@@ -1,0 +1,26 @@
+[package]
+name = "wide"
+description = "A crate to help you go wide."
+version = "0.0.1-alpha.0"
+authors = ["Lokathor <zefria@gmail.com>"]
+repository = "https://github.com/Lokathor/wide"
+readme = "README.md"
+keywords = ["simd", "wide", "lokathor"]
+categories = ["data-structures", "hardware-support"]
+edition = "2018"
+license = "0BSD"
+
+[features]
+default = []
+
+[dependencies]
+# TODO: serde
+# TODO: mint
+
+[badges]
+appveyor = { repository = "Lokathor/lokacore" }
+travis-ci = { repository = "Lokathor/lokacore" }
+
+[package.metadata.docs.rs]
+rustc-args = ["-Ctarget-cpu=native"]
+rustdoc-args = ["-Ctarget-cpu=native"]
