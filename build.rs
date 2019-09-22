@@ -8,7 +8,7 @@ fn main() {
       .arg("--version")
       .output()
       .expect("failed to execute `rustc --version`!");
-    assert!(output.status.success(),"toolchain detection unsuccessful!");
+    assert!(output.status.success(), "toolchain detection unsuccessful!");
     let stdout = String::from_utf8_lossy(&output.stdout);
     if stdout.contains("nightly") {
       println!(r#"cargo:rustc-cfg=feature="toolchain_nightly""#);

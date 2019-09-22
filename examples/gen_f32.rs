@@ -1,4 +1,3 @@
-
 fn main() {
   let mut buffer = String::new();
   //
@@ -10,8 +9,9 @@ fn main() {
     println!("I think this is stable.");
   }
   //
-  use std::fs::File;
-  use std::io::prelude::*;
+  use std::{fs::File, io::prelude::*};
   let mut file = File::create("target/f32x.rs").expect("couldn't make file");
-  file.write_all(buffer.as_bytes()).expect("couldn't write all the data.");
+  file
+    .write_all(buffer.as_bytes())
+    .expect("couldn't write all the data.");
 }

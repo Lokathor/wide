@@ -93,13 +93,13 @@ macro_rules! cfg_block {
 }
 
 pub fn lib_function_if() {
-  cfg_block!{if #[cfg(windows)] {
+  cfg_block! {if #[cfg(windows)] {
     println!("foo");
   }}
 }
 
 pub fn lib_function_if_else() {
-  cfg_block!{if #[cfg(windows)] {
+  cfg_block! {if #[cfg(windows)] {
     println!("foo");
   } else {
     println!("else");
@@ -107,7 +107,7 @@ pub fn lib_function_if_else() {
 }
 
 pub fn lib_function_if_elseif() {
-  cfg_block!{if #[cfg(windows)] {
+  cfg_block! {if #[cfg(windows)] {
     println!("foo");
   } else if #[cfg(unix)] {
     println!("elseif");
@@ -115,7 +115,7 @@ pub fn lib_function_if_elseif() {
 }
 
 pub fn lib_function_if_elseif_else() {
-  cfg_block!{if #[cfg(windows)] {
+  cfg_block! {if #[cfg(windows)] {
     println!("foo");
   } else if #[cfg(unix)] {
     println!("elseif");
