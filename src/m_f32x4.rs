@@ -550,10 +550,10 @@ impl Neg for f32x4 {
       Self { sse: self.sse.neg() }
     } else {
       Self { arr: [
-        !self.arr[0],
-        !self.arr[1],
-        !self.arr[2],
-        !self.arr[3],
+        -self.arr[0],
+        -self.arr[1],
+        -self.arr[2],
+        -self.arr[3],
       ] }
     }}
   }
@@ -566,10 +566,10 @@ impl Neg for &'_ f32x4 {
       f32x4 { sse: self.sse.neg() }
     } else {
       f32x4 { arr: [
-        !self.arr[0],
-        !self.arr[1],
-        !self.arr[2],
-        !self.arr[3],
+        -self.arr[0],
+        -self.arr[1],
+        -self.arr[2],
+        -self.arr[3],
       ] }
     }}
   }
