@@ -8,9 +8,10 @@
 //! hardware of various targets. Both in terms of explicit SIMD usage and also
 //! in terms of allowing LLVM's auto-vectorizer to do its job.
 //!
-//! All SIMD support is on a _best effort_ basis. Results will vary based on
+//! All SIMD usage is on a _best effort_ basis. Results will vary based on
 //! target, optimization level, method, and if you're using a Nightly compiler
-//! or not.
+//! or not. Otherwise you get a "fallback" implementation, which will just do
+//! the normal computation on each lane individually.
 //!
 //! * **Note:** The crate will auto-detect if you're using Nightly and take
 //!   advantage of it. You don't do anything on your part. Activate the
@@ -22,18 +23,22 @@
 //! Compared to the
 //! [packed_simd](https://github.com/rust-lang-nursery/packed_simd) RFC efforts,
 //! this crate is less concerned with complete coverage of all possible
-//! intrinsics and more concerned with having a good API that's easy to
-//! understand.
+//! intrinsics and being totally generic across all widths. Instead, I focus on
+//! having a very simple, easy to understand setup that avoids generics and
+//! tries to just be plain and obvious at all times. The goal is that using a
+//! wide type should be as close as possible to using the scalar version of the
+//! same type. Some function designed for `f32` inputs and outputs should "just
+//! work" when you change it to `f32x4` inputs and outputs.
 //!
 //! Also, `packed_simd` is Nightly-only, whereas this crate works on Stable.
-//! Even on Stable you'll get _reasonable_ levels of SIMD on most platforms just
-//! from LLVM's auto-vectorizer being pretty good when you're doing the sort of
-//! code it recognizes.
+//! Even on Stable this crate will give you _reasonable_ levels of SIMD just
+//! from LLVM's auto-vectorizer being pretty good at its job when you give it
+//! code that it recognizes.
 //!
-//! If `packed_simd` ever completes it _might_ make this crate obsolete.
-//! However, in September of 2019 I asked the `packed_simd` folks when they
-//! might complete their task and get it all into Stable Rust, and they just
-//! said "no ETA". I'm not gonna hold my breath.
+//! When `packed_simd` eventually makes it into Stable it _might_ make this
+//! crate obsolete. However, in September of 2019 I asked the `packed_simd`
+//! folks if there was any kind of ETA, 6 months, 12 months, or more, and they
+//! just said "no ETA". So I'm not gonna wait around for `packed_simd`.
 
 /// Works like
 /// [`cfg_if!`](https://docs.rs/cfg-if/0.1.9/cfg_if/macro.cfg_if.html), but for
