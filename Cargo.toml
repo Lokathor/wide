@@ -13,13 +13,17 @@ license = "0BSD"
 [features]
 default = []
 
+# If you enable this feature the crate will always act like it's on the Stable
+# toolchain. Otherwise, the crate will attempt to detect when the current
+# compiler is a Nightly compiler and enable appropraite ightly features.
+always_use_stable = []
+
 [dependencies]
 # TODO: serde
-# TODO: mint
 
 [badges]
-appveyor = { repository = "Lokathor/lokacore" }
-travis-ci = { repository = "Lokathor/lokacore" }
+appveyor = { repository = "Lokathor/wide" }
+travis-ci = { repository = "Lokathor/wide" }
 
 [package.metadata.docs.rs]
 rustc-args = ["-Ctarget-cpu=native"]
