@@ -60,7 +60,7 @@ impl IndexMut<usize> for f32x4 {
 }
 
 /// Various `f32` related consts, duplicated into x4 array form.
-/// 
+///
 /// Rust doesn't let you declare SIMD values in a `const` context, so you have
 /// to use something like `let c = f32x4::from(CONST_NAME);`
 pub mod consts {
@@ -351,14 +351,12 @@ impl Rem for f32x4 {
     cfg_block! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
       let arr2: [f32; 4] = cast(rhs.sse);
-      Self {
-        sse: cast([
-          arr1[0] % arr2[0],
-          arr1[1] % arr2[1],
-          arr1[2] % arr2[2],
-          arr1[3] % arr2[3],
-        ])
-      }
+      Self { sse: cast([
+        arr1[0] % arr2[0],
+        arr1[1] % arr2[1],
+        arr1[2] % arr2[2],
+        arr1[3] % arr2[3],
+      ]) }
     } else {
       Self { arr: [
         self.arr[0] % rhs.arr[0],
@@ -377,14 +375,12 @@ impl Rem<&'_ f32x4> for f32x4 {
     cfg_block! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
       let arr2: [f32; 4] = cast(rhs.sse);
-      Self {
-        sse: cast([
-          arr1[0] % arr2[0],
-          arr1[1] % arr2[1],
-          arr1[2] % arr2[2],
-          arr1[3] % arr2[3],
-        ])
-      }
+      Self { sse: cast([
+        arr1[0] % arr2[0],
+        arr1[1] % arr2[1],
+        arr1[2] % arr2[2],
+        arr1[3] % arr2[3],
+      ]) }
     } else {
       Self { arr: [
         self.arr[0] % rhs.arr[0],
