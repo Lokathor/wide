@@ -20,6 +20,12 @@ cfg_if! {
     }
   }
 }
+#[test]
+fn declaration_tests() {
+  use core::mem::{align_of, size_of};
+  assert_eq!(size_of::<f32x4>(), 16);
+  assert_eq!(align_of::<f32x4>(), 16);
+}
 
 impl Clone for f32x4 {
   #[inline(always)]
@@ -53,15 +59,11 @@ impl IndexMut<usize> for f32x4 {
   }
 }
 
-#[test]
-fn declaration_tests() {
-  use core::mem::{align_of, size_of};
-  assert_eq!(size_of::<f32x4>(), 16);
-  assert_eq!(align_of::<f32x4>(), 16);
-}
-
-/// Consts
-impl f32x4 {
+/// Various `f32` related consts, duplicated into x4 array form.
+/// 
+/// Rust doesn't let you declare SIMD values in a `const` context, so you have
+/// to use something like `let c = f32x4::from(CONST_NAME);`
+pub mod consts {
   pub const EPSILON: [f32; 4] = [
     std::f32::EPSILON,
     std::f32::EPSILON,
@@ -351,11 +353,11 @@ impl Rem for f32x4 {
       let arr2: [f32; 4] = cast(rhs.sse);
       Self {
         sse: cast([
-        arr1[0] % arr2[0],
-        arr1[1] % arr2[1],
-        arr1[2] % arr2[2],
-        arr1[3] % arr2[3],
-      ])
+          arr1[0] % arr2[0],
+          arr1[1] % arr2[1],
+          arr1[2] % arr2[2],
+          arr1[3] % arr2[3],
+        ])
       }
     } else {
       Self { arr: [
@@ -377,11 +379,11 @@ impl Rem<&'_ f32x4> for f32x4 {
       let arr2: [f32; 4] = cast(rhs.sse);
       Self {
         sse: cast([
-        arr1[0] % arr2[0],
-        arr1[1] % arr2[1],
-        arr1[2] % arr2[2],
-        arr1[3] % arr2[3],
-      ])
+          arr1[0] % arr2[0],
+          arr1[1] % arr2[1],
+          arr1[2] % arr2[2],
+          arr1[3] % arr2[3],
+        ])
       }
     } else {
       Self { arr: [
