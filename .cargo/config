@@ -3,8 +3,7 @@
 # copied forward by cargo, so crates using this crate as a dependency
 # are not affected.
 [build]
-rustflags = ["-C","target-cpu=native", "-Z","external-macro-backtrace",
-"-Z","trace-macros"]
+rustflags = ["-C","target-cpu=native"]
 rustdocflags = ["-C","target-cpu=native"]
 
 # Building for Android requires different settings for windows vs linux hosts.

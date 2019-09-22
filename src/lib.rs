@@ -48,53 +48,73 @@
 /// function signature.
 #[macro_export]
 macro_rules! cfg_block {
-  // match if/else chains with a final `else`, you must have at least 1 if.
-  ($(if #[cfg($($meta:meta),*)]
-      $if_block:block)else+
-    else
-      $else_block:block) => {
-    $crate::cfg_block! {
-      @__internal
-      () ;
-      $( ( ($($meta),*) ($if_block) ), )+
-      ( () ($else_block) ),
+  // Handle when there's only `if` and `else if`, no lone `else`. In this case,
+  // the macro sees the whole thing as being a list of entries of the form `if
+  // cfg block`, and using `else` as a "separator token" between entries. Like a
+  // comma separated list, but it's an `else` separated list instead.
+  ($(if #[cfg($($if_else_meta:meta),*)] $if_else_block:block)else+) => {
+    $crate::cfg_block!{
+      @__internal ();
+      $( ([$($if_else_meta),*] [$if_else_block]), )+
     }
   };
 
-  // match if/else chains lacking a final `else`
-  (if #[cfg($($if_meta:meta),*)]
-      $if_block:block
-    $(else if #[cfg($($else_meta:meta),*)]
-      $else_block:block)*) => {
-    $crate::cfg_block! {
-      @__internal
-      () ;
-      ( ($($if_meta),*) ($if_block) ),
-      $( ( ($($else_meta),*) ($else_block) ), )*
-      ( () () ),
+  // Handle when there's a final `else` WITHOUT an `if` on it at the end of the
+  // "list" of entries. It's basically just like the above case, except that we
+  // throw the final else block onto the end of the token tree that we send to
+  // the internal branch. We just give it no conditions and it all works out.
+  ($(if #[cfg($($if_else_meta:meta),*)] $if_else_block:block)else+
+    else $else_block:block) => {
+    $crate::cfg_block!{
+      @__internal ();
+      $( ([$($if_else_meta),*] [$if_else_block]), )+
+      ( [] [$else_block] ),
     }
   };
 
-  // Internal and recursive macro to emit all the items
-  //
-  // Collects all the negated cfgs in a list at the beginning and after the
-  // semicolon is all the remaining items
+  // Here we have some metas that we've handled so far (starts empty), as well
+  // as the current pairing of metas and a block that goes with them. We emit
+  // the block configured for the negation of all previous metas combined with
+  // its own metas. Then we move the current metas into the negation pile and
+  // recurse to the next set of entries in the token tree.
+  (@__internal ($($not:meta,)*) ; ( [$($m:meta),*] [$bl:block] ), $($rest:tt)*) => {
+    #[cfg(all($($m,)* not(any($($not),*))))] $bl
+
+    $crate::cfg_block!{ @__internal ($($not,)* $($m,)*) ; $($rest)* }
+  };
+
+  // Here we've run out of token tree to process, so we just stop.
   (@__internal ($($not:meta,)*) ; ) => {};
+}
 
-  (@__internal ($($not:meta,)*) ; ( ($($m:meta),*) ($bl:block) ), $($rest:tt)*) => {
-    // Emit all items within one block, applying an appropriate #[cfg]. The
-    // #[cfg] will require all `$m` matchers specified and must also negate
-    // all previous matchers.
-    $crate::cfg_block! { @__apply cfg(all($($m,)* not(any($($not),*)))), $bl }
+pub fn lib_function_if() {
+  cfg_block!{if #[cfg(windows)] {
+    println!("foo");
+  }}
+}
 
-    // Recurse to emit all other items in `$rest`, and when we do so add all
-    // our `$m` matchers to the list of `$not` matchers as future emissions
-    // will have to negate everything we just matched as well.
-    $crate::cfg_block! { @__internal ($($not,)* $($m,)*) ; $($rest)* }
-  };
+pub fn lib_function_if_else() {
+  cfg_block!{if #[cfg(windows)] {
+    println!("foo");
+  } else {
+    println!("else");
+  }}
+}
 
-  // Internal macro to Apply a cfg attribute to a list of items
-  (@__apply $m:meta, $bl:block) => {
-    #[$m] $bl
-  };
+pub fn lib_function_if_elseif() {
+  cfg_block!{if #[cfg(windows)] {
+    println!("foo");
+  } else if #[cfg(unix)] {
+    println!("elseif");
+  }}
+}
+
+pub fn lib_function_if_elseif_else() {
+  cfg_block!{if #[cfg(windows)] {
+    println!("foo");
+  } else if #[cfg(unix)] {
+    println!("elseif");
+  } else {
+    println!("else");
+  }}
 }
