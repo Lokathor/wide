@@ -19,7 +19,10 @@ default = []
 always_use_stable = []
 
 [dependencies]
-# TODO: serde
+cfg-if = "0.1"
+lokacore = "0.2"
+
+# TODO: serde support
 
 [badges]
 appveyor = { repository = "Lokathor/wide" }

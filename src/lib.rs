@@ -1,4 +1,5 @@
-#![warn(missing_docs)]
+//#![warn(missing_docs)]
+#![allow(unused_imports)]
 #![cfg_attr(feature = "toolchain_nightly", feature(stdsimd))]
 
 //! A crate to help you go wide.
@@ -39,6 +40,23 @@
 //! crate obsolete. However, in September of 2019 I asked the `packed_simd`
 //! folks if there was any kind of ETA, 6 months, 12 months, or more, and they
 //! just said "no ETA". So I'm not gonna wait around for `packed_simd`.
+
+pub(crate) use cfg_if::cfg_if;
+pub(crate) use core::{
+  convert::*,
+  fmt::{Binary, Debug, Display, LowerExp, UpperExp},
+  ops::*,
+};
+pub(crate) use lokacore::{cast, cast_mut, cast_ref, Pod, Zeroable};
+
+cfg_if! {
+  if #[cfg(target_arch="x86")] {
+    pub(crate) use lokacore::arch::x86::m128;
+  } else if #[cfg(target_arch="x86_64")] {
+    pub(crate) use lokacore::arch::x86_64::m128;
+  }
+  // TODO: arm, aarch64, wasm32, maybe more?
+}
 
 /// Works like
 /// [`cfg_if!`](https://docs.rs/cfg-if/0.1.9/cfg_if/macro.cfg_if.html), but for
@@ -92,13 +110,18 @@ macro_rules! cfg_block {
   (@__internal ($($not:meta,)*) ; ) => {};
 }
 
-pub fn lib_function_if() {
+mod m_f32x4;
+pub use m_f32x4::*;
+
+#[test]
+fn lib_function_if() {
   cfg_block! {if #[cfg(windows)] {
     println!("foo");
   }}
 }
 
-pub fn lib_function_if_else() {
+#[test]
+fn lib_function_if_else() {
   cfg_block! {if #[cfg(windows)] {
     println!("foo");
   } else {
@@ -106,7 +129,8 @@ pub fn lib_function_if_else() {
   }}
 }
 
-pub fn lib_function_if_elseif() {
+#[test]
+fn lib_function_if_elseif() {
   cfg_block! {if #[cfg(windows)] {
     println!("foo");
   } else if #[cfg(unix)] {
@@ -114,7 +138,8 @@ pub fn lib_function_if_elseif() {
   }}
 }
 
-pub fn lib_function_if_elseif_else() {
+#[test]
+fn lib_function_if_elseif_else() {
   cfg_block! {if #[cfg(windows)] {
     println!("foo");
   } else if #[cfg(unix)] {
