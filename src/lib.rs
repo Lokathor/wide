@@ -41,13 +41,13 @@
 //! folks if there was any kind of ETA, 6 months, 12 months, or more, and they
 //! just said "no ETA". So I'm not gonna wait around for `packed_simd`.
 
+pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
 pub(crate) use cfg_if::cfg_if;
 pub(crate) use core::{
   convert::*,
   fmt::{Binary, Debug, Display, LowerExp, UpperExp},
   ops::*,
 };
-pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
 
 cfg_if! {
   if #[cfg(all(target_arch="x86", target_feature="sse"))] {
