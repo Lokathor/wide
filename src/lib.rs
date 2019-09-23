@@ -43,11 +43,7 @@
 
 pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
 pub(crate) use cfg_if::cfg_if;
-pub(crate) use core::{
-  convert::*,
-  fmt::{Binary, Debug, Display, LowerExp, UpperExp},
-  ops::*,
-};
+pub(crate) use core::{convert::*, fmt::*, ops::*};
 
 cfg_if! {
   if #[cfg(all(target_arch="x86", target_feature="sse"))] {
