@@ -47,12 +47,12 @@ pub(crate) use core::{
   fmt::{Binary, Debug, Display, LowerExp, UpperExp},
   ops::*,
 };
-pub(crate) use lokacore::{cast, cast_mut, cast_ref, Pod, Zeroable};
+pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
 
 cfg_if! {
-  if #[cfg(target_arch="x86")] {
+  if #[cfg(all(target_arch="x86", target_feature="sse"))] {
     pub(crate) use lokacore::arch::x86::m128;
-  } else if #[cfg(target_arch="x86_64")] {
+  } else if #[cfg(all(target_arch="x86_64", target_feature="sse"))] {
     pub(crate) use lokacore::arch::x86_64::m128;
   }
   // TODO: arm, aarch64, wasm32, maybe more?
