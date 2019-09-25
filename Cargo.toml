@@ -15,7 +15,7 @@ default = []
 
 # If you enable this feature the crate will always act like it's on the Stable
 # toolchain. Otherwise, the crate will attempt to detect when the current
-# compiler is a Nightly compiler and enable appropraite ightly features.
+# compiler is a Nightly compiler and enable appropriate ightly features.
 always_use_stable = []
 
 [dependencies]
