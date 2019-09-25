@@ -1,27 +1,5 @@
 use super::*;
 
-/*
-
-TODO: these are the methods that we didn't add yet
-
-* abs_sub
-
-* div_euclid
-* rem_euclid
-* clamp
-
-* to_bits
-* from_bits
-
-* is_finite
-* is_infinite
-* is_nan
-* is_normal
-* is_sign_negative
-* is_sign_positive
-
-*/
-
 cfg_if! {
   if #[cfg(target_feature="sse")] {
     #[repr(C, align(16))]
