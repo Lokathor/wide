@@ -19,7 +19,7 @@ default = []
 always_use_stable = []
 
 [dependencies]
-cfg-if = "0.1"
+cfg-if = "^0.1.10"
 bytemuck = "0.1"
 lokacore = "0.3" # TODO: remove lokacore so that this can become _a part of_ lokacore
 

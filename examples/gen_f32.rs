@@ -6,7 +6,8 @@ fn main() {
   //write_consts(&mut buffer);
   //write_math_op_impls(&mut buffer);
   //write_formatting(&mut buffer);
-  write_from_impls(&mut buffer);
+  //write_from_impls(&mut buffer);
+  write_methods(&mut buffer);
   //
   use std::{fs::File, io::prelude::*};
   let mut file = File::create("target/gen_f32_out.rs").expect("couldn't make file");
@@ -201,6 +202,103 @@ fn write_from_impls(buf: &mut String) {
     }}
     "#,
       src_type, src_type
+    ));
+  }
+}
+
+fn write_methods(buf: &mut String) {
+  for unary_func in [
+    "abs",
+    "acos",
+    "acosh",
+    "asin",
+    "asinh",
+    "atan",
+    "atanh",
+    "cbrt",
+    "ceil",
+    "classify",
+    "cos",
+    "cosh",
+    "exp",
+    "exp2",
+    "exp_m1",
+    "floor",
+    "fract",
+    "ln",
+    "ln_1p",
+    "log10",
+    "log2",
+    "recip",
+    "round",
+    "signum",
+    "sin",
+    "sinh",
+    "sqrt",
+    "tan",
+    "tanh",
+    "to_degrees",
+    "to_radians",
+    "trunc",
+  ]
+  .iter()
+  {
+    buf.push_str(&format!(
+      r#"
+    #[inline]
+    pub fn {name}(self) -> Self {{
+      let a: [f32; 4] = cast(self);
+      cast([a[0].{name}(),a[1].{name}(),a[2].{name}(),a[3].{name}()])
+    }}
+    "#,
+      name = unary_func
+    ));
+  }
+
+  for binary_func in [
+    "atan2", "copysign", "hypot", "log", "max", "min", "powf", "powi",
+  ]
+  .iter()
+  {
+    buf.push_str(&format!(
+      r#"
+    #[inline]
+    pub fn {name}(self, b: Self) -> Self {{
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      cast([a[0].{name}(b[0]),a[1].{name}(b[1]),a[2].{name}(b[2]),a[3].{name}(b[3])])
+    }}
+    "#,
+      name = binary_func
+    ));
+  }
+
+  for trinary_func in ["mul_add"].iter() {
+    buf.push_str(&format!(r#"
+    #[inline]
+    pub fn {name}(self, b: Self, c: Self) -> Self {{
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      let c: [f32; 4] = cast(c);
+      cast([a[0].{name}(b[0], c[0]),a[1].{name}(b[1], c[0]),a[2].{name}(b[2], c[0]),a[3].{name}(b[3], c[0])])
+    }}
+    "#,name = trinary_func));
+  }
+
+  for tuple_output in ["sin_cos"].iter() {
+    buf.push_str(&format!(
+      r#"
+    #[inline]
+    pub fn {name}(self) -> (Self, Self) {{
+      let a: [f32; 4] = cast(self);
+      let (zero_sin, zero_cos) = a[0];
+      let (one_sin, one_cos) = a[1];
+      let (two_sin, two_cos) = a[2];
+      let (three_sin, three_cos) = a[3];
+      (cast([zero_sin, one_sin, two_sin, three_sin]),cast([zero_cos, one_cos, two_cos, three_cos]))
+    }}
+    "#,
+      name = tuple_output
     ));
   }
 }

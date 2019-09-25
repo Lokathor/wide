@@ -1,5 +1,27 @@
 use super::*;
 
+/*
+
+TODO: these are the methods that we didn't add yet
+
+* abs_sub
+
+* div_euclid
+* rem_euclid
+* clamp
+
+* to_bits
+* from_bits
+
+* is_finite
+* is_infinite
+* is_nan
+* is_normal
+* is_sign_negative
+* is_sign_positive
+
+*/
+
 cfg_if! {
   if #[cfg(target_feature="sse")] {
     #[repr(C, align(16))]
@@ -23,7 +45,7 @@ fn declaration_tests() {
 impl f32x4 {
   #[inline(always)]
   pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: m128::set(a,b,c,d) }
     } else {
       Self { arr: [a,b,c,d] }
@@ -35,7 +57,7 @@ impl Add for f32x4 {
   type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.add(rhs.sse) }
     } else {
       Self { arr: [
@@ -52,7 +74,7 @@ impl Add<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn add(self, rhs: &Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.add(rhs.sse) }
     } else {
       Self { arr: [
@@ -69,7 +91,7 @@ impl Div for f32x4 {
   type Output = Self;
   #[inline]
   fn div(self, rhs: Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.div(rhs.sse) }
     } else {
       Self { arr: [
@@ -86,7 +108,7 @@ impl Div<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn div(self, rhs: &Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.div(rhs.sse) }
     } else {
       Self { arr: [
@@ -103,7 +125,7 @@ impl Mul for f32x4 {
   type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.mul(rhs.sse) }
     } else {
       Self { arr: [
@@ -120,7 +142,7 @@ impl Mul<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn mul(self, rhs: &Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.mul(rhs.sse) }
     } else {
       Self { arr: [
@@ -137,7 +159,7 @@ impl Rem for f32x4 {
   type Output = Self;
   #[inline]
   fn rem(self, rhs: Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
       let arr2: [f32; 4] = cast(rhs.sse);
       Self { sse: cast([
@@ -161,7 +183,7 @@ impl Rem<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn rem(self, rhs: &Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
       let arr2: [f32; 4] = cast(rhs.sse);
       Self { sse: cast([
@@ -185,7 +207,7 @@ impl Sub for f32x4 {
   type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.sub(rhs.sse) }
     } else {
       Self { arr: [
@@ -202,7 +224,7 @@ impl Sub<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn sub(self, rhs: &Self) -> Self {
-    cfg_block! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.sub(rhs.sse) }
     } else {
       Self { arr: [
@@ -215,10 +237,340 @@ impl Sub<&'_ f32x4> for f32x4 {
   }
 }
 
+impl f32x4 {
+  #[inline]
+  pub fn abs(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].abs(), a[1].abs(), a[2].abs(), a[3].abs()])
+  }
+
+  #[inline]
+  pub fn acos(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].acos(), a[1].acos(), a[2].acos(), a[3].acos()])
+  }
+
+  #[inline]
+  pub fn acosh(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].acosh(), a[1].acosh(), a[2].acosh(), a[3].acosh()])
+  }
+
+  #[inline]
+  pub fn asin(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].asin(), a[1].asin(), a[2].asin(), a[3].asin()])
+  }
+
+  #[inline]
+  pub fn asinh(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].asinh(), a[1].asinh(), a[2].asinh(), a[3].asinh()])
+  }
+
+  #[inline]
+  pub fn atan(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].atan(), a[1].atan(), a[2].atan(), a[3].atan()])
+  }
+
+  #[inline]
+  pub fn atanh(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].atanh(), a[1].atanh(), a[2].atanh(), a[3].atanh()])
+  }
+
+  #[inline]
+  pub fn cbrt(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].cbrt(), a[1].cbrt(), a[2].cbrt(), a[3].cbrt()])
+  }
+
+  #[inline]
+  pub fn ceil(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].ceil(), a[1].ceil(), a[2].ceil(), a[3].ceil()])
+  }
+
+  #[inline]
+  pub fn classify(self) -> [std::num::FpCategory; 4] {
+    let a: [f32; 4] = cast(self);
+    [
+      a[0].classify(),
+      a[1].classify(),
+      a[2].classify(),
+      a[3].classify(),
+    ]
+  }
+
+  #[inline]
+  pub fn cos(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].cos(), a[1].cos(), a[2].cos(), a[3].cos()])
+  }
+
+  #[inline]
+  pub fn cosh(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].cosh(), a[1].cosh(), a[2].cosh(), a[3].cosh()])
+  }
+
+  #[inline]
+  pub fn exp(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].exp(), a[1].exp(), a[2].exp(), a[3].exp()])
+  }
+
+  #[inline]
+  pub fn exp2(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].exp2(), a[1].exp2(), a[2].exp2(), a[3].exp2()])
+  }
+
+  #[inline]
+  pub fn exp_m1(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].exp_m1(), a[1].exp_m1(), a[2].exp_m1(), a[3].exp_m1()])
+  }
+
+  #[inline]
+  pub fn floor(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].floor(), a[1].floor(), a[2].floor(), a[3].floor()])
+  }
+
+  #[inline]
+  pub fn fract(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].fract(), a[1].fract(), a[2].fract(), a[3].fract()])
+  }
+
+  #[inline]
+  pub fn ln(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].ln(), a[1].ln(), a[2].ln(), a[3].ln()])
+  }
+
+  #[inline]
+  pub fn ln_1p(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].ln_1p(), a[1].ln_1p(), a[2].ln_1p(), a[3].ln_1p()])
+  }
+
+  #[inline]
+  pub fn log10(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].log10(), a[1].log10(), a[2].log10(), a[3].log10()])
+  }
+
+  #[inline]
+  pub fn log2(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].log2(), a[1].log2(), a[2].log2(), a[3].log2()])
+  }
+
+  #[inline]
+  pub fn recip(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].recip(), a[1].recip(), a[2].recip(), a[3].recip()])
+  }
+
+  #[inline]
+  pub fn round(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].round(), a[1].round(), a[2].round(), a[3].round()])
+  }
+
+  #[inline]
+  pub fn signum(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].signum(), a[1].signum(), a[2].signum(), a[3].signum()])
+  }
+
+  #[inline]
+  pub fn sin(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].sin(), a[1].sin(), a[2].sin(), a[3].sin()])
+  }
+
+  #[inline]
+  pub fn sinh(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].sinh(), a[1].sinh(), a[2].sinh(), a[3].sinh()])
+  }
+
+  #[inline]
+  pub fn sqrt(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].sqrt(), a[1].sqrt(), a[2].sqrt(), a[3].sqrt()])
+  }
+
+  #[inline]
+  pub fn tan(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].tan(), a[1].tan(), a[2].tan(), a[3].tan()])
+  }
+
+  #[inline]
+  pub fn tanh(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].tanh(), a[1].tanh(), a[2].tanh(), a[3].tanh()])
+  }
+
+  #[inline]
+  pub fn to_degrees(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([
+      a[0].to_degrees(),
+      a[1].to_degrees(),
+      a[2].to_degrees(),
+      a[3].to_degrees(),
+    ])
+  }
+
+  #[inline]
+  pub fn to_radians(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([
+      a[0].to_radians(),
+      a[1].to_radians(),
+      a[2].to_radians(),
+      a[3].to_radians(),
+    ])
+  }
+
+  #[inline]
+  pub fn trunc(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].trunc(), a[1].trunc(), a[2].trunc(), a[3].trunc()])
+  }
+
+  #[inline]
+  pub fn atan2(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].atan2(b[0]),
+      a[1].atan2(b[1]),
+      a[2].atan2(b[2]),
+      a[3].atan2(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn copysign(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].copysign(b[0]),
+      a[1].copysign(b[1]),
+      a[2].copysign(b[2]),
+      a[3].copysign(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn hypot(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].hypot(b[0]),
+      a[1].hypot(b[1]),
+      a[2].hypot(b[2]),
+      a[3].hypot(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn log(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].log(b[0]),
+      a[1].log(b[1]),
+      a[2].log(b[2]),
+      a[3].log(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn max(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].max(b[0]),
+      a[1].max(b[1]),
+      a[2].max(b[2]),
+      a[3].max(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn min(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].min(b[0]),
+      a[1].min(b[1]),
+      a[2].min(b[2]),
+      a[3].min(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn powf(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].powf(b[0]),
+      a[1].powf(b[1]),
+      a[2].powf(b[2]),
+      a[3].powf(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn powi(self, b: [i32; 4]) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([
+      a[0].powi(b[0]),
+      a[1].powi(b[1]),
+      a[2].powi(b[2]),
+      a[3].powi(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn mul_add(self, b: Self, c: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    let c: [f32; 4] = cast(c);
+    cast([
+      a[0].mul_add(b[0], c[0]),
+      a[1].mul_add(b[1], c[0]),
+      a[2].mul_add(b[2], c[0]),
+      a[3].mul_add(b[3], c[0]),
+    ])
+  }
+
+  #[inline]
+  pub fn sin_cos(self) -> (Self, Self) {
+    let a: [f32; 4] = cast(self);
+    let (zero_sin, zero_cos) = a[0].sin_cos();
+    let (one_sin, one_cos) = a[1].sin_cos();
+    let (two_sin, two_cos) = a[2].sin_cos();
+    let (three_sin, three_cos) = a[3].sin_cos();
+    (
+      cast([zero_sin, one_sin, two_sin, three_sin]),
+      cast([zero_cos, one_cos, two_cos, three_cos]),
+    )
+  }
+}
+
 // // //
 // CODE AFTER HERE SHOULD NOT USE CONDITIONAL COMPILATION!
 // // //
-// We want to keep per-platform code away from the universal code.
+// (We want to keep per-platform code away from the universal code)
 // // //
 
 impl Clone for f32x4 {
@@ -408,7 +760,7 @@ impl core::iter::Sum for f32x4 {
   fn sum<I: Iterator<Item = f32x4>>(iter: I) -> f32x4 {
     let mut total = f32x4::new(0.0, 0.0, 0.0, 0.0);
     for i in iter {
-      total *= i;
+      total += i;
     }
     total
   }
@@ -418,7 +770,7 @@ impl<'a> core::iter::Sum<&'a f32x4> for f32x4 {
   fn sum<I: Iterator<Item = &'a f32x4>>(iter: I) -> f32x4 {
     let mut total = f32x4::new(0.0, 0.0, 0.0, 0.0);
     for i in iter {
-      total *= i;
+      total += i;
     }
     total
   }
