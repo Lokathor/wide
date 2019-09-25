@@ -1,7 +1,7 @@
 [package]
 name = "wide"
 description = "A crate to help you go wide."
-version = "0.0.1-alpha.0"
+version = "0.1.0"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/wide"
 readme = "README.md"
@@ -9,6 +9,10 @@ keywords = ["simd", "wide", "lokathor"]
 categories = ["data-structures", "hardware-support"]
 edition = "2018"
 license = "BlueOak-1.0.0+"
+
+[package.metadata.docs.rs]
+rustc-args = ["-Ctarget-cpu=native"]
+rustdoc-args = ["-Ctarget-cpu=native"]
 
 [features]
 default = []
@@ -28,7 +32,3 @@ lokacore = "0.3" # TODO: remove lokacore so that this can become _a part of_ lok
 [badges]
 appveyor = { repository = "Lokathor/wide" }
 travis-ci = { repository = "Lokathor/wide" }
-
-[package.metadata.docs.rs]
-rustc-args = ["-Ctarget-cpu=native"]
-rustdoc-args = ["-Ctarget-cpu=native"]
