@@ -31,6 +31,17 @@ impl f32x4 {
   }
 }
 
+impl From<f32> for f32x4 {
+  #[inline]
+  fn from(val: f32) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: m128::splat(val) }
+    } else {
+      Self::new(val,val,val,val)
+    }}
+  }
+}
+
 impl Add for f32x4 {
   type Output = Self;
   #[inline]
