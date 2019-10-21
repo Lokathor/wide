@@ -536,9 +536,9 @@ impl f32x4 {
     let c: [f32; 4] = cast(c);
     cast([
       a[0].mul_add(b[0], c[0]),
-      a[1].mul_add(b[1], c[0]),
-      a[2].mul_add(b[2], c[0]),
-      a[3].mul_add(b[3], c[0]),
+      a[1].mul_add(b[1], c[1]),
+      a[2].mul_add(b[2], c[2]),
+      a[3].mul_add(b[3], c[3]),
     ])
   }
 
