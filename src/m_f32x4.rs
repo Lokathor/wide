@@ -263,6 +263,81 @@ impl Sub<&'_ f32x4> for f32x4 {
   }
 }
 
+impl BitAnd for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.bitand(rhs.sse) }
+    } else {
+      Self { arr: [
+        f32::from_bits(self.arr[0].to_bits() & rhs.arr[0].to_bits()),
+        f32::from_bits(self.arr[1].to_bits() & rhs.arr[1].to_bits()),
+        f32::from_bits(self.arr[2].to_bits() & rhs.arr[2].to_bits()),
+        f32::from_bits(self.arr[3].to_bits() & rhs.arr[3].to_bits()),
+      ] }
+    }}
+  }
+}
+
+impl BitAnd<&'_ f32x4> for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn bitand(self, rhs: &Self) -> Self {
+    self & *rhs
+  }
+}
+
+impl BitOr for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.bitor(rhs.sse) }
+    } else {
+      Self { arr: [
+        f32::from_bits(self.arr[0].to_bits() | rhs.arr[0].to_bits()),
+        f32::from_bits(self.arr[1].to_bits() | rhs.arr[1].to_bits()),
+        f32::from_bits(self.arr[2].to_bits() | rhs.arr[2].to_bits()),
+        f32::from_bits(self.arr[3].to_bits() | rhs.arr[3].to_bits()),
+      ] }
+    }}
+  }
+}
+
+impl BitOr<&'_ f32x4> for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn bitor(self, rhs: &Self) -> Self {
+    self | *rhs
+  }
+}
+
+impl BitXor for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.bitxor(rhs.sse) }
+    } else {
+      Self { arr: [
+        f32::from_bits(self.arr[0].to_bits() ^ rhs.arr[0].to_bits()),
+        f32::from_bits(self.arr[1].to_bits() ^ rhs.arr[1].to_bits()),
+        f32::from_bits(self.arr[2].to_bits() ^ rhs.arr[2].to_bits()),
+        f32::from_bits(self.arr[3].to_bits() ^ rhs.arr[3].to_bits()),
+      ] }
+    }}
+  }
+}
+
+impl BitXor<&'_ f32x4> for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn bitxor(self, rhs: &Self) -> Self {
+    self ^ *rhs
+  }
+}
+
 impl f32x4 {
   #[inline]
   pub fn cmp_eq(self, rhs: Self) -> Self {
@@ -942,6 +1017,48 @@ impl SubAssign<&'_ f32x4> for f32x4 {
   #[inline]
   fn sub_assign(&mut self, rhs: &Self) {
     *self = *self - rhs
+  }
+}
+
+impl BitAndAssign for f32x4 {
+  #[inline]
+  fn bitand_assign(&mut self, rhs: Self) {
+    *self = *self & rhs
+  }
+}
+
+impl BitAndAssign<&'_ f32x4> for f32x4 {
+  #[inline]
+  fn bitand_assign(&mut self, rhs: &Self) {
+    *self = *self & rhs
+  }
+}
+
+impl BitOrAssign for f32x4 {
+  #[inline]
+  fn bitor_assign(&mut self, rhs: Self) {
+    *self = *self | rhs
+  }
+}
+
+impl BitOrAssign<&'_ f32x4> for f32x4 {
+  #[inline]
+  fn bitor_assign(&mut self, rhs: &Self) {
+    *self = *self | rhs
+  }
+}
+
+impl BitXorAssign for f32x4 {
+  #[inline]
+  fn bitxor_assign(&mut self, rhs: Self) {
+    *self = *self ^ rhs
+  }
+}
+
+impl BitXorAssign<&'_ f32x4> for f32x4 {
+  #[inline]
+  fn bitxor_assign(&mut self, rhs: &Self) {
+    *self = *self ^ rhs
   }
 }
 
