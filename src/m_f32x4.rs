@@ -29,6 +29,43 @@ impl f32x4 {
       Self { arr: [a,b,c,d] }
     }}
   }
+
+  /// Use the mask to bitwise merge two values.
+  ///
+  /// It is expected that the mask will be a "boolish" value where each lane is
+  /// either all 1s or all 0s, but that's not actually required.
+  ///
+  /// The output will have the `tru` bit any place that `mask` has a 1, and use
+  /// the `fal` bit anywhere the mask has a 0.
+  ///
+  /// ```rust
+  /// use wide::f32x4;
+  /// let a = f32x4::new(1.0, 2.0, 3.0, 4.0);
+  /// let b = f32x4::from(2.5);
+  /// let mask = a.cmp_gt(b);
+  /// let merged = f32x4::merge(mask, f32x4::from(10.0), f32x4::from(2.0));
+  /// let merged_arr: [f32; 4] = unsafe { core::mem::transmute(merged) };
+  /// assert_eq!(merged_arr, [2.0, 2.0, 10.0, 10.0]);
+  /// ```
+  #[inline]
+  pub fn merge(mask: Self, tru: Self, fal: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: tru.sse ^ ((tru.sse ^ fal.sse) & mask.sse) }
+    } else {
+      let op = |maskf, af, bf| {
+        let ai: i32 = cast(af);
+        let bf: i32 = cast(bf);
+        let maski: i32 = cast(maski);
+        cast::<i32, f32>(ai ^ ((ai ^ bi) & maski))
+      };
+      Self { arr: [
+        op(mask[0], tru.arr[0], fal.arr[0]),
+        op(mask[1], tru.arr[1], fal.arr[1]),
+        op(mask[2], tru.arr[2], fal.arr[2]),
+        op(mask[3], tru.arr[3], fal.arr[3]),
+      ] }
+    }}
+  }
 }
 
 impl From<f32> for f32x4 {
@@ -225,6 +262,256 @@ impl Sub<&'_ f32x4> for f32x4 {
     }}
   }
 }
+
+impl f32x4 {
+  #[inline]
+  pub fn cmp_eq(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_eq(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if a == b {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_ge(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_ge(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if a >= b {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_gt(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_gt(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if a > b {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_le(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_le(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if a <= b {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_lt(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_lt(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if a < b {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_nan(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_nan(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if a.is_nan() || b.is_nan() {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_ne(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_ne(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if a != b {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  /// If you call this method it sets off [Third Impact](https://evangelion.fandom.com/wiki/Third_Impact)
+  #[inline]
+  pub fn cmp_nge(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_nge(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if !(a >= b) {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_ngt(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_ngt(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if !(a > b) {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_nle(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_nle(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if !(a <= b) {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_nlt(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_nlt(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if !(a < b) {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+  #[inline]
+  pub fn cmp_not_nan(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.cmp_ordinary(rhs.sse) }
+    } else {
+      let test = |a, b| {
+        if (!a.is_nan()) && (!b.is_nan()) {
+          cast::<u32, f32>(core::u32::MAX)
+        } else {
+          cast::<u32, f32>(0)
+        }
+      };
+      Self { arr: [
+        test(self.arr[0], rhs.arr[0]),
+        test(self.arr[1], rhs.arr[1]),
+        test(self.arr[2], rhs.arr[2]),
+        test(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+}
+
+// // //
+// CODE AFTER HERE SHOULD NOT USE CONDITIONAL COMPILATION!
+// // //
+// (We want to keep per-platform code away from the universal code)
+// // //
 
 impl f32x4 {
   #[inline]
@@ -555,12 +842,6 @@ impl f32x4 {
     )
   }
 }
-
-// // //
-// CODE AFTER HERE SHOULD NOT USE CONDITIONAL COMPILATION!
-// // //
-// (We want to keep per-platform code away from the universal code)
-// // //
 
 impl Clone for f32x4 {
   #[inline(always)]
