@@ -55,7 +55,7 @@ impl f32x4 {
       let op = |maskf, af, bf| {
         let ai: i32 = cast(af);
         let bf: i32 = cast(bf);
-        let maski: i32 = cast(maski);
+        let maski: i32 = cast(maskf);
         cast::<i32, f32>(ai ^ ((ai ^ bi) & maski))
       };
       Self { arr: [
