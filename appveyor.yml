@@ -27,7 +27,7 @@ environment:
 
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
-  - rustup-init -y --default-toolchain %channel% --default-host %target%
+  - rustup-init -y --profile=minimal --default-toolchain %channel% --default-host %target%
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustup component add rustfmt
   - rustup component add clippy
