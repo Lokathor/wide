@@ -444,7 +444,7 @@ impl f32x4 {
     cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nan(rhs.sse) }
     } else {
-      let test = |a, b| {
+      let test = |a: f32, b: f32| {
         if a.is_nan() || b.is_nan() {
           cast::<u32, f32>(core::u32::MAX)
         } else {
@@ -565,7 +565,7 @@ impl f32x4 {
     cfg_if! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ordinary(rhs.sse) }
     } else {
-      let test = |a, b| {
+      let test = |a: f32, b: f32| {
         if (!a.is_nan()) && (!b.is_nan()) {
           cast::<u32, f32>(core::u32::MAX)
         } else {
