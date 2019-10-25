@@ -1,6 +1,7 @@
 //#![warn(missing_docs)]
 #![allow(unused_imports)]
 #![cfg_attr(feature = "toolchain_nightly", feature(stdsimd))]
+#![cfg_attr(feature = "toolchain_nightly", feature(core_intrinsics))]
 
 //! A crate to help you go wide.
 //!
@@ -45,11 +46,13 @@ pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
 pub(crate) use cfg_if::cfg_if;
 pub(crate) use core::{convert::*, fmt::*, ops::*};
 
+pub mod arch;
+
 cfg_if! {
   if #[cfg(all(target_arch="x86", target_feature="sse"))] {
-    pub(crate) use lokacore::arch::x86::m128;
+    pub(crate) use arch::x86::m128;
   } else if #[cfg(all(target_arch="x86_64", target_feature="sse"))] {
-    pub(crate) use lokacore::arch::x86_64::m128;
+    pub(crate) use arch::x86_64::m128;
   }
   // TODO: arm, aarch64, wasm32, maybe more?
 }
