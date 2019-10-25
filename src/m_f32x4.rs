@@ -580,6 +580,240 @@ impl f32x4 {
       ] }
     }}
   }
+
+  #[inline]
+  pub fn ceil(self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse4.1")] {
+      Self { sse: self.sse.ceil() }
+    } else if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.ceil_sse2() }
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].ceil(), a[1].ceil(), a[2].ceil(), a[3].ceil()])
+    }}
+  }
+
+  #[inline]
+  pub fn floor(self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse4.1")] {
+      Self { sse: self.sse.floor() }
+    } else if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.floor_sse2() }
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].floor(), a[1].floor(), a[2].floor(), a[3].floor()])
+    }}
+  }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::fabsf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [fabsf32(a[0]), fabsf32(a[1]), fabsf32(a[2]), fabsf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].abs(), a[1].abs(), a[2].abs(), a[3].abs()])
+    }}
+  }
+
+  #[inline]
+  pub fn cos(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::cosf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [cosf32(a[0]), cosf32(a[1]), cosf32(a[2]), cosf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].cos(), a[1].cos(), a[2].cos(), a[3].cos()])
+    }}
+  }
+
+  #[inline]
+  pub fn exp2(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::exp2f32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [exp2f32(a[0]), exp2f32(a[1]), exp2f32(a[2]), exp2f32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].exp2(), a[1].exp2(), a[2].exp2(), a[3].exp2()])
+    }}
+  }
+
+  #[inline]
+  pub fn log10(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::log10f32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [log10f32(a[0]), log10f32(a[1]), log10f32(a[2]), log10f32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].log10(), a[1].log10(), a[2].log10(), a[3].log10()])
+    }}
+  }
+
+  #[inline]
+  pub fn log2(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::log2f32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [log2f32(a[0]), log2f32(a[1]), log2f32(a[2]), log2f32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].log2(), a[1].log2(), a[2].log2(), a[3].log2()])
+    }}
+  }
+
+  #[inline]
+  pub fn round(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::roundf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [roundf32(a[0]), roundf32(a[1]), roundf32(a[2]), roundf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].round(), a[1].round(), a[2].round(), a[3].round()])
+    }}
+  }
+
+  #[inline]
+  pub fn sin(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::sinf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [sinf32(a[0]), sinf32(a[1]), sinf32(a[2]), sinf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].sin(), a[1].sin(), a[2].sin(), a[3].sin()])
+    }}
+  }
+
+  #[inline]
+  pub fn sqrt(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::sqrtf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [sqrtf32(a[0]), sqrtf32(a[1]), sqrtf32(a[2]), sqrtf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].sqrt(), a[1].sqrt(), a[2].sqrt(), a[3].sqrt()])
+    }}
+  }
+
+  #[inline]
+  pub fn trunc(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::truncf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [truncf32(a[0]), truncf32(a[1]), truncf32(a[2]), truncf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].trunc(), a[1].trunc(), a[2].trunc(), a[3].trunc()])
+    }}
+  }
+
+  #[inline]
+  pub fn copysign(self, b: Self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::copysignf32;
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      cast(unsafe { [
+        copysignf32(a[0], b[0]),
+        copysignf32(a[1], b[1]),
+        copysignf32(a[2], b[2]),
+        copysignf32(a[3], b[3]),
+      ]})
+    } else {
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      cast([
+        a[0].copysign(b[0]),
+        a[1].copysign(b[1]),
+        a[2].copysign(b[2]),
+        a[3].copysign(b[3]),
+      ])
+    }}
+  }
+
+  #[inline]
+  pub fn ln(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::logf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [logf32(a[0]), logf32(a[1]), logf32(a[2]), logf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].ln(), a[1].ln(), a[2].ln(), a[3].ln()])
+    }}
+  }
+
+  #[inline]
+  pub fn powf(self, b: Self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::powf32;
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      cast(unsafe { [
+        powf32(a[0], b[0]),
+        powf32(a[1], b[1]),
+        powf32(a[2], b[2]),
+        powf32(a[3], b[3]),
+      ]})
+    } else {
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      cast([
+        a[0].powf(b[0]),
+        a[1].powf(b[1]),
+        a[2].powf(b[2]),
+        a[3].powf(b[3]),
+      ])
+    }}
+  }
+
+  #[inline]
+  pub fn powi(self, b: [i32; 4]) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::powif32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe { [
+        powif32(a[0], b[0]),
+        powif32(a[1], b[1]),
+        powif32(a[2], b[2]),
+        powif32(a[3], b[3]),
+      ]})
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([
+        a[0].powi(b[0]),
+        a[1].powi(b[1]),
+        a[2].powi(b[2]),
+        a[3].powi(b[3]),
+      ])
+    }}
+  }
 }
 
 // // //
@@ -589,12 +823,6 @@ impl f32x4 {
 // // //
 
 impl f32x4 {
-  #[inline]
-  pub fn abs(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].abs(), a[1].abs(), a[2].abs(), a[3].abs()])
-  }
-
   #[inline]
   pub fn acos(self) -> Self {
     let a: [f32; 4] = cast(self);
@@ -638,13 +866,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn ceil(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].ceil(), a[1].ceil(), a[2].ceil(), a[3].ceil()])
-  }
-
-  #[inline]
-  pub fn classify(self) -> [std::num::FpCategory; 4] {
+  pub fn classify(self) -> [core::num::FpCategory; 4] {
     let a: [f32; 4] = cast(self);
     [
       a[0].classify(),
@@ -655,12 +877,6 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn cos(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].cos(), a[1].cos(), a[2].cos(), a[3].cos()])
-  }
-
-  #[inline]
   pub fn cosh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].cosh(), a[1].cosh(), a[2].cosh(), a[3].cosh()])
@@ -668,14 +884,11 @@ impl f32x4 {
 
   #[inline]
   pub fn exp(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    } else {
+    }}
     let a: [f32; 4] = cast(self);
     cast([a[0].exp(), a[1].exp(), a[2].exp(), a[3].exp()])
-  }
-
-  #[inline]
-  pub fn exp2(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].exp2(), a[1].exp2(), a[2].exp2(), a[3].exp2()])
   }
 
   #[inline]
@@ -685,21 +898,9 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn floor(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].floor(), a[1].floor(), a[2].floor(), a[3].floor()])
-  }
-
-  #[inline]
   pub fn fract(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].fract(), a[1].fract(), a[2].fract(), a[3].fract()])
-  }
-
-  #[inline]
-  pub fn ln(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].ln(), a[1].ln(), a[2].ln(), a[3].ln()])
   }
 
   #[inline]
@@ -709,15 +910,15 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn log10(self) -> Self {
+  pub fn log(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
-    cast([a[0].log10(), a[1].log10(), a[2].log10(), a[3].log10()])
-  }
-
-  #[inline]
-  pub fn log2(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].log2(), a[1].log2(), a[2].log2(), a[3].log2()])
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].log(b[0]),
+      a[1].log(b[1]),
+      a[2].log(b[2]),
+      a[3].log(b[3]),
+    ])
   }
 
   #[inline]
@@ -727,33 +928,15 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn round(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].round(), a[1].round(), a[2].round(), a[3].round()])
-  }
-
-  #[inline]
   pub fn signum(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].signum(), a[1].signum(), a[2].signum(), a[3].signum()])
   }
 
   #[inline]
-  pub fn sin(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].sin(), a[1].sin(), a[2].sin(), a[3].sin()])
-  }
-
-  #[inline]
   pub fn sinh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].sinh(), a[1].sinh(), a[2].sinh(), a[3].sinh()])
-  }
-
-  #[inline]
-  pub fn sqrt(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].sqrt(), a[1].sqrt(), a[2].sqrt(), a[3].sqrt()])
   }
 
   #[inline]
@@ -791,12 +974,6 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn trunc(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].trunc(), a[1].trunc(), a[2].trunc(), a[3].trunc()])
-  }
-
-  #[inline]
   pub fn atan2(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
@@ -809,18 +986,6 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn copysign(self, b: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    cast([
-      a[0].copysign(b[0]),
-      a[1].copysign(b[1]),
-      a[2].copysign(b[2]),
-      a[3].copysign(b[3]),
-    ])
-  }
-
-  #[inline]
   pub fn hypot(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
@@ -829,18 +994,6 @@ impl f32x4 {
       a[1].hypot(b[1]),
       a[2].hypot(b[2]),
       a[3].hypot(b[3]),
-    ])
-  }
-
-  #[inline]
-  pub fn log(self, b: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    cast([
-      a[0].log(b[0]),
-      a[1].log(b[1]),
-      a[2].log(b[2]),
-      a[3].log(b[3]),
     ])
   }
 
@@ -865,29 +1018,6 @@ impl f32x4 {
       a[1].min(b[1]),
       a[2].min(b[2]),
       a[3].min(b[3]),
-    ])
-  }
-
-  #[inline]
-  pub fn powf(self, b: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    cast([
-      a[0].powf(b[0]),
-      a[1].powf(b[1]),
-      a[2].powf(b[2]),
-      a[3].powf(b[3]),
-    ])
-  }
-
-  #[inline]
-  pub fn powi(self, b: [i32; 4]) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([
-      a[0].powi(b[0]),
-      a[1].powi(b[1]),
-      a[2].powi(b[2]),
-      a[3].powi(b[3]),
     ])
   }
 
@@ -1223,168 +1353,183 @@ impl From<[u16; 4]> for f32x4 {
 /// to use something like `let c = f32x4::from(CONST_NAME);`
 pub mod consts {
   pub const EPSILON: [f32; 4] = [
-    std::f32::EPSILON,
-    std::f32::EPSILON,
-    std::f32::EPSILON,
-    std::f32::EPSILON,
+    core::f32::EPSILON,
+    core::f32::EPSILON,
+    core::f32::EPSILON,
+    core::f32::EPSILON,
   ];
   pub const INFINITY: [f32; 4] = [
-    std::f32::INFINITY,
-    std::f32::INFINITY,
-    std::f32::INFINITY,
-    std::f32::INFINITY,
+    core::f32::INFINITY,
+    core::f32::INFINITY,
+    core::f32::INFINITY,
+    core::f32::INFINITY,
   ];
-  pub const MAX: [f32; 4] = [std::f32::MAX, std::f32::MAX, std::f32::MAX, std::f32::MAX];
-  pub const MIN: [f32; 4] = [std::f32::MIN, std::f32::MIN, std::f32::MIN, std::f32::MIN];
+  pub const MAX: [f32; 4] = [
+    core::f32::MAX,
+    core::f32::MAX,
+    core::f32::MAX,
+    core::f32::MAX,
+  ];
+  pub const MIN: [f32; 4] = [
+    core::f32::MIN,
+    core::f32::MIN,
+    core::f32::MIN,
+    core::f32::MIN,
+  ];
   pub const MIN_POSITIVE: [f32; 4] = [
-    std::f32::MIN_POSITIVE,
-    std::f32::MIN_POSITIVE,
-    std::f32::MIN_POSITIVE,
-    std::f32::MIN_POSITIVE,
+    core::f32::MIN_POSITIVE,
+    core::f32::MIN_POSITIVE,
+    core::f32::MIN_POSITIVE,
+    core::f32::MIN_POSITIVE,
   ];
-  pub const NAN: [f32; 4] = [std::f32::NAN, std::f32::NAN, std::f32::NAN, std::f32::NAN];
+  pub const NAN: [f32; 4] = [
+    core::f32::NAN,
+    core::f32::NAN,
+    core::f32::NAN,
+    core::f32::NAN,
+  ];
   pub const NEG_INFINITY: [f32; 4] = [
-    std::f32::NEG_INFINITY,
-    std::f32::NEG_INFINITY,
-    std::f32::NEG_INFINITY,
-    std::f32::NEG_INFINITY,
+    core::f32::NEG_INFINITY,
+    core::f32::NEG_INFINITY,
+    core::f32::NEG_INFINITY,
+    core::f32::NEG_INFINITY,
   ];
   pub const DIGITS: [u32; 4] = [
-    std::f32::DIGITS,
-    std::f32::DIGITS,
-    std::f32::DIGITS,
-    std::f32::DIGITS,
+    core::f32::DIGITS,
+    core::f32::DIGITS,
+    core::f32::DIGITS,
+    core::f32::DIGITS,
   ];
   pub const MANTISSA_DIGITS: [u32; 4] = [
-    std::f32::MANTISSA_DIGITS,
-    std::f32::MANTISSA_DIGITS,
-    std::f32::MANTISSA_DIGITS,
-    std::f32::MANTISSA_DIGITS,
+    core::f32::MANTISSA_DIGITS,
+    core::f32::MANTISSA_DIGITS,
+    core::f32::MANTISSA_DIGITS,
+    core::f32::MANTISSA_DIGITS,
   ];
   pub const RADIX: [u32; 4] = [
-    std::f32::RADIX,
-    std::f32::RADIX,
-    std::f32::RADIX,
-    std::f32::RADIX,
+    core::f32::RADIX,
+    core::f32::RADIX,
+    core::f32::RADIX,
+    core::f32::RADIX,
   ];
   pub const MAX_10_EXP: [i32; 4] = [
-    std::f32::MAX_10_EXP,
-    std::f32::MAX_10_EXP,
-    std::f32::MAX_10_EXP,
-    std::f32::MAX_10_EXP,
+    core::f32::MAX_10_EXP,
+    core::f32::MAX_10_EXP,
+    core::f32::MAX_10_EXP,
+    core::f32::MAX_10_EXP,
   ];
   pub const MAX_EXP: [i32; 4] = [
-    std::f32::MAX_EXP,
-    std::f32::MAX_EXP,
-    std::f32::MAX_EXP,
-    std::f32::MAX_EXP,
+    core::f32::MAX_EXP,
+    core::f32::MAX_EXP,
+    core::f32::MAX_EXP,
+    core::f32::MAX_EXP,
   ];
   pub const MIN_10_EXP: [i32; 4] = [
-    std::f32::MIN_10_EXP,
-    std::f32::MIN_10_EXP,
-    std::f32::MIN_10_EXP,
-    std::f32::MIN_10_EXP,
+    core::f32::MIN_10_EXP,
+    core::f32::MIN_10_EXP,
+    core::f32::MIN_10_EXP,
+    core::f32::MIN_10_EXP,
   ];
   pub const MIN_EXP: [i32; 4] = [
-    std::f32::MIN_EXP,
-    std::f32::MIN_EXP,
-    std::f32::MIN_EXP,
-    std::f32::MIN_EXP,
+    core::f32::MIN_EXP,
+    core::f32::MIN_EXP,
+    core::f32::MIN_EXP,
+    core::f32::MIN_EXP,
   ];
   pub const E: [f32; 4] = [
-    std::f32::consts::E,
-    std::f32::consts::E,
-    std::f32::consts::E,
-    std::f32::consts::E,
+    core::f32::consts::E,
+    core::f32::consts::E,
+    core::f32::consts::E,
+    core::f32::consts::E,
   ];
   pub const FRAC_1_PI: [f32; 4] = [
-    std::f32::consts::FRAC_1_PI,
-    std::f32::consts::FRAC_1_PI,
-    std::f32::consts::FRAC_1_PI,
-    std::f32::consts::FRAC_1_PI,
+    core::f32::consts::FRAC_1_PI,
+    core::f32::consts::FRAC_1_PI,
+    core::f32::consts::FRAC_1_PI,
+    core::f32::consts::FRAC_1_PI,
   ];
   pub const FRAC_2_PI: [f32; 4] = [
-    std::f32::consts::FRAC_2_PI,
-    std::f32::consts::FRAC_2_PI,
-    std::f32::consts::FRAC_2_PI,
-    std::f32::consts::FRAC_2_PI,
+    core::f32::consts::FRAC_2_PI,
+    core::f32::consts::FRAC_2_PI,
+    core::f32::consts::FRAC_2_PI,
+    core::f32::consts::FRAC_2_PI,
   ];
   pub const FRAC_2_SQRT_PI: [f32; 4] = [
-    std::f32::consts::FRAC_2_SQRT_PI,
-    std::f32::consts::FRAC_2_SQRT_PI,
-    std::f32::consts::FRAC_2_SQRT_PI,
-    std::f32::consts::FRAC_2_SQRT_PI,
+    core::f32::consts::FRAC_2_SQRT_PI,
+    core::f32::consts::FRAC_2_SQRT_PI,
+    core::f32::consts::FRAC_2_SQRT_PI,
+    core::f32::consts::FRAC_2_SQRT_PI,
   ];
   pub const FRAC_1_SQRT_2: [f32; 4] = [
-    std::f32::consts::FRAC_1_SQRT_2,
-    std::f32::consts::FRAC_1_SQRT_2,
-    std::f32::consts::FRAC_1_SQRT_2,
-    std::f32::consts::FRAC_1_SQRT_2,
+    core::f32::consts::FRAC_1_SQRT_2,
+    core::f32::consts::FRAC_1_SQRT_2,
+    core::f32::consts::FRAC_1_SQRT_2,
+    core::f32::consts::FRAC_1_SQRT_2,
   ];
   pub const FRAC_PI_2: [f32; 4] = [
-    std::f32::consts::FRAC_PI_2,
-    std::f32::consts::FRAC_PI_2,
-    std::f32::consts::FRAC_PI_2,
-    std::f32::consts::FRAC_PI_2,
+    core::f32::consts::FRAC_PI_2,
+    core::f32::consts::FRAC_PI_2,
+    core::f32::consts::FRAC_PI_2,
+    core::f32::consts::FRAC_PI_2,
   ];
   pub const FRAC_PI_3: [f32; 4] = [
-    std::f32::consts::FRAC_PI_3,
-    std::f32::consts::FRAC_PI_3,
-    std::f32::consts::FRAC_PI_3,
-    std::f32::consts::FRAC_PI_3,
+    core::f32::consts::FRAC_PI_3,
+    core::f32::consts::FRAC_PI_3,
+    core::f32::consts::FRAC_PI_3,
+    core::f32::consts::FRAC_PI_3,
   ];
   pub const FRAC_PI_4: [f32; 4] = [
-    std::f32::consts::FRAC_PI_4,
-    std::f32::consts::FRAC_PI_4,
-    std::f32::consts::FRAC_PI_4,
-    std::f32::consts::FRAC_PI_4,
+    core::f32::consts::FRAC_PI_4,
+    core::f32::consts::FRAC_PI_4,
+    core::f32::consts::FRAC_PI_4,
+    core::f32::consts::FRAC_PI_4,
   ];
   pub const FRAC_PI_6: [f32; 4] = [
-    std::f32::consts::FRAC_PI_6,
-    std::f32::consts::FRAC_PI_6,
-    std::f32::consts::FRAC_PI_6,
-    std::f32::consts::FRAC_PI_6,
+    core::f32::consts::FRAC_PI_6,
+    core::f32::consts::FRAC_PI_6,
+    core::f32::consts::FRAC_PI_6,
+    core::f32::consts::FRAC_PI_6,
   ];
   pub const FRAC_PI_8: [f32; 4] = [
-    std::f32::consts::FRAC_PI_8,
-    std::f32::consts::FRAC_PI_8,
-    std::f32::consts::FRAC_PI_8,
-    std::f32::consts::FRAC_PI_8,
+    core::f32::consts::FRAC_PI_8,
+    core::f32::consts::FRAC_PI_8,
+    core::f32::consts::FRAC_PI_8,
+    core::f32::consts::FRAC_PI_8,
   ];
   pub const LN_2: [f32; 4] = [
-    std::f32::consts::LN_2,
-    std::f32::consts::LN_2,
-    std::f32::consts::LN_2,
-    std::f32::consts::LN_2,
+    core::f32::consts::LN_2,
+    core::f32::consts::LN_2,
+    core::f32::consts::LN_2,
+    core::f32::consts::LN_2,
   ];
   pub const LN_10: [f32; 4] = [
-    std::f32::consts::LN_10,
-    std::f32::consts::LN_10,
-    std::f32::consts::LN_10,
-    std::f32::consts::LN_10,
+    core::f32::consts::LN_10,
+    core::f32::consts::LN_10,
+    core::f32::consts::LN_10,
+    core::f32::consts::LN_10,
   ];
   pub const LOG2_E: [f32; 4] = [
-    std::f32::consts::LOG2_E,
-    std::f32::consts::LOG2_E,
-    std::f32::consts::LOG2_E,
-    std::f32::consts::LOG2_E,
+    core::f32::consts::LOG2_E,
+    core::f32::consts::LOG2_E,
+    core::f32::consts::LOG2_E,
+    core::f32::consts::LOG2_E,
   ];
   pub const LOG10_E: [f32; 4] = [
-    std::f32::consts::LOG10_E,
-    std::f32::consts::LOG10_E,
-    std::f32::consts::LOG10_E,
-    std::f32::consts::LOG10_E,
+    core::f32::consts::LOG10_E,
+    core::f32::consts::LOG10_E,
+    core::f32::consts::LOG10_E,
+    core::f32::consts::LOG10_E,
   ];
   pub const PI: [f32; 4] = [
-    std::f32::consts::PI,
-    std::f32::consts::PI,
-    std::f32::consts::PI,
-    std::f32::consts::PI,
+    core::f32::consts::PI,
+    core::f32::consts::PI,
+    core::f32::consts::PI,
+    core::f32::consts::PI,
   ];
   pub const SQRT_2: [f32; 4] = [
-    std::f32::consts::SQRT_2,
-    std::f32::consts::SQRT_2,
-    std::f32::consts::SQRT_2,
-    std::f32::consts::SQRT_2,
+    core::f32::consts::SQRT_2,
+    core::f32::consts::SQRT_2,
+    core::f32::consts::SQRT_2,
+    core::f32::consts::SQRT_2,
   ];
 }
