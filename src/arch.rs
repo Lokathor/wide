@@ -12,7 +12,7 @@ use super::*;
 /// This is for alignment shenanigans, you're not expected to use it in a
 /// struct, more just in function arguments and such.
 #[derive(Debug, Clone, Copy)]
-#[repr(align(2))]
+#[repr(C, align(2))]
 pub struct Align2<T>(pub T);
 
 /// Wrap the inner value to a minimum alignment of 4.
@@ -20,7 +20,7 @@ pub struct Align2<T>(pub T);
 /// This is for alignment shenanigans, you're not expected to use it in a
 /// struct, more just in function arguments and such.
 #[derive(Debug, Clone, Copy)]
-#[repr(align(4))]
+#[repr(C, align(4))]
 pub struct Align4<T>(pub T);
 
 /// Wrap the inner value to a minimum alignment of 8.
@@ -28,7 +28,7 @@ pub struct Align4<T>(pub T);
 /// This is for alignment shenanigans, you're not expected to use it in a
 /// struct, more just in function arguments and such.
 #[derive(Debug, Clone, Copy)]
-#[repr(align(8))]
+#[repr(C, align(8))]
 pub struct Align8<T>(pub T);
 
 /// Wrap the inner value to a minimum alignment of 16.
@@ -36,7 +36,7 @@ pub struct Align8<T>(pub T);
 /// This is for alignment shenanigans, you're not expected to use it in a
 /// struct, more just in function arguments and such.
 #[derive(Debug, Clone, Copy)]
-#[repr(align(16))]
+#[repr(C, align(16))]
 pub struct Align16<T>(pub T);
 
 /// Wrap the inner value to a minimum alignment of 32.
@@ -44,7 +44,7 @@ pub struct Align16<T>(pub T);
 /// This is for alignment shenanigans, you're not expected to use it in a
 /// struct, more just in function arguments and such.
 #[derive(Debug, Clone, Copy)]
-#[repr(align(32))]
+#[repr(C, align(32))]
 pub struct Align32<T>(pub T);
 
 unsafe impl<T> Zeroable for Align2<T> where T: Zeroable {}
