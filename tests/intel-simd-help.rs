@@ -18,9 +18,8 @@ pub use core::mem::*;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub use wide::shuffle128;
 
-pub use wide::*;
-pub use wide::arch::*;
 pub use bytemuck::*;
+pub use wide::{arch::*, *};
 
 #[macro_export]
 macro_rules! assert_approx_f32 {
