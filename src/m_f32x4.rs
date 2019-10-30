@@ -339,6 +339,26 @@ impl BitXor<&'_ f32x4> for f32x4 {
 }
 
 impl f32x4 {
+  /// ```rust
+  /// use wide::f32x4;
+  /// let a = f32x4::new(1.0, 2.0, 3.0, 4.0);
+  /// let b = f32x4::from(2.5);
+  /// assert_eq!(a.cmp_lt(b).move_mask(), 0b1100);
+  /// ```
+  #[inline]
+  pub fn move_mask(self) -> i32 {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      self.sse.move_mask()
+    } else {
+      let mut out = 0_i32;
+      for i in 0..4 {
+        if cast::<f32, i32>(self.arr[i]) < 0 {
+          out |= (1<<i);
+        }
+      }
+      out
+    }}
+  }
   #[inline]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     cfg_if! {if #[cfg(target_feature="sse")] {
