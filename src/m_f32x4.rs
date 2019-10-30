@@ -339,6 +339,26 @@ impl BitXor<&'_ f32x4> for f32x4 {
 }
 
 impl f32x4 {
+  /// ```rust
+  /// use wide::f32x4;
+  /// let a = f32x4::new(1.0, 2.0, 3.0, 4.0);
+  /// let b = f32x4::from(2.5);
+  /// assert_eq!(a.cmp_lt(b).move_mask(), 0b1100);
+  /// ```
+  #[inline]
+  pub fn move_mask(self) -> i32 {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      self.sse.move_mask()
+    } else {
+      let mut out = 0_i32;
+      for i in 0..4 {
+        if cast::<f32, i32>(self.arr[i]) < 0 {
+          out |= (1<<i);
+        }
+      }
+      out
+    }}
+  }
   #[inline]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     cfg_if! {if #[cfg(target_feature="sse")] {
@@ -648,6 +668,20 @@ impl f32x4 {
   }
 
   #[inline]
+  pub fn exp(self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::expf32;
+      let a: [f32; 4] = cast(self);
+      cast(unsafe {
+        [expf32(a[0]), expf32(a[1]), expf32(a[2]), expf32(a[3])]
+      })
+    } else {
+      let a: [f32; 4] = cast(self);
+      cast([a[0].exp(), a[1].exp(), a[2].exp(), a[3].exp()])
+    }}
+  }
+
+  #[inline]
   pub fn log10(self) -> Self {
     cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::log10f32;
@@ -814,6 +848,41 @@ impl f32x4 {
       ])
     }}
   }
+
+  #[inline]
+  pub fn mul_add(self, b: Self, c: Self) -> Self {
+    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+      use core::intrinsics::fmaf32;
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      let c: [f32; 4] = cast(c);
+      cast(unsafe { [
+        fmaf32(a[0], b[0], c[0]),
+        fmaf32(a[1], b[1], c[1]),
+        fmaf32(a[2], b[2], c[2]),
+        fmaf32(a[3], b[3], c[3]),
+      ]})
+    } else {
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      let c: [f32; 4] = cast(c);
+      cast([
+        a[0].mul_add(b[0], c[0]),
+        a[1].mul_add(b[1], c[1]),
+        a[2].mul_add(b[2], c[2]),
+        a[3].mul_add(b[3], c[3]),
+      ])
+    }}
+  }
+
+  #[inline]
+  pub fn recip(self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.reciprocal() }
+    } else {
+      f32x4::from(1.0) / self
+    }}
+  }
 }
 
 // // //
@@ -823,6 +892,73 @@ impl f32x4 {
 // // //
 
 impl f32x4 {
+  // METHODS AVAILABLE IN CORE
+
+  #[inline]
+  pub fn classify(self) -> [core::num::FpCategory; 4] {
+    let a: [f32; 4] = cast(self);
+    [
+      a[0].classify(),
+      a[1].classify(),
+      a[2].classify(),
+      a[3].classify(),
+    ]
+  }
+
+  #[inline]
+  pub fn to_degrees(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([
+      a[0].to_degrees(),
+      a[1].to_degrees(),
+      a[2].to_degrees(),
+      a[3].to_degrees(),
+    ])
+  }
+
+  #[inline]
+  pub fn to_radians(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([
+      a[0].to_radians(),
+      a[1].to_radians(),
+      a[2].to_radians(),
+      a[3].to_radians(),
+    ])
+  }
+
+  #[inline]
+  pub fn max(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].max(b[0]),
+      a[1].max(b[1]),
+      a[2].max(b[2]),
+      a[3].max(b[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn min(self, b: Self) -> Self {
+    let a: [f32; 4] = cast(self);
+    let b: [f32; 4] = cast(b);
+    cast([
+      a[0].min(b[0]),
+      a[1].min(b[1]),
+      a[2].min(b[2]),
+      a[3].min(b[3]),
+    ])
+  }
+
+  // REQUIRES EXTERNAL MATH LIBS
+
+  #[inline]
+  pub fn fract(self) -> Self {
+    let a: [f32; 4] = cast(self);
+    cast([a[0].fract(), a[1].fract(), a[2].fract(), a[3].fract()])
+  }
+
   #[inline]
   pub fn acos(self) -> Self {
     let a: [f32; 4] = cast(self);
@@ -866,41 +1002,15 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn classify(self) -> [core::num::FpCategory; 4] {
-    let a: [f32; 4] = cast(self);
-    [
-      a[0].classify(),
-      a[1].classify(),
-      a[2].classify(),
-      a[3].classify(),
-    ]
-  }
-
-  #[inline]
   pub fn cosh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].cosh(), a[1].cosh(), a[2].cosh(), a[3].cosh()])
   }
 
   #[inline]
-  pub fn exp(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-    } else {
-    }}
-    let a: [f32; 4] = cast(self);
-    cast([a[0].exp(), a[1].exp(), a[2].exp(), a[3].exp()])
-  }
-
-  #[inline]
   pub fn exp_m1(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].exp_m1(), a[1].exp_m1(), a[2].exp_m1(), a[3].exp_m1()])
-  }
-
-  #[inline]
-  pub fn fract(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].fract(), a[1].fract(), a[2].fract(), a[3].fract()])
   }
 
   #[inline]
@@ -919,12 +1029,6 @@ impl f32x4 {
       a[2].log(b[2]),
       a[3].log(b[3]),
     ])
-  }
-
-  #[inline]
-  pub fn recip(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].recip(), a[1].recip(), a[2].recip(), a[3].recip()])
   }
 
   #[inline]
@@ -952,28 +1056,6 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn to_degrees(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([
-      a[0].to_degrees(),
-      a[1].to_degrees(),
-      a[2].to_degrees(),
-      a[3].to_degrees(),
-    ])
-  }
-
-  #[inline]
-  pub fn to_radians(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([
-      a[0].to_radians(),
-      a[1].to_radians(),
-      a[2].to_radians(),
-      a[3].to_radians(),
-    ])
-  }
-
-  #[inline]
   pub fn atan2(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
@@ -998,53 +1080,8 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn max(self, b: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    cast([
-      a[0].max(b[0]),
-      a[1].max(b[1]),
-      a[2].max(b[2]),
-      a[3].max(b[3]),
-    ])
-  }
-
-  #[inline]
-  pub fn min(self, b: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    cast([
-      a[0].min(b[0]),
-      a[1].min(b[1]),
-      a[2].min(b[2]),
-      a[3].min(b[3]),
-    ])
-  }
-
-  #[inline]
-  pub fn mul_add(self, b: Self, c: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    let c: [f32; 4] = cast(c);
-    cast([
-      a[0].mul_add(b[0], c[0]),
-      a[1].mul_add(b[1], c[1]),
-      a[2].mul_add(b[2], c[2]),
-      a[3].mul_add(b[3], c[3]),
-    ])
-  }
-
-  #[inline]
   pub fn sin_cos(self) -> (Self, Self) {
-    let a: [f32; 4] = cast(self);
-    let (zero_sin, zero_cos) = a[0].sin_cos();
-    let (one_sin, one_cos) = a[1].sin_cos();
-    let (two_sin, two_cos) = a[2].sin_cos();
-    let (three_sin, three_cos) = a[3].sin_cos();
-    (
-      cast([zero_sin, one_sin, two_sin, three_sin]),
-      cast([zero_cos, one_cos, two_cos, three_cos]),
-    )
+    (self.sin(), self.cos())
   }
 }
 
