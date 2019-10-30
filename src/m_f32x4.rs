@@ -1233,8 +1233,11 @@ impl Debug for f32x4 {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(f, "f32x4(")?;
     Debug::fmt(&self[0], f)?;
+    write!(f, ", ")?;
     Debug::fmt(&self[1], f)?;
+    write!(f, ", ")?;
     Debug::fmt(&self[2], f)?;
+    write!(f, ", ")?;
     Debug::fmt(&self[3], f)?;
     write!(f, ")")
   }
@@ -1244,8 +1247,11 @@ impl Display for f32x4 {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(f, "f32x4(")?;
     Display::fmt(&self[0], f)?;
+    write!(f, ", ")?;
     Display::fmt(&self[1], f)?;
+    write!(f, ", ")?;
     Display::fmt(&self[2], f)?;
+    write!(f, ", ")?;
     Display::fmt(&self[3], f)?;
     write!(f, ")")
   }
@@ -1255,8 +1261,11 @@ impl LowerExp for f32x4 {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(f, "f32x4(")?;
     LowerExp::fmt(&self[0], f)?;
+    write!(f, ", ")?;
     LowerExp::fmt(&self[1], f)?;
+    write!(f, ", ")?;
     LowerExp::fmt(&self[2], f)?;
+    write!(f, ", ")?;
     LowerExp::fmt(&self[3], f)?;
     write!(f, ")")
   }
@@ -1266,9 +1275,68 @@ impl UpperExp for f32x4 {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(f, "f32x4(")?;
     UpperExp::fmt(&self[0], f)?;
+    write!(f, ", ")?;
     UpperExp::fmt(&self[1], f)?;
+    write!(f, ", ")?;
     UpperExp::fmt(&self[2], f)?;
+    write!(f, ", ")?;
     UpperExp::fmt(&self[3], f)?;
+    write!(f, ")")
+  }
+}
+
+impl Binary for f32x4 {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "f32x4(")?;
+    Binary::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    Binary::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    Binary::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    Binary::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ")")
+  }
+}
+
+impl LowerHex for f32x4 {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "f32x4(")?;
+    LowerHex::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    LowerHex::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    LowerHex::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    LowerHex::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ")")
+  }
+}
+
+impl Octal for f32x4 {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "f32x4(")?;
+    Octal::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    Octal::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    Octal::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    Octal::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ")")
+  }
+}
+
+impl UpperHex for f32x4 {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "f32x4(")?;
+    UpperHex::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    UpperHex::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    UpperHex::fmt(&cast::<f32, u32>(self[0]), f)?;
+    write!(f, ", ")?;
+    UpperHex::fmt(&cast::<f32, u32>(self[0]), f)?;
     write!(f, ")")
   }
 }
