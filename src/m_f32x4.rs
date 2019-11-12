@@ -862,7 +862,7 @@ impl f32x4 {
     cfg_if! {if #[cfg(target_feature = "fma")] {
       // TODO: put this properly into the `arch` modules.
       #[cfg(target_arch="x86")]
-      use core::arch::x86::{_mm_fmadd_ps, m128};
+      use core::arch::x86::_mm_fmadd_ps;
       #[cfg(target_arch="x86")]
       use arch::x86::m128;
       #[cfg(target_arch="x86_64")]
