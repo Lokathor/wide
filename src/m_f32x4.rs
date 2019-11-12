@@ -849,29 +849,28 @@ impl f32x4 {
     }}
   }
 
+  /// Performs a "fused multiply-add", `(self * b) + c`
+  ///
+  /// This is only different from a normal mul and then add if the `fma`
+  /// target_feature is enabled during the build. This is **not** on by default,
+  /// you must enable it yourself. To be clear, this is not a cargo feature,
+  /// this is a CPU feature. [Read the
+  /// guide](https://rust-lang.github.io/packed_simd/perf-guide/target-feature/rustflags.html)
+  /// for info on how to enable CPU features if you haven't done that before.
   #[inline]
   pub fn mul_add(self, b: Self, c: Self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-      use core::intrinsics::fmaf32;
-      let a: [f32; 4] = cast(self);
-      let b: [f32; 4] = cast(b);
-      let c: [f32; 4] = cast(c);
-      cast(unsafe { [
-        fmaf32(a[0], b[0], c[0]),
-        fmaf32(a[1], b[1], c[1]),
-        fmaf32(a[2], b[2], c[2]),
-        fmaf32(a[3], b[3], c[3]),
-      ]})
+    cfg_if! {if #[cfg(target_feature = "fma")] {
+      #[cfg(target_arch="x86")]
+      use core::arch::x86::_mm_fmadd_ps;
+      #[cfg(target_arch="x86_64")]
+      use core::arch::x86_64::_mm_fmadd_ps;
+
+      // TODO: put this properly into the `arch` modules.
+      unsafe {
+        Self { sse: arch::x86_64::m128(_mm_fmadd_ps(self.sse.0, b.sse.0, c.sse.0)) }
+      }
     } else {
-      let a: [f32; 4] = cast(self);
-      let b: [f32; 4] = cast(b);
-      let c: [f32; 4] = cast(c);
-      cast([
-        a[0].mul_add(b[0], c[0]),
-        a[1].mul_add(b[1], c[1]),
-        a[2].mul_add(b[2], c[2]),
-        a[3].mul_add(b[3], c[3]),
-      ])
+      (self * b) + c
     }}
   }
 
