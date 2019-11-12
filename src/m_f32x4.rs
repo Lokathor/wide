@@ -860,14 +860,17 @@ impl f32x4 {
   #[inline]
   pub fn mul_add(self, b: Self, c: Self) -> Self {
     cfg_if! {if #[cfg(target_feature = "fma")] {
+      // TODO: put this properly into the `arch` modules.
       #[cfg(target_arch="x86")]
-      use core::arch::x86::_mm_fmadd_ps;
+      use core::arch::x86::{_mm_fmadd_ps, m128};
+      #[cfg(target_arch="x86")]
+      use arch::x86::m128;
       #[cfg(target_arch="x86_64")]
       use core::arch::x86_64::_mm_fmadd_ps;
-
-      // TODO: put this properly into the `arch` modules.
+      #[cfg(target_arch="x86_64")]
+      use arch::x86_64::m128;
       unsafe {
-        Self { sse: arch::x86_64::m128(_mm_fmadd_ps(self.sse.0, b.sse.0, c.sse.0)) }
+        Self { sse: m128(_mm_fmadd_ps(self.sse.0, b.sse.0, c.sse.0)) }
       }
     } else {
       (self * b) + c
