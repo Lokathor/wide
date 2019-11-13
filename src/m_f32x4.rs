@@ -885,6 +885,38 @@ impl f32x4 {
       f32x4::from(1.0) / self
     }}
   }
+
+  #[inline]
+  pub fn max(self, b: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.max(b.sse) }
+    } else {
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      cast([
+        a[0].max(b[0]),
+        a[1].max(b[1]),
+        a[2].max(b[2]),
+        a[3].max(b[3]),
+      ])
+    }}
+  }
+
+  #[inline]
+  pub fn min(self, b: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: self.sse.min(b.sse) }
+    } else {
+      let a: [f32; 4] = cast(self);
+      let b: [f32; 4] = cast(b);
+      cast([
+        a[0].min(b[0]),
+        a[1].min(b[1]),
+        a[2].min(b[2]),
+        a[3].min(b[3]),
+      ])
+    }}
+  }
 }
 
 // // //
@@ -929,31 +961,12 @@ impl f32x4 {
     ])
   }
 
-  #[inline]
-  pub fn max(self, b: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    cast([
-      a[0].max(b[0]),
-      a[1].max(b[1]),
-      a[2].max(b[2]),
-      a[3].max(b[3]),
-    ])
-  }
-
-  #[inline]
-  pub fn min(self, b: Self) -> Self {
-    let a: [f32; 4] = cast(self);
-    let b: [f32; 4] = cast(b);
-    cast([
-      a[0].min(b[0]),
-      a[1].min(b[1]),
-      a[2].min(b[2]),
-      a[3].min(b[3]),
-    ])
-  }
-
   // REQUIRES EXTERNAL MATH LIBS
+
+  #[inline]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    self.max(min).min(max)
+  }
 
   #[inline]
   pub fn fract(self) -> Self {
