@@ -14,10 +14,204 @@ cfg_if! {
   }
 }
 #[test]
-fn declaration_tests() {
+fn declaration_tests_f32x4() {
   use core::mem::{align_of, size_of};
   assert_eq!(size_of::<f32x4>(), 16);
   assert_eq!(align_of::<f32x4>(), 16);
+}
+
+#[allow(non_camel_case_types)]
+pub union ConstUnionHack_f32x4 {
+  narrow_arr: [f32; 4],
+  wide_thing: f32x4,
+}
+#[test]
+#[allow(non_snake_case)]
+fn declaration_tests_ConstUnionHack_f32x4() {
+  use core::mem::{align_of, size_of};
+  assert_eq!(size_of::<ConstUnionHack_f32x4>(), size_of::<f32x4>());
+  assert_eq!(align_of::<ConstUnionHack_f32x4>(), align_of::<f32x4>());
+}
+
+/// Declares an `f32x4` const identifier.
+///
+/// ## Broadcast A Single Value
+///
+/// * **Usage:** `const_f32_as_f32x4!(#[meta]* vis ident, val);`
+///
+/// The value should be a single `f32` expression, which is then duplicated into
+/// all lanes of the constant declaration.
+///
+/// ```rust
+/// const_f32_as_f32x4!(
+///   /// Machine epsilon value for `f32`.
+///   pub EPSILON, core::f32::EPSILON
+/// );
+/// ```
+///
+/// ## Select Each Lane
+///
+/// * **Usage:** `const_f32_as_f32x4!(#[meta]* vis ident, a, b, c, d);`
+///
+/// Each of `a`, `b`, `c`, and `d` are an `f32` expression when are then placed
+/// into the constant declaration (low lane to high lane).
+///
+/// ```rust
+/// const_f32_as_f32x4!(
+///   /// 1, 2, 3, 4
+///   pub ONE_TWO_THREE_FOUR, 1.0, 2.0, 3.0, 4.0
+/// );
+/// ```
+#[macro_export]
+macro_rules! const_f32_as_f32x4 {
+  // broadcast a single value
+  ($(#[$attrs:meta])* $v:vis $i:ident, $val:expr) => {
+    $(#[$attrs])*
+    $v const $i: f32x4 = {
+      let cuh = ConstUnionHack_f32x4 {
+        narrow_arr: [$val, $val, $val, $val],
+      };
+      unsafe { cuh.wide_thing }
+    };
+  };
+  // select each lane's value
+  ($(#[$attrs:meta])* $v:vis $i:ident, $a:expr, $b:expr, $c:expr, $d:expr) => {
+    $(#[$attrs])*
+    $v const $i: f32x4 = {
+      let cuh = ConstUnionHack_f32x4 {
+        narrow_arr: [$a, $b, $c, $d],
+      };
+      unsafe { cuh.wide_thing }
+    };
+  };
+}
+
+impl f32x4 {
+  //
+  // core::f32
+  //
+
+  const_f32_as_f32x4!(
+    /// Machine epsilon value for `f32`.
+    pub EPSILON, core::f32::EPSILON
+  );
+
+  const_f32_as_f32x4!(
+    /// Positive Infinity (∞).
+    pub INFINITY, core::f32::INFINITY
+  );
+
+  const_f32_as_f32x4!(
+    /// Largest finite `f32` value.
+    pub MAX, core::f32::MAX
+  );
+
+  const_f32_as_f32x4!(
+    /// Smallest finite `f32` value.
+    pub MIN, core::f32::MIN
+  );
+
+  const_f32_as_f32x4!(
+    /// Smallest positive normal `f32` value.
+    pub MIN_POSITIVE, core::f32::MIN_POSITIVE
+  );
+
+  const_f32_as_f32x4!(
+    /// Not a Number (NaN).
+    ///
+    /// **Reminder:** This is one possible NaN value, but there are many NaN bit
+    /// patterns within the `f32` space.
+    pub NAN, core::f32::NAN
+  );
+
+  const_f32_as_f32x4!(
+    /// Negative infinity (-∞).
+    pub NEG_INFINITY, core::f32::NEG_INFINITY
+  );
+
+  //
+  // core::f32::consts
+  //
+
+  const_f32_as_f32x4!(
+    /// Euler's number (e)
+    pub E, core::f32::consts::E
+  );
+
+  const_f32_as_f32x4!(
+    /// 1/π
+    pub FRAC_1_PI, core::f32::consts::FRAC_1_PI
+  );
+
+  const_f32_as_f32x4!(
+    /// 2/π
+    pub FRAC_2_PI, core::f32::consts::FRAC_2_PI
+  );
+
+  const_f32_as_f32x4!(
+    /// 2/sqrt(π)
+    pub FRAC_2_SQRT_PI, core::f32::consts::FRAC_2_SQRT_PI
+  );
+
+  const_f32_as_f32x4!(
+    /// 1/sqrt(2)
+    pub FRAC_1_SQRT_2, core::f32::consts::FRAC_1_SQRT_2
+  );
+
+  const_f32_as_f32x4!(
+    /// π/2
+    pub FRAC_PI_2, core::f32::consts::FRAC_PI_2
+  );
+
+  const_f32_as_f32x4!(
+    /// π/3
+    pub FRAC_PI_3, core::f32::consts::FRAC_PI_3
+  );
+
+  const_f32_as_f32x4!(
+    /// π/4
+    pub FRAC_PI_4, core::f32::consts::FRAC_PI_4
+  );
+
+  const_f32_as_f32x4!(
+    /// π/6
+    pub FRAC_PI_6, core::f32::consts::FRAC_PI_6
+  );
+
+  const_f32_as_f32x4!(
+    /// π/8
+    pub FRAC_PI_8, core::f32::consts::FRAC_PI_8
+  );
+
+  const_f32_as_f32x4!(
+    /// ln(2)
+    pub LN_2, core::f32::consts::LN_2
+  );
+
+  const_f32_as_f32x4!(
+    /// ln(10)
+    pub LN_10, core::f32::consts::LN_10
+  );
+
+  const_f32_as_f32x4!(
+    /// log2(e)
+    pub LOG2_E, core::f32::consts::LOG2_E
+  );
+
+  const_f32_as_f32x4!(
+    /// log10(e)
+    pub LOG10_E, core::f32::consts::LOG10_E
+  );
+
+  const_f32_as_f32x4!(
+    /// Archimedes' constant (π)
+    pub PI, core::f32::consts::PI
+  );
+
+  const_f32_as_f32x4!(
+    /// sqrt(2)
+    pub SQRT_2, core::f32::consts::SQRT_2
+  );
 }
 
 impl f32x4 {
@@ -1465,191 +1659,4 @@ impl From<[u16; 4]> for f32x4 {
   fn from([a, b, c, d]: [u16; 4]) -> Self {
     Self::new(f32::from(a), f32::from(b), f32::from(c), f32::from(d))
   }
-}
-
-/// Various `f32` related consts, duplicated into x4 array form.
-///
-/// Rust doesn't let you declare SIMD values in a `const` context, so you have
-/// to use something like `let c = f32x4::from(CONST_NAME);`
-pub mod consts {
-  pub const EPSILON: [f32; 4] = [
-    core::f32::EPSILON,
-    core::f32::EPSILON,
-    core::f32::EPSILON,
-    core::f32::EPSILON,
-  ];
-  pub const INFINITY: [f32; 4] = [
-    core::f32::INFINITY,
-    core::f32::INFINITY,
-    core::f32::INFINITY,
-    core::f32::INFINITY,
-  ];
-  pub const MAX: [f32; 4] = [
-    core::f32::MAX,
-    core::f32::MAX,
-    core::f32::MAX,
-    core::f32::MAX,
-  ];
-  pub const MIN: [f32; 4] = [
-    core::f32::MIN,
-    core::f32::MIN,
-    core::f32::MIN,
-    core::f32::MIN,
-  ];
-  pub const MIN_POSITIVE: [f32; 4] = [
-    core::f32::MIN_POSITIVE,
-    core::f32::MIN_POSITIVE,
-    core::f32::MIN_POSITIVE,
-    core::f32::MIN_POSITIVE,
-  ];
-  pub const NAN: [f32; 4] = [
-    core::f32::NAN,
-    core::f32::NAN,
-    core::f32::NAN,
-    core::f32::NAN,
-  ];
-  pub const NEG_INFINITY: [f32; 4] = [
-    core::f32::NEG_INFINITY,
-    core::f32::NEG_INFINITY,
-    core::f32::NEG_INFINITY,
-    core::f32::NEG_INFINITY,
-  ];
-  pub const DIGITS: [u32; 4] = [
-    core::f32::DIGITS,
-    core::f32::DIGITS,
-    core::f32::DIGITS,
-    core::f32::DIGITS,
-  ];
-  pub const MANTISSA_DIGITS: [u32; 4] = [
-    core::f32::MANTISSA_DIGITS,
-    core::f32::MANTISSA_DIGITS,
-    core::f32::MANTISSA_DIGITS,
-    core::f32::MANTISSA_DIGITS,
-  ];
-  pub const RADIX: [u32; 4] = [
-    core::f32::RADIX,
-    core::f32::RADIX,
-    core::f32::RADIX,
-    core::f32::RADIX,
-  ];
-  pub const MAX_10_EXP: [i32; 4] = [
-    core::f32::MAX_10_EXP,
-    core::f32::MAX_10_EXP,
-    core::f32::MAX_10_EXP,
-    core::f32::MAX_10_EXP,
-  ];
-  pub const MAX_EXP: [i32; 4] = [
-    core::f32::MAX_EXP,
-    core::f32::MAX_EXP,
-    core::f32::MAX_EXP,
-    core::f32::MAX_EXP,
-  ];
-  pub const MIN_10_EXP: [i32; 4] = [
-    core::f32::MIN_10_EXP,
-    core::f32::MIN_10_EXP,
-    core::f32::MIN_10_EXP,
-    core::f32::MIN_10_EXP,
-  ];
-  pub const MIN_EXP: [i32; 4] = [
-    core::f32::MIN_EXP,
-    core::f32::MIN_EXP,
-    core::f32::MIN_EXP,
-    core::f32::MIN_EXP,
-  ];
-  pub const E: [f32; 4] = [
-    core::f32::consts::E,
-    core::f32::consts::E,
-    core::f32::consts::E,
-    core::f32::consts::E,
-  ];
-  pub const FRAC_1_PI: [f32; 4] = [
-    core::f32::consts::FRAC_1_PI,
-    core::f32::consts::FRAC_1_PI,
-    core::f32::consts::FRAC_1_PI,
-    core::f32::consts::FRAC_1_PI,
-  ];
-  pub const FRAC_2_PI: [f32; 4] = [
-    core::f32::consts::FRAC_2_PI,
-    core::f32::consts::FRAC_2_PI,
-    core::f32::consts::FRAC_2_PI,
-    core::f32::consts::FRAC_2_PI,
-  ];
-  pub const FRAC_2_SQRT_PI: [f32; 4] = [
-    core::f32::consts::FRAC_2_SQRT_PI,
-    core::f32::consts::FRAC_2_SQRT_PI,
-    core::f32::consts::FRAC_2_SQRT_PI,
-    core::f32::consts::FRAC_2_SQRT_PI,
-  ];
-  pub const FRAC_1_SQRT_2: [f32; 4] = [
-    core::f32::consts::FRAC_1_SQRT_2,
-    core::f32::consts::FRAC_1_SQRT_2,
-    core::f32::consts::FRAC_1_SQRT_2,
-    core::f32::consts::FRAC_1_SQRT_2,
-  ];
-  pub const FRAC_PI_2: [f32; 4] = [
-    core::f32::consts::FRAC_PI_2,
-    core::f32::consts::FRAC_PI_2,
-    core::f32::consts::FRAC_PI_2,
-    core::f32::consts::FRAC_PI_2,
-  ];
-  pub const FRAC_PI_3: [f32; 4] = [
-    core::f32::consts::FRAC_PI_3,
-    core::f32::consts::FRAC_PI_3,
-    core::f32::consts::FRAC_PI_3,
-    core::f32::consts::FRAC_PI_3,
-  ];
-  pub const FRAC_PI_4: [f32; 4] = [
-    core::f32::consts::FRAC_PI_4,
-    core::f32::consts::FRAC_PI_4,
-    core::f32::consts::FRAC_PI_4,
-    core::f32::consts::FRAC_PI_4,
-  ];
-  pub const FRAC_PI_6: [f32; 4] = [
-    core::f32::consts::FRAC_PI_6,
-    core::f32::consts::FRAC_PI_6,
-    core::f32::consts::FRAC_PI_6,
-    core::f32::consts::FRAC_PI_6,
-  ];
-  pub const FRAC_PI_8: [f32; 4] = [
-    core::f32::consts::FRAC_PI_8,
-    core::f32::consts::FRAC_PI_8,
-    core::f32::consts::FRAC_PI_8,
-    core::f32::consts::FRAC_PI_8,
-  ];
-  pub const LN_2: [f32; 4] = [
-    core::f32::consts::LN_2,
-    core::f32::consts::LN_2,
-    core::f32::consts::LN_2,
-    core::f32::consts::LN_2,
-  ];
-  pub const LN_10: [f32; 4] = [
-    core::f32::consts::LN_10,
-    core::f32::consts::LN_10,
-    core::f32::consts::LN_10,
-    core::f32::consts::LN_10,
-  ];
-  pub const LOG2_E: [f32; 4] = [
-    core::f32::consts::LOG2_E,
-    core::f32::consts::LOG2_E,
-    core::f32::consts::LOG2_E,
-    core::f32::consts::LOG2_E,
-  ];
-  pub const LOG10_E: [f32; 4] = [
-    core::f32::consts::LOG10_E,
-    core::f32::consts::LOG10_E,
-    core::f32::consts::LOG10_E,
-    core::f32::consts::LOG10_E,
-  ];
-  pub const PI: [f32; 4] = [
-    core::f32::consts::PI,
-    core::f32::consts::PI,
-    core::f32::consts::PI,
-    core::f32::consts::PI,
-  ];
-  pub const SQRT_2: [f32; 4] = [
-    core::f32::consts::SQRT_2,
-    core::f32::consts::SQRT_2,
-    core::f32::consts::SQRT_2,
-    core::f32::consts::SQRT_2,
-  ];
 }
