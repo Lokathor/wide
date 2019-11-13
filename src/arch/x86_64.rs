@@ -46,6 +46,12 @@ mod sse4_2;
 #[cfg(target_feature = "sse4.2")]
 pub use sse4_2::*;
 
+#[cfg(target_feature = "fma")]
+#[path = "fma.rs"]
+mod fma;
+#[cfg(target_feature = "fma")]
+pub use fma::*;
+
 /// As [`_rdtsc`](https://doc.rust-lang.org/core/arch/x86_64/fn._rdtsc.html).
 #[inline]
 pub fn rdtsc() -> u64 {
