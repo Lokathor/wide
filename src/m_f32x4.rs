@@ -212,6 +212,30 @@ impl f32x4 {
     /// sqrt(2)
     pub SQRT_2, core::f32::consts::SQRT_2
   );
+
+  //
+  // others
+  //
+
+  const_f32_as_f32x4!(
+    /// 0.0
+    pub ZERO, 0.0
+  );
+
+  const_f32_as_f32x4!(
+    /// 0.5
+    pub HALF, 0.5
+  );
+
+  const_f32_as_f32x4!(
+    /// 1.0
+    pub ONE, 1.0
+  );
+
+  const_f32_as_f32x4!(
+    /// 2.0 * π, the number of radians in a circle.
+    pub TWO_PI, 2.0 * core::f32::consts::PI
+  );
 }
 
 impl f32x4 {
@@ -905,13 +929,22 @@ impl f32x4 {
 
   #[inline]
   pub fn round(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    cfg_if! {if #[cfg(target_feature = "sse4.1")] {
+      // we sometimes have a direct round instruction
+      Self { sse: self.sse.round_nearest() }
+    } else if #[cfg(target_feature="sse2")] {
+      // or we could round to int and back
+      Self { sse: self.sse.round_i32().round_f32() }
+    } else if #[cfg(feature = "toolchain_nightly")] {
+      // hope that the intrinsics will tell LLVM what we're doing, and we can do
+      // this core-only in nightly.
       use core::intrinsics::roundf32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
         [roundf32(a[0]), roundf32(a[1]), roundf32(a[2]), roundf32(a[3])]
       })
     } else {
+      // this path is like the above but needs std
       let a: [f32; 4] = cast(self);
       cast([a[0].round(), a[1].round(), a[2].round(), a[3].round()])
     }}
@@ -1054,20 +1087,20 @@ impl f32x4 {
   #[inline]
   pub fn mul_add(self, b: Self, c: Self) -> Self {
     cfg_if! {if #[cfg(target_feature = "fma")] {
-      // TODO: put this properly into the `arch` modules.
-      #[cfg(target_arch="x86")]
-      use core::arch::x86::_mm_fmadd_ps;
-      #[cfg(target_arch="x86")]
-      use arch::x86::m128;
-      #[cfg(target_arch="x86_64")]
-      use core::arch::x86_64::_mm_fmadd_ps;
-      #[cfg(target_arch="x86_64")]
-      use arch::x86_64::m128;
-      unsafe {
-        Self { sse: m128(_mm_fmadd_ps(self.sse.0, b.sse.0, c.sse.0)) }
-      }
+      Self { sse: self.sse.fmadd(b.sse, c.sse) }
     } else {
       (self * b) + c
+    }}
+  }
+
+  /// Negated "mul_add", `c - (self * b)`.
+  ///
+  /// Fused if `fma` feature is enabled, see [`mul_add`].
+  pub fn negated_mul_add(self, b: Self, c: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature = "fma")] {
+      Self { sse: self.sse.fnmadd(b.sse, c.sse) }
+    } else {
+      c - (self * b)
     }}
   }
 
@@ -1291,6 +1324,58 @@ impl f32x4 {
   #[inline]
   pub fn sin_cos(self) -> (Self, Self) {
     (self.sin(), self.cos())
+  }
+
+  /// calculates polynomial c2*x^2 + c1*x + c0
+  ///
+  /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L111
+  #[inline]
+  fn polynomial_2(self, c0: Self, c1: Self, c2: Self) -> Self {
+    let self2 = self * self;
+    self2.mul_add(c2, self.mul_add(c1, c0))
+  }
+
+  /// calculates polynomial c3*x^3 + c2*x^2 + c1*x + c0
+  ///
+  /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L120
+  #[inline]
+  fn polynomial_3(self, c0: Self, c1: Self, c2: Self, c3: Self) -> Self {
+    let self2 = self * self;
+    c3.mul_add(self, c2).mul_add(self2, c1.mul_add(self, c0))
+  }
+
+  #[allow(clippy::unreadable_literal)]
+  #[allow(clippy::excessive_precision)]
+  #[allow(bad_style)]
+  pub fn s_c_t(xx: Self) -> (Self, Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+
+    const_f32_as_f32x4!(DP1F, 0.78515625_f32 * 2.0);
+    const_f32_as_f32x4!(DP2F, 2.4187564849853515625E-4_f32 * 2.0);
+    const_f32_as_f32x4!(DP3F, 3.77489497744594108E-8_f32 * 2.0);
+
+    const_f32_as_f32x4!(P0sinf, -1.6666654611E-1);
+    const_f32_as_f32x4!(P1sinf, 8.3321608736E-3);
+    const_f32_as_f32x4!(P2sinf, -1.9515295891E-4);
+
+    const_f32_as_f32x4!(P0cosf, 4.166664568298827E-2);
+    const_f32_as_f32x4!(P1cosf, -1.388731625493765E-3);
+    const_f32_as_f32x4!(P2cosf, 2.443315711809948E-5);
+
+    let xa = xx.abs();
+
+    let y = (xa * Self::TWO_PI).round();
+    let q = y.sse.round_i32();
+
+    let x = y.negated_mul_add(DP3F, y.negated_mul_add(DP2F, y.negated_mul_add(DP1F, xa)));
+    let x2 = x * x;
+    let s = x2.polynomial_2(P0sinf, P1sinf, P2sinf) * (x * x2) + x;
+    let c = x2.polynomial_2(P0cosf, P1cosf, P2cosf) * (x2 * x2)
+      + Self::HALF.negated_mul_add(x2, Self::ONE);
+
+    // stop it rustfmt
+    unimplemented!();
   }
 }
 
