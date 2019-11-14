@@ -269,18 +269,18 @@ impl f32x4 {
       // yes it's weird, yes it's correct.
       Self { sse: self.sse.cmp_nan(self.sse) }
     } else {
-      let op = |a:f32, b:f32| {
-        if a.is_nan() | b.is_nan() {
+      let op = |a:f32| {
+        if a.is_nan() {
           f32::from_bits(u32::max_value())
         } else {
           0.0
         }
       };
       Self { arr: [
-        op(self.arr[0], rhs.arr[0]),
-        op(self.arr[1], rhs.arr[1]),
-        op(self.arr[2], rhs.arr[2]),
-        op(self.arr[3], rhs.arr[3]),
+        op(self.arr[0]),
+        op(self.arr[1]),
+        op(self.arr[2]),
+        op(self.arr[3]),
       ] }
     }}
   }
@@ -290,18 +290,18 @@ impl f32x4 {
       // yes it's weird, yes it's correct.
       Self { sse: self.sse.cmp_ordinary(self.sse) }
     } else {
-      let op = |a:f32, b:f32| {
-        if (!a.is_nan()) & (!b.is_nan()) {
+      let op = |a:f32| {
+        if !a.is_nan() {
           f32::from_bits(u32::max_value())
         } else {
           0.0
         }
       };
       Self { arr: [
-        op(self.arr[0], rhs.arr[0]),
-        op(self.arr[1], rhs.arr[1]),
-        op(self.arr[2], rhs.arr[2]),
-        op(self.arr[3], rhs.arr[3]),
+        op(self.arr[0]),
+        op(self.arr[1]),
+        op(self.arr[2]),
+        op(self.arr[3]),
       ] }
     }}
   }
