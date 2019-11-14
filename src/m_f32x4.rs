@@ -14,56 +14,313 @@ cfg_if! {
   }
 }
 #[test]
-fn declaration_tests() {
+fn declaration_tests_f32x4() {
   use core::mem::{align_of, size_of};
   assert_eq!(size_of::<f32x4>(), 16);
   assert_eq!(align_of::<f32x4>(), 16);
+}
+
+#[allow(non_camel_case_types)]
+pub union ConstUnionHack_f32x4 {
+  pub narrow_arr: [f32; 4],
+  pub wide_thing: f32x4,
+}
+#[test]
+#[allow(non_snake_case)]
+fn declaration_tests_ConstUnionHack_f32x4() {
+  use core::mem::{align_of, size_of};
+  assert_eq!(size_of::<ConstUnionHack_f32x4>(), size_of::<f32x4>());
+  assert_eq!(align_of::<ConstUnionHack_f32x4>(), align_of::<f32x4>());
+}
+
+/// Declares an `f32x4` const identifier.
+///
+/// ## Broadcast A Single Value
+///
+/// * **Usage:** `const_f32_as_f32x4!(#[meta]* vis ident, val);`
+///
+/// The value should be a single `f32` expression, which is then duplicated into
+/// all lanes of the constant declaration.
+///
+/// ```rust
+/// use wide::*;
+/// const_f32_as_f32x4!(
+///   /// Machine epsilon value for `f32`.
+///   pub EPSILON, core::f32::EPSILON
+/// );
+/// ```
+///
+/// ## Select Each Lane
+///
+/// * **Usage:** `const_f32_as_f32x4!(#[meta]* vis ident, a, b, c, d);`
+///
+/// Each of `a`, `b`, `c`, and `d` are an `f32` expression when are then placed
+/// into the constant declaration (low lane to high lane).
+///
+/// ```rust
+/// use wide::*;
+/// const_f32_as_f32x4!(
+///   /// 1, 2, 3, 4
+///   pub ONE_TWO_THREE_FOUR, 1.0, 2.0, 3.0, 4.0
+/// );
+/// ```
+#[macro_export]
+macro_rules! const_f32_as_f32x4 {
+  // broadcast a single value
+  ($(#[$attrs:meta])* $v:vis $i:ident, $val:expr) => {
+    $(#[$attrs])*
+    $v const $i: f32x4 = {
+      let cuh = ConstUnionHack_f32x4 {
+        narrow_arr: [$val, $val, $val, $val],
+      };
+      unsafe { cuh.wide_thing }
+    };
+  };
+  // select each lane's value
+  ($(#[$attrs:meta])* $v:vis $i:ident, $a:expr, $b:expr, $c:expr, $d:expr) => {
+    $(#[$attrs])*
+    $v const $i: f32x4 = {
+      let cuh = ConstUnionHack_f32x4 {
+        narrow_arr: [$a, $b, $c, $d],
+      };
+      unsafe { cuh.wide_thing }
+    };
+  };
+}
+
+impl f32x4 {
+  //
+  // core::f32
+  //
+
+  const_f32_as_f32x4!(
+    /// Machine epsilon value for `f32`.
+    pub EPSILON, core::f32::EPSILON
+  );
+
+  const_f32_as_f32x4!(
+    /// Positive Infinity (∞).
+    pub INFINITY, core::f32::INFINITY
+  );
+
+  const_f32_as_f32x4!(
+    /// Largest finite `f32` value.
+    pub MAX, core::f32::MAX
+  );
+
+  const_f32_as_f32x4!(
+    /// Smallest finite `f32` value.
+    pub MIN, core::f32::MIN
+  );
+
+  const_f32_as_f32x4!(
+    /// Smallest positive normal `f32` value.
+    pub MIN_POSITIVE, core::f32::MIN_POSITIVE
+  );
+
+  const_f32_as_f32x4!(
+    /// Not a Number (NaN).
+    ///
+    /// **Reminder:** This is one possible NaN value, but there are many NaN bit
+    /// patterns within the `f32` space.
+    pub NAN, core::f32::NAN
+  );
+
+  const_f32_as_f32x4!(
+    /// Negative infinity (-∞).
+    pub NEG_INFINITY, core::f32::NEG_INFINITY
+  );
+
+  //
+  // core::f32::consts
+  //
+
+  const_f32_as_f32x4!(
+    /// Euler's number (e)
+    pub E, core::f32::consts::E
+  );
+
+  const_f32_as_f32x4!(
+    /// 1/π
+    pub FRAC_1_PI, core::f32::consts::FRAC_1_PI
+  );
+
+  const_f32_as_f32x4!(
+    /// 2/π
+    pub FRAC_2_PI, core::f32::consts::FRAC_2_PI
+  );
+
+  const_f32_as_f32x4!(
+    /// 2/sqrt(π)
+    pub FRAC_2_SQRT_PI, core::f32::consts::FRAC_2_SQRT_PI
+  );
+
+  const_f32_as_f32x4!(
+    /// 1/sqrt(2)
+    pub FRAC_1_SQRT_2, core::f32::consts::FRAC_1_SQRT_2
+  );
+
+  const_f32_as_f32x4!(
+    /// π/2
+    pub FRAC_PI_2, core::f32::consts::FRAC_PI_2
+  );
+
+  const_f32_as_f32x4!(
+    /// π/3
+    pub FRAC_PI_3, core::f32::consts::FRAC_PI_3
+  );
+
+  const_f32_as_f32x4!(
+    /// π/4
+    pub FRAC_PI_4, core::f32::consts::FRAC_PI_4
+  );
+
+  const_f32_as_f32x4!(
+    /// π/6
+    pub FRAC_PI_6, core::f32::consts::FRAC_PI_6
+  );
+
+  const_f32_as_f32x4!(
+    /// π/8
+    pub FRAC_PI_8, core::f32::consts::FRAC_PI_8
+  );
+
+  const_f32_as_f32x4!(
+    /// ln(2)
+    pub LN_2, core::f32::consts::LN_2
+  );
+
+  const_f32_as_f32x4!(
+    /// ln(10)
+    pub LN_10, core::f32::consts::LN_10
+  );
+
+  const_f32_as_f32x4!(
+    /// log2(e)
+    pub LOG2_E, core::f32::consts::LOG2_E
+  );
+
+  const_f32_as_f32x4!(
+    /// log10(e)
+    pub LOG10_E, core::f32::consts::LOG10_E
+  );
+
+  const_f32_as_f32x4!(
+    /// Archimedes' constant (π)
+    pub PI, core::f32::consts::PI
+  );
+
+  const_f32_as_f32x4!(
+    /// sqrt(2)
+    pub SQRT_2, core::f32::consts::SQRT_2
+  );
+
+  //
+  // others
+  //
+
+  const_f32_as_f32x4!(
+    /// 0.0
+    pub ZERO, 0.0
+  );
+
+  const_f32_as_f32x4!(
+    /// -0.0
+    pub NEGATIVE_ZERO, -0.0
+  );
+
+  const_f32_as_f32x4!(
+    /// 0.5
+    pub HALF, 0.5
+  );
+
+  const_f32_as_f32x4!(
+    /// 1.0
+    pub ONE, 1.0
+  );
+
+  const_f32_as_f32x4!(
+    /// 2.0 * π, the number of radians in a circle.
+    pub TWO_PI, 2.0 * core::f32::consts::PI
+  );
 }
 
 impl f32x4 {
   #[inline(always)]
   pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
     cfg_if! {if #[cfg(target_feature="sse")] {
-      Self { sse: m128::set(a,b,c,d) }
+      Self { sse: m128::set_reverse(a,b,c,d) }
     } else {
       Self { arr: [a,b,c,d] }
     }}
   }
 
-  /// Use the mask to bitwise merge two values.
-  ///
-  /// It is expected that the mask will be a "boolish" value where each lane is
-  /// either all 1s or all 0s, but that's not actually required.
-  ///
-  /// The output will have the `tru` bit any place that `mask` has a 1, and use
-  /// the `fal` bit anywhere the mask has a 0.
-  ///
-  /// ```rust
-  /// use wide::f32x4;
-  /// let a = f32x4::new(1.0, 2.0, 3.0, 4.0);
-  /// let b = f32x4::from(2.5);
-  /// let mask = a.cmp_gt(b);
-  /// let merged = f32x4::merge(mask, f32x4::from(10.0), f32x4::from(2.0));
-  /// let merged_arr: [f32; 4] = unsafe { core::mem::transmute(merged) };
-  /// assert_eq!(merged_arr, [2.0, 2.0, 10.0, 10.0]);
-  /// ```
   #[inline]
-  pub fn merge(mask: Self, tru: Self, fal: Self) -> Self {
+  pub fn andnot(self, rhs: Self) -> Self {
     cfg_if! {if #[cfg(target_feature="sse")] {
-      Self { sse: tru.sse ^ ((tru.sse ^ fal.sse) & mask.sse) }
+      Self { sse: self.sse.andnot(rhs.sse) }
     } else {
-      let op = |maskf, af, bf| {
-        let ai: i32 = cast(af);
-        let bi: i32 = cast(bf);
-        let maski: i32 = cast(maskf);
-        cast::<i32, f32>(ai ^ ((ai ^ bi) & maski))
+      (!self) & rhs
+    }}
+  }
+
+  pub fn is_nan(self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      // yes it's weird, yes it's correct.
+      Self { sse: self.sse.cmp_nan(self.sse) }
+    } else {
+      let op = |a:f32| {
+        if a.is_nan() {
+          f32::from_bits(u32::max_value())
+        } else {
+          0.0
+        }
       };
       Self { arr: [
-        op(mask[0], tru.arr[0], fal.arr[0]),
-        op(mask[1], tru.arr[1], fal.arr[1]),
-        op(mask[2], tru.arr[2], fal.arr[2]),
-        op(mask[3], tru.arr[3], fal.arr[3]),
+        op(self.arr[0]),
+        op(self.arr[1]),
+        op(self.arr[2]),
+        op(self.arr[3]),
       ] }
+    }}
+  }
+
+  pub fn is_ordinary(self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      // yes it's weird, yes it's correct.
+      Self { sse: self.sse.cmp_ordinary(self.sse) }
+    } else {
+      let op = |a:f32| {
+        if !a.is_nan() {
+          f32::from_bits(u32::max_value())
+        } else {
+          0.0
+        }
+      };
+      Self { arr: [
+        op(self.arr[0]),
+        op(self.arr[1]),
+        op(self.arr[2]),
+        op(self.arr[3]),
+      ] }
+    }}
+  }
+
+  /// Use `self` (a boolish value) to merge `a` and `b`.
+  ///
+  /// For each lane index, if the `self` lane is "true" then the `a` value will
+  /// be used in the output, otherwise the `b` value will be used in the output.
+  ///
+  /// If `sse4.1` is enabled, then "true" _only_ checks the sign bit. With less
+  /// features enabled the entire bit pattern of the lane will matter. This is
+  /// not normally a problem, because the comparison methods naturally return
+  /// all 1s or all 0s anyway.
+  #[inline]
+  pub fn merge(self, a: Self, b: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse4.1")] {
+      Self { sse: b.sse.blend_var(a.sse, self.sse) }
+    } else {
+      (self & a) | self.andnot(b)
     }}
   }
 }
@@ -343,7 +600,7 @@ impl f32x4 {
   /// use wide::f32x4;
   /// let a = f32x4::new(1.0, 2.0, 3.0, 4.0);
   /// let b = f32x4::from(2.5);
-  /// assert_eq!(a.cmp_lt(b).move_mask(), 0b1100);
+  /// assert_eq!(a.cmp_lt(b).move_mask(), 0b0011);
   /// ```
   #[inline]
   pub fn move_mask(self) -> i32 {
@@ -353,7 +610,7 @@ impl f32x4 {
       let mut out = 0_i32;
       for i in 0..4 {
         if cast::<f32, i32>(self.arr[i]) < 0 {
-          out |= (1<<i);
+          out |= 1<<i;
         }
       }
       out
@@ -641,16 +898,8 @@ impl f32x4 {
 
   #[inline]
   pub fn cos(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-      use core::intrinsics::cosf32;
-      let a: [f32; 4] = cast(self);
-      cast(unsafe {
-        [cosf32(a[0]), cosf32(a[1]), cosf32(a[2]), cosf32(a[3])]
-      })
-    } else {
-      let a: [f32; 4] = cast(self);
-      cast([a[0].cos(), a[1].cos(), a[2].cos(), a[3].cos()])
-    }}
+    // TODO: check that once this inlines we don't pay the "calculate sin" costs.
+    self.sin_cos().1
   }
 
   #[inline]
@@ -711,30 +960,34 @@ impl f32x4 {
 
   #[inline]
   pub fn round(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    cfg_if! {if #[cfg(target_feature = "sse4.1")] {
+      // we sometimes have a direct round instruction
+      Self { sse: self.sse.round_nearest() }
+    } else if #[cfg(target_feature="sse2")] {
+      // or we could round to int and back
+      Self { sse: self.sse.round_i32().round_f32() }
+    } else if #[cfg(feature = "toolchain_nightly")] {
+      // hope that the intrinsics will tell LLVM what we're doing, and we can do
+      // this core-only in nightly.
       use core::intrinsics::roundf32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
         [roundf32(a[0]), roundf32(a[1]), roundf32(a[2]), roundf32(a[3])]
       })
     } else {
+      // this path is like the above but needs std
       let a: [f32; 4] = cast(self);
       cast([a[0].round(), a[1].round(), a[2].round(), a[3].round()])
     }}
   }
 
+  /// Sine function.
+  ///
+  /// "We called it '[Sin](https://vignette.wikia.nocookie.net/finalfantasy/images/d/de/10sin-a.jpg)'."
   #[inline]
   pub fn sin(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-      use core::intrinsics::sinf32;
-      let a: [f32; 4] = cast(self);
-      cast(unsafe {
-        [sinf32(a[0]), sinf32(a[1]), sinf32(a[2]), sinf32(a[3])]
-      })
-    } else {
-      let a: [f32; 4] = cast(self);
-      cast([a[0].sin(), a[1].sin(), a[2].sin(), a[3].sin()])
-    }}
+    // TODO: check that once this inlines we don't pay the "calculate cos" costs.
+    self.sin_cos().0
   }
 
   #[inline]
@@ -762,30 +1015,6 @@ impl f32x4 {
     } else {
       let a: [f32; 4] = cast(self);
       cast([a[0].trunc(), a[1].trunc(), a[2].trunc(), a[3].trunc()])
-    }}
-  }
-
-  #[inline]
-  pub fn copysign(self, b: Self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-      use core::intrinsics::copysignf32;
-      let a: [f32; 4] = cast(self);
-      let b: [f32; 4] = cast(b);
-      cast(unsafe { [
-        copysignf32(a[0], b[0]),
-        copysignf32(a[1], b[1]),
-        copysignf32(a[2], b[2]),
-        copysignf32(a[3], b[3]),
-      ]})
-    } else {
-      let a: [f32; 4] = cast(self);
-      let b: [f32; 4] = cast(b);
-      cast([
-        a[0].copysign(b[0]),
-        a[1].copysign(b[1]),
-        a[2].copysign(b[2]),
-        a[3].copysign(b[3]),
-      ])
     }}
   }
 
@@ -860,20 +1089,20 @@ impl f32x4 {
   #[inline]
   pub fn mul_add(self, b: Self, c: Self) -> Self {
     cfg_if! {if #[cfg(target_feature = "fma")] {
-      // TODO: put this properly into the `arch` modules.
-      #[cfg(target_arch="x86")]
-      use core::arch::x86::_mm_fmadd_ps;
-      #[cfg(target_arch="x86")]
-      use arch::x86::m128;
-      #[cfg(target_arch="x86_64")]
-      use core::arch::x86_64::_mm_fmadd_ps;
-      #[cfg(target_arch="x86_64")]
-      use arch::x86_64::m128;
-      unsafe {
-        Self { sse: m128(_mm_fmadd_ps(self.sse.0, b.sse.0, c.sse.0)) }
-      }
+      Self { sse: self.sse.fmadd(b.sse, c.sse) }
     } else {
       (self * b) + c
+    }}
+  }
+
+  /// Negated "mul_add", `c - (self * b)`.
+  ///
+  /// Fused if `fma` feature is enabled, see (mul_add)[f32x4::mul_add].
+  pub fn negated_mul_add(self, b: Self, c: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature = "fma")] {
+      Self { sse: self.sse.fnmadd(b.sse, c.sse) }
+    } else {
+      c - (self * b)
     }}
   }
 
@@ -915,6 +1144,66 @@ impl f32x4 {
         a[2].min(b[2]),
         a[3].min(b[3]),
       ])
+    }}
+  }
+
+  #[inline]
+  pub fn round_i32(self) -> i32x4 {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      i32x4 { sse: self.sse.round_i32() }
+    } else {
+      i32x4 { arr: [
+        self.arr[0] as i32,
+        self.arr[1] as i32,
+        self.arr[2] as i32,
+        self.arr[3] as i32,
+      ]}
+    }}
+  }
+
+  /// If it's some finite value.
+  ///
+  /// * True for normal, denormal, and zero.
+  /// * False for +/- INF, NaN
+  /// * boolish
+  #[allow(clippy::unreadable_literal)]
+  #[allow(bad_style)]
+  pub fn is_finite(self) -> f32x4 {
+    const EXPONENT_MASKu: u32 = 0xFF000000_u32;
+    const EXPONENT_MASKi: i32 = EXPONENT_MASKu as i32;
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      let t1 = self.sse.cast_m128i();
+      // TODO: use an immediate shift here?
+      let t2 = t1.shift_left_i32(m128i::splat_i32(1));
+      let t3 = !(t2 & m128i::splat_i32(EXPONENT_MASKi))
+        .cmp_eq_i32(m128i::splat_i32(EXPONENT_MASKi));
+      Self { sse: t3.cast_m128() }
+    } else {
+      let op = |f: f32| {
+        let t1 = f.to_bits();
+        let t2 = t1 << 1;
+        let t3 = (t2 & EXPONENT_MASKu) != EXPONENT_MASKu;
+        if t3 {
+          f32::from_bits(u32::max_value())
+        } else {
+          0.0
+        }
+      };
+      Self { arr: [
+        op(self.arr[0]),
+        op(self.arr[1]),
+        op(self.arr[2]),
+        op(self.arr[3]),
+      ]}
+    }}
+  }
+
+  #[inline]
+  pub fn cast_i32x4(self) -> i32x4 {
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      i32x4 { sse: self.sse.cast_m128i() }
+    } else {
+      cast(self)
     }}
   }
 }
@@ -959,6 +1248,11 @@ impl f32x4 {
       a[2].to_radians(),
       a[3].to_radians(),
     ])
+  }
+
+  #[inline]
+  pub fn copysign(self, b: Self) -> Self {
+    self ^ (b & Self::NEGATIVE_ZERO)
   }
 
   // REQUIRES EXTERNAL MATH LIBS
@@ -1060,8 +1354,8 @@ impl f32x4 {
 
   #[inline]
   pub fn tan(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].tan(), a[1].tan(), a[2].tan(), a[3].tan()])
+    let (s, c) = self.sin_cos();
+    s / c
   }
 
   #[inline]
@@ -1094,9 +1388,85 @@ impl f32x4 {
     ])
   }
 
+  /// calculates polynomial c2*x^2 + c1*x + c0
+  ///
+  /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L111
   #[inline]
+  fn polynomial_2(self, c0: Self, c1: Self, c2: Self) -> Self {
+    let self2 = self * self;
+    self2.mul_add(c2, self.mul_add(c1, c0))
+  }
+
+  // /// calculates polynomial c3*x^3 + c2*x^2 + c1*x + c0
+  // ///
+  // /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L120
+  // #[inline]
+  // fn polynomial_3(self, c0: Self, c1: Self, c2: Self, c3: Self) -> Self {
+  //   let self2 = self * self;
+  //   c3.mul_add(self, c2).mul_add(self2, c1.mul_add(self, c0))
+  // }
+
+  /// Sine and Cosine as a single operation.
+  #[allow(clippy::unreadable_literal)]
+  #[allow(clippy::excessive_precision)]
+  #[allow(clippy::many_single_char_names)]
+  #[allow(bad_style)]
+  // Note: NOT inline
   pub fn sin_cos(self) -> (Self, Self) {
-    (self.sin(), self.cos())
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+
+    const_f32_as_f32x4!(DP1F, 0.78515625_f32 * 2.0);
+    const_f32_as_f32x4!(DP2F, 2.4187564849853515625E-4_f32 * 2.0);
+    const_f32_as_f32x4!(DP3F, 3.77489497744594108E-8_f32 * 2.0);
+
+    const_f32_as_f32x4!(P0sinf, -1.6666654611E-1);
+    const_f32_as_f32x4!(P1sinf, 8.3321608736E-3);
+    const_f32_as_f32x4!(P2sinf, -1.9515295891E-4);
+
+    const_f32_as_f32x4!(P0cosf, 4.166664568298827E-2);
+    const_f32_as_f32x4!(P1cosf, -1.388731625493765E-3);
+    const_f32_as_f32x4!(P2cosf, 2.443315711809948E-5);
+
+    // TODO: check where we can reduce any casting operations.
+
+    let xa = self.abs();
+
+    // Find quadrant
+    let y = (xa * (f32x4::from(2.0) / Self::PI)).round();
+    let q: i32x4 = y.round_i32();
+
+    // Reduce by extended precision modular arithmetic
+    // x = ((xa - y * DP1F) - y * DP2F) - y * DP3F;
+    let x = y.negated_mul_add(DP3F, y.negated_mul_add(DP2F, y.negated_mul_add(DP1F, xa)));
+
+    // Taylor expansion of sin and cos, valid for -pi/4 <= x <= pi/4
+    let x2 = x * x;
+    let mut s = x2.polynomial_2(P0sinf, P1sinf, P2sinf) * (x * x2) + x;
+    let mut c = x2.polynomial_2(P0cosf, P1cosf, P2cosf) * (x2 * x2)
+      + Self::HALF.negated_mul_add(x2, Self::ONE);
+
+    // swap sin and cos if odd quadrant
+    let swap = !(q & i32x4::ONE).cmp_eq(i32x4::ZERO);
+
+    // "q big if overflow"
+    const_i32_as_i32x4!(BIG_THRESHOLD, 0x2000000);
+    let mut overflow: f32x4 = cast(q.cmp_gt(BIG_THRESHOLD));
+    overflow &= xa.is_finite();
+    s = f32x4::merge(overflow, f32x4::ZERO, s);
+    c = f32x4::merge(overflow, f32x4::ONE, c);
+
+    // calc sin
+    let mut sin1 = f32x4::merge(cast(swap), c, s);
+    let sign_sin: i32x4 = (q << 30) ^ self.cast_i32x4();
+    sin1 = sin1.copysign(cast(sign_sin));
+
+    // calc cos
+    let mut cos1 = f32x4::merge(cast(swap), s, c);
+    let sign_cos: i32x4 = ((q + i32x4::ONE) & i32x4::from(2)) << 30;
+    cos1 ^= cast::<i32x4, f32x4>(sign_cos);
+
+    (sin1, cos1)
   }
 }
 
@@ -1260,7 +1630,7 @@ impl Debug for f32x4 {
 
 impl Display for f32x4 {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "f32x4(")?;
+    write!(f, "[")?;
     Display::fmt(&self[0], f)?;
     write!(f, ", ")?;
     Display::fmt(&self[1], f)?;
@@ -1268,7 +1638,7 @@ impl Display for f32x4 {
     Display::fmt(&self[2], f)?;
     write!(f, ", ")?;
     Display::fmt(&self[3], f)?;
-    write!(f, ")")
+    write!(f, "]")
   }
 }
 
@@ -1467,189 +1837,13 @@ impl From<[u16; 4]> for f32x4 {
   }
 }
 
-/// Various `f32` related consts, duplicated into x4 array form.
-///
-/// Rust doesn't let you declare SIMD values in a `const` context, so you have
-/// to use something like `let c = f32x4::from(CONST_NAME);`
-pub mod consts {
-  pub const EPSILON: [f32; 4] = [
-    core::f32::EPSILON,
-    core::f32::EPSILON,
-    core::f32::EPSILON,
-    core::f32::EPSILON,
-  ];
-  pub const INFINITY: [f32; 4] = [
-    core::f32::INFINITY,
-    core::f32::INFINITY,
-    core::f32::INFINITY,
-    core::f32::INFINITY,
-  ];
-  pub const MAX: [f32; 4] = [
-    core::f32::MAX,
-    core::f32::MAX,
-    core::f32::MAX,
-    core::f32::MAX,
-  ];
-  pub const MIN: [f32; 4] = [
-    core::f32::MIN,
-    core::f32::MIN,
-    core::f32::MIN,
-    core::f32::MIN,
-  ];
-  pub const MIN_POSITIVE: [f32; 4] = [
-    core::f32::MIN_POSITIVE,
-    core::f32::MIN_POSITIVE,
-    core::f32::MIN_POSITIVE,
-    core::f32::MIN_POSITIVE,
-  ];
-  pub const NAN: [f32; 4] = [
-    core::f32::NAN,
-    core::f32::NAN,
-    core::f32::NAN,
-    core::f32::NAN,
-  ];
-  pub const NEG_INFINITY: [f32; 4] = [
-    core::f32::NEG_INFINITY,
-    core::f32::NEG_INFINITY,
-    core::f32::NEG_INFINITY,
-    core::f32::NEG_INFINITY,
-  ];
-  pub const DIGITS: [u32; 4] = [
-    core::f32::DIGITS,
-    core::f32::DIGITS,
-    core::f32::DIGITS,
-    core::f32::DIGITS,
-  ];
-  pub const MANTISSA_DIGITS: [u32; 4] = [
-    core::f32::MANTISSA_DIGITS,
-    core::f32::MANTISSA_DIGITS,
-    core::f32::MANTISSA_DIGITS,
-    core::f32::MANTISSA_DIGITS,
-  ];
-  pub const RADIX: [u32; 4] = [
-    core::f32::RADIX,
-    core::f32::RADIX,
-    core::f32::RADIX,
-    core::f32::RADIX,
-  ];
-  pub const MAX_10_EXP: [i32; 4] = [
-    core::f32::MAX_10_EXP,
-    core::f32::MAX_10_EXP,
-    core::f32::MAX_10_EXP,
-    core::f32::MAX_10_EXP,
-  ];
-  pub const MAX_EXP: [i32; 4] = [
-    core::f32::MAX_EXP,
-    core::f32::MAX_EXP,
-    core::f32::MAX_EXP,
-    core::f32::MAX_EXP,
-  ];
-  pub const MIN_10_EXP: [i32; 4] = [
-    core::f32::MIN_10_EXP,
-    core::f32::MIN_10_EXP,
-    core::f32::MIN_10_EXP,
-    core::f32::MIN_10_EXP,
-  ];
-  pub const MIN_EXP: [i32; 4] = [
-    core::f32::MIN_EXP,
-    core::f32::MIN_EXP,
-    core::f32::MIN_EXP,
-    core::f32::MIN_EXP,
-  ];
-  pub const E: [f32; 4] = [
-    core::f32::consts::E,
-    core::f32::consts::E,
-    core::f32::consts::E,
-    core::f32::consts::E,
-  ];
-  pub const FRAC_1_PI: [f32; 4] = [
-    core::f32::consts::FRAC_1_PI,
-    core::f32::consts::FRAC_1_PI,
-    core::f32::consts::FRAC_1_PI,
-    core::f32::consts::FRAC_1_PI,
-  ];
-  pub const FRAC_2_PI: [f32; 4] = [
-    core::f32::consts::FRAC_2_PI,
-    core::f32::consts::FRAC_2_PI,
-    core::f32::consts::FRAC_2_PI,
-    core::f32::consts::FRAC_2_PI,
-  ];
-  pub const FRAC_2_SQRT_PI: [f32; 4] = [
-    core::f32::consts::FRAC_2_SQRT_PI,
-    core::f32::consts::FRAC_2_SQRT_PI,
-    core::f32::consts::FRAC_2_SQRT_PI,
-    core::f32::consts::FRAC_2_SQRT_PI,
-  ];
-  pub const FRAC_1_SQRT_2: [f32; 4] = [
-    core::f32::consts::FRAC_1_SQRT_2,
-    core::f32::consts::FRAC_1_SQRT_2,
-    core::f32::consts::FRAC_1_SQRT_2,
-    core::f32::consts::FRAC_1_SQRT_2,
-  ];
-  pub const FRAC_PI_2: [f32; 4] = [
-    core::f32::consts::FRAC_PI_2,
-    core::f32::consts::FRAC_PI_2,
-    core::f32::consts::FRAC_PI_2,
-    core::f32::consts::FRAC_PI_2,
-  ];
-  pub const FRAC_PI_3: [f32; 4] = [
-    core::f32::consts::FRAC_PI_3,
-    core::f32::consts::FRAC_PI_3,
-    core::f32::consts::FRAC_PI_3,
-    core::f32::consts::FRAC_PI_3,
-  ];
-  pub const FRAC_PI_4: [f32; 4] = [
-    core::f32::consts::FRAC_PI_4,
-    core::f32::consts::FRAC_PI_4,
-    core::f32::consts::FRAC_PI_4,
-    core::f32::consts::FRAC_PI_4,
-  ];
-  pub const FRAC_PI_6: [f32; 4] = [
-    core::f32::consts::FRAC_PI_6,
-    core::f32::consts::FRAC_PI_6,
-    core::f32::consts::FRAC_PI_6,
-    core::f32::consts::FRAC_PI_6,
-  ];
-  pub const FRAC_PI_8: [f32; 4] = [
-    core::f32::consts::FRAC_PI_8,
-    core::f32::consts::FRAC_PI_8,
-    core::f32::consts::FRAC_PI_8,
-    core::f32::consts::FRAC_PI_8,
-  ];
-  pub const LN_2: [f32; 4] = [
-    core::f32::consts::LN_2,
-    core::f32::consts::LN_2,
-    core::f32::consts::LN_2,
-    core::f32::consts::LN_2,
-  ];
-  pub const LN_10: [f32; 4] = [
-    core::f32::consts::LN_10,
-    core::f32::consts::LN_10,
-    core::f32::consts::LN_10,
-    core::f32::consts::LN_10,
-  ];
-  pub const LOG2_E: [f32; 4] = [
-    core::f32::consts::LOG2_E,
-    core::f32::consts::LOG2_E,
-    core::f32::consts::LOG2_E,
-    core::f32::consts::LOG2_E,
-  ];
-  pub const LOG10_E: [f32; 4] = [
-    core::f32::consts::LOG10_E,
-    core::f32::consts::LOG10_E,
-    core::f32::consts::LOG10_E,
-    core::f32::consts::LOG10_E,
-  ];
-  pub const PI: [f32; 4] = [
-    core::f32::consts::PI,
-    core::f32::consts::PI,
-    core::f32::consts::PI,
-    core::f32::consts::PI,
-  ];
-  pub const SQRT_2: [f32; 4] = [
-    core::f32::consts::SQRT_2,
-    core::f32::consts::SQRT_2,
-    core::f32::consts::SQRT_2,
-    core::f32::consts::SQRT_2,
-  ];
+impl Not for f32x4 {
+  type Output = Self;
+  /// Bitwise negation
+  #[inline(always)]
+  fn not(self) -> Self {
+    let f: f32 = f32::from_bits(u32::max_value());
+    let b = Self::from(f);
+    self ^ b
+  }
 }

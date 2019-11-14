@@ -46,16 +46,27 @@ pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
 pub(crate) use cfg_if::cfg_if;
 pub(crate) use core::{convert::*, fmt::*, ops::*};
 
+/// debug_assertions only: `file!():line!() expr: expr_value`, one per line
+#[macro_export]
+macro_rules! dump {
+  ($($n:expr),*) => (if cfg!(debug_assertions) {
+    $(println!(concat!("{}:{} ",stringify!($n),": {:?}"),file!(),line!(),$n);)*
+  })
+}
+
 pub mod arch;
 
 cfg_if! {
   if #[cfg(all(target_arch="x86", target_feature="sse"))] {
-    pub(crate) use arch::x86::m128;
+    pub(crate) use arch::x86::{m128, m128i};
   } else if #[cfg(all(target_arch="x86_64", target_feature="sse"))] {
-    pub(crate) use arch::x86_64::m128;
+    pub(crate) use arch::x86_64::{m128, m128i};
   }
   // TODO: arm, aarch64, wasm32, maybe more?
 }
 
 mod m_f32x4;
 pub use m_f32x4::*;
+
+mod m_i32x4;
+pub use m_i32x4::*;

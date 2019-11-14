@@ -1,8 +1,8 @@
-#![cfg(target_feature="sse")]
-#![cfg(target_feature="sse2")]
-#![cfg(target_feature="sse3")]
-#![cfg(target_feature="ssse3")]
-#![cfg(target_feature="sse4.1")]
+#![cfg(target_feature = "sse")]
+#![cfg(target_feature = "sse2")]
+#![cfg(target_feature = "sse3")]
+#![cfg(target_feature = "ssse3")]
+#![cfg(target_feature = "sse4.1")]
 
 use super::*;
 
@@ -46,6 +46,10 @@ impl m128 {
   #[inline(always)]
   pub fn floor_rhs0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_floor_ss(self.0, rhs.0) })
+  }
+
+  pub fn round_nearest(self) -> Self {
+    Self(unsafe { _mm_round_ps(self.0, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC) })
   }
 }
 
