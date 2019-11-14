@@ -279,10 +279,10 @@ impl Add for i32x4 {
       Self { sse: self.sse.add_i32(rhs.sse) }
     } else {
       Self { arr: [
-        self.arr[0].add(rhs[0]),
-        self.arr[1].add(rhs[1]),
-        self.arr[2].add(rhs[2]),
-        self.arr[3].add(rhs[3]),
+        self.arr[0].add(rhs.arr[0]),
+        self.arr[1].add(rhs.arr[1]),
+        self.arr[2].add(rhs.arr[2]),
+        self.arr[3].add(rhs.arr[3]),
       ] }
     }}
   }
