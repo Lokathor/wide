@@ -568,7 +568,7 @@ impl f32x4 {
       let mut out = 0_i32;
       for i in 0..4 {
         if cast::<f32, i32>(self.arr[i]) < 0 {
-          out |= (1<<i);
+          out |= 1<<i;
         }
       }
       out
@@ -1364,6 +1364,7 @@ impl f32x4 {
   //   c3.mul_add(self, c2).mul_add(self2, c1.mul_add(self, c0))
   // }
 
+  /// Sine and Cosine as a single operation.
   #[allow(clippy::unreadable_literal)]
   #[allow(clippy::excessive_precision)]
   #[allow(clippy::many_single_char_names)]

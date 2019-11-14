@@ -263,10 +263,10 @@ impl BitXor for i32x4 {
       Self { sse: self.sse.bitxor(rhs.sse) }
     } else {
       Self { arr: [
-        self.arr[0].bitxor(rhs[0]),
-        self.arr[1].bitxor(rhs[1]),
-        self.arr[2].bitxor(rhs[2]),
-        self.arr[3].bitxor(rhs[3]),
+        self.arr[0].bitxor(rhs.arr[0]),
+        self.arr[1].bitxor(rhs.arr[1]),
+        self.arr[2].bitxor(rhs.arr[2]),
+        self.arr[3].bitxor(rhs.arr[3]),
       ] }
     }}
   }
