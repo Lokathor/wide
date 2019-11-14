@@ -1137,7 +1137,7 @@ impl f32x4 {
         .cmp_eq_i32(m128i::splat_i32(EXPONENT_MASKi));
       Self { sse: t3.cast_m128() }
     } else {
-      let op |f: f32| {
+      let op = |f: f32| {
         let t1 = f.to_bits();
         let t2 = t1 << 1;
         let t3 = (t2 & EXPONENT_MASKu) != EXPONENT_MASKu;
@@ -1791,5 +1791,16 @@ impl From<[u16; 4]> for f32x4 {
   #[inline]
   fn from([a, b, c, d]: [u16; 4]) -> Self {
     Self::new(f32::from(a), f32::from(b), f32::from(c), f32::from(d))
+  }
+}
+
+impl Not for f32x4 {
+  type Output = Self;
+  /// Bitwise negation
+  #[inline(always)]
+  fn not(self) -> Self {
+    let f: f32 = f32::from_bits(u32::max_value());
+    let b = Self::from(f);
+    self ^ b
   }
 }
