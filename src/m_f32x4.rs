@@ -264,6 +264,27 @@ impl f32x4 {
     }}
   }
 
+  pub fn is_nan(self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      // yes it's weird, yes it's correct.
+      Self { sse: self.sse.cmp_nan(self.sse) }
+    } else {
+      let op = |a:f32, b:f32| {
+        if a.is_nan() | b.is_nan() {
+          f32::from_bits(u32::max_value())
+        } else {
+          0.0
+        }
+      };
+      Self { arr: [
+        op(self.arr[0], rhs.arr[0]),
+        op(self.arr[1], rhs.arr[1]),
+        op(self.arr[2], rhs.arr[2]),
+        op(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+
   /// Use `self` (a boolish value) to merge `a` and `b`.
   ///
   /// For each lane index, if the `self` lane is "true" then the `a` value will
