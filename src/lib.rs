@@ -46,14 +46,6 @@ pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
 pub(crate) use cfg_if::cfg_if;
 pub(crate) use core::{convert::*, fmt::*, ops::*};
 
-/// debug_assertions only: `file!():line!() expr: expr_value`, one per line
-#[macro_export]
-macro_rules! dump {
-  ($($n:expr),*) => (if cfg!(debug_assertions) {
-    $(println!(concat!("{}:{} ",stringify!($n),": {:?}"),file!(),line!(),$n);)*
-  })
-}
-
 pub mod arch;
 
 cfg_if! {
