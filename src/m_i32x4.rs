@@ -1,15 +1,15 @@
 use super::*;
 
 cfg_if! {
-  if #[cfg(target_feature="sse")] {
+  if #[cfg(target_feature="sse2")] {
     #[repr(C, align(16))]
     pub struct i32x4 {
-      sse: m128i
+      pub(crate) sse: m128i
     }
   } else {
     #[repr(C, align(16))]
     pub struct i32x4 {
-      arr: [i32; 4]
+      pub(crate) arr: [i32; 4]
     }
   }
 }
@@ -37,8 +37,8 @@ unsafe impl Pod for i32x4 {}
 
 #[allow(non_camel_case_types)]
 pub union ConstUnionHack_i32x4 {
-  narrow_arr: [i32; 4],
-  wide_thing: i32x4,
+  pub narrow_arr: [i32; 4],
+  pub wide_thing: i32x4,
 }
 #[test]
 #[allow(non_snake_case)]
@@ -58,6 +58,7 @@ fn declaration_tests_ConstUnionHack_i32x4() {
 /// all lanes of the constant declaration.
 ///
 /// ```rust
+/// use wide::*;
 /// const_i32_as_i32x4!(
 ///   /// The maximum `i32` value
 ///   pub MAX, core::i32::MAX
@@ -72,6 +73,7 @@ fn declaration_tests_ConstUnionHack_i32x4() {
 /// into the constant declaration (low lane to high lane).
 ///
 /// ```rust
+/// use wide::*;
 /// const_i32_as_i32x4!(
 ///   /// 1, 2, 3, 4
 ///   pub ONE_TWO_THREE_FOUR, 1, 2, 3, 4
@@ -129,4 +131,159 @@ impl i32x4 {
     /// 1
     pub ONE, 1_i32
   );
+}
+
+impl BitAnd for i32x4 {
+  type Output = Self;
+  fn bitand(self, rhs: Self) -> Self {
+    cfg_if! { if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.bitand(rhs.sse) }
+    } else {
+      Self { arr: [
+        self.arr[0].bitand(rhs.arr[0]),
+        self.arr[1].bitand(rhs.arr[1]),
+        self.arr[2].bitand(rhs.arr[2]),
+        self.arr[3].bitand(rhs.arr[3]),
+      ] }
+    }}
+  }
+}
+
+impl BitAndAssign for i32x4 {
+  fn bitand_assign(&mut self, rhs: Self) {
+    cfg_if! { if #[cfg(target_feature="sse2")] {
+      self.sse.bitand_assign(rhs.sse)
+    } else {
+      self.arr[0].bitand_assign(rhs.arr[0]);
+      self.arr[1].bitand_assign(rhs.arr[1]);
+      self.arr[2].bitand_assign(rhs.arr[2]);
+      self.arr[3].bitand_assign(rhs.arr[3]);
+    }}
+  }
+}
+
+impl i32x4 {
+  #[inline]
+  pub fn cmp_eq(self, rhs: Self) -> Self {
+    cfg_if! { if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.cmp_eq_i32(rhs.sse) }
+    } else {
+      let op = |a:i32, b:i32|{
+        if a == b {
+          -1
+        } else {
+          0
+        }
+      };
+      Self { arr: [
+        op(self.arr[0], rhs.arr[0]),
+        op(self.arr[1], rhs.arr[1]),
+        op(self.arr[2], rhs.arr[2]),
+        op(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+
+  #[inline]
+  pub fn cmp_gt(self, rhs: Self) -> Self {
+    cfg_if! { if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.cmp_gt_i32(rhs.sse) }
+    } else {
+      let op = |a:i32, b:i32|{
+        if a > b {
+          -1
+        } else {
+          0
+        }
+      };
+      Self { arr: [
+        op(self.arr[0], rhs.arr[0]),
+        op(self.arr[1], rhs.arr[1]),
+        op(self.arr[2], rhs.arr[2]),
+        op(self.arr[3], rhs.arr[3]),
+      ] }
+    }}
+  }
+}
+
+impl Not for i32x4 {
+  type Output = Self;
+
+  fn not(self) -> Self {
+    cfg_if! { if #[cfg(target_feature="sse2")] {
+      Self { sse: !self.sse }
+    } else {
+      Self { arr: [
+        !self.arr[0],
+        !self.arr[1],
+        !self.arr[2],
+        !self.arr[3],
+      ] }
+    }}
+  }
+}
+
+impl i32x4 {
+  #[inline(always)]
+  pub fn new(a: i32, b: i32, c: i32, d: i32) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      Self { sse: m128i::set_reverse_i32(a,b,c,d) }
+    } else {
+      Self { arr: [a,b,c,d] }
+    }}
+  }
+}
+
+impl From<i32> for i32x4 {
+  fn from(i: i32) -> Self {
+    Self::new(i, i, i, i)
+  }
+}
+
+impl Shl<i32> for i32x4 {
+  type Output = Self;
+  fn shl(self, rhs: i32) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.shift_left_i32(i32x4::from(rhs).sse) }
+    } else {
+      Self { arr: [
+        self.arr[0] << rhs,
+        self.arr[1] << rhs,
+        self.arr[2] << rhs,
+        self.arr[3] << rhs,
+      ] }
+    }}
+  }
+}
+
+impl BitXor for i32x4 {
+  type Output = Self;
+  fn bitxor(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.bitxor(rhs.sse) }
+    } else {
+      Self { arr: [
+        self.arr[0].bitxor(rhs[0]),
+        self.arr[1].bitxor(rhs[1]),
+        self.arr[2].bitxor(rhs[2]),
+        self.arr[3].bitxor(rhs[3]),
+      ] }
+    }}
+  }
+}
+
+impl Add for i32x4 {
+  type Output = Self;
+  fn add(self, rhs: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.add_i32(rhs.sse) }
+    } else {
+      Self { arr: [
+        self.arr[0].add(rhs[0]),
+        self.arr[1].add(rhs[1]),
+        self.arr[2].add(rhs[2]),
+        self.arr[3].add(rhs[3]),
+      ] }
+    }}
+  }
 }

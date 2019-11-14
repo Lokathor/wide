@@ -22,8 +22,8 @@ fn declaration_tests_f32x4() {
 
 #[allow(non_camel_case_types)]
 pub union ConstUnionHack_f32x4 {
-  narrow_arr: [f32; 4],
-  wide_thing: f32x4,
+  pub narrow_arr: [f32; 4],
+  pub wide_thing: f32x4,
 }
 #[test]
 #[allow(non_snake_case)]
@@ -43,6 +43,7 @@ fn declaration_tests_ConstUnionHack_f32x4() {
 /// all lanes of the constant declaration.
 ///
 /// ```rust
+/// use wide::*;
 /// const_f32_as_f32x4!(
 ///   /// Machine epsilon value for `f32`.
 ///   pub EPSILON, core::f32::EPSILON
@@ -57,6 +58,7 @@ fn declaration_tests_ConstUnionHack_f32x4() {
 /// into the constant declaration (low lane to high lane).
 ///
 /// ```rust
+/// use wide::*;
 /// const_f32_as_f32x4!(
 ///   /// 1, 2, 3, 4
 ///   pub ONE_TWO_THREE_FOUR, 1.0, 2.0, 3.0, 4.0
@@ -223,6 +225,11 @@ impl f32x4 {
   );
 
   const_f32_as_f32x4!(
+    /// -0.0
+    pub NEGATIVE_ZERO, -0.0
+  );
+
+  const_f32_as_f32x4!(
     /// 0.5
     pub HALF, 0.5
   );
@@ -242,46 +249,36 @@ impl f32x4 {
   #[inline(always)]
   pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
     cfg_if! {if #[cfg(target_feature="sse")] {
-      Self { sse: m128::set(a,b,c,d) }
+      Self { sse: m128::set_reverse(a,b,c,d) }
     } else {
       Self { arr: [a,b,c,d] }
     }}
   }
 
-  /// Use the mask to bitwise merge two values.
-  ///
-  /// It is expected that the mask will be a "boolish" value where each lane is
-  /// either all 1s or all 0s, but that's not actually required.
-  ///
-  /// The output will have the `tru` bit any place that `mask` has a 1, and use
-  /// the `fal` bit anywhere the mask has a 0.
-  ///
-  /// ```rust
-  /// use wide::f32x4;
-  /// let a = f32x4::new(1.0, 2.0, 3.0, 4.0);
-  /// let b = f32x4::from(2.5);
-  /// let mask = a.cmp_gt(b);
-  /// let merged = f32x4::merge(mask, f32x4::from(10.0), f32x4::from(2.0));
-  /// let merged_arr: [f32; 4] = unsafe { core::mem::transmute(merged) };
-  /// assert_eq!(merged_arr, [2.0, 2.0, 10.0, 10.0]);
-  /// ```
   #[inline]
-  pub fn merge(mask: Self, tru: Self, fal: Self) -> Self {
+  pub fn andnot(self, rhs: Self) -> Self {
     cfg_if! {if #[cfg(target_feature="sse")] {
-      Self { sse: tru.sse ^ ((tru.sse ^ fal.sse) & mask.sse) }
+      Self { sse: self.sse.andnot(rhs.sse) }
     } else {
-      let op = |maskf, af, bf| {
-        let ai: i32 = cast(af);
-        let bi: i32 = cast(bf);
-        let maski: i32 = cast(maskf);
-        cast::<i32, f32>(ai ^ ((ai ^ bi) & maski))
-      };
-      Self { arr: [
-        op(mask[0], tru.arr[0], fal.arr[0]),
-        op(mask[1], tru.arr[1], fal.arr[1]),
-        op(mask[2], tru.arr[2], fal.arr[2]),
-        op(mask[3], tru.arr[3], fal.arr[3]),
-      ] }
+      (!self) & rhs
+    }}
+  }
+
+  /// Use `self` (a boolish value) to merge `a` and `b`.
+  ///
+  /// For each lane index, if the `self` lane is "true" then the `a` value will
+  /// be used in the output, otherwise the `b` value will be used in the output.
+  ///
+  /// If `sse4.1` is enabled, then "true" _only_ checks the sign bit. With less
+  /// features enabled the entire bit pattern of the lane will matter. This is
+  /// not normally a problem, because the comparison methods naturally return
+  /// all 1s or all 0s anyway.
+  #[inline]
+  pub fn merge(self, a: Self, b: Self) -> Self {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      Self { sse: b.sse.blend_var(a.sse, self.sse) }
+    } else {
+      (self & a) | self.andnot(b)
     }}
   }
 }
@@ -561,7 +558,7 @@ impl f32x4 {
   /// use wide::f32x4;
   /// let a = f32x4::new(1.0, 2.0, 3.0, 4.0);
   /// let b = f32x4::from(2.5);
-  /// assert_eq!(a.cmp_lt(b).move_mask(), 0b1100);
+  /// assert_eq!(a.cmp_lt(b).move_mask(), 0b0011);
   /// ```
   #[inline]
   pub fn move_mask(self) -> i32 {
@@ -859,16 +856,8 @@ impl f32x4 {
 
   #[inline]
   pub fn cos(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-      use core::intrinsics::cosf32;
-      let a: [f32; 4] = cast(self);
-      cast(unsafe {
-        [cosf32(a[0]), cosf32(a[1]), cosf32(a[2]), cosf32(a[3])]
-      })
-    } else {
-      let a: [f32; 4] = cast(self);
-      cast([a[0].cos(), a[1].cos(), a[2].cos(), a[3].cos()])
-    }}
+    // TODO: check that once this inlines we don't pay the "calculate sin" costs.
+    self.sin_cos().1
   }
 
   #[inline]
@@ -950,18 +939,13 @@ impl f32x4 {
     }}
   }
 
+  /// Sine function.
+  ///
+  /// "We called it '[Sin](https://vignette.wikia.nocookie.net/finalfantasy/images/d/de/10sin-a.jpg)'."
   #[inline]
   pub fn sin(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-      use core::intrinsics::sinf32;
-      let a: [f32; 4] = cast(self);
-      cast(unsafe {
-        [sinf32(a[0]), sinf32(a[1]), sinf32(a[2]), sinf32(a[3])]
-      })
-    } else {
-      let a: [f32; 4] = cast(self);
-      cast([a[0].sin(), a[1].sin(), a[2].sin(), a[3].sin()])
-    }}
+    // TODO: check that once this inlines we don't pay the "calculate cos" costs.
+    self.sin_cos().0
   }
 
   #[inline]
@@ -989,30 +973,6 @@ impl f32x4 {
     } else {
       let a: [f32; 4] = cast(self);
       cast([a[0].trunc(), a[1].trunc(), a[2].trunc(), a[3].trunc()])
-    }}
-  }
-
-  #[inline]
-  pub fn copysign(self, b: Self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
-      use core::intrinsics::copysignf32;
-      let a: [f32; 4] = cast(self);
-      let b: [f32; 4] = cast(b);
-      cast(unsafe { [
-        copysignf32(a[0], b[0]),
-        copysignf32(a[1], b[1]),
-        copysignf32(a[2], b[2]),
-        copysignf32(a[3], b[3]),
-      ]})
-    } else {
-      let a: [f32; 4] = cast(self);
-      let b: [f32; 4] = cast(b);
-      cast([
-        a[0].copysign(b[0]),
-        a[1].copysign(b[1]),
-        a[2].copysign(b[2]),
-        a[3].copysign(b[3]),
-      ])
     }}
   }
 
@@ -1095,7 +1055,7 @@ impl f32x4 {
 
   /// Negated "mul_add", `c - (self * b)`.
   ///
-  /// Fused if `fma` feature is enabled, see [`mul_add`].
+  /// Fused if `fma` feature is enabled, see (mul_add)[f32x4::mul_add].
   pub fn negated_mul_add(self, b: Self, c: Self) -> Self {
     cfg_if! {if #[cfg(target_feature = "fma")] {
       Self { sse: self.sse.fnmadd(b.sse, c.sse) }
@@ -1144,6 +1104,66 @@ impl f32x4 {
       ])
     }}
   }
+
+  #[inline]
+  pub fn round_i32(self) -> i32x4 {
+    cfg_if! {if #[cfg(target_feature="sse")] {
+      i32x4 { sse: self.sse.round_i32() }
+    } else {
+      i32x4 { arr: [
+        self.arr[0] as i32,
+        self.arr[1] as i32,
+        self.arr[2] as i32,
+        self.arr[3] as i32,
+      ]}
+    }}
+  }
+
+  /// If it's some finite value.
+  ///
+  /// * True for normal, denormal, and zero.
+  /// * False for +/- INF, NaN
+  /// * boolish
+  #[allow(clippy::unreadable_literal)]
+  #[allow(bad_style)]
+  pub fn is_finite(self) -> f32x4 {
+    const EXPONENT_MASKu: u32 = 0xFF000000_u32;
+    const EXPONENT_MASKi: i32 = EXPONENT_MASKu as i32;
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      let t1 = self.sse.cast_m128i();
+      // TODO: use an immediate shift here?
+      let t2 = t1.shift_left_i32(m128i::splat_i32(1));
+      let t3 = !(t2 & m128i::splat_i32(EXPONENT_MASKi))
+        .cmp_eq_i32(m128i::splat_i32(EXPONENT_MASKi));
+      Self { sse: t3.cast_m128() }
+    } else {
+      let op |f: f32| {
+        let t1 = f.to_bits();
+        let t2 = t1 << 1;
+        let t3 = (t2 & EXPONENT_MASKu) != EXPONENT_MASKu;
+        if t3 {
+          f32::from_bits(u32::max_value())
+        } else {
+          0.0
+        }
+      };
+      Self { arr: [
+        op(self.arr[0]),
+        op(self.arr[1]),
+        op(self.arr[2]),
+        op(self.arr[3]),
+      ]}
+    }}
+  }
+
+  #[inline]
+  pub fn cast_i32x4(self) -> i32x4 {
+    cfg_if! {if #[cfg(target_feature="sse2")] {
+      i32x4 { sse: self.sse.cast_m128i() }
+    } else {
+      cast(self)
+    }}
+  }
 }
 
 // // //
@@ -1186,6 +1206,11 @@ impl f32x4 {
       a[2].to_radians(),
       a[3].to_radians(),
     ])
+  }
+
+  #[inline]
+  pub fn copysign(self, b: Self) -> Self {
+    self ^ (b & Self::NEGATIVE_ZERO)
   }
 
   // REQUIRES EXTERNAL MATH LIBS
@@ -1287,8 +1312,8 @@ impl f32x4 {
 
   #[inline]
   pub fn tan(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].tan(), a[1].tan(), a[2].tan(), a[3].tan()])
+    let (s, c) = self.sin_cos();
+    s / c
   }
 
   #[inline]
@@ -1321,11 +1346,6 @@ impl f32x4 {
     ])
   }
 
-  #[inline]
-  pub fn sin_cos(self) -> (Self, Self) {
-    (self.sin(), self.cos())
-  }
-
   /// calculates polynomial c2*x^2 + c1*x + c0
   ///
   /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L111
@@ -1335,19 +1355,21 @@ impl f32x4 {
     self2.mul_add(c2, self.mul_add(c1, c0))
   }
 
-  /// calculates polynomial c3*x^3 + c2*x^2 + c1*x + c0
-  ///
-  /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L120
-  #[inline]
-  fn polynomial_3(self, c0: Self, c1: Self, c2: Self, c3: Self) -> Self {
-    let self2 = self * self;
-    c3.mul_add(self, c2).mul_add(self2, c1.mul_add(self, c0))
-  }
+  // /// calculates polynomial c3*x^3 + c2*x^2 + c1*x + c0
+  // ///
+  // /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L120
+  // #[inline]
+  // fn polynomial_3(self, c0: Self, c1: Self, c2: Self, c3: Self) -> Self {
+  //   let self2 = self * self;
+  //   c3.mul_add(self, c2).mul_add(self2, c1.mul_add(self, c0))
+  // }
 
   #[allow(clippy::unreadable_literal)]
   #[allow(clippy::excessive_precision)]
+  #[allow(clippy::many_single_char_names)]
   #[allow(bad_style)]
-  pub fn s_c_t(xx: Self) -> (Self, Self, Self) {
+  // Note: NOT inline
+  pub fn sin_cos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
 
@@ -1363,19 +1385,45 @@ impl f32x4 {
     const_f32_as_f32x4!(P1cosf, -1.388731625493765E-3);
     const_f32_as_f32x4!(P2cosf, 2.443315711809948E-5);
 
-    let xa = xx.abs();
+    // TODO: check where we can reduce any casting operations.
 
-    let y = (xa * Self::TWO_PI).round();
-    let q = y.sse.round_i32();
+    let xa = self.abs();
 
+    // Find quadrant
+    let y = (xa * (f32x4::from(2.0) / Self::PI)).round();
+    let q: i32x4 = y.round_i32();
+
+    // Reduce by extended precision modular arithmetic
+    // x = ((xa - y * DP1F) - y * DP2F) - y * DP3F;
     let x = y.negated_mul_add(DP3F, y.negated_mul_add(DP2F, y.negated_mul_add(DP1F, xa)));
+
+    // Taylor expansion of sin and cos, valid for -pi/4 <= x <= pi/4
     let x2 = x * x;
-    let s = x2.polynomial_2(P0sinf, P1sinf, P2sinf) * (x * x2) + x;
-    let c = x2.polynomial_2(P0cosf, P1cosf, P2cosf) * (x2 * x2)
+    let mut s = x2.polynomial_2(P0sinf, P1sinf, P2sinf) * (x * x2) + x;
+    let mut c = x2.polynomial_2(P0cosf, P1cosf, P2cosf) * (x2 * x2)
       + Self::HALF.negated_mul_add(x2, Self::ONE);
 
-    // stop it rustfmt
-    unimplemented!();
+    // swap sin and cos if odd quadrant
+    let swap = !(q & i32x4::ONE).cmp_eq(i32x4::ZERO);
+
+    // "q big if overflow"
+    const_i32_as_i32x4!(BIG_THRESHOLD, 0x2000000);
+    let mut overflow: f32x4 = cast(q.cmp_gt(BIG_THRESHOLD));
+    overflow &= xa.is_finite();
+    s = f32x4::merge(overflow, f32x4::ZERO, s);
+    c = f32x4::merge(overflow, f32x4::ONE, c);
+
+    // calc sin
+    let mut sin1 = f32x4::merge(cast(swap), c, s);
+    let sign_sin: i32x4 = (q << 30) ^ self.cast_i32x4();
+    sin1 = sin1.copysign(cast(sign_sin));
+
+    // calc cos
+    let mut cos1 = f32x4::merge(cast(swap), s, c);
+    let sign_cos: i32x4 = ((q + i32x4::ONE) & i32x4::from(2)) << 30;
+    cos1 ^= cast::<i32x4, f32x4>(sign_cos);
+
+    (sin1, cos1)
   }
 }
 
@@ -1539,7 +1587,7 @@ impl Debug for f32x4 {
 
 impl Display for f32x4 {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "f32x4(")?;
+    write!(f, "[")?;
     Display::fmt(&self[0], f)?;
     write!(f, ", ")?;
     Display::fmt(&self[1], f)?;
@@ -1547,7 +1595,7 @@ impl Display for f32x4 {
     Display::fmt(&self[2], f)?;
     write!(f, ", ")?;
     Display::fmt(&self[3], f)?;
-    write!(f, ")")
+    write!(f, "]")
   }
 }
 
