@@ -275,7 +275,7 @@ impl f32x4 {
   /// all 1s or all 0s anyway.
   #[inline]
   pub fn merge(self, a: Self, b: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    cfg_if! {if #[cfg(target_feature="sse4.1")] {
       Self { sse: b.sse.blend_var(a.sse, self.sse) }
     } else {
       (self & a) | self.andnot(b)
