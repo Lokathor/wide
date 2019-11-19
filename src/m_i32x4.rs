@@ -288,7 +288,6 @@ impl Add for i32x4 {
   }
 }
 
-
 impl BitOr for i32x4 {
   type Output = Self;
   fn bitor(self, rhs: Self) -> Self {

@@ -1221,7 +1221,6 @@ impl f32x4 {
 
 // WIDE
 impl f32x4 {
-
   #[inline]
   pub fn copysign(self, b: Self) -> Self {
     self ^ (b & Self::NEGATIVE_ZERO)
@@ -1350,7 +1349,6 @@ impl f32x4 {
 
 // NOT WIDE
 impl f32x4 {
-
   #[inline]
   pub fn classify(self) -> [core::num::FpCategory; 4] {
     let a: [f32; 4] = cast(self);
