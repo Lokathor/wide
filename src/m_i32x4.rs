@@ -287,3 +287,33 @@ impl Add for i32x4 {
     }}
   }
 }
+
+
+impl BitOr for i32x4 {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self {
+    cfg_if! { if #[cfg(target_feature="sse2")] {
+      Self { sse: self.sse.bitor(rhs.sse) }
+    } else {
+      Self { arr: [
+        self.arr[0].bitor(rhs.arr[0]),
+        self.arr[1].bitor(rhs.arr[1]),
+        self.arr[2].bitor(rhs.arr[2]),
+        self.arr[3].bitor(rhs.arr[3]),
+      ] }
+    }}
+  }
+}
+
+impl BitOrAssign for i32x4 {
+  fn bitor_assign(&mut self, rhs: Self) {
+    cfg_if! { if #[cfg(target_feature="sse2")] {
+      self.sse.bitor_assign(rhs.sse)
+    } else {
+      self.arr[0].bitor_assign(rhs.arr[0]);
+      self.arr[1].bitor_assign(rhs.arr[1]);
+      self.arr[2].bitor_assign(rhs.arr[2]);
+      self.arr[3].bitor_assign(rhs.arr[3]);
+    }}
+  }
+}

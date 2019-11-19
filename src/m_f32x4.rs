@@ -1341,6 +1341,11 @@ impl f32x4 {
     );
     self * DEG_TO_RAD_RATIO
   }
+
+  #[inline]
+  pub fn fract(self) -> Self {
+    self - self.trunc()
+  }
 }
 
 // NOT WIDE
@@ -1355,12 +1360,6 @@ impl f32x4 {
       a[2].classify(),
       a[3].classify(),
     ]
-  }
-
-  #[inline]
-  pub fn fract(self) -> Self {
-    let a: [f32; 4] = cast(self);
-    cast([a[0].fract(), a[1].fract(), a[2].fract(), a[3].fract()])
   }
 
   #[inline]
