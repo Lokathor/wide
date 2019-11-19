@@ -48,3 +48,24 @@ fn f32x4_merge() {
   assert_eq!(combined[2], 1.0);
   assert_eq!(combined[3], 1.0);
 }
+
+#[test]
+fn f32x4_signum() {
+  let a = f32x4::new(0.0, 1.0, 2.0, core::f32::INFINITY).signum();
+  assert_eq!(a[0], 1.0);
+  assert_eq!(a[1], 1.0);
+  assert_eq!(a[2], 1.0);
+  assert_eq!(a[3], 1.0);
+
+  let b = f32x4::new(-0.0, -1.0, -2.0, core::f32::NEG_INFINITY).signum();
+  assert_eq!(b[0], -1.0);
+  assert_eq!(b[1], -1.0);
+  assert_eq!(b[2], -1.0);
+  assert_eq!(b[3], -1.0);
+
+  let b = f32x4::new(core::f32::NAN, -1.0, 2.0, core::f32::NEG_INFINITY).signum();
+  assert!(b[0].is_nan(), -1.0);
+  assert_eq!(b[1], -1.0);
+  assert_eq!(b[2], 1.0);
+  assert_eq!(b[3], -1.0);
+}
