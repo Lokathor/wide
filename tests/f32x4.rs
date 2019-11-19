@@ -3,6 +3,21 @@ use bytemuck::*;
 use wide::*;
 
 #[test]
+fn declaration_tests_f32x4() {
+  use core::mem::{align_of, size_of};
+  assert_eq!(size_of::<f32x4>(), 16);
+  assert_eq!(align_of::<f32x4>(), 16);
+}
+
+#[test]
+#[allow(non_snake_case)]
+fn declaration_tests_ConstUnionHack_f32x4() {
+  use core::mem::{align_of, size_of};
+  assert_eq!(size_of::<ConstUnionHack_f32x4>(), size_of::<f32x4>());
+  assert_eq!(align_of::<ConstUnionHack_f32x4>(), align_of::<f32x4>());
+}
+
+#[test]
 fn f32x4_new_order() {
   let f = f32x4::new(0.0, 1.0, 2.0, 3.0);
   assert_eq!(f[0], 0.0);

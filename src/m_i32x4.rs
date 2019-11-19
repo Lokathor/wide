@@ -13,12 +13,6 @@ cfg_if! {
     }
   }
 }
-#[test]
-fn declaration_tests_i32x4() {
-  use core::mem::{align_of, size_of};
-  assert_eq!(size_of::<i32x4>(), 16);
-  assert_eq!(align_of::<i32x4>(), 16);
-}
 impl Clone for i32x4 {
   #[inline(always)]
   fn clone(&self) -> Self {
@@ -36,16 +30,10 @@ unsafe impl Zeroable for i32x4 {}
 unsafe impl Pod for i32x4 {}
 
 #[allow(non_camel_case_types)]
+#[repr(C, align(16))]
 pub union ConstUnionHack_i32x4 {
   pub narrow_arr: [i32; 4],
   pub wide_thing: i32x4,
-}
-#[test]
-#[allow(non_snake_case)]
-fn declaration_tests_ConstUnionHack_i32x4() {
-  use core::mem::{align_of, size_of};
-  assert_eq!(size_of::<ConstUnionHack_i32x4>(), size_of::<i32x4>());
-  assert_eq!(align_of::<ConstUnionHack_i32x4>(), align_of::<i32x4>());
 }
 
 /// Declares an `i32x4` const identifier.
