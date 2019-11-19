@@ -1,4 +1,3 @@
-
 use wide::*;
 
 #[test]

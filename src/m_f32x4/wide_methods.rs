@@ -1,4 +1,3 @@
-
 use super::*;
 
 /// Wide Methods
@@ -670,5 +669,4 @@ impl f32x4 {
       cast([a[0].sqrt(), a[1].sqrt(), a[2].sqrt(), a[3].sqrt()])
     }}
   }
-
 }

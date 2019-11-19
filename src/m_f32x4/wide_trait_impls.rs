@@ -1,4 +1,3 @@
-
 use super::*;
 
 impl Clone for f32x4 {

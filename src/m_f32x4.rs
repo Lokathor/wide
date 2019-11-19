@@ -1,7 +1,7 @@
 use super::*;
 
-mod wide_trait_impls;
 mod wide_methods;
+mod wide_trait_impls;
 
 cfg_if! {
   if #[cfg(target_feature="sse")] {
@@ -215,13 +215,22 @@ impl f32x4 {
 
   /// All bits active.
   pub const ALL_BITS_ACTIVE: f32x4 = {
-    let cuh = ConstUnionHack_f32x4 { u: u128::max_value() };
+    let cuh = ConstUnionHack_f32x4 {
+      u: u128::max_value(),
+    };
     unsafe { cuh.wide_thing }
   };
 
   /// All bits active.
   pub const ALL_EXCEPT_SIGN: f32x4 = {
-    let cuh = ConstUnionHack_f32x4 { i32_arr: [i32::max_value(),i32::max_value(),i32::max_value(),i32::max_value()]  };
+    let cuh = ConstUnionHack_f32x4 {
+      i32_arr: [
+        i32::max_value(),
+        i32::max_value(),
+        i32::max_value(),
+        i32::max_value(),
+      ],
+    };
     unsafe { cuh.wide_thing }
   };
 
