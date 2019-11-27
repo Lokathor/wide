@@ -19,7 +19,7 @@ unsafe impl Pod for f32x4 {}
 impl From<f32> for f32x4 {
   #[inline]
   fn from(val: f32) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: m128::splat(val) }
     } else {
       Self::new(val,val,val,val)
@@ -31,7 +31,7 @@ impl Add for f32x4 {
   type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.add(rhs.sse) }
     } else {
       Self { arr: [
@@ -48,7 +48,7 @@ impl Add<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn add(self, rhs: &Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.add(rhs.sse) }
     } else {
       Self { arr: [
@@ -65,7 +65,7 @@ impl Div for f32x4 {
   type Output = Self;
   #[inline]
   fn div(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.div(rhs.sse) }
     } else {
       Self { arr: [
@@ -82,7 +82,7 @@ impl Div<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn div(self, rhs: &Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.div(rhs.sse) }
     } else {
       Self { arr: [
@@ -99,7 +99,7 @@ impl Mul for f32x4 {
   type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.mul(rhs.sse) }
     } else {
       Self { arr: [
@@ -116,7 +116,7 @@ impl Mul<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn mul(self, rhs: &Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.mul(rhs.sse) }
     } else {
       Self { arr: [
@@ -133,7 +133,7 @@ impl Sub for f32x4 {
   type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.sub(rhs.sse) }
     } else {
       Self { arr: [
@@ -150,7 +150,7 @@ impl Sub<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn sub(self, rhs: &Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.sub(rhs.sse) }
     } else {
       Self { arr: [
@@ -167,7 +167,7 @@ impl BitAnd for f32x4 {
   type Output = Self;
   #[inline]
   fn bitand(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.bitand(rhs.sse) }
     } else {
       Self { arr: [
@@ -192,7 +192,7 @@ impl BitOr for f32x4 {
   type Output = Self;
   #[inline]
   fn bitor(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.bitor(rhs.sse) }
     } else {
       Self { arr: [
@@ -217,7 +217,7 @@ impl BitXor for f32x4 {
   type Output = Self;
   #[inline]
   fn bitxor(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.bitxor(rhs.sse) }
     } else {
       Self { arr: [

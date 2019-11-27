@@ -4,7 +4,7 @@ use super::*;
 impl f32x4 {
   #[inline]
   pub fn andnot(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.andnot(rhs.sse) }
     } else {
       (!self) & rhs
@@ -12,7 +12,7 @@ impl f32x4 {
   }
 
   pub fn is_nan(self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       // yes it's weird, yes it's correct.
       Self { sse: self.sse.cmp_nan(self.sse) }
     } else {
@@ -33,7 +33,7 @@ impl f32x4 {
   }
 
   pub fn is_ordinary(self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       // yes it's weird, yes it's correct.
       Self { sse: self.sse.cmp_ordinary(self.sse) }
     } else {
@@ -64,7 +64,7 @@ impl f32x4 {
   /// all 1s or all 0s anyway.
   #[inline]
   pub fn merge(self, a: Self, b: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse4.1")] {
+    magic! {if #[cfg(target_feature="sse4.1")] {
       Self { sse: b.sse.blend_var(a.sse, self.sse) }
     } else {
       (self & a) | self.andnot(b)
@@ -79,7 +79,7 @@ impl f32x4 {
   /// ```
   #[inline]
   pub fn move_mask(self) -> i32 {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       self.sse.move_mask()
     } else {
       let mut out = 0_i32;
@@ -93,7 +93,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_eq(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_eq(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -113,7 +113,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_ge(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ge(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -133,7 +133,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_gt(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_gt(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -153,7 +153,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_le(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_le(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -173,7 +173,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_lt(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_lt(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -193,7 +193,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_nan(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nan(rhs.sse) }
     } else {
       let test = |a: f32, b: f32| {
@@ -213,7 +213,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_ne(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ne(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -234,7 +234,7 @@ impl f32x4 {
   /// If you call this method it sets off [Third Impact](https://evangelion.fandom.com/wiki/Third_Impact)
   #[inline]
   pub fn cmp_nge(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nge(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -254,7 +254,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_ngt(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ngt(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -274,7 +274,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_nle(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nle(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -294,7 +294,7 @@ impl f32x4 {
   }
   #[inline]
   pub fn cmp_nlt(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nlt(rhs.sse) }
     } else {
       let test = |a, b| {
@@ -315,7 +315,7 @@ impl f32x4 {
   #[inline]
   #[deprecated(since = "0.3.1", note = "use is_ordinary")]
   pub fn cmp_not_nan(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ordinary(rhs.sse) }
     } else {
       let test = |a: f32, b: f32| {
@@ -336,7 +336,7 @@ impl f32x4 {
 
   #[inline]
   pub fn ceil(self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse4.1")] {
+    magic! {if #[cfg(target_feature="sse4.1")] {
       Self { sse: self.sse.ceil() }
     } else if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.ceil_sse2() }
@@ -348,7 +348,7 @@ impl f32x4 {
 
   #[inline]
   pub fn floor(self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse4.1")] {
+    magic! {if #[cfg(target_feature="sse4.1")] {
       Self { sse: self.sse.floor() }
     } else if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.floor_sse2() }
@@ -371,7 +371,7 @@ impl f32x4 {
 
   #[inline]
   pub fn round(self) -> Self {
-    cfg_if! {if #[cfg(target_feature = "sse4.1")] {
+    magic! {if #[cfg(target_feature = "sse4.1")] {
       // we sometimes have a direct round instruction
       Self { sse: self.sse.round_nearest() }
     } else if #[cfg(target_feature="sse2")] {
@@ -411,7 +411,7 @@ impl f32x4 {
   /// for info on how to enable CPU features if you haven't done that before.
   #[inline]
   pub fn mul_add(self, b: Self, c: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature = "fma")] {
+    magic! {if #[cfg(target_feature = "fma")] {
       Self { sse: self.sse.fmadd(b.sse, c.sse) }
     } else {
       (self * b) + c
@@ -422,7 +422,7 @@ impl f32x4 {
   ///
   /// Fused if `fma` feature is enabled, see (mul_add)[f32x4::mul_add].
   pub fn negated_mul_add(self, b: Self, c: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature = "fma")] {
+    magic! {if #[cfg(target_feature = "fma")] {
       Self { sse: self.sse.fnmadd(b.sse, c.sse) }
     } else {
       c - (self * b)
@@ -431,7 +431,7 @@ impl f32x4 {
 
   #[inline]
   pub fn recip(self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.reciprocal() }
     } else {
       f32x4::from(1.0) / self
@@ -440,7 +440,7 @@ impl f32x4 {
 
   #[inline]
   pub fn max(self, b: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.max(b.sse) }
     } else {
       let a: [f32; 4] = cast(self);
@@ -456,7 +456,7 @@ impl f32x4 {
 
   #[inline]
   pub fn min(self, b: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.min(b.sse) }
     } else {
       let a: [f32; 4] = cast(self);
@@ -472,7 +472,7 @@ impl f32x4 {
 
   #[inline]
   pub fn round_i32(self) -> i32x4 {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       i32x4 { sse: self.sse.round_i32() }
     } else {
       i32x4 { arr: [
@@ -494,7 +494,7 @@ impl f32x4 {
   pub fn is_finite(self) -> f32x4 {
     const EXPONENT_MASKu: u32 = 0xFF000000_u32;
     const EXPONENT_MASKi: i32 = EXPONENT_MASKu as i32;
-    cfg_if! {if #[cfg(target_feature="sse2")] {
+    magic! {if #[cfg(target_feature="sse2")] {
       let t1 = self.sse.cast_m128i();
       // TODO: use an immediate shift here?
       let t2 = t1.shift_left_i32(m128i::splat_i32(1));
@@ -523,7 +523,7 @@ impl f32x4 {
 
   #[inline]
   pub fn cast_i32x4(self) -> i32x4 {
-    cfg_if! {if #[cfg(target_feature="sse2")] {
+    magic! {if #[cfg(target_feature="sse2")] {
       i32x4 { sse: self.sse.cast_m128i() }
     } else {
       cast(self)
@@ -656,7 +656,7 @@ impl f32x4 {
 
   #[inline]
   pub fn sqrt(self) -> Self {
-    cfg_if! { if #[cfg(target_feature = "sse")] {
+    magic! { if #[cfg(target_feature = "sse")] {
       Self { sse: self.sse.sqrt() }
     } else if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::sqrtf32;

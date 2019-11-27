@@ -23,8 +23,7 @@ default = []
 always_use_stable = []
 
 [dependencies]
-cfg-if = "^0.1.10"
-bytemuck = "0.1"
+bytemuck = "1"
 
 # TODO: serde support
 
