@@ -1,4 +1,4 @@
-[![License:BlueOak-1.0.0](https://img.shields.io/badge/License-BlueOak_1.0.0-brightgreen.svg)](https://blueoakcouncil.org/license/1.0.0)
+[![License:Zlib](https://img.shields.io/badge/License-Zlib-brightgreen.svg)](https://opensource.org/licenses/Zlib)
 ![Minimum Rust Version](https://img.shields.io/badge/Min%20Rust-1.38-green.svg)
 [![travis.ci](https://travis-ci.org/Lokathor/wide.svg?branch=master)](https://travis-ci.org/Lokathor/wide)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/33t3nhj1rplo7t1x/branch/master?svg=true)](https://ci.appveyor.com/project/Lokathor/wide/branch/master)
