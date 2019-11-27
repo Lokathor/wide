@@ -88,7 +88,7 @@ macro_rules! magic {
   ) => {
     #[cfg(all( $($m,)* not(any($($not),*)) ))]
     magic!{ @__identity $($tokens)* }
-    
+
     magic!{
       @__forests [ $($not,)* $($m,)* ] ;
       $($rest)*
