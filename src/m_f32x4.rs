@@ -3,7 +3,7 @@ use super::*;
 mod wide_methods;
 mod wide_trait_impls;
 
-cfg_if! {
+magic! {
   if #[cfg(target_feature="sse")] {
     #[repr(C, align(16))]
     pub struct f32x4 {
@@ -268,7 +268,7 @@ impl f32x4 {
 impl f32x4 {
   #[inline(always)]
   pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       Self { sse: m128::set_reverse(a,b,c,d) }
     } else {
       Self { arr: [a,b,c,d] }
@@ -280,7 +280,7 @@ impl Rem for f32x4 {
   type Output = Self;
   #[inline]
   fn rem(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
       let arr2: [f32; 4] = cast(rhs.sse);
       Self { sse: cast([
@@ -304,7 +304,7 @@ impl Rem<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
   fn rem(self, rhs: &Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse")] {
+    magic! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
       let arr2: [f32; 4] = cast(rhs.sse);
       Self { sse: cast([
@@ -327,7 +327,7 @@ impl Rem<&'_ f32x4> for f32x4 {
 impl f32x4 {
   #[inline]
   pub fn exp2(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::exp2f32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -341,7 +341,7 @@ impl f32x4 {
 
   #[inline]
   pub fn exp(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::expf32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -355,7 +355,7 @@ impl f32x4 {
 
   #[inline]
   pub fn log10(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::log10f32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -369,7 +369,7 @@ impl f32x4 {
 
   #[inline]
   pub fn log2(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::log2f32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -383,7 +383,7 @@ impl f32x4 {
 
   #[inline]
   pub fn trunc(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::truncf32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -397,7 +397,7 @@ impl f32x4 {
 
   #[inline]
   pub fn ln(self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::logf32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -411,7 +411,7 @@ impl f32x4 {
 
   #[inline]
   pub fn powf(self, b: Self) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::powf32;
       let a: [f32; 4] = cast(self);
       let b: [f32; 4] = cast(b);
@@ -435,7 +435,7 @@ impl f32x4 {
 
   #[inline]
   pub fn powi(self, b: [i32; 4]) -> Self {
-    cfg_if! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::powif32;
       let a: [f32; 4] = cast(self);
       cast(unsafe { [

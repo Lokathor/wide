@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["simd", "wide", "lokathor"]
 categories = ["data-structures", "hardware-support"]
 edition = "2018"
-license = "BlueOak-1.0.0"
+license = "Zlib"
 
 [package.metadata.docs.rs]
 rustc-args = ["-Ctarget-cpu=native"]
@@ -23,8 +23,7 @@ default = []
 always_use_stable = []
 
 [dependencies]
-cfg-if = "^0.1.10"
-bytemuck = "0.1"
+bytemuck = "1"
 
 # TODO: serde support
 

@@ -43,12 +43,68 @@
 //! just said "no ETA". So I'm not gonna wait around for `packed_simd`.
 
 pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
-pub(crate) use cfg_if::cfg_if;
 pub(crate) use core::{convert::*, fmt::*, ops::*};
+
+/// Does all our conditional compilation selection.
+macro_rules! magic {
+  (
+    $(if #[cfg($($test:meta),*)] {
+      $($if_tokens:tt)*
+    })else* else {
+      $($else_tokens:tt)*
+    }
+  ) => {
+    magic!{
+      @__forests [ ] ;
+      $( [ {$($test),*} {$($if_tokens)*} ], )*
+      [ { } {$($else_tokens)*} ],
+    }
+  };
+
+  (
+    if #[cfg($($if_meta:meta),*)] {
+      $($if_tokens:tt)*
+    } $(else if #[cfg($($else_meta:meta),*)] {
+      $($else_tokens:tt)*
+    })*
+  ) => {
+    magic!{
+      @__forests [ ] ;
+      [ {$($if_meta),*} {$($if_tokens)*} ],
+      $( [ {$($else_meta),*} {$($else_tokens)*} ], )*
+    }
+  };
+
+  (
+    @__forests [ $($not:meta,)* ] ;
+  ) => {
+    /* halt expansion */
+  };
+
+  (
+    @__forests [ $($not:meta,)* ] ;
+    [ { $($m:meta),* } { $($tokens:tt)* } ],
+    $($rest:tt)*
+  ) => {
+    #[cfg(all( $($m,)* not(any($($not),*)) ))]
+    magic!{ @__identity $($tokens)* }
+
+    magic!{
+      @__forests [ $($not,)* $($m,)* ] ;
+      $($rest)*
+    }
+  };
+
+  (
+    @__identity $($tokens:tt)*
+  ) => {
+    $($tokens)*
+  };
+}
 
 pub mod arch;
 
-cfg_if! {
+magic! {
   if #[cfg(all(target_arch="x86", target_feature="sse"))] {
     pub(crate) use arch::x86::{m128, m128i};
   } else if #[cfg(all(target_arch="x86_64", target_feature="sse"))] {

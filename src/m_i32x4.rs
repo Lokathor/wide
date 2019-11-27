@@ -1,6 +1,6 @@
 use super::*;
 
-cfg_if! {
+magic! {
   if #[cfg(target_feature="sse2")] {
     #[repr(C, align(16))]
     pub struct i32x4 {
@@ -124,7 +124,7 @@ impl i32x4 {
 impl BitAnd for i32x4 {
   type Output = Self;
   fn bitand(self, rhs: Self) -> Self {
-    cfg_if! { if #[cfg(target_feature="sse2")] {
+    magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.bitand(rhs.sse) }
     } else {
       Self { arr: [
@@ -139,7 +139,7 @@ impl BitAnd for i32x4 {
 
 impl BitAndAssign for i32x4 {
   fn bitand_assign(&mut self, rhs: Self) {
-    cfg_if! { if #[cfg(target_feature="sse2")] {
+    magic! { if #[cfg(target_feature="sse2")] {
       self.sse.bitand_assign(rhs.sse)
     } else {
       self.arr[0].bitand_assign(rhs.arr[0]);
@@ -153,7 +153,7 @@ impl BitAndAssign for i32x4 {
 impl i32x4 {
   #[inline]
   pub fn cmp_eq(self, rhs: Self) -> Self {
-    cfg_if! { if #[cfg(target_feature="sse2")] {
+    magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.cmp_eq_i32(rhs.sse) }
     } else {
       let op = |a:i32, b:i32|{
@@ -174,7 +174,7 @@ impl i32x4 {
 
   #[inline]
   pub fn cmp_gt(self, rhs: Self) -> Self {
-    cfg_if! { if #[cfg(target_feature="sse2")] {
+    magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.cmp_gt_i32(rhs.sse) }
     } else {
       let op = |a:i32, b:i32|{
@@ -198,7 +198,7 @@ impl Not for i32x4 {
   type Output = Self;
 
   fn not(self) -> Self {
-    cfg_if! { if #[cfg(target_feature="sse2")] {
+    magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: !self.sse }
     } else {
       Self { arr: [
@@ -214,7 +214,7 @@ impl Not for i32x4 {
 impl i32x4 {
   #[inline(always)]
   pub fn new(a: i32, b: i32, c: i32, d: i32) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse2")] {
+    magic! {if #[cfg(target_feature="sse2")] {
       Self { sse: m128i::set_reverse_i32(a,b,c,d) }
     } else {
       Self { arr: [a,b,c,d] }
@@ -231,7 +231,7 @@ impl From<i32> for i32x4 {
 impl Shl<i32> for i32x4 {
   type Output = Self;
   fn shl(self, rhs: i32) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse2")] {
+    magic! {if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.shift_left_i32(i32x4::from(rhs).sse) }
     } else {
       Self { arr: [
@@ -247,7 +247,7 @@ impl Shl<i32> for i32x4 {
 impl BitXor for i32x4 {
   type Output = Self;
   fn bitxor(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse2")] {
+    magic! {if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.bitxor(rhs.sse) }
     } else {
       Self { arr: [
@@ -263,7 +263,7 @@ impl BitXor for i32x4 {
 impl Add for i32x4 {
   type Output = Self;
   fn add(self, rhs: Self) -> Self {
-    cfg_if! {if #[cfg(target_feature="sse2")] {
+    magic! {if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.add_i32(rhs.sse) }
     } else {
       Self { arr: [
@@ -279,7 +279,7 @@ impl Add for i32x4 {
 impl BitOr for i32x4 {
   type Output = Self;
   fn bitor(self, rhs: Self) -> Self {
-    cfg_if! { if #[cfg(target_feature="sse2")] {
+    magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.bitor(rhs.sse) }
     } else {
       Self { arr: [
@@ -294,7 +294,7 @@ impl BitOr for i32x4 {
 
 impl BitOrAssign for i32x4 {
   fn bitor_assign(&mut self, rhs: Self) {
-    cfg_if! { if #[cfg(target_feature="sse2")] {
+    magic! { if #[cfg(target_feature="sse2")] {
       self.sse.bitor_assign(rhs.sse)
     } else {
       self.arr[0].bitor_assign(rhs.arr[0]);
