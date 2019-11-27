@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["simd", "wide", "lokathor"]
 categories = ["data-structures", "hardware-support"]
 edition = "2018"
-license = "BlueOak-1.0.0"
+license = "Zlib"
 
 [package.metadata.docs.rs]
 rustc-args = ["-Ctarget-cpu=native"]
