@@ -324,6 +324,7 @@ impl Rem<&'_ f32x4> for f32x4 {
 
 impl f32x4 {
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn exp2(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::exp2f32;
@@ -338,6 +339,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn exp(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::expf32;
@@ -352,6 +354,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn log10(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::log10f32;
@@ -366,6 +369,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn log2(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::log2f32;
@@ -381,7 +385,17 @@ impl f32x4 {
 
   #[inline]
   pub fn trunc(self) -> Self {
-    magic! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! { if #[cfg(target_feature = "sse4.1")] {
+      Self { sse: self.sse.truncate() }
+    } else if #[cfg(target_feature = "sse2")] {
+      let mut temp = self.sse.truncate_i32().round_f32();
+      temp |= self & f32x4::NEGATIVE_ZERO;
+      Self { sse: f32x4::merge(
+        temp.cmp_ne(f32x4::NEGATIVE_ZERO),
+        temp,
+        self
+      ) }
+    } else if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::truncf32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -394,6 +408,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn ln(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::logf32;
@@ -408,6 +423,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn powf(self, b: Self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::powf32;
@@ -432,6 +448,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn powi(self, b: [i32; 4]) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::powif32;
