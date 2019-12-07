@@ -645,7 +645,8 @@ impl m128 {
 
   /// Lanewise approximate reciprocal.
   ///
-  /// The maximum relative error for this approximation is less than 1.5*2.0e-12.
+  /// The maximum relative error for this approximation is less than
+  /// 1.5*2.0e-12.
   #[inline(always)]
   pub fn reciprocal(self) -> Self {
     Self(unsafe { _mm_rcp_ps(self.0) })
@@ -653,7 +654,8 @@ impl m128 {
 
   /// Lane 0 approximate reciprocal, other lanes are `self`.
   ///
-  /// The maximum relative error for this approximation is less than 1.5*2.0e-12.
+  /// The maximum relative error for this approximation is less than
+  /// 1.5*2.0e-12.
   #[inline(always)]
   pub fn reciprocal0(self) -> Self {
     Self(unsafe { _mm_rcp_ss(self.0) })
@@ -661,7 +663,8 @@ impl m128 {
 
   /// Lanewise approximate reciprocal of the square root.
   ///
-  /// The maximum relative error for this approximation is less than 1.5*2.0e-12.
+  /// The maximum relative error for this approximation is less than
+  /// 1.5*2.0e-12.
   #[inline(always)]
   pub fn reciprocal_sqrt(self) -> Self {
     Self(unsafe { _mm_rsqrt_ps(self.0) })
@@ -669,7 +672,8 @@ impl m128 {
 
   /// Lane 0 approximate reciprocal of the square root, other lanes are `self`.
   ///
-  /// The maximum relative error for this approximation is less than 1.5*2.0e-12.
+  /// The maximum relative error for this approximation is less than
+  /// 1.5*2.0e-12.
   #[inline(always)]
   pub fn reciprocal_sqrt0(self) -> Self {
     Self(unsafe { _mm_rsqrt_ss(self.0) })

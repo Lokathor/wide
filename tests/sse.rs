@@ -85,10 +85,7 @@ fn m128_andnot() {
 #[test]
 fn m128_cmp_eq() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, false), (5.0, true), (6.0, false)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, false), (5.0, true), (6.0, false)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_eq(b));
@@ -103,10 +100,7 @@ fn m128_cmp_eq() {
 #[test]
 fn m128_cmp_eq0() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, false), (5.0, true), (6.0, false)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, false), (5.0, true), (6.0, false)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_eq0(b));
@@ -151,10 +145,7 @@ fn m128_cmp_ge0() {
 #[test]
 fn m128_cmp_gt() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_gt(b));
@@ -169,10 +160,7 @@ fn m128_cmp_gt() {
 #[test]
 fn m128_cmp_gt0() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_gt0(b));
@@ -217,10 +205,7 @@ fn m128_cmp_le0() {
 #[test]
 fn m128_cmp_lt() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_lt(b));
@@ -235,10 +220,7 @@ fn m128_cmp_lt() {
 #[test]
 fn m128_cmp_lt0() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_lt0(b));
@@ -283,10 +265,7 @@ fn m128_cmp_ne0() {
 #[test]
 fn m128_cmp_nge() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_nge(b));
@@ -301,10 +280,7 @@ fn m128_cmp_nge() {
 #[test]
 fn m128_cmp_nge0() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, true), (5.0, false), (6.0, false)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_nge0(b));
@@ -349,10 +325,7 @@ fn m128_cmp_ngt0() {
 #[test]
 fn m128_cmp_nle() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_nle(b));
@@ -367,10 +340,7 @@ fn m128_cmp_nle() {
 #[test]
 fn m128_cmp_nle0() {
   let max = core::u32::MAX;
-  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)]
-    .iter()
-    .copied()
-  {
+  for (f, t) in [(4.0_f32, false), (5.0, false), (6.0, true)].iter().copied() {
     let a: m128 = cast([f, f, f, f]);
     let b: m128 = cast([5.0_f32, 5.0, 5.0, 5.0]);
     let out: [u32; 4] = cast(a.cmp_nle0(b));
@@ -659,7 +629,8 @@ fn m128_load_splat() {
   let floats = Align16([5.0_f32, 6.0, 7.0, 8.0]);
   let m: m128 = m128::load_splat(&floats.0[1]);
   let m_bits: [u32; 4] = cast(m);
-  let float_bits_x4: [u32; 4] = cast([floats.0[1], floats.0[1], floats.0[1], floats.0[1]]);
+  let float_bits_x4: [u32; 4] =
+    cast([floats.0[1], floats.0[1], floats.0[1], floats.0[1]]);
   assert_eq!(m_bits, float_bits_x4);
 }
 

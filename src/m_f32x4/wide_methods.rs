@@ -365,7 +365,8 @@ impl f32x4 {
 
   #[inline]
   pub fn cos(self) -> Self {
-    // TODO: check that once this inlines we don't pay the "calculate sin" costs.
+    // TODO: check that once this inlines we don't pay the "calculate sin"
+    // costs.
     self.sin_cos().1
   }
 
@@ -397,7 +398,8 @@ impl f32x4 {
   /// "We called it '[Sin](https://vignette.wikia.nocookie.net/finalfantasy/images/d/de/10sin-a.jpg)'."
   #[inline]
   pub fn sin(self) -> Self {
-    // TODO: check that once this inlines we don't pay the "calculate cos" costs.
+    // TODO: check that once this inlines we don't pay the "calculate cos"
+    // costs.
     self.sin_cos().0
   }
 
@@ -600,7 +602,10 @@ impl f32x4 {
 
     // Reduce by extended precision modular arithmetic
     // x = ((xa - y * DP1F) - y * DP2F) - y * DP3F;
-    let x = y.negated_mul_add(DP3F, y.negated_mul_add(DP2F, y.negated_mul_add(DP1F, xa)));
+    let x = y.negated_mul_add(
+      DP3F,
+      y.negated_mul_add(DP2F, y.negated_mul_add(DP1F, xa)),
+    );
 
     // Taylor expansion of sin and cos, valid for -pi/4 <= x <= pi/4
     let x2 = x * x;

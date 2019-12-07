@@ -49,7 +49,9 @@ impl m128 {
   }
 
   pub fn round_nearest(self) -> Self {
-    Self(unsafe { _mm_round_ps(self.0, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC) })
+    Self(unsafe {
+      _mm_round_ps(self.0, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)
+    })
   }
 }
 

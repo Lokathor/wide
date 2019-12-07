@@ -40,7 +40,8 @@ impl m128 {
     m128i(unsafe { _mm_castps_si128(self.0) })
   }
 
-  /// `[non-intrinsic]` Lanewise "ceiling" operation (round to positive infinity).
+  /// `[non-intrinsic]` Lanewise "ceiling" operation (round to positive
+  /// infinity).
   ///
   /// This is NOT the "ceil" intrinsic. Instead, it's a "software" version of
   /// the ceiling operation using only `sse2` operations. You should prefer the
@@ -55,8 +56,10 @@ impl m128 {
 
     // clear any sign bits, then check which lanes are under the magic threshold
     // where the simple "truncate and round back" trick works.
-    let signless: m128i = self.cast_m128i() & m128i::splat_i32(i32::max_value());
-    let under_threshold: m128i = signless.cmp_lt_i32(m128i::splat_i32(THRESHOLD));
+    let signless: m128i =
+      self.cast_m128i() & m128i::splat_i32(i32::max_value());
+    let under_threshold: m128i =
+      signless.cmp_lt_i32(m128i::splat_i32(THRESHOLD));
 
     // truncate, round back, check for changes.
     let truncated: m128i = self.truncate_i32();
@@ -87,8 +90,10 @@ impl m128 {
     // this value or more is already a whole number.
     const THRESHOLD: i32 = 0x4b00_0000;
 
-    let signless: m128i = self.cast_m128i() & m128i::splat_i32(i32::max_value());
-    let under_threshold: m128i = signless.cmp_lt_i32(m128i::splat_i32(THRESHOLD));
+    let signless: m128i =
+      self.cast_m128i() & m128i::splat_i32(i32::max_value());
+    let under_threshold: m128i =
+      signless.cmp_lt_i32(m128i::splat_i32(THRESHOLD));
 
     let truncated: m128i = self.truncate_i32();
     let float_again: Self = truncated.round_f32();
@@ -358,11 +363,7 @@ impl core::fmt::Binary for m128i {
       Some(4) => {
         let a: [u32; 4] = cast(self.0);
         if f.alternate() {
-          write!(
-            f,
-            "m128i({:#b}, {:#b}, {:#b}, {:#b})",
-            a[0], a[1], a[2], a[3]
-          )
+          write!(f, "m128i({:#b}, {:#b}, {:#b}, {:#b})", a[0], a[1], a[2], a[3])
         } else {
           write!(f, "m128i({:b}, {:b}, {:b}, {:b})", a[0], a[1], a[2], a[3])
         }
@@ -426,11 +427,7 @@ impl core::fmt::LowerHex for m128i {
       Some(4) => {
         let a: [u32; 4] = cast(self.0);
         if f.alternate() {
-          write!(
-            f,
-            "m128i({:#x}, {:#x}, {:#x}, {:#x})",
-            a[0], a[1], a[2], a[3]
-          )
+          write!(f, "m128i({:#x}, {:#x}, {:#x}, {:#x})", a[0], a[1], a[2], a[3])
         } else {
           write!(f, "m128i({:x}, {:x}, {:x}, {:x})", a[0], a[1], a[2], a[3])
         }
@@ -494,11 +491,7 @@ impl core::fmt::Octal for m128i {
       Some(4) => {
         let a: [u32; 4] = cast(self.0);
         if f.alternate() {
-          write!(
-            f,
-            "m128i({:#o}, {:#o}, {:#o}, {:#o})",
-            a[0], a[1], a[2], a[3]
-          )
+          write!(f, "m128i({:#o}, {:#o}, {:#o}, {:#o})", a[0], a[1], a[2], a[3])
         } else {
           write!(f, "m128i({:o}, {:o}, {:o}, {:o})", a[0], a[1], a[2], a[3])
         }
@@ -562,11 +555,7 @@ impl core::fmt::UpperHex for m128i {
       Some(4) => {
         let a: [u32; 4] = cast(self.0);
         if f.alternate() {
-          write!(
-            f,
-            "m128i({:#X}, {:#X}, {:#X}, {:#X})",
-            a[0], a[1], a[2], a[3]
-          )
+          write!(f, "m128i({:#X}, {:#X}, {:#X}, {:#X})", a[0], a[1], a[2], a[3])
         } else {
           write!(f, "m128i({:X}, {:X}, {:X}, {:X})", a[0], a[1], a[2], a[3])
         }
@@ -955,7 +944,9 @@ impl m128i {
     o: i8,
     p: i8,
   ) -> Self {
-    Self(unsafe { _mm_set_epi8(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) })
+    Self(unsafe {
+      _mm_set_epi8(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p)
+    })
   }
 
   /// Sets the `i8` values together in reverse order.
@@ -980,14 +971,25 @@ impl m128i {
     o: i8,
     p: i8,
   ) -> Self {
-    Self(unsafe { _mm_setr_epi8(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) })
+    Self(unsafe {
+      _mm_setr_epi8(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p)
+    })
   }
 
   /// Sets the `i16` values together in standard order.
   #[allow(clippy::too_many_arguments)]
   #[allow(clippy::many_single_char_names)]
   #[inline(always)]
-  pub fn set_i16(a: i16, b: i16, c: i16, d: i16, e: i16, f: i16, g: i16, h: i16) -> Self {
+  pub fn set_i16(
+    a: i16,
+    b: i16,
+    c: i16,
+    d: i16,
+    e: i16,
+    f: i16,
+    g: i16,
+    h: i16,
+  ) -> Self {
     Self(unsafe { _mm_set_epi16(a, b, c, d, e, f, g, h) })
   }
 
@@ -995,7 +997,16 @@ impl m128i {
   #[allow(clippy::too_many_arguments)]
   #[allow(clippy::many_single_char_names)]
   #[inline(always)]
-  pub fn set_reverse_i16(a: i16, b: i16, c: i16, d: i16, e: i16, f: i16, g: i16, h: i16) -> Self {
+  pub fn set_reverse_i16(
+    a: i16,
+    b: i16,
+    c: i16,
+    d: i16,
+    e: i16,
+    f: i16,
+    g: i16,
+    h: i16,
+  ) -> Self {
     Self(unsafe { _mm_setr_epi16(a, b, c, d, e, f, g, h) })
   }
 
@@ -1707,7 +1718,8 @@ impl m128d {
     Self(unsafe { _mm_cvtss_sd(self.0, rhs.0) })
   }
 
-  /// Truncate the lanes to `i32` and place as the two lower lanes of an [`m128i`]
+  /// Truncate the lanes to `i32` and place as the two lower lanes of an
+  /// [`m128i`]
   #[inline(always)]
   pub fn truncate_i32x4(self) -> m128i {
     m128i(unsafe { _mm_cvttpd_epi32(self.0) })

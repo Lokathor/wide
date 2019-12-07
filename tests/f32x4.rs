@@ -78,7 +78,8 @@ fn f32x4_signum() {
   assert_eq!(b[2], -1.0);
   assert_eq!(b[3], -1.0);
 
-  let b = f32x4::new(core::f32::NAN, -1.0, 2.0, core::f32::NEG_INFINITY).signum();
+  let b =
+    f32x4::new(core::f32::NAN, -1.0, 2.0, core::f32::NEG_INFINITY).signum();
   assert!(b[0].is_nan(), -1.0);
   assert_eq!(b[1], -1.0);
   assert_eq!(b[2], 1.0);

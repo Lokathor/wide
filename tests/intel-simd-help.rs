@@ -2,7 +2,6 @@
 
 //!
 //! Module for test helpers common to all Intel SIMD testing.
-//!
 
 #[cfg(target_arch = "x86")]
 pub use core::arch::x86::*;

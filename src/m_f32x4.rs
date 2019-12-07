@@ -215,9 +215,7 @@ impl f32x4 {
 
   /// All bits active.
   pub const ALL_BITS_ACTIVE: f32x4 = {
-    let cuh = ConstUnionHack_f32x4 {
-      u: u128::max_value(),
-    };
+    let cuh = ConstUnionHack_f32x4 { u: u128::max_value() };
     unsafe { cuh.wide_thing }
   };
 
@@ -458,12 +456,7 @@ impl f32x4 {
   #[inline]
   pub fn classify(self) -> [core::num::FpCategory; 4] {
     let a: [f32; 4] = cast(self);
-    [
-      a[0].classify(),
-      a[1].classify(),
-      a[2].classify(),
-      a[3].classify(),
-    ]
+    [a[0].classify(), a[1].classify(), a[2].classify(), a[3].classify()]
   }
 
   #[inline]
@@ -530,12 +523,7 @@ impl f32x4 {
   pub fn log(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
-    cast([
-      a[0].log(b[0]),
-      a[1].log(b[1]),
-      a[2].log(b[2]),
-      a[3].log(b[3]),
-    ])
+    cast([a[0].log(b[0]), a[1].log(b[1]), a[2].log(b[2]), a[3].log(b[3])])
   }
 
   #[inline]

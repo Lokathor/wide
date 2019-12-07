@@ -1,4 +1,7 @@
-#![cfg(all(feature = "serde", any(target_arch = "x86", target_arch = "x86_64")))]
+#![cfg(all(
+  feature = "serde",
+  any(target_arch = "x86", target_arch = "x86_64")
+))]
 
 use lokacore::*;
 

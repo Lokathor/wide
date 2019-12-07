@@ -9,7 +9,8 @@ use intel_simd_help::*;
 fn m128i_blend_var_i8() {
   let ai: m128i = cast([5_i8, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]);
   let bi: m128i = cast([7_i8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]);
-  let mask: m128i = cast([0_i8, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1]);
+  let mask: m128i =
+    cast([0_i8, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1]);
   let out: [i8; 16] = cast(ai.blend_var_i8(bi, mask));
   assert_eq!(out, [5, 5, 7, 7, 5, 5, 7, 7, 5, 5, 7, 7, 5, 5, 7, 7]);
 }
@@ -98,14 +99,16 @@ fn m128i_cmp_eq_i64() {
 
 #[test]
 fn m128i_sign_extend_i16_i32() {
-  let ai: m128i = cast([0_i16, 1, -1, core::i16::MAX, core::i16::MIN, 100, 7, 2]);
+  let ai: m128i =
+    cast([0_i16, 1, -1, core::i16::MAX, core::i16::MIN, 100, 7, 2]);
   let out: [i32; 4] = cast(ai.sign_extend_i16_i32());
   assert_eq!(out, [0, 1, -1, i32::from(core::i16::MAX)]);
 }
 
 #[test]
 fn m128i_sign_extend_i16_i64() {
-  let ai: m128i = cast([1_i16, -1, -1, core::i16::MAX, core::i16::MIN, 100, 7, 2]);
+  let ai: m128i =
+    cast([1_i16, -1, -1, core::i16::MAX, core::i16::MIN, 100, 7, 2]);
   let out: [i64; 2] = cast(ai.sign_extend_i16_i64());
   assert_eq!(out, [1, -1]);
 }
@@ -167,27 +170,24 @@ fn m128i_zero_extend_u32_i64() {
 
 #[test]
 fn m128i_zero_extend_u8_i16() {
-  let ai: m128i = cast([
-    0_u8, 1, 7, 127, 200, 100, 7, 2, 3, 1, 126, 125, 103, 10, 15, 16,
-  ]);
+  let ai: m128i =
+    cast([0_u8, 1, 7, 127, 200, 100, 7, 2, 3, 1, 126, 125, 103, 10, 15, 16]);
   let out: [i16; 8] = cast(ai.zero_extend_u8_i16());
   assert_eq!(out, [0_i16, 1, 7, 127, 200, 100, 7, 2]);
 }
 
 #[test]
 fn m128i_zero_extend_u8_i32() {
-  let ai: m128i = cast([
-    0_u8, 175, 7, 127, 200, 100, 7, 2, 3, 1, 126, 125, 103, 10, 15, 16,
-  ]);
+  let ai: m128i =
+    cast([0_u8, 175, 7, 127, 200, 100, 7, 2, 3, 1, 126, 125, 103, 10, 15, 16]);
   let out: [i32; 4] = cast(ai.zero_extend_u8_i32());
   assert_eq!(out, [0_i32, 175, 7, 127]);
 }
 
 #[test]
 fn m128i_zero_extend_u8_i64() {
-  let ai: m128i = cast([
-    0_u8, 175, 7, 127, 200, 100, 7, 2, 3, 1, 126, 125, 103, 10, 15, 16,
-  ]);
+  let ai: m128i =
+    cast([0_u8, 175, 7, 127, 200, 100, 7, 2, 3, 1, 126, 125, 103, 10, 15, 16]);
   let out: [i64; 2] = cast(ai.zero_extend_u8_i64());
   assert_eq!(out, [0_i64, 175]);
 }
@@ -207,10 +207,7 @@ fn m128i_max_i8() {
   ]);
   let bi: m128i = cast([7_i8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]);
   let out: [i8; 16] = cast(ai.max_i8(bi));
-  assert_eq!(
-    out,
-    [7, 7, 7, 127, 7, 100, 7, 7, 7, 7, 7, 7, 103, 10, 15, 16]
-  );
+  assert_eq!(out, [7, 7, 7, 127, 7, 100, 7, 7, 7, 7, 7, 7, 103, 10, 15, 16]);
 }
 
 #[test]
@@ -244,10 +241,7 @@ fn m128i_min_i8() {
   ]);
   let bi: m128i = cast([7_i8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]);
   let out: [i8; 16] = cast(ai.min_i8(bi));
-  assert_eq!(
-    out,
-    [0, 1, -1, 7, -128, 7, 7, 2, 3, 1, -126, -125, 7, 7, 7, 7]
-  );
+  assert_eq!(out, [0, 1, -1, 7, -128, 7, 7, 2, 3, 1, -126, -125, 7, 7, 7, 7]);
 }
 
 #[test]

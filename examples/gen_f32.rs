@@ -10,24 +10,16 @@ fn main() {
   write_methods(&mut buffer);
   //
   use std::{fs::File, io::prelude::*};
-  let mut file = File::create("target/gen_f32_out.rs").expect("couldn't make file");
-  file
-    .write_all(buffer.as_bytes())
-    .expect("couldn't write all the data.");
+  let mut file =
+    File::create("target/gen_f32_out.rs").expect("couldn't make file");
+  file.write_all(buffer.as_bytes()).expect("couldn't write all the data.");
 }
 
 fn write_consts(buf: &mut String) {
   // f32 in std::f32
-  for const_name in [
-    "EPSILON",
-    "INFINITY",
-    "MAX",
-    "MIN",
-    "MIN_POSITIVE",
-    "NAN",
-    "NEG_INFINITY",
-  ]
-  .iter()
+  for const_name in
+    ["EPSILON", "INFINITY", "MAX", "MIN", "MIN_POSITIVE", "NAN", "NEG_INFINITY"]
+      .iter()
   {
     buf.push_str(&format!(
       "pub const {}: [f32;4] = [std::f32::{},std::f32::{},std::f32::{},std::f32::{}];\n",
@@ -255,10 +247,8 @@ fn write_methods(buf: &mut String) {
     ));
   }
 
-  for binary_func in [
-    "atan2", "copysign", "hypot", "log", "max", "min", "powf", "powi",
-  ]
-  .iter()
+  for binary_func in
+    ["atan2", "copysign", "hypot", "log", "max", "min", "powf", "powi"].iter()
   {
     buf.push_str(&format!(
       r#"
