@@ -5,20 +5,26 @@ mod wide_trait_impls;
 
 magic! {
   if #[cfg(target_feature="sse")] {
+    /// Four `f32` values packed together.
     #[repr(C, align(16))]
     pub struct f32x4 {
-      sse: m128
+      pub(crate) sse: m128
     }
   } else {
+    /// Four `f32` values packed together.
     #[repr(C, align(16))]
     pub struct f32x4 {
-      arr: [f32; 4]
+      pub(crate) arr: [f32; 4]
     }
   }
 }
 
+/// Lets us declare `f32x4` values in a `const` context. Otherwise useless.
+/// 
+/// See the [`const_f32_as_f32x4`] macro.
 #[allow(non_camel_case_types)]
 #[repr(C, align(16))]
+#[allow(missing_docs)]
 pub union ConstUnionHack_f32x4 {
   pub narrow_arr: [f32; 4],
   pub wide_thing: f32x4,
@@ -264,6 +270,7 @@ impl f32x4 {
 }
 
 impl f32x4 {
+  /// Makes a new `f32x4`.
   #[inline(always)]
   pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
@@ -324,6 +331,7 @@ impl Rem<&'_ f32x4> for f32x4 {
 
 impl f32x4 {
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn exp2(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::exp2f32;
@@ -338,6 +346,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn exp(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::expf32;
@@ -352,6 +361,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn log10(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::log10f32;
@@ -366,6 +376,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn log2(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::log2f32;
@@ -379,9 +390,20 @@ impl f32x4 {
     }}
   }
 
+  /// Truncate the fractional part.
   #[inline]
   pub fn trunc(self) -> Self {
-    magic! {if #[cfg(feature = "toolchain_nightly")] {
+    magic! { if #[cfg(target_feature = "sse4.1")] {
+      Self { sse: self.sse.truncate() }
+    } else if #[cfg(target_feature = "sse2")] {
+      let mut temp: f32x4 = Self { sse: self.sse.truncate_i32().round_f32() };
+      temp |= self & f32x4::NEGATIVE_ZERO;
+      f32x4::merge(
+        temp.cmp_ne(f32x4::NEGATIVE_ZERO),
+        temp,
+        self
+      )
+    } else if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::truncf32;
       let a: [f32; 4] = cast(self);
       cast(unsafe {
@@ -394,6 +416,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn ln(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::logf32;
@@ -408,6 +431,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn powf(self, b: Self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::powf32;
@@ -432,6 +456,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn powi(self, b: [i32; 4]) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::powif32;
@@ -453,6 +478,7 @@ impl f32x4 {
     }}
   }
 
+  /// As [`f32::classify`]
   #[inline]
   pub fn classify(self) -> [core::num::FpCategory; 4] {
     let a: [f32; 4] = cast(self);
@@ -460,66 +486,77 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn acos(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].acos(), a[1].acos(), a[2].acos(), a[3].acos()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn acosh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].acosh(), a[1].acosh(), a[2].acosh(), a[3].acosh()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn asin(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].asin(), a[1].asin(), a[2].asin(), a[3].asin()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn asinh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].asinh(), a[1].asinh(), a[2].asinh(), a[3].asinh()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn atan(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].atan(), a[1].atan(), a[2].atan(), a[3].atan()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn atanh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].atanh(), a[1].atanh(), a[2].atanh(), a[3].atanh()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn cbrt(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].cbrt(), a[1].cbrt(), a[2].cbrt(), a[3].cbrt()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn cosh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].cosh(), a[1].cosh(), a[2].cosh(), a[3].cosh()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn exp_m1(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].exp_m1(), a[1].exp_m1(), a[2].exp_m1(), a[3].exp_m1()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn ln_1p(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].ln_1p(), a[1].ln_1p(), a[2].ln_1p(), a[3].ln_1p()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn log(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
@@ -527,18 +564,21 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn sinh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].sinh(), a[1].sinh(), a[2].sinh(), a[3].sinh()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn tanh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].tanh(), a[1].tanh(), a[2].tanh(), a[3].tanh()])
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn atan2(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
@@ -551,6 +591,7 @@ impl f32x4 {
   }
 
   #[inline]
+  #[cfg(feature = "extern_crate_std")]
   pub fn hypot(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);

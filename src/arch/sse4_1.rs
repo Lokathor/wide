@@ -48,9 +48,19 @@ impl m128 {
     Self(unsafe { _mm_floor_ss(self.0, rhs.0) })
   }
 
+  /// Round to the nearest whole number.
+  #[inline]
   pub fn round_nearest(self) -> Self {
     Self(unsafe {
       _mm_round_ps(self.0, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)
+    })
+  }
+
+  /// Truncate the fractional portion.
+  #[inline]
+  pub fn truncate(self) -> Self {
+    Self(unsafe {
+      _mm_round_ps(self.0, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)
     })
   }
 }

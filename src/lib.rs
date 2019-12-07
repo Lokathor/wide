@@ -1,8 +1,8 @@
-//#![warn(missing_docs)]
-//#![no_std]
-#![allow(unused_imports)]
+#![warn(missing_docs)]
+#![cfg_attr(not(feature = "extern_crate_std"), no_std)]
 #![cfg_attr(feature = "toolchain_nightly", feature(stdsimd))]
 #![cfg_attr(feature = "toolchain_nightly", feature(core_intrinsics))]
+//#![warn(clippy::missing_inline_in_public_items)]
 
 //! A crate to help you go wide.
 //!
@@ -119,3 +119,43 @@ pub use m_f32x4::*;
 
 mod m_i32x4;
 pub use m_i32x4::*;
+
+/// A `sqrt` for just one `f32`.
+/// 
+/// Tries its best to be `no_std`
+#[inline(always)]
+pub fn sqrt_f32(x: f32) -> f32 {
+  magic! {
+    if #[cfg(target_feature = "sse")] {
+      m128::set0(x).sqrt0().extract0()
+    } else if #[cfg(feature = "toolchain_nightly")] {
+      core::intrinsics::sqrtf32(x)
+    } else {
+      f32::sqrt(x)
+    }
+  }
+}
+
+/// A `sin` for just one `f32`.
+#[inline(always)]
+pub fn sin_f32(x: f32) -> f32 {
+  magic! {
+    if #[cfg(target_feature = "sse")] {
+      f32x4 { sse: m128::set0(x) }.sin().sse.extract0()
+    } else {
+      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.sin().arr[0]
+    }
+  }
+}
+
+/// A `cos` for just one `f32`.
+#[inline(always)]
+pub fn cos_f32(x: f32) -> f32 {
+  magic! {
+    if #[cfg(target_feature = "sse")] {
+      f32x4 { sse: m128::set0(x) }.cos().sse.extract0()
+    } else {
+      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.cos().arr[0]
+    }
+  }
+}

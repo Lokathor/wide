@@ -13,6 +13,7 @@ use super::*;
 ///
 /// See
 /// [`_rdrand16_step`](https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_rdrand16_step)
+#[inline]
 pub fn rdrand16_step() -> Option<u16> {
   let mut x = 0_u16;
   if 1 == unsafe { _rdrand16_step(&mut x) } {
@@ -32,6 +33,7 @@ pub fn rdrand16_step() -> Option<u16> {
 ///
 /// See
 /// [`_rdrand32_step`](https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_rdrand32_step)
+#[inline]
 pub fn rdrand32_step() -> Option<u32> {
   let mut x = 0_u32;
   if 1 == unsafe { _rdrand32_step(&mut x) } {
@@ -51,6 +53,7 @@ pub fn rdrand32_step() -> Option<u32> {
 /// See
 /// [`_rdrand64_step`](https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_rdrand64_step)
 #[cfg(target_arch = "x86_64")]
+#[inline]
 pub fn rdrand64_step() -> Option<u64> {
   let mut x = 0_u64;
   if 1 == unsafe { _rdrand64_step(&mut x) } {

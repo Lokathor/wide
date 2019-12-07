@@ -2,7 +2,6 @@
 #![cfg(target_feature="sse2")]
 
 use super::*;
-use core::ops::*;
 
 /// # SSE2 Operations
 impl m128 {
