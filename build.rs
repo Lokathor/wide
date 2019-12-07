@@ -14,4 +14,8 @@ fn main() {
       println!(r#"cargo:rustc-cfg=feature="toolchain_nightly""#);
     }
   }
+  let target = env!("TARGET");
+  if !(target.contains("x86") || target.contains("x86_64")) {
+    println!(r#"cargo:rustc-cfg=feature="extern_crate_std""#);
+  }
 }

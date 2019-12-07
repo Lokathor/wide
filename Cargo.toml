@@ -1,7 +1,7 @@
 [package]
 name = "wide"
 description = "A crate to help you go wide."
-version = "0.3.3-alpha.0"
+version = "0.4.0-alpha.0"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/wide"
 readme = "README.md"
@@ -21,6 +21,10 @@ default = []
 # toolchain. Otherwise, the crate will attempt to detect when the current
 # compiler is a Nightly compiler and enable appropriate ightly features.
 always_use_stable = []
+
+# Link in the standard library. For now this will be turned on automatically if
+# you're not building on `x86` or `x86_64`.
+extern_crate_std = []
 
 [dependencies]
 bytemuck = "1"

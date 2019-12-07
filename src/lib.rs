@@ -1,6 +1,5 @@
 //#![warn(missing_docs)]
-//#![no_std]
-#![allow(unused_imports)]
+#![cfg_attr(not(feature="extern_crate_std"),no_std)]
 #![cfg_attr(feature = "toolchain_nightly", feature(stdsimd))]
 #![cfg_attr(feature = "toolchain_nightly", feature(core_intrinsics))]
 
