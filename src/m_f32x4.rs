@@ -388,13 +388,13 @@ impl f32x4 {
     magic! { if #[cfg(target_feature = "sse4.1")] {
       Self { sse: self.sse.truncate() }
     } else if #[cfg(target_feature = "sse2")] {
-      let mut temp = self.sse.truncate_i32().round_f32();
+      let mut temp: f32x4 = Self { sse: self.sse.truncate_i32().round_f32() };
       temp |= self & f32x4::NEGATIVE_ZERO;
-      Self { sse: f32x4::merge(
+      f32x4::merge(
         temp.cmp_ne(f32x4::NEGATIVE_ZERO),
         temp,
         self
-      ) }
+      )
     } else if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::truncf32;
       let a: [f32; 4] = cast(self);
