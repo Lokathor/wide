@@ -1,7 +1,6 @@
 #![cfg(target_feature="sse")]
 
 use super::*;
-use core::ops::*;
 
 /// A 128-bit SIMD value. Always used as `f32x4`.
 ///

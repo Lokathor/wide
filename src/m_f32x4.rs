@@ -460,77 +460,77 @@ impl f32x4 {
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn acos(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].acos(), a[1].acos(), a[2].acos(), a[3].acos()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn acosh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].acosh(), a[1].acosh(), a[2].acosh(), a[3].acosh()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn asin(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].asin(), a[1].asin(), a[2].asin(), a[3].asin()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn asinh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].asinh(), a[1].asinh(), a[2].asinh(), a[3].asinh()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn atan(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].atan(), a[1].atan(), a[2].atan(), a[3].atan()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn atanh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].atanh(), a[1].atanh(), a[2].atanh(), a[3].atanh()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn cbrt(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].cbrt(), a[1].cbrt(), a[2].cbrt(), a[3].cbrt()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn cosh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].cosh(), a[1].cosh(), a[2].cosh(), a[3].cosh()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn exp_m1(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].exp_m1(), a[1].exp_m1(), a[2].exp_m1(), a[3].exp_m1()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn ln_1p(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].ln_1p(), a[1].ln_1p(), a[2].ln_1p(), a[3].ln_1p()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn log(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
@@ -538,21 +538,21 @@ impl f32x4 {
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn sinh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].sinh(), a[1].sinh(), a[2].sinh(), a[3].sinh()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn tanh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].tanh(), a[1].tanh(), a[2].tanh(), a[3].tanh()])
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn atan2(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
@@ -565,7 +565,7 @@ impl f32x4 {
   }
 
   #[inline]
-  #[cfg(feature="extern_crate_std")]
+  #[cfg(feature = "extern_crate_std")]
   pub fn hypot(self, b: Self) -> Self {
     let a: [f32; 4] = cast(self);
     let b: [f32; 4] = cast(b);
