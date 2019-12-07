@@ -5,11 +5,13 @@ mod wide_trait_impls;
 
 magic! {
   if #[cfg(target_feature="sse")] {
+    /// Four `f32` values packed together.
     #[repr(C, align(16))]
     pub struct f32x4 {
       pub(crate) sse: m128
     }
   } else {
+    /// Four `f32` values packed together.
     #[repr(C, align(16))]
     pub struct f32x4 {
       pub(crate) arr: [f32; 4]
@@ -17,8 +19,12 @@ magic! {
   }
 }
 
+/// Lets us declare `f32x4` values in a `const` context. Otherwise useless.
+/// 
+/// See the [`const_f32_as_f32x4`] macro.
 #[allow(non_camel_case_types)]
 #[repr(C, align(16))]
+#[allow(missing_docs)]
 pub union ConstUnionHack_f32x4 {
   pub narrow_arr: [f32; 4],
   pub wide_thing: f32x4,
@@ -264,6 +270,7 @@ impl f32x4 {
 }
 
 impl f32x4 {
+  /// Makes a new `f32x4`.
   #[inline(always)]
   pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
@@ -383,6 +390,7 @@ impl f32x4 {
     }}
   }
 
+  /// Truncate the fractional part.
   #[inline]
   pub fn trunc(self) -> Self {
     magic! { if #[cfg(target_feature = "sse4.1")] {
@@ -470,6 +478,7 @@ impl f32x4 {
     }}
   }
 
+  /// As [`f32::classify`]
   #[inline]
   pub fn classify(self) -> [core::num::FpCategory; 4] {
     let a: [f32; 4] = cast(self);

@@ -1,7 +1,8 @@
-//#![warn(missing_docs)]
+#![warn(missing_docs)]
 #![cfg_attr(not(feature = "extern_crate_std"), no_std)]
 #![cfg_attr(feature = "toolchain_nightly", feature(stdsimd))]
 #![cfg_attr(feature = "toolchain_nightly", feature(core_intrinsics))]
+//#![warn(clippy::missing_inline_in_public_items)]
 
 //! A crate to help you go wide.
 //!
@@ -122,6 +123,7 @@ pub use m_i32x4::*;
 /// A `sqrt` for just one `f32`.
 /// 
 /// Tries its best to be `no_std`
+#[inline(always)]
 pub fn sqrt_f32(x: f32) -> f32 {
   magic! {
     if #[cfg(target_feature = "sse")] {
@@ -135,6 +137,7 @@ pub fn sqrt_f32(x: f32) -> f32 {
 }
 
 /// A `sin` for just one `f32`.
+#[inline(always)]
 pub fn sin_f32(x: f32) -> f32 {
   magic! {
     if #[cfg(target_feature = "sse")] {
@@ -146,6 +149,7 @@ pub fn sin_f32(x: f32) -> f32 {
 }
 
 /// A `cos` for just one `f32`.
+#[inline(always)]
 pub fn cos_f32(x: f32) -> f32 {
   magic! {
     if #[cfg(target_feature = "sse")] {
