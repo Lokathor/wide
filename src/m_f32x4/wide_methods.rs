@@ -365,8 +365,7 @@ impl f32x4 {
 
   #[inline]
   pub fn cos(self) -> Self {
-    // TODO: check that once this inlines we don't pay the "calculate sin"
-    // costs.
+    // Gonna TRUST that optimizer to skip the final `sin` computations
     self.sin_cos().1
   }
 
@@ -398,8 +397,7 @@ impl f32x4 {
   /// "We called it '[Sin](https://vignette.wikia.nocookie.net/finalfantasy/images/d/de/10sin-a.jpg)'."
   #[inline]
   pub fn sin(self) -> Self {
-    // TODO: check that once this inlines we don't pay the "calculate cos"
-    // costs.
+    // Gonna TRUST that optimizer to skip the final `cos` computations
     self.sin_cos().0
   }
 

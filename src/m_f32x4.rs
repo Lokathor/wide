@@ -7,12 +7,12 @@ magic! {
   if #[cfg(target_feature="sse")] {
     #[repr(C, align(16))]
     pub struct f32x4 {
-      sse: m128
+      pub(crate) sse: m128
     }
   } else {
     #[repr(C, align(16))]
     pub struct f32x4 {
-      arr: [f32; 4]
+      pub(crate) arr: [f32; 4]
     }
   }
 }

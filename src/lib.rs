@@ -119,7 +119,9 @@ pub use m_f32x4::*;
 mod m_i32x4;
 pub use m_i32x4::*;
 
-/// A `sqrt` for `f32` that will do its best to be `no_std`.
+/// A `sqrt` for just one `f32`.
+/// 
+/// Tries its best to be `no_std`
 pub fn sqrt_f32(x: f32) -> f32 {
   magic! {
     if #[cfg(target_feature = "sse")] {
@@ -128,6 +130,28 @@ pub fn sqrt_f32(x: f32) -> f32 {
       core::intrinsics::sqrtf32(x)
     } else {
       f32::sqrt(x)
+    }
+  }
+}
+
+/// A `sin` for just one `f32`.
+pub fn sin_f32(x: f32) -> f32 {
+  magic! {
+    if #[cfg(target_feature = "sse")] {
+      f32x4 { sse: m128::set0(x) }.sin().sse.extract0()
+    } else {
+      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.sin().arr[0]
+    }
+  }
+}
+
+/// A `cos` for just one `f32`.
+pub fn cos_f32(x: f32) -> f32 {
+  magic! {
+    if #[cfg(target_feature = "sse")] {
+      f32x4 { sse: m128::set0(x) }.cos().sse.extract0()
+    } else {
+      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.cos().arr[0]
     }
   }
 }
