@@ -88,6 +88,7 @@ macro_rules! const_f32_as_f32x4 {
 }
 
 // consts
+#[allow(clippy::use_self)]
 impl f32x4 {
   //
   // core::f32
@@ -272,6 +273,7 @@ impl f32x4 {
 impl f32x4 {
   /// Makes a new `f32x4`.
   #[inline(always)]
+  #[must_use]
   pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: m128::set_reverse(a,b,c,d) }
@@ -284,6 +286,7 @@ impl f32x4 {
 impl Rem for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn rem(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
@@ -308,6 +311,7 @@ impl Rem for f32x4 {
 impl Rem<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn rem(self, rhs: &Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       let arr1: [f32; 4] = cast(self.sse);
@@ -392,6 +396,7 @@ impl f32x4 {
 
   /// Truncate the fractional part.
   #[inline]
+  #[must_use]
   pub fn trunc(self) -> Self {
     magic! { if #[cfg(target_feature = "sse4.1")] {
       Self { sse: self.sse.truncate() }
@@ -417,6 +422,7 @@ impl f32x4 {
 
   #[inline]
   #[cfg(feature = "extern_crate_std")]
+  #[must_use]
   pub fn ln(self) -> Self {
     magic! {if #[cfg(feature = "toolchain_nightly")] {
       use core::intrinsics::logf32;
@@ -480,6 +486,7 @@ impl f32x4 {
 
   /// As [`f32::classify`]
   #[inline]
+  #[must_use]
   pub fn classify(self) -> [core::num::FpCategory; 4] {
     let a: [f32; 4] = cast(self);
     [a[0].classify(), a[1].classify(), a[2].classify(), a[3].classify()]
@@ -487,6 +494,7 @@ impl f32x4 {
 
   #[inline]
   #[cfg(feature = "extern_crate_std")]
+  #[must_use]
   pub fn acos(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].acos(), a[1].acos(), a[2].acos(), a[3].acos()])
@@ -494,6 +502,7 @@ impl f32x4 {
 
   #[inline]
   #[cfg(feature = "extern_crate_std")]
+  #[must_use]
   pub fn acosh(self) -> Self {
     let a: [f32; 4] = cast(self);
     cast([a[0].acosh(), a[1].acosh(), a[2].acosh(), a[3].acosh()])
@@ -607,6 +616,7 @@ impl f32x4 {
 impl Index<usize> for f32x4 {
   type Output = f32;
   #[inline(always)]
+  #[must_use]
   fn index(&self, index: usize) -> &f32 {
     let r: &[f32; 4] = cast_ref(self);
     &r[index]
@@ -614,6 +624,7 @@ impl Index<usize> for f32x4 {
 }
 impl IndexMut<usize> for f32x4 {
   #[inline(always)]
+  #[must_use]
   fn index_mut(&mut self, index: usize) -> &mut f32 {
     let r: &mut [f32; 4] = cast_mut(self);
     &mut r[index]
@@ -734,6 +745,7 @@ impl UpperHex for f32x4 {
 
 impl AsRef<[f32; 4]> for f32x4 {
   #[inline(always)]
+  #[must_use]
   fn as_ref(&self) -> &[f32; 4] {
     cast_ref(self)
   }
@@ -741,6 +753,7 @@ impl AsRef<[f32; 4]> for f32x4 {
 
 impl AsMut<[f32; 4]> for f32x4 {
   #[inline(always)]
+  #[must_use]
   fn as_mut(&mut self) -> &mut [f32; 4] {
     cast_mut(self)
   }
@@ -748,6 +761,7 @@ impl AsMut<[f32; 4]> for f32x4 {
 
 impl From<[f32; 4]> for f32x4 {
   #[inline(always)]
+  #[must_use]
   fn from(arr: [f32; 4]) -> Self {
     cast(arr)
   }
@@ -755,6 +769,7 @@ impl From<[f32; 4]> for f32x4 {
 
 impl From<(f32, f32, f32, f32)> for f32x4 {
   #[inline(always)]
+  #[must_use]
   fn from((a, b, c, d): (f32, f32, f32, f32)) -> Self {
     Self::new(a, b, c, d)
   }
@@ -762,6 +777,7 @@ impl From<(f32, f32, f32, f32)> for f32x4 {
 
 impl From<[i8; 4]> for f32x4 {
   #[inline]
+  #[must_use]
   fn from([a, b, c, d]: [i8; 4]) -> Self {
     Self::new(f32::from(a), f32::from(b), f32::from(c), f32::from(d))
   }
@@ -769,6 +785,7 @@ impl From<[i8; 4]> for f32x4 {
 
 impl From<[u8; 4]> for f32x4 {
   #[inline]
+  #[must_use]
   fn from([a, b, c, d]: [u8; 4]) -> Self {
     Self::new(f32::from(a), f32::from(b), f32::from(c), f32::from(d))
   }
@@ -776,6 +793,7 @@ impl From<[u8; 4]> for f32x4 {
 
 impl From<[i16; 4]> for f32x4 {
   #[inline]
+  #[must_use]
   fn from([a, b, c, d]: [i16; 4]) -> Self {
     Self::new(f32::from(a), f32::from(b), f32::from(c), f32::from(d))
   }
@@ -783,6 +801,7 @@ impl From<[i16; 4]> for f32x4 {
 
 impl From<[u16; 4]> for f32x4 {
   #[inline]
+  #[must_use]
   fn from([a, b, c, d]: [u16; 4]) -> Self {
     Self::new(f32::from(a), f32::from(b), f32::from(c), f32::from(d))
   }

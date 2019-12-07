@@ -17,6 +17,7 @@ magic! {
 }
 impl Clone for i32x4 {
   #[inline(always)]
+  #[must_use]
   fn clone(&self) -> Self {
     *self
   }
@@ -24,6 +25,7 @@ impl Clone for i32x4 {
 impl Copy for i32x4 {}
 impl Default for i32x4 {
   #[inline(always)]
+  #[must_use]
   fn default() -> Self {
     Self::zeroed()
   }
@@ -97,6 +99,7 @@ macro_rules! const_i32_as_i32x4 {
   };
 }
 
+#[allow(clippy::use_self)]
 impl i32x4 {
   //
   // core::i32
@@ -130,6 +133,7 @@ impl i32x4 {
 impl BitAnd for i32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitand(self, rhs: Self) -> Self {
     magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.bitand(rhs.sse) }
@@ -161,6 +165,7 @@ impl BitAndAssign for i32x4 {
 impl i32x4 {
   /// Lanewise `==`
   #[inline]
+  #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.cmp_eq_i32(rhs.sse) }
@@ -183,6 +188,7 @@ impl i32x4 {
 
   /// Lanewise `>`
   #[inline]
+  #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
     magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.cmp_gt_i32(rhs.sse) }
@@ -208,6 +214,7 @@ impl Not for i32x4 {
   type Output = Self;
 
   #[inline]
+  #[must_use]
   fn not(self) -> Self {
     magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: !self.sse }
@@ -225,6 +232,7 @@ impl Not for i32x4 {
 impl i32x4 {
   /// Make a new `i32x4`
   #[inline(always)]
+  #[must_use]
   pub fn new(a: i32, b: i32, c: i32, d: i32) -> Self {
     magic! {if #[cfg(target_feature="sse2")] {
       Self { sse: m128i::set_reverse_i32(a,b,c,d) }
@@ -236,6 +244,7 @@ impl i32x4 {
 
 impl From<i32> for i32x4 {
   #[inline]
+  #[must_use]
   fn from(i: i32) -> Self {
     Self::new(i, i, i, i)
   }
@@ -244,9 +253,10 @@ impl From<i32> for i32x4 {
 impl Shl<i32> for i32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn shl(self, rhs: i32) -> Self {
     magic! {if #[cfg(target_feature="sse2")] {
-      Self { sse: self.sse.shift_left_i32(i32x4::from(rhs).sse) }
+      Self { sse: self.sse.shift_left_i32(Self::from(rhs).sse) }
     } else {
       Self { arr: [
         self.arr[0] << rhs,
@@ -261,6 +271,7 @@ impl Shl<i32> for i32x4 {
 impl BitXor for i32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitxor(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.bitxor(rhs.sse) }
@@ -278,6 +289,7 @@ impl BitXor for i32x4 {
 impl Add for i32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn add(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.add_i32(rhs.sse) }
@@ -295,6 +307,7 @@ impl Add for i32x4 {
 impl BitOr for i32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitor(self, rhs: Self) -> Self {
     magic! { if #[cfg(target_feature="sse2")] {
       Self { sse: self.sse.bitor(rhs.sse) }
@@ -326,6 +339,7 @@ impl BitOrAssign for i32x4 {
 impl i32x4 {
   /// Cast directly to `f32x4` (no bit change).
   #[inline(always)]
+  #[must_use]
   pub fn cast_f32x4(self) -> f32x4 {
     magic! {if #[cfg(target_feature="sse2")] {
       f32x4 { sse: self.sse.cast_m128() }

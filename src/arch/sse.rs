@@ -30,6 +30,7 @@ unsafe impl Pod for m128 {}
 
 impl Default for m128 {
   #[inline(always)]
+  #[must_use]
   fn default() -> Self {
     Self::zeroed()
   }
@@ -139,6 +140,7 @@ impl Add for m128 {
   type Output = Self;
   /// Lanewise addition.
   #[inline(always)]
+  #[must_use]
   fn add(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_ps(self.0, rhs.0) })
   }
@@ -155,6 +157,7 @@ impl BitAnd for m128 {
   type Output = Self;
   /// Bitwise AND.
   #[inline(always)]
+  #[must_use]
   fn bitand(self, rhs: Self) -> Self {
     Self(unsafe { _mm_and_ps(self.0, rhs.0) })
   }
@@ -171,6 +174,7 @@ impl Div for m128 {
   type Output = Self;
   /// Lanewise division.
   #[inline(always)]
+  #[must_use]
   fn div(self, rhs: Self) -> Self {
     Self(unsafe { _mm_div_ps(self.0, rhs.0) })
   }
@@ -187,6 +191,7 @@ impl Mul for m128 {
   type Output = Self;
   /// Lanewise multiplication.
   #[inline(always)]
+  #[must_use]
   fn mul(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mul_ps(self.0, rhs.0) })
   }
@@ -203,6 +208,7 @@ impl Sub for m128 {
   type Output = Self;
   /// Lanewise subtraction.
   #[inline(always)]
+  #[must_use]
   fn sub(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_ps(self.0, rhs.0) })
   }
@@ -219,6 +225,7 @@ impl BitOr for m128 {
   type Output = Self;
   /// Bitwise OR.
   #[inline(always)]
+  #[must_use]
   fn bitor(self, rhs: Self) -> Self {
     Self(unsafe { _mm_or_ps(self.0, rhs.0) })
   }
@@ -235,6 +242,7 @@ impl BitXor for m128 {
   type Output = Self;
   /// Bitwise XOR.
   #[inline(always)]
+  #[must_use]
   fn bitxor(self, rhs: Self) -> Self {
     Self(unsafe { _mm_xor_ps(self.0, rhs.0) })
   }
@@ -251,6 +259,7 @@ impl Neg for m128 {
   type Output = Self;
   /// Lanewise `0.0 - self`
   #[inline(always)]
+  #[must_use]
   fn neg(self) -> Self {
     Self(unsafe { _mm_sub_ps(_mm_setzero_ps(), self.0) })
   }
@@ -260,6 +269,7 @@ impl Not for m128 {
   type Output = Self;
   /// Bitwise negation
   #[inline(always)]
+  #[must_use]
   fn not(self) -> Self {
     let f: f32 = cast(-1_i32);
     let b = Self::splat(f);
@@ -271,84 +281,98 @@ impl Not for m128 {
 impl m128 {
   /// Adds the 0th lanes without affecting the other lanes of `self.
   #[inline(always)]
+  #[must_use]
   pub fn add0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_ss(self.0, rhs.0) })
   }
 
   /// Bitwise `(!self) & rhs`
   #[inline(always)]
+  #[must_use]
   pub fn andnot(self, rhs: Self) -> Self {
     Self(unsafe { _mm_andnot_ps(self.0, rhs.0) })
   }
 
   /// Lanewise `self == rhs` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpeq_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self == rhs`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_eq0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpeq_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `self >= rhs` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ge(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpge_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self >= rhs`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ge0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpge_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `self > rhs` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpgt_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self > rhs`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_gt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpgt_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `self <= rhs` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_le(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmple_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self <= rhs`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_le0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmple_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `self < rhs` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmplt_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self < rhs`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_lt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmplt_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `self != rhs` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ne(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpneq_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self != rhs`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ne0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpneq_ss(self.0, rhs.0) })
   }
@@ -357,108 +381,126 @@ impl m128 {
   ///
   /// Also, this triggers 3rd Impact.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nge(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnge_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self >= rhs)`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nge0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnge_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `!(self > rhs)` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ngt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpngt_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self > rhs)`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ngt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpngt_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `!(self <= rhs)` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nle(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnle_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self <= rhs)`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nle0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnle_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `!(self < rhs)` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nlt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnlt_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self < rhs)`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nlt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnlt_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `self.not_nan() & rhs.not_nan()` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ordinary(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpord_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self.not_nan() & rhs.not_nan()`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ordinary0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpord_ss(self.0, rhs.0) })
   }
 
   /// Lanewise `self.is_nan() | rhs.is_nan()` check, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nan(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpunord_ps(self.0, rhs.0) })
   }
 
   /// Lane 0: `self.is_nan() | rhs.is_nan()`, bool-ish output.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nan0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpunord_ss(self.0, rhs.0) })
   }
 
   /// Lane 0: `self == rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_eq0(self, rhs: Self) -> i32 {
     unsafe { _mm_comieq_ss(self.0, rhs.0) }
   }
 
   /// Lane 0: `self >= rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_ge0(self, rhs: Self) -> i32 {
     unsafe { _mm_comige_ss(self.0, rhs.0) }
   }
 
   /// Lane 0: `self > rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_gt0(self, rhs: Self) -> i32 {
     unsafe { _mm_comigt_ss(self.0, rhs.0) }
   }
 
   /// Lane 0: `self <= rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_le0(self, rhs: Self) -> i32 {
     unsafe { _mm_comile_ss(self.0, rhs.0) }
   }
 
   /// Lane 0: `self < rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_lt0(self, rhs: Self) -> i32 {
     unsafe { _mm_comilt_ss(self.0, rhs.0) }
   }
 
   /// Lane 0: `self != rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_ne0(self, rhs: Self) -> i32 {
     unsafe { _mm_comineq_ss(self.0, rhs.0) }
   }
@@ -468,6 +510,7 @@ impl m128 {
   /// Subject to the current thread's [rounding
   /// mode](https://doc.rust-lang.org/core/arch/x86_64/fn._mm_setcsr.html#rounding-mode)
   #[inline(always)]
+  #[must_use]
   pub fn round_replace0_i32(self, rhs: i32) -> Self {
     Self(unsafe { _mm_cvt_si2ss(self.0, rhs) })
   }
@@ -477,6 +520,7 @@ impl m128 {
   /// Subject to the current thread's [rounding
   /// mode](https://doc.rust-lang.org/core/arch/x86_64/fn._mm_setcsr.html#rounding-mode)
   #[inline(always)]
+  #[must_use]
   pub fn round_extract0_i32(self) -> i32 {
     unsafe { _mm_cvt_ss2si(self.0) }
   }
@@ -489,12 +533,14 @@ impl m128 {
   /// Not available to `x86`
   #[inline(always)]
   #[cfg(target_arch = "x86_64")]
+  #[must_use]
   pub fn round_replace0_i64(self, rhs: i64) -> Self {
     Self(unsafe { _mm_cvtsi64_ss(self.0, rhs) })
   }
 
   /// Directly extracts lane 0 as `f32`.
   #[inline(always)]
+  #[must_use]
   pub fn extract0(self) -> f32 {
     unsafe { _mm_cvtss_f32(self.0) }
   }
@@ -505,18 +551,21 @@ impl m128 {
   /// mode](https://doc.rust-lang.org/core/arch/x86_64/fn._mm_setcsr.html#rounding-mode)
   #[inline(always)]
   #[cfg(target_arch = "x86_64")]
+  #[must_use]
   pub fn round_extract0_i64(self) -> i64 {
     unsafe { _mm_cvtss_si64(self.0) }
   }
 
   /// Truncate lane 0 to `i32` and return.
   #[inline(always)]
+  #[must_use]
   pub fn truncate_extract0_i32(self) -> i32 {
     unsafe { _mm_cvtt_ss2si(self.0) }
   }
 
   /// Truncate lane 0 to `i64` and return.
   #[inline(always)]
+  #[must_use]
   #[cfg(target_arch = "x86_64")]
   pub fn truncate_extract0_i64(self) -> i64 {
     unsafe { _mm_cvttss_si64(self.0) }
@@ -524,6 +573,7 @@ impl m128 {
 
   /// Divides the 0th lanes without affecting the other lanes of `self.
   #[inline(always)]
+  #[must_use]
   pub fn div0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_div_ss(self.0, rhs.0) })
   }
@@ -533,6 +583,7 @@ impl m128 {
   /// This produces the same lane order as you'd get if you de-referenced the
   /// pointed to array and then used `transmute`.
   #[inline(always)]
+  #[must_use]
   pub fn load(addr: &Align16<[f32; 4]>) -> Self {
     let ptr: *const f32 = addr as *const Align16<[f32; 4]> as *const f32;
     Self(unsafe { _mm_load_ps(ptr) })
@@ -541,6 +592,7 @@ impl m128 {
   /// Loads the `f32` address into all lanes.
   #[allow(clippy::trivially_copy_pass_by_ref)]
   #[inline(always)]
+  #[must_use]
   pub fn load_splat(addr: &f32) -> Self {
     Self(unsafe { _mm_load_ps1(addr) })
   }
@@ -548,6 +600,7 @@ impl m128 {
   /// Loads the `f32` address into lane 0, other lanes are `0.0`.
   #[allow(clippy::trivially_copy_pass_by_ref)]
   #[inline(always)]
+  #[must_use]
   pub fn load0(addr: &f32) -> Self {
     Self(unsafe { _mm_load_ss(addr) })
   }
@@ -557,6 +610,7 @@ impl m128 {
   /// This produces the **reverse** lane order as you'd get if you used a
   /// `transmute` on the pointed to array.
   #[inline(always)]
+  #[must_use]
   pub fn load_reverse(addr: &Align16<[f32; 4]>) -> Self {
     let ptr: *const f32 = addr as *const Align16<[f32; 4]> as *const f32;
     Self(unsafe { _mm_loadr_ps(ptr) })
@@ -567,6 +621,7 @@ impl m128 {
   /// This doesn't have the alignment requirements of [`load`](m128::load), but
   /// the lane ordering is the same.
   #[inline(always)]
+  #[must_use]
   pub fn load_unaligned(addr: &[f32; 4]) -> Self {
     let ptr: *const f32 = addr as *const [f32; 4] as *const f32;
     Self(unsafe { _mm_loadu_ps(ptr) })
@@ -574,30 +629,35 @@ impl m128 {
 
   /// Lanewise maximum.
   #[inline(always)]
+  #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     Self(unsafe { _mm_max_ps(self.0, rhs.0) })
   }
 
   /// Lane 0 maximum, other lanes are `self`.
   #[inline(always)]
+  #[must_use]
   pub fn max0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_max_ss(self.0, rhs.0) })
   }
 
   /// Lanewise minimum.
   #[inline(always)]
+  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     Self(unsafe { _mm_min_ps(self.0, rhs.0) })
   }
 
   /// Lane 0 minimum, other lanes are `self`.
   #[inline(always)]
+  #[must_use]
   pub fn min0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_min_ss(self.0, rhs.0) })
   }
 
   /// Copies lane 0 from `rhs`, other lanes are `self`.
   #[inline(always)]
+  #[must_use]
   pub fn copy0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_move_ss(self.0, rhs.0) })
   }
@@ -612,6 +672,7 @@ impl m128 {
   /// out[3] = self[3]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn copy_high_low(self, rhs: Self) -> Self {
     Self(unsafe { _mm_movehl_ps(self.0, rhs.0) })
   }
@@ -626,6 +687,7 @@ impl m128 {
   /// out[3] = rhs[1]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn copy_low_high(self, rhs: Self) -> Self {
     Self(unsafe { _mm_movelh_ps(self.0, rhs.0) })
   }
@@ -638,6 +700,7 @@ impl m128 {
   /// (Yes, this name is kinda stupid but I couldn't come up with a better thing
   /// to rename it to, oh well.)
   #[inline(always)]
+  #[must_use]
   pub fn move_mask(self) -> i32 {
     unsafe { _mm_movemask_ps(self.0) }
   }
@@ -647,6 +710,7 @@ impl m128 {
   /// The maximum relative error for this approximation is less than
   /// 1.5*2.0e-12.
   #[inline(always)]
+  #[must_use]
   pub fn reciprocal(self) -> Self {
     Self(unsafe { _mm_rcp_ps(self.0) })
   }
@@ -656,6 +720,7 @@ impl m128 {
   /// The maximum relative error for this approximation is less than
   /// 1.5*2.0e-12.
   #[inline(always)]
+  #[must_use]
   pub fn reciprocal0(self) -> Self {
     Self(unsafe { _mm_rcp_ss(self.0) })
   }
@@ -665,6 +730,7 @@ impl m128 {
   /// The maximum relative error for this approximation is less than
   /// 1.5*2.0e-12.
   #[inline(always)]
+  #[must_use]
   pub fn reciprocal_sqrt(self) -> Self {
     Self(unsafe { _mm_rsqrt_ps(self.0) })
   }
@@ -674,6 +740,7 @@ impl m128 {
   /// The maximum relative error for this approximation is less than
   /// 1.5*2.0e-12.
   #[inline(always)]
+  #[must_use]
   pub fn reciprocal_sqrt0(self) -> Self {
     Self(unsafe { _mm_rsqrt_ss(self.0) })
   }
@@ -685,18 +752,21 @@ impl m128 {
   /// then using [`load`](m128::load) on that array. Same with using `transmute`
   /// or similar.
   #[inline(always)]
+  #[must_use]
   pub fn set(a: f32, b: f32, c: f32, d: f32) -> Self {
     Self(unsafe { _mm_set_ps(a, b, c, d) })
   }
 
   /// Set the `f32` into all lanes.
   #[inline(always)]
+  #[must_use]
   pub fn splat(a: f32) -> Self {
     Self(unsafe { _mm_set1_ps(a) })
   }
 
   /// Set the value into lane 0, other lanes `0.0`.
   #[inline(always)]
+  #[must_use]
   pub fn set0(a: f32) -> Self {
     Self(unsafe { _mm_set_ss(a) })
   }
@@ -704,18 +774,21 @@ impl m128 {
   /// Set four `f32` values into an `m128`, order reversed from normal
   /// [`set`](m128::set).
   #[inline(always)]
+  #[must_use]
   pub fn set_reverse(a: f32, b: f32, c: f32, d: f32) -> Self {
     Self(unsafe { _mm_setr_ps(a, b, c, d) })
   }
 
   /// Lanewise square root.
   #[inline(always)]
+  #[must_use]
   pub fn sqrt(self) -> Self {
     Self(unsafe { _mm_sqrt_ps(self.0) })
   }
 
   /// Lane 0 square root, other lanes are `self`.
   #[inline(always)]
+  #[must_use]
   pub fn sqrt0(self) -> Self {
     Self(unsafe { _mm_sqrt_ss(self.0) })
   }
@@ -763,6 +836,7 @@ impl m128 {
 
   /// Subtracts the 0th lanes without affecting the other lanes of `self.
   #[inline(always)]
+  #[must_use]
   pub fn sub0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_ss(self.0, rhs.0) })
   }
@@ -776,6 +850,7 @@ impl m128 {
   /// out[3] = rhs[3]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn unpack_high(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpackhi_ps(self.0, rhs.0) })
   }
@@ -789,6 +864,7 @@ impl m128 {
   /// out[3] = rhs[1]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn unpack_low(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpacklo_ps(self.0, rhs.0) })
   }
@@ -923,6 +999,7 @@ impl m128 {
   /// This is not an official Intel intrinsic, instead it's a `bitand` operation
   /// with a mask so that the sign bit is cleared in all lanes.
   #[inline(always)]
+  #[must_use]
   pub fn abs(self) -> Self {
     self & Self::splat(cast(i32::max_value()))
   }

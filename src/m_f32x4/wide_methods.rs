@@ -4,6 +4,7 @@ use super::*;
 impl f32x4 {
   /// Bitwise `(!self) & rhs`
   #[inline]
+  #[must_use]
   pub fn andnot(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.andnot(rhs.sse) }
@@ -14,6 +15,7 @@ impl f32x4 {
 
   /// Lanewise "is the value a NaN value?"
   #[inline]
+  #[must_use]
   pub fn is_nan(self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       // yes it's weird, yes it's correct.
@@ -37,6 +39,7 @@ impl f32x4 {
 
   /// Lanewise "is the value a non-NaN value?"
   #[inline]
+  #[must_use]
   pub fn is_ordinary(self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       // yes it's weird, yes it's correct.
@@ -68,6 +71,7 @@ impl f32x4 {
   /// not normally a problem, because the comparison methods naturally return
   /// all 1s or all 0s anyway.
   #[inline]
+  #[must_use]
   pub fn merge(self, a: Self, b: Self) -> Self {
     magic! {if #[cfg(target_feature="sse4.1")] {
       Self { sse: b.sse.blend_var(a.sse, self.sse) }
@@ -83,6 +87,7 @@ impl f32x4 {
   /// assert_eq!(a.cmp_lt(b).move_mask(), 0b0011);
   /// ```
   #[inline]
+  #[must_use]
   pub fn move_mask(self) -> i32 {
     magic! {if #[cfg(target_feature="sse")] {
       self.sse.move_mask()
@@ -99,6 +104,7 @@ impl f32x4 {
 
   /// Lanewise `==`
   #[inline]
+  #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_eq(rhs.sse) }
@@ -121,6 +127,7 @@ impl f32x4 {
 
   /// Lanewise `>=`
   #[inline]
+  #[must_use]
   pub fn cmp_ge(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ge(rhs.sse) }
@@ -143,6 +150,7 @@ impl f32x4 {
 
   /// Lanewise `>`
   #[inline]
+  #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_gt(rhs.sse) }
@@ -165,6 +173,7 @@ impl f32x4 {
 
   /// Lanewise `<=`
   #[inline]
+  #[must_use]
   pub fn cmp_le(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_le(rhs.sse) }
@@ -187,6 +196,7 @@ impl f32x4 {
 
   /// Lanewise `<`
   #[inline]
+  #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_lt(rhs.sse) }
@@ -209,6 +219,7 @@ impl f32x4 {
 
   /// Lanewise "self.is_nan() | other.is_nan()"
   #[inline]
+  #[must_use]
   pub fn cmp_nan(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nan(rhs.sse) }
@@ -231,6 +242,7 @@ impl f32x4 {
 
   /// Lanewise `!=`
   #[inline]
+  #[must_use]
   pub fn cmp_ne(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ne(rhs.sse) }
@@ -255,6 +267,7 @@ impl f32x4 {
   /// 
   /// If you call this method it triggers [Third Impact](https://evangelion.fandom.com/wiki/Third_Impact)
   #[inline]
+  #[must_use]
   pub fn cmp_nge(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nge(rhs.sse) }
@@ -277,6 +290,7 @@ impl f32x4 {
 
   /// Lanewise `!(a > b)`
   #[inline]
+  #[must_use]
   pub fn cmp_ngt(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_ngt(rhs.sse) }
@@ -299,6 +313,7 @@ impl f32x4 {
   
   /// Lanewise `!(a <= b)`
   #[inline]
+  #[must_use]
   pub fn cmp_nle(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nle(rhs.sse) }
@@ -321,6 +336,7 @@ impl f32x4 {
 
   /// Lanewise `!(a < b)`
   #[inline]
+  #[must_use]
   pub fn cmp_nlt(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.cmp_nlt(rhs.sse) }
@@ -343,6 +359,7 @@ impl f32x4 {
 
   /// Lanewise ceiling (next larger whole number)
   #[inline]
+  #[must_use]
   pub fn ceil(self) -> Self {
     magic! {if #[cfg(target_feature="sse4.1")] {
       Self { sse: self.sse.ceil() }
@@ -356,6 +373,7 @@ impl f32x4 {
 
   /// Lanewise floor (next smaller whole number)
   #[inline]
+  #[must_use]
   pub fn floor(self) -> Self {
     magic! {if #[cfg(target_feature="sse4.1")] {
       Self { sse: self.sse.floor() }
@@ -369,12 +387,14 @@ impl f32x4 {
 
   /// Lanewise absolute value
   #[inline(always)]
+  #[must_use]
   pub fn abs(self) -> Self {
     self & Self::ALL_EXCEPT_SIGN
   }
 
   /// Lanewise cosine
   #[inline]
+  #[must_use]
   pub fn cos(self) -> Self {
     // Gonna TRUST that optimizer to skip the final `sin` computations
     self.sin_cos().1
@@ -382,6 +402,7 @@ impl f32x4 {
 
   /// Lanewise round to nearest whole number.
   #[inline]
+  #[must_use]
   pub fn round(self) -> Self {
     magic! {if #[cfg(target_feature = "sse4.1")] {
       // we sometimes have a direct round instruction
@@ -408,6 +429,7 @@ impl f32x4 {
   ///
   /// "We called it '[Sin](https://vignette.wikia.nocookie.net/finalfantasy/images/d/de/10sin-a.jpg)'."
   #[inline]
+  #[must_use]
   pub fn sin(self) -> Self {
     // Gonna TRUST that optimizer to skip the final `cos` computations
     self.sin_cos().0
@@ -422,6 +444,7 @@ impl f32x4 {
   /// guide](https://rust-lang.github.io/packed_simd/perf-guide/target-feature/rustflags.html)
   /// for info on how to enable CPU features if you haven't done that before.
   #[inline]
+  #[must_use]
   pub fn mul_add(self, b: Self, c: Self) -> Self {
     magic! {if #[cfg(target_feature = "fma")] {
       Self { sse: self.sse.fmadd(b.sse, c.sse) }
@@ -430,10 +453,11 @@ impl f32x4 {
     }}
   }
 
-  /// Negated "mul_add", `c - (self * b)`.
+  /// Negated `mul_add`, `c - (self * b)`.
   ///
-  /// Fused if `fma` feature is enabled, see (mul_add)[f32x4::mul_add].
+  /// Fused if `fma` feature is enabled, see [`mul_add`](f32x4::mul_add).
   #[inline]
+  #[must_use]
   pub fn negated_mul_add(self, b: Self, c: Self) -> Self {
     magic! {if #[cfg(target_feature = "fma")] {
       Self { sse: self.sse.fnmadd(b.sse, c.sse) }
@@ -444,6 +468,7 @@ impl f32x4 {
 
   /// Lanewise reciprocal, 1.0/lane
   #[inline]
+  #[must_use]
   pub fn recip(self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.reciprocal() }
@@ -454,6 +479,7 @@ impl f32x4 {
 
   /// Lanewise maximum
   #[inline]
+  #[must_use]
   pub fn max(self, b: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.max(b.sse) }
@@ -471,6 +497,7 @@ impl f32x4 {
 
   /// Lanewise minimum
   #[inline]
+  #[must_use]
   pub fn min(self, b: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.min(b.sse) }
@@ -488,6 +515,7 @@ impl f32x4 {
 
   /// Lanewise round and get `i32x4` output
   #[inline]
+  #[must_use]
   pub fn round_i32(self) -> i32x4 {
     magic! {if #[cfg(target_feature="sse")] {
       i32x4 { sse: self.sse.round_i32() }
@@ -507,8 +535,10 @@ impl f32x4 {
   /// * False for +/- INF, NaN
   /// * boolish
   #[allow(clippy::unreadable_literal)]
+  #[allow(clippy::cast_possible_wrap)]
   #[allow(bad_style)]
   #[inline]
+  #[must_use]
   pub fn is_finite(self) -> f32x4 {
     const EXPONENT_MASKu: u32 = 0xFF000000_u32;
     const EXPONENT_MASKi: i32 = EXPONENT_MASKu as i32;
@@ -541,6 +571,7 @@ impl f32x4 {
 
   /// Cast directly to `i32x4` (no change in bit pattern).
   #[inline(always)]
+  #[must_use]
   pub fn cast_i32x4(self) -> i32x4 {
     magic! {if #[cfg(target_feature="sse2")] {
       i32x4 { sse: self.sse.cast_m128i() }
@@ -551,24 +582,28 @@ impl f32x4 {
 
   /// Copy the sign of `b` onto the value of `self`.
   #[inline]
+  #[must_use]
   pub fn copysign(self, b: Self) -> Self {
     self ^ (b & Self::NEGATIVE_ZERO)
   }
 
   /// Lanewise clamp to a per-lane min and max.
   #[inline]
+  #[must_use]
   pub fn clamp(self, min: Self, max: Self) -> Self {
     self.max(min).min(max)
   }
 
   /// Lanewise sign-number (-1.0 if < 0.0, otherwise 1.0)
   #[inline]
+  #[must_use]
   pub fn signum(self) -> Self {
     self.is_nan().merge(f32x4::NAN, Self::ONE.copysign(self))
   }
 
   /// Lanewise tangent
   #[inline]
+  #[must_use]
   pub fn tan(self) -> Self {
     let (s, c) = self.sin_cos();
     s / c
@@ -576,8 +611,9 @@ impl f32x4 {
 
   /// calculates polynomial c2*x^2 + c1*x + c0
   ///
-  /// https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L111
+  /// <https://github.com/vectorclass/version2/blob/master/vectormath_common.h#L111>
   #[inline(always)]
+  #[must_use]
   fn polynomial_2(self, c0: Self, c1: Self, c2: Self) -> Self {
     let self2 = self * self;
     self2.mul_add(c2, self.mul_add(c1, c0))
@@ -598,6 +634,7 @@ impl f32x4 {
   #[allow(clippy::many_single_char_names)]
   #[allow(bad_style)]
   #[allow(clippy::missing_inline_in_public_items)]
+  #[must_use]
   pub fn sin_cos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -662,6 +699,7 @@ impl f32x4 {
   #[inline]
   #[allow(clippy::unreadable_literal)]
   #[allow(clippy::excessive_precision)]
+  #[must_use]
   pub fn to_degrees(self) -> Self {
     const_f32_as_f32x4!(
       pub RAD_TO_DEG_RATIO, 57.2957795130823208767981548141051703_f32
@@ -671,6 +709,7 @@ impl f32x4 {
 
   /// Lanewise degrees -> radians.
   #[inline]
+  #[must_use]
   pub fn to_radians(self) -> Self {
     const_f32_as_f32x4!(
       pub DEG_TO_RAD_RATIO, core::f32::consts::PI / 180.0_f32
@@ -680,12 +719,14 @@ impl f32x4 {
 
   /// Lanewise fractional part.
   #[inline]
+  #[must_use]
   pub fn fract(self) -> Self {
     self - self.trunc()
   }
 
   /// Lanewise sqrt
   #[inline]
+  #[must_use]
   pub fn sqrt(self) -> Self {
     magic! { if #[cfg(target_feature = "sse")] {
       Self { sse: self.sse.sqrt() }

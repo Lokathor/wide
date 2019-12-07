@@ -2,6 +2,7 @@ use super::*;
 
 impl Clone for f32x4 {
   #[inline(always)]
+  #[must_use]
   fn clone(&self) -> Self {
     *self
   }
@@ -9,6 +10,7 @@ impl Clone for f32x4 {
 impl Copy for f32x4 {}
 impl Default for f32x4 {
   #[inline(always)]
+  #[must_use]
   fn default() -> Self {
     Self::zeroed()
   }
@@ -18,6 +20,7 @@ unsafe impl Pod for f32x4 {}
 
 impl From<f32> for f32x4 {
   #[inline]
+  #[must_use]
   fn from(val: f32) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: m128::splat(val) }
@@ -30,6 +33,7 @@ impl From<f32> for f32x4 {
 impl Add for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn add(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.add(rhs.sse) }
@@ -47,6 +51,7 @@ impl Add for f32x4 {
 impl Add<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn add(self, rhs: &Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.add(rhs.sse) }
@@ -64,6 +69,7 @@ impl Add<&'_ f32x4> for f32x4 {
 impl Div for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn div(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.div(rhs.sse) }
@@ -81,6 +87,7 @@ impl Div for f32x4 {
 impl Div<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn div(self, rhs: &Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.div(rhs.sse) }
@@ -98,6 +105,7 @@ impl Div<&'_ f32x4> for f32x4 {
 impl Mul for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn mul(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.mul(rhs.sse) }
@@ -115,6 +123,7 @@ impl Mul for f32x4 {
 impl Mul<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn mul(self, rhs: &Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.mul(rhs.sse) }
@@ -132,6 +141,7 @@ impl Mul<&'_ f32x4> for f32x4 {
 impl Sub for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn sub(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.sub(rhs.sse) }
@@ -149,6 +159,7 @@ impl Sub for f32x4 {
 impl Sub<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn sub(self, rhs: &Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.sub(rhs.sse) }
@@ -166,6 +177,7 @@ impl Sub<&'_ f32x4> for f32x4 {
 impl BitAnd for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitand(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.bitand(rhs.sse) }
@@ -183,6 +195,7 @@ impl BitAnd for f32x4 {
 impl BitAnd<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitand(self, rhs: &Self) -> Self {
     self & *rhs
   }
@@ -191,6 +204,7 @@ impl BitAnd<&'_ f32x4> for f32x4 {
 impl BitOr for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitor(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.bitor(rhs.sse) }
@@ -208,6 +222,7 @@ impl BitOr for f32x4 {
 impl BitOr<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitor(self, rhs: &Self) -> Self {
     self | *rhs
   }
@@ -216,6 +231,7 @@ impl BitOr<&'_ f32x4> for f32x4 {
 impl BitXor for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitxor(self, rhs: Self) -> Self {
     magic! {if #[cfg(target_feature="sse")] {
       Self { sse: self.sse.bitxor(rhs.sse) }
@@ -233,6 +249,7 @@ impl BitXor for f32x4 {
 impl BitXor<&'_ f32x4> for f32x4 {
   type Output = Self;
   #[inline]
+  #[must_use]
   fn bitxor(self, rhs: &Self) -> Self {
     self ^ *rhs
   }
@@ -242,6 +259,7 @@ impl Not for f32x4 {
   type Output = Self;
   /// Bitwise negation
   #[inline(always)]
+  #[must_use]
   fn not(self) -> Self {
     self ^ Self::ALL_BITS_ACTIVE
   }
@@ -249,8 +267,8 @@ impl Not for f32x4 {
 
 impl core::iter::Sum for f32x4 {
   #[inline]
-  fn sum<I: Iterator<Item = f32x4>>(iter: I) -> f32x4 {
-    let mut total = f32x4::new(0.0, 0.0, 0.0, 0.0);
+  fn sum<I: Iterator<Item = f32x4>>(iter: I) -> Self {
+    let mut total = Self::new(0.0, 0.0, 0.0, 0.0);
     for i in iter {
       total += i;
     }
@@ -259,8 +277,8 @@ impl core::iter::Sum for f32x4 {
 }
 impl<'a> core::iter::Sum<&'a f32x4> for f32x4 {
   #[inline]
-  fn sum<I: Iterator<Item = &'a f32x4>>(iter: I) -> f32x4 {
-    let mut total = f32x4::new(0.0, 0.0, 0.0, 0.0);
+  fn sum<I: Iterator<Item = &'a f32x4>>(iter: I) -> Self {
+    let mut total = Self::new(0.0, 0.0, 0.0, 0.0);
     for i in iter {
       total += i;
     }
@@ -270,8 +288,8 @@ impl<'a> core::iter::Sum<&'a f32x4> for f32x4 {
 
 impl core::iter::Product for f32x4 {
   #[inline]
-  fn product<I: Iterator<Item = f32x4>>(iter: I) -> f32x4 {
-    let mut total = f32x4::new(1.0, 1.0, 1.0, 1.0);
+  fn product<I: Iterator<Item = f32x4>>(iter: I) -> Self {
+    let mut total = Self::new(1.0, 1.0, 1.0, 1.0);
     for i in iter {
       total *= i;
     }
@@ -280,8 +298,8 @@ impl core::iter::Product for f32x4 {
 }
 impl<'a> core::iter::Product<&'a f32x4> for f32x4 {
   #[inline]
-  fn product<I: Iterator<Item = &'a f32x4>>(iter: I) -> f32x4 {
-    let mut total = f32x4::new(1.0, 1.0, 1.0, 1.0);
+  fn product<I: Iterator<Item = &'a f32x4>>(iter: I) -> Self {
+    let mut total = Self::new(1.0, 1.0, 1.0, 1.0);
     for i in iter {
       total *= i;
     }
@@ -290,15 +308,17 @@ impl<'a> core::iter::Product<&'a f32x4> for f32x4 {
 }
 
 impl Neg for f32x4 {
-  type Output = f32x4;
+  type Output = Self;
   #[inline]
-  fn neg(self) -> f32x4 {
-    f32x4::new(0.0, 0.0, 0.0, 0.0) - self
+  #[must_use]
+  fn neg(self) -> Self {
+    Self::new(0.0, 0.0, 0.0, 0.0) - self
   }
 }
 impl Neg for &'_ f32x4 {
   type Output = f32x4;
   #[inline]
+  #[must_use]
   fn neg(self) -> f32x4 {
     f32x4::new(0.0, 0.0, 0.0, 0.0) - self
   }

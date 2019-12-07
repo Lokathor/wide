@@ -9,16 +9,21 @@ use super::*;
 impl m128i {
   /// Lanewise `i8` wrapping absolute value.
   #[inline(always)]
+  #[must_use]
   pub fn abs_i8(self) -> Self {
     Self(unsafe { _mm_abs_epi8(self.0) })
   }
+
   /// Lanewise `i16` wrapping absolute value.
   #[inline(always)]
+  #[must_use]
   pub fn abs_i16(self) -> Self {
     Self(unsafe { _mm_abs_epi16(self.0) })
   }
+
   /// Lanewise `i32` wrapping absolute value.
   #[inline(always)]
+  #[must_use]
   pub fn abs_i32(self) -> Self {
     Self(unsafe { _mm_abs_epi32(self.0) })
   }
@@ -36,9 +41,11 @@ impl m128i {
   /// out[7]= rhs[7] + rhs[6]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn horizontal_add_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_hadd_epi16(self.0, rhs.0) })
   }
+
   /// Horizontal saturating add `i16` pairs in `self` and `rhs`.
   ///
   /// ```txt
@@ -52,9 +59,11 @@ impl m128i {
   /// out[7]= rhs[7].saturating_add(rhs[6])
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn horizontal_saturating_add_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_hadds_epi16(self.0, rhs.0) })
   }
+
   /// Horizontal add `i32` pairs in `self` and `rhs`.
   ///
   /// ```txt
@@ -64,6 +73,7 @@ impl m128i {
   /// out[3]= rhs[7] + rhs[6]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn horizontal_add_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_hadd_epi32(self.0, rhs.0) })
   }
@@ -81,9 +91,11 @@ impl m128i {
   /// out[7]= rhs[6] - rhs[7]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn horizontal_sub_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_hsub_epi16(self.0, rhs.0) })
   }
+
   /// Horizontal saturating subtract `i16` pairs in `self` and `rhs`.
   ///
   /// ```txt
@@ -97,6 +109,7 @@ impl m128i {
   /// out[7]= rhs[7].saturating_sub(rhs[6])
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn horizontal_saturating_sub_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_hsubs_epi16(self.0, rhs.0) })
   }
@@ -109,6 +122,7 @@ impl m128i {
   /// out[3]= rhs[7] - rhs[6]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn horizontal_sub_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_hsub_epi32(self.0, rhs.0) })
   }
@@ -127,6 +141,7 @@ impl m128i {
   /// out_i16[7]= self_u8[14]*rhs_u8[14] + self_u8[15]*rhs_u8[15]
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn mul_hadd_u8_to_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_maddubs_epi16(self.0, rhs.0) })
   }
@@ -140,6 +155,7 @@ impl m128i {
   /// }
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn mul_higher_ish_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mulhrs_epi16(self.0, rhs.0) })
   }
@@ -156,6 +172,7 @@ impl m128i {
   /// }
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn shuffle_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_shuffle_epi8(self.0, rhs.0) })
   }
@@ -172,6 +189,7 @@ impl m128i {
   /// }
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn sign_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sign_epi8(self.0, rhs.0) })
   }
@@ -187,6 +205,7 @@ impl m128i {
   /// }
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn sign_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sign_epi16(self.0, rhs.0) })
   }
@@ -202,6 +221,7 @@ impl m128i {
   /// }
   /// ```
   #[inline(always)]
+  #[must_use]
   pub fn sign_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sign_epi32(self.0, rhs.0) })
   }

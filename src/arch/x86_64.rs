@@ -54,6 +54,7 @@ pub use fma::*;
 
 /// As [`_rdtsc`](https://doc.rust-lang.org/core/arch/x86_64/fn._rdtsc.html).
 #[inline]
+#[must_use]
 pub fn rdtsc() -> u64 {
   unsafe { _rdtsc() }
 }

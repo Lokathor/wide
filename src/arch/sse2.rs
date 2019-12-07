@@ -7,12 +7,14 @@ use super::*;
 impl m128 {
   /// This rounds each lane to `i32`.
   #[inline(always)]
+  #[must_use]
   pub fn round_i32(self) -> m128i {
     m128i(unsafe { _mm_cvtps_epi32(self.0) })
   }
 
   /// This truncates each lane to `i32`.
   #[inline(always)]
+  #[must_use]
   pub fn truncate_i32(self) -> m128i {
     m128i(unsafe { _mm_cvttps_epi32(self.0) })
   }
@@ -23,18 +25,21 @@ impl m128 {
   /// on here, but I'll just call it rounding so that the naming stays
   /// consistent with other similar methods.
   #[inline(always)]
+  #[must_use]
   pub fn round_f64(self) -> m128d {
     m128d(unsafe { _mm_cvtps_pd(self.0) })
   }
 
   /// Lane 0 is the low `f64` of `rhs` rounded to `f32`, other lanes are `self`.
   #[inline(always)]
+  #[must_use]
   pub fn f64_round_copy0(self, rhs: m128d) -> Self {
     Self(unsafe { _mm_cvtsd_ss(self.0, rhs.0) })
   }
 
   /// Cast the bits of this `m128` directly to `m128i` without modification.
   #[inline(always)]
+  #[must_use]
   pub fn cast_m128i(self) -> m128i {
     m128i(unsafe { _mm_castps_si128(self.0) })
   }
@@ -47,6 +52,7 @@ impl m128 {
   /// `ceil` method when `sse4.1` is available. That actually _does_ perform the
   /// ceiling operation as a single instruction (much faster).
   #[inline]
+  #[must_use]
   pub fn ceil_sse2(self) -> Self {
     // Note(Lokathor): This magical value is the bit pattern for the smallest
     // `f32` that will never have a fractional part (8388608). Any number of
@@ -83,6 +89,7 @@ impl m128 {
   /// `floor` method when `sse4.1` is available. That actually _does_ perform
   /// the floor operation as a single instruction (much faster).
   #[inline]
+  #[must_use]
   pub fn floor_sse2(self) -> Self {
     // Note(Lokathor): This magical value is the bit pattern for the smallest
     // `f32` that will never have a fractional part (8388608). Any number of
@@ -131,6 +138,7 @@ pub struct m128i(pub __m128i);
 
 impl Default for m128i {
   #[inline(always)]
+  #[must_use]
   fn default() -> Self {
     Self::zeroed()
   }
@@ -599,6 +607,7 @@ impl BitAnd for m128i {
   type Output = Self;
   /// Bitwise AND.
   #[inline(always)]
+  #[must_use]
   fn bitand(self, rhs: Self) -> Self {
     Self(unsafe { _mm_and_si128(self.0, rhs.0) })
   }
@@ -615,6 +624,7 @@ impl BitOr for m128i {
   type Output = Self;
   /// Bitwise OR.
   #[inline(always)]
+  #[must_use]
   fn bitor(self, rhs: Self) -> Self {
     Self(unsafe { _mm_or_si128(self.0, rhs.0) })
   }
@@ -631,6 +641,7 @@ impl BitXor for m128i {
   type Output = Self;
   /// Bitwise XOR.
   #[inline(always)]
+  #[must_use]
   fn bitxor(self, rhs: Self) -> Self {
     Self(unsafe { _mm_xor_si128(self.0, rhs.0) })
   }
@@ -647,6 +658,7 @@ impl Not for m128i {
   type Output = Self;
   /// Bitwise negation
   #[inline(always)]
+  #[must_use]
   fn not(self) -> Self {
     let i: i64 = -1;
     let b = Self::splat_i64(i);
@@ -657,131 +669,155 @@ impl Not for m128i {
 impl m128i {
   /// Lanewise `i8` wrapping addition
   #[inline(always)]
+  #[must_use]
   pub fn add_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_epi8(self.0, rhs.0) })
   }
   /// Lanewise `i16` wrapping addition
   #[inline(always)]
+  #[must_use]
   pub fn add_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_epi16(self.0, rhs.0) })
   }
   /// Lanewise `i32` wrapping addition
   #[inline(always)]
+  #[must_use]
   pub fn add_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_epi32(self.0, rhs.0) })
   }
   /// Lanewise `i64` wrapping addition
   #[inline(always)]
+  #[must_use]
   pub fn add_i64(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_epi64(self.0, rhs.0) })
   }
 
   /// Lanewise `i8` saturating addition
   #[inline(always)]
+  #[must_use]
   pub fn saturating_add_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_adds_epi8(self.0, rhs.0) })
   }
   /// Lanewise `i16` saturating addition
   #[inline(always)]
+  #[must_use]
   pub fn saturating_add_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_adds_epi16(self.0, rhs.0) })
   }
   /// Lanewise `u8` saturating addition
   #[inline(always)]
+  #[must_use]
   pub fn saturating_add_u8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_adds_epu8(self.0, rhs.0) })
   }
   /// Lanewise `u16` saturating addition
   #[inline(always)]
+  #[must_use]
   pub fn saturating_add_u16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_adds_epu16(self.0, rhs.0) })
   }
 
   /// Bitwise `(!self) & rhs`
   #[inline(always)]
+  #[must_use]
   pub fn andnot(self, rhs: Self) -> Self {
     Self(unsafe { _mm_andnot_si128(self.0, rhs.0) })
   }
 
   /// Lanewise `u8` average: `(a + b + 1) >> 1`
   #[inline(always)]
+  #[must_use]
   pub fn average_u8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_avg_epu8(self.0, rhs.0) })
   }
   /// Lanewise `u16` average: `(a + b + 1) >> 1`
   #[inline(always)]
+  #[must_use]
   pub fn average_u16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_avg_epu16(self.0, rhs.0) })
   }
 
   /// Cast the bits of this `m128i` directly to `m128` without modification.
   #[inline(always)]
+  #[must_use]
   pub fn cast_m128(self) -> m128 {
     m128(unsafe { _mm_castsi128_ps(self.0) })
   }
 
   /// Lanewise `i8` equality: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_eq_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpeq_epi8(self.0, rhs.0) })
   }
   /// Lanewise `i16` equality: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_eq_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpeq_epi16(self.0, rhs.0) })
   }
   /// Lanewise `i32` equality: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_eq_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpeq_epi32(self.0, rhs.0) })
   }
 
   /// Lanewise `i8` greater than: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_gt_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpgt_epi8(self.0, rhs.0) })
   }
   /// Lanewise `i16` greater than: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_gt_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpgt_epi16(self.0, rhs.0) })
   }
   /// Lanewise `i32` greater than: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_gt_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpgt_epi32(self.0, rhs.0) })
   }
 
   /// Lanewise `i8` greater than: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_lt_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmplt_epi8(self.0, rhs.0) })
   }
   /// Lanewise `i16` greater than: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_lt_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmplt_epi16(self.0, rhs.0) })
   }
   /// Lanewise `i32` greater than: bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_lt_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmplt_epi32(self.0, rhs.0) })
   }
 
   /// Rounds the lower two `i32` lanes to `f64` lanes.
   #[inline(always)]
+  #[must_use]
   pub fn round_low_f64(self) -> m128d {
     m128d(unsafe { _mm_cvtepi32_pd(self.0) })
   }
 
   /// Rounds the `i32` lanes to `f32` lanes.
   #[inline(always)]
+  #[must_use]
   pub fn round_f32(self) -> m128 {
     m128(unsafe { _mm_cvtepi32_ps(self.0) })
   }
 
   /// Gets out the lowest `i32` lane.
   #[inline(always)]
+  #[must_use]
   pub fn extract0_i32(self) -> i32 {
     unsafe { _mm_cvtsi128_si32(self.0) }
   }
@@ -789,12 +825,14 @@ impl m128i {
   /// Gets out the lowest `i64` lane.
   #[cfg(target_arch = "x86_64")]
   #[inline(always)]
+  #[must_use]
   pub fn extract0_i64(self) -> i64 {
     unsafe { _mm_cvtsi128_si64(self.0) }
   }
 
   /// Places the `i32` in the low lane and zeroes other lanes.
   #[inline(always)]
+  #[must_use]
   pub fn set0_i32(val: i32) -> Self {
     Self(unsafe { _mm_cvtsi32_si128(val) })
   }
@@ -802,12 +840,14 @@ impl m128i {
   /// Places the `i64` in the low lane and zeroes the other lane.
   #[cfg(target_arch = "x86_64")]
   #[inline(always)]
+  #[must_use]
   pub fn set0_i64(val: i64) -> Self {
     Self(unsafe { _mm_cvtsi64_si128(val) })
   }
 
   /// Loads the aligned `i128` address specified.
   #[inline(always)]
+  #[must_use]
   pub fn load(addr: &Align16<i128>) -> Self {
     let ptr: *const __m128i = addr as *const Align16<i128> as *const __m128i;
     Self(unsafe { _mm_load_si128(ptr) })
@@ -815,6 +855,7 @@ impl m128i {
 
   /// Loads the aligned `i64` address specified into the low lane.
   #[inline(always)]
+  #[must_use]
   pub fn load0_i64(addr: &Align16<i64>) -> Self {
     let ptr: *const __m128i = addr as *const Align16<i64> as *const __m128i;
     Self(unsafe { _mm_loadl_epi64(ptr) })
@@ -823,6 +864,7 @@ impl m128i {
   /// Loads the `i128` address specified, no alignment requirements.
   #[inline(always)]
   #[allow(clippy::cast_ptr_alignment)]
+  #[must_use]
   pub fn load_unaligned(addr: &[u8; 16]) -> Self {
     let ptr: *const __m128i = addr as *const [u8; 16] as *const __m128i;
     Self(unsafe { _mm_loadu_si128(ptr) })
@@ -833,90 +875,105 @@ impl m128i {
   /// The eight `i16` multiplies produce eight intermediate `i32` values, which
   /// then get horizontal added into four `i32` values.
   #[inline(always)]
+  #[must_use]
   pub fn mul_i16_hadd(self, rhs: Self) -> Self {
     Self(unsafe { _mm_madd_epi16(self.0, rhs.0) })
   }
 
   /// Lanewise `u8` maximum
   #[inline(always)]
+  #[must_use]
   pub fn max_u8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_max_epu8(self.0, rhs.0) })
   }
 
   /// Lanewise `u8` minimum
   #[inline(always)]
+  #[must_use]
   pub fn min_u8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_min_epu8(self.0, rhs.0) })
   }
 
   /// Lanewise `i16` maximum
   #[inline(always)]
+  #[must_use]
   pub fn max_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_max_epi16(self.0, rhs.0) })
   }
 
   /// Lanewise `i16` minimum
   #[inline(always)]
+  #[must_use]
   pub fn min_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_min_epi16(self.0, rhs.0) })
   }
 
   /// Copies the low lane `i64` into a new value, upper lane is 0.
   #[inline(always)]
+  #[must_use]
   pub fn copy0_i64(self) -> Self {
     Self(unsafe { _mm_move_epi64(self.0) })
   }
 
   /// Crates a move mask from the `i8` lanes.
   #[inline(always)]
+  #[must_use]
   pub fn move_mask_i8(self) -> i32 {
     unsafe { _mm_movemask_epi8(self.0) }
   }
 
   /// Lanewise `i16` multiplication, keep high bits.
   #[inline(always)]
+  #[must_use]
   pub fn mul_high_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mulhi_epi16(self.0, rhs.0) })
   }
 
   /// Lanewise `i16` multiplication, keep low bits.
   #[inline(always)]
+  #[must_use]
   pub fn mul_low_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mullo_epi16(self.0, rhs.0) })
   }
 
   /// Lanewise `u16` multiplication, keep high bits.
   #[inline(always)]
+  #[must_use]
   pub fn mul_high_u16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mulhi_epu16(self.0, rhs.0) })
   }
 
   /// Lower half of each `i64` lane is `u32` multiplied into `u64` lanes.
   #[inline(always)]
+  #[must_use]
   pub fn half_mul_u32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mul_epu32(self.0, rhs.0) })
   }
 
   /// Pack `self` then `rhs` `i16` values into saturated `i8`s
   #[inline(always)]
+  #[must_use]
   pub fn pack_i16_saturating_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_packs_epi16(self.0, rhs.0) })
   }
 
   /// Pack `self` then `rhs` `i32` values into saturated `i16`s
   #[inline(always)]
+  #[must_use]
   pub fn pack_i32_saturating_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_packs_epi32(self.0, rhs.0) })
   }
 
   /// Pack `self` then `rhs` `i16` values into saturated `u8`s
   #[inline(always)]
+  #[must_use]
   pub fn pack_i16_saturating_u8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_packus_epi16(self.0, rhs.0) })
   }
 
   /// Sum of absolute `i8` differences, eight at a time into two `i64` lanes.
   #[inline(always)]
+  #[must_use]
   pub fn signed_abs_diff_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sad_epu8(self.0, rhs.0) })
   }
@@ -925,6 +982,7 @@ impl m128i {
   #[allow(clippy::too_many_arguments)]
   #[allow(clippy::many_single_char_names)]
   #[inline(always)]
+  #[must_use]
   pub fn set_i8(
     a: i8,
     b: i8,
@@ -952,6 +1010,7 @@ impl m128i {
   #[allow(clippy::too_many_arguments)]
   #[allow(clippy::many_single_char_names)]
   #[inline(always)]
+  #[must_use]
   pub fn set_reverse_i8(
     a: i8,
     b: i8,
@@ -979,6 +1038,7 @@ impl m128i {
   #[allow(clippy::too_many_arguments)]
   #[allow(clippy::many_single_char_names)]
   #[inline(always)]
+  #[must_use]
   pub fn set_i16(
     a: i16,
     b: i16,
@@ -996,6 +1056,7 @@ impl m128i {
   #[allow(clippy::too_many_arguments)]
   #[allow(clippy::many_single_char_names)]
   #[inline(always)]
+  #[must_use]
   pub fn set_reverse_i16(
     a: i16,
     b: i16,
@@ -1011,60 +1072,70 @@ impl m128i {
 
   /// Sets the `i32` values together in standard order.
   #[inline(always)]
+  #[must_use]
   pub fn set_i32(a: i32, b: i32, c: i32, d: i32) -> Self {
     Self(unsafe { _mm_set_epi32(a, b, c, d) })
   }
 
   /// Sets the `i32` values together in reverse order.
   #[inline(always)]
+  #[must_use]
   pub fn set_reverse_i32(a: i32, b: i32, c: i32, d: i32) -> Self {
     Self(unsafe { _mm_setr_epi32(a, b, c, d) })
   }
 
   /// Sets the `i64` values together in standard order.
   #[inline(always)]
+  #[must_use]
   pub fn set_i64(a: i64, b: i64) -> Self {
     Self(unsafe { _mm_set_epi64x(a, b) })
   }
 
   /// Splats the `i8` value across all lanes.
   #[inline(always)]
+  #[must_use]
   pub fn splat_i8(a: i8) -> Self {
     Self(unsafe { _mm_set1_epi8(a) })
   }
 
   /// Splats the `i16` value across all lanes.
   #[inline(always)]
+  #[must_use]
   pub fn splat_i16(a: i16) -> Self {
     Self(unsafe { _mm_set1_epi16(a) })
   }
 
   /// Splats the `i32` value across all lanes.
   #[inline(always)]
+  #[must_use]
   pub fn splat_i32(a: i32) -> Self {
     Self(unsafe { _mm_set1_epi32(a) })
   }
 
   /// Splats the `i64` value across all lanes.
   #[inline(always)]
+  #[must_use]
   pub fn splat_i64(a: i64) -> Self {
     Self(unsafe { _mm_set1_epi64x(a) })
   }
 
   /// Lanewise `i16` left shift using `rhs` as a `i128`: `self << rhs`
   #[inline(always)]
+  #[must_use]
   pub fn shift_left_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sll_epi16(self.0, rhs.0) })
   }
 
   /// Lanewise `i32` left shift using `rhs` as a `i128`: `self << rhs`
   #[inline(always)]
+  #[must_use]
   pub fn shift_left_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sll_epi32(self.0, rhs.0) })
   }
 
   /// Lanewise `i64` left shift using `rhs` as a `i128`: `self << rhs`
   #[inline(always)]
+  #[must_use]
   pub fn shift_left_i64(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sll_epi64(self.0, rhs.0) })
   }
@@ -1073,6 +1144,7 @@ impl m128i {
   ///
   /// Sign bit is preserved when shifting.
   #[inline(always)]
+  #[must_use]
   pub fn shift_right_sign_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sra_epi16(self.0, rhs.0) })
   }
@@ -1081,6 +1153,7 @@ impl m128i {
   ///
   /// Sign bit is preserved when shifting.
   #[inline(always)]
+  #[must_use]
   pub fn shift_right_sign_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sra_epi32(self.0, rhs.0) })
   }
@@ -1089,6 +1162,7 @@ impl m128i {
   ///
   /// Zeroes are shifted in regardless of the sign bit.
   #[inline(always)]
+  #[must_use]
   pub fn shift_right_zero_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_srl_epi16(self.0, rhs.0) })
   }
@@ -1097,6 +1171,7 @@ impl m128i {
   ///
   /// Zeroes are shifted in regardless of the sign bit.
   #[inline(always)]
+  #[must_use]
   pub fn shift_right_zero_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_srl_epi32(self.0, rhs.0) })
   }
@@ -1105,6 +1180,7 @@ impl m128i {
   ///
   /// Zeroes are shifted in regardless of the sign bit.
   #[inline(always)]
+  #[must_use]
   pub fn shift_right_zero_i64(self, rhs: Self) -> Self {
     Self(unsafe { _mm_srl_epi64(self.0, rhs.0) })
   }
@@ -1133,85 +1209,101 @@ impl m128i {
 
   /// Lanewise `i8` wrapping subtraction
   #[inline(always)]
+  #[must_use]
   pub fn sub_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_epi8(self.0, rhs.0) })
   }
   /// Lanewise `i16` wrapping subtraction
   #[inline(always)]
+  #[must_use]
   pub fn sub_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_epi16(self.0, rhs.0) })
   }
   /// Lanewise `i32` wrapping subtraction
   #[inline(always)]
+  #[must_use]
   pub fn sub_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_epi32(self.0, rhs.0) })
   }
   /// Lanewise `i64` wrapping subtraction
   #[inline(always)]
+  #[must_use]
   pub fn sub_i64(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_epi64(self.0, rhs.0) })
   }
 
   /// Lanewise `i8` saturating subtraction
   #[inline(always)]
+  #[must_use]
   pub fn saturating_sub_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_subs_epi8(self.0, rhs.0) })
   }
   /// Lanewise `i16` saturating subtraction
   #[inline(always)]
+  #[must_use]
   pub fn saturating_sub_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_subs_epi16(self.0, rhs.0) })
   }
 
   /// Lanewise `u8` saturating subtraction
   #[inline(always)]
+  #[must_use]
   pub fn saturating_sub_u8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_subs_epu8(self.0, rhs.0) })
   }
   /// Lanewise `u16` saturating subtraction
   #[inline(always)]
+  #[must_use]
   pub fn saturating_sub_u16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_subs_epu16(self.0, rhs.0) })
   }
 
   /// Unpack `i8` values from the high half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_high_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpackhi_epi8(self.0, rhs.0) })
   }
   /// Unpack `i16` values from the high half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_high_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpackhi_epi16(self.0, rhs.0) })
   }
   /// Unpack `i32` values from the high half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_high_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpackhi_epi32(self.0, rhs.0) })
   }
   /// Unpack `i64` values from the high half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_high_i64(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpackhi_epi64(self.0, rhs.0) })
   }
 
   /// Unpack `i8` values from the low half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_low_i8(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpacklo_epi8(self.0, rhs.0) })
   }
   /// Unpack `i16` values from the low half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_low_i16(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpacklo_epi16(self.0, rhs.0) })
   }
   /// Unpack `i32` values from the low half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_low_i32(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpacklo_epi32(self.0, rhs.0) })
   }
   /// Unpack `i64` values from the low half of `self` and `rhs`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_low_i64(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpacklo_epi64(self.0, rhs.0) })
   }
@@ -1241,6 +1333,7 @@ pub struct m128d(pub __m128d);
 
 impl Default for m128d {
   #[inline(always)]
+  #[must_use]
   fn default() -> Self {
     Self::zeroed()
   }
@@ -1337,6 +1430,7 @@ impl Add for m128d {
   type Output = Self;
   /// Lanewise addition.
   #[inline(always)]
+  #[must_use]
   fn add(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_pd(self.0, rhs.0) })
   }
@@ -1353,6 +1447,7 @@ impl BitAnd for m128d {
   type Output = Self;
   /// Bitwise AND.
   #[inline(always)]
+  #[must_use]
   fn bitand(self, rhs: Self) -> Self {
     Self(unsafe { _mm_and_pd(self.0, rhs.0) })
   }
@@ -1369,6 +1464,7 @@ impl Div for m128d {
   type Output = Self;
   /// Lanewise division.
   #[inline(always)]
+  #[must_use]
   fn div(self, rhs: Self) -> Self {
     Self(unsafe { _mm_div_pd(self.0, rhs.0) })
   }
@@ -1385,6 +1481,7 @@ impl Mul for m128d {
   type Output = Self;
   /// Lanewise multiplication.
   #[inline(always)]
+  #[must_use]
   fn mul(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mul_pd(self.0, rhs.0) })
   }
@@ -1401,6 +1498,7 @@ impl BitOr for m128d {
   type Output = Self;
   /// Bitwise OR.
   #[inline(always)]
+  #[must_use]
   fn bitor(self, rhs: Self) -> Self {
     Self(unsafe { _mm_or_pd(self.0, rhs.0) })
   }
@@ -1417,6 +1515,7 @@ impl Sub for m128d {
   type Output = Self;
   /// Lanewise subtraction.
   #[inline(always)]
+  #[must_use]
   fn sub(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_pd(self.0, rhs.0) })
   }
@@ -1433,6 +1532,7 @@ impl BitXor for m128d {
   type Output = Self;
   /// Bitwise XOR.
   #[inline(always)]
+  #[must_use]
   fn bitxor(self, rhs: Self) -> Self {
     Self(unsafe { _mm_xor_pd(self.0, rhs.0) })
   }
@@ -1449,6 +1549,7 @@ impl Neg for m128d {
   type Output = Self;
   /// Lanewise `0.0 - self`
   #[inline(always)]
+  #[must_use]
   fn neg(self) -> Self {
     Self(unsafe { _mm_sub_pd(_mm_setzero_pd(), self.0) })
   }
@@ -1458,6 +1559,7 @@ impl Not for m128d {
   type Output = Self;
   /// Bitwise negation
   #[inline(always)]
+  #[must_use]
   fn not(self) -> Self {
     let f: f64 = cast(-1_i64);
     let b = Self::splat(f);
@@ -1469,90 +1571,105 @@ impl Not for m128d {
 impl m128d {
   /// Adds the low lane, high lane unaffected.
   #[inline(always)]
+  #[must_use]
   pub fn add0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_add_sd(self.0, rhs.0) })
   }
 
   /// Bitwise `(!self) & rhs`
   #[inline(always)]
+  #[must_use]
   pub fn andnot(self, rhs: Self) -> Self {
     Self(unsafe { _mm_andnot_pd(self.0, rhs.0) })
   }
 
   /// Cast the bits of this `m128d` directly to `m128i` without modification.
   #[inline(always)]
+  #[must_use]
   pub fn cast_m128i(self) -> m128i {
     m128i(unsafe { _mm_castpd_si128(self.0) })
   }
 
   /// Lanewise `self == rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpeq_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self == rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_eq0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpeq_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `self >= rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ge(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpge_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self >= rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ge0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpge_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `self > rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpgt_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self > rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_gt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpgt_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `self <= rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_le(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmple_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self <= rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_le0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmple_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `self < rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmplt_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self < rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_lt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmplt_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `self != rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ne(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpneq_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self != rhs`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ne0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpneq_sd(self.0, rhs.0) })
   }
@@ -1561,132 +1678,154 @@ impl m128d {
   ///
   /// Also, 3rd Impact and all that, of course.
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nge(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnge_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self >= rhs)`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nge0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnge_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `!(self > rhs)`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ngt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpngt_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self > rhs)`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ngt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpngt_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `!(self <= rhs)`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nle(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnle_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self <= rhs)`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nle0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnle_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `!(self < rhs)`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nlt(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnlt_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `!(self < rhs)`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nlt0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpnlt_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `self.not_nan() & rhs.not_nan()`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ordinary(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpord_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self.not_nan() & rhs.not_nan()`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_ordinary0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpord_sd(self.0, rhs.0) })
   }
 
   /// Lanewise `self.is_nan() | rhs.is_nan()`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nan(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpunord_pd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self.is_nan() | rhs.is_nan()`, bool-ish output
   #[inline(always)]
+  #[must_use]
   pub fn cmp_nan0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_cmpunord_sd(self.0, rhs.0) })
   }
 
   /// Lane 0: `self == rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_eq0(self, rhs: Self) -> i32 {
     unsafe { _mm_comieq_sd(self.0, rhs.0) }
   }
 
   /// Lane 0: `self >= rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_ge0(self, rhs: Self) -> i32 {
     unsafe { _mm_comige_sd(self.0, rhs.0) }
   }
 
   /// Lane 0: `self > rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_gt0(self, rhs: Self) -> i32 {
     unsafe { _mm_comigt_sd(self.0, rhs.0) }
   }
 
   /// Lane 0: `self <= rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_le0(self, rhs: Self) -> i32 {
     unsafe { _mm_comile_sd(self.0, rhs.0) }
   }
 
   /// Lane 0: `self < rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_lt0(self, rhs: Self) -> i32 {
     unsafe { _mm_comilt_sd(self.0, rhs.0) }
   }
 
   /// Lane 0: `self != rhs`, 0 or 1 `i32` output.
   #[inline(always)]
+  #[must_use]
   pub fn cmpi_ne0(self, rhs: Self) -> i32 {
     unsafe { _mm_comineq_sd(self.0, rhs.0) }
   }
 
   /// Round the lanes to `i32` and place as the two lower lanes of an [`m128i`]
   #[inline(always)]
+  #[must_use]
   pub fn round_i32x4(self) -> m128i {
     m128i(unsafe { _mm_cvtpd_epi32(self.0) })
   }
 
   /// Round the lanes to `f32` and place as the two lower lanes of an [`m128`]
   #[inline(always)]
+  #[must_use]
   pub fn round_f32x4(self) -> m128 {
     m128(unsafe { _mm_cvtpd_ps(self.0) })
   }
 
   /// Get the lower lane value as `f64`.
   #[inline(always)]
+  #[must_use]
   pub fn extract0(self) -> f64 {
     unsafe { _mm_cvtsd_f64(self.0) }
   }
 
   /// Round lower lane to `i32` and return it.
   #[inline(always)]
+  #[must_use]
   pub fn round_i32_extract0(self) -> i32 {
     unsafe { _mm_cvtsd_si32(self.0) }
   }
@@ -1694,12 +1833,14 @@ impl m128d {
   /// Round lower lane to `i64` and return it.
   #[cfg(target_arch = "x86_64")]
   #[inline(always)]
+  #[must_use]
   pub fn round_i64_extract0(self) -> i64 {
     unsafe { _mm_cvtsd_si64(self.0) }
   }
 
   /// Replace lane 0 with `i32` rounded to `f64`, lane 1 unaffected.
   #[inline(always)]
+  #[must_use]
   pub fn replace0_with_i32(self, rhs: i32) -> Self {
     Self(unsafe { _mm_cvtsi32_sd(self.0, rhs) })
   }
@@ -1707,12 +1848,14 @@ impl m128d {
   /// Replace lane 0 with `i64` rounded to `f64`, lane 1 unaffected.
   #[cfg(target_arch = "x86_64")]
   #[inline(always)]
+  #[must_use]
   pub fn replace0_with_i64(self, rhs: i64) -> Self {
     Self(unsafe { _mm_cvtsi64_sd(self.0, rhs) })
   }
 
   /// Replace lane 0 with `rhs` low `f32` rounded to `f64`, lane 1 unaffected.
   #[inline(always)]
+  #[must_use]
   pub fn replace0_with_f32(self, rhs: m128) -> Self {
     Self(unsafe { _mm_cvtss_sd(self.0, rhs.0) })
   }
@@ -1720,12 +1863,14 @@ impl m128d {
   /// Truncate the lanes to `i32` and place as the two lower lanes of an
   /// [`m128i`]
   #[inline(always)]
+  #[must_use]
   pub fn truncate_i32x4(self) -> m128i {
     m128i(unsafe { _mm_cvttpd_epi32(self.0) })
   }
 
   /// Truncate lane 0 to `i32` and return it.
   #[inline(always)]
+  #[must_use]
   pub fn truncate0_i32(self) -> i32 {
     unsafe { _mm_cvttsd_si32(self.0) }
   }
@@ -1733,12 +1878,14 @@ impl m128d {
   /// Truncate lane 0 to `i64` and return it.
   #[cfg(target_arch = "x86_64")]
   #[inline(always)]
+  #[must_use]
   pub fn truncate0_i64(self) -> i64 {
     unsafe { _mm_cvttsd_si64(self.0) }
   }
 
   /// Divides the low lane, high lane unaffected.
   #[inline(always)]
+  #[must_use]
   pub fn div0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_div_sd(self.0, rhs.0) })
   }
@@ -1747,6 +1894,7 @@ impl m128d {
   ///
   /// Loads the 0th index as the 0th lane, and the 1st index as the 1st lane.
   #[inline(always)]
+  #[must_use]
   pub fn load(addr: &Align16<[f64; 2]>) -> Self {
     let ptr: *const f64 = addr as *const Align16<[f64; 2]> as *const f64;
     Self(unsafe { _mm_load_pd(ptr) })
@@ -1754,6 +1902,7 @@ impl m128d {
 
   /// Load the 16-byte aligned `f64` address into both lanes.
   #[inline(always)]
+  #[must_use]
   pub fn load_aligned_splat(addr: &Align16<f64>) -> Self {
     let ptr: *const f64 = addr as *const Align16<f64> as *const f64;
     Self(unsafe { _mm_load_pd1(ptr) })
@@ -1762,6 +1911,7 @@ impl m128d {
   /// Load the `f64` addressed into the low lane, high lane `0.0`.
   #[allow(clippy::trivially_copy_pass_by_ref)]
   #[inline(always)]
+  #[must_use]
   pub fn load0(addr: &f64) -> Self {
     Self(unsafe { _mm_load_sd(addr) })
   }
@@ -1769,6 +1919,7 @@ impl m128d {
   /// Replace high lane with the float referenced, low lane unaffected.
   #[allow(clippy::trivially_copy_pass_by_ref)]
   #[inline(always)]
+  #[must_use]
   pub fn replace_high(self, addr: &f64) -> Self {
     Self(unsafe { _mm_loadh_pd(self.0, addr) })
   }
@@ -1776,6 +1927,7 @@ impl m128d {
   /// Replace low lane with the float referenced, high lane unaffected.
   #[allow(clippy::trivially_copy_pass_by_ref)]
   #[inline(always)]
+  #[must_use]
   pub fn replace_low(self, addr: &f64) -> Self {
     Self(unsafe { _mm_loadl_pd(self.0, addr) })
   }
@@ -1784,6 +1936,7 @@ impl m128d {
   ///
   /// Loads the 0th index as the 1st lane, and the 1st index as the 0th lane.
   #[inline(always)]
+  #[must_use]
   pub fn load_reverse(addr: &Align16<[f64; 2]>) -> Self {
     let ptr: *const f64 = addr as *const Align16<[f64; 2]> as *const f64;
     Self(unsafe { _mm_loadr_pd(ptr) })
@@ -1793,6 +1946,7 @@ impl m128d {
   ///
   /// Loads the 0th index as the 1st lane, and the 1st index as the 0th lane.
   #[inline(always)]
+  #[must_use]
   pub fn load_unaligned(addr: &[f64; 2]) -> Self {
     let ptr: *const f64 = addr as *const [f64; 2] as *const f64;
     Self(unsafe { _mm_loadu_pd(ptr) })
@@ -1800,30 +1954,35 @@ impl m128d {
 
   /// Lanewise maximum.
   #[inline(always)]
+  #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     Self(unsafe { _mm_max_pd(self.0, rhs.0) })
   }
 
   /// Lane 0 maximum, other lanes are `self`.
   #[inline(always)]
+  #[must_use]
   pub fn max0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_max_sd(self.0, rhs.0) })
   }
 
   /// Lanewise minimum.
   #[inline(always)]
+  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     Self(unsafe { _mm_min_pd(self.0, rhs.0) })
   }
 
   /// Lane 0 minimum, other lanes are `self`.
   #[inline(always)]
+  #[must_use]
   pub fn min0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_min_sd(self.0, rhs.0) })
   }
 
   /// Copies lane 0 from `rhs`, other lane is unchanged.
   #[inline(always)]
+  #[must_use]
   pub fn copy0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_move_sd(self.0, rhs.0) })
   }
@@ -1836,12 +1995,14 @@ impl m128d {
   /// (Yes, this name is kinda stupid but I couldn't come up with a better thing
   /// to rename it to, oh well.)
   #[inline(always)]
+  #[must_use]
   pub fn move_mask(self) -> i32 {
     unsafe { _mm_movemask_pd(self.0) }
   }
 
   /// Multiplies the low lane, high lane unaffected.
   #[inline(always)]
+  #[must_use]
   pub fn mul0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_mul_sd(self.0, rhs.0) })
   }
@@ -1853,18 +2014,21 @@ impl m128d {
   /// then using [`load`](m128d::load) on that array. Same with using
   /// `transmute` or similar.
   #[inline(always)]
+  #[must_use]
   pub fn set(a: f64, b: f64) -> Self {
     Self(unsafe { _mm_set_pd(a, b) })
   }
 
   /// Set an `f64` as the value in both lanes.
   #[inline(always)]
+  #[must_use]
   pub fn splat(a: f64) -> Self {
     Self(unsafe { _mm_set_pd1(a) })
   }
 
   /// Sets the `f64` as lane 0, other lane `0.0`.
   #[inline(always)]
+  #[must_use]
   pub fn set0(a: f64) -> Self {
     Self(unsafe { _mm_set_sd(a) })
   }
@@ -1876,12 +2040,14 @@ impl m128d {
   /// then using [`load`](m128d::load) on that array. Same with using
   /// `transmute` or similar.
   #[inline(always)]
+  #[must_use]
   pub fn set_reverse(a: f64, b: f64) -> Self {
     Self(unsafe { _mm_setr_pd(a, b) })
   }
 
   /// Lanewise square root.
   #[inline(always)]
+  #[must_use]
   pub fn sqrt(self) -> Self {
     Self(unsafe { _mm_sqrt_pd(self.0) })
   }
@@ -1889,6 +2055,7 @@ impl m128d {
   /// `rhs[0]` square root copied over top of `self[0]`, `self[1]` is
   /// unaffected.
   #[inline(always)]
+  #[must_use]
   pub fn sqrt_other0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sqrt_sd(self.0, rhs.0) })
   }
@@ -1935,18 +2102,21 @@ impl m128d {
 
   /// Subtracts the low lane, high lane unaffected.
   #[inline(always)]
+  #[must_use]
   pub fn sub0(self, rhs: Self) -> Self {
     Self(unsafe { _mm_sub_sd(self.0, rhs.0) })
   }
 
   /// Gives `m128d(self[1], rhs[1])`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_high(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpackhi_pd(self.0, rhs.0) })
   }
 
   /// Gives `m128d(self[0], rhs[0])`
   #[inline(always)]
+  #[must_use]
   pub fn unpack_low(self, rhs: Self) -> Self {
     Self(unsafe { _mm_unpacklo_pd(self.0, rhs.0) })
   }
