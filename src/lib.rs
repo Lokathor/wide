@@ -7,6 +7,7 @@
 #![allow(clippy::expl_impl_clone_on_copy)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::use_self)]
+#![warn(clippy::must_use_candidate)]
 
 //! A crate to help you go wide.
 //!
