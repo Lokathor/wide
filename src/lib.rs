@@ -167,3 +167,16 @@ pub fn cos_f32(x: f32) -> f32 {
     }
   }
 }
+
+/// A `tan` for just one `f32`.
+#[inline(always)]
+#[must_use]
+pub fn tan_f32(x: f32) -> f32 {
+  magic! {
+    if #[cfg(target_feature = "sse")] {
+      f32x4 { sse: m128::set0(x) }.tan().sse.extract0()
+    } else {
+      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.tan().arr[0]
+    }
+  }
+}
