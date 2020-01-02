@@ -87,10 +87,16 @@ fn f32x4_signum() {
 }
 
 #[test]
-fn f32x4_fraction() {
+fn f32x4_fract() {
   let a = f32x4::new(3.5, 5.0, 0.1, -1.5).fract();
   assert_eq!(a[0], 0.5_f32.fract());
   assert_eq!(a[1], 0.0_f32.fract());
   assert_eq!(a[2], 0.1_f32.fract());
   assert_eq!(a[3], (-0.5_f32).fract());
+  
+  let a = f32x4::new(-0.1, 0.0, 0.0, 0.0).fract();
+  assert_eq!(a[0], (-0.1_f32).fract());
+  assert_eq!(a[1], 0.0_f32.fract());
+  assert_eq!(a[2], 0.0_f32.fract());
+  assert_eq!(a[3], 0.0_f32.fract());
 }
