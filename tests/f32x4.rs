@@ -89,14 +89,29 @@ fn f32x4_signum() {
 #[test]
 fn f32x4_fract() {
   let a = f32x4::new(3.5, 5.0, 0.1, -1.5).fract();
-  assert_eq!(a[0], 0.5_f32.fract());
-  assert_eq!(a[1], 0.0_f32.fract());
+  assert_eq!(a[0], 3.5_f32.fract());
+  assert_eq!(a[1], 5.0_f32.fract());
   assert_eq!(a[2], 0.1_f32.fract());
-  assert_eq!(a[3], (-0.5_f32).fract());
+  assert_eq!(a[3], (-1.5_f32).fract());
   
-  let a = f32x4::new(-0.1, 0.0, 0.0, 0.0).fract();
+  let a = f32x4::new(-0.1, -0.53, -1.25, 0.25).fract();
   assert_eq!(a[0], (-0.1_f32).fract());
-  assert_eq!(a[1], 0.0_f32.fract());
-  assert_eq!(a[2], 0.0_f32.fract());
-  assert_eq!(a[3], 0.0_f32.fract());
+  assert_eq!(a[1], (-0.53_f32).fract());
+  assert_eq!(a[2], (-1.25_f32).fract());
+  assert_eq!(a[3], 0.25_f32.fract());
+}
+
+#[test]
+fn f32x4_trunc() {
+  let a = f32x4::new(3.5, 5.0, 0.1, -1.5).trunc();
+  assert_eq!(a[0], 3.5_f32.trunc());
+  assert_eq!(a[1], 5.0_f32.trunc());
+  assert_eq!(a[2], 0.1_f32.trunc());
+  assert_eq!(a[3], (-1.5_f32).trunc());
+  
+  let a = f32x4::new(-0.1, -0.53, -1.25, 0.25).trunc();
+  assert_eq!(a[0], (-0.1_f32).trunc());
+  assert_eq!(a[1], (-0.53_f32).trunc());
+  assert_eq!(a[2], (-1.25_f32).trunc());
+  assert_eq!(a[3], 0.25_f32.trunc());
 }
