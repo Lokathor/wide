@@ -31,6 +31,7 @@ matrix:
     #- { os: linux, rust: 1.38.0,  env: FLAGS=--release }
 
     - { os: linux, rust: 1.38.0,  env: TARGET=wasm32-unknown-unknown }
+    - { os: linux, rust: nightly,  env: TARGET=wasm32-unknown-unknown }
     - { os: linux, rust: 1.38.0,  env: TARGET=wasm32-wasi }
 
     - { os: linux, rust: 1.38.0,  env: TARGET=aarch64-linux-android }
