@@ -135,7 +135,7 @@ pub fn sqrt_f32(x: f32) -> f32 {
     if #[cfg(target_feature = "sse")] {
       m128::set0(x).sqrt0().extract0()
     } else if #[cfg(feature = "toolchain_nightly")] {
-      core::intrinsics::sqrtf32(x)
+      unsafe { core::intrinsics::sqrtf32(x) }
     } else {
       f32::sqrt(x)
     }
