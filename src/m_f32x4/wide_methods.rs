@@ -264,7 +264,7 @@ impl f32x4 {
   }
 
   /// Lanewise `!(a >= b)`
-  /// 
+  ///
   /// If you call this method it triggers [Third Impact](https://evangelion.fandom.com/wiki/Third_Impact)
   #[inline]
   #[must_use]
@@ -310,7 +310,7 @@ impl f32x4 {
       ] }
     }}
   }
-  
+
   /// Lanewise `!(a <= b)`
   #[inline]
   #[must_use]
@@ -395,6 +395,7 @@ impl f32x4 {
   /// Lanewise cosine
   #[inline]
   #[must_use]
+  #[cfg(feature = "extern_crate_std")]
   pub fn cos(self) -> Self {
     // Gonna TRUST that optimizer to skip the final `sin` computations
     self.sin_cos().1
@@ -430,6 +431,7 @@ impl f32x4 {
   /// "We called it '[Sin](https://vignette.wikia.nocookie.net/finalfantasy/images/d/de/10sin-a.jpg)'."
   #[inline]
   #[must_use]
+  #[cfg(feature = "extern_crate_std")]
   pub fn sin(self) -> Self {
     // Gonna TRUST that optimizer to skip the final `cos` computations
     self.sin_cos().0
@@ -604,6 +606,7 @@ impl f32x4 {
   /// Lanewise tangent
   #[inline]
   #[must_use]
+  #[cfg(feature = "extern_crate_std")]
   pub fn tan(self) -> Self {
     let (s, c) = self.sin_cos();
     s / c
@@ -635,7 +638,23 @@ impl f32x4 {
   #[allow(bad_style)]
   #[allow(clippy::missing_inline_in_public_items)]
   #[must_use]
+  #[cfg(feature = "extern_crate_std")]
   pub fn sin_cos(self) -> (Self, Self) {
+    // the code below has a bug somewhere, so as a quick fix to at least get
+    // accurate results we have "un-wided" this method:
+    let mut arr_sin = [0.0; 4];
+    let mut arr_cos = [0.0; 4];
+    let arr_self: [f32; 4] = cast(self);
+    arr_self
+      .iter()
+      .copied()
+      .zip(arr_sin.iter_mut().zip(arr_cos.iter_mut()))
+      .for_each(|(f, (s_mut, c_mut))| {
+        let (s, c) = f.sin_cos();
+        *s_mut = s;
+        *c_mut = c;
+      });
+    /*
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
 
@@ -693,6 +712,7 @@ impl f32x4 {
     cos1 ^= sign_cos.cast_f32x4();
 
     (sin1, cos1)
+    */
   }
 
   /// Lanewise radians -> degrees.
