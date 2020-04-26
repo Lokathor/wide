@@ -654,6 +654,7 @@ impl f32x4 {
         *s_mut = s;
         *c_mut = c;
       });
+    (f32x4::from(arr_sin), f32x4::from(arr_cos))
     /*
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
