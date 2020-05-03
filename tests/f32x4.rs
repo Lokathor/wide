@@ -117,7 +117,6 @@ fn f32x4_trunc() {
 }
 
 #[test]
-#[cfg(feature = "extern_crate_std")]
 fn f32x4_sin_cos() {
   for x in -2500..2500 {
     let base = (x * 4) as f32;

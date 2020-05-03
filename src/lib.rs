@@ -145,7 +145,6 @@ pub fn sqrt_f32(x: f32) -> f32 {
 /// A `sin` for just one `f32`.
 #[inline(always)]
 #[must_use]
-#[cfg(feature = "extern_crate_std")]
 pub fn sin_f32(x: f32) -> f32 {
   magic! {
     if #[cfg(target_feature = "sse")] {
@@ -159,7 +158,6 @@ pub fn sin_f32(x: f32) -> f32 {
 /// A `cos` for just one `f32`.
 #[inline(always)]
 #[must_use]
-#[cfg(feature = "extern_crate_std")]
 pub fn cos_f32(x: f32) -> f32 {
   magic! {
     if #[cfg(target_feature = "sse")] {
@@ -173,7 +171,6 @@ pub fn cos_f32(x: f32) -> f32 {
 /// A `tan` for just one `f32`.
 #[inline(always)]
 #[must_use]
-#[cfg(feature = "extern_crate_std")]
 pub fn tan_f32(x: f32) -> f32 {
   magic! {
     if #[cfg(target_feature = "sse")] {

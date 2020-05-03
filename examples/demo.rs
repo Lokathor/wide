@@ -3,7 +3,6 @@ use wide::*;
 fn main() {
   // /*
   let mut f = 0.0;
-  #[cfg(feature = "extern_crate_std")]
   while f <= 1.5 {
     println!("rad {:.2}: s/c {:?}", f, f32x4::from(f).sin_cos());
     f += 0.1;
