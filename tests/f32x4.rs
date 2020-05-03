@@ -93,7 +93,7 @@ fn f32x4_fract() {
   assert_eq!(a[1], 5.0_f32.fract());
   assert_eq!(a[2], 0.1_f32.fract());
   assert_eq!(a[3], (-1.5_f32).fract());
-  
+
   let a = f32x4::new(-0.1, -0.53, -1.25, 0.25).fract();
   assert_eq!(a[0], (-0.1_f32).fract());
   assert_eq!(a[1], (-0.53_f32).fract());
@@ -108,10 +108,32 @@ fn f32x4_trunc() {
   assert_eq!(a[1], 5.0_f32.trunc());
   assert_eq!(a[2], 0.1_f32.trunc());
   assert_eq!(a[3], (-1.5_f32).trunc());
-  
+
   let a = f32x4::new(-0.1, -0.53, -1.25, 0.25).trunc();
   assert_eq!(a[0], (-0.1_f32).trunc());
   assert_eq!(a[1], (-0.53_f32).trunc());
   assert_eq!(a[2], (-1.25_f32).trunc());
   assert_eq!(a[3], 0.25_f32.trunc());
+}
+
+#[test]
+#[cfg(feature = "extern_crate_std")]
+fn f32x4_sin_cos() {
+  for x in -2500..2500 {
+    let base = (x * 4) as f32;
+    let angles = [base, base + 1_f32, base + 2_f32, base + 3_f32];
+    let (actual_sins, actual_coses) = f32x4::from(angles).sin_cos();
+
+    for i in 0..4 {
+      let angle = angles[i];
+
+      let check = |name: &str, actuals: &f32x4, expected: f32| {
+        let actual = actuals[i];
+        assert!((actual - expected).abs() < 0.00000006, "Wanted {}({}) to be {} but got {}", name, angle, expected, actual);
+      };
+
+      check("sin", &actual_sins, angle.sin());
+      check("cos", &actual_coses, angle.cos());
+    }
+  }
 }
