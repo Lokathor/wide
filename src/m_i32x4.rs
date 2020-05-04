@@ -34,7 +34,7 @@ unsafe impl Zeroable for i32x4 {}
 unsafe impl Pod for i32x4 {}
 
 /// Allows us to declare `i32x4` values in a `const` context. Uninteresting otherwise.
-/// 
+///
 /// See the [`const_i32_as_i32x4`] macro for usage.
 #[allow(non_camel_case_types)]
 #[repr(C, align(16))]
@@ -250,13 +250,23 @@ impl From<i32> for i32x4 {
   }
 }
 
+impl Index<usize> for i32x4 {
+  type Output = i32;
+  #[inline(always)]
+  #[must_use]
+  fn index(&self, index: usize) -> &i32 {
+    let r: &[i32; 4] = cast_ref(self);
+    &r[index]
+  }
+}
+
 impl Shl<i32> for i32x4 {
   type Output = Self;
   #[inline]
   #[must_use]
   fn shl(self, rhs: i32) -> Self {
     magic! {if #[cfg(target_feature="sse2")] {
-      Self { sse: self.sse.shift_left_i32(Self::from(rhs).sse) }
+      Self { sse: self.sse.shift_left_i32(Self::new(rhs, 0, 0, 0).sse) }
     } else {
       Self { arr: [
         self.arr[0] << rhs,
