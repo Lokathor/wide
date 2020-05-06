@@ -1,5 +1,5 @@
 [![License:Zlib](https://img.shields.io/badge/License-Zlib-brightgreen.svg)](https://opensource.org/licenses/Zlib)
-![Minimum Rust Version](https://img.shields.io/badge/Min%20Rust-1.38-green.svg)
+![Minimum Rust Version](https://img.shields.io/badge/Min%20Rust-1.43-green.svg)
 [![travis.ci](https://travis-ci.org/Lokathor/wide.svg?branch=master)](https://travis-ci.org/Lokathor/wide)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/33t3nhj1rplo7t1x/branch/master?svg=true)](https://ci.appveyor.com/project/Lokathor/wide/branch/master)
 [![crates.io](https://img.shields.io/crates/v/wide.svg)](https://crates.io/crates/wide)
