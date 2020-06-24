@@ -14,3 +14,11 @@ For more info [see the docs](https://docs.rs/wide).
 CI coverage:
 * Tested on: `x86`, `x86_64`, `wasm`
 * Built on: `armv7`, `aarch64`, `thumbv7neon`
+
+# Current Status
+
+The `wide` crate is currently in a holding pattern while I develop the [safe_arch](https://docs.rs/safe_arch) crate.
+
+`safe_arch` is a project where I'm pulling out the "safe usage of SIMD intrinsics" modules that `wide` currently has as just internal modules, and making that into its own fully formed crate.
+
+Once `safe_arch` is able to support it, I'll update `wide` to utilize the `safe_arch` crate. The `i32x4` type will get a proper overhaul to be completed, and we might even get additional data types added.
