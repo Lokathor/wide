@@ -8,8 +8,31 @@ jobs:
     strategy:
       matrix:
         rust:
-          - toolchain: [1.43.0, stable, beta, nightly]
-          - target: [i686-unknown-linux-gnu, x86_64-unknown-linux-gnu, arm-unknown-linux-gnueabihf, aarch64-unknown-linux-gnu, wasm32-unknown-unknown]
+        # x86
+        - { target: i686-pc-windows-msvc, toolchain: 1.43.0 }
+        - { target: i686-pc-windows-msvc, toolchain: stable }
+        - { target: i686-pc-windows-msvc, toolchain: beta }
+        - { target: i686-pc-windows-msvc, toolchain: nightly }
+        # x86_64
+        - { target: x86_64-unknown-linux-gnu, toolchain: 1.43.0 }
+        - { target: x86_64-unknown-linux-gnu, toolchain: stable }
+        - { target: x86_64-unknown-linux-gnu, toolchain: beta }
+        - { target: x86_64-unknown-linux-gnu, toolchain: nightly }
+        # arm
+        - { target: arm-unknown-linux-gnueabihf, toolchain: 1.43.0 }
+        - { target: arm-unknown-linux-gnueabihf, toolchain: stable }
+        - { target: arm-unknown-linux-gnueabihf, toolchain: beta }
+        - { target: arm-unknown-linux-gnueabihf, toolchain: nightly }
+        # aarch64
+        - { target: aarch64-unknown-linux-gnu, toolchain: 1.43.0 }
+        - { target: aarch64-unknown-linux-gnu, toolchain: stable }
+        - { target: aarch64-unknown-linux-gnu, toolchain: beta }
+        - { target: aarch64-unknown-linux-gnu, toolchain: nightly }
+        # wasm32
+        - { target: wasm32-unknown-unknown, toolchain: 1.43.0 }
+        - { target: wasm32-unknown-unknown, toolchain: stable }
+        - { target: wasm32-unknown-unknown, toolchain: beta }
+        - { target: wasm32-unknown-unknown, toolchain: nightly }
     steps:
     - uses: actions/checkout@v1
     - uses: actions-rs/toolchain@v1
