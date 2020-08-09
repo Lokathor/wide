@@ -53,23 +53,23 @@ pub use f64x2_::*;
 mod i8x16_;
 pub use i8x16_::*;
 
-mod u8x16_;
-pub use u8x16_::*;
-
 mod i16x8_;
 pub use i16x8_::*;
-
-mod u16x8_;
-pub use u16x8_::*;
 
 mod i32x4_;
 pub use i32x4_::*;
 
-mod u32x4_;
-pub use u32x4_::*;
-
 mod i64x2_;
 pub use i64x2_::*;
+
+mod u8x16_;
+pub use u8x16_::*;
+
+mod u16x8_;
+pub use u16x8_::*;
+
+mod u32x4_;
+pub use u32x4_::*;
 
 mod u64x2_;
 pub use u64x2_::*;
@@ -93,7 +93,7 @@ macro_rules! bulk_impl_op_ref_self_for {
 }
 
 bulk_impl_op_ref_self_for! {
-  (Add, add) => [f32x4, u8x16],
+  (Add, add) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
 }
 
 /// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
@@ -112,9 +112,11 @@ macro_rules! bulk_impl_op_assign_for {
   };
 }
 
+// Note: remember to update bulk_impl_op_ref_self_for first or this will give
+// weird errors!
 bulk_impl_op_assign_for! {
-  (AddAssign<Self>, add, add_assign) => [f32x4, u8x16],
-  (AddAssign<&Self>, add, add_assign) => [f32x4, u8x16],
+  (AddAssign<Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (AddAssign<&Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
 }
 
 /// impls `From<a> for b` by just calling `cast`
@@ -131,5 +133,7 @@ macro_rules! impl_from_a_for_b_with_cast {
 }
 
 impl_from_a_for_b_with_cast! {
-  ([f32;4], f32x4), ([u8;16], u8x16),
+  ([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2),
 }

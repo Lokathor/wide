@@ -35,7 +35,7 @@ impl Add for f32x4 {
           self.arr[0] + rhs.arr[0],
           self.arr[1] + rhs.arr[1],
           self.arr[2] + rhs.arr[2],
-          self.arr[3] + rhs.arr[3]
+          self.arr[3] + rhs.arr[3],
         ]}
       }
     }

@@ -1,0 +1,16 @@
+use wide::*;
+
+#[test]
+fn size_align() {
+  assert_eq!(core::mem::size_of::<f64x2>(), 16);
+  assert_eq!(core::mem::align_of::<f64x2>(), 16);
+}
+
+#[test]
+fn impl_add_for_f64x2() {
+  let a = f64x2::from([1.0, 2.0]);
+  let b = f64x2::from([5.0, 6.0]);
+  let expected = f64x2::from([6.0, 8.0]);
+  let actual = a + b;
+  assert_eq!(expected, actual);
+}
