@@ -8,11 +8,16 @@ jobs:
     strategy:
       matrix:
         rust:
+        # x86 without SIMD enabled
+        - { target: i586-unknown-linux-gnu, toolchain: 1.43.0 }
+        - { target: i586-unknown-linux-gnu, toolchain: stable }
+        - { target: i586-unknown-linux-gnu, toolchain: beta }
+        - { target: i586-unknown-linux-gnu, toolchain: nightly }
         # x86
-        - { target: i686-pc-windows-msvc, toolchain: 1.43.0 }
-        - { target: i686-pc-windows-msvc, toolchain: stable }
-        - { target: i686-pc-windows-msvc, toolchain: beta }
-        - { target: i686-pc-windows-msvc, toolchain: nightly }
+        - { target: i686-unknown-linux-gnu, toolchain: 1.43.0 }
+        - { target: i686-unknown-linux-gnu, toolchain: stable }
+        - { target: i686-unknown-linux-gnu, toolchain: beta }
+        - { target: i686-unknown-linux-gnu, toolchain: nightly }
         # x86_64
         - { target: x86_64-unknown-linux-gnu, toolchain: 1.43.0 }
         - { target: x86_64-unknown-linux-gnu, toolchain: stable }
@@ -46,9 +51,9 @@ jobs:
       with:
         toolchain: ${{ matrix.rust.toolchain }}
         command: build
-    - name: Test If CI Supports It
-      uses: actions-rs/cargo@v1
-      if: matrix.rust.target == 'i686-unknown-linux-gnu' || matrix.rust.target == 'x86_64-unknown-linux-gnu'
-      with:
-        toolchain: ${{ matrix.rust.toolchain }}
-        command: test
+    - name: Test with default CPU features.
+      if: matrix.rust.target == 'i586-unknown-linux-gnu' || matrix.rust.target == 'i686-unknown-linux-gnu' || matrix.rust.target == 'x86_64-unknown-linux-gnu'
+      run: cargo test
+    - name: Test with 'native' CPU features.
+      if: matrix.rust.target == 'i586-unknown-linux-gnu' || matrix.rust.target == 'i686-unknown-linux-gnu' || matrix.rust.target == 'x86_64-unknown-linux-gnu'
+      run: RUSTARGS=-Ctarget-cpu=native cargo test
