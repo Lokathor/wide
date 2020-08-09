@@ -1,7 +1,7 @@
 use super::*;
 
 pick! {
-  if #[cfg(all(any(target_arch = "x86", target_arch="x86_64"), target_feature="sse"))] {
+  if #[cfg(target_feature="sse")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
     pub struct f32x4 { sse: m128 }
@@ -22,17 +22,13 @@ impl core::fmt::Debug for f32x4 {
   }
 }
 
-impl From<[f32; 4]> for f32x4 {
-  fn from(arr: [f32; 4]) -> Self {
-    cast(arr)
-  }
-}
-
 impl Add for f32x4 {
   type Output = Self;
+  #[inline]
+  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(all(any(target_arch = "x86", target_arch="x86_64"), target_feature="sse"))] {
+      if #[cfg(target_feature="sse")] {
         Self { sse: add_m128(self.sse, rhs.sse) }
       } else {
         Self { arr: [
@@ -43,12 +39,5 @@ impl Add for f32x4 {
         ]}
       }
     }
-  }
-}
-
-impl Add<&f32x4> for f32x4 {
-  type Output = Self;
-  fn add(self, rhs: &f32x4) -> Self::Output {
-    self + *rhs
   }
 }

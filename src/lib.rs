@@ -74,11 +74,35 @@ pub use i64x2_::*;
 mod u64x2_;
 pub use u64x2_::*;
 
+/// given `type.op(type)` and type is Copy, impls `type.op(&type)`
+macro_rules! bulk_impl_op_ref_self_for {
+  ($(($op:ident, $method:ident) => [$($t:ty),+]),+ $(,)?) => {
+    $( // do each trait/list matching given
+      $( // do the current trait for each type in its list.
+        impl $op<&Self> for $t {
+          type Output = Self;
+          #[inline]
+          #[must_use]
+          fn $method(self, rhs: &Self) -> Self::Output {
+            self.$method(*rhs)
+          }
+        }
+      )+
+    )+
+  };
+}
+
+bulk_impl_op_ref_self_for! {
+  (Add, add) => [f32x4, u8x16],
+}
+
+/// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
 macro_rules! bulk_impl_op_assign_for {
   ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {
     $( // do each trait/list matching given
       $( // do the current trait for each type in its list.
         impl $op<$rhs> for $t {
+          #[inline]
           fn $method_assign(&mut self, rhs: $rhs) {
             *self = self.$method(rhs);
           }
@@ -89,6 +113,23 @@ macro_rules! bulk_impl_op_assign_for {
 }
 
 bulk_impl_op_assign_for! {
-  (AddAssign<Self>, add, add_assign) => [f32x4],
-  (AddAssign<&Self>, add, add_assign) => [f32x4],
+  (AddAssign<Self>, add, add_assign) => [f32x4, u8x16],
+  (AddAssign<&Self>, add, add_assign) => [f32x4, u8x16],
+}
+
+/// impls `From<a> for b` by just calling `cast`
+macro_rules! impl_from_a_for_b_with_cast {
+  ($(($arr:ty, $simd:ty)),+  $(,)?) => {
+    $(impl From<$arr> for $simd {
+      #[inline]
+      #[must_use]
+      fn from(arr: $arr) -> Self {
+        cast(arr)
+      }
+    })+
+  };
+}
+
+impl_from_a_for_b_with_cast! {
+  ([f32;4], f32x4), ([u8;16], u8x16),
 }
