@@ -102,6 +102,7 @@ macro_rules! bulk_impl_op_ref_self_for {
 bulk_impl_op_ref_self_for! {
   (Add, add) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
   (Sub, sub) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (Mul, mul) => [f32x4, f64x2, i16x8, i32x4],
 }
 
 /// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
@@ -127,6 +128,8 @@ bulk_impl_op_assign_for! {
   (AddAssign<&Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
   (SubAssign<Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
   (SubAssign<&Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (MulAssign<Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
+  (MulAssign<&Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
 }
 
 /// impls `From<a> for b` by just calling `cast`

@@ -62,3 +62,27 @@ impl Sub for i16x8 {
     }
   }
 }
+
+impl Mul for i16x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: mul_i16_keep_low_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].wrapping_mul(rhs.arr[0]),
+          self.arr[1].wrapping_mul(rhs.arr[1]),
+          self.arr[2].wrapping_mul(rhs.arr[2]),
+          self.arr[3].wrapping_mul(rhs.arr[3]),
+          self.arr[4].wrapping_mul(rhs.arr[4]),
+          self.arr[5].wrapping_mul(rhs.arr[5]),
+          self.arr[6].wrapping_mul(rhs.arr[6]),
+          self.arr[7].wrapping_mul(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+}

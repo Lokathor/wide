@@ -34,3 +34,12 @@ fn impl_sub_for_f32x4() {
   let actual = a - b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_mul_for_f32x4() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::from([5.0, 7.0, 17.0, 1.0]);
+  let expected = f32x4::from([5.0, 14.0, 51.0, 4.0]);
+  let actual = a * b;
+  assert_eq!(expected, actual);
+}

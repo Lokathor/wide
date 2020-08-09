@@ -50,3 +50,21 @@ impl Sub for f64x2 {
     }
   }
 }
+
+impl Mul for f64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: mul_m128d(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0] * rhs.arr[0],
+          self.arr[1] * rhs.arr[1],
+        ]}
+      }
+    }
+  }
+}

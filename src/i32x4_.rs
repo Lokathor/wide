@@ -54,3 +54,25 @@ impl Sub for i32x4 {
     }
   }
 }
+
+impl Mul for i32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: mul_i32_keep_low_m128i(self.sse, rhs.sse) }
+      } else {
+        let arr1: [i32; 4] = cast(self);
+        let arr2: [i32; 4] = cast(rhs);
+        cast([
+          arr1[0].wrapping_mul(arr2[0]),
+          arr1[1].wrapping_mul(arr2[1]),
+          arr1[2].wrapping_mul(arr2[2]),
+          arr1[3].wrapping_mul(arr2[3]),
+        ])
+      }
+    }
+  }
+}
