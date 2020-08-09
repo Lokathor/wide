@@ -46,14 +46,11 @@ jobs:
         target:  ${{ matrix.rust.target }}
         profile: minimal
         default: true
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        toolchain: ${{ matrix.rust.toolchain }}
-        command: build
+    - name: Build the crate
+      run: cargo build --target ${{ matrix.rust.target }}
     - name: Test with default CPU features.
       if: matrix.rust.target == 'i586-unknown-linux-gnu' || matrix.rust.target == 'i686-unknown-linux-gnu' || matrix.rust.target == 'x86_64-unknown-linux-gnu'
-      run: cargo test
+      run: cargo test --target ${{ matrix.rust.target }}
     - name: Test with 'native' CPU features.
       if: matrix.rust.target == 'i586-unknown-linux-gnu' || matrix.rust.target == 'i686-unknown-linux-gnu' || matrix.rust.target == 'x86_64-unknown-linux-gnu'
-      run: RUSTARGS=-Ctarget-cpu=native cargo test
+      run: RUSTARGS=-Ctarget-cpu=native cargo test --target ${{ matrix.rust.target }}
