@@ -1,0 +1,31 @@
+name: Rust
+
+on: [push]
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - toolchain: [1.43.0, stable, beta, nightly]
+          - target: [i686-unknown-linux-gnu, x86_64-unknown-linux-gnu, arm-unknown-linux-gnueabihf, aarch64-unknown-linux-gnu, wasm32-unknown-unknown]
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust.toolchain }}
+        target:  ${{ matrix.rust.target }}
+        profile: minimal
+        default: true
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        toolchain: ${{ matrix.rust.toolchain }}
+        command: build
+    - name: Test If CI Supports It
+      uses: actions-rs/cargo@v1
+      if: matrix.rust.target == 'i686-unknown-linux-gnu' || matrix.rust.target == 'x86_64-unknown-linux-gnu'
+      with:
+        toolchain: ${{ matrix.rust.toolchain }}
+        command: test
