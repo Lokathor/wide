@@ -70,3 +70,12 @@ fn impl_bitor_for_f32x4() {
   let actual = a | b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_bitxor_for_f32x4() {
+  let a = f32x4::from([0.0, 0.0, 1.0, 1.0]);
+  let b = f32x4::from([0.0, 1.0, 0.0, 1.0]);
+  let expected = f32x4::from([0.0, 1.0, 1.0, 0.0]);
+  let actual = a ^ b;
+  assert_eq!(expected, actual);
+}

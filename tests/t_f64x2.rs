@@ -59,3 +59,12 @@ fn impl_bitor_for_f64x2() {
   let actual = a | b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_bitxor_for_f64x2() {
+  let a = f64x2::from([0.0, 1.0]);
+  let b = f64x2::from([1.0, 1.0]);
+  let expected = f64x2::from([1.0, 0.0]);
+  let actual = a ^ b;
+  assert_eq!(expected, actual);
+}

@@ -116,3 +116,23 @@ impl BitOr for i32x4 {
     }
   }
 }
+
+impl BitXor for i32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitxor(rhs.arr[0]),
+          self.arr[1].bitxor(rhs.arr[1]),
+          self.arr[2].bitxor(rhs.arr[2]),
+          self.arr[3].bitxor(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+}

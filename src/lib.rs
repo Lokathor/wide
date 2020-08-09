@@ -144,6 +144,44 @@ impl_simple_neg_ref! {
   f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
 }
 
+macro_rules! impl_simple_not {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl Not for $t {
+        type Output = Self;
+        #[inline]
+        #[must_use]
+        fn not(self) -> Self::Output {
+          self ^ cast(u128::MAX)
+        }
+      }
+    )+
+  };
+}
+
+impl_simple_not! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
+macro_rules! impl_simple_not_ref {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl Not for &'_ $t {
+        type Output = $t;
+        #[inline]
+        #[must_use]
+        fn not(self) -> Self::Output {
+          *self ^ cast(u128::MAX)
+        }
+      }
+    )+
+  };
+}
+
+impl_simple_not_ref! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
 /// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
 macro_rules! bulk_impl_op_assign_for {
   ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {

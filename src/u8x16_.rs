@@ -142,3 +142,35 @@ impl BitOr for u8x16 {
     }
   }
 }
+
+impl BitXor for u8x16 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitxor(rhs.arr[0]),
+          self.arr[1].bitxor(rhs.arr[1]),
+          self.arr[2].bitxor(rhs.arr[2]),
+          self.arr[3].bitxor(rhs.arr[3]),
+          self.arr[4].bitxor(rhs.arr[4]),
+          self.arr[5].bitxor(rhs.arr[5]),
+          self.arr[6].bitxor(rhs.arr[6]),
+          self.arr[7].bitxor(rhs.arr[7]),
+          self.arr[8].bitxor(rhs.arr[8]),
+          self.arr[9].bitxor(rhs.arr[9]),
+          self.arr[10].bitxor(rhs.arr[10]),
+          self.arr[11].bitxor(rhs.arr[11]),
+          self.arr[12].bitxor(rhs.arr[12]),
+          self.arr[13].bitxor(rhs.arr[13]),
+          self.arr[14].bitxor(rhs.arr[14]),
+          self.arr[15].bitxor(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+}

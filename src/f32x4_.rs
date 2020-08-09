@@ -134,3 +134,23 @@ impl BitOr for f32x4 {
     }
   }
 }
+
+impl BitXor for f32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: bitxor_m128(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          f32::from_bits(self.arr[0].to_bits() ^ rhs.arr[0].to_bits()),
+          f32::from_bits(self.arr[1].to_bits() ^ rhs.arr[1].to_bits()),
+          f32::from_bits(self.arr[2].to_bits() ^ rhs.arr[2].to_bits()),
+          f32::from_bits(self.arr[3].to_bits() ^ rhs.arr[3].to_bits()),
+        ]}
+      }
+    }
+  }
+}
