@@ -74,3 +74,23 @@ impl Mul for f32x4 {
     }
   }
 }
+
+impl Div for f32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn div(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: div_m128(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0] / rhs.arr[0],
+          self.arr[1] / rhs.arr[1],
+          self.arr[2] / rhs.arr[2],
+          self.arr[3] / rhs.arr[3],
+        ]}
+      }
+    }
+  }
+}
