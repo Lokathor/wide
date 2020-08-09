@@ -8,7 +8,7 @@ use core::{
   ops::*,
 };
 
-// TODO: manual Debug for all types that passes through the formatter.
+// TODO: core::iter::Product, core::iter::Sum
 
 #[allow(unused_imports)]
 use safe_arch::*;
@@ -104,6 +104,44 @@ bulk_impl_op_ref_self_for! {
   (Sub, sub) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
   (Mul, mul) => [f32x4, f64x2, i16x8, i32x4],
   (Div, div) => [f32x4, f64x2],
+}
+
+macro_rules! impl_simple_neg {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl Neg for $t {
+        type Output = Self;
+        #[inline]
+        #[must_use]
+        fn neg(self) -> Self::Output {
+          Self::default() - self
+        }
+      }
+    )+
+  };
+}
+
+impl_simple_neg! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
+macro_rules! impl_simple_neg_ref {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl Neg for &'_ $t {
+        type Output = $t;
+        #[inline]
+        #[must_use]
+        fn neg(self) -> Self::Output {
+          <$t>::default() - self
+        }
+      }
+    )+
+  };
+}
+
+impl_simple_neg_ref! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
 }
 
 /// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`

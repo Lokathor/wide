@@ -50,3 +50,21 @@ impl Sub for i64x2 {
     }
   }
 }
+
+impl BitAnd for i64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+        ]}
+      }
+    }
+  }
+}

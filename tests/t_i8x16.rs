@@ -62,3 +62,12 @@ fn impl_sub_for_i8x16() {
   let actual = a - b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_bitand_for_i8x16() {
+  let a = i8x16::from([0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]);
+  let b = i8x16::from([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]);
+  let expected = i8x16::from([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  let actual = a & b;
+  assert_eq!(expected, actual);
+}

@@ -54,3 +54,23 @@ impl Sub for u32x4 {
     }
   }
 }
+
+impl BitAnd for u32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+          self.arr[2].bitand(rhs.arr[2]),
+          self.arr[3].bitand(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+}

@@ -62,3 +62,27 @@ impl Sub for u16x8 {
     }
   }
 }
+
+impl BitAnd for u16x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+          self.arr[2].bitand(rhs.arr[2]),
+          self.arr[3].bitand(rhs.arr[3]),
+          self.arr[4].bitand(rhs.arr[4]),
+          self.arr[5].bitand(rhs.arr[5]),
+          self.arr[6].bitand(rhs.arr[6]),
+          self.arr[7].bitand(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+}

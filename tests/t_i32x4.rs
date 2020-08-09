@@ -32,3 +32,12 @@ fn impl_mul_for_i32x4() {
   let actual = a * b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_bitand_for_i32x4() {
+  let a = i32x4::from([0, 0, 1, 1]);
+  let b = i32x4::from([0, 1, 0, 1]);
+  let expected = i32x4::from([0, 0, 0, 1]);
+  let actual = a & b;
+  assert_eq!(expected, actual);
+}

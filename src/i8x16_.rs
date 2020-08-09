@@ -78,3 +78,35 @@ impl Sub for i8x16 {
     }
   }
 }
+
+impl BitAnd for i8x16 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+          self.arr[2].bitand(rhs.arr[2]),
+          self.arr[3].bitand(rhs.arr[3]),
+          self.arr[4].bitand(rhs.arr[4]),
+          self.arr[5].bitand(rhs.arr[5]),
+          self.arr[6].bitand(rhs.arr[6]),
+          self.arr[7].bitand(rhs.arr[7]),
+          self.arr[8].bitand(rhs.arr[8]),
+          self.arr[9].bitand(rhs.arr[9]),
+          self.arr[10].bitand(rhs.arr[10]),
+          self.arr[11].bitand(rhs.arr[11]),
+          self.arr[12].bitand(rhs.arr[12]),
+          self.arr[13].bitand(rhs.arr[13]),
+          self.arr[14].bitand(rhs.arr[14]),
+          self.arr[15].bitand(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+}
