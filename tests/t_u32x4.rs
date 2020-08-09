@@ -14,3 +14,12 @@ fn impl_add_for_u32x4() {
   let actual = a + b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_sub_for_u32x4() {
+  let a = u32x4::from([9001, 2, 1, 0]);
+  let b = u32x4::from([17, 18, 1, 1]);
+  let expected = u32x4::from([8984, 4294967280, 0, u32::MAX]);
+  let actual = a - b;
+  assert_eq!(expected, actual);
+}

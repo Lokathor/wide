@@ -18,3 +18,30 @@ fn impl_add_for_u8x16() {
   let actual = a + b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_sub_for_u8x16() {
+  let a = u8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1, 0]);
+  let b =
+    u8x16::from([170, 18, 10, 200, 241, 2, 93, 4, 12, 8, 27, 28, 29, 30, 1, 1]);
+  let expected = u8x16::from([
+    87,
+    240,
+    249,
+    60,
+    20,
+    4,
+    170,
+    4,
+    253,
+    2,
+    240,
+    240,
+    240,
+    240,
+    0,
+    u8::MAX,
+  ]);
+  let actual = a - b;
+  assert_eq!(expected, actual);
+}

@@ -15,18 +15,6 @@ pick! {
 unsafe impl Zeroable for u32x4 {}
 unsafe impl Pod for u32x4 {}
 
-impl core::fmt::Debug for u32x4 {
-  #[rustfmt::skip]
-  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    let a: [u32; 4] = cast(*self);
-    write!(
-      f,
-      "({},{},{},{})",
-      a[0], a[1], a[2], a[3],
-    )
-  }
-}
-
 impl Add for u32x4 {
   type Output = Self;
   #[inline]
@@ -41,6 +29,26 @@ impl Add for u32x4 {
           self.arr[1].wrapping_add(rhs.arr[1]),
           self.arr[2].wrapping_add(rhs.arr[2]),
           self.arr[3].wrapping_add(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+}
+
+impl Sub for u32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: sub_i32_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].wrapping_sub(rhs.arr[0]),
+          self.arr[1].wrapping_sub(rhs.arr[1]),
+          self.arr[2].wrapping_sub(rhs.arr[2]),
+          self.arr[3].wrapping_sub(rhs.arr[3]),
         ]}
       }
     }

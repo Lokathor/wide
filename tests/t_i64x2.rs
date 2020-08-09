@@ -14,3 +14,12 @@ fn impl_add_for_i64x2() {
   let actual = a + b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_sub_for_i64x2() {
+  let a = i64x2::from([i64::MIN + 1, i64::MIN]);
+  let b = i64x2::from([1, 1]);
+  let expected = i64x2::from([i64::MIN, i64::MAX]);
+  let actual = a - b;
+  assert_eq!(expected, actual);
+}
