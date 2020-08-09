@@ -52,3 +52,10 @@ impl Add for f32x4 {
     }
   }
 }
+
+impl Add<&f32x4> for f32x4 {
+  type Output = Self;
+  fn add(self, rhs: &f32x4) -> Self::Output {
+    self + *rhs
+  }
+}

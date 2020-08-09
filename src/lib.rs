@@ -72,3 +72,22 @@ pub use i64x2_::*;
 
 mod u64x2_;
 pub use u64x2_::*;
+
+macro_rules! bulk_impl_op_assign_for {
+  ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {
+    $(
+      $(
+        impl $op<$rhs> for $t {
+          fn $method_assign(&mut self, rhs: $rhs) {
+            *self = self.$method(rhs);
+          }
+        }
+      )+
+    )+
+  };
+}
+
+bulk_impl_op_assign_for! {
+  (AddAssign<Self>, add, add_assign) => [f32x4],
+  (AddAssign<&Self>, add, add_assign) => [f32x4],
+}
