@@ -75,8 +75,8 @@ pub use u64x2_::*;
 
 macro_rules! bulk_impl_op_assign_for {
   ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {
-    $(
-      $(
+    $( // do each trait/list matching given
+      $( // do the current trait for each type in its list.
         impl $op<$rhs> for $t {
           fn $method_assign(&mut self, rhs: $rhs) {
             *self = self.$method(rhs);
