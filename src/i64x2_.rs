@@ -68,3 +68,21 @@ impl BitAnd for i64x2 {
     }
   }
 }
+
+impl BitOr for i64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitor(rhs.arr[0]),
+          self.arr[1].bitor(rhs.arr[1]),
+        ]}
+      }
+    }
+  }
+}

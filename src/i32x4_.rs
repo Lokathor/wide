@@ -87,10 +87,30 @@ impl BitAnd for i32x4 {
         Self { sse: bitand_m128i(self.sse, rhs.sse) }
       } else {
         Self { arr: [
-          self.arr[0].bit_and(rhs.arr[0]),
-          self.arr[1].bit_and(rhs.arr[1]),
-          self.arr[2].bit_and(rhs.arr[2]),
-          self.arr[3].bit_and(rhs.arr[3]),
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+          self.arr[2].bitand(rhs.arr[2]),
+          self.arr[3].bitand(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+}
+
+impl BitOr for i32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitor(rhs.arr[0]),
+          self.arr[1].bitor(rhs.arr[1]),
+          self.arr[2].bitor(rhs.arr[2]),
+          self.arr[3].bitor(rhs.arr[3]),
         ]}
       }
     }

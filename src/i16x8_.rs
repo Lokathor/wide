@@ -110,3 +110,27 @@ impl BitAnd for i16x8 {
     }
   }
 }
+
+impl BitOr for i16x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].bitor(rhs.arr[0]),
+          self.arr[1].bitor(rhs.arr[1]),
+          self.arr[2].bitor(rhs.arr[2]),
+          self.arr[3].bitor(rhs.arr[3]),
+          self.arr[4].bitor(rhs.arr[4]),
+          self.arr[5].bitor(rhs.arr[5]),
+          self.arr[6].bitor(rhs.arr[6]),
+          self.arr[7].bitor(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+}

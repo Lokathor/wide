@@ -104,3 +104,21 @@ impl BitAnd for f64x2 {
     }
   }
 }
+
+impl BitOr for f64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitor_m128d(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          f64::from_bits(self.arr[0].to_bits() | rhs.arr[0].to_bits()),
+          f64::from_bits(self.arr[1].to_bits() | rhs.arr[1].to_bits()),
+        ]}
+      }
+    }
+  }
+}

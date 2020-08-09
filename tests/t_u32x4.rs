@@ -32,3 +32,12 @@ fn impl_bitand_for_u32x4() {
   let actual = a & b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_bitor_for_u32x4() {
+  let a = u32x4::from([0, 0, 1, 1]);
+  let b = u32x4::from([0, 1, 0, 1]);
+  let expected = u32x4::from([0, 1, 1, 1]);
+  let actual = a | b;
+  assert_eq!(expected, actual);
+}
