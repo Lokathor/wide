@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         rust:
-        # x86 without SIMD enabled
+        # x86 without sse/sse2 on by default
         - { target: i586-pc-windows-msvc, toolchain: 1.43.0 }
         - { target: i586-pc-windows-msvc, toolchain: stable }
         - { target: i586-pc-windows-msvc, toolchain: beta }

@@ -92,6 +92,3 @@ bulk_impl_op_assign_for! {
   (AddAssign<Self>, add, add_assign) => [f32x4],
   (AddAssign<&Self>, add, add_assign) => [f32x4],
 }
-
-#[cfg(target_feature = "avx")]
-compile_error!("avx is on");
