@@ -24,14 +24,7 @@ impl core::fmt::Debug for f32x4 {
 
 impl From<[f32; 4]> for f32x4 {
   fn from(arr: [f32; 4]) -> Self {
-    pick! {
-      if #[cfg(any(target_arch = "x86", target_arch="x86_64"))] {
-        Self { sse: cast(arr) }
-      } else {
-        #[repr(C, align(16))]
-        Self { arr }
-      }
-    }
+    cast(arr)
   }
 }
 
