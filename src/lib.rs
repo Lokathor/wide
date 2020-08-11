@@ -8,8 +8,6 @@ use core::{
   ops::*,
 };
 
-// TODO: core::iter::Product, core::iter::Sum
-
 #[allow(unused_imports)]
 use safe_arch::*;
 
@@ -109,6 +107,41 @@ bulk_impl_op_ref_self_for! {
   (BitXor, bitxor) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
 }
 
+/// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
+macro_rules! bulk_impl_op_assign_for {
+  ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {
+    $( // do each trait/list matching given
+      $( // do the current trait for each type in its list.
+        impl $op<$rhs> for $t {
+          #[inline]
+          fn $method_assign(&mut self, rhs: $rhs) {
+            *self = self.$method(rhs);
+          }
+        }
+      )+
+    )+
+  };
+}
+
+// Note: remember to update bulk_impl_op_ref_self_for first or this will give
+// weird errors!
+bulk_impl_op_assign_for! {
+  (AddAssign<Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (AddAssign<&Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (SubAssign<Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (SubAssign<&Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (MulAssign<Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
+  (MulAssign<&Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
+  (DivAssign<Self>, div, div_assign) => [f32x4, f64x2],
+  (DivAssign<&Self>, div, div_assign) => [f32x4, f64x2],
+  (BitAndAssign<Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitAndAssign<&Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOrAssign<Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOrAssign<&Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXorAssign<Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXorAssign<&Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+}
+
 macro_rules! impl_simple_neg {
   ($($t:ty),+ $(,)?) => {
     $(
@@ -163,39 +196,91 @@ impl_simple_not! {
   f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
 }
 
-/// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
-macro_rules! bulk_impl_op_assign_for {
-  ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {
-    $( // do each trait/list matching given
-      $( // do the current trait for each type in its list.
-        impl $op<$rhs> for $t {
-          #[inline]
-          fn $method_assign(&mut self, rhs: $rhs) {
-            *self = self.$method(rhs);
+macro_rules! impl_simple_sum {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl core::iter::Sum<$t> for $t {
+        fn sum<I: Iterator<Item = $t>>(iter: I) -> Self {
+          let mut total = Self::default();
+          for val in iter {
+            total += val;
           }
+          total
         }
-      )+
+      }
+      impl<'a> core::iter::Sum<&'a $t> for $t {
+        fn sum<I: Iterator<Item = &'a $t>>(iter: I) -> Self {
+          let mut total = Self::default();
+          for val in iter {
+            total += val;
+          }
+          total
+        }
+      }
     )+
   };
 }
 
-// Note: remember to update bulk_impl_op_ref_self_for first or this will give
-// weird errors!
-bulk_impl_op_assign_for! {
-  (AddAssign<Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (AddAssign<&Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (SubAssign<Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (SubAssign<&Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (MulAssign<Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
-  (MulAssign<&Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
-  (DivAssign<Self>, div, div_assign) => [f32x4, f64x2],
-  (DivAssign<&Self>, div, div_assign) => [f32x4, f64x2],
-  (BitAndAssign<Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitAndAssign<&Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitOrAssign<Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitOrAssign<&Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitXorAssign<Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitXorAssign<&Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+impl_simple_sum! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
+macro_rules! impl_floating_product {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl core::iter::Product<$t> for $t {
+        fn product<I: Iterator<Item = $t>>(iter: I) -> Self {
+          let mut total = Self::from(1.0);
+          for val in iter {
+            total *= val;
+          }
+          total
+        }
+      }
+      impl<'a> core::iter::Product<&'a $t> for $t {
+        fn product<I: Iterator<Item = &'a $t>>(iter: I) -> Self {
+          let mut total = Self::from(1.0);
+          for val in iter {
+            total *= val;
+          }
+          total
+        }
+      }
+    )+
+  };
+}
+
+impl_floating_product! {
+  f32x4, f64x2
+}
+
+macro_rules! impl_integer_product {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl core::iter::Product<$t> for $t {
+        fn product<I: Iterator<Item = $t>>(iter: I) -> Self {
+          let mut total = Self::from(1);
+          for val in iter {
+            total *= val;
+          }
+          total
+        }
+      }
+      impl<'a> core::iter::Product<&'a $t> for $t {
+        fn product<I: Iterator<Item = &'a $t>>(iter: I) -> Self {
+          let mut total = Self::from(1);
+          for val in iter {
+            total *= val;
+          }
+          total
+        }
+      }
+    )+
+  };
+}
+
+impl_integer_product! {
+  i16x8, i32x4,
 }
 
 /// impls `From<a> for b` by just calling `cast`
