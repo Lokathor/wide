@@ -117,17 +117,6 @@ macro_rules! impl_simple_neg {
           Self::default() - self
         }
       }
-    )+
-  };
-}
-
-impl_simple_neg! {
-  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
-}
-
-macro_rules! impl_simple_neg_ref {
-  ($($t:ty),+ $(,)?) => {
-    $(
       impl Neg for &'_ $t {
         type Output = $t;
         #[inline]
@@ -140,7 +129,7 @@ macro_rules! impl_simple_neg_ref {
   };
 }
 
-impl_simple_neg_ref! {
+impl_simple_neg! {
   f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
 }
 
@@ -155,17 +144,6 @@ macro_rules! impl_simple_not {
           self ^ cast(u128::MAX)
         }
       }
-    )+
-  };
-}
-
-impl_simple_not! {
-  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
-}
-
-macro_rules! impl_simple_not_ref {
-  ($($t:ty),+ $(,)?) => {
-    $(
       impl Not for &'_ $t {
         type Output = $t;
         #[inline]
@@ -178,7 +156,7 @@ macro_rules! impl_simple_not_ref {
   };
 }
 
-impl_simple_not_ref! {
+impl_simple_not! {
   f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
 }
 
