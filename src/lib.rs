@@ -199,17 +199,8 @@ impl_simple_not! {
 macro_rules! impl_simple_sum {
   ($($t:ty),+ $(,)?) => {
     $(
-      impl core::iter::Sum<$t> for $t {
-        fn sum<I: Iterator<Item = $t>>(iter: I) -> Self {
-          let mut total = Self::default();
-          for val in iter {
-            total += val;
-          }
-          total
-        }
-      }
-      impl<'a> core::iter::Sum<&'a $t> for $t {
-        fn sum<I: Iterator<Item = &'a $t>>(iter: I) -> Self {
+      impl<RHS> core::iter::Sum<RHS> for $t where $t: AddAssign<RHS> {
+        fn sum<I: Iterator<Item = RHS>>(iter: I) -> Self {
           let mut total = Self::default();
           for val in iter {
             total += val;
@@ -228,17 +219,8 @@ impl_simple_sum! {
 macro_rules! impl_floating_product {
   ($($t:ty),+ $(,)?) => {
     $(
-      impl core::iter::Product<$t> for $t {
-        fn product<I: Iterator<Item = $t>>(iter: I) -> Self {
-          let mut total = Self::from(1.0);
-          for val in iter {
-            total *= val;
-          }
-          total
-        }
-      }
-      impl<'a> core::iter::Product<&'a $t> for $t {
-        fn product<I: Iterator<Item = &'a $t>>(iter: I) -> Self {
+      impl<RHS> core::iter::Product<RHS> for $t where $t: MulAssign<RHS> {
+        fn product<I: Iterator<Item = RHS>>(iter: I) -> Self {
           let mut total = Self::from(1.0);
           for val in iter {
             total *= val;
@@ -257,17 +239,8 @@ impl_floating_product! {
 macro_rules! impl_integer_product {
   ($($t:ty),+ $(,)?) => {
     $(
-      impl core::iter::Product<$t> for $t {
-        fn product<I: Iterator<Item = $t>>(iter: I) -> Self {
-          let mut total = Self::from(1);
-          for val in iter {
-            total *= val;
-          }
-          total
-        }
-      }
-      impl<'a> core::iter::Product<&'a $t> for $t {
-        fn product<I: Iterator<Item = &'a $t>>(iter: I) -> Self {
+      impl<RHS> core::iter::Product<RHS> for $t where $t: MulAssign<RHS> {
+        fn product<I: Iterator<Item = RHS>>(iter: I) -> Self {
           let mut total = Self::from(1);
           for val in iter {
             total *= val;
