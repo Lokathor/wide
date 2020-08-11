@@ -217,6 +217,25 @@ impl_from_a_for_b_with_cast! {
   ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2),
 }
 
+macro_rules! impl_from_single_value {
+  ($(([$elem:ty;$len:expr], $simd:ty)),+  $(,)?) => {
+    $(impl From<$elem> for $simd {
+      /// Splats the single value given across all lanes.
+      #[inline]
+      #[must_use]
+      fn from(elem: $elem) -> Self {
+        cast([elem; $len])
+      }
+    })+
+  };
+}
+
+impl_from_single_value! {
+  ([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2),
+}
+
 /// formatter => [(arr, simd)+],+
 macro_rules! impl_formatter_for {
   ($($trait:ident => [$(($arr:ty, $simd:ty)),+]),+ $(,)?) => {
