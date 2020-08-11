@@ -104,6 +104,9 @@ bulk_impl_op_ref_self_for! {
   (Sub, sub) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
   (Mul, mul) => [f32x4, f64x2, i16x8, i32x4],
   (Div, div) => [f32x4, f64x2],
+  (BitAnd, bitand) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOr, bitor) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXor, bitxor) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
 }
 
 macro_rules! impl_simple_neg {
@@ -141,7 +144,7 @@ macro_rules! impl_simple_not {
         #[inline]
         #[must_use]
         fn not(self) -> Self::Output {
-          self ^ cast(u128::MAX)
+          self ^ cast::<u128, $t>(u128::MAX)
         }
       }
       impl Not for &'_ $t {
@@ -149,7 +152,7 @@ macro_rules! impl_simple_not {
         #[inline]
         #[must_use]
         fn not(self) -> Self::Output {
-          *self ^ cast(u128::MAX)
+          *self ^ cast::<u128, $t>(u128::MAX)
         }
       }
     )+
@@ -187,6 +190,12 @@ bulk_impl_op_assign_for! {
   (MulAssign<&Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
   (DivAssign<Self>, div, div_assign) => [f32x4, f64x2],
   (DivAssign<&Self>, div, div_assign) => [f32x4, f64x2],
+  (BitAndAssign<Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitAndAssign<&Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOrAssign<Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOrAssign<&Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXorAssign<Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXorAssign<&Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
 }
 
 /// impls `From<a> for b` by just calling `cast`
