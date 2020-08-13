@@ -50,3 +50,13 @@ fn impl_bitxor_for_u32x4() {
   let actual = a ^ b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_shl_for_u32x4() {
+  let a = u32x4::from([1, 2, u32::MAX - 1, u32::MAX - 1]);
+  let b = 2_u32;
+  let expected =
+    u32x4::from([1 << 2, 2 << 2, (u32::MAX - 1) << 2, (u32::MAX - 1) << 2]);
+  let actual = a << b;
+  assert_eq!(expected, actual);
+}

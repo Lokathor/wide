@@ -104,3 +104,24 @@ impl BitXor for i64x2 {
     }
   }
 }
+
+impl<I: Into<u64>> Shl<I> for i64x2 {
+  type Output = Self;
+  /// Shifts all lanes by the value given.
+  #[inline]
+  #[must_use]
+  fn shl(self, rhs: I) -> Self::Output {
+    let u = rhs.into();
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let shift = cast([u, 0]);
+        Self { sse: shl_all_u64_m128i(self.sse, shift) }
+      } else {
+        Self { arr: [
+          self.arr[0] << u,
+          self.arr[1] << u,
+        ]}
+      }
+    }
+  }
+}
