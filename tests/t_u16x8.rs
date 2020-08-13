@@ -68,3 +68,21 @@ fn impl_shl_for_u16x8() {
   let actual = a << b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_shr_for_u16x8() {
+  let a = u16x8::from([1, 2, 3, 4, 5, 6, u16::MAX - 1, u16::MAX - 1]);
+  let b = 2_u32;
+  let expected = u16x8::from([
+    1 >> 2,
+    2 >> 2,
+    3 >> 2,
+    4 >> 2,
+    5 >> 2,
+    6 >> 2,
+    (u16::MAX - 1) >> 2,
+    (u16::MAX - 1) >> 2,
+  ]);
+  let actual = a >> b;
+  assert_eq!(expected, actual);
+}

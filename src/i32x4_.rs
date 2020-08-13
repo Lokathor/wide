@@ -159,3 +159,26 @@ impl<I: Into<u64>> Shl<I> for i32x4 {
     }
   }
 }
+
+impl<I: Into<u64>> Shr<I> for i32x4 {
+  type Output = Self;
+  /// Shifts all lanes by the value given.
+  #[inline]
+  #[must_use]
+  fn shr(self, rhs: I) -> Self::Output {
+    let u = rhs.into();
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let shift = cast([u, 0]);
+        Self { sse: shr_all_i32_m128i(self.sse, shift) }
+      } else {
+        Self { arr: [
+          self.arr[0] >> u,
+          self.arr[1] >> u,
+          self.arr[2] >> u,
+          self.arr[3] >> u,
+        ]}
+      }
+    }
+  }
+}

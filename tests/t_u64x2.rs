@@ -59,3 +59,12 @@ fn impl_shl_for_u64x2() {
   let actual = a << b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_shr_for_u64x2() {
+  let a = u64x2::from([u64::MAX - 1, u64::MAX - 1]);
+  let b = 2_u32;
+  let expected = u64x2::from([(u64::MAX - 1) >> 2, (u64::MAX - 1) >> 2]);
+  let actual = a >> b;
+  assert_eq!(expected, actual);
+}

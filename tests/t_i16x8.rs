@@ -78,3 +78,21 @@ fn impl_shl_for_i16x8() {
   let actual = a << b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_shr_for_i16x8() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+  let b = 2_u32;
+  let expected = i16x8::from([
+    1 >> 2,
+    2 >> 2,
+    3 >> 2,
+    4 >> 2,
+    5 >> 2,
+    6 >> 2,
+    (i16::MIN + 1) >> 2,
+    i16::MIN >> 2,
+  ]);
+  let actual = a >> b;
+  assert_eq!(expected, actual);
+}
