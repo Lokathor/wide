@@ -1,5 +1,7 @@
 use wide::*;
 
+use bytemuck::*;
+
 #[test]
 fn size_align() {
   assert_eq!(core::mem::size_of::<f64x2>(), 16);
@@ -66,5 +68,83 @@ fn impl_bitxor_for_f64x2() {
   let b = f64x2::from([1.0, 1.0]);
   let expected = f64x2::from([1.0, 0.0]);
   let actual = a ^ b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_cmp_eq() {
+  let a = f64x2::from([1.0, 2.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [0, -1];
+  let actual: [i64; 2] = cast(a.cmp_eq(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_cmp_ne() {
+  let a = f64x2::from([1.0, 2.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [-1, 0];
+  let actual: [i64; 2] = cast(a.cmp_ne(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_cmp_ge() {
+  let a = f64x2::from([1.0, 2.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [0, -1];
+  let actual: [i64; 2] = cast(a.cmp_ge(b));
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([3.0, 4.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [-1, -1];
+  let actual: [i64; 2] = cast(a.cmp_ge(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_cmp_gt() {
+  let a = f64x2::from([1.0, 2.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [0, 0];
+  let actual: [i64; 2] = cast(a.cmp_gt(b));
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([3.0, 4.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [-1, -1];
+  let actual: [i64; 2] = cast(a.cmp_gt(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_cmp_le() {
+  let a = f64x2::from([1.0, 2.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [-1, -1];
+  let actual: [i64; 2] = cast(a.cmp_le(b));
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([3.0, 4.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [0, 0];
+  let actual: [i64; 2] = cast(a.cmp_le(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_cmp_lt() {
+  let a = f64x2::from([1.0, 2.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [-1, 0];
+  let actual: [i64; 2] = cast(a.cmp_lt(b));
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([3.0, 4.0]);
+  let b = f64x2::from([2.0, 2.0]);
+  let expected: [i64; 2] = [0, 0];
+  let actual: [i64; 2] = cast(a.cmp_lt(b));
   assert_eq!(expected, actual);
 }

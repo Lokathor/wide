@@ -72,3 +72,29 @@ fn impl_bitxor_for_u8x16() {
   let actual = a ^ b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u8x16_cmp_eq() {
+  let a = u8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = u8x16::from([2_u8; 16]);
+  let expected = u8x16::from([
+    0,
+    u8::MAX,
+    0,
+    0,
+    0,
+    u8::MAX,
+    0,
+    0,
+    0,
+    u8::MAX,
+    0,
+    0,
+    0,
+    u8::MAX,
+    0,
+    0,
+  ]);
+  let actual = a.cmp_eq(b);
+  assert_eq!(expected, actual);
+}

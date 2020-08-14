@@ -89,3 +89,33 @@ fn impl_bitxor_for_i8x16() {
   let actual = a ^ b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i8x16_cmp_eq() {
+  let a = i8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i8x16::from([2_i8; 16]);
+  let expected =
+    i8x16::from([0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0]);
+  let actual = a.cmp_eq(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_cmp_gt() {
+  let a = i8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i8x16::from([2_i8; 16]);
+  let expected =
+    i8x16::from([0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1]);
+  let actual = a.cmp_gt(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_cmp_lt() {
+  let a = i8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i8x16::from([2_i8; 16]);
+  let expected =
+    i8x16::from([-1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0]);
+  let actual = a.cmp_lt(b);
+  assert_eq!(expected, actual);
+}

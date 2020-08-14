@@ -70,3 +70,12 @@ fn impl_shr_for_u32x4() {
   let actual = a >> b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u32x4_cmp_eq() {
+  let a = u32x4::from([1, 2, 3, 4]);
+  let b = u32x4::from([2_u32; 4]);
+  let expected = u32x4::from([0, u32::MAX, 0, 0]);
+  let actual = a.cmp_eq(b);
+  assert_eq!(expected, actual);
+}

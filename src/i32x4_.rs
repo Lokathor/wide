@@ -182,3 +182,54 @@ impl<I: Into<u64>> Shr<I> for i32x4 {
     }
   }
 }
+
+impl i32x4 {
+  #[inline]
+  #[must_use]
+  pub fn cmp_eq(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] == rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] == rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] == rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] == rhs.arr[3] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn cmp_gt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: cmp_gt_mask_i32_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] > rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] > rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] > rhs.arr[3] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn cmp_lt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: cmp_lt_mask_i32_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] < rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] < rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] < rhs.arr[3] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}

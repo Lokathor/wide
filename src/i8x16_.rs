@@ -174,3 +174,90 @@ impl BitXor for i8x16 {
     }
   }
 }
+
+impl i8x16 {
+  #[inline]
+  #[must_use]
+  pub fn cmp_eq(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] == rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] == rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] == rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] == rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] == rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] == rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] == rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] == rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] == rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] == rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] == rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] == rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] == rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] == rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] == rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] == rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn cmp_gt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_gt_mask_i8_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] > rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] > rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] > rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] > rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] > rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] > rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] > rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] > rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] > rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] > rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] > rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] > rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] > rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] > rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] > rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn cmp_lt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_lt_mask_i8_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] < rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] < rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] < rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] < rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] < rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] < rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] < rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] < rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] < rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] < rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] < rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] < rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] < rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] < rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] < rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}

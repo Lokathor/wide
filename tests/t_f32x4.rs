@@ -1,5 +1,7 @@
 use wide::*;
 
+use bytemuck::*;
+
 #[test]
 fn size_align() {
   assert_eq!(core::mem::size_of::<f32x4>(), 16);
@@ -77,5 +79,59 @@ fn impl_bitxor_for_f32x4() {
   let b = f32x4::from([0.0, 1.0, 0.0, 1.0]);
   let expected = f32x4::from([0.0, 1.0, 1.0, 0.0]);
   let actual = a ^ b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_cmp_eq() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  let expected: [i32; 4] = [0, -1, 0, 0];
+  let actual: [i32; 4] = cast(a.cmp_eq(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_cmp_ne() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  let expected: [i32; 4] = [-1, 0, -1, -1];
+  let actual: [i32; 4] = cast(a.cmp_ne(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_cmp_ge() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  let expected: [i32; 4] = [0, -1, -1, -1];
+  let actual: [i32; 4] = cast(a.cmp_ge(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_cmp_gt() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  let expected: [i32; 4] = [0, 0, -1, -1];
+  let actual: [i32; 4] = cast(a.cmp_gt(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_cmp_le() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  let expected: [i32; 4] = [-1, -1, 0, 0];
+  let actual: [i32; 4] = cast(a.cmp_le(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_cmp_lt() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  let expected: [i32; 4] = [-1, 0, 0, 0];
+  let actual: [i32; 4] = cast(a.cmp_lt(b));
   assert_eq!(expected, actual);
 }

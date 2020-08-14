@@ -188,3 +188,26 @@ impl<I: Into<u64>> Shr<I> for u16x8 {
     }
   }
 }
+
+impl u16x8 {
+  #[inline]
+  #[must_use]
+  pub fn cmp_eq(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_eq_mask_i16_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] == rhs.arr[0] { u16::MAX } else { 0 },
+          if self.arr[1] == rhs.arr[1] { u16::MAX } else { 0 },
+          if self.arr[2] == rhs.arr[2] { u16::MAX } else { 0 },
+          if self.arr[3] == rhs.arr[3] { u16::MAX } else { 0 },
+          if self.arr[4] == rhs.arr[4] { u16::MAX } else { 0 },
+          if self.arr[5] == rhs.arr[5] { u16::MAX } else { 0 },
+          if self.arr[6] == rhs.arr[6] { u16::MAX } else { 0 },
+          if self.arr[7] == rhs.arr[7] { u16::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}

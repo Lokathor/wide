@@ -96,3 +96,30 @@ fn impl_shr_for_i16x8() {
   let actual = a >> b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i16x8_cmp_eq() {
+  let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i16x8::from([2_i16; 8]);
+  let expected = i16x8::from([0, -1, 0, 0, 0, -1, 0, 0]);
+  let actual = a.cmp_eq(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x8_cmp_gt() {
+  let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i16x8::from([2_i16; 8]);
+  let expected = i16x8::from([0, 0, -1, -1, 0, 0, -1, -1]);
+  let actual = a.cmp_gt(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x8_cmp_lt() {
+  let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i16x8::from([2_i16; 8]);
+  let expected = i16x8::from([-1, 0, 0, 0, -1, 0, 0, 0]);
+  let actual = a.cmp_lt(b);
+  assert_eq!(expected, actual);
+}

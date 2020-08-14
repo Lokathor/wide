@@ -160,3 +160,22 @@ impl<I: Into<u64>> Shr<I> for u32x4 {
     }
   }
 }
+
+impl u32x4 {
+  #[inline]
+  #[must_use]
+  pub fn cmp_eq(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] == rhs.arr[0] { u32::MAX } else { 0 },
+          if self.arr[1] == rhs.arr[1] { u32::MAX } else { 0 },
+          if self.arr[2] == rhs.arr[2] { u32::MAX } else { 0 },
+          if self.arr[3] == rhs.arr[3] { u32::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
