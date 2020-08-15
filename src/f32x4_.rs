@@ -257,10 +257,34 @@ impl f32x4 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_m128(t, f, self) }
+        Self { sse: blend_varying_m128(t.sse, f.sse, self) }
       } else {
         generic_bit_blend(self, t, f)
       }
     }
   }
+  /*
+  #[inline]
+  #[must_use]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: floor_m128(self) }
+      } else if #[cfg(target_feature="sse2")] {
+        software_floor_f32(self)
+      } else {
+        let mut a: [f32; 4] = cast(self);
+        a.iter_mut().for_each(|f|*f = f.floor());
+        cast(a)
+      }
+    }
+  }
+  */
 }
+
+/*
+fn software_floor_f32(x: f32x4) -> f32x4 {
+  const THRESHOLD: i32 = 0x4b00_0000;
+  let signless =
+}
+*/

@@ -183,7 +183,7 @@ impl u32x4 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(t, f, self) }
+        Self { sse: blend_varying_i8_m128i(t.sse, f.sse, self) }
       } else {
         generic_bit_blend(self, t, f)
       }
