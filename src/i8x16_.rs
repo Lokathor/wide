@@ -265,7 +265,7 @@ impl i8x16 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(t, f, mask) }
+        Self { sse: blend_varying_i8_m128i(t, f, self) }
       } else {
         generic_bit_blend(self, t, f)
       }

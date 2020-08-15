@@ -257,7 +257,7 @@ impl f32x4 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_m128(t, f, mask) }
+        Self { sse: blend_varying_m128(t, f, self) }
       } else {
         generic_bit_blend(self, t, f)
       }
