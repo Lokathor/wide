@@ -119,7 +119,7 @@ fn impl_i32x4_blend() {
 }
 
 #[test]
-fn impl_i32x4_blend() {
+fn impl_i32x4_abs() {
   let a = i32x4::from([-1, 2, -3, i32::MIN]);
   let expected = i32x4::from([1, 2, 3, i32::MIN]);
   let actual = a.abs();
