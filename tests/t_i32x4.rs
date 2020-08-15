@@ -117,3 +117,11 @@ fn impl_i32x4_blend() {
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i32x4_blend() {
+  let a = i32x4::from([-1, 2, -3, i32::MIN]);
+  let expected = i32x4::from([1, 2, 3, i32::MIN]);
+  let actual = a.abs();
+  assert_eq!(expected, actual);
+}
