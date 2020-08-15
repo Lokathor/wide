@@ -237,4 +237,10 @@ impl f64x2 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn abs(self) -> Self {
+    let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
+    self & non_sign_bits
+  }
 }
