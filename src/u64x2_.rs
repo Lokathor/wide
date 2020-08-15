@@ -146,3 +146,17 @@ impl<I: Into<u64>> Shr<I> for u64x2 {
     }
   }
 }
+
+impl u64x2 {
+  #[inline]
+  #[must_use]
+  pub fn blend(self, t: Self, f: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: blend_varying_i8_m128i(t, f, mask) }
+      } else {
+        generic_bit_blend(self, t, f)
+      }
+    }
+  }
+}

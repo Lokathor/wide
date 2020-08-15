@@ -79,6 +79,13 @@ pub use u32x4_::*;
 mod u64x2_;
 pub use u64x2_::*;
 
+fn generic_bit_blend<T>(mask: T, y: T, n: T) -> T
+where
+  T: Copy + BitXor<Output = T> + BitAnd<Output = T>,
+{
+  n ^ ((n ^ y) & mask)
+}
+
 /// given `type.op(type)` and type is Copy, impls `type.op(&type)`
 macro_rules! bulk_impl_op_ref_self_for {
   ($(($op:ident, $method:ident) => [$($t:ty),+]),+ $(,)?) => {

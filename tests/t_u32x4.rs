@@ -79,3 +79,14 @@ fn impl_u32x4_cmp_eq() {
   let actual = a.cmp_eq(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u32x4_blend() {
+  let use_t: u32 = u32::MAX;
+  let t = u32x4::from([1, 2, 3, 4]);
+  let f = u32x4::from([17, 18, 19, 20]);
+  let mask = u32x4::from([use_t, 0, use_t, 0]);
+  let expected = u32x4::from([1, 18, 3, 20]);
+  let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}

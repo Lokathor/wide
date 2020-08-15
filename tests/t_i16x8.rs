@@ -123,3 +123,14 @@ fn impl_i16x8_cmp_lt() {
   let actual = a.cmp_lt(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i16x8_blend() {
+  let use_t: i16 = -1;
+  let t = i16x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  let f = i16x8::from([17, 18, 19, 20, 21, 22, 23, 24]);
+  let mask = i16x8::from([use_t, 0, use_t, 0, use_t, 0, use_t, 0]);
+  let expected = i16x8::from([1, 18, 3, 20, 5, 22, 7, 24]);
+  let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}

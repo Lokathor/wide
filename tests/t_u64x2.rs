@@ -68,3 +68,14 @@ fn impl_shr_for_u64x2() {
   let actual = a >> b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u64x2_blend() {
+  let use_t: u64 = u64::MAX;
+  let t = u64x2::from([1, 2]);
+  let f = u64x2::from([17, 18]);
+  let mask = u64x2::from([use_t, 0]);
+  let expected = u64x2::from([1, 18]);
+  let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}

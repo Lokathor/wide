@@ -135,3 +135,14 @@ fn impl_f32x4_cmp_lt() {
   let actual: [i32; 4] = cast(a.cmp_lt(b));
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f32x4_blend() {
+  let use_t: f32 = f32::from_bits(u32::MAX);
+  let t = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let f = f32x4::from([5.0, 6.0, 7.0, 8.0]);
+  let mask = f32x4::from([use_t, 0.0, use_t, 0.0]);
+  let expected = f32x4::from([1.0, 6.0, 3.0, 8.0]);
+  let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}

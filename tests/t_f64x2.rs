@@ -148,3 +148,14 @@ fn impl_f64x2_cmp_lt() {
   let actual: [i64; 2] = cast(a.cmp_lt(b));
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_blend() {
+  let use_t: f64 = f64::from_bits(u64::MAX);
+  let t = f64x2::from([1.0, 2.0]);
+  let f = f64x2::from([5.0, 6.0]);
+  let mask = f64x2::from([use_t, 0.0]);
+  let expected = f64x2::from([1.0, 6.0]);
+  let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}

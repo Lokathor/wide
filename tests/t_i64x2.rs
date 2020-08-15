@@ -59,3 +59,14 @@ fn impl_shl_for_i64x2() {
   let actual = a << b;
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i64x2_blend() {
+  let use_t: i64 = -1;
+  let t = i64x2::from([1, 2]);
+  let f = i64x2::from([17, 18]);
+  let mask = i64x2::from([use_t, 0]);
+  let expected = i64x2::from([1, 18]);
+  let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}
