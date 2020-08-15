@@ -163,12 +163,12 @@ fn impl_f64x2_blend() {
 #[test]
 fn impl_f64x2_abs() {
   let a = f64x2::from([-1.0, 2.0]);
-  let expected = f32x4::from([1.0, 2.0]);
+  let expected = f64x2::from([1.0, 2.0]);
   let actual = a.abs();
   assert_eq!(expected, actual);
   //
   let a = f64x2::from([-3.5, f64::NEG_INFINITY]);
-  let expected = f32x4::from([3.0, f64::POS_INFINITY]);
+  let expected = f64x2::from([3.0, f64::POS_INFINITY]);
   let actual = a.abs();
   assert_eq!(expected, actual);
 }
