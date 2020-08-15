@@ -243,4 +243,21 @@ impl i32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: abs_i32_m128i(self.sse) }
+      } else {
+        let arr: [i32; 4] = cast(self);
+        cast([
+          arr[0].wrapping_abs(),
+          arr[1].wrapping_abs(),
+          arr[2].wrapping_abs(),
+          arr[3].wrapping_abs(),
+        ])
+      }
+    }
+  }
 }
