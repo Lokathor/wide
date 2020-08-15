@@ -134,3 +134,11 @@ fn impl_i16x8_blend() {
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i16x8_abs() {
+  let a = i16x8::from([1, -2, 3, -4, 5, -6, -7, i16::MIN]);
+  let expected = i16x8::from([1, 2, 3, 4, 5, 6, 7, i16::MIN]);
+  let actual = a.abs();
+  assert_eq!(expected, actual);
+}
