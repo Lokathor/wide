@@ -79,6 +79,7 @@ pub use u32x4_::*;
 mod u64x2_;
 pub use u64x2_::*;
 
+#[allow(dead_code)]
 fn generic_bit_blend<T>(mask: T, y: T, n: T) -> T
 where
   T: Copy + BitXor<Output = T> + BitAnd<Output = T>,

@@ -294,4 +294,19 @@ impl f64x2 {
     let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
     cast(out)
   }
+  #[inline]
+  #[must_use]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128d!(self.sse, Nearest) }
+      } else {
+        let sign_mask = f64x2::from(-0.0);
+        let magic = f64x2::from(f64::from_bits(0x43300000_00000000));
+        let sign = self & sign_mask;
+        let signed_magic = magic | sign;
+        self + signed_magic - signed_magic
+      }
+    }
+  }
 }

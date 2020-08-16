@@ -326,4 +326,26 @@ impl f32x4 {
     let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
     cast(out)
   }
+  #[inline]
+  #[must_use]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128!(self.sse, Nearest) }
+      } else if #[cfg(target_feature="sse2")] {
+        let mi: m128i = convert_to_i32_m128i_from_m128(self.sse);
+        let f: f32x4 = f32x4 { sse: convert_to_m128_from_i32_m128i(mi) };
+        let i: i32x4 = cast(mi);
+        let mask: f32x4 = cast(i.cmp_eq(i32x4::from(0x80000000_u32 as i32)));
+        mask.blend(self, f)
+      } else {
+        Self { arr: [
+          self.arr[0].round(),
+          self.arr[1].round(),
+          self.arr[2].round(),
+          self.arr[3].round(),
+        ]}
+      }
+    }
+  }
 }

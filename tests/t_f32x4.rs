@@ -188,3 +188,21 @@ fn impl_f32x4_is_finite() {
   let actual: [u32; 4] = cast(a.is_finite());
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f32x4_round() {
+  let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);
+  let expected = f32x4::from([1.0, 2.0, 4.0, 4.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x4::from([f32::INFINITY, f32::NEG_INFINITY, 5.5, 5.0]);
+  let expected = f32x4::from([f32::INFINITY, f32::NEG_INFINITY, 6.0, 5.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x4::from(f32::NAN);
+  let expected: [u32; 4] = [u32::MAX; 4];
+  let actual: [u32; 4] = cast(a.round().is_nan());
+  assert_eq!(expected, actual);
+}

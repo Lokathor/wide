@@ -211,3 +211,36 @@ fn impl_f64x2_is_finite() {
   let actual: [u64; 2] = cast(a.is_finite());
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_round() {
+  let a = f64x2::from([1.1, 2.5]);
+  let expected = f64x2::from([1.0, 2.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([3.7, 4.0]);
+  let expected = f64x2::from([4.0, 4.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([1.1, 2.5]);
+  let expected = f64x2::from([1.0, 2.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([f64::INFINITY, f64::NEG_INFINITY]);
+  let expected = f64x2::from([f64::INFINITY, f64::NEG_INFINITY]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([5.5, 5.0]);
+  let expected = f64x2::from([6.0, 5.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from(f64::NAN);
+  let expected: [u64; 2] = [u64::MAX; 2];
+  let actual: [u64; 2] = cast(a.round().is_nan());
+  assert_eq!(expected, actual);
+}
