@@ -220,7 +220,7 @@ macro_rules! impl_simple_sum {
     $(
       impl<RHS> core::iter::Sum<RHS> for $t where $t: AddAssign<RHS> {
         fn sum<I: Iterator<Item = RHS>>(iter: I) -> Self {
-          let mut total = Self::default();
+          let mut total = Self::zeroed();
           for val in iter {
             total += val;
           }
