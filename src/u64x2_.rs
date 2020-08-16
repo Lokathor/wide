@@ -146,8 +146,8 @@ macro_rules! impl_shr_t_for_u64x2 {
             Self { sse: shr_all_u64_m128i(self.sse, shift) }
           } else {
             Self { arr: [
-              self.arr[0] << u,
-              self.arr[1] << u,
+              self.arr[0] >> u,
+              self.arr[1] >> u,
             ]}
           }
         }
