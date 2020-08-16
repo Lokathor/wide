@@ -339,12 +339,30 @@ impl f32x4 {
         let mask: f32x4 = cast(i.cmp_eq(i32x4::from(0x80000000_u32 as i32)));
         mask.blend(self, f)
       } else {
-        Self { arr: [
-          self.arr[0].round(),
-          self.arr[1].round(),
-          self.arr[2].round(),
-          self.arr[3].round(),
-        ]}
+        // Note(Lokathor): This software fallback is extremely slow.
+        let to_int = f32x4::from(1.0 / f32::EPSILON);
+        let u: u32x4 = cast(self);
+        let e: i32x4 = cast((u >> 23_u64) & u32x4::from(0xff));
+        let mut y: f32x4;
+
+        let no_op_magic = i32x4::from(0x7f + 23);
+        let no_op_mask: f32x4 = cast(e.cmp_gt(no_op_magic) | e.cmp_eq(no_op_magic));
+        let no_op_val: f32x4 = self;
+
+        let zero_magic = i32x4::from(0x7f - 1);
+        let zero_mask: f32x4 = cast(e.cmp_lt(zero_magic));
+        let zero_val: f32x4 = self * f32x4::from(0.0);
+
+        let neg_bit: f32x4 = cast(cast::<u32x4, i32x4>(u).cmp_lt(i32x4::default()));
+        let x: f32x4 = neg_bit.blend(-self, self);
+        y = x + to_int - to_int - x;
+        y = y.cmp_gt(f32x4::from(0.5)).blend(
+          y + x - f32x4::from(-1.0),
+          y.cmp_lt(f32x4::from(-0.5)).blend(y + x + f32x4::from(1.0), y + x),
+        );
+        y = neg_bit.blend(-y, y);
+
+        no_op_mask.blend(no_op_val, zero_mask.blend(zero_val, y))
       }
     }
   }

@@ -224,8 +224,13 @@ fn impl_f64x2_round() {
   let actual = a.round();
   assert_eq!(expected, actual);
   //
-  let a = f64x2::from([1.1, 2.5]);
-  let expected = f64x2::from([1.0, 2.0]);
+  let a = f64x2::from([-1.1, -2.5]);
+  let expected = f64x2::from([-1.0, -2.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([-3.7, -4.0]);
+  let expected = f64x2::from([-4.0, -4.0]);
   let actual = a.round();
   assert_eq!(expected, actual);
   //
