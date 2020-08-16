@@ -19,6 +19,17 @@ macro_rules! const_f64_as_f64x2 {
   };
 }
 
+macro_rules! polynomial_5 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    $c3
+      .mul_add(x, $c2)
+      .mul_add(x2, $c5.mul_add(x, $c4).mul_add(x4, $c1.mul_add(x, $c0)))
+  }};
+}
+
 impl f64x2 {
   const_f64_as_f64x2!(PI, core::f64::consts::PI);
 }
@@ -357,8 +368,6 @@ impl f64x2 {
   }
   #[inline]
   #[must_use]
-  #[allow(dead_code)]
-  #[allow(unreachable_code)]
   #[allow(non_upper_case_globals)]
   pub fn sin_cos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
@@ -416,5 +425,23 @@ impl f64x2 {
     cos1 ^= cast::<_, f64x2>(sign_cos);
 
     (sin1, cos1)
+  }
+  #[inline]
+  #[must_use]
+  pub fn sin(self) -> Self {
+    let (s, _) = self.sin_cos();
+    s
+  }
+  #[inline]
+  #[must_use]
+  pub fn cos(self) -> Self {
+    let (_, c) = self.sin_cos();
+    c
+  }
+  #[inline]
+  #[must_use]
+  pub fn tan(self) -> Self {
+    let (s, c) = self.sin_cos();
+    s / c
   }
 }

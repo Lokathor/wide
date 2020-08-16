@@ -19,6 +19,14 @@ macro_rules! const_f32_as_f32x4 {
   };
 }
 
+macro_rules! polynomial_2 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    x2.mul_add($c2, x.mul_add($c1, $c0))
+  }};
+}
+
 impl f32x4 {
   const_f32_as_f32x4!(PI, core::f32::consts::PI);
 }
@@ -479,5 +487,23 @@ impl f32x4 {
     cos1 ^= cast::<_, f32x4>(sign_cos);
 
     (sin1, cos1)
+  }
+  #[inline]
+  #[must_use]
+  pub fn sin(self) -> Self {
+    let (s, _) = self.sin_cos();
+    s
+  }
+  #[inline]
+  #[must_use]
+  pub fn cos(self) -> Self {
+    let (_, c) = self.sin_cos();
+    c
+  }
+  #[inline]
+  #[must_use]
+  pub fn tan(self) -> Self {
+    let (s, c) = self.sin_cos();
+    s / c
   }
 }
