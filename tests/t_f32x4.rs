@@ -210,4 +210,9 @@ fn impl_f32x4_round() {
   let expected: [u32; 4] = [u32::MAX; 4];
   let actual: [u32; 4] = cast(a.round().is_nan());
   assert_eq!(expected, actual);
+  //
+  let a = f32x4::from(-0.0);
+  let expected = a;
+  let actual = a.round();
+  assert_eq!(expected, actual);
 }

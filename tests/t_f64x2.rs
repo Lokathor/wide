@@ -248,4 +248,9 @@ fn impl_f64x2_round() {
   let expected: [u64; 2] = [u64::MAX; 2];
   let actual: [u64; 2] = cast(a.round().is_nan());
   assert_eq!(expected, actual);
+  //
+  let a = f64x2::from(-0.0);
+  let expected = a;
+  let actual = a.round();
+  assert_eq!(expected, actual);
 }
