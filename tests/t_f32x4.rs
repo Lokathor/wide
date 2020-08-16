@@ -312,3 +312,36 @@ fn impl_f32x4_to_radians() {
   let actual = a.to_radians();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f32x4_sqrt() {
+  for (f, e) in [
+    (f32::INFINITY, f32::INFINITY),
+    (0.0, 0.0),
+    (-0.0, -0.0),
+    (4.0, 2.0),
+    (9.0, 3.0),
+    (16.0, 4.0),
+    (25.0, 5.0),
+    (5000.0 * 5000.0, 5000.0),
+  ]
+  .iter()
+  .copied()
+  {
+    let expected = f32x4::from(e);
+    let actual = f32x4::from(f).sqrt();
+    assert_eq!(expected, actual);
+  }
+  assert_eq!(
+    cast::<_, i32x4>(f32x4::from(f32::NAN).sqrt().is_nan()),
+    i32x4::from(-1)
+  );
+  assert_eq!(
+    cast::<_, i32x4>(f32x4::from(f32::NEG_INFINITY).sqrt().is_nan()),
+    i32x4::from(-1)
+  );
+  assert_eq!(
+    cast::<_, i32x4>(f32x4::from(-1.0).sqrt().is_nan()),
+    i32x4::from(-1)
+  );
+}

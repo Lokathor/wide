@@ -362,3 +362,163 @@ impl_formatter_for! {
   ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
   ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
 }
+
+#[allow(unused)]
+fn software_sqrt(x: f64) -> f64 {
+  use core::num::Wrapping;
+  type wu32 = Wrapping<u32>;
+  const fn w(u: u32) -> wu32 {
+    Wrapping(u)
+  }
+  let mut z: f64;
+  let sign: wu32 = w(0x80000000);
+  let mut ix0: i32;
+  let mut s0: i32;
+  let mut q: i32;
+  let mut m: i32;
+  let mut t: i32;
+  let mut i: i32;
+  let mut r: wu32;
+  let mut t1: wu32;
+  let mut s1: wu32;
+  let mut ix1: wu32;
+  let mut q1: wu32;
+  // extract data
+  {
+    let [low, high]: [u32; 2] = cast(x);
+    ix0 = high as i32;
+    ix1 = w(low);
+  }
+  // inf and nan
+  {
+    if ix0 & 0x7ff00000 == 0x7ff00000 {
+      return x * x + x;
+    }
+  }
+  // handle zero
+  {
+    if ix0 <= 0 {
+      if ((ix0 & (!sign).0 as i32) | (ix1.0 as i32)) == 0 {
+        return x;
+      } else if ix0 < 0 {
+        return (x - x) / (x - x);
+      }
+    }
+  }
+  // normalize
+  {
+    m = ix0 >> 20;
+    if m == 0 {
+      // subnormal
+      while ix0 == 0 {
+        m -= 21;
+        ix0 |= (ix1 >> 11).0 as i32;
+        ix1 <<= 21;
+      }
+      i = 0;
+      while ix0 & 0x00100000 == 0 {
+        ix0 <<= 1;
+        i += 1;
+      }
+      m -= i - 1;
+      ix0 |= (ix1.0 >> (31 - i)) as i32;
+      ix1 <<= i as usize;
+    }
+    // unbias exponent
+    m -= 1023;
+    ix0 = (ix0 & 0x000fffff) | 0x00100000;
+    if (m & 1) != 0 {
+      // odd m, double the input to make it even
+      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+      ix1 += ix1;
+    }
+    m >>= 1;
+  }
+  // generate sqrt bit by bit
+  {
+    ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+    ix1 += ix1;
+    // q and q1 store the sqrt(x);
+    q = 0;
+    q1 = w(0);
+    s0 = 0;
+    s1 = w(0);
+    // our bit that moves from right to left
+    r = w(0x00200000);
+    while r != w(0) {
+      t = s0 + (r.0 as i32);
+      if t <= ix0 {
+        s0 = t + (r.0 as i32);
+        ix0 -= t;
+        q += (r.0 as i32);
+      }
+      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+      ix1 += ix1;
+      r >>= 1;
+    }
+    r = sign;
+    while r != w(0) {
+      t1 = s1 + r;
+      t = s0;
+      if (t < ix0) || ((t == ix0) && (t1 <= ix1)) {
+        s1 = t1 + r;
+        if t1 & sign == sign && (s1 & sign) == w(0) {
+          s0 += 1;
+        }
+        ix0 -= t;
+        if ix1 < t1 {
+          ix0 -= 1;
+        }
+        ix1 -= t1;
+        q1 += r;
+      }
+      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+      ix1 += ix1;
+      r >>= 1;
+    }
+  }
+  // use floating add to find out rounding direction
+  {
+    if ix0 | (ix1.0 as i32) != 0 {
+      z = 1.0 - 1.0e-300;
+      if z >= 1.0 {
+        z = 1.0 + 1.0e-300;
+        if q1 == w(0xffffffff) {
+          q1 = w(0);
+          q += 1;
+        } else if z > 1.0 {
+          if q1 == w(0xfffffffe) {
+            q += 1;
+          }
+          q1 += w(2);
+        } else {
+          q1 += q1 & w(1);
+        }
+      }
+    }
+  }
+  // finish up
+  ix0 = (q >> 1) + 0x3fe00000;
+  ix1 = q1 >> 1;
+  if q & 1 == 1 {
+    ix1 |= sign;
+  }
+  ix0 += m << 20;
+
+  cast::<[u32; 2], f64>([ix1.0, ix0 as u32])
+}
+
+#[test]
+fn test_software_sqrt() {
+  assert!(software_sqrt(f64::NAN).is_nan());
+  assert_eq!(software_sqrt(f64::INFINITY), f64::INFINITY);
+  assert_eq!(software_sqrt(0.0), 0.0);
+  assert_eq!(software_sqrt(-0.0), -0.0);
+  assert!(software_sqrt(-1.0).is_nan());
+  assert!(software_sqrt(f64::NEG_INFINITY).is_nan());
+  assert_eq!(software_sqrt(4.0), 2.0);
+  assert_eq!(software_sqrt(9.0), 3.0);
+  assert_eq!(software_sqrt(16.0), 4.0);
+  assert_eq!(software_sqrt(25.0), 5.0);
+  assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
+}

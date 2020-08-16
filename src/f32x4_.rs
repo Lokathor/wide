@@ -518,4 +518,20 @@ impl f32x4 {
     const_f32_as_f32x4!(DEG_TO_RAD_RATIO, core::f32::consts::PI / 180.0_f32);
     self * DEG_TO_RAD_RATIO
   }
+  #[inline]
+  #[must_use]
+  pub fn sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: sqrt_m128(self.sse) }
+      } else {
+        Self { arr: [
+          software_sqrt(self.arr[0] as f64) as f32,
+          software_sqrt(self.arr[1] as f64) as f32,
+          software_sqrt(self.arr[2] as f64) as f32,
+          software_sqrt(self.arr[3] as f64) as f32,
+        ]}
+      }
+    }
+  }
 }

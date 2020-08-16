@@ -456,4 +456,18 @@ impl f64x2 {
     const_f64_as_f64x2!(DEG_TO_RAD_RATIO, core::f64::consts::PI / 180.0_f64);
     self * DEG_TO_RAD_RATIO
   }
+  #[inline]
+  #[must_use]
+  pub fn sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: sqrt_m128d(self.sse) }
+      } else {
+        Self { arr: [
+          software_sqrt(self.arr[0]),
+          software_sqrt(self.arr[1]),
+        ]}
+      }
+    }
+  }
 }
