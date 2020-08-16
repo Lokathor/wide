@@ -368,4 +368,25 @@ impl f32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn round_int(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        cast(convert_to_i32_m128i_from_m128(self.sse))
+      } else {
+        let rounded: [f32;4] = cast(self.round());
+        let rounded_ints: i32x4 = cast([
+          rounded[0] as i32,
+          rounded[1] as i32,
+          rounded[2] as i32,
+          rounded[3] as i32,
+        ]);
+        cast::<f32x4 i32x4>(self.is_finite()).blend(
+          rounded_ints,
+          i32x4::from(i32::MIN)
+        )
+      }
+    }
+  }
 }

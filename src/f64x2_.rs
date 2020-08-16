@@ -309,4 +309,12 @@ impl f64x2 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn round_int(self) -> i64x2 {
+    let rounded: [f64; 2] = cast(self.round());
+    let rounded_ints: i64x2 = cast([rounded[0] as i64, rounded[1] as i64]);
+    cast::<f64x2, i64x2>(self.is_finite())
+      .blend(rounded_ints, i64x2::from(i64::MIN))
+  }
 }

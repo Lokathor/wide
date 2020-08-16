@@ -216,3 +216,26 @@ fn impl_f32x4_round() {
   let actual = a.round();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f32x4_round_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (0.0, 0),
+    (-0.0, 0),
+    (f32::NAN, i32::MIN),
+    (f32::INFINITY, i32::MIN),
+    (f32::NEG_INFINITY, i32::MIN),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f32x4::from(f);
+    let expected = i32x4::from(i);
+    let actual = a.round_int();
+    assert_eq!(expected, actual);
+  }
+}

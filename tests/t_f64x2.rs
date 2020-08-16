@@ -254,3 +254,26 @@ fn impl_f64x2_round() {
   let actual = a.round();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_round_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (0.0, 0),
+    (-0.0, 0),
+    (f64::NAN, i64::MIN),
+    (f64::INFINITY, i64::MIN),
+    (f64::NEG_INFINITY, i64::MIN),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x2::from(f);
+    let expected = i64x2::from(i);
+    let actual = a.round_int();
+    assert_eq!(expected, actual);
+  }
+}
