@@ -54,7 +54,7 @@ fn impl_bitxor_for_i64x2() {
 #[test]
 fn impl_shl_for_i64x2() {
   let a = i64x2::from([i64::MAX - 1, i64::MAX - 1]);
-  let b = 2_u32;
+  let b = 2;
   let expected = i64x2::from([(i64::MAX - 1) << 2, (i64::MAX - 1) << 2]);
   let actual = a << b;
   assert_eq!(expected, actual);

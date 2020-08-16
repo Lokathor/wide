@@ -54,7 +54,7 @@ fn impl_bitxor_for_u8x16() {
 #[test]
 fn impl_shl_for_u16x8() {
   let a = u16x8::from([1, 2, 3, 4, 5, 6, u16::MAX - 1, u16::MAX - 1]);
-  let b = 2_u32;
+  let b = 2;
   let expected = u16x8::from([
     1 << 2,
     2 << 2,
@@ -72,7 +72,7 @@ fn impl_shl_for_u16x8() {
 #[test]
 fn impl_shr_for_u16x8() {
   let a = u16x8::from([1, 2, 3, 4, 5, 6, u16::MAX - 1, u16::MAX - 1]);
-  let b = 2_u32;
+  let b = 2;
   let expected = u16x8::from([
     1 >> 2,
     2 >> 2,

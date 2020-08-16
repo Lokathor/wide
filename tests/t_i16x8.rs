@@ -64,7 +64,7 @@ fn impl_bitxor_for_i16x8() {
 #[test]
 fn impl_shl_for_i16x8() {
   let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
-  let b = 2_u32;
+  let b = 2;
   let expected = i16x8::from([
     1 << 2,
     2 << 2,
@@ -82,7 +82,7 @@ fn impl_shl_for_i16x8() {
 #[test]
 fn impl_shr_for_i16x8() {
   let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
-  let b = 2_u32;
+  let b = 2;
   let expected = i16x8::from([
     1 >> 2,
     2 >> 2,

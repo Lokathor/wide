@@ -105,47 +105,57 @@ impl BitXor for u64x2 {
   }
 }
 
-impl<I: Into<u64>> Shl<I> for u64x2 {
-  type Output = Self;
-  /// Shifts all lanes by the value given.
-  #[inline]
-  #[must_use]
-  fn shl(self, rhs: I) -> Self::Output {
-    let u = rhs.into();
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        let shift = cast([u, 0]);
-        Self { sse: shl_all_u64_m128i(self.sse, shift) }
-      } else {
-        Self { arr: [
-          self.arr[0] << u,
-          self.arr[1] << u,
-        ]}
+macro_rules! impl_shl_t_for_u64x2 {
+  ($($shift_type:ty),+ $(,)?) => {
+    $(impl Shl<$shift_type> for u64x2 {
+      type Output = Self;
+      /// Shifts all lanes by the value given.
+      #[inline]
+      #[must_use]
+      fn shl(self, rhs: $shift_type) -> Self::Output {
+        let u = rhs as u64;
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            let shift = cast([u, 0]);
+            Self { sse: shl_all_u64_m128i(self.sse, shift) }
+          } else {
+            Self { arr: [
+              self.arr[0] << u,
+              self.arr[1] << u,
+            ]}
+          }
+        }
       }
-    }
-  }
+    })+
+  };
 }
+impl_shl_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-impl<I: Into<u64>> Shr<I> for u64x2 {
-  type Output = Self;
-  /// Shifts all lanes by the value given.
-  #[inline]
-  #[must_use]
-  fn shr(self, rhs: I) -> Self::Output {
-    let u = rhs.into();
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        let shift = cast([u, 0]);
-        Self { sse: shr_all_u64_m128i(self.sse, shift) }
-      } else {
-        Self { arr: [
-          self.arr[0] >> u,
-          self.arr[1] >> u,
-        ]}
+macro_rules! impl_shr_t_for_u64x2 {
+  ($($shift_type:ty),+ $(,)?) => {
+    $(impl Shr<$shift_type> for u64x2 {
+      type Output = Self;
+      /// Shifts all lanes by the value given.
+      #[inline]
+      #[must_use]
+      fn shr(self, rhs: $shift_type) -> Self::Output {
+        let u = rhs as u64;
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            let shift = cast([u, 0]);
+            Self { sse: shr_all_u64_m128i(self.sse, shift) }
+          } else {
+            Self { arr: [
+              self.arr[0] << u,
+              self.arr[1] << u,
+            ]}
+          }
+        }
       }
-    }
-  }
+    })+
+  };
 }
+impl_shr_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 impl u64x2 {
   #[inline]

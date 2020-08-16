@@ -159,59 +159,69 @@ impl BitXor for i16x8 {
   }
 }
 
-impl<I: Into<u64>> Shl<I> for i16x8 {
-  type Output = Self;
-  /// Shifts all lanes by the value given.
-  #[inline]
-  #[must_use]
-  fn shl(self, rhs: I) -> Self::Output {
-    let u: u64 = rhs.into();
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        let shift = cast([u, 0]);
-        Self { sse: shl_all_u16_m128i(self.sse, shift) }
-      } else {
-        Self { arr: [
-          self.arr[0] << u,
-          self.arr[1] << u,
-          self.arr[2] << u,
-          self.arr[3] << u,
-          self.arr[4] << u,
-          self.arr[5] << u,
-          self.arr[6] << u,
-          self.arr[7] << u,
-        ]}
+macro_rules! impl_shl_t_for_i16x8 {
+  ($($shift_type:ty),+ $(,)?) => {
+    $(impl Shl<$shift_type> for i16x8 {
+      type Output = Self;
+      /// Shifts all lanes by the value given.
+      #[inline]
+      #[must_use]
+      fn shl(self, rhs: $shift_type) -> Self::Output {
+        let u: u64 = rhs as u64;
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            let shift = cast([u, 0]);
+            Self { sse: shl_all_u16_m128i(self.sse, shift) }
+          } else {
+            Self { arr: [
+              self.arr[0] << u,
+              self.arr[1] << u,
+              self.arr[2] << u,
+              self.arr[3] << u,
+              self.arr[4] << u,
+              self.arr[5] << u,
+              self.arr[6] << u,
+              self.arr[7] << u,
+            ]}
+          }
+        }
       }
-    }
-  }
+    })+
+  };
 }
+impl_shl_t_for_i16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-impl<I: Into<u64>> Shr<I> for i16x8 {
-  type Output = Self;
-  /// Shifts all lanes by the value given.
-  #[inline]
-  #[must_use]
-  fn shr(self, rhs: I) -> Self::Output {
-    let u: u64 = rhs.into();
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        let shift = cast([u, 0]);
-        Self { sse: shr_all_i16_m128i(self.sse, shift) }
-      } else {
-        Self { arr: [
-          self.arr[0] >> u,
-          self.arr[1] >> u,
-          self.arr[2] >> u,
-          self.arr[3] >> u,
-          self.arr[4] >> u,
-          self.arr[5] >> u,
-          self.arr[6] >> u,
-          self.arr[7] >> u,
-        ]}
+macro_rules! impl_shr_t_for_i16x8 {
+  ($($shift_type:ty),+ $(,)?) => {
+    $(impl Shr<$shift_type> for i16x8 {
+      type Output = Self;
+      /// Shifts all lanes by the value given.
+      #[inline]
+      #[must_use]
+      fn shr(self, rhs: $shift_type) -> Self::Output {
+        let u: u64 = rhs as u64;
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            let shift = cast([u, 0]);
+            Self { sse: shr_all_i16_m128i(self.sse, shift) }
+          } else {
+            Self { arr: [
+              self.arr[0] >> u,
+              self.arr[1] >> u,
+              self.arr[2] >> u,
+              self.arr[3] >> u,
+              self.arr[4] >> u,
+              self.arr[5] >> u,
+              self.arr[6] >> u,
+              self.arr[7] >> u,
+            ]}
+          }
+        }
       }
-    }
-  }
+    })+
+  };
 }
+impl_shr_t_for_i16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 impl i16x8 {
   #[inline]
