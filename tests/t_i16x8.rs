@@ -142,3 +142,21 @@ fn impl_i16x8_abs() {
   let actual = a.abs();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i16x8_max() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+  let b = i16x8::from([17, -18, 190, -20, 21, -22, 1, 1]);
+  let expected = i16x8::from([17, 2, 190, 4, 21, 6, 1, 1]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x8_min() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+  let b = i16x8::from([17, -18, 190, -20, 21, -22, 1, 1]);
+  let expected = i16x8::from([1, -18, 3, -20, 5, -22, i16::MIN + 1, i16::MIN]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+}

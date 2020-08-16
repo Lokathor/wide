@@ -172,3 +172,21 @@ fn impl_f64x2_abs() {
   let actual = a.abs();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_max() {
+  let a = f64x2::from([f64::NAN, 5.0]);
+  let b = f64x2::from([2.0, f64::NEG_INFINITY]);
+  let expected = f64x2::from([2.0, 5.0]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_min() {
+  let a = f64x2::from([f64::NAN, 5.0]);
+  let b = f64x2::from([2.0, f64::NEG_INFINITY]);
+  let expected = f64x2::from([2.0, f64::NEG_INFINITY]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+}

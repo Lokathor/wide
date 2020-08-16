@@ -154,3 +154,21 @@ fn impl_f32x4_abs() {
   let actual = a.abs();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f32x4_max() {
+  let a = f32x4::from([1.0, 5.0, 3.0, f32::NAN]);
+  let b = f32x4::from([2.0, f32::NEG_INFINITY, f32::INFINITY, 10.0]);
+  let expected = f32x4::from([2.0, 5.0, f32::INFINITY, 10.0]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_min() {
+  let a = f32x4::from([1.0, 5.0, 3.0, f32::NAN]);
+  let b = f32x4::from([2.0, f32::NEG_INFINITY, f32::INFINITY, 10.0]);
+  let expected = f32x4::from([1.0, f32::NEG_INFINITY, 3.0, 10.0]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+}

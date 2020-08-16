@@ -215,4 +215,60 @@ impl u8x16 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: max_u8_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].max(rhs.arr[0]),
+          self.arr[1].max(rhs.arr[1]),
+          self.arr[2].max(rhs.arr[2]),
+          self.arr[3].max(rhs.arr[3]),
+          self.arr[4].max(rhs.arr[4]),
+          self.arr[5].max(rhs.arr[5]),
+          self.arr[6].max(rhs.arr[6]),
+          self.arr[7].max(rhs.arr[7]),
+          self.arr[8].max(rhs.arr[8]),
+          self.arr[9].max(rhs.arr[9]),
+          self.arr[10].max(rhs.arr[10]),
+          self.arr[11].max(rhs.arr[11]),
+          self.arr[12].max(rhs.arr[12]),
+          self.arr[13].max(rhs.arr[13]),
+          self.arr[14].max(rhs.arr[14]),
+          self.arr[15].max(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: min_u8_m128i(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].min(rhs.arr[0]),
+          self.arr[1].min(rhs.arr[1]),
+          self.arr[2].min(rhs.arr[2]),
+          self.arr[3].min(rhs.arr[3]),
+          self.arr[4].min(rhs.arr[4]),
+          self.arr[5].min(rhs.arr[5]),
+          self.arr[6].min(rhs.arr[6]),
+          self.arr[7].min(rhs.arr[7]),
+          self.arr[8].min(rhs.arr[8]),
+          self.arr[9].min(rhs.arr[9]),
+          self.arr[10].min(rhs.arr[10]),
+          self.arr[11].min(rhs.arr[11]),
+          self.arr[12].min(rhs.arr[12]),
+          self.arr[13].min(rhs.arr[13]),
+          self.arr[14].min(rhs.arr[14]),
+          self.arr[15].min(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
 }

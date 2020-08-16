@@ -306,4 +306,26 @@ impl i16x8 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: max_i16_m128i(self.sse, rhs.sse) }
+      } else {
+        self.cmp_lt(rhs).blend(rhs, self)
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: min_i16_m128i(self.sse, rhs.sse) }
+      } else {
+        self.cmp_lt(rhs).blend(self, rhs)
+      }
+    }
+  }
 }

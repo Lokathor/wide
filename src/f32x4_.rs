@@ -269,4 +269,36 @@ impl f32x4 {
     let non_sign_bits = f32x4::from(f32::from_bits(i32::MAX as u32));
     self & non_sign_bits
   }
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: max_m128(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].max(rhs.arr[0]),
+          self.arr[1].max(rhs.arr[1]),
+          self.arr[2].max(rhs.arr[2]),
+          self.arr[3].max(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: min_m128(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].min(rhs.arr[0]),
+          self.arr[1].min(rhs.arr[1]),
+          self.arr[2].min(rhs.arr[2]),
+          self.arr[3].min(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
 }

@@ -221,4 +221,48 @@ impl u16x8 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: max_u8_m128i(self.sse, rhs.sse) }
+      } else {
+        let arr: [u16; 8] = cast(self);
+        let rhs: [u16; 8] = cast(rhs);
+        cast([
+          arr[0].max(rhs[0]),
+          arr[1].max(rhs[1]),
+          arr[2].max(rhs[2]),
+          arr[3].max(rhs[3]),
+          arr[4].max(rhs[4]),
+          arr[5].max(rhs[5]),
+          arr[6].max(rhs[6]),
+          arr[7].max(rhs[7]),
+        ])
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: min_u8_m128i(self.sse, rhs.sse) }
+      } else {
+        let arr: [u16; 8] = cast(self);
+        let rhs: [u16; 8] = cast(rhs);
+        cast([
+          arr[0].min(rhs[0]),
+          arr[1].min(rhs[1]),
+          arr[2].min(rhs[2]),
+          arr[3].min(rhs[3]),
+          arr[4].min(rhs[4]),
+          arr[5].min(rhs[5]),
+          arr[6].min(rhs[6]),
+          arr[7].min(rhs[7]),
+        ])
+      }
+    }
+  }
 }

@@ -189,4 +189,40 @@ impl u32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: max_u32_m128i(self.sse, rhs.sse) }
+      } else {
+        let arr: [u32; 4] = cast(self);
+        let rhs: [u32; 4] = cast(rhs);
+        cast([
+          arr[0].max(rhs[0]),
+          arr[1].max(rhs[1]),
+          arr[2].max(rhs[2]),
+          arr[3].max(rhs[3]),
+        ])
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: min_u32_m128i(self.sse, rhs.sse) }
+      } else {
+        let arr: [u32; 4] = cast(self);
+        let rhs: [u32; 4] = cast(rhs);
+        cast([
+          arr[0].min(rhs[0]),
+          arr[1].min(rhs[1]),
+          arr[2].min(rhs[2]),
+          arr[3].min(rhs[3]),
+        ])
+      }
+    }
+  }
 }

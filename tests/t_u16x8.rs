@@ -106,3 +106,21 @@ fn impl_u16x8_blend() {
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u16x8_max() {
+  let a = u16x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  let b = u16x8::from([17, 18, 19, 20, 2, 2, 2, 24]);
+  let expected = u16x8::from([17, 18, 19, 20, 5, 6, 7, 24]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u16x8_min() {
+  let a = u16x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  let b = u16x8::from([17, 18, 19, 20, 2, 2, 2, 24]);
+  let expected = u16x8::from([1, 2, 3, 4, 2, 2, 2, 8]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+}

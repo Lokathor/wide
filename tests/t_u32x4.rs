@@ -90,3 +90,21 @@ fn impl_u32x4_blend() {
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u32x4_max() {
+  let a = u32x4::from([0, 2, 3, 4]);
+  let b = u32x4::from([17, 1, 0, 20]);
+  let expected = u32x4::from([17, 2, 3, 20]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u32x4_min() {
+  let a = u32x4::from([0, 2, 3, 4]);
+  let b = u32x4::from([17, 1, 0, 20]);
+  let expected = u32x4::from([0, 1, 0, 4]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+}

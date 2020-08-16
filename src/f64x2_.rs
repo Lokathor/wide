@@ -243,4 +243,32 @@ impl f64x2 {
     let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
     self & non_sign_bits
   }
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: max_m128d(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].max(rhs.arr[0]),
+          self.arr[1].max(rhs.arr[1]),
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: min_m128d(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          self.arr[0].min(rhs.arr[0]),
+          self.arr[1].min(rhs.arr[1]),
+        ]}
+      }
+    }
+  }
 }

@@ -125,3 +125,21 @@ fn impl_i32x4_abs() {
   let actual = a.abs();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i32x4_max() {
+  let a = i32x4::from([1, 2, i32::MIN + 1, i32::MIN]);
+  let b = i32x4::from([17, -18, 1, 1]);
+  let expected = i32x4::from([17, 2, 1, 1]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i32x4_min() {
+  let a = i32x4::from([1, 2, i32::MIN + 1, i32::MIN]);
+  let b = i32x4::from([17, -18, 1, 1]);
+  let expected = i32x4::from([1, -18, i32::MIN + 1, i32::MIN]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+}

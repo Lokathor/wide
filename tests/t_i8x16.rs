@@ -139,10 +139,98 @@ fn impl_i8x16_blend() {
 
 #[test]
 fn impl_i8x16_abs() {
-  let a =
-    i8x16::from([-1, 2, -3, 4, 5, -6, 7, 8, 9, -10, -11, 12, 13, -14, -126, i8::MIN]);
+  let a = i8x16::from([
+    -1,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    -10,
+    -11,
+    12,
+    13,
+    -14,
+    -126,
+    i8::MIN,
+  ]);
   let expected =
     i8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 126, i8::MIN]);
   let actual = a.abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_max() {
+  let a =
+    i8x16::from([10, 2, -3, 4, 5, -6, 7, 8, 9, 7, -11, 12, 13, 6, 55, i8::MIN]);
+  let b = i8x16::from([
+    -1,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    -10,
+    -11,
+    12,
+    13,
+    -14,
+    -126,
+    i8::MIN + 1,
+  ]);
+  let expected =
+    i8x16::from([10, 2, -3, 4, 5, -6, 7, 8, 9, 7, -11, 12, 13, 6, 55, -127]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_min() {
+  let a =
+    i8x16::from([10, 2, -3, 4, 5, -6, 7, 8, 9, 7, -11, 12, 13, 6, 55, i8::MIN]);
+  let b = i8x16::from([
+    -1,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    -10,
+    -11,
+    12,
+    13,
+    -14,
+    -126,
+    i8::MIN + 1,
+  ]);
+  let expected = i8x16::from([
+    -1,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    -10,
+    -11,
+    12,
+    13,
+    -14,
+    -126,
+    i8::MIN,
+  ]);
+  let actual = a.min(b);
   assert_eq!(expected, actual);
 }
