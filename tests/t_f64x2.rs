@@ -312,3 +312,29 @@ fn impl_f64x2_flip_signs() {
   let actual = a.flip_signs(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_sin_cos() {
+  for x in -2500..=2500 {
+    let base = (x * 4) as f64;
+    let angles = [base, base + 1.0];
+    let (actual_sins, actual_coses) = f64x2::from(angles).sin_cos();
+    for i in 0..2 {
+      let angle = angles[i];
+      let check = |name: &str, vals: f64x2, expected: f64| {
+        let actual_arr: [f64; 2] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.00000006,
+          "Wanted {name}({angle}) to be {expected} but got {actual}",
+          name = name,
+          angle = angle,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("sin", actual_sins, angle.sin());
+      check("cos", actual_coses, angle.cos());
+    }
+  }
+}

@@ -12,6 +12,17 @@ pick! {
   }
 }
 
+macro_rules! const_f64_as_f64x2 {
+  ($i:ident, $f:expr) => {
+    pub const $i: f64x2 =
+      unsafe { ConstUnionHack128bit { f64a2: [$f, $f] }.f64x2 };
+  };
+}
+
+impl f64x2 {
+  const_f64_as_f64x2!(PI, core::f64::consts::PI);
+}
+
 unsafe impl Zeroable for f64x2 {}
 unsafe impl Pod for f64x2 {}
 
@@ -343,5 +354,67 @@ impl f64x2 {
   #[must_use]
   pub fn flip_signs(self, signs: Self) -> Self {
     self ^ (signs & Self::from(-0.0))
+  }
+  #[inline]
+  #[must_use]
+  #[allow(dead_code)]
+  #[allow(unreachable_code)]
+  #[allow(non_upper_case_globals)]
+  pub fn sin_cos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+
+    const_f64_as_f64x2!(P0sin, -1.66666666666666307295E-1);
+    const_f64_as_f64x2!(P1sin, 8.33333333332211858878E-3);
+    const_f64_as_f64x2!(P2sin, -1.98412698295895385996E-4);
+    const_f64_as_f64x2!(P3sin, 2.75573136213857245213E-6);
+    const_f64_as_f64x2!(P4sin, -2.50507477628578072866E-8);
+    const_f64_as_f64x2!(P5sin, 1.58962301576546568060E-10);
+
+    const_f64_as_f64x2!(P0cos, 4.16666666666665929218E-2);
+    const_f64_as_f64x2!(P1cos, -1.38888888888730564116E-3);
+    const_f64_as_f64x2!(P2cos, 2.48015872888517045348E-5);
+    const_f64_as_f64x2!(P3cos, -2.75573141792967388112E-7);
+    const_f64_as_f64x2!(P4cos, 2.08757008419747316778E-9);
+    const_f64_as_f64x2!(P5cos, -1.13585365213876817300E-11);
+
+    const_f64_as_f64x2!(DP1, 7.853981554508209228515625E-1 * 2.);
+    const_f64_as_f64x2!(DP2, 7.94662735614792836714E-9 * 2.);
+    const_f64_as_f64x2!(DP3, 3.06161699786838294307E-17 * 2.);
+
+    const_f64_as_f64x2!(TWO_OVER_PI, 2.0 / core::f64::consts::PI);
+
+    let xa = self.abs();
+
+    let y = (xa * TWO_OVER_PI).round();
+    let q = y.round_int();
+
+    let x = y.mul_neg_add(DP3, y.mul_neg_add(DP2, y.mul_neg_add(DP1, xa)));
+
+    let x2 = x * x;
+    let mut s = polynomial_5!(x2, P0sin, P1sin, P2sin, P3sin, P4sin, P5sin);
+    let mut c = polynomial_5!(x2, P0cos, P1cos, P2cos, P3cos, P4cos, P5cos);
+    s = (x * x2).mul_add(s, x);
+    c =
+      (x2 * x2).mul_add(c, x2.mul_neg_add(f64x2::from(0.5), f64x2::from(1.0)));
+
+    let swap = !((q & i64x2::from(1)).cmp_eq(i64x2::from(0)));
+
+    let mut overflow: f64x2 = cast(q.cmp_gt(i64x2::from(0x80000000000000)));
+    overflow &= xa.is_finite();
+    s = overflow.blend(f64x2::from(0.0), s);
+    c = overflow.blend(f64x2::from(1.0), c);
+
+    // calc sin
+    let mut sin1 = cast::<_, f64x2>(swap).blend(c, s);
+    let sign_sin: i64x2 = (q << 62_u64) ^ cast::<_, i64x2>(self);
+    sin1 = sin1.flip_signs(cast(sign_sin));
+
+    // calc cos
+    let mut cos1 = cast::<_, f64x2>(swap).blend(s, c);
+    let sign_cos: i64x2 = ((q + i64x2::from(1)) & i64x2::from(2)) << 62_u64;
+    cos1 ^= cast::<_, f64x2>(sign_cos);
+
+    (sin1, cos1)
   }
 }

@@ -12,6 +12,17 @@ pick! {
   }
 }
 
+macro_rules! const_f32_as_f32x4 {
+  ($i:ident, $f:expr) => {
+    pub const $i: f32x4 =
+      unsafe { ConstUnionHack128bit { f32a4: [$f, $f, $f, $f] }.f32x4 };
+  };
+}
+
+impl f32x4 {
+  const_f32_as_f32x4!(PI, core::f32::consts::PI);
+}
+
 unsafe impl Zeroable for f32x4 {}
 unsafe impl Pod for f32x4 {}
 
@@ -415,5 +426,58 @@ impl f32x4 {
   #[must_use]
   pub fn flip_signs(self, signs: Self) -> Self {
     self ^ (signs & Self::from(-0.0))
+  }
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn sin_cos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+
+    const_f32_as_f32x4!(DP1F, 0.78515625_f32 * 2.0);
+    const_f32_as_f32x4!(DP2F, 2.4187564849853515625E-4_f32 * 2.0);
+    const_f32_as_f32x4!(DP3F, 3.77489497744594108E-8_f32 * 2.0);
+
+    const_f32_as_f32x4!(P0sinf, -1.6666654611E-1);
+    const_f32_as_f32x4!(P1sinf, 8.3321608736E-3);
+    const_f32_as_f32x4!(P2sinf, -1.9515295891E-4);
+
+    const_f32_as_f32x4!(P0cosf, 4.166664568298827E-2);
+    const_f32_as_f32x4!(P1cosf, -1.388731625493765E-3);
+    const_f32_as_f32x4!(P2cosf, 2.443315711809948E-5);
+
+    const_f32_as_f32x4!(TWO_OVER_PI, 2.0 / core::f32::consts::PI);
+
+    let xa = self.abs();
+
+    // Find quadrant
+    let y = (xa * TWO_OVER_PI).round();
+    let q: i32x4 = y.round_int();
+
+    let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
+
+    let x2 = x * x;
+    let mut s = polynomial_2!(x2, P0sinf, P1sinf, P2sinf) * (x * x2) + x;
+    let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
+      + f32x4::from(0.5).mul_neg_add(x2, f32x4::from(1.0));
+
+    let swap = !(q & i32x4::from(1)).cmp_eq(i32x4::from(0));
+
+    let mut overflow: f32x4 = cast(q.cmp_gt(i32x4::from(0x2000000)));
+    overflow &= xa.is_finite();
+    s = overflow.blend(f32x4::from(0.0), s);
+    c = overflow.blend(f32x4::from(1.0), c);
+
+    // calc sin
+    let mut sin1 = cast::<_, f32x4>(swap).blend(c, s);
+    let sign_sin: i32x4 = (q << 30_u64) ^ cast::<_, i32x4>(self);
+    sin1 = sin1.flip_signs(cast(sign_sin));
+
+    // calc cos
+    let mut cos1 = cast::<_, f32x4>(swap).blend(s, c);
+    let sign_cos: i32x4 = ((q + i32x4::from(1)) & i32x4::from(2)) << 30_u64;
+    cos1 ^= cast::<_, f32x4>(sign_cos);
+
+    (sin1, cos1)
   }
 }

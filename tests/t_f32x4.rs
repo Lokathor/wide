@@ -268,3 +268,29 @@ fn impl_f32x4_flip_signs() {
   let actual = a.flip_signs(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f32x4_sin_cos() {
+  for x in -2500..=2500 {
+    let base = (x * 4) as f32;
+    let angles = [base, base + 1.0, base + 2.0, base + 3.0];
+    let (actual_sins, actual_coses) = f32x4::from(angles).sin_cos();
+    for i in 0..4 {
+      let angle = angles[i];
+      let check = |name: &str, vals: f32x4, expected: f32| {
+        let actual_arr: [f32; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.00000006,
+          "Wanted {name}({angle}) to be {expected} but got {actual}",
+          name = name,
+          angle = angle,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("sin", actual_sins, angle.sin());
+      check("cos", actual_coses, angle.cos());
+    }
+  }
+}
