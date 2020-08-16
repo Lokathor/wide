@@ -339,7 +339,9 @@ impl f32x4 {
         let mask: f32x4 = cast(i.cmp_eq(i32x4::from(0x80000000_u32 as i32)));
         mask.blend(self, f)
       } else {
-        // Note(Lokathor): This software fallback is extremely slow.
+        // Note(Lokathor): This software fallback is extremely slow compared to
+        // having a hardware option available, even just the sse2 version is
+        // better than this. Oh well.
         let to_int = f32x4::from(1.0 / f32::EPSILON);
         let u: u32x4 = cast(self);
         let e: i32x4 = cast((u >> 23_u64) & u32x4::from(0xff));
