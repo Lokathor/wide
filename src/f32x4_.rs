@@ -382,7 +382,7 @@ impl f32x4 {
           rounded[2] as i32,
           rounded[3] as i32,
         ]);
-        cast::<f32x4 i32x4>(self.is_finite()).blend(
+        cast::<f32x4, i32x4>(self.is_finite()).blend(
           rounded_ints,
           i32x4::from(i32::MIN)
         )
