@@ -424,7 +424,7 @@ fn software_sqrt(x: f64) -> f64 {
       ix0 |= (ix1.0 >> (31 - i)) as i32;
       ix1 <<= i as usize;
     }
-    // unbias exponent
+    // un-bias exponent
     m -= 1023;
     ix0 = (ix0 & 0x000fffff) | 0x00100000;
     if (m & 1) != 0 {
