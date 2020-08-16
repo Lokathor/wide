@@ -239,3 +239,23 @@ fn impl_f32x4_round_int() {
     assert_eq!(expected, actual);
   }
 }
+
+#[test]
+fn impl_f32x4_mul_add() {
+  let a = f32x4::from([2.0, 3.0, 4.0, 5.0]);
+  let b = f32x4::from([4.0, 5.0, 6.0, 7.0]);
+  let c = f32x4::from([1.0, 1.0, 1.0, 1.0]);
+  let expected = f32x4::from([9.0, 16.0, 25.0, 36.0]);
+  let actual = a.mul_add(b, c);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_mul_neg_add() {
+  let a = f32x4::from([2.0, 3.0, 4.0, 5.0]);
+  let b = f32x4::from([4.0, 5.0, 6.0, 7.0]);
+  let c = f32x4::from([1.0, 1.0, 1.0, 1.0]);
+  let expected = f32x4::from([-7.0, -14.0, -23.0, -34.0]);
+  let actual = a.mul_neg_add(b, c);
+  assert_eq!(expected, actual);
+}

@@ -389,4 +389,26 @@ impl f32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn mul_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_add_m128(self.sse, m.sse, a.sse) }
+      } else {
+        (self * m) + a
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_neg_add_m128(self.sse, m.sse, a.sse) }
+      } else {
+        a - (self * m)
+      }
+    }
+  }
 }

@@ -277,3 +277,23 @@ fn impl_f64x2_round_int() {
     assert_eq!(expected, actual);
   }
 }
+
+#[test]
+fn impl_f64x2_mul_add() {
+  let a = f64x2::from([2.0, 3.0]);
+  let b = f64x2::from([4.0, 5.0]);
+  let c = f64x2::from([1.0, 1.0]);
+  let expected = f64x2::from([9.0, 16.0]);
+  let actual = a.mul_add(b, c);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_mul_neg_add() {
+  let a = f64x2::from([2.0, 3.0]);
+  let b = f64x2::from([4.0, 5.0]);
+  let c = f64x2::from([1.0, 1.0]);
+  let expected = f64x2::from([-7.0, -14.0]);
+  let actual = a.mul_neg_add(b, c);
+  assert_eq!(expected, actual);
+}

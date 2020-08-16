@@ -317,4 +317,26 @@ impl f64x2 {
     cast::<f64x2, i64x2>(self.is_finite())
       .blend(rounded_ints, i64x2::from(i64::MIN))
   }
+  #[inline]
+  #[must_use]
+  pub fn mul_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_add_m128d(self.sse, m.sse, a.sse) }
+      } else {
+        (self * m) + a
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse",target_feature="fma"))] {
+        Self { sse: fused_mul_neg_add_m128d(self.sse, m.sse, a.sse) }
+      } else {
+        a - (self * m)
+      }
+    }
+  }
 }
