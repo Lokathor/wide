@@ -411,4 +411,9 @@ impl f32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn flip_signs(self, signs: Self) -> Self {
+    self ^ (signs & Self::from(-0.0))
+  }
 }

@@ -297,3 +297,18 @@ fn impl_f64x2_mul_neg_add() {
   let actual = a.mul_neg_add(b, c);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_flip_signs() {
+  let a = f64x2::from([1.0, 1.0]);
+  let b = f64x2::from([2.0, -3.0]);
+  let expected = f64x2::from([1.0, -1.0]);
+  let actual = a.flip_signs(b);
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([-1.0, -1.0]);
+  let b = f64x2::from([4.0, -5.0]);
+  let expected = f64x2::from([-1.0, 1.0]);
+  let actual = a.flip_signs(b);
+  assert_eq!(expected, actual);
+}
