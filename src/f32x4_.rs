@@ -358,12 +358,12 @@ impl f32x4 {
         let mask: f32x4 = cast(i.cmp_eq(i32x4::from(0x80000000_u32 as i32)));
         mask.blend(self, f)
       } else {
-        // Note(Lokathor): This software fallback is extremely slow compared to
-        // having a hardware option available, even just the sse2 version is
+        // Note(Lokathor): This software fallback is probably very slow compared
+        // to having a hardware option available, even just the sse2 version is
         // better than this. Oh well.
         let to_int = f32x4::from(1.0 / f32::EPSILON);
         let u: u32x4 = cast(self);
-        let e: i32x4 = cast((u >> 23_u64) & u32x4::from(0xff));
+        let e: i32x4 = cast((u >> 23) & u32x4::from(0xff));
         let mut y: f32x4;
 
         let no_op_magic = i32x4::from(0x7f + 23);
@@ -478,12 +478,12 @@ impl f32x4 {
 
     // calc sin
     let mut sin1 = cast::<_, f32x4>(swap).blend(c, s);
-    let sign_sin: i32x4 = (q << 30_u64) ^ cast::<_, i32x4>(self);
+    let sign_sin: i32x4 = (q << 30) ^ cast::<_, i32x4>(self);
     sin1 = sin1.flip_signs(cast(sign_sin));
 
     // calc cos
     let mut cos1 = cast::<_, f32x4>(swap).blend(s, c);
-    let sign_cos: i32x4 = ((q + i32x4::from(1)) & i32x4::from(2)) << 30_u64;
+    let sign_cos: i32x4 = ((q + i32x4::from(1)) & i32x4::from(2)) << 30;
     cos1 ^= cast::<_, f32x4>(sign_cos);
 
     (sin1, cos1)

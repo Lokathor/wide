@@ -416,12 +416,12 @@ impl f64x2 {
 
     // calc sin
     let mut sin1 = cast::<_, f64x2>(swap).blend(c, s);
-    let sign_sin: i64x2 = (q << 62_u64) ^ cast::<_, i64x2>(self);
+    let sign_sin: i64x2 = (q << 62) ^ cast::<_, i64x2>(self);
     sin1 = sin1.flip_signs(cast(sign_sin));
 
     // calc cos
     let mut cos1 = cast::<_, f64x2>(swap).blend(s, c);
-    let sign_cos: i64x2 = ((q + i64x2::from(1)) & i64x2::from(2)) << 62_u64;
+    let sign_cos: i64x2 = ((q + i64x2::from(1)) & i64x2::from(2)) << 62;
     cos1 ^= cast::<_, f64x2>(sign_cos);
 
     (sin1, cos1)
