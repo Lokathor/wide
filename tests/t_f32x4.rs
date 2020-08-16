@@ -294,3 +294,21 @@ fn impl_f32x4_sin_cos() {
     }
   }
 }
+
+#[test]
+fn impl_f32x4_to_degrees() {
+  let pi = core::f32::consts::PI;
+  let a = f32x4::from([0.0, pi / 2.0, pi, 2.0 * pi]);
+  let expected = f32x4::from([0.0, 90.0, 180.0, 360.0]);
+  let actual = a.to_degrees();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_to_radians() {
+  let pi = core::f32::consts::PI;
+  let a = f32x4::from([0.0, 90.0, 180.0, 360.0]);
+  let expected = f32x4::from([0.0, pi / 2.0, pi, 2.0 * pi]);
+  let actual = a.to_radians();
+  assert_eq!(expected, actual);
+}

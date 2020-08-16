@@ -338,3 +338,31 @@ fn impl_f64x2_sin_cos() {
     }
   }
 }
+
+#[test]
+fn impl_f64x2_to_degrees() {
+  let pi = core::f64::consts::PI;
+  let a = f64x2::from([0.0, pi / 2.0]);
+  let expected = f64x2::from([0.0, 90.0]);
+  let actual = a.to_degrees();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([pi, pi * 2.0]);
+  let expected = f64x2::from([180.0, 360.0]);
+  let actual = a.to_degrees();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_to_radians() {
+  let pi = core::f64::consts::PI;
+  let a = f64x2::from([0.0, 90.0]);
+  let expected = f64x2::from([0.0, pi / 2.0]);
+  let actual = a.to_radians();
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([180.0, 360.0]);
+  let expected = f64x2::from([pi, pi * 2.0]);
+  let actual = a.to_radians();
+  assert_eq!(expected, actual);
+}
