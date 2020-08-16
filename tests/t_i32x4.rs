@@ -143,3 +143,11 @@ fn impl_i32x4_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i32x4_round_float() {
+  let a = i32x4::from([-1, 30, i32::MIN, i32::MAX]);
+  let expected = f32x4::from([-1.0, 30.0, i32::MIN as f32, i32::MAX as f32]);
+  let actual = a.round_float();
+  assert_eq!(expected, actual);
+}

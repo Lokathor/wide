@@ -292,4 +292,21 @@ impl i32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn round_float(self) -> f32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        cast(convert_to_m128_from_i32_m128i(self.sse))
+      } else {
+        let arr: [i32; 4] = cast(self);
+        cast([
+          arr[0] as f32,
+          arr[1] as f32,
+          arr[2] as f32,
+          arr[3] as f32,
+        ])
+      }
+    }
+  }
 }
