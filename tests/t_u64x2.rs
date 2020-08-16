@@ -79,3 +79,12 @@ fn impl_u64x2_blend() {
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u64x2_cmp_eq() {
+  let a = u64x2::from([1_u64, 4]);
+  let b = u64x2::from([3_u64, 4]);
+  let expected = u64x2::from([0, u64::MAX]);
+  let actual = a.cmp_eq(b);
+  assert_eq!(expected, actual);
+}

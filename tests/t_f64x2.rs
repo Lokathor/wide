@@ -190,3 +190,24 @@ fn impl_f64x2_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_is_nan() {
+  let a = f64x2::from([0.0, f64::NAN]);
+  let expected = [0, u64::MAX];
+  let actual: [u64; 2] = cast(a.is_nan());
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x2_is_finite() {
+  let a = f64x2::from([f64::NAN, 1.0]);
+  let expected = [0, u64::MAX];
+  let actual: [u64; 2] = cast(a.is_finite());
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([f64::INFINITY, f64::NEG_INFINITY]);
+  let expected = [0, 0];
+  let actual: [u64; 2] = cast(a.is_finite());
+  assert_eq!(expected, actual);
+}

@@ -188,7 +188,7 @@ impl i32x4 {
   #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
       } else {
         Self { arr: [
@@ -204,7 +204,7 @@ impl i32x4 {
   #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_i32_m128i(self.sse, rhs.sse) }
       } else {
         Self { arr: [
@@ -220,7 +220,7 @@ impl i32x4 {
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_i32_m128i(self.sse, rhs.sse) }
       } else {
         Self { arr: [

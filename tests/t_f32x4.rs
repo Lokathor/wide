@@ -172,3 +172,19 @@ fn impl_f32x4_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f32x4_is_nan() {
+  let a = f32x4::from([0.0, f32::NAN, f32::NAN, 0.0]);
+  let expected = [0, u32::MAX, u32::MAX, 0];
+  let actual: [u32; 4] = cast(a.is_nan());
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_is_finite() {
+  let a = f32x4::from([f32::NAN, 1.0, f32::INFINITY, f32::NEG_INFINITY]);
+  let expected = [0, u32::MAX, 0, 0];
+  let actual: [u32; 4] = cast(a.is_finite());
+  assert_eq!(expected, actual);
+}

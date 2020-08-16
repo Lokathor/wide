@@ -271,4 +271,27 @@ impl f64x2 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn is_nan(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_unord_mask_m128d(self.sse, self.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] < rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn is_finite(self) -> Self {
+    let shifted_exp_mask = u64x2::from(0xFFE0000000000000);
+    let u: u64x2 = cast(self);
+    let shift_u = u << 1_u64;
+    let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    cast(out)
+  }
 }
