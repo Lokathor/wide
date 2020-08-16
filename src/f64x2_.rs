@@ -279,8 +279,8 @@ impl f64x2 {
         Self { sse: cmp_unord_mask_m128d(self.sse, self.sse) }
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] < rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
