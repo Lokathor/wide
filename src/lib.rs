@@ -1,182 +1,524 @@
-#![warn(missing_docs)]
-#![cfg_attr(not(feature = "extern_crate_std"), no_std)]
-#![cfg_attr(feature = "toolchain_nightly", feature(stdsimd))]
-#![cfg_attr(feature = "toolchain_nightly", feature(core_intrinsics))]
-#![allow(clippy::replace_consts)]
-#![allow(clippy::inline_always)]
-#![allow(clippy::expl_impl_clone_on_copy)]
-#![allow(clippy::doc_markdown)]
-#![allow(clippy::use_self)]
-#![warn(clippy::must_use_candidate)]
+#![no_std]
+#![allow(non_camel_case_types)]
 
-//! A crate to help you go wide.
-//!
-//! Specifically, this crate has data types for blocks of primitives packed
-//! together and used as a single unit. This works very well with SIMD/vector
-//! hardware of various targets. Both in terms of explicit SIMD usage and also
-//! in terms of allowing LLVM's auto-vectorizer to do its job.
-//!
-//! All SIMD usage is on a _best effort_ basis. Results will vary based on
-//! target, optimization level, method, and if you're using a Nightly compiler
-//! or not. Otherwise you get a "fallback" implementation, which will just do
-//! the normal computation on each lane individually.
-//!
-//! * **Note:** The crate will auto-detect if you're using Nightly and take
-//!   advantage of it. You don't do anything on your part. Activate the
-//!   `always_use_stable` feature if you'd like to suppress this effect such as
-//!   for testing purposes.
-//!
-//! ### What About `packed_simd`?
-//!
-//! Compared to the
-//! [packed_simd](https://github.com/rust-lang-nursery/packed_simd) RFC efforts,
-//! this crate is less concerned with complete coverage of all possible
-//! intrinsics and being totally generic across all widths. Instead, I focus on
-//! having a very simple, easy to understand setup that avoids generics and
-//! tries to just be plain and obvious at all times. The goal is that using a
-//! wide type should be as close as possible to using the scalar version of the
-//! same type. Some function designed for `f32` inputs and outputs should "just
-//! work" when you change it to `f32x4` inputs and outputs.
-//!
-//! Also, `packed_simd` is Nightly-only, whereas this crate works on Stable.
-//! Even on Stable this crate will give you _reasonable_ levels of SIMD just
-//! from LLVM's auto-vectorizer being pretty good at its job when you give it
-//! code that it recognizes.
-//!
-//! When `packed_simd` eventually makes it into Stable it _might_ make this
-//! crate obsolete. However, in September of 2019 I asked the `packed_simd`
-//! folks if there was any kind of ETA, 6 months, 12 months, or more, and they
-//! just said "no ETA". So I'm not gonna wait around for `packed_simd`.
+use core::{
+  fmt::{
+    Binary, Debug, Display, LowerExp, LowerHex, Octal, UpperExp, UpperHex,
+  },
+  ops::*,
+};
 
-pub(crate) use bytemuck::{cast, cast_mut, cast_ref, Pod, Zeroable};
-pub(crate) use core::{convert::*, fmt::*, ops::*};
+#[allow(unused_imports)]
+use safe_arch::*;
 
-/// Does all our conditional compilation selection.
-macro_rules! magic {
-  (
-    $(if #[cfg($($test:meta),*)] {
+use bytemuck::*;
+
+macro_rules! pick {
+  ($(if #[cfg($($test:meta),*)] {
       $($if_tokens:tt)*
-    })else* else {
+    })else+ else {
       $($else_tokens:tt)*
-    }
-  ) => {
-    magic!{
+    }) => {
+    pick!{
       @__forests [ ] ;
       $( [ {$($test),*} {$($if_tokens)*} ], )*
       [ { } {$($else_tokens)*} ],
     }
   };
-
-  (
-    if #[cfg($($if_meta:meta),*)] {
+  (if #[cfg($($if_meta:meta),*)] {
       $($if_tokens:tt)*
     } $(else if #[cfg($($else_meta:meta),*)] {
       $($else_tokens:tt)*
-    })*
-  ) => {
-    magic!{
+    })*) => {
+    pick!{
       @__forests [ ] ;
       [ {$($if_meta),*} {$($if_tokens)*} ],
       $( [ {$($else_meta),*} {$($else_tokens)*} ], )*
     }
   };
-
-  (
-    @__forests [ $($not:meta,)* ] ;
-  ) => {
+  (@__forests [$($not:meta,)*];) => {
     /* halt expansion */
   };
-
-  (
-    @__forests [ $($not:meta,)* ] ;
-    [ { $($m:meta),* } { $($tokens:tt)* } ],
-    $($rest:tt)*
-  ) => {
+  (@__forests [$($not:meta,)*]; [{$($m:meta),*} {$($tokens:tt)*}], $($rest:tt)*) => {
     #[cfg(all( $($m,)* not(any($($not),*)) ))]
-    magic!{ @__identity $($tokens)* }
-
-    magic!{
-      @__forests [ $($not,)* $($m,)* ] ;
-      $($rest)*
-    }
+    pick!{ @__identity $($tokens)* }
+    pick!{ @__forests [ $($not,)* $($m,)* ] ; $($rest)* }
   };
-
-  (
-    @__identity $($tokens:tt)*
-  ) => {
+  (@__identity $($tokens:tt)*) => {
     $($tokens)*
   };
 }
 
-pub mod arch;
+mod f32x4_;
+pub use f32x4_::*;
 
-magic! {
-  if #[cfg(all(target_arch="x86", target_feature="sse"))] {
-    pub(crate) use arch::x86::{m128, m128i};
-  } else if #[cfg(all(target_arch="x86_64", target_feature="sse"))] {
-    pub(crate) use arch::x86_64::{m128, m128i};
-  }
-  // TODO: arm, aarch64, wasm32, maybe more?
+mod f64x2_;
+pub use f64x2_::*;
+
+mod i8x16_;
+pub use i8x16_::*;
+
+mod i16x8_;
+pub use i16x8_::*;
+
+mod i32x4_;
+pub use i32x4_::*;
+
+mod i64x2_;
+pub use i64x2_::*;
+
+mod u8x16_;
+pub use u8x16_::*;
+
+mod u16x8_;
+pub use u16x8_::*;
+
+mod u32x4_;
+pub use u32x4_::*;
+
+mod u64x2_;
+pub use u64x2_::*;
+
+#[allow(non_camel_case_types)]
+#[repr(C, align(16))]
+union ConstUnionHack128bit {
+  f32a4: [f32; 4],
+  i32a4: [i32; 4],
+  f64a2: [f64; 2],
+  f32x4: f32x4,
+  f64x2: f64x2,
+  u128: u128,
 }
 
-mod m_f32x4;
-pub use m_f32x4::*;
+#[allow(dead_code)]
+fn generic_bit_blend<T>(mask: T, y: T, n: T) -> T
+where
+  T: Copy + BitXor<Output = T> + BitAnd<Output = T>,
+{
+  n ^ ((n ^ y) & mask)
+}
 
-mod m_i32x4;
-pub use m_i32x4::*;
+/// given `type.op(type)` and type is Copy, impls `type.op(&type)`
+macro_rules! bulk_impl_op_ref_self_for {
+  ($(($op:ident, $method:ident) => [$($t:ty),+]),+ $(,)?) => {
+    $( // do each trait/list matching given
+      $( // do the current trait for each type in its list.
+        impl $op<&Self> for $t {
+          type Output = Self;
+          #[inline]
+          #[must_use]
+          fn $method(self, rhs: &Self) -> Self::Output {
+            self.$method(*rhs)
+          }
+        }
+      )+
+    )+
+  };
+}
 
-/// A `sqrt` for just one `f32`.
-///
-/// Tries its best to be `no_std`
-#[inline(always)]
-#[must_use]
-pub fn sqrt_f32(x: f32) -> f32 {
-  magic! {
-    if #[cfg(target_feature = "sse")] {
-      m128::set0(x).sqrt0().extract0()
-    } else if #[cfg(feature = "toolchain_nightly")] {
-      unsafe { core::intrinsics::sqrtf32(x) }
-    } else {
-      f32::sqrt(x)
-    }
+bulk_impl_op_ref_self_for! {
+  (Add, add) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (Sub, sub) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (Mul, mul) => [f32x4, f64x2, i16x8, i32x4],
+  (Div, div) => [f32x4, f64x2],
+  (BitAnd, bitand) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOr, bitor) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXor, bitxor) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+}
+
+/// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
+macro_rules! bulk_impl_op_assign_for {
+  ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {
+    $( // do each trait/list matching given
+      $( // do the current trait for each type in its list.
+        impl $op<$rhs> for $t {
+          #[inline]
+          fn $method_assign(&mut self, rhs: $rhs) {
+            *self = self.$method(rhs);
+          }
+        }
+      )+
+    )+
+  };
+}
+
+// Note: remember to update bulk_impl_op_ref_self_for first or this will give
+// weird errors!
+bulk_impl_op_assign_for! {
+  (AddAssign<Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (AddAssign<&Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (SubAssign<Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (SubAssign<&Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (MulAssign<Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
+  (MulAssign<&Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
+  (DivAssign<Self>, div, div_assign) => [f32x4, f64x2],
+  (DivAssign<&Self>, div, div_assign) => [f32x4, f64x2],
+  (BitAndAssign<Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitAndAssign<&Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOrAssign<Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitOrAssign<&Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXorAssign<Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (BitXorAssign<&Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+}
+
+macro_rules! impl_simple_neg {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl Neg for $t {
+        type Output = Self;
+        #[inline]
+        #[must_use]
+        fn neg(self) -> Self::Output {
+          Self::default() - self
+        }
+      }
+      impl Neg for &'_ $t {
+        type Output = $t;
+        #[inline]
+        #[must_use]
+        fn neg(self) -> Self::Output {
+          <$t>::default() - self
+        }
+      }
+    )+
+  };
+}
+
+impl_simple_neg! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
+macro_rules! impl_simple_not {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl Not for $t {
+        type Output = Self;
+        #[inline]
+        #[must_use]
+        fn not(self) -> Self::Output {
+          self ^ cast::<u128, $t>(u128::MAX)
+        }
+      }
+      impl Not for &'_ $t {
+        type Output = $t;
+        #[inline]
+        #[must_use]
+        fn not(self) -> Self::Output {
+          *self ^ cast::<u128, $t>(u128::MAX)
+        }
+      }
+    )+
+  };
+}
+
+impl_simple_not! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
+macro_rules! impl_simple_sum {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl<RHS> core::iter::Sum<RHS> for $t where $t: AddAssign<RHS> {
+        fn sum<I: Iterator<Item = RHS>>(iter: I) -> Self {
+          let mut total = Self::zeroed();
+          for val in iter {
+            total += val;
+          }
+          total
+        }
+      }
+    )+
+  };
+}
+
+impl_simple_sum! {
+  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
+macro_rules! impl_floating_product {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl<RHS> core::iter::Product<RHS> for $t where $t: MulAssign<RHS> {
+        fn product<I: Iterator<Item = RHS>>(iter: I) -> Self {
+          let mut total = Self::from(1.0);
+          for val in iter {
+            total *= val;
+          }
+          total
+        }
+      }
+    )+
+  };
+}
+
+impl_floating_product! {
+  f32x4, f64x2
+}
+
+macro_rules! impl_integer_product {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl<RHS> core::iter::Product<RHS> for $t where $t: MulAssign<RHS> {
+        fn product<I: Iterator<Item = RHS>>(iter: I) -> Self {
+          let mut total = Self::from(1);
+          for val in iter {
+            total *= val;
+          }
+          total
+        }
+      }
+    )+
+  };
+}
+
+impl_integer_product! {
+  i16x8, i32x4,
+}
+
+/// impls `From<a> for b` by just calling `cast`
+macro_rules! impl_from_a_for_b_with_cast {
+  ($(($arr:ty, $simd:ty)),+  $(,)?) => {
+    $(impl From<$arr> for $simd {
+      #[inline]
+      #[must_use]
+      fn from(arr: $arr) -> Self {
+        cast(arr)
+      }
+    })+
+  };
+}
+
+impl_from_a_for_b_with_cast! {
+  ([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2),
+}
+
+macro_rules! impl_from_single_value {
+  ($(([$elem:ty;$len:expr], $simd:ty)),+  $(,)?) => {
+    $(impl From<$elem> for $simd {
+      /// Splats the single value given across all lanes.
+      #[inline]
+      #[must_use]
+      fn from(elem: $elem) -> Self {
+        cast([elem; $len])
+      }
+    })+
+  };
+}
+
+impl_from_single_value! {
+  ([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2),
+}
+
+/// formatter => [(arr, simd)+],+
+macro_rules! impl_formatter_for {
+  ($($trait:ident => [$(($arr:ty, $simd:ty)),+]),+ $(,)?) => {
+    $( // do per trait
+      $( // do per simd type
+        impl $trait for $simd {
+          fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+            let a: $arr = cast(*self);
+            write!(f, "(")?;
+            for (x, a_ref) in a.iter().enumerate() {
+              if x > 0 {
+                write!(f, ", ")?;
+              }
+              $trait::fmt(a_ref, f)?;
+            }
+            write!(f, ")")
+          }
+        }
+      )+
+    )+
   }
 }
 
-/// A `sin` for just one `f32`.
-#[inline(always)]
-#[must_use]
-pub fn sin_f32(x: f32) -> f32 {
-  magic! {
-    if #[cfg(target_feature = "sse")] {
-      f32x4 { sse: m128::set0(x) }.sin().sse.extract0()
-    } else {
-      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.sin().arr[0]
-    }
-  }
+impl_formatter_for! {
+  Binary => [([u32;4], f32x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  Debug => [([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  Display => [([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  LowerExp => [([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  LowerHex => [([u32;4], f32x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  Octal => [([u32;4], f32x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  UpperExp => [([f32;4], f32x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  UpperHex => [([u32;4], f32x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
 }
 
-/// A `cos` for just one `f32`.
-#[inline(always)]
-#[must_use]
-pub fn cos_f32(x: f32) -> f32 {
-  magic! {
-    if #[cfg(target_feature = "sse")] {
-      f32x4 { sse: m128::set0(x) }.cos().sse.extract0()
-    } else {
-      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.cos().arr[0]
+#[allow(unused)]
+fn software_sqrt(x: f64) -> f64 {
+  use core::num::Wrapping;
+  type wu32 = Wrapping<u32>;
+  const fn w(u: u32) -> wu32 {
+    Wrapping(u)
+  }
+  let mut z: f64;
+  let sign: wu32 = w(0x80000000);
+  let mut ix0: i32;
+  let mut s0: i32;
+  let mut q: i32;
+  let mut m: i32;
+  let mut t: i32;
+  let mut i: i32;
+  let mut r: wu32;
+  let mut t1: wu32;
+  let mut s1: wu32;
+  let mut ix1: wu32;
+  let mut q1: wu32;
+  // extract data
+  {
+    let [low, high]: [u32; 2] = cast(x);
+    ix0 = high as i32;
+    ix1 = w(low);
+  }
+  // inf and nan
+  {
+    if ix0 & 0x7ff00000 == 0x7ff00000 {
+      return x * x + x;
     }
   }
+  // handle zero
+  {
+    if ix0 <= 0 {
+      if ((ix0 & (!sign).0 as i32) | (ix1.0 as i32)) == 0 {
+        return x;
+      } else if ix0 < 0 {
+        return (x - x) / (x - x);
+      }
+    }
+  }
+  // normalize
+  {
+    m = ix0 >> 20;
+    if m == 0 {
+      // subnormal
+      while ix0 == 0 {
+        m -= 21;
+        ix0 |= (ix1 >> 11).0 as i32;
+        ix1 <<= 21;
+      }
+      i = 0;
+      while ix0 & 0x00100000 == 0 {
+        ix0 <<= 1;
+        i += 1;
+      }
+      m -= i - 1;
+      ix0 |= (ix1.0 >> (31 - i)) as i32;
+      ix1 <<= i as usize;
+    }
+    // un-bias exponent
+    m -= 1023;
+    ix0 = (ix0 & 0x000fffff) | 0x00100000;
+    if (m & 1) != 0 {
+      // odd m, double the input to make it even
+      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+      ix1 += ix1;
+    }
+    m >>= 1;
+  }
+  // generate sqrt bit by bit
+  {
+    ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+    ix1 += ix1;
+    // q and q1 store the sqrt(x);
+    q = 0;
+    q1 = w(0);
+    s0 = 0;
+    s1 = w(0);
+    // our bit that moves from right to left
+    r = w(0x00200000);
+    while r != w(0) {
+      t = s0 + (r.0 as i32);
+      if t <= ix0 {
+        s0 = t + (r.0 as i32);
+        ix0 -= t;
+        q += (r.0 as i32);
+      }
+      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+      ix1 += ix1;
+      r >>= 1;
+    }
+    r = sign;
+    while r != w(0) {
+      t1 = s1 + r;
+      t = s0;
+      if (t < ix0) || ((t == ix0) && (t1 <= ix1)) {
+        s1 = t1 + r;
+        if t1 & sign == sign && (s1 & sign) == w(0) {
+          s0 += 1;
+        }
+        ix0 -= t;
+        if ix1 < t1 {
+          ix0 -= 1;
+        }
+        ix1 -= t1;
+        q1 += r;
+      }
+      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+      ix1 += ix1;
+      r >>= 1;
+    }
+  }
+  // use floating add to find out rounding direction
+  {
+    if ix0 | (ix1.0 as i32) != 0 {
+      z = 1.0 - 1.0e-300;
+      if z >= 1.0 {
+        z = 1.0 + 1.0e-300;
+        if q1 == w(0xffffffff) {
+          q1 = w(0);
+          q += 1;
+        } else if z > 1.0 {
+          if q1 == w(0xfffffffe) {
+            q += 1;
+          }
+          q1 += w(2);
+        } else {
+          q1 += q1 & w(1);
+        }
+      }
+    }
+  }
+  // finish up
+  ix0 = (q >> 1) + 0x3fe00000;
+  ix1 = q1 >> 1;
+  if q & 1 == 1 {
+    ix1 |= sign;
+  }
+  ix0 += m << 20;
+
+  cast::<[u32; 2], f64>([ix1.0, ix0 as u32])
 }
 
-/// A `tan` for just one `f32`.
-#[inline(always)]
-#[must_use]
-pub fn tan_f32(x: f32) -> f32 {
-  magic! {
-    if #[cfg(target_feature = "sse")] {
-      f32x4 { sse: m128::set0(x) }.tan().sse.extract0()
-    } else {
-      f32x4 { arr: [x, 0.0, 0.0, 0.0] }.tan().arr[0]
-    }
-  }
+#[test]
+fn test_software_sqrt() {
+  assert!(software_sqrt(f64::NAN).is_nan());
+  assert_eq!(software_sqrt(f64::INFINITY), f64::INFINITY);
+  assert_eq!(software_sqrt(0.0), 0.0);
+  assert_eq!(software_sqrt(-0.0), -0.0);
+  assert!(software_sqrt(-1.0).is_nan());
+  assert!(software_sqrt(f64::NEG_INFINITY).is_nan());
+  assert_eq!(software_sqrt(4.0), 2.0);
+  assert_eq!(software_sqrt(9.0), 3.0);
+  assert_eq!(software_sqrt(16.0), 4.0);
+  assert_eq!(software_sqrt(25.0), 5.0);
+  assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }

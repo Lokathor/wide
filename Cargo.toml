@@ -1,36 +1,19 @@
 [package]
 name = "wide"
 description = "A crate to help you go wide."
-version = "0.4.7-alpha.0"
+version = "0.5.0-alpha.0"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/wide"
 readme = "README.md"
 keywords = ["simd", "wide", "lokathor"]
 categories = ["data-structures", "hardware-support"]
 edition = "2018"
-license = "Zlib"
-
-[package.metadata.docs.rs]
-rustc-args = ["-Ctarget-cpu=native"]
-rustdoc-args = ["-Ctarget-cpu=native"]
+license = "Zlib OR Apache-2.0 OR MIT"
 
 [features]
 default = []
-
-# If you enable this feature the crate will always act like it's on the Stable
-# toolchain. Otherwise, the crate will attempt to detect when the current
-# compiler is a Nightly compiler and enable appropriate ightly features.
-always_use_stable = []
-
-# Link in the standard library. For now this will be turned on automatically if
-# you're not building on `x86` or `x86_64`.
-extern_crate_std = []
+std = []
 
 [dependencies]
+safe_arch = { version = "0.5", features = ["bytemuck"] }
 bytemuck = "1"
-
-# TODO: serde support
-
-[badges]
-appveyor = { repository = "Lokathor/wide" }
-travis-ci = { repository = "Lokathor/wide" }
