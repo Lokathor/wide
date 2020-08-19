@@ -53,8 +53,14 @@ jobs:
     - name: Test with default CPU features.
       if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
       run: cargo test --target ${{ matrix.rust.target }}
+    - name: Test with default CPU features + All Cargo Features
+      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
+      run: cargo test --target ${{ matrix.rust.target }} --all-features
     - name: switch over to native cpu features
       run: mv .cargo-ci .cargo
     - name: Test with 'native' CPU features.
       if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
       run: cargo test --target ${{ matrix.rust.target }}
+    - name: Test with 'native' CPU features + All Cargo Features
+      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
+      run: cargo test --target ${{ matrix.rust.target }} --all-features

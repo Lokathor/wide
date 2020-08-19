@@ -553,6 +553,13 @@ impl f32x4 {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self { sse: sqrt_m128(self.sse) }
+      } else if #[cfg(feature="std")] {
+        Self { arr: [
+          self.arr[0].sqrt(),
+          self.arr[1].sqrt(),
+          self.arr[2].sqrt(),
+          self.arr[3].sqrt(),
+        ]}
       } else {
         Self { arr: [
           software_sqrt(self.arr[0] as f64) as f32,

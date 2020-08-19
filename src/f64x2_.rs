@@ -499,6 +499,11 @@ impl f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: sqrt_m128d(self.sse) }
+      } else if #[cfg(feature="std")] {
+        Self { arr: [
+          self.arr[0].sqrt(),
+          self.arr[1].sqrt(),
+        ]}
       } else {
         Self { arr: [
           software_sqrt(self.arr[0]),
