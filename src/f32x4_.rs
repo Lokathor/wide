@@ -27,6 +27,16 @@ macro_rules! polynomial_2 {
   }};
 }
 
+macro_rules! polynomial_5 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    $c3
+      .mul_add(x, $c2)
+      .mul_add(x2, $c5.mul_add(x, $c4).mul_add(x4, $c1.mul_add(x, $c0)))
+  }};
+}
 impl f32x4 {
   const_f32_as_f32x4!(E, core::f32::consts::E);
   const_f32_as_f32x4!(FRAC_1_PI, core::f32::consts::FRAC_1_PI);
@@ -453,6 +463,7 @@ impl f32x4 {
   pub fn flip_signs(self, signs: Self) -> Self {
     self ^ (signs & Self::from(-0.0))
   }
+
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
@@ -565,5 +576,46 @@ impl f32x4 {
         (((self.arr[3].to_bits() as i32) < 0) as i32) << 3
       }
     }
+  }
+
+  #[inline]
+  #[allow(non_upper_case_globals)]
+  fn vm_pow2n(self) -> Self {
+    const_f32_as_f32x4!(pow2_23, 8388608.0);
+    const_f32_as_f32x4!(bias, 127.0);
+    let a = self + (bias + pow2_23);
+    let c = cast::<_, i32x4>(a) << 23;
+    cast::<_, f32x4>(c)
+  }
+
+  /// Calculate the exponent of a packed f32x4
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn exp(self) -> Self {
+    const_f32_as_f32x4!(ONE, 1.0);
+    const_f32_as_f32x4!(ZERO, 0.0);
+    const_f32_as_f32x4!(P0, 1.0 / 2.0);
+    const_f32_as_f32x4!(P1, 1.0 / 6.0);
+    const_f32_as_f32x4!(P2, 1. / 24.);
+    const_f32_as_f32x4!(P3, 1. / 120.);
+    const_f32_as_f32x4!(P4, 1. / 720.);
+    const_f32_as_f32x4!(P5, 1. / 5040.);
+    const_f32_as_f32x4!(LN2D_HI, 0.693359375);
+    const_f32_as_f32x4!(LN2D_LO, -2.12194440e-4);
+    const_f32_as_f32x4!(VMLOG2E, 1.44269504088896340736);
+    let max_x = f32x4::from(87.3);
+    let r = (self * VMLOG2E).round();
+    let x = r.mul_neg_add(LN2D_HI, self);
+    let x = r.mul_neg_add(LN2D_LO, x);
+    let z = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
+    let x2 = x * x;
+    let z = z.mul_add(x2, x);
+    let n2 = Self::vm_pow2n(r);
+    let z = (z + ONE) * n2;
+    // check for overflow
+    let inrange = self.abs().cmp_lt(max_x);
+    let inrange = inrange & self.is_finite();
+    inrange.blend(z, ZERO)
   }
 }

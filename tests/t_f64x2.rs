@@ -412,3 +412,23 @@ fn test_f64x2_move_mask() {
   let actual = a.move_mask();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_f64x2_exp() {
+  for (f, e) in [
+    (-2.0, 0.1353352832366127),
+    (-1.0, 0.36787944117144233),
+    (0.0, 1.0),
+    (1.0, 2.7182818284590455),
+    (1.5, 4.4816890703380645),
+    (2.0, 7.38905609893065),
+    (10.0, 22026.465794806718),
+  ]
+  .iter()
+  .copied()
+  {
+    let expected = f64x2::from(e);
+    let actual = f64x2::from(f).exp();
+    assert_eq!(expected, actual);
+  }
+}
