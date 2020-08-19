@@ -1,6 +1,11 @@
 #![no_std]
 #![allow(non_camel_case_types)]
 
+// Note(Lokathor): Due to standard library magic, the std-only methods for f32
+// and f64 will automatically be available simply by declaring this.
+#[cfg(feature = "std")]
+extern crate std;
+
 use core::{
   fmt::{
     Binary, Debug, Display, LowerExp, LowerHex, Octal, UpperExp, UpperHex,
