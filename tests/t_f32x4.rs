@@ -347,6 +347,26 @@ fn impl_f32x4_sqrt() {
 }
 
 #[test]
+fn impl_f32x4_exp() {
+  for (f, e) in [
+    (-2.0, 0.13533528),
+    (-1.0, 0.36787945),
+    (0.0, 1.0),
+    (1.0, 2.7182817),
+    (1.5, 4.481689),
+    (2.0, 7.389056),
+    (10.0, 22026.465),
+  ]
+  .iter()
+  .copied()
+  {
+    let expected = f32x4::from(e);
+    let actual = f32x4::from(f).exp();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn test_f32x4_move_mask() {
   let a = f32x4::from([-1.0, 0.0, -2.0, -3.0]);
   let expected = 0b1101;
