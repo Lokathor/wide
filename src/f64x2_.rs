@@ -495,8 +495,8 @@ impl f64x2 {
       if #[cfg(target_feature="sse2")] {
         move_mask_m128d(self.sse)
       } else {
-        ((self.arr[0].to_bits() as i64 < 0) as i32) << 0 |
-        ((self.arr[1].to_bits() as i64 < 0) as i32) << 1
+        (((self.arr[0].to_bits() as i64) < 0) as i32) << 0 |
+        (((self.arr[1].to_bits() as i64) < 0) as i32) << 1
       }
     }
   }
