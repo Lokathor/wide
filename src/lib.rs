@@ -284,6 +284,13 @@ macro_rules! impl_from_a_for_b_with_cast {
       fn from(arr: $arr) -> Self {
         cast(arr)
       }
+    }
+    impl From<$simd> for $arr {
+      #[inline]
+      #[must_use]
+      fn from(simd: $simd) -> Self {
+        cast(simd)
+      }
     })+
   };
 }
