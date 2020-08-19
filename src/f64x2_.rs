@@ -30,6 +30,25 @@ macro_rules! polynomial_5 {
   }};
 }
 
+macro_rules! polynomial_13 {
+  ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let x8 = x4 * x4;
+    x8.mul_add(
+      x4.mul_add(
+        x.mul_add($c13, $c12),
+        x2.mul_add(x.mul_add($c11, $c10), x.mul_add($c9, $c8)),
+      ),
+      x4.mul_add(
+        x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
+        x2.mul_add(x.mul_add($c3, $c2), x),
+      ),
+    )
+  }};
+}
+
 impl f64x2 {
   const_f64_as_f64x2!(E, core::f64::consts::E);
   const_f64_as_f64x2!(FRAC_1_PI, core::f64::consts::FRAC_1_PI);
@@ -499,5 +518,51 @@ impl f64x2 {
         (((self.arr[1].to_bits() as i64) < 0) as i32) << 1
       }
     }
+  }
+
+  #[inline]
+  #[allow(non_upper_case_globals)]
+  fn vm_pow2n(self) -> Self {
+    const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
+    const_f64_as_f64x2!(bias, 1023.0);
+    let a = self + (bias + pow2_52);
+    let c = cast::<_, i64x2>(a) << 52;
+    cast::<_, f64x2>(c)
+  }
+
+  /// Calculate the exponent of a packed f64x2
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn exp(self) -> Self {
+    const_f64_as_f64x2!(ONE, 1.0);
+    const_f64_as_f64x2!(ZERO, 0.0);
+    const_f64_as_f64x2!(P2, 1.0 / 2.0);
+    const_f64_as_f64x2!(P3, 1.0 / 6.0);
+    const_f64_as_f64x2!(P4, 1. / 24.);
+    const_f64_as_f64x2!(P5, 1. / 120.);
+    const_f64_as_f64x2!(P6, 1. / 720.);
+    const_f64_as_f64x2!(P7, 1. / 5040.);
+    const_f64_as_f64x2!(P8, 1. / 40320.);
+    const_f64_as_f64x2!(P9, 1. / 362880.);
+    const_f64_as_f64x2!(P10, 1. / 3628800.);
+    const_f64_as_f64x2!(P11, 1. / 39916800.);
+    const_f64_as_f64x2!(P12, 1. / 479001600.);
+    const_f64_as_f64x2!(P13, 1. / 6227020800.);
+    const_f64_as_f64x2!(LN2D_HI, 0.693145751953125);
+    const_f64_as_f64x2!(LN2D_LO, 1.42860682030941723212E-6);
+    const_f64_as_f64x2!(VMLOG2E, 1.44269504088896340736);
+    let max_x = f64x2::from(708.39);
+    let r = (self * VMLOG2E).round();
+    let x = r.mul_neg_add(LN2D_HI, self);
+    let x = r.mul_neg_add(LN2D_LO, x);
+    let z =
+      polynomial_13!(x, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13);
+    let n2 = Self::vm_pow2n(r);
+    let z = (z + ONE) * n2;
+    // check for overflow
+    let inrange = self.abs().cmp_lt(max_x);
+    let inrange = inrange & self.is_finite();
+    inrange.blend(z, ZERO)
   }
 }
