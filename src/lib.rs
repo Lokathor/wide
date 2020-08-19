@@ -310,6 +310,13 @@ macro_rules! impl_from_single_value {
       fn from(elem: $elem) -> Self {
         cast([elem; $len])
       }
+    }
+    impl $simd {
+      #[inline]
+      #[must_use]
+      pub fn splat(elem: $elem) -> $simd {
+        cast([elem; $len])
+      }
     })+
   };
 }
