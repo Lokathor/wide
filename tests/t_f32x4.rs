@@ -345,3 +345,16 @@ fn impl_f32x4_sqrt() {
     i32x4::from(-1)
   );
 }
+
+#[test]
+fn test_f32x4_move_mask() {
+  let a = f32x4::from([-1.0, 0.0, -2.0, -3.0]);
+  let expected = 0b1101;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x4::from([1.0, 0.0, 2.0, -3.0]);
+  let expected = 0b1000;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+}

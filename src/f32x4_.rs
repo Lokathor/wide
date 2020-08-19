@@ -552,4 +552,18 @@ impl f32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        move_mask_m128(self.sse)
+      } else {
+        ((self.arr[0].to_bits() as i32 < 0) as i32) << 0 |
+        ((self.arr[1].to_bits() as i32 < 0) as i32) << 1 |
+        ((self.arr[2].to_bits() as i32 < 0) as i32) << 2 |
+        ((self.arr[3].to_bits() as i32 < 0) as i32) << 3
+      }
+    }
+  }
 }
