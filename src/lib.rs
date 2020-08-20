@@ -70,6 +70,46 @@ macro_rules! pick {
   };
 }
 
+// TODO: make these generic over `mul_add`? Worth it?
+
+macro_rules! polynomial_2 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    x2.mul_add($c2, x.mul_add($c1, $c0))
+  }};
+}
+
+macro_rules! polynomial_5 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    $c3
+      .mul_add(x, $c2)
+      .mul_add(x2, $c5.mul_add(x, $c4).mul_add(x4, $c1.mul_add(x, $c0)))
+  }};
+}
+
+macro_rules! polynomial_13 {
+  ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let x8 = x4 * x4;
+    x8.mul_add(
+      x4.mul_add(
+        x.mul_add($c13, $c12),
+        x2.mul_add(x.mul_add($c11, $c10), x.mul_add($c9, $c8)),
+      ),
+      x4.mul_add(
+        x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
+        x2.mul_add(x.mul_add($c3, $c2), x),
+      ),
+    )
+  }};
+}
+
 mod f32x4_;
 pub use f32x4_::*;
 

@@ -19,37 +19,9 @@ macro_rules! const_f64_as_f64x2 {
   };
 }
 
-macro_rules! polynomial_5 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    $c3
-      .mul_add(x, $c2)
-      .mul_add(x2, $c5.mul_add(x, $c4).mul_add(x4, $c1.mul_add(x, $c0)))
-  }};
-}
-
-macro_rules! polynomial_13 {
-  ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    let x8 = x4 * x4;
-    x8.mul_add(
-      x4.mul_add(
-        x.mul_add($c13, $c12),
-        x2.mul_add(x.mul_add($c11, $c10), x.mul_add($c9, $c8)),
-      ),
-      x4.mul_add(
-        x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
-        x2.mul_add(x.mul_add($c3, $c2), x),
-      ),
-    )
-  }};
-}
-
 impl f64x2 {
+  const_f64_as_f64x2!(ONE, 1.0);
+  const_f64_as_f64x2!(ZERO, 0.0);
   const_f64_as_f64x2!(E, core::f64::consts::E);
   const_f64_as_f64x2!(FRAC_1_PI, core::f64::consts::FRAC_1_PI);
   const_f64_as_f64x2!(FRAC_2_PI, core::f64::consts::FRAC_2_PI);
@@ -540,8 +512,6 @@ impl f64x2 {
   #[must_use]
   #[allow(non_upper_case_globals)]
   pub fn exp(self) -> Self {
-    const_f64_as_f64x2!(ONE, 1.0);
-    const_f64_as_f64x2!(ZERO, 0.0);
     const_f64_as_f64x2!(P2, 1.0 / 2.0);
     const_f64_as_f64x2!(P3, 1.0 / 6.0);
     const_f64_as_f64x2!(P4, 1. / 24.);
@@ -556,18 +526,17 @@ impl f64x2 {
     const_f64_as_f64x2!(P13, 1. / 6227020800.);
     const_f64_as_f64x2!(LN2D_HI, 0.693145751953125);
     const_f64_as_f64x2!(LN2D_LO, 1.42860682030941723212E-6);
-    const_f64_as_f64x2!(VMLOG2E, 1.44269504088896340736);
     let max_x = f64x2::from(708.39);
-    let r = (self * VMLOG2E).round();
+    let r = (self * Self::LOG2_E).round();
     let x = r.mul_neg_add(LN2D_HI, self);
     let x = r.mul_neg_add(LN2D_LO, x);
     let z =
       polynomial_13!(x, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13);
     let n2 = Self::vm_pow2n(r);
-    let z = (z + ONE) * n2;
+    let z = (z + Self::ONE) * n2;
     // check for overflow
-    let inrange = self.abs().cmp_lt(max_x);
-    let inrange = inrange & self.is_finite();
-    inrange.blend(z, ZERO)
+    let in_range = self.abs().cmp_lt(max_x);
+    let in_range = in_range & self.is_finite();
+    in_range.blend(z, Self::ZERO)
   }
 }
