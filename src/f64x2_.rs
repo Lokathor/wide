@@ -496,6 +496,22 @@ impl f64x2 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    self.move_mask() != 0
+  }
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    // two lanes
+    self.move_mask() == 0b11
+  }
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
 
   #[inline]
   #[allow(non_upper_case_globals)]

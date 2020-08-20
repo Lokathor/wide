@@ -423,3 +423,30 @@ fn impl_f64x2_exp() {
     assert!(diff_from_std[0] < 0.000000000000001);
   }
 }
+
+#[test]
+fn test_f64x2_any() {
+  let a = f64x2::from([-1.0, 0.0]);
+  assert!(a.any());
+  //
+  let a = f64x2::from([1.0, 0.0]);
+  assert!(!a.any());
+}
+
+#[test]
+fn test_f64x2_all() {
+  let a = f64x2::from([-1.0, -0.0]);
+  assert!(a.all());
+  //
+  let a = f64x2::from([1.0, -0.0]);
+  assert!(!a.all());
+}
+
+#[test]
+fn test_f64x2_none() {
+  let a = f64x2::from([1.0, 0.0]);
+  assert!(a.none());
+  //
+  let a = f64x2::from([1.0, -0.0]);
+  assert!(!a.none());
+}

@@ -568,6 +568,22 @@ impl f32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    self.move_mask() != 0
+  }
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    // four lanes
+    self.move_mask() == 0b1111
+  }
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
 
   #[inline]
   #[allow(non_upper_case_globals)]

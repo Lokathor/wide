@@ -369,3 +369,30 @@ fn test_f32x4_move_mask() {
   let actual = a.move_mask();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn test_f32x4_any() {
+  let a = f32x4::from([-1.0, 0.0, -2.0, -3.0]);
+  assert!(a.any());
+  //
+  let a = f32x4::from([1.0, 0.0, 2.0, 3.0]);
+  assert!(!a.any());
+}
+
+#[test]
+fn test_f32x4_all() {
+  let a = f32x4::from([-1.0, -0.0, -2.0, -3.0]);
+  assert!(a.all());
+  //
+  let a = f32x4::from([1.0, -0.0, 2.0, 3.0]);
+  assert!(!a.all());
+}
+
+#[test]
+fn test_f32x4_none() {
+  let a = f32x4::from([1.0, 0.0, 2.0, 3.0]);
+  assert!(a.none());
+  //
+  let a = f32x4::from([1.0, -0.0, 2.0, 3.0]);
+  assert!(!a.none());
+}
