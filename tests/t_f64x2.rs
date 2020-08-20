@@ -453,20 +453,12 @@ fn test_f64x2_none() {
 
 #[test]
 fn impl_f64x2_ln() {
-  for (f, e) in [
-    (0.1, -2.3025850929942098),
-    (0.5, -0.69314718056),
-    (1.0, 0.0),
-    (2.718282, 1.0000000631064432),
-    (10.0, 2.3025850929942098),
-    (35.0, 3.555348061489687),
-    (1250.0, 7.130898830296894),
-  ]
-  .iter()
-  .copied()
-  {
-    let expected = f64x2::from(e);
+  for f in [0.1f64, 0.5, 1.0, 2.718282, 10.0, 35.0, 1250.0].iter().copied() {
+    let expected = f64x2::from((f as f64).ln());
     let actual = f64x2::from(f).ln();
-    assert_eq!(expected, actual);
+    let diff_from_std: [f64; 2] = cast((actual - expected).abs());
+    dbg!(actual);
+    dbg!(expected);
+    assert!(diff_from_std[0] < 0.000000000001);
   }
 }
