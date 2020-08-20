@@ -583,8 +583,6 @@ impl f64x2 {
   #[must_use]
   #[allow(non_upper_case_globals)]
   pub fn ln(self) -> Self {
-    const_f64_as_f64x2!(ONE, 1.0);
-    const_f64_as_f64x2!(ZERO, 0.0);
     const_f64_as_f64x2!(HALF, 0.5);
     const_f64_as_f64x2!(P0, 7.70838733755885391666E0);
     const_f64_as_f64x2!(P1, 1.79368678507819816313E1);
@@ -608,8 +606,8 @@ impl f64x2 {
     let e = Self::exponent(x1);
     let mask = x.cmp_gt(VM_SQRT2 * HALF);
     let x = (!mask).blend(x + x, x);
-    let fe = mask.blend(e + ONE, e);
-    let x = x - ONE;
+    let fe = mask.blend(e + Self::ONE, e);
+    let x = x - Self::ONE;
     let px = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
     let x2 = x * x;
     let px = x2 * x * px;
@@ -621,19 +619,19 @@ impl f64x2 {
     let overflow = !self.is_finite();
     let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
-    (!mask).blend(res, ZERO)
+    (!mask).blend(res, Self::ZERO)
   }
 
   #[inline]
   #[must_use]
   pub fn log2(self) -> Self {
     const_f64_as_f64x2!(VM_LOG2E, 1.44269504088896340736);
-    Self::ln(self) * VM_LOG2E
+    Self::ln(self) * Self::LOG2_E
   }
   #[inline]
   #[must_use]
   pub fn log10(self) -> Self {
     const_f64_as_f64x2!(VM_LOG10E, 0.434294481903251827651);
-    Self::ln(self) * VM_LOG10E
+    Self::ln(self) * Self::LOG10_E
   }
 }

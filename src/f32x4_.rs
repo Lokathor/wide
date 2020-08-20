@@ -649,8 +649,6 @@ impl f32x4 {
   #[must_use]
   #[allow(non_upper_case_globals)]
   pub fn ln(self) -> Self {
-    const_f32_as_f32x4!(ONE, 1.0);
-    const_f32_as_f32x4!(ZERO, 0.0);
     const_f32_as_f32x4!(HALF, 0.5);
     const_f32_as_f32x4!(P0, 3.3333331174E-1);
     const_f32_as_f32x4!(P1, -2.4999993993E-1);
@@ -663,16 +661,15 @@ impl f32x4 {
     const_f32_as_f32x4!(P8, 7.0376836292E-2);
     const_f32_as_f32x4!(LN2F_HI, 0.693359375);
     const_f32_as_f32x4!(LN2F_LO, -2.12194440e-4);
-    const_f32_as_f32x4!(VM_SQRT2, 1.414213562373095048801);
     const_f32_as_f32x4!(VM_SMALLEST_NORMAL, 1.17549435E-38);
 
     let x1 = self;
     let x = Self::fraction_2(x1);
     let e = Self::exponent(x1);
-    let mask = x.cmp_gt(VM_SQRT2 * HALF);
+    let mask = x.cmp_gt(Self::SQRT_2 * HALF);
     let x = (!mask).blend(x + x, x);
-    let fe = mask.blend(e + ONE, e);
-    let x = x - ONE;
+    let fe = mask.blend(e + Self::ONE, e);
+    let x = x - Self::ONE;
     let res = polynomial_8!(x, P0, P1, P2, P3, P4, P5, P6, P7, P8);
     let x2 = x * x;
     let res = x2 * x * res;
@@ -682,19 +679,17 @@ impl f32x4 {
     let overflow = !self.is_finite();
     let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
-    (!mask).blend(res, ZERO)
+    (!mask).blend(res, Self::ZERO)
   }
 
   #[inline]
   #[must_use]
   pub fn log2(self) -> Self {
-    const_f32_as_f32x4!(VM_LOG2E, 1.44269504088896340736);
-    Self::ln(self) * VM_LOG2E
+    Self::ln(self) * Self::LOG2_E
   }
   #[inline]
   #[must_use]
   pub fn log10(self) -> Self {
-    const_f32_as_f32x4!(VM_LOG10E, 0.434294481903251827651);
-    Self::ln(self) * VM_LOG10E
+    Self::ln(self) * Self::LOG10_E
   }
 }
