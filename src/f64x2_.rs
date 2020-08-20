@@ -555,4 +555,85 @@ impl f64x2 {
     let in_range = in_range & self.is_finite();
     in_range.blend(z, Self::ZERO)
   }
+
+  #[inline]
+  #[allow(non_upper_case_globals)]
+  fn exponent(self) -> f64x2 {
+    const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
+    const_f64_as_f64x2!(bias, 1023.0);
+    let a = cast::<_, u64x2>(self);
+    let b = a >> 52;
+    let c = b | cast::<_, u64x2>(pow2_52);
+    let d = cast::<_, f64x2>(c);
+    let e = d - (pow2_52 + bias);
+    e
+  }
+
+  #[inline]
+  #[allow(non_upper_case_globals)]
+  fn fraction_2(self) -> Self {
+    let t1 = cast::<_, u64x2>(self);
+    let t2 = cast::<_, u64x2>(
+      (t1 & u64x2::from(0x000FFFFFFFFFFFFF)) | u64x2::from(0x3FE0000000000000),
+    );
+    cast::<_, f64x2>(t2)
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn ln(self) -> Self {
+    const_f64_as_f64x2!(ONE, 1.0);
+    const_f64_as_f64x2!(ZERO, 0.0);
+    const_f64_as_f64x2!(HALF, 0.5);
+    const_f64_as_f64x2!(P0, 7.70838733755885391666E0);
+    const_f64_as_f64x2!(P1, 1.79368678507819816313E1);
+    const_f64_as_f64x2!(P2, 1.44989225341610930846E1);
+    const_f64_as_f64x2!(P3, 4.70579119878881725854E0);
+    const_f64_as_f64x2!(P4, 4.97494994976747001425E-1);
+    const_f64_as_f64x2!(P5, 1.01875663804580931796E-4);
+
+    const_f64_as_f64x2!(Q0, 2.31251620126765340583E1);
+    const_f64_as_f64x2!(Q1, 7.11544750618563894466E1);
+    const_f64_as_f64x2!(Q2, 8.29875266912776603211E1);
+    const_f64_as_f64x2!(Q3, 4.52279145837532221105E1);
+    const_f64_as_f64x2!(Q4, 1.12873587189167450590E1);
+    const_f64_as_f64x2!(LN2F_HI, 0.693359375);
+    const_f64_as_f64x2!(LN2F_LO, -2.12194440e-4);
+    const_f64_as_f64x2!(VM_SQRT2, 1.414213562373095048801);
+    const_f64_as_f64x2!(VM_SMALLEST_NORMAL, 1.17549435E-38);
+
+    let x1 = self;
+    let x = Self::fraction_2(x1);
+    let e = Self::exponent(x1);
+    let mask = x.cmp_gt(VM_SQRT2 * HALF);
+    let x = (!mask).blend(x + x, x);
+    let fe = mask.blend(e + ONE, e);
+    let x = x - ONE;
+    let px = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
+    let x2 = x * x;
+    let px = x2 * x * px;
+    let qx = polynomial_5n!(x, Q0, Q1, Q2, Q3, Q4, Q5);
+    let res = px / qx;
+    let res = fe.mul_add(LN2F_LO, res);
+    let res = res + x2.mul_neg_add(HALF, x);
+    let res = fe.mul_add(LN2F_HI, res);
+    let overflow = !self.is_finite();
+    let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
+    let mask = overflow | underflow;
+    (!mask).blend(res, ZERO)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn log2(self) -> Self {
+    const_f64_as_f64x2!(VM_LOG2E, 1.44269504088896340736);
+    Self::ln(self) * VM_LOG2E
+  }
+  #[inline]
+  #[must_use]
+  pub fn log10(self) -> Self {
+    const_f64_as_f64x2!(VM_LOG10E, 0.434294481903251827651);
+    Self::ln(self) * VM_LOG10E
+  }
 }

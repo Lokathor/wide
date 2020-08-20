@@ -396,3 +396,23 @@ fn test_f32x4_none() {
   let a = f32x4::from([1.0, -0.0, 2.0, 3.0]);
   assert!(!a.none());
 }
+
+#[test]
+fn impl_f32x4_ln() {
+  for (f, e) in [
+    (0.1, -2.3025851),
+    (0.5, -0.6931472),
+    (1.0, 0.0),
+    (2.718282, 1.0),
+    (10.0, 2.3025851),
+    (35.0, 3.5553482),
+    (1250.0, 7.130899),
+  ]
+  .iter()
+  .copied()
+  {
+    let expected = f32x4::from(e);
+    let actual = f32x4::from(f).ln();
+    assert_eq!(expected, actual);
+  }
+}

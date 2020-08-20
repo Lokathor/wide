@@ -91,6 +91,28 @@ macro_rules! polynomial_5 {
   }};
 }
 
+macro_rules! polynomial_5n {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    x2.mul_add(x.mul_add($c3, $c2), (x4.mul_add($c4 + x, x.mul_add($c1, $c0))))
+  }};
+}
+
+macro_rules! polynomial_8 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr,  $c6:expr, $c7:expr, $c8:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let x8 = x4 * x4;
+    x4.mul_add(
+      x2.mul_add($c7.mul_add(x, $c6), x.mul_add($c5, $c4)),
+      x8.mul_add($c8, x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0))),
+    )
+  }};
+}
+
 macro_rules! polynomial_13 {
   ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
     let x = $x;
