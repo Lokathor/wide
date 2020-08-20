@@ -348,21 +348,12 @@ fn impl_f32x4_sqrt() {
 
 #[test]
 fn impl_f32x4_exp() {
-  for (f, e) in [
-    (-2.0, 0.13533528),
-    (-1.0, 0.36787945),
-    (0.0, 1.0),
-    (1.0, 2.7182817),
-    (1.5, 4.481689),
-    (2.0, 7.389056),
-    (10.0, 22026.465),
-  ]
-  .iter()
-  .copied()
+  for f in [(-2.0), (-1.0), (0.0), (1.0), (1.5), (2.0), (10.0)].iter().copied()
   {
-    let expected = f32x4::from(e);
+    let expected = f32x4::from((f as f32).exp());
     let actual = f32x4::from(f).exp();
-    assert_eq!(expected, actual);
+    let diff_from_std: [f32; 4] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000000000000001);
   }
 }
 

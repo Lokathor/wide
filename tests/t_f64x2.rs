@@ -415,20 +415,11 @@ fn test_f64x2_move_mask() {
 
 #[test]
 fn impl_f64x2_exp() {
-  for (f, e) in [
-    (-2.0, 0.1353352832366127),
-    (-1.0, 0.36787944117144233),
-    (0.0, 1.0),
-    (1.0, 2.7182818284590455),
-    (1.5, 4.4816890703380645),
-    (2.0, 7.38905609893065),
-    (10.0, 22026.465794806718),
-  ]
-  .iter()
-  .copied()
+  for f in [(-2.0), (-1.0), (0.0), (1.0), (1.5), (2.0), (10.0)].iter().copied()
   {
-    let expected = f64x2::from(e);
+    let expected = f64x2::from((f as f64).exp());
     let actual = f64x2::from(f).exp();
-    assert_eq!(expected, actual);
+    let diff_from_std: [f64; 2] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000000000000001);
   }
 }
