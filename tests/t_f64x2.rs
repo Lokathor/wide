@@ -352,7 +352,7 @@ fn impl_f64x2_asin_acos() {
         let actual_arr: [f64; 2] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.0003,
+          (actual - expected).abs() < 0.000000000000001,
           "Wanted {name}({orig}) to be {expected} but got {actual}",
           name = name,
           orig = orig,
@@ -379,7 +379,7 @@ fn impl_f64x2_asin() {
         let actual_arr: [f64; 2] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.0003,
+          (actual - expected).abs() < 0.000000000000001,
           "Wanted {name}({orig}) to be {expected} but got {actual}",
           name = name,
           orig = orig,
@@ -405,7 +405,7 @@ fn impl_f64x2_acos() {
         let actual_arr: [f64; 2] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.0003,
+          (actual - expected).abs() < 0.000000000000001,
           "Wanted {name}({orig}) to be {expected} but got {actual}",
           name = name,
           orig = orig,

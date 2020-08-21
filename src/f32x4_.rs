@@ -810,5 +810,5 @@ impl f32x4 {
 fn polynomial_4(x: f32x4, c0: f32x4, c1: f32x4, c2: f32x4, c3: f32x4, c4: f32x4) -> f32x4 {
   let x2 = x * x;
   let x4 = x2 * x2;
-  c3.mul_add(x, x2).mul_add(x2, c1.mul_add(x, c0) + c4 * x4)
+  c3.mul_add(x, c2).mul_add(x2, c1.mul_add(x, c0) + c4 * x4)
 }

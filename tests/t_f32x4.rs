@@ -308,7 +308,7 @@ fn impl_f32x4_asin_acos() {
         let actual_arr: [f32; 4] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.0003,
+          (actual - expected).abs() < 0.0000006,
           "Wanted {name}({orig}) to be {expected} but got {actual}",
           name = name,
           orig = orig,
@@ -335,7 +335,7 @@ fn impl_f32x4_asin() {
         let actual_arr: [f32; 4] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.0003,
+          (actual - expected).abs() < 0.0000006,
           "Wanted {name}({orig}) to be {expected} but got {actual}",
           name = name,
           orig = orig,
@@ -361,7 +361,7 @@ fn impl_f32x4_acos() {
         let actual_arr: [f32; 4] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.0003,
+          (actual - expected).abs() < 0.0000006,
           "Wanted {name}({orig}) to be {expected} but got {actual}",
           name = name,
           orig = orig,
