@@ -296,6 +296,85 @@ fn impl_f32x4_sin_cos() {
 }
 
 #[test]
+fn impl_f32x4_asin_acos() {
+  let inc = 1.0 / 2501.0 / 4.0;
+  for x in -2500..=2500 {
+    let base = (x * 4) as f32 * inc;
+    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc];
+    let (actual_asins, actual_acoses) = f32x4::from(origs).asin_acos();
+    for i in 0..4 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f32x4, expected: f32| {
+        let actual_arr: [f32; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0003,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("asin", actual_asins, orig.asin());
+      check("acos", actual_acoses, orig.acos());
+    }
+  }
+}
+
+#[test]
+fn impl_f32x4_asin() {
+  let inc = 1.0 / 2501.0 / 4.0;
+  for x in -2500..=2500 {
+    let base = (x * 4) as f32 * inc;
+    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc];
+    let actual_asins = f32x4::from(origs).asin();
+    for i in 0..4 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f32x4, expected: f32| {
+        let actual_arr: [f32; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0003,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("asin", actual_asins, orig.asin());
+    }
+  }
+}
+
+#[test]
+fn impl_f32x4_acos() {
+  let inc = 1.0 / 2501.0 / 4.0;
+  for x in -2500..=2500 {
+    let base = (x * 4) as f32 * inc;
+    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc];
+    let actual_acoses = f32x4::from(origs).acos();
+    for i in 0..4 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f32x4, expected: f32| {
+        let actual_arr: [f32; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0003,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("acos", actual_acoses, orig.acos());
+    }
+  }
+}
+
+#[test]
 fn impl_f32x4_to_degrees() {
   let pi = core::f32::consts::PI;
   let a = f32x4::from([0.0, pi / 2.0, pi, 2.0 * pi]);

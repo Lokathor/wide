@@ -340,6 +340,84 @@ fn impl_f64x2_sin_cos() {
 }
 
 #[test]
+fn impl_f64x2_asin_acos() {
+  let inc = 1.0 / 2501.0 / 2.0;
+  for x in -2500..=2500 {
+    let base = (x * 2) as f64 * inc;
+    let origs = [base, base + inc];
+    let (actual_asins, actual_acoses) = f64x2::from(origs).asin_acos();
+    for i in 0..2 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f64x2, expected: f64| {
+        let actual_arr: [f64; 2] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0003,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("asin", actual_asins, orig.asin());
+      check("acos", actual_acoses, orig.acos());
+    }
+  }
+}
+
+#[test]
+fn impl_f64x2_asin() {
+  let inc = 1.0 / 2501.0 / 2.0;
+  for x in -2500..=2500 {
+    let base = (x * 2) as f64 * inc;
+    let origs = [base, base + inc];
+    let actual_asins = f64x2::from(origs).asin();
+    for i in 0..2 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f64x2, expected: f64| {
+        let actual_arr: [f64; 2] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0003,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("asin", actual_asins, orig.asin());
+    }
+  }
+}
+
+#[test]
+fn impl_f64x2_acos() {
+  let inc = 1.0 / 2501.0 / 2.0;
+  for x in -2500..=2500 {
+    let base = (x * 2) as f64 * inc;
+    let origs = [base, base + inc];
+    let actual_acoses = f64x2::from(origs).acos();
+    for i in 0..2 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f64x2, expected: f64| {
+        let actual_arr: [f64; 2] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0003,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("acos", actual_acoses, orig.acos());
+    }
+  }
+}
+#[test]
 fn impl_f64x2_to_degrees() {
   let pi = core::f64::consts::PI;
   let a = f64x2::from([0.0, pi / 2.0]);
