@@ -450,6 +450,7 @@ fn test_f64x2_none() {
   let a = f64x2::from([1.0, -0.0]);
   assert!(!a.none());
 }
+
 #[test]
 fn impl_f64x2_ln() {
   for f in [0.1f64, 0.5, 1.0, 2.718282, 10.0, 35.0, 1250.0].iter().copied() {
