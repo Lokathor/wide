@@ -33,6 +33,8 @@ impl Add for u64x4 {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
           self.arr[1].wrapping_add(rhs.arr[1]),
+          self.arr[2].wrapping_add(rhs.arr[2]),
+          self.arr[3].wrapping_add(rhs.arr[3]),
         ]}
       }
     }
@@ -53,6 +55,8 @@ impl Sub for u64x4 {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
           self.arr[1].wrapping_sub(rhs.arr[1]),
+          self.arr[2].wrapping_sub(rhs.arr[2]),
+          self.arr[3].wrapping_sub(rhs.arr[3]),
         ]}
       }
     }
@@ -73,6 +77,8 @@ impl BitAnd for u64x4 {
         Self { arr: [
           self.arr[0].bitand(rhs.arr[0]),
           self.arr[1].bitand(rhs.arr[1]),
+          self.arr[2].bitand(rhs.arr[2]),
+          self.arr[3].bitand(rhs.arr[3]),
         ]}
       }
     }
@@ -93,7 +99,9 @@ impl BitOr for u64x4 {
             Self { arr: [
               self.arr[0].bitor(rhs.arr[0]),
               self.arr[1].bitor(rhs.arr[1]),
-            ]}
+              self.arr[2].bitor(rhs.arr[2]),
+              self.arr[3].bitor(rhs.arr[3]),
+                ]}
           }
         }
   }
@@ -113,6 +121,8 @@ impl BitXor for u64x4 {
         Self { arr: [
           self.arr[0].bitxor(rhs.arr[0]),
           self.arr[1].bitxor(rhs.arr[1]),
+          self.arr[2].bitxor(rhs.arr[2]),
+          self.arr[3].bitxor(rhs.arr[3]),
         ]}
       }
     }
@@ -139,6 +149,8 @@ macro_rules! impl_shl_t_for_u64x4 {
             Self { arr: [
               self.arr[0] << u,
               self.arr[1] << u,
+              self.arr[2] << u,
+              self.arr[3] << u,
             ]}
           }
         }
@@ -166,8 +178,10 @@ macro_rules! impl_shr_t_for_u64x4 {
             Self { sse0: shr_all_u64_m128i(self.sse0, shift), sse1: shr_all_u64_m128i(self.sse1, shift) }
           } else {
             Self { arr: [
-              self.arr[0] << u,
-              self.arr[1] << u,
+              self.arr[0] >> u,
+              self.arr[1] >> u,
+              self.arr[2] >> u,
+              self.arr[3] >> u,
             ]}
           }
         }
@@ -244,14 +258,10 @@ impl Not for u64x4 {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
         Self { arr: [
-          !self.arr[0],
-          !self.arr[1],
-          !self.arr[2],
-          !self.arr[3],
-          !self.arr[4],
-          !self.arr[5],
-          !self.arr[6],
-          !self.arr[7],
+          self.arr[0] ^ 0xFF,
+          self.arr[1] ^ 0xFF,
+          self.arr[2] ^ 0xFF,
+          self.arr[3] ^ 0xFF,
         ]}
       }
     }

@@ -850,14 +850,14 @@ impl Not for f32x8 {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
         Self { arr: [
-          !self.arr[0],
-          !self.arr[1],
-          !self.arr[2],
-          !self.arr[3],
-          !self.arr[4],
-          !self.arr[5],
-          !self.arr[6],
-          !self.arr[7],
+          (self.arr[0].to_bits() ^ 0xFF) as f32,
+          (self.arr[1].to_bits() ^ 0xFF) as f32,
+          (self.arr[2].to_bits() ^ 0xFF) as f32,
+          (self.arr[3].to_bits() ^ 0xFF) as f32,
+          (self.arr[4].to_bits() ^ 0xFF) as f32,
+          (self.arr[3].to_bits() ^ 0xFF) as f32,
+          (self.arr[6].to_bits() ^ 0xFF) as f32,
+          (self.arr[7].to_bits() ^ 0xFF) as f32,
         ]}
       }
     }

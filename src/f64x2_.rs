@@ -352,7 +352,7 @@ impl f64x2 {
   #[must_use]
   pub fn mul_add(self, m: Self, a: Self) -> Self {
     pick! {
-      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+      if #[cfg(all(target_feature="fma"))] {
         Self { sse: fused_mul_add_m128d(self.sse, m.sse, a.sse) }
       } else {
         (self * m) + a
@@ -363,7 +363,7 @@ impl f64x2 {
   #[must_use]
   pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
     pick! {
-      if #[cfg(all(target_feature="sse",target_feature="fma"))] {
+      if #[cfg(all(target_feature="fma"))] {
         Self { sse: fused_mul_neg_add_m128d(self.sse, m.sse, a.sse) }
       } else {
         a - (self * m)

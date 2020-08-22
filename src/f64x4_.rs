@@ -217,10 +217,10 @@ impl f64x4 {
         Self { sse0: cmp_eq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_eq_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
-          if self.arr[0] == rhs.arr[0] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] == rhs.arr[1] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] == rhs.arr[2] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] == rhs.arr[3] { f64::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[0] == rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] == rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[2] == rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[3] == rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -236,10 +236,10 @@ impl f64x4 {
         Self { sse0: cmp_neq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
-          if self.arr[0] != rhs.arr[0] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] != rhs.arr[1] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] != rhs.arr[2] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] != rhs.arr[3] { f64::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] != rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[2] != rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[3] != rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -255,10 +255,10 @@ impl f64x4 {
         Self { sse0: cmp_ge_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] >= rhs.arr[1] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] >= rhs.arr[2] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] >= rhs.arr[3] { f64::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[0] >= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] >= rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[2] >= rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[3] >= rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -274,10 +274,10 @@ impl f64x4 {
         Self { sse0: cmp_gt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
-          if self.arr[0] > rhs.arr[0] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] > rhs.arr[1] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] > rhs.arr[2] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] > rhs.arr[3] { f64::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[0] > rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] > rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[2] > rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[3] > rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -293,10 +293,10 @@ impl f64x4 {
         Self { sse0: cmp_le_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_le_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] <= rhs.arr[1] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] <= rhs.arr[2] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] <= rhs.arr[3] { f64::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[0] <= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] <= rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[2] <= rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[3] <= rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -312,10 +312,10 @@ impl f64x4 {
         Self { sse0: cmp_lt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_lt_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] < rhs.arr[1] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] < rhs.arr[2] { f64::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] < rhs.arr[3] { f64::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[0] < rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] < rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[2] < rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[3] < rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -583,14 +583,10 @@ impl f64x4 {
         ]}
       } else {
         Self { arr: [
-          software_sqrt(self.arr[0] as f64) as f32,
-          software_sqrt(self.arr[1] as f64) as f32,
-          software_sqrt(self.arr[2] as f64) as f32,
-          software_sqrt(self.arr[3] as f64) as f32,
-          software_sqrt(self.arr[4] as f64) as f32,
-          software_sqrt(self.arr[5] as f64) as f32,
-          software_sqrt(self.arr[6] as f64) as f32,
-          software_sqrt(self.arr[7] as f64) as f32,
+          software_sqrt(self.arr[0] as f64) as f64,
+          software_sqrt(self.arr[1] as f64) as f64,
+          software_sqrt(self.arr[2] as f64) as f64,
+          software_sqrt(self.arr[3] as f64) as f64,
         ]}
       }
     }
@@ -761,14 +757,10 @@ impl Not for f64x4 {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
         Self { arr: [
-          !self.arr[0],
-          !self.arr[1],
-          !self.arr[2],
-          !self.arr[3],
-          !self.arr[4],
-          !self.arr[5],
-          !self.arr[6],
-          !self.arr[7],
+          (self.arr[0].to_bits()  ^ 0xFF) as f64,
+          (self.arr[1].to_bits() ^ 0xFF) as f64,
+          (self.arr[2].to_bits() ^ 0xFF) as f64,
+          (self.arr[3].to_bits() ^ 0xFF) as f64,
         ]}
       }
     }
