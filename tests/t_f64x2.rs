@@ -456,8 +456,6 @@ fn impl_f64x2_ln() {
     let expected = f64x2::from((f as f64).ln());
     let actual = f64x2::from(f).ln();
     let diff_from_std: [f64; 2] = cast((actual - expected).abs());
-    dbg!(actual);
-    dbg!(expected);
     assert!(diff_from_std[0] < 0.000000000001);
   }
 }

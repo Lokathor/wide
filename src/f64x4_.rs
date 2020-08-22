@@ -577,10 +577,6 @@ impl f64x4 {
           self.arr[1].sqrt(),
           self.arr[2].sqrt(),
           self.arr[3].sqrt(),
-          self.arr[4].sqrt(),
-          self.arr[5].sqrt(),
-          self.arr[6].sqrt(),
-          self.arr[7].sqrt(),
         ]}
       } else {
         Self { arr: [
