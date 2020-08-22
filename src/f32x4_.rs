@@ -629,9 +629,7 @@ impl f32x4 {
     let t1 = cast::<_, u32x4>(self);
     let t2 = t1 << 1;
     let t3 = t2 >> 24;
-    // There might be a simpler way to do this cast from i32 back to f32 using bytemuck?
-    let t4: [i32; 4] = cast(cast::<_, i32x4>(t3) - i32x4::from(0x7F));
-    f32x4::from([t4[0] as f32, t4[1] as f32, t4[2] as f32, t4[3] as f32])
+    i32x4::round_float(cast::<_, i32x4>(t3) - i32x4::from(0x7F))
   }
 
   #[inline]
