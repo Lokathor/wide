@@ -165,15 +165,32 @@ impl u64x2 {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
       } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
         cast([
-          if s[0] == r[0] { u64::MAX } else { 0 },
-          if s[1] == r[1] { u64::MAX } else { 0 },
+          if s[0] == r[0] { -1_i64 } else { 0 },
+          if s[1] == r[1] { -1_i64 } else { 0 },
         ])
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn cmp_gt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.2")] {
+        Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] > r[0] { -1_i64 } else { 0 },
+          if s[1] > r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
