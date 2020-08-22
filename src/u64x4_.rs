@@ -12,7 +12,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u64x4 { arr: [i64;4] }
+    pub struct u64x4 { arr: [u64;4] }
   }
 }
 
@@ -258,10 +258,10 @@ impl Not for u64x4 {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
         Self { arr: [
-          self.arr[0] ^ 0xFF,
-          self.arr[1] ^ 0xFF,
-          self.arr[2] ^ 0xFF,
-          self.arr[3] ^ 0xFF,
+          (self.arr[0] as u64 ^ u64::MAX) as u64,
+          (self.arr[1] as u64 ^ u64::MAX) as u64,
+          (self.arr[2] as u64 ^ u64::MAX) as u64,
+          (self.arr[3] as u64 ^ u64::MAX) as u64,
         ]}
       }
     }

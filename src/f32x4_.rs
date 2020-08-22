@@ -622,4 +622,74 @@ impl f32x4 {
     let in_range = in_range & self.is_finite();
     in_range.blend(z, Self::ZERO)
   }
+
+  #[inline]
+  #[allow(non_upper_case_globals)]
+  fn exponent(self) -> f32x4 {
+    let t1 = cast::<_, u32x4>(self);
+    let t2 = t1 << 1;
+    let t3 = t2 >> 24;
+    // There might be a simpler way to do this cast from i32 back to f32 using bytemuck?
+    let t4: [i32; 4] = cast(cast::<_, i32x4>(t3) - i32x4::from(0x7F));
+    f32x4::from([t4[0] as f32, t4[1] as f32, t4[2] as f32, t4[3] as f32])
+  }
+
+  #[inline]
+  #[allow(non_upper_case_globals)]
+  fn fraction_2(self) -> Self {
+    let t1 = cast::<_, u32x4>(self);
+    let t2 = cast::<_, u32x4>(
+      (t1 & u32x4::from(0x007FFFFF)) | u32x4::from(0x3F000000),
+    );
+    cast::<_, f32x4>(t2)
+  }
+
+  /// Natural log (ln(x))
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn ln(self) -> Self {
+    const_f32_as_f32x4!(HALF, 0.5);
+    const_f32_as_f32x4!(P0, 3.3333331174E-1);
+    const_f32_as_f32x4!(P1, -2.4999993993E-1);
+    const_f32_as_f32x4!(P2, 2.0000714765E-1);
+    const_f32_as_f32x4!(P3, -1.6668057665E-1);
+    const_f32_as_f32x4!(P4, 1.4249322787E-1);
+    const_f32_as_f32x4!(P5, -1.2420140846E-1);
+    const_f32_as_f32x4!(P6, 1.1676998740E-1);
+    const_f32_as_f32x4!(P7, -1.1514610310E-1);
+    const_f32_as_f32x4!(P8, 7.0376836292E-2);
+    const_f32_as_f32x4!(LN2F_HI, 0.693359375);
+    const_f32_as_f32x4!(LN2F_LO, -2.12194440e-4);
+    const_f32_as_f32x4!(VM_SMALLEST_NORMAL, 1.17549435E-38);
+
+    let x1 = self;
+    let x = Self::fraction_2(x1);
+    let e = Self::exponent(x1);
+    let mask = x.cmp_gt(Self::SQRT_2 * HALF);
+    let x = (!mask).blend(x + x, x);
+    let fe = mask.blend(e + Self::ONE, e);
+    let x = x - Self::ONE;
+    let res = polynomial_8!(x, P0, P1, P2, P3, P4, P5, P6, P7, P8);
+    let x2 = x * x;
+    let res = x2 * x * res;
+    let res = fe.mul_add(LN2F_LO, res);
+    let res = res + x2.mul_neg_add(HALF, x);
+    let res = fe.mul_add(LN2F_HI, res);
+    let overflow = !self.is_finite();
+    let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
+    let mask = overflow | underflow;
+    (!mask).blend(res, Self::ZERO)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn log2(self) -> Self {
+    Self::ln(self) * Self::LOG2_E
+  }
+  #[inline]
+  #[must_use]
+  pub fn log10(self) -> Self {
+    Self::ln(self) * Self::LOG10_E
+  }
 }

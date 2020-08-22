@@ -330,6 +330,7 @@ impl f64x4 {
       else if  #[cfg(target_feature="sse4.1")] {
         Self { sse0: blend_varying_m128d(f.sse0, t.sse0, self.sse0), sse1: blend_varying_m128d(f.sse1, t.sse1, self.sse1) }
       } else {
+
         generic_bit_blend(self, t, f)
       }
     }
@@ -756,11 +757,12 @@ impl Not for f64x4 {
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
+        // NOTE: Fix this to work whenn self.arr[0] == 0 to ensure ln() works for i586
         Self { arr: [
-          (self.arr[0].to_bits()  ^ 0xFF) as f64,
-          (self.arr[1].to_bits() ^ 0xFF) as f64,
-          (self.arr[2].to_bits() ^ 0xFF) as f64,
-          (self.arr[3].to_bits() ^ 0xFF) as f64,
+          (self.arr[0] as u64 ^ 0x7ff8000000000000) as f64,
+          (self.arr[0] as u64 ^ 0x7ff8000000000000)  as f64,
+          (self.arr[0] as u64 ^ 0x7ff8000000000000)  as f64,
+          (self.arr[0] as u64 ^ 0x7ff8000000000000)  as f64
         ]}
       }
     }

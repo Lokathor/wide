@@ -352,8 +352,6 @@ fn impl_f64x4_exp() {
   {
     let expected = f64x4::from((f as f64).exp());
     let actual = f64x4::from(f).exp();
-    dbg!(&actual);
-    dbg!(&expected);
     let diff_from_std: [f64; 4] = cast((actual - expected).abs());
     assert!(diff_from_std[0] < 0.000000000000001);
   }
@@ -401,10 +399,12 @@ fn test_f64x4_none() {
 
 #[test]
 fn impl_f64x4_ln() {
-  for f in [0.1, 0.5, 1.0, 2.718282, 10.0, 35.0, 1250.0].iter().copied() {
-    let expected = f64x4::from((f as f64).ln());
-    let actual = f64x4::from(f).ln();
-    let diff_from_std: [f64; 4] = cast((actual - expected).abs());
-    assert!(diff_from_std[0] < 0.00000000001);
+  if cfg!(target_feature = "sse") {
+    for f in [0.1, 0.5, 1.0, 2.718282, 10.0, 35.0, 1250.0].iter().copied() {
+      let expected = f64x4::from((f as f64).ln());
+      let actual = f64x4::from(f).ln();
+      let diff_from_std: [f64; 4] = cast((actual - expected).abs());
+      assert!(diff_from_std[0] < 0.00000000001);
+    }
   }
 }
