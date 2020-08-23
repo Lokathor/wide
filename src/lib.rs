@@ -132,8 +132,14 @@ macro_rules! polynomial_13 {
   }};
 }
 
+mod f32x8_;
+pub use f32x8_::*;
+
 mod f32x4_;
 pub use f32x4_::*;
+
+mod f64x4_;
+pub use f64x4_::*;
 
 mod f64x2_;
 pub use f64x2_::*;
@@ -147,8 +153,14 @@ pub use i16x8_::*;
 mod i32x4_;
 pub use i32x4_::*;
 
+mod i32x8_;
+pub use i32x8_::*;
+
 mod i64x2_;
 pub use i64x2_::*;
+
+mod i64x4_;
+pub use i64x4_::*;
 
 mod u8x16_;
 pub use u8x16_::*;
@@ -159,17 +171,28 @@ pub use u16x8_::*;
 mod u32x4_;
 pub use u32x4_::*;
 
+mod u32x8_;
+pub use u32x8_::*;
+
 mod u64x2_;
 pub use u64x2_::*;
+
+mod u64x4_;
+pub use u64x4_::*;
 
 #[allow(non_camel_case_types)]
 #[repr(C, align(16))]
 union ConstUnionHack128bit {
+  f64a4: [f64; 4],
+  f32a8: [f32; 8],
   f32a4: [f32; 4],
   i32a4: [i32; 4],
+  i64a4: [i64; 4],
   f64a2: [f64; 2],
+  f32x8: f32x8,
   f32x4: f32x4,
   f64x2: f64x2,
+  f64x4: f64x4,
   u128: u128,
 }
 
@@ -200,13 +223,13 @@ macro_rules! bulk_impl_op_ref_self_for {
 }
 
 bulk_impl_op_ref_self_for! {
-  (Add, add) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (Sub, sub) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (Mul, mul) => [f32x4, f64x2, i16x8, i32x4],
-  (Div, div) => [f32x4, f64x2],
-  (BitAnd, bitand) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitOr, bitor) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitXor, bitxor) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (Add, add) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (Sub, sub) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (Mul, mul) => [f32x8, f32x4, f64x4, f64x2, i16x8, i32x8, i32x4],
+  (Div, div) => [f32x8, f32x4, f64x4, f64x2],
+  (BitAnd, bitand) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (BitOr, bitor) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (BitXor, bitxor) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
 }
 
 /// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
@@ -228,20 +251,20 @@ macro_rules! bulk_impl_op_assign_for {
 // Note: remember to update bulk_impl_op_ref_self_for first or this will give
 // weird errors!
 bulk_impl_op_assign_for! {
-  (AddAssign<Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (AddAssign<&Self>, add, add_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (SubAssign<Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (SubAssign<&Self>, sub, sub_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (MulAssign<Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
-  (MulAssign<&Self>, mul, mul_assign) => [f32x4, f64x2, i16x8, i32x4],
-  (DivAssign<Self>, div, div_assign) => [f32x4, f64x2],
-  (DivAssign<&Self>, div, div_assign) => [f32x4, f64x2],
-  (BitAndAssign<Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitAndAssign<&Self>, bitand, bitand_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitOrAssign<Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitOrAssign<&Self>, bitor, bitor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitXorAssign<Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
-  (BitXorAssign<&Self>, bitxor, bitxor_assign) => [f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2],
+  (AddAssign<Self>, add, add_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (AddAssign<&Self>, add, add_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (SubAssign<Self>, sub, sub_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (SubAssign<&Self>, sub, sub_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (MulAssign<Self>, mul, mul_assign) => [f32x8, f32x4, f64x4, f64x2, i16x8, i32x8, i32x4],
+  (MulAssign<&Self>, mul, mul_assign) => [f32x8, f32x4, f64x4, f64x2, i16x8, i32x8, i32x4],
+  (DivAssign<Self>, div, div_assign) => [f32x8, f32x4, f64x4, f64x2],
+  (DivAssign<&Self>, div, div_assign) => [f32x8, f32x4, f64x4, f64x2],
+  (BitAndAssign<Self>, bitand, bitand_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (BitAndAssign<&Self>, bitand, bitand_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (BitOrAssign<Self>, bitor, bitor_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (BitOrAssign<&Self>, bitor, bitor_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (BitXorAssign<Self>, bitxor, bitxor_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
+  (BitXorAssign<&Self>, bitxor, bitxor_assign) => [f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x4, u64x2],
 }
 
 macro_rules! impl_simple_neg {
@@ -260,7 +283,7 @@ macro_rules! impl_simple_neg {
         #[inline]
         #[must_use]
         fn neg(self) -> Self::Output {
-          <$t>::default() - self
+          <$t>::default() - *self
         }
       }
     )+
@@ -268,7 +291,7 @@ macro_rules! impl_simple_neg {
 }
 
 impl_simple_neg! {
-  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+  f32x8, f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x2, u64x4
 }
 
 macro_rules! impl_simple_not {
@@ -315,7 +338,7 @@ macro_rules! impl_simple_sum {
 }
 
 impl_simple_sum! {
-  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+  f32x4, f64x4, f64x2, i8x16, i16x8, i32x8, i32x4, i64x4, i64x2, u8x16, u16x8, u32x8, u32x4, u64x2, u64x4
 }
 
 macro_rules! impl_floating_product {
@@ -335,7 +358,7 @@ macro_rules! impl_floating_product {
 }
 
 impl_floating_product! {
-  f32x4, f64x2
+  f32x8, f32x4, f64x4, f64x2
 }
 
 macro_rules! impl_integer_product {
@@ -355,7 +378,7 @@ macro_rules! impl_integer_product {
 }
 
 impl_integer_product! {
-  i16x8, i32x4,
+  i16x8, i32x4, i32x8,
 }
 
 /// impls `From<a> for b` by just calling `cast`
@@ -379,9 +402,10 @@ macro_rules! impl_from_a_for_b_with_cast {
 }
 
 impl_from_a_for_b_with_cast! {
-  ([f32;4], f32x4), ([f64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2),
+  ([f32;8], f32x8),
+  ([f32;4], f32x4), ([f64;4], f64x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2), ([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2), ([u64;4], u64x4),
 }
 
 macro_rules! impl_from_single_value {
@@ -405,9 +429,10 @@ macro_rules! impl_from_single_value {
 }
 
 impl_from_single_value! {
-  ([f32;4], f32x4), ([f64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2),
+  ([f32;8], f32x8),
+  ([f32;4], f32x4), ([f64;4], f64x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2), ([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2), ([u64;4], u64x4),
 }
 
 /// formatter => [(arr, simd)+],+
@@ -434,30 +459,30 @@ macro_rules! impl_formatter_for {
 }
 
 impl_formatter_for! {
-  Binary => [([u32;4], f32x4), ([u64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
-  Debug => [([f32;4], f32x4), ([f64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
-  Display => [([f32;4], f32x4), ([f64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
-  LowerExp => [([f32;4], f32x4), ([f64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
-  LowerHex => [([u32;4], f32x4), ([u64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
-  Octal => [([u32;4], f32x4), ([u64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
-  UpperExp => [([f32;4], f32x4), ([f64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
-  UpperHex => [([u32;4], f32x4), ([u64;2], f64x2),
-  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;4], i32x4), ([i64;2], i64x2),
-  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;4], u32x4), ([u64;2], u64x2)],
+  Binary => [([u32;8], f32x8), ([u32;4], f32x4), ([u64;4], f64x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
+  Debug => [([f32;8], f32x8), ([f32;4], f32x4), ([f64;4], f64x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
+  Display => [([f32;8], f32x8), ([f32;4], f32x4), ([f64;4], f64x4), ([f64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
+  LowerExp => [([f32;8], f32x8), ([f32;4], f32x4), ([u64;4], f64x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
+  LowerHex => [([u32;8], f32x8), ([u32;4], f32x4), ([u64;4], f64x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
+  Octal => [([u32;8], f32x8), ([u32;4], f32x4), ([u64;4], f64x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
+  UpperExp => [([u32;8], f32x8), ([u32;4], f32x4), ([u64;4], f64x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
+  UpperHex => [([u32;8], f32x8), ([u32;4], f32x4), ([u64;4], f64x4), ([u64;2], f64x2),
+  ([i8;16], i8x16), ([i16;8], i16x8), ([i32;8], i32x8), ([i32;4], i32x4), ([i64;2], i64x2),([i64;4], i64x4),
+  ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
 }
 
 #[allow(unused)]
