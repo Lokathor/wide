@@ -475,6 +475,256 @@ impl f64x4 {
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
+  pub fn asin_acos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
+    const_f64_as_f64x4!(R3asin, -5.634242780008963776856E-1);
+    const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
+    const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
+    const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
+
+    const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
+    const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
+    const_f64_as_f64x4!(S1asin, -3.838770957603691357202E2);
+    const_f64_as_f64x4!(S0asin, 3.424398657913078477438E2);
+
+    const_f64_as_f64x4!(P5asin, 4.253011369004428248960E-3);
+    const_f64_as_f64x4!(P4asin, -6.019598008014123785661E-1);
+    const_f64_as_f64x4!(P3asin, 5.444622390564711410273E0);
+    const_f64_as_f64x4!(P2asin, -1.626247967210700244449E1);
+    const_f64_as_f64x4!(P1asin, 1.956261983317594739197E1);
+    const_f64_as_f64x4!(P0asin, -8.198089802484824371615E0);
+
+    const_f64_as_f64x4!(Q4asin, -1.474091372988853791896E1);
+    const_f64_as_f64x4!(Q3asin, 7.049610280856842141659E1);
+    const_f64_as_f64x4!(Q2asin, -1.471791292232726029859E2);
+    const_f64_as_f64x4!(Q1asin, 1.395105614657485689735E2);
+    const_f64_as_f64x4!(Q0asin, -4.918853881490881290097E1);
+
+    let xa = self.abs();
+
+    let big = xa.cmp_ge(f64x4::splat(0.625));
+
+    let x1 = big.blend(f64x4::splat(1.0) - xa, xa * xa);
+
+    let x2 = x1 * x1;
+    let x3 = x2 * x1;
+    let x4 = x2 * x2;
+    let x5 = x4 * x1;
+
+    let dobig = big.any();
+    let dosmall = !big.all();
+    
+    let mut rx = f64x4::default();
+    let mut sx = f64x4::default();
+    let mut px = f64x4::default();
+    let mut qx = f64x4::default();
+
+    if dobig {
+      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+    }
+    if dosmall {
+      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+    };
+
+    let vx = big.blend(rx, px);
+    let wx = big.blend(sx, qx);
+
+    let y1 = vx / wx * x1;
+
+    let mut z1 = f64x4::default();
+    let mut z2 = f64x4::default();
+    if dobig {
+      let xb = (x1 + x1).sqrt();
+      z1 = xb.mul_add(y1, xb);
+    }
+
+    if dosmall {
+      z2 = xa.mul_add(y1, xa);
+    }
+
+    // asin
+    let z3 = f64x4::FRAC_PI_2 - z1;
+    let asin = big.blend(z3, z2);
+    let asin = asin.flip_signs(self);
+
+    // acos
+    let z3 = self.cmp_lt(f64x4::ZERO).blend(f64x4::PI - z1, z1);
+    let z4 = f64x4::FRAC_PI_2 - z2.flip_signs(self);
+    let acos = big.blend(z3, z4);
+
+    (asin, acos)
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn acos(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
+    const_f64_as_f64x4!(R3asin, -5.634242780008963776856E-1);
+    const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
+    const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
+    const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
+
+    const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
+    const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
+    const_f64_as_f64x4!(S1asin, -3.838770957603691357202E2);
+    const_f64_as_f64x4!(S0asin, 3.424398657913078477438E2);
+
+    const_f64_as_f64x4!(P5asin, 4.253011369004428248960E-3);
+    const_f64_as_f64x4!(P4asin, -6.019598008014123785661E-1);
+    const_f64_as_f64x4!(P3asin, 5.444622390564711410273E0);
+    const_f64_as_f64x4!(P2asin, -1.626247967210700244449E1);
+    const_f64_as_f64x4!(P1asin, 1.956261983317594739197E1);
+    const_f64_as_f64x4!(P0asin, -8.198089802484824371615E0);
+
+    const_f64_as_f64x4!(Q4asin, -1.474091372988853791896E1);
+    const_f64_as_f64x4!(Q3asin, 7.049610280856842141659E1);
+    const_f64_as_f64x4!(Q2asin, -1.471791292232726029859E2);
+    const_f64_as_f64x4!(Q1asin, 1.395105614657485689735E2);
+    const_f64_as_f64x4!(Q0asin, -4.918853881490881290097E1);
+
+    let xa = self.abs();
+
+    let big = xa.cmp_ge(f64x4::splat(0.625));
+
+    let x1 = big.blend(f64x4::splat(1.0) - xa, xa * xa);
+
+    let x2 = x1 * x1;
+    let x3 = x2 * x1;
+    let x4 = x2 * x2;
+    let x5 = x4 * x1;
+
+    let dobig = big.any();
+    let dosmall = !big.all();
+    
+    let mut rx = f64x4::default();
+    let mut sx = f64x4::default();
+    let mut px = f64x4::default();
+    let mut qx = f64x4::default();
+
+    if dobig {
+      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+    }
+    if dosmall {
+      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+    };
+
+    let vx = big.blend(rx, px);
+    let wx = big.blend(sx, qx);
+
+    let y1 = vx / wx * x1;
+
+    let mut z1 = f64x4::default();
+    let mut z2 = f64x4::default();
+    if dobig {
+      let xb = (x1 + x1).sqrt();
+      z1 = xb.mul_add(y1, xb);
+    }
+
+    if dosmall {
+      z2 = xa.mul_add(y1, xa);
+    }
+
+    // acos
+    let z3 = self.cmp_lt(f64x4::ZERO).blend(f64x4::PI - z1, z1);
+    let z4 = f64x4::FRAC_PI_2 - z2.flip_signs(self);
+    let acos = big.blend(z3, z4);
+
+    acos
+  }
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn asin(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
+    const_f64_as_f64x4!(R3asin, -5.634242780008963776856E-1);
+    const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
+    const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
+    const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
+
+    const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
+    const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
+    const_f64_as_f64x4!(S1asin, -3.838770957603691357202E2);
+    const_f64_as_f64x4!(S0asin, 3.424398657913078477438E2);
+
+    const_f64_as_f64x4!(P5asin, 4.253011369004428248960E-3);
+    const_f64_as_f64x4!(P4asin, -6.019598008014123785661E-1);
+    const_f64_as_f64x4!(P3asin, 5.444622390564711410273E0);
+    const_f64_as_f64x4!(P2asin, -1.626247967210700244449E1);
+    const_f64_as_f64x4!(P1asin, 1.956261983317594739197E1);
+    const_f64_as_f64x4!(P0asin, -8.198089802484824371615E0);
+
+    const_f64_as_f64x4!(Q4asin, -1.474091372988853791896E1);
+    const_f64_as_f64x4!(Q3asin, 7.049610280856842141659E1);
+    const_f64_as_f64x4!(Q2asin, -1.471791292232726029859E2);
+    const_f64_as_f64x4!(Q1asin, 1.395105614657485689735E2);
+    const_f64_as_f64x4!(Q0asin, -4.918853881490881290097E1);
+
+    let xa = self.abs();
+
+    let big = xa.cmp_ge(f64x4::splat(0.625));
+
+    let x1 = big.blend(f64x4::splat(1.0) - xa, xa * xa);
+
+    let x2 = x1 * x1;
+    let x3 = x2 * x1;
+    let x4 = x2 * x2;
+    let x5 = x4 * x1;
+
+    let dobig = big.any();
+    let dosmall = !big.all();
+    
+    let mut rx = f64x4::default();
+    let mut sx = f64x4::default();
+    let mut px = f64x4::default();
+    let mut qx = f64x4::default();
+
+    if dobig {
+      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+    }
+    if dosmall {
+      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+    };
+
+    let vx = big.blend(rx, px);
+    let wx = big.blend(sx, qx);
+
+    let y1 = vx / wx * x1;
+
+    let mut z1 = f64x4::default();
+    let mut z2 = f64x4::default();
+    if dobig {
+      let xb = (x1 + x1).sqrt();
+      z1 = xb.mul_add(y1, xb);
+    }
+
+    if dosmall {
+      z2 = xa.mul_add(y1, xa);
+    }
+
+    // asin
+    let z3 = f64x4::FRAC_PI_2 - z1;
+    let asin = big.blend(z3, z2);
+    let asin = asin.flip_signs(self);
+
+    asin
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
   pub fn sin_cos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h

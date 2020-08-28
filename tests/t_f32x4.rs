@@ -295,6 +295,8 @@ fn impl_f32x4_sin_cos() {
   }
 }
 
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "sse")]
 #[test]
 fn impl_f32x4_asin_acos() {
   let inc = 1.0 / 2501.0 / 4.0;
@@ -322,6 +324,8 @@ fn impl_f32x4_asin_acos() {
   }
 }
 
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "sse")]
 #[test]
 fn impl_f32x4_asin() {
   let inc = 1.0 / 2501.0 / 4.0;
@@ -348,6 +352,8 @@ fn impl_f32x4_asin() {
   }
 }
 
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "sse")]
 #[test]
 fn impl_f32x4_acos() {
   let inc = 1.0 / 2501.0 / 4.0;
