@@ -260,7 +260,7 @@ impl i64x4 {
   pub fn cmp_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) & cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
+        Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
       } else if #[cfg(target_feature="sse4.2")] {
         Self { sse0: cmp_lt_mask_i64_m128i(self.sse0, rhs.sse0), sse1: cmp_lt_mask_i64_m128i(self.sse1, rhs.sse1) }
       } else {

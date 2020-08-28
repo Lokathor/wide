@@ -765,10 +765,14 @@ impl f32x4 {
   #[inline]
   #[allow(non_upper_case_globals)]
   fn exponent(self) -> f32x4 {
-    let t1 = cast::<_, u32x4>(self);
-    let t2 = t1 << 1;
-    let t3 = t2 >> 24;
-    i32x4::round_float(cast::<_, i32x4>(t3) - i32x4::from(0x7F))
+    const_f32_as_f32x4!(pow2_23, 8388608.0);
+    const_f32_as_f32x4!(bias, 127.0);
+    let a = cast::<_, u32x4>(self);
+    let b = a >> 23;
+    let c = b | cast::<_, u32x4>(pow2_23);
+    let d = cast::<_, f32x4>(c);
+    let e = d - (pow2_23 + bias);
+    e
   }
 
   #[inline]
@@ -792,7 +796,17 @@ impl f32x4 {
   }
 
   fn nan_log() -> Self {
-    cast::<_, f32x4>(i32x4::splat(0x101))
+    cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
+  }
+
+  fn nan_pow() -> Self {
+    cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
+  }
+
+  fn sign_bit(self) -> Self {
+    let t1 = cast::<_, i32x4>(self);
+    let t2 = t1 >> 31;
+    !cast::<_, f32x4>(t2).cmp_eq(f32x4::ZERO)
   }
 
   /// Natural log (ln(x))
@@ -855,7 +869,7 @@ impl f32x4 {
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
-  pub fn powf(self, y: f32) -> Self {
+  pub fn pow_f32x4(self, y: f32x4) -> Self {
     const_f32_as_f32x4!(ln2f_hi, 0.693359375);
     const_f32_as_f32x4!(ln2f_lo, -2.12194440e-4);
     const_f32_as_f32x4!(P0logf, 3.3333331174E-1);
@@ -876,9 +890,8 @@ impl f32x4 {
     const_f32_as_f32x4!(p7expf, 1.0 / 5040.0);
 
     let x1 = self.abs();
-    let y = f32x4::splat(y);
     let x = x1.fraction_2();
-    let ef = x1.exponent();
+
     let mask = x.cmp_gt(f32x4::SQRT_2 * f32x4::HALF);
     let x = (!mask).blend(x + x, x);
 
@@ -889,7 +902,9 @@ impl f32x4 {
     );
     let lg1 = lg1 * x2 * x;
 
+    let ef = x1.exponent();
     let ef = mask.blend(ef + f32x4::ONE, ef);
+
     let e1 = (ef * y).round();
     let yr = ef.mul_sub(y, e1);
 
@@ -897,13 +912,13 @@ impl f32x4 {
     let x2err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
     let lgerr = f32x4::HALF.mul_add(x2, lg - x) - lg1;
 
-    let e2 = lg * y * f32x4::LOG10_2;
+    let e2 = (lg * y * f32x4::LOG2_E).round();
     let v = lg.mul_sub(y, e2 * ln2f_hi);
     let v = e2.mul_neg_add(ln2f_lo, v);
     let v = v - (lgerr + x2err).mul_sub(y, yr * f32x4::LN_2);
 
     let x = v;
-    let e3 = (x * f32x4::LOG10_2).round();
+    let e3 = (x * f32x4::LOG2_E).round();
     let x = e3.mul_neg_add(f32x4::LN_2, x);
     let x2 = x * x;
     let z = x2.mul_add(
@@ -923,16 +938,16 @@ impl f32x4 {
     // Add exponent by integer addition
     let z = cast::<_, f32x4>(cast::<_, i32x4>(z) + (ei << 23));
 
-    let xfinite = self.is_finite();
-    let yfinite = y.is_finite();
-    let efinite = ee.is_finite();
-    let xzero = self.is_zero_or_subnormal();
-
     // Check for overflow/underflow
-    let z = underflow.blend(f32x4::ZERO, z);
-    let z = overflow.blend(Self::infinity(), z);
+    let z = if (overflow | underflow).any() {
+      let z = underflow.blend(f32x4::ZERO, z);
+      overflow.blend(Self::infinity(), z)
+    } else {
+      z
+    };
 
     // Check for self == 0
+    let xzero = self.is_zero_or_subnormal();
     let z = xzero.blend(
       y.cmp_lt(f32x4::ZERO).blend(
         Self::infinity(),
@@ -941,11 +956,32 @@ impl f32x4 {
       z,
     );
 
+    let xsign = self.sign_bit();
+    let z = if xsign.any() {
+      // Y into an integer
+      let yi = y.cmp_eq(y.round());
+      // Is y odd?
+      let yodd = cast::<_, i32x4>(y.round_int() << 31).round_float();
+
+      let z1 =
+        yi.blend(z | yodd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+      xsign.blend(z1, z)
+    } else {
+      z
+    };
+
+    let xfinite = self.is_finite();
+    let yfinite = y.is_finite();
+    let efinite = ee.is_finite();
     if (xfinite & yfinite & (efinite | xzero)).all() {
       return z;
     }
 
     (self.is_nan() | y.is_nan()).blend(self + y, z)
+  }
+
+  pub fn powf(self, y: f32) -> Self {
+    Self::pow_f32x4(self, f32x4::splat(y))
   }
 }
 

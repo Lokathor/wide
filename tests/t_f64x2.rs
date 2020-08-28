@@ -541,19 +541,76 @@ fn impl_f64x2_ln() {
     let expected = f64x2::from((f as f64).ln());
     let actual = f64x2::from(f).ln();
     let diff_from_std: [f64; 2] = cast((actual - expected).abs());
-    dbg!(f);
-    dbg!(actual);
-    dbg!(expected);
     assert!(diff_from_std[0] < 0.000000000001);
   }
 }
 
 #[test]
-fn impl_f64x2_pow() {
+fn impl_f64x2_pow_single() {
   for f in [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0].iter().copied() {
     let expected = f64x2::splat(2.0 as f64).powf(f);
     let actual = f64x2::from(2.0_f64.powf(f));
     let diff_from_std: [f64; 2] = cast((actual - expected).abs());
     assert!(diff_from_std[0] < 0.000001);
+  }
+}
+
+// Fails because of the signbits issue see f64x4_pow_nan
+//#[test]
+fn impl_f64x2_pow_nan() {
+  for f in [3.4].iter().copied() {
+    let expected: [f64; 2] = cast(f64x2::splat(-4.5 as f64).powf(f));
+    let actual = (-4.5_f64).powf(f);
+    dbg!(&actual);
+    dbg!(&expected);
+    assert!(expected[0].is_nan());
+    assert!(actual.is_nan());
+  }
+}
+
+#[test]
+fn impl_f64x2_pow_multiple() {
+  let p = f64x2::from([29.0, 0.1]);
+  let f = f64x2::from([1.2, 2.0]);
+  let res = f.pow_f64x2(p);
+
+  let p: [f64; 2] = cast(p);
+  let f: [f64; 2] = cast(f);
+  let res: [f64; 2] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+
+  let p = f64x2::from([2.718282, -0.2]);
+  let f = f64x2::from([9.2, 6.1]);
+  let res = f.pow_f64x2(p);
+
+  let p: [f64; 2] = cast(p);
+  let f: [f64; 2] = cast(f);
+  let res: [f64; 2] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+
+  let p = f64x2::from([-1.5, 3.4]);
+  let f = f64x2::from([2.5, 4.5]);
+  let res = f.pow_f64x2(p);
+
+  let p: [f64; 2] = cast(p);
+  let f: [f64; 2] = cast(f);
+  let res: [f64; 2] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      dbg!(expected);
+      dbg!(res[i]);
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
   }
 }

@@ -500,3 +500,34 @@ fn impl_f32x4_pow() {
     assert!(diff_from_std[0] < 0.000001);
   }
 }
+
+#[test]
+fn impl_f32x4_pow_n() {
+  let p = f32x4::from([29.0, 0.1, 0.5, 1.0]);
+  let f = f32x4::from([1.2, 2.0, 3.0, 1.5]);
+  let res = f.pow_f32x4(p);
+
+  let p: [f32; 4] = cast(p);
+  let f: [f32; 4] = cast(f);
+  let res: [f32; 4] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+
+  let p = f32x4::from([2.718282, -0.2, -1.5, 3.4]);
+  let f = f32x4::from([9.2, 6.1, 2.5, -4.5]);
+  let res = f.pow_f32x4(p);
+
+  let p: [f32; 4] = cast(p);
+  let f: [f32; 4] = cast(f);
+  let res: [f32; 4] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+}

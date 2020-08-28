@@ -1002,7 +1002,15 @@ impl f64x4 {
   }
 
   fn nan_log() -> Self {
-    cast::<_, f64x4>(i64x4::splat(0x101))
+    cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
+  }
+
+  fn nan_pow() -> Self {
+    cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
+  }
+
+  fn sign_bit(self) -> Self {
+    self & Self::from(-0.0)
   }
 
   /// Natural log (ln(x))
@@ -1071,8 +1079,8 @@ impl f64x4 {
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
-  pub fn powf(self, y: f64) -> Self {
-    const_f64_as_f64x4!(ln2d_hi, 0.693359375);
+  pub fn pow_f64x4(self, y: Self) -> Self {
+    const_f64_as_f64x4!(ln2d_hi, 0.693145751953125);
     const_f64_as_f64x4!(ln2d_lo, 1.42860682030941723212E-6);
     const_f64_as_f64x4!(P0log, 2.0039553499201281259648E1);
     const_f64_as_f64x4!(P1log, 5.7112963590585538103336E1);
@@ -1103,8 +1111,6 @@ impl f64x4 {
     const_f64_as_f64x4!(p13, 1.0 / 6227020800.0);
 
     let x1 = self.abs();
-
-    let y = f64x4::splat(y);
     let x = x1.fraction_2();
     let mask = x.cmp_gt(f64x4::SQRT_2 * f64x4::HALF);
     let x = (!mask).blend(x + x, x);
@@ -1116,7 +1122,7 @@ impl f64x4 {
     let lg1 = px / qx;
 
     let ef = x1.exponent();
-    let ef = mask.blend(ef + ef, f64x4::ONE);
+    let ef = mask.blend(ef + f64x4::ONE, ef);
     let e1 = (ef * y).round();
     let yr = ef.mul_sub(y, e1);
 
@@ -1124,41 +1130,39 @@ impl f64x4 {
     let x2err = (f64x4::HALF * x).mul_sub(x, f64x4::HALF * x2);
     let lgerr = f64x4::HALF.mul_add(x2, lg - x) - lg1;
 
-    let e2 = lg * y * f64x4::LOG10_2;
+    let e2 = (lg * y * f64x4::LOG2_E).round();
     let v = lg.mul_sub(y, e2 * ln2d_hi);
     let v = e2.mul_neg_add(ln2d_lo, v);
-    let v = yr.mul_add(f64x4::LN_2, v);
-    let v = (lgerr + x2err).mul_neg_add(y, v);
+    let v = v - (lgerr + x2err).mul_sub(y, yr * f64x4::LN_2);
 
     let x = v;
-    let e3 = (x * f64x4::LOG10_2).round();
+    let e3 = (x * f64x4::LOG2_E).round();
     let x = e3.mul_neg_add(f64x4::LN_2, x);
     let z =
       polynomial_13m!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
         + f64x4::ONE;
-
     let ee = e1 + e2 + e3;
-
     let ei = cast::<_, i64x4>(ee.round_int());
     let ej = cast::<_, i64x4>(ei + (cast::<_, i64x4>(z) >> 52));
 
-    let overflow = cast::<_, f64x4>(ej.cmp_gt(i64x4::splat(0x07FF)))
-      | (ee.cmp_gt(f64x4::splat(3000.0)));
-    let underflow = cast::<_, f64x4>(ej.cmp_le(i64x4::splat(0x000)))
-      | (ee.cmp_lt(f64x4::splat(-3000.0)));
+    let overflow = cast::<_, f64x4>(!ej.cmp_lt(i64x4::splat(0x07FF)))
+      | ee.cmp_gt(f64x4::splat(3000.0));
+    let underflow = cast::<_, f64x4>(!ej.cmp_gt(i64x4::splat(0x000)))
+      | ee.cmp_lt(f64x4::splat(-3000.0));
 
     // Add exponent by integer addition
     let z = cast::<_, f64x4>(cast::<_, i64x4>(z) + (ei << 52));
-    let xfinite = self.is_finite();
-    let yfinite = y.is_finite();
-    let efinite = ee.is_finite();
-    let xzero = self.is_zero_or_subnormal();
 
     // Check for overflow/underflow
-    let z = underflow.blend(f64x4::ZERO, z);
-    let z = overflow.blend(Self::infinity(), z);
+    let z = if (overflow | underflow).any() {
+      let z = underflow.blend(f64x4::ZERO, z);
+      overflow.blend(Self::infinity(), z)
+    } else {
+      z
+    };
 
     // Check for self == 0
+    let xzero = self.is_zero_or_subnormal();
     let z = xzero.blend(
       y.cmp_lt(f64x4::ZERO).blend(
         Self::infinity(),
@@ -1167,11 +1171,33 @@ impl f64x4 {
       z,
     );
 
+    let xsign = self.sign_bit();
+
+    let z = if xsign.any() {
+      // Y into an integer
+      let yi = y.cmp_eq(y.round());
+      // Is y odd?
+      let yodd = cast::<_, i64x4>(y.round_int() << 63).round_float();
+      let z1 =
+        yi.blend(z | yodd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+      xsign.blend(z1, z)
+    } else {
+      z
+    };
+
+    let xfinite = self.is_finite();
+    let yfinite = y.is_finite();
+    let efinite = ee.is_finite();
+
     if (xfinite & yfinite & (efinite | xzero)).all() {
       return z;
     }
 
     (self.is_nan() | y.is_nan()).blend(self + y, z)
+  }
+
+  pub fn powf(self, y: f64) -> Self {
+    Self::pow_f64x4(self, f64x4::splat(y))
   }
 }
 
@@ -1184,12 +1210,11 @@ impl Not for f64x4 {
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
-        // NOTE: Fix this to work whenn self.arr[0] == 0 to ensure ln() works for i586
         Self { arr: [
-          (self.arr[0] as u64 ^ 0x7ff8000000000000) as f64,
-          (self.arr[1] as u64 ^ 0x7ff8000000000000)  as f64,
-          (self.arr[2] as u64 ^ 0x7ff8000000000000)  as f64,
-          (self.arr[3] as u64 ^ 0x7ff8000000000000)  as f64
+          (self.arr[0].to_bits() ^ u64::MAX) as f64,
+          (self.arr[1].to_bits() ^ u64::MAX) as f64,
+          (self.arr[2].to_bits() ^ u64::MAX) as f64,
+          (self.arr[3].to_bits() ^ u64::MAX) as f64,
         ]}
       }
     }
