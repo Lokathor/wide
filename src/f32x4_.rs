@@ -22,6 +22,7 @@ macro_rules! const_f32_as_f32x4 {
 impl f32x4 {
   const_f32_as_f32x4!(ONE, 1.0);
   const_f32_as_f32x4!(ZERO, 0.0);
+  const_f32_as_f32x4!(HALF, 0.5);
   const_f32_as_f32x4!(E, core::f32::consts::E);
   const_f32_as_f32x4!(FRAC_1_PI, core::f32::consts::FRAC_1_PI);
   const_f32_as_f32x4!(FRAC_2_PI, core::f32::consts::FRAC_2_PI);
@@ -431,14 +432,15 @@ impl f32x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
-  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+  pub fn mul_sub(self, m: Self, s: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_neg_add_m128(self.sse, m.sse, a.sse) }
+        Self { sse: fused_mul_sub_m128(self.sse, m.sse, s.sse) }
       } else {
-        a - (self * m)
+        (self * m) - s
       }
     }
   }
@@ -450,6 +452,16 @@ impl f32x4 {
 
   #[inline]
   #[must_use]
+  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_neg_add_m128(self.sse, m.sse, a.sse) }
+      } else {
+        a - (self * m)
+      }
+    }
+  }
+
   #[allow(non_upper_case_globals)]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
@@ -491,6 +503,15 @@ impl f32x4 {
 
   #[inline]
   #[must_use]
+  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_neg_sub_m128(self.sse, m.sse, a.sse) }
+      } else {
+        -(self * m) - a
+      }
+    }
+  }
   #[allow(non_upper_case_globals)]
   pub fn asin(self) -> Self {
     // Based on the Agner Fog "vector class library":
@@ -755,6 +776,20 @@ impl f32x4 {
     cast::<_, f32x4>(t2)
   }
 
+  fn is_zero_or_subnormal(self) -> Self {
+    let t = cast::<_, i32x4>(self);
+    let t = t & i32x4::splat(0x7F800000);
+    i32x4::round_float(t.cmp_eq(i32x4::splat(0)))
+  }
+
+  fn infinity() -> Self {
+    cast::<_, f32x4>(i32x4::splat(0x7F800000))
+  }
+
+  fn nan_log() -> Self {
+    cast::<_, f32x4>(i32x4::splat(0x101))
+  }
+
   /// Natural log (ln(x))
   #[inline]
   #[must_use]
@@ -790,7 +825,15 @@ impl f32x4 {
     let overflow = !self.is_finite();
     let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
-    (!mask).blend(res, Self::ZERO)
+    if !mask.any() {
+      res
+    } else {
+      let iszero = self.is_zero_or_subnormal();
+      let res = underflow.blend(Self::nan_log(), res);
+      let res = iszero.blend(Self::infinity(), res);
+      let res = overflow.blend(self, res);
+      res
+    }
   }
 
   #[inline]
@@ -802,6 +845,102 @@ impl f32x4 {
   #[must_use]
   pub fn log10(self) -> Self {
     Self::ln(self) * Self::LOG10_E
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn powf(self, y: f32) -> Self {
+    const_f32_as_f32x4!(ln2f_hi, 0.693359375);
+    const_f32_as_f32x4!(ln2f_lo, -2.12194440e-4);
+    const_f32_as_f32x4!(P0logf, 3.3333331174E-1);
+    const_f32_as_f32x4!(P1logf, -2.4999993993E-1);
+    const_f32_as_f32x4!(P2logf, 2.0000714765E-1);
+    const_f32_as_f32x4!(P3logf, -1.6668057665E-1);
+    const_f32_as_f32x4!(P4logf, 1.4249322787E-1);
+    const_f32_as_f32x4!(P5logf, -1.2420140846E-1);
+    const_f32_as_f32x4!(P6logf, 1.1676998740E-1);
+    const_f32_as_f32x4!(P7logf, -1.1514610310E-1);
+    const_f32_as_f32x4!(P8logf, 7.0376836292E-2);
+
+    const_f32_as_f32x4!(p2expf, 1.0 / 2.0); // coefficients for Taylor expansion of exp
+    const_f32_as_f32x4!(p3expf, 1.0 / 6.0);
+    const_f32_as_f32x4!(p4expf, 1.0 / 24.0);
+    const_f32_as_f32x4!(p5expf, 1.0 / 120.0);
+    const_f32_as_f32x4!(p6expf, 1.0 / 720.0);
+    const_f32_as_f32x4!(p7expf, 1.0 / 5040.0);
+
+    let x1 = self.abs();
+    let y = f32x4::splat(y);
+    let x = x1.fraction_2();
+    let ef = x1.exponent();
+    let mask = x.cmp_gt(f32x4::SQRT_2 * f32x4::HALF);
+    let x = (!mask).blend(x + x, x);
+
+    let x = x - f32x4::ONE;
+    let x2 = x * x;
+    let lg1 = polynomial_8!(
+      x, P0logf, P1logf, P2logf, P3logf, P4logf, P5logf, P6logf, P7logf, P8logf
+    );
+    let lg1 = lg1 * x2 * x;
+
+    let ef = mask.blend(ef + f32x4::ONE, ef);
+    let e1 = (ef * y).round();
+    let yr = ef.mul_sub(y, e1);
+
+    let lg = f32x4::HALF.mul_neg_add(x2, x) + lg1;
+    let x2err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
+    let lgerr = f32x4::HALF.mul_add(x2, lg - x) - lg1;
+
+    let e2 = lg * y * f32x4::LOG10_2;
+    let v = lg.mul_sub(y, e2 * ln2f_hi);
+    let v = e2.mul_neg_add(ln2f_lo, v);
+    let v = v - (lgerr + x2err).mul_sub(y, yr * f32x4::LN_2);
+
+    let x = v;
+    let e3 = (x * f32x4::LOG10_2).round();
+    let x = e3.mul_neg_add(f32x4::LN_2, x);
+    let x2 = x * x;
+    let z = x2.mul_add(
+      polynomial_5!(x, p2expf, p3expf, p4expf, p5expf, p6expf, p7expf),
+      x + f32x4::ONE,
+    );
+
+    let ee = e1 + e2 + e3;
+    let ei = cast::<_, i32x4>(ee.round_int());
+    let ej = cast::<_, i32x4>(ei + (cast::<_, i32x4>(z) >> 23));
+
+    let overflow = cast::<_, f32x4>(ej.cmp_gt(i32x4::splat(0x0FF)))
+      | (ee.cmp_gt(f32x4::splat(300.0)));
+    let underflow = cast::<_, f32x4>(ej.cmp_lt(i32x4::splat(0x000)))
+      | (ee.cmp_lt(f32x4::splat(-300.0)));
+
+    // Add exponent by integer addition
+    let z = cast::<_, f32x4>(cast::<_, i32x4>(z) + (ei << 23));
+
+    let xfinite = self.is_finite();
+    let yfinite = y.is_finite();
+    let efinite = ee.is_finite();
+    let xzero = self.is_zero_or_subnormal();
+
+    // Check for overflow/underflow
+    let z = underflow.blend(f32x4::ZERO, z);
+    let z = overflow.blend(Self::infinity(), z);
+
+    // Check for self == 0
+    let z = xzero.blend(
+      y.cmp_lt(f32x4::ZERO).blend(
+        Self::infinity(),
+        y.cmp_eq(f32x4::ZERO).blend(f32x4::ONE, f32x4::ZERO),
+      ),
+      z,
+    );
+
+    if (xfinite & yfinite & (efinite | xzero)).all() {
+      return z;
+    }
+
+    (self.is_nan() | y.is_nan()).blend(self + y, z)
   }
 }
 

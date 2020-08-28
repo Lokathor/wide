@@ -131,6 +131,33 @@ macro_rules! impl_shl_t_for_i64x2 {
 }
 impl_shl_t_for_i64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+macro_rules! impl_shr_t_for_i64x2 {
+  ($($shift_type:ty),+ $(,)?) => {
+    $(impl Shr<$shift_type> for i64x2 {
+      type Output = Self;
+      /// Shifts all lanes by the value given.
+      #[inline]
+      #[must_use]
+      fn shr(self, rhs: $shift_type) -> Self::Output {
+        let u = rhs as u64;
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            let shift = cast([u, 0]);
+            Self { sse: shr_all_u64_m128i(self.sse, shift) }
+          } else {
+            Self { arr: [
+              self.arr[0] >> u,
+              self.arr[1] >> u,
+            ]}
+          }
+        }
+      }
+    })+
+  };
+}
+
+impl_shr_t_for_i64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+
 impl i64x2 {
   #[inline]
   #[must_use]
@@ -164,6 +191,24 @@ impl i64x2 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn cmp_lt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.2")] {
+        Self { sse: !cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] < r[0] { -1_i64 } else { 0 },
+          if s[1] < r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -174,5 +219,12 @@ impl i64x2 {
         generic_bit_blend(self, t, f)
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn round_float(self) -> f64x2 {
+    let arr: [i64; 2] = cast(self);
+    cast([arr[0] as f64, arr[1] as f64])
   }
 }

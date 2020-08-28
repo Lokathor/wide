@@ -233,6 +233,49 @@ impl i64x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn cmp_le(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: !cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
+      } else if #[cfg(target_feature="sse4.2")] {
+        Self { sse0: !cmp_gt_mask_i64_m128i(self.sse0, rhs.sse0), sse1: !cmp_gt_mask_i64_m128i(self.sse1, rhs.sse1) }
+      } else {
+        let s: [i64;4] = cast(self);
+        let r: [i64;4] = cast(rhs);
+        cast([
+          if s[0] <= r[0] { -1_i64 } else { 0 },
+          if s[1] <= r[1] { -1_i64 } else { 0 },
+          if s[2] <= r[2] { -1_i64 } else { 0 },
+          if s[3] <= r[3] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn cmp_lt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) & cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
+      } else if #[cfg(target_feature="sse4.2")] {
+        Self { sse0: cmp_lt_mask_i64_m128i(self.sse0, rhs.sse0), sse1: cmp_lt_mask_i64_m128i(self.sse1, rhs.sse1) }
+      } else {
+        let s: [i64;4] = cast(self);
+        let r: [i64;4] = cast(rhs);
+        cast([
+          if s[0] < r[0] { -1_i64 } else { 0 },
+          if s[1] < r[1] { -1_i64 } else { 0 },
+          if s[2] < r[2] { -1_i64 } else { 0 },
+          if s[3] < r[3] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -245,6 +288,13 @@ impl i64x4 {
         generic_bit_blend(self, t, f)
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn round_float(self) -> f64x4 {
+    let arr: [i64; 4] = cast(self);
+    cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
   }
 }
 

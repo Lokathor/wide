@@ -100,6 +100,30 @@ macro_rules! polynomial_5n {
   }};
 }
 
+macro_rules! polynomial_6 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr ,$c6:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    x4.mul_add(
+      x2.mul_add($c6, x.mul_add($c5, $c4)),
+      x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+    )
+  }};
+}
+
+macro_rules! polynomial_6n {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    x4.mul_add(
+      x.mul_add($c5, x2 + $c4),
+      x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+    )
+  }};
+}
+
 macro_rules! polynomial_8 {
   ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr,  $c6:expr, $c7:expr, $c8:expr $(,)?) => {{
     let x = $x;
@@ -114,11 +138,33 @@ macro_rules! polynomial_8 {
 }
 
 macro_rules! polynomial_13 {
+  // calculates polynomial c13*x^13 + c12*x^12 + ... + c1*x + c0
   ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
     let x = $x;
     let x2 = x * x;
     let x4 = x2 * x2;
     let x8 = x4 * x4;
+    x8.mul_add(
+      x4.mul_add(
+        x.mul_add($c13, $c12),
+        x2.mul_add(x.mul_add($c11, $c10), x.mul_add($c9, $c8)),
+      ),
+      x4.mul_add(
+        x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
+        x2.mul_add(x.mul_add($c3, $c2), x),
+      ),
+    )
+  }};
+}
+
+macro_rules! polynomial_13m {
+  // return  ((c8+c9*x) + (c10+c11*x)*x2 + (c12+c13*x)*x4)*x8 + (((c6+c7*x)*x2 + (c4+c5*x))*x4 + ((c2+c3*x)*x2 + x));
+  ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    let x8 = x4 * x4;
+
     x8.mul_add(
       x4.mul_add(
         x.mul_add($c13, $c12),
@@ -318,7 +364,7 @@ macro_rules! impl_simple_not {
 }
 
 impl_simple_not! {
-  f32x4, f64x2, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+  f32x4, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
 }
 
 macro_rules! impl_simple_sum {

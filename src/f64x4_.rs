@@ -27,6 +27,7 @@ macro_rules! const_f64_as_f64x4 {
 impl f64x4 {
   const_f64_as_f64x4!(ONE, 1.0);
   const_f64_as_f64x4!(ZERO, 0.0);
+  const_f64_as_f64x4!(HALF, 0.5);
   const_f64_as_f64x4!(E, core::f64::consts::E);
   const_f64_as_f64x4!(FRAC_1_PI, core::f64::consts::FRAC_1_PI);
   const_f64_as_f64x4!(FRAC_2_PI, core::f64::consts::FRAC_2_PI);
@@ -452,6 +453,22 @@ impl f64x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_sub(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+        Self { avx: fused_mul_sub_m256d(self.avx, m.avx, a.avx) }
+      } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
+      {
+        Self { sse0: fused_mul_sub_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_sub_m128d(self.sse1, m.sse1, a.sse1) }
+      } else {
+        (self * m) - a
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
@@ -474,6 +491,17 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+        Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, a.avx) }
+      } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
+      {
+        Self { sse0: fused_mul_neg_sub_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_neg_sub_m128d(self.sse1, m.sse1, a.sse1) }
+      }  else {
+         -(self * m) - a
+      }
+  }
   #[allow(non_upper_case_globals)]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
@@ -483,6 +511,8 @@ impl f64x4 {
     const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
     const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
     const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
+
+
 
     const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
     const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
@@ -524,7 +554,7 @@ impl f64x4 {
     if dobig {
       rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
       sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
-    }
+
     if dosmall {
       px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
       qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
@@ -561,6 +591,9 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  pub fn flip_signs(self, signs: Self) -> Self {
+    self ^ (signs & Self::from(-0.0))
+  }
   #[allow(non_upper_case_globals)]
   pub fn acos(self) -> Self {
     // Based on the Agner Fog "vector class library":
@@ -938,6 +971,20 @@ impl f64x4 {
     cast::<_, f64x4>(t2)
   }
 
+  fn is_zero_or_subnormal(self) -> Self {
+    let t = cast::<_, i64x4>(self);
+    let t = t & i64x4::splat(0x7FF0000000000000);
+    i64x4::round_float(t.cmp_eq(i64x4::splat(0)))
+  }
+
+  fn infinity() -> Self {
+    cast::<_, f64x4>(i64x4::splat(0x7FF0000000000000))
+  }
+
+  fn nan_log() -> Self {
+    cast::<_, f64x4>(i64x4::splat(0x101))
+  }
+
   /// Natural log (ln(x))
   #[inline]
   #[must_use]
@@ -979,7 +1026,15 @@ impl f64x4 {
     let overflow = !self.is_finite();
     let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
-    (!mask).blend(res, Self::ZERO)
+    if !mask.any() {
+      res
+    } else {
+      let iszero = self.is_zero_or_subnormal();
+      let res = underflow.blend(Self::nan_log(), res);
+      let res = iszero.blend(Self::infinity(), res);
+      let res = overflow.blend(self, res);
+      res
+    }
   }
 
   #[inline]
@@ -991,6 +1046,112 @@ impl f64x4 {
   #[must_use]
   pub fn log10(self) -> Self {
     Self::ln(self) * Self::LOG10_E
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn powf(self, y: f64) -> Self {
+    const_f64_as_f64x4!(ln2d_hi, 0.693359375);
+    const_f64_as_f64x4!(ln2d_lo, 1.42860682030941723212E-6);
+    const_f64_as_f64x4!(P0log, 2.0039553499201281259648E1);
+    const_f64_as_f64x4!(P1log, 5.7112963590585538103336E1);
+    const_f64_as_f64x4!(P2log, 6.0949667980987787057556E1);
+    const_f64_as_f64x4!(P3log, 2.9911919328553073277375E1);
+    const_f64_as_f64x4!(P4log, 6.5787325942061044846969E0);
+    const_f64_as_f64x4!(P5log, 4.9854102823193375972212E-1);
+    const_f64_as_f64x4!(P6log, 4.5270000862445199635215E-5);
+    const_f64_as_f64x4!(Q0log, 6.0118660497603843919306E1);
+    const_f64_as_f64x4!(Q1log, 2.1642788614495947685003E2);
+    const_f64_as_f64x4!(Q2log, 3.0909872225312059774938E2);
+    const_f64_as_f64x4!(Q3log, 2.2176239823732856465394E2);
+    const_f64_as_f64x4!(Q4log, 8.3047565967967209469434E1);
+    const_f64_as_f64x4!(Q5log, 1.5062909083469192043167E1);
+
+    // Taylor expansion constants
+    const_f64_as_f64x4!(p2, 1.0 / 2.0); // coefficients for Taylor expansion of exp
+    const_f64_as_f64x4!(p3, 1.0 / 6.0);
+    const_f64_as_f64x4!(p4, 1.0 / 24.0);
+    const_f64_as_f64x4!(p5, 1.0 / 120.0);
+    const_f64_as_f64x4!(p6, 1.0 / 720.0);
+    const_f64_as_f64x4!(p7, 1.0 / 5040.0);
+    const_f64_as_f64x4!(p8, 1.0 / 40320.0);
+    const_f64_as_f64x4!(p9, 1.0 / 362880.0);
+    const_f64_as_f64x4!(p10, 1.0 / 3628800.0);
+    const_f64_as_f64x4!(p11, 1.0 / 39916800.0);
+    const_f64_as_f64x4!(p12, 1.0 / 479001600.0);
+    const_f64_as_f64x4!(p13, 1.0 / 6227020800.0);
+
+    let x1 = self.abs();
+
+    let y = f64x4::splat(y);
+    let x = x1.fraction_2();
+    let mask = x.cmp_gt(f64x4::SQRT_2 * f64x4::HALF);
+    let x = (!mask).blend(x + x, x);
+    let x = x - f64x4::ONE;
+    let x2 = x * x;
+    let px = polynomial_6!(x, P0log, P1log, P2log, P3log, P4log, P5log, P6log);
+    let px = px * x * x2;
+    let qx = polynomial_6n!(x, Q0log, Q1log, Q2log, Q3log, Q4log, Q5log);
+    let lg1 = px / qx;
+
+    let ef = x1.exponent();
+    let ef = mask.blend(ef + ef, f64x4::ONE);
+    let e1 = (ef * y).round();
+    let yr = ef.mul_sub(y, e1);
+
+    let lg = f64x4::HALF.mul_neg_add(x2, x) + lg1;
+    let x2err = (f64x4::HALF * x).mul_sub(x, f64x4::HALF * x2);
+    let lgerr = f64x4::HALF.mul_add(x2, lg - x) - lg1;
+
+    let e2 = lg * y * f64x4::LOG10_2;
+    let v = lg.mul_sub(y, e2 * ln2d_hi);
+    let v = e2.mul_neg_add(ln2d_lo, v);
+    let v = yr.mul_add(f64x4::LN_2, v);
+    let v = (lgerr + x2err).mul_neg_add(y, v);
+
+    let x = v;
+    let e3 = (x * f64x4::LOG10_2).round();
+    let x = e3.mul_neg_add(f64x4::LN_2, x);
+    let z =
+      polynomial_13m!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
+        + f64x4::ONE;
+
+    let ee = e1 + e2 + e3;
+
+    let ei = cast::<_, i64x4>(ee.round_int());
+    let ej = cast::<_, i64x4>(ei + (cast::<_, i64x4>(z) >> 52));
+
+    let overflow = cast::<_, f64x4>(ej.cmp_gt(i64x4::splat(0x07FF)))
+      | (ee.cmp_gt(f64x4::splat(3000.0)));
+    let underflow = cast::<_, f64x4>(ej.cmp_le(i64x4::splat(0x000)))
+      | (ee.cmp_lt(f64x4::splat(-3000.0)));
+
+    // Add exponent by integer addition
+    let z = cast::<_, f64x4>(cast::<_, i64x4>(z) + (ei << 52));
+    let xfinite = self.is_finite();
+    let yfinite = y.is_finite();
+    let efinite = ee.is_finite();
+    let xzero = self.is_zero_or_subnormal();
+
+    // Check for overflow/underflow
+    let z = underflow.blend(f64x4::ZERO, z);
+    let z = overflow.blend(Self::infinity(), z);
+
+    // Check for self == 0
+    let z = xzero.blend(
+      y.cmp_lt(f64x4::ZERO).blend(
+        Self::infinity(),
+        y.cmp_eq(f64x4::ZERO).blend(f64x4::ONE, f64x4::ZERO),
+      ),
+      z,
+    );
+
+    if (xfinite & yfinite & (efinite | xzero)).all() {
+      return z;
+    }
+
+    (self.is_nan() | y.is_nan()).blend(self + y, z)
   }
 }
 
@@ -1006,9 +1167,9 @@ impl Not for f64x4 {
         // NOTE: Fix this to work whenn self.arr[0] == 0 to ensure ln() works for i586
         Self { arr: [
           (self.arr[0] as u64 ^ 0x7ff8000000000000) as f64,
-          (self.arr[0] as u64 ^ 0x7ff8000000000000)  as f64,
-          (self.arr[0] as u64 ^ 0x7ff8000000000000)  as f64,
-          (self.arr[0] as u64 ^ 0x7ff8000000000000)  as f64
+          (self.arr[1] as u64 ^ 0x7ff8000000000000)  as f64,
+          (self.arr[2] as u64 ^ 0x7ff8000000000000)  as f64,
+          (self.arr[3] as u64 ^ 0x7ff8000000000000)  as f64
         ]}
       }
     }
