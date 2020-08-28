@@ -295,8 +295,6 @@ fn impl_f32x4_sin_cos() {
   }
 }
 
-// FIXME: remove cfg requirement once masks as their own types are implemented
-#[cfg(target_feature = "sse")]
 #[test]
 fn impl_f32x4_asin_acos() {
   let inc = 1.0 / 2501.0 / 4.0;
@@ -487,6 +485,16 @@ fn impl_f32x4_ln() {
   for f in [0.1, 0.5, 1.0, 2.718282, 10.0, 35.0, 1250.0].iter().copied() {
     let expected = f32x4::from((f as f32).ln());
     let actual = f32x4::from(f).ln();
+    let diff_from_std: [f32; 4] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000001);
+  }
+}
+
+#[test]
+fn impl_f32x4_pow() {
+  for f in [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0].iter().copied() {
+    let expected = f32x4::splat(2.0 as f32).powf(f);
+    let actual = f32x4::from(2.0_f32.powf(f));
     let diff_from_std: [f32; 4] = cast((actual - expected).abs());
     assert!(diff_from_std[0] < 0.000001);
   }

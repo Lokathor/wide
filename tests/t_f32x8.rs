@@ -187,7 +187,6 @@ fn impl_f32x8_is_nan() {
   assert_eq!(expected, actual);
 }
 
-
 #[test]
 fn impl_f32x8_is_finite() {
   let a = f32x8::from([
@@ -272,7 +271,6 @@ fn impl_f32x8_round_int() {
     let expected = i32x8::from(i);
     let actual = a.round_int();
     assert_eq!(expected, actual);
-    dbg!(actual);
   }
 }
 
@@ -311,8 +309,6 @@ fn impl_f32x8_flip_signs() {
   assert_eq!(expected, actual);
 }
 
-// FIXME: remove cfg requirement once masks as their own types are implemented
-#[cfg(target_feature = "avx")]
 #[test]
 fn impl_f32x8_asin_acos() {
   let inc = 1.0 / 2501.0 / 8.0;
@@ -542,5 +538,15 @@ fn impl_f32x8_ln() {
     let actual = f32x8::from(f).ln();
     let diff_from_std: [f32; 8] = cast((actual - expected).abs());
     assert!(diff_from_std[0] < 0.0000001);
+  }
+}
+
+#[test]
+fn impl_f32x8_pow() {
+  for f in [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0].iter().copied() {
+    let expected = f32x8::splat(2.0 as f32).powf(f);
+    let actual = f32x8::from(2.0_f32.powf(f));
+    let diff_from_std: [f32; 8] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000001);
   }
 }

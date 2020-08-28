@@ -493,3 +493,13 @@ fn impl_f64x4_ln() {
     }
   }
 }
+
+#[test]
+fn impl_f64x4_pow() {
+  for f in [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0].iter().copied() {
+    let expected = f64x4::splat(2.0 as f64).powf(f);
+    let actual = f64x4::from(2.0_f64.powf(f));
+    let diff_from_std: [f64; 4] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000001);
+  }
+}
