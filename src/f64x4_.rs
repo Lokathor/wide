@@ -336,12 +336,14 @@ impl f64x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
     let non_sign_bits = f64x4::from(f64::from_bits(i64::MAX as u64));
     self & non_sign_bits
   }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -360,6 +362,7 @@ impl f64x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
@@ -378,11 +381,11 @@ impl f64x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {
     pick! {
-
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256d!(self.avx, Unordered, self.avx ) }
       } else if #[cfg(target_feature="sse2")] {
@@ -397,6 +400,7 @@ impl f64x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn is_finite(self) -> Self {
@@ -424,6 +428,7 @@ impl f64x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn round_int(self) -> i64x4 {
@@ -483,25 +488,28 @@ impl f64x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
+    pick! {
+        if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+          Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, a.avx) }
+        } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
+        {
+          Self { sse0: fused_mul_neg_sub_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_neg_sub_m128d(self.sse1, m.sse1, a.sse1) }
+        }  else {
+           -(self * m) - a
+        }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn flip_signs(self, signs: Self) -> Self {
     self ^ (signs & Self::from(-0.0))
   }
 
-  #[inline]
-  #[must_use]
-  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-        Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, a.avx) }
-      } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
-      {
-        Self { sse0: fused_mul_neg_sub_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_neg_sub_m128d(self.sse1, m.sse1, a.sse1) }
-      }  else {
-         -(self * m) - a
-      }
-  }
   #[allow(non_upper_case_globals)]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
@@ -511,8 +519,6 @@ impl f64x4 {
     const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
     const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
     const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
-
-
 
     const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
     const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
@@ -545,19 +551,26 @@ impl f64x4 {
 
     let dobig = big.any();
     let dosmall = !big.all();
-    
+
     let mut rx = f64x4::default();
     let mut sx = f64x4::default();
     let mut px = f64x4::default();
     let mut qx = f64x4::default();
 
     if dobig {
-      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+    }
 
     if dosmall {
-      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.blend(rx, px);
@@ -589,11 +602,6 @@ impl f64x4 {
     (asin, acos)
   }
 
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
-  }
   #[allow(non_upper_case_globals)]
   pub fn acos(self) -> Self {
     // Based on the Agner Fog "vector class library":
@@ -635,19 +643,25 @@ impl f64x4 {
 
     let dobig = big.any();
     let dosmall = !big.all();
-    
+
     let mut rx = f64x4::default();
     let mut sx = f64x4::default();
     let mut px = f64x4::default();
     let mut qx = f64x4::default();
 
     if dobig {
-      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
     if dosmall {
-      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.blend(rx, px);
@@ -716,19 +730,25 @@ impl f64x4 {
 
     let dobig = big.any();
     let dosmall = !big.all();
-    
+
     let mut rx = f64x4::default();
     let mut sx = f64x4::default();
     let mut px = f64x4::default();
     let mut qx = f64x4::default();
 
     if dobig {
-      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
     if dosmall {
-      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.blend(rx, px);

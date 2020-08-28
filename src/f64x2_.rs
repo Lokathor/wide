@@ -377,21 +377,35 @@ impl f64x2 {
       }
     }
   }
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
-  }
 
   #[inline]
   #[must_use]
   pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
     pick! {
-      if #[cfg(all(target_feature="fma"))] {
-        Self { sse: fused_mul_neg_add_m128d(self.sse, m.sse, a.sse) }
-      } else {
-        a - (self * m)
-      }
+        if #[cfg(all(target_feature="fma"))] {
+          Self { sse: fused_mul_neg_add_m128d(self.sse, m.sse, a.sse) }
+        } else {
+          a - (self * m)
+        }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
+    pick! {
+        if #[cfg(all(target_feature="fma"))] {
+          Self { sse: fused_mul_neg_sub_m128d(self.sse, m.sse, a.sse) }
+        } else {
+          -(self * m) - a
+        }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn flip_signs(self, signs: Self) -> Self {
+    self ^ (signs & Self::from(-0.0))
   }
 
   #[allow(non_upper_case_globals)]
@@ -435,19 +449,25 @@ impl f64x2 {
 
     let dobig = big.any();
     let dosmall = !big.all();
-    
+
     let mut rx = f64x2::default();
     let mut sx = f64x2::default();
     let mut px = f64x2::default();
     let mut qx = f64x2::default();
 
     if dobig {
-      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
     if dosmall {
-      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.blend(rx, px);
@@ -477,17 +497,6 @@ impl f64x2 {
     let acos = big.blend(z3, z4);
 
     (asin, acos)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="fma"))] {
-        Self { sse: fused_mul_neg_sub_m128d(self.sse, m.sse, a.sse) }
-      } else {
-        -(self * m) - a
-      }
   }
 
   #[allow(non_upper_case_globals)]
@@ -531,19 +540,25 @@ impl f64x2 {
 
     let dobig = big.any();
     let dosmall = !big.all();
-    
+
     let mut rx = f64x2::default();
     let mut sx = f64x2::default();
     let mut px = f64x2::default();
     let mut qx = f64x2::default();
 
     if dobig {
-      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
     if dosmall {
-      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.blend(rx, px);
@@ -568,11 +583,6 @@ impl f64x2 {
     let acos = big.blend(z3, z4);
 
     acos
-  }
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
   }
 
   #[allow(non_upper_case_globals)]
@@ -616,19 +626,25 @@ impl f64x2 {
 
     let dobig = big.any();
     let dosmall = !big.all();
-    
+
     let mut rx = f64x2::default();
     let mut sx = f64x2::default();
     let mut px = f64x2::default();
     let mut qx = f64x2::default();
 
     if dobig {
-      rx = x3.mul_add(R3asin, x2 * R2asin) + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx = x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
     if dosmall {
-      px = x3.mul_add(P3asin, P0asin) +  x4.mul_add(P4asin, x1 * P1asin) + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5) + x3.mul_add(Q3asin, x1*Q1asin) + x2.mul_add(Q2asin, Q0asin);
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.blend(rx, px);
@@ -895,39 +911,22 @@ impl f64x2 {
     const_f64_as_f64x2!(VM_SMALLEST_NORMAL, 1.17549435E-38);
 
     let x1 = self;
-    dbg!(&x1);
     let x = Self::fraction_2(x1);
-    dbg!(&x);
     let e = Self::exponent(x1);
-    dbg!(&e);
     let mask = x.cmp_gt(VM_SQRT2 * f64x2::HALF);
-    dbg!(&mask);
     let x = (!mask).blend(x + x, x);
-    dbg!(&x);
     let fe = mask.blend(e + Self::ONE, e);
-    dbg!(&fe);
     let x = x - Self::ONE;
-    dbg!(&x);
     let px = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
-    dbg!(&px);
     let x2 = x * x;
-    dbg!(&x2);
     let px = x2 * x * px;
-    dbg!(&px);
     let qx = polynomial_5n!(x, Q0, Q1, Q2, Q3, Q4, Q5);
-    dbg!(&qx);
     let res = px / qx;
-    dbg!(&res);
     let res = fe.mul_add(LN2F_LO, res);
-    dbg!(&res);
     let res = res + x2.mul_neg_add(f64x2::HALF, x);
-    dbg!(&res);
     let res = fe.mul_add(LN2F_HI, res);
-    dbg!(&res);
     let overflow = !self.is_finite();
-    dbg!(&overflow);
     let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
-    dbg!(&underflow);
     let mask = overflow | underflow;
     if !mask.any() {
       res
@@ -1064,7 +1063,7 @@ impl Not for f64x2 {
       if #[cfg(target_feature="sse2")] {
         Self { sse: self.sse.not() }
       } else {
-            dbg!(&self.arr[0].to_bits());
+
 
         // NOTE: Fix this to work whenn self.arr[0] == 0 to ensure ln() works for i586
         Self { arr: [

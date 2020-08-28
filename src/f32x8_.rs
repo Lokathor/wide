@@ -578,11 +578,6 @@ impl f32x8 {
       }
     }
   }
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
-  }
 
   #[inline]
   #[must_use]
@@ -598,6 +593,13 @@ impl f32x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn flip_signs(self, signs: Self) -> Self {
+    self ^ (signs & Self::from(-0.0))
+  }
+
   #[allow(non_upper_case_globals)]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
@@ -1115,7 +1117,14 @@ impl Not for f32x8 {
 
 #[must_use]
 #[inline]
-fn polynomial_4(x: f32x8, c0: f32x8, c1: f32x8, c2: f32x8, c3: f32x8, c4: f32x8) -> f32x8 {
+fn polynomial_4(
+  x: f32x8,
+  c0: f32x8,
+  c1: f32x8,
+  c2: f32x8,
+  c3: f32x8,
+  c4: f32x8,
+) -> f32x8 {
   let x2 = x * x;
   let x4 = x2 * x2;
   c3.mul_add(x, c2).mul_add(x2, c1.mul_add(x, c0) + c4 * x4)

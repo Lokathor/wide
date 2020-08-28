@@ -204,6 +204,7 @@ impl f32x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn cmp_ne(self, rhs: Self) -> Self {
@@ -358,6 +359,7 @@ impl f32x4 {
     let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
     cast(out)
   }
+
   #[inline]
   #[must_use]
   pub fn round(self) -> Self {
@@ -444,11 +446,6 @@ impl f32x4 {
       }
     }
   }
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
-  }
 
   #[inline]
   #[must_use]
@@ -460,6 +457,24 @@ impl f32x4 {
         a - (self * m)
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_neg_sub_m128(self.sse, m.sse, a.sse) }
+      } else {
+        -(self * m) - a
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn flip_signs(self, signs: Self) -> Self {
+    self ^ (signs & Self::from(-0.0))
   }
 
   #[allow(non_upper_case_globals)]
@@ -501,17 +516,6 @@ impl f32x4 {
     (asin, acos)
   }
 
-  #[inline]
-  #[must_use]
-  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_neg_sub_m128(self.sse, m.sse, a.sse) }
-      } else {
-        -(self * m) - a
-      }
-    }
-  }
   #[allow(non_upper_case_globals)]
   pub fn asin(self) -> Self {
     // Based on the Agner Fog "vector class library":
@@ -635,6 +639,7 @@ impl f32x4 {
 
     (sin1, cos1)
   }
+
   #[inline]
   #[must_use]
   pub fn sin(self) -> Self {
@@ -946,7 +951,14 @@ impl f32x4 {
 
 #[must_use]
 #[inline]
-fn polynomial_4(x: f32x4, c0: f32x4, c1: f32x4, c2: f32x4, c3: f32x4, c4: f32x4) -> f32x4 {
+fn polynomial_4(
+  x: f32x4,
+  c0: f32x4,
+  c1: f32x4,
+  c2: f32x4,
+  c3: f32x4,
+  c4: f32x4,
+) -> f32x4 {
   let x2 = x * x;
   let x4 = x2 * x2;
   c3.mul_add(x, c2).mul_add(x2, c1.mul_add(x, c0) + c4 * x4)
