@@ -269,6 +269,91 @@ fn impl_f64x4_flip_signs() {
   assert_eq!(expected, actual);
 }
 
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "avx")]
+#[test]
+fn impl_f64x4_asin_acos() {
+  let inc = 1.0 / 2501.0 / 4.0;
+  for x in -2500..=2500 {
+    let base = (x * 4) as f64 * inc;
+    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc];
+    let (actual_asins, actual_acoses) = f64x4::from(origs).asin_acos();
+    for i in 0..4 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f64x4, expected: f64| {
+        let actual_arr: [f64; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0000006,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("asin", actual_asins, orig.asin());
+      check("acos", actual_acoses, orig.acos());
+    }
+  }
+}
+
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "avx")]
+#[test]
+fn impl_f64x4_asin() {
+  let inc = 1.0 / 2501.0 / 4.0;
+  for x in -2500..=2500 {
+    let base = (x * 4) as f64 * inc;
+    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc];
+    let actual_asins = f64x4::from(origs).asin();
+    for i in 0..4 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f64x4, expected: f64| {
+        let actual_arr: [f64; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0000006,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("asin", actual_asins, orig.asin());
+    }
+  }
+}
+
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "avx")]
+#[test]
+fn impl_f64x4_acos() {
+  let inc = 1.0 / 2501.0 / 4.0;
+  for x in -2500..=2500 {
+    let base = (x * 4) as f64 * inc;
+    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc];
+    let actual_acoses = f64x4::from(origs).acos();
+    for i in 0..4 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f64x4, expected: f64| {
+        let actual_arr: [f64; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0000006,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("acos", actual_acoses, orig.acos());
+    }
+  }
+}
+
 #[test]
 fn impl_f64x4_sin_cos() {
   for x in -2500..=2500 {

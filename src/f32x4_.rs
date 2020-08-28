@@ -451,6 +451,119 @@ impl f32x4 {
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
+  pub fn asin_acos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
+    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
+    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
+    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
+    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
+
+    let xa = self.abs();
+    let big = xa.cmp_ge(f32x4::splat(0.5));
+
+    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
+    let x2 = xa * xa;
+    let x3 = big.blend(x1, x2);
+
+    let xb = x1.sqrt();
+
+    let x4 = big.blend(xb, xa);
+
+    let z = polynomial_4(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = z.mul_add(x3 * x4, x4);
+
+    let z1 = z + z;
+
+    // acos
+    let z3 = self.cmp_lt(f32x4::ZERO).blend(f32x4::PI - z1, z1);
+    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
+    let acos = big.blend(z3, z4);
+
+    // asin
+    let z3 = f32x4::FRAC_PI_2 - z1;
+    let asin = big.blend(z3, z);
+    let asin = asin.flip_signs(self);
+
+    (asin, acos)
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn asin(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
+    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
+    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
+    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
+    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
+
+    let xa = self.abs();
+    let big = xa.cmp_ge(f32x4::splat(0.5));
+
+    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
+    let x2 = xa * xa;
+    let x3 = big.blend(x1, x2);
+
+    let xb = x1.sqrt();
+
+    let x4 = big.blend(xb, xa);
+
+    let z = polynomial_4(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = z.mul_add(x3 * x4, x4);
+
+    let z1 = z + z;
+
+    // asin
+    let z3 = f32x4::FRAC_PI_2 - z1;
+    let asin = big.blend(z3, z);
+    let asin = asin.flip_signs(self);
+
+    asin
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
+  pub fn acos(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
+    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
+    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
+    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
+    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
+
+    let xa = self.abs();
+    let big = xa.cmp_ge(f32x4::splat(0.5));
+
+    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
+    let x2 = xa * xa;
+    let x3 = big.blend(x1, x2);
+
+    let xb = x1.sqrt();
+
+    let x4 = big.blend(xb, xa);
+
+    let z = polynomial_4(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = z.mul_add(x3 * x4, x4);
+
+    let z1 = z + z;
+
+    // acos
+    let z3 = self.cmp_lt(f32x4::ZERO).blend(f32x4::PI - z1, z1);
+    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
+    let acos = big.blend(z3, z4);
+
+    acos
+  }
+
+  #[inline]
+  #[must_use]
+  #[allow(non_upper_case_globals)]
   pub fn sin_cos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -690,4 +803,12 @@ impl f32x4 {
   pub fn log10(self) -> Self {
     Self::ln(self) * Self::LOG10_E
   }
+}
+
+#[must_use]
+#[inline]
+fn polynomial_4(x: f32x4, c0: f32x4, c1: f32x4, c2: f32x4, c3: f32x4, c4: f32x4) -> f32x4 {
+  let x2 = x * x;
+  let x4 = x2 * x2;
+  c3.mul_add(x, c2).mul_add(x2, c1.mul_add(x, c0) + c4 * x4)
 }
