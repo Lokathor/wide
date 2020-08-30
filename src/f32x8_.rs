@@ -951,6 +951,40 @@ impl f32x8 {
     !cast::<_, f32x8>(t2).cmp_eq(f32x8::ZERO)
   }
 
+  pub fn reduce_add(self) -> f32 {
+    pick! {
+      // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
+      if #[cfg(target_feature="avx")]{
+        let hi_quad = extract_m128_from_m256!(self.avx,1);
+        let lo_quad = cast_to_m128_from_m256(self.avx);
+        let sum_quad = add_m128(lo_quad,hi_quad);
+        let lo_dual = sum_quad;
+        let hi_dual = move_high_low_m128(sum_quad,sum_quad);
+        let sum_dual = add_m128(lo_dual,hi_dual);
+        let lo = sum_dual;
+        let hi = shuffle_ai_f32_all_m128!(sum_dual,[1,0,0,0]);
+        let sum = add_m128_s(lo, hi);
+        get_f32_from_m128_s(sum)
+      }
+      else if #[cfg(target_feature="sse3")] {
+          let a = add_horizontal_m128(self.sse0, self.sse0);
+          let b = add_horizontal_m128(a, a);
+          let c = add_horizontal_m128(self.sse1, self.sse1);
+          let d = add_horizontal_m128(c, c);
+          dbg!(c);
+          dbg!(d);
+          let sum = add_m128_s(b, d);
+          get_f32_from_m128_s(sum)
+      } else if #[cfg(target_feature="sse")] {
+          let v1 :f32 = self.sse0.to_array().iter().sum();
+          let v2 :f32 = self.sse1.to_array().iter().sum();
+          v1 + v2
+      } else {
+          self.arr.iter().sum()
+      }
+    }
+  }
+
   /// Natural log (ln(x))
   #[inline]
   #[must_use]

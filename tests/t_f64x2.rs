@@ -555,8 +555,8 @@ fn impl_f64x2_pow_single() {
   }
 }
 
-// Fails because of the signbits issue see f64x4_pow_nan
-//#[test]
+#[cfg(target_feature = "sse")]
+#[test]
 fn impl_f64x2_pow_nan() {
   for f in [3.4].iter().copied() {
     let expected: [f64; 2] = cast(f64x2::splat(-4.5 as f64).powf(f));
@@ -613,4 +613,28 @@ fn impl_f64x2_pow_multiple() {
       assert!((expected - res[i]).abs() < 0.0001);
     }
   }
+}
+
+#[test]
+fn impl_f64x2_reduce_add() {
+  let p = f64x2::splat(0.001);
+  assert_eq!(p.reduce_add(), 0.004);
+}
+
+#[test]
+fn impl_f64x2_sum() {
+  let mut p = Vec::with_capacity(250_000);
+  for _ in 0..500_000 {
+    p.push(f64x2::splat(0.001));
+  }
+  let now = std::time::Instant::now();
+  let sum: f64 = p.iter().map(|x| x.reduce_add()).sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum, duration);
+
+  let p = vec![0.001; 1_000_000];
+  let now = std::time::Instant::now();
+  let sum2: f64 = p.iter().sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum2, duration);
 }

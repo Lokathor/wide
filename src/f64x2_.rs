@@ -894,8 +894,24 @@ impl f64x2 {
   }
 
   fn sign_bit(self) -> Self {
-    let sign_mask = f64x2::from(-0.0);
-    self & sign_mask
+    let t1 = cast::<_, i64x2>(self);
+    let t2 = t1 >> 63;
+    !cast::<_, f64x2>(t2).cmp_eq(f64x2::ZERO)
+  }
+
+  pub fn reduce_add(self) -> f64 {
+    pick! {
+    if #[cfg(target_feature="sse3")] {
+      let a = add_horizontal_m128d(self.sse, self.sse);
+      a.to_array()[0]
+        } else if #[cfg(target_feature="sse")] {
+            let v0:f64 = self.sse0.to_array().iter().sum();
+            let v1:f64 = self.sse1.to_array().iter().sum();
+            v0 + v1
+          } else {
+            self.arr.iter().sum()
+          }
+        }
   }
 
   #[inline]
@@ -1054,20 +1070,19 @@ impl f64x2 {
       z,
     );
 
-    // let xsign = self.sign_bit();
-    // let z = if xsign.any() {
-    //   // Y into an integer
-    //   let yi = y.cmp_eq(y.round());
-    //   // Is y odd?
-    //   let yodd = cast::<_, i64x2>(y.round_int() << 63).round_float();
+    let xsign = self.sign_bit();
+    let z = if xsign.any() {
+      // Y into an integer
+      let yi = y.cmp_eq(y.round());
+      // Is y odd?
+      let yodd = cast::<_, i64x2>(y.round_int() << 63).round_float();
 
-    //   let z1 =
-    //     yi.blend(z | yodd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
-    //   dbg!(&z1);
-    //   z1
-    // } else {
-    //   z
-    // };
+      let z1 =
+        yi.blend(z | yodd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+      xsign.blend(z1, z)
+    } else {
+      z
+    };
 
     let xfinite = self.is_finite();
     let yfinite = y.is_finite();

@@ -504,7 +504,8 @@ fn impl_f64x4_pow_single() {
   }
 }
 
-//#[test]
+#[cfg(target_feature = "sse")]
+#[test]
 // NOTE this fails due the signbit not working with the non-sse blend
 // it only affects the case where there is a nan result
 fn impl_f64x4_pow_nan() {
@@ -549,4 +550,28 @@ fn impl_f64x4_pow_multiple() {
       assert!((expected - res[i]).abs() < 0.0001);
     }
   }
+}
+
+#[test]
+fn impl_f64x4_reduce_add() {
+  let p = f64x4::splat(0.001);
+  assert_eq!(p.reduce_add(), 0.004);
+}
+
+#[test]
+fn impl_f64x4_sum() {
+  let mut p = Vec::with_capacity(250_000);
+  for _ in 0..250_000 {
+    p.push(f64x4::splat(0.001));
+  }
+  let now = std::time::Instant::now();
+  let sum: f64 = p.iter().map(|x| x.reduce_add()).sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum, duration);
+
+  let p = vec![0.001; 1_000_000];
+  let now = std::time::Instant::now();
+  let sum2: f64 = p.iter().sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum2, duration);
 }

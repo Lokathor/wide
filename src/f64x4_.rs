@@ -1010,7 +1010,32 @@ impl f64x4 {
   }
 
   fn sign_bit(self) -> Self {
-    self & Self::from(-0.0)
+    let t1 = cast::<_, i64x4>(self);
+    let t2 = t1 >> 63;
+    !cast::<_, f64x4>(t2).cmp_eq(f64x4::ZERO)
+  }
+
+  pub fn reduce_add(self) -> f64 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
+        let lo = cast_to_m128d_from_m256d(self.avx);
+        let hi = extract_m128d_from_m256d!(self.avx,1);
+        let lo = add_m128d(lo,hi);
+        let hi64 = unpack_high_m128d(lo,lo);
+        let sum = add_m128d_s(lo,hi64);
+        get_f64_from_m128d_s(sum)
+      } else if #[cfg(target_feature="sse3")] {
+        let a = add_horizontal_m256d(self.sse, self.sse);
+        a.to_array()[0]
+      } else if #[cfg(target_feature="sse")] {
+        let v0:f64 = self.sse0.to_array().iter().sum();
+        let v1:f64 = self.sse1.to_array().iter().sum();
+        v0 + v1
+      } else {
+        self.arr.iter().sum()
+      }
+    }
   }
 
   /// Natural log (ln(x))

@@ -531,3 +531,27 @@ fn impl_f32x4_pow_n() {
     }
   }
 }
+
+#[test]
+fn impl_f32x4_reduce_add() {
+  let p = f32x4::splat(0.001);
+  assert_eq!(p.reduce_add(), 0.004);
+}
+
+#[test]
+fn impl_f32x4_sum() {
+  let mut p = Vec::with_capacity(250_000);
+  for _ in 0..250_000 {
+    p.push(f32x4::splat(0.001));
+  }
+  let now = std::time::Instant::now();
+  let sum: f32 = p.iter().map(|x| x.reduce_add()).sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum, duration);
+
+  let p = vec![0.001; 1_000_000];
+  let now = std::time::Instant::now();
+  let sum2: f32 = p.iter().sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum2, duration);
+}
