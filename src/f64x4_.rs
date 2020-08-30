@@ -1026,8 +1026,9 @@ impl f64x4 {
         let sum = add_m128d_s(lo,hi64);
         get_f64_from_m128d_s(sum)
       } else if #[cfg(target_feature="sse3")] {
-        let a = add_horizontal_m256d(self.sse, self.sse);
-        a.to_array()[0]
+        let a = add_horizontal_m128d(self.sse0, self.sse0);
+        let b = add_horizontal_m128d(self.sse1, self.sse1);
+        get_f64_from_m128d_s(a) + get_f64_from_m128d_s(b)
       } else if #[cfg(target_feature="sse")] {
         let v0:f64 = self.sse0.to_array().iter().sum();
         let v1:f64 = self.sse1.to_array().iter().sum();

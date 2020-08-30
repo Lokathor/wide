@@ -971,8 +971,6 @@ impl f32x8 {
           let b = add_horizontal_m128(a, a);
           let c = add_horizontal_m128(self.sse1, self.sse1);
           let d = add_horizontal_m128(c, c);
-          dbg!(c);
-          dbg!(d);
           let sum = add_m128_s(b, d);
           get_f32_from_m128_s(sum)
       } else if #[cfg(target_feature="sse")] {
