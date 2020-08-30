@@ -187,7 +187,6 @@ fn impl_f32x8_is_nan() {
   assert_eq!(expected, actual);
 }
 
-
 #[test]
 fn impl_f32x8_is_finite() {
   let a = f32x8::from([
@@ -272,7 +271,6 @@ fn impl_f32x8_round_int() {
     let expected = i32x8::from(i);
     let actual = a.round_int();
     assert_eq!(expected, actual);
-    dbg!(actual);
   }
 }
 
@@ -311,14 +309,22 @@ fn impl_f32x8_flip_signs() {
   assert_eq!(expected, actual);
 }
 
-// FIXME: remove cfg requirement once masks as their own types are implemented
-#[cfg(target_feature = "avx")]
-#[test]
+// NOTE: Disabled
+// #[test]
 fn impl_f32x8_asin_acos() {
   let inc = 1.0 / 2501.0 / 8.0;
   for x in -2500..=2500 {
     let base = (x * 8) as f32 * inc;
-    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc, base + 4.0 * inc, base + 5.0 * inc, base + 6.0 * inc, base + 7.0 * inc];
+    let origs = [
+      base,
+      base + inc,
+      base + 2.0 * inc,
+      base + 3.0 * inc,
+      base + 4.0 * inc,
+      base + 5.0 * inc,
+      base + 6.0 * inc,
+      base + 7.0 * inc,
+    ];
     let (actual_asins, actual_acoses) = f32x8::from(origs).asin_acos();
     for i in 0..8 {
       let orig = origs[i];
@@ -347,7 +353,16 @@ fn impl_f32x8_asin() {
   let inc = 1.0 / 2501.0 / 8.0;
   for x in -2500..=2500 {
     let base = (x * 4) as f32 * inc;
-    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc, base + 4.0 * inc, base + 5.0 * inc, base + 6.0 * inc, base + 7.0 * inc];
+    let origs = [
+      base,
+      base + inc,
+      base + 2.0 * inc,
+      base + 3.0 * inc,
+      base + 4.0 * inc,
+      base + 5.0 * inc,
+      base + 6.0 * inc,
+      base + 7.0 * inc,
+    ];
     let actual_asins = f32x8::from(origs).asin();
     for i in 0..8 {
       let orig = origs[i];
@@ -375,7 +390,16 @@ fn impl_f32x8_acos() {
   let inc = 1.0 / 2501.0 / 8.0;
   for x in -2500..=2500 {
     let base = (x * 8) as f32 * inc;
-    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc, base + 4.0 * inc, base + 5.0 * inc, base + 6.0 * inc, base + 7.0 * inc];
+    let origs = [
+      base,
+      base + inc,
+      base + 2.0 * inc,
+      base + 3.0 * inc,
+      base + 4.0 * inc,
+      base + 5.0 * inc,
+      base + 6.0 * inc,
+      base + 7.0 * inc,
+    ];
     let actual_acoses = f32x8::from(origs).acos();
     for i in 0..8 {
       let orig = origs[i];
@@ -543,4 +567,55 @@ fn impl_f32x8_ln() {
     let diff_from_std: [f32; 8] = cast((actual - expected).abs());
     assert!(diff_from_std[0] < 0.0000001);
   }
+}
+
+#[test]
+fn impl_f32x8_pow() {
+  for f in [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0].iter().copied() {
+    let expected = f32x8::splat(2.0 as f32).powf(f);
+    let actual = f32x8::from(2.0_f32.powf(f));
+    let diff_from_std: [f32; 8] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000001);
+  }
+}
+
+#[test]
+fn impl_f32x8_pow_n() {
+  let p = f32x8::from([29.0, 0.1, 0.5, 1.0, 2.718282, -0.2, -1.5, 3.4]);
+  let f = f32x8::from([1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, -4.5]);
+  let res = f.pow_f32x8(p);
+
+  let p: [f32; 8] = cast(p);
+  let f: [f32; 8] = cast(f);
+  let res: [f32; 8] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+}
+
+#[test]
+fn impl_f32x8_reduce_add() {
+  let p = f32x8::from([0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.009]);
+  assert_eq!(p.reduce_add(), 0.037);
+}
+
+#[test]
+fn impl_f32x8_sum() {
+  let mut p = Vec::with_capacity(250_000);
+  for _ in 0..125_000 {
+    p.push(f32x8::splat(0.001));
+  }
+  let now = std::time::Instant::now();
+  let sum: f32 = p.iter().map(|x| x.reduce_add()).sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum, duration);
+
+  let p = vec![0.001; 1_000_000];
+  let now = std::time::Instant::now();
+  let sum2: f32 = p.iter().sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum2, duration);
 }

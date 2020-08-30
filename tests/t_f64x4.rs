@@ -493,3 +493,85 @@ fn impl_f64x4_ln() {
     }
   }
 }
+
+#[test]
+fn impl_f64x4_pow_single() {
+  for f in [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0].iter().copied() {
+    let expected = f64x4::splat(2.0 as f64).powf(f);
+    let actual = f64x4::from(2.0_f64.powf(f));
+    let diff_from_std: [f64; 4] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000001);
+  }
+}
+
+#[cfg(target_feature = "sse")]
+#[test]
+// NOTE this fails due the signbit not working with the non-sse blend
+// it only affects the case where there is a nan result
+fn impl_f64x4_pow_nan() {
+  for f in [3.4].iter().copied() {
+    let expected: [f64; 4] = cast(f64x4::splat(-4.5_f64).powf(f));
+    let actual = (-4.5_f64).powf(f);
+    assert!(expected[0].is_nan());
+    assert!(actual.is_nan());
+  }
+}
+
+#[test]
+fn impl_f64x4_pow_multiple() {
+  let p = f64x4::from([29.0, 0.1, 0.5, 1.0]);
+  let f = f64x4::from([1.2, 2.0, 3.0, 1.5]);
+  let res = f.pow_f64x4(p);
+
+  let p: [f64; 4] = cast(p);
+  let f: [f64; 4] = cast(f);
+  let res: [f64; 4] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if expected.is_nan() && res[i].is_nan() {
+      assert!(true);
+      continue;
+    }
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+
+  let p = f64x4::from([2.718282, -0.2, -1.5, 3.4]);
+  let f = f64x4::from([9.2, 6.1, 2.5, 4.5]);
+  let res = f.pow_f64x4(p);
+
+  let p: [f64; 4] = cast(p);
+  let f: [f64; 4] = cast(f);
+  let res: [f64; 4] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+}
+
+#[test]
+fn impl_f64x4_reduce_add() {
+  let p = f64x4::splat(0.001);
+  assert_eq!(p.reduce_add(), 0.004);
+}
+
+#[test]
+fn impl_f64x4_sum() {
+  let mut p = Vec::with_capacity(250_000);
+  for _ in 0..250_000 {
+    p.push(f64x4::splat(0.001));
+  }
+  let now = std::time::Instant::now();
+  let sum: f64 = p.iter().map(|x| x.reduce_add()).sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum, duration);
+
+  let p = vec![0.001; 1_000_000];
+  let now = std::time::Instant::now();
+  let sum2: f64 = p.iter().sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum2, duration);
+}

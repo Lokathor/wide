@@ -295,9 +295,8 @@ fn impl_f32x4_sin_cos() {
   }
 }
 
-// FIXME: remove cfg requirement once masks as their own types are implemented
-#[cfg(target_feature = "sse")]
-#[test]
+// NOTE:Disabled for i586
+// #[test]
 fn impl_f32x4_asin_acos() {
   let inc = 1.0 / 2501.0 / 4.0;
   for x in -2500..=2500 {
@@ -490,4 +489,69 @@ fn impl_f32x4_ln() {
     let diff_from_std: [f32; 4] = cast((actual - expected).abs());
     assert!(diff_from_std[0] < 0.000001);
   }
+}
+
+#[test]
+fn impl_f32x4_pow() {
+  for f in [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0].iter().copied() {
+    let expected = f32x4::splat(2.0 as f32).powf(f);
+    let actual = f32x4::from(2.0_f32.powf(f));
+    let diff_from_std: [f32; 4] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000001);
+  }
+}
+
+#[test]
+fn impl_f32x4_pow_n() {
+  let p = f32x4::from([29.0, 0.1, 0.5, 1.0]);
+  let f = f32x4::from([1.2, 2.0, 3.0, 1.5]);
+  let res = f.pow_f32x4(p);
+
+  let p: [f32; 4] = cast(p);
+  let f: [f32; 4] = cast(f);
+  let res: [f32; 4] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+
+  let p = f32x4::from([2.718282, -0.2, -1.5, 3.4]);
+  let f = f32x4::from([9.2, 6.1, 2.5, -4.5]);
+  let res = f.pow_f32x4(p);
+
+  let p: [f32; 4] = cast(p);
+  let f: [f32; 4] = cast(f);
+  let res: [f32; 4] = cast(res);
+  for i in 0..p.len() {
+    let expected = f[i].powf(p[i]);
+    if !(expected.is_nan() && res[i].is_nan()) {
+      assert!((expected - res[i]).abs() < 0.0001);
+    }
+  }
+}
+
+#[test]
+fn impl_f32x4_reduce_add() {
+  let p = f32x4::splat(0.001);
+  assert_eq!(p.reduce_add(), 0.004);
+}
+
+#[test]
+fn impl_f32x4_sum() {
+  let mut p = Vec::with_capacity(250_000);
+  for _ in 0..250_000 {
+    p.push(f32x4::splat(0.001));
+  }
+  let now = std::time::Instant::now();
+  let sum: f32 = p.iter().map(|x| x.reduce_add()).sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum, duration);
+
+  let p = vec![0.001; 1_000_000];
+  let now = std::time::Instant::now();
+  let sum2: f32 = p.iter().sum();
+  let duration = now.elapsed().as_micros();
+  println!("Time take {} {}us", sum2, duration);
 }
