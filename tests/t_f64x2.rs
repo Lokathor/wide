@@ -618,7 +618,7 @@ fn impl_f64x2_pow_multiple() {
 #[test]
 fn impl_f64x2_reduce_add() {
   let p = f64x2::splat(0.001);
-  assert_eq!(p.reduce_add(), 0.004);
+  assert_eq!(p.reduce_add(), 0.002);
 }
 
 #[test]
