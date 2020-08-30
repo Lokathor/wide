@@ -811,17 +811,13 @@ impl f32x4 {
 
   pub fn reduce_add(self) -> f32 {
     pick! {
-      if #[cfg(target_feature="sse3")] {
-        let a = add_horizontal_m128(self.sse, self.sse);
-        let b = add_horizontal_m128(a, a);
-        get_f32_from_m128_s(b)
-      } else if #[cfg(target_feature="sse")] {
-        let v = self.sse.to_array();
-        v.iter().sum()
-      } else {
-        self.arr.iter().sum()
+    if #[cfg(target_feature="sse")] {
+          let v = self.sse.to_array();
+          v.iter().sum()
+        } else {
+          self.arr.iter().sum()
+        }
       }
-    }
   }
 
   /// Natural log (ln(x))
