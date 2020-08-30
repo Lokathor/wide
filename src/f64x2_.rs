@@ -905,9 +905,7 @@ impl f64x2 {
       let a = add_horizontal_m128d(self.sse, self.sse);
       a.to_array()[0]
         } else if #[cfg(target_feature="sse")] {
-            let v0:f64 = self.sse0.to_array().iter().sum();
-            let v1:f64 = self.sse1.to_array().iter().sum();
-            v0 + v1
+            self.sse.to_array().iter().sum()
           } else {
             self.arr.iter().sum()
           }
