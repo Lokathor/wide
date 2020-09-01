@@ -80,6 +80,15 @@ macro_rules! polynomial_2 {
   }};
 }
 
+macro_rules! polynomial_4 {
+  ($x:expr, $c0:expr, $c1:expr, $c2:expr ,$c3:expr, $c4:expr $(,)?) => {{
+    let x = $x;
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    $c3.mul_add(x, $c2).mul_add(x2, $c1.mul_add(x, $c0)) + $c4 * x4
+  }};
+}
+
 macro_rules! polynomial_5 {
   ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
     let x = $x;
