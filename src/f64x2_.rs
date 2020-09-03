@@ -901,12 +901,13 @@ impl f64x2 {
 
   pub fn reduce_add(self) -> f64 {
     pick! {
-    if #[cfg(target_feature="sse3")] {
+    if #[cfg(target_feature="ssse3")] {
       let a = add_horizontal_m128d(self.sse, self.sse);
       a.to_array()[0]
-        } else if #[cfg(target_feature="sse")] {
-            self.sse.to_array().iter().sum()
-          } else {
+        }  else if #[cfg(target_feature="sse2")] {
+          let a :[f64;2] = cast(self.sse);
+          a.iter().sum::<f64>()
+        } else  {
             self.arr.iter().sum()
           }
         }

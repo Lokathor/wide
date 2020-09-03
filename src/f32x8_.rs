@@ -973,10 +973,10 @@ impl f32x8 {
           let d = add_horizontal_m128(c, c);
           let sum = add_m128_s(b, d);
           get_f32_from_m128_s(sum)
-      } else if #[cfg(target_feature="sse")] {
-          let v1 :f32 = self.sse0.to_array().iter().sum();
-          let v2 :f32 = self.sse1.to_array().iter().sum();
-          v1 + v2
+      } else if #[cfg(target_feature="sse2")] {
+        let a :[f32;4] = cast(self.sse0);
+        let b :[f32;4] = cast(self.sse1);
+        a.iter().sum::<f32>() + b.iter().sum::<f32>()
       } else {
           self.arr.iter().sum()
       }
