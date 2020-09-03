@@ -367,7 +367,7 @@ impl i8x32 {
   pub fn cmp_lt(self, rhs: Self) -> Self {
     pick! {
         if #[cfg(target_feature="avx2")] {
-            Self { avx : cmp_lt_mask_i8_m256i(self.avx,rhs.avx) }
+            Self { avx : !(cmp_gt_mask_i8_m256i(self.avx,rhs.avx) ^ cmp_eq_mask_i8_m256i(self.avx,rhs.avx))  }
         } else if #[cfg(target_feature="sse2")] {
           Self { sse0: cmp_lt_mask_i8_m128i(self.sse0, rhs.sse0),  sse1: cmp_lt_mask_i8_m128i(self.sse1, rhs.sse1) }
       } else {
@@ -413,7 +413,7 @@ impl i8x32 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
         if #[cfg(target_feature="avx2")] {
-            avx: blend_varying_i8_m256i(f.avx, t.avx, self.avx)
+            Self { avx: blend_varying_i8_m256i(f.avx, t.avx, self.avx) }
         } else if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse),  sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
       } else {
@@ -426,7 +426,7 @@ impl i8x32 {
   pub fn abs(self) -> Self {
     pick! {
         if #[cfg(target_feature="avx2")] {
-            avx: abs_i8_m256i(f.avx, t.avx, self.avx)
+            Self { avx: abs_i8_m256i(self.avx) }
         } else if #[cfg(target_feature="ssse3")] {
         Self { sse0: abs_i8_m128i(self.sse0), sse1: abs_i8_m128i(self.sse1) }
       } else {
@@ -474,7 +474,7 @@ impl i8x32 {
     pick! {
 
         if #[cfg(target_feature="avx2")] {
-            avx: max_i8_m256i(self.avx,rhs.avx)
+            Self { avx: max_i8_m256i(self.avx,rhs.avx) }
         } else if #[cfg(target_feature="sse4.1")] {
         Self { sse0: max_i8_m128i(self.sse0,rhs.sse0), sse1: max_i8_m128i(self.sse1,rhs.sse1) }
       } else {
@@ -487,7 +487,7 @@ impl i8x32 {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
         if #[cfg(target_feature="avx2")] {
-            avx: min_i8_m256i(self.avx,rhs.avx)
+           Self { avx: min_i8_m256i(self.avx,rhs.avx) }
         } else if #[cfg(target_feature="sse4.1")] {
         Self { sse0: min_i8_m128i(self.sse0,rhs.sse0), sse1: min_i8_m128i(self.sse1,rhs.sse1) }
       } else {
