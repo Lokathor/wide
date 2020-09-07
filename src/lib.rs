@@ -949,9 +949,6 @@ from_array!(f64, f64x4, 4);
 from_array!(u64, u64x4, 4);
 from_array!(i64, i64x4, 4);
 
-
-
-
 #[allow(unused)]
 fn software_sqrt(x: f64) -> f64 {
   use core::num::Wrapping;
