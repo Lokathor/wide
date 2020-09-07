@@ -309,4 +309,36 @@ impl i32x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse)
+      }
+      else {
+        (((self.arr[0].to_bits()) < 0)) << 0 |
+        (((self.arr[1].to_bits()) < 0)) << 1 |
+        (((self.arr[2].to_bits()) < 0)) << 2 |
+        (((self.arr[3].to_bits()) < 0)) << 3
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    self.move_mask() != 0
+  }
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    // eight lanes
+    self.move_mask() == 0b1111
+  }
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
 }

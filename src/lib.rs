@@ -543,6 +543,407 @@ impl_formatter_for! {
   ([u8;16], u8x16), ([u16;8], u16x8), ([u32;8], u32x8), ([u32;4], u32x4), ([u64;2], u64x2),([u64;4], u64x4)],
 }
 
+// With const generics this could be simplified I hope
+macro_rules! from_array {
+  ($ty:ty,$dst:ident,32) => {
+    impl From<&[$ty]> for $dst {
+      fn from(src: &[$ty]) -> $dst {
+        match src.len() {
+          32 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], src[25], src[26], src[27], src[28],
+            src[29], src[30], src[31],
+          ]),
+          31 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], src[25], src[26], src[27], src[28],
+            src[29], src[30], 0 as $ty,
+          ]),
+          30 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], src[25], src[26], src[27], src[28],
+            src[29], 0 as $ty, 0 as $ty,
+          ]),
+          29 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], src[25], src[26], src[27], src[28],
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          28 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], src[25], src[26], src[27], 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          27 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], src[25], src[26], 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          26 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], src[25], 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          25 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], src[24], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          24 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], src[23], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          23 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            src[22], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          22 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], src[21],
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          21 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], src[20], 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          20 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], src[19], 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          19 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], src[18], 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          18 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], src[17], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          17 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], src[16], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          16 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          15 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          14 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          13 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          12 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          11 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          10 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          9 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          8 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          7 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          6 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          5 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          4 => $dst::from([
+            src[0], src[1], src[2], src[3], 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          3 => $dst::from([
+            src[0], src[1], src[2], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          2 => $dst::from([
+            src[0], src[1], src[2], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          1 => $dst::from([
+            src[0], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          _ => panic!(
+            "Converting from an array larger than what can be stored in $dst"
+          ),
+        }
+      }
+    }
+  };
+  ($ty:ty,$dst:ident,16) => {
+    impl From<&[$ty]> for $dst {
+      fn from(src: &[$ty]) -> $dst {
+        match src.len() {
+          16 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            src[15],
+          ]),
+          15 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], src[14],
+            0 as $ty,
+          ]),
+          14 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], src[13], 0 as $ty,
+            0 as $ty,
+          ]),
+          13 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], src[12], 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          12 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], src[11], 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          11 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], src[10], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          10 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], src[9], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          9 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            src[8], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty,
+          ]),
+          8 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty,
+          ]),
+          7 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty,
+          ]),
+          6 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty,
+          ]),
+          5 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          4 => $dst::from([
+            src[0], src[1], src[2], src[3], 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          3 => $dst::from([
+            src[0], src[1], src[2], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          2 => $dst::from([
+            src[0], src[1], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          1 => $dst::from([
+            src[0], 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty, 0 as $ty,
+            0 as $ty, 0 as $ty, 0 as $ty,
+          ]),
+          _ => panic!(
+            "Converting from an array larger than what can be stored in $dst"
+          ),
+        }
+      }
+    }
+  };
+  ($ty:ty,$dst:ident,8) => {
+    impl From<&[$ty]> for $dst {
+      fn from(src: &[$ty]) -> $dst {
+        match src.len() {
+          8 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7],
+          ]),
+          7 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], src[6], 0.0 as $ty,
+          ]),
+          6 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], src[5], 0.0 as $ty,
+            0.0 as $ty,
+          ]),
+          5 => $dst::from([
+            src[0], src[1], src[2], src[3], src[4], 0.0 as $ty, 0.0 as $ty,
+            0.0 as $ty,
+          ]),
+          4 => $dst::from([
+            src[0], src[1], src[2], src[3], 0.0 as $ty, 0.0 as $ty, 0.0 as $ty,
+            0.0 as $ty,
+          ]),
+          3 => $dst::from([
+            src[0], src[1], src[2], 0.0 as $ty, 0.0 as $ty, 0.0 as $ty,
+            0.0 as $ty, 0.0 as $ty,
+          ]),
+          2 => $dst::from([
+            src[0], src[1], 0.0 as $ty, 0.0 as $ty, 0.0 as $ty, 0.0 as $ty,
+            0.0 as $ty, 0.0 as $ty,
+          ]),
+          1 => $dst::from([
+            src[0], 0.0 as $ty, 0.0 as $ty, 0.0 as $ty, 0.0 as $ty, 0.0 as $ty,
+            0.0 as $ty, 0.0 as $ty,
+          ]),
+          _ => panic!(
+            "Converting from an array larger than what can be stored in $dst"
+          ),
+        }
+      }
+    }
+  };
+  ($ty:ty,$dst:ident,4) => {
+    impl From<&[$ty]> for $dst {
+      fn from(src: &[$ty]) -> $dst {
+        match src.len() {
+          4 => $dst::from([src[0], src[1], src[2], src[3]]),
+          3 => $dst::from([src[0], src[1], src[2], 0.0 as $ty]),
+          2 => $dst::from([src[0], src[1], 0.0 as $ty, 0.0 as $ty]),
+          1 => $dst::from([src[0], 0.0 as $ty, 0.0 as $ty, 0.0 as $ty]),
+          _ => panic!(
+            "Converting from an array larger than what can be stored in $dst"
+          ),
+        }
+      }
+    }
+  };
+}
+
+from_array!(i8, i8x32, 32);
+from_array!(i8, i8x16, 16);
+from_array!(u8, u8x16, 16);
+from_array!(i32, i32x8, 8);
+from_array!(f32, f32x8, 8);
+from_array!(f32, f32x4, 4);
+from_array!(f64, f64x4, 4);
+from_array!(u64, u64x4, 4);
+from_array!(i64, i64x4, 4);
+
 #[allow(unused)]
 fn software_sqrt(x: f64) -> f64 {
   use core::num::Wrapping;
