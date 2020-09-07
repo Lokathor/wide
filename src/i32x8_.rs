@@ -414,7 +414,7 @@ impl i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         move_mask_m256i(self.avx2)
-      } else if #[cfg(target_feature="sse2")] {
+      } else if #[cfg(target_feature="ssse3")] {
         move_mask_i8_m128i(self.sse0) << 4 ^ move_mask_i8_m128i(self.sse1)
       }
       else {
