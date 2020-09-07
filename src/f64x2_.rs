@@ -155,6 +155,42 @@ impl Div<f64> for f64x2 {
   }
 }
 
+impl Add<f64x2> for f64 {
+  type Output = f64x2;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: f64x2) -> Self::Output {
+    f64x2::splat(self).add(rhs)
+  }
+}
+
+impl Sub<f64x2> for f64 {
+  type Output = f64x2;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: f64x2) -> Self::Output {
+    f64x2::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<f64x2> for f64 {
+  type Output = f64x2;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: f64x2) -> Self::Output {
+    f64x2::splat(self).mul(rhs)
+  }
+}
+
+impl Div<f64x2> for f64 {
+  type Output = f64x2;
+  #[inline]
+  #[must_use]
+  fn div(self, rhs: f64x2) -> Self::Output {
+    f64x2::splat(self).div(rhs)
+  }
+}
+
 impl BitAnd for f64x2 {
   type Output = Self;
   #[inline]
