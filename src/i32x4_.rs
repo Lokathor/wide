@@ -318,10 +318,10 @@ impl i32x4 {
         move_mask_i8_m128i(self.sse)
       }
       else {
-        (((self.arr[0].to_bits()) < 0)) << 0 |
-        (((self.arr[1].to_bits()) < 0)) << 1 |
-        (((self.arr[2].to_bits()) < 0)) << 2 |
-        (((self.arr[3].to_bits()) < 0)) << 3
+        ((self.arr[0] < 0) as i32) << 0 |
+        ((self.arr[1] < 0) as i32) << 1 |
+        ((self.arr[2] < 0) as i32) << 2 |
+        ((self.arr[3] < 0) as i32) << 3
       }
     }
   }

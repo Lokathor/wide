@@ -331,22 +331,22 @@ impl i8x16 {
         move_mask_i8_m128i(self.sse)
       }
       else {
-        (((self.arr[0].to_bits()) < 0)) << 0 |
-        (((self.arr[1].to_bits()) < 0)) << 1 |
-        (((self.arr[2].to_bits()) < 0)) << 2 |
-        (((self.arr[3].to_bits()) < 0)) << 3 |
-        (((self.arr[4].to_bits()) < 0)) << 4 |
-        (((self.arr[5].to_bits()) < 0)) << 5 |
-        (((self.arr[6].to_bits()) < 0)) << 6 |
-        (((self.arr[7].to_bits()) < 0)) << 7 |
-        (((self.arr[8].to_bits()) < 0)) << 8 |
-        (((self.arr[9].to_bits()) < 0)) << 9 |
-        (((self.arr[10].to_bits()) < 0)) << 10 |
-        (((self.arr[11].to_bits()) < 0)) << 11 |
-        (((self.arr[12].to_bits()) < 0)) << 12 |
-        (((self.arr[13].to_bits()) < 0)) << 13 |
-        (((self.arr[14].to_bits()) < 0)) << 14 |
-        (((self.arr[15].to_bits()) < 0)) << 15
+        ((self.arr[0] < 0) as i32) << 0 |
+        ((self.arr[1] < 0) as i32) << 1 |
+        ((self.arr[2] < 0) as i32) << 2 |
+        ((self.arr[3] < 0) as i32) << 3 |
+        ((self.arr[4] < 0) as i32) << 4 |
+        ((self.arr[5] < 0) as i32) << 5 |
+        ((self.arr[6] < 0) as i32) << 6 |
+        ((self.arr[7] < 0) as i32) << 7 |
+        ((self.arr[8] < 0) as i32) << 8 |
+        ((self.arr[9] < 0) as i32) << 9 |
+        ((self.arr[10] < 0) as i32) << 10 |
+        ((self.arr[11] < 0) as i32) << 11 |
+        ((self.arr[12] < 0) as i32) << 12 |
+        ((self.arr[13] < 0) as i32) << 13 |
+        ((self.arr[14] < 0) as i32) << 14 |
+        ((self.arr[15] < 0) as i32) << 15
       }
     }
   }
