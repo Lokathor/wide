@@ -157,6 +157,42 @@ impl Div for f32x8 {
   }
 }
 
+impl Add<f32> for f32x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: f32) -> Self::Output {
+    self.add(Self::splat(rhs))
+  }
+}
+
+impl Sub<f32> for f32x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: f32) -> Self::Output {
+    self.sub(Self::splat(rhs))
+  }
+}
+
+impl Mul<f32> for f32x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: f32) -> Self::Output {
+    self.mul(Self::splat(rhs))
+  }
+}
+
+impl Div<f32> for f32x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn div(self, rhs: f32) -> Self::Output {
+    self.div(Self::splat(rhs))
+  }
+}
+
 impl BitAnd for f32x8 {
   type Output = Self;
   #[inline]
