@@ -56,6 +56,30 @@ fn impl_div_for_f64x4() {
 }
 
 #[test]
+fn impl_sub_const_for_f64x4() {
+  let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
+  let expected = f64x4::from([-1.0, 0.0, 1.0, 2.0]);
+  let actual = a - 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_mul_const_for_f64x4() {
+  let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
+  let expected = f64x4::from([2.0, 4.0, 6.0, 8.0]);
+  let actual = a * 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_div_const_for_f64x4() {
+  let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
+  let expected = f64x4::from([0.5, 1.0, 1.5, 2.0]);
+  let actual = a / 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_bitand_for_f64x4() {
   let a = f64x4::from([0.0, 0.0, 1.0, 1.0]);
   let b = f64x4::from([0.0, 1.0, 0.0, 1.0]);

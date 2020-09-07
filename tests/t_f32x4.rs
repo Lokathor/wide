@@ -29,6 +29,38 @@ fn impl_add_for_f32x4() {
 }
 
 #[test]
+fn impl_add_const_for_f32x4() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let expected = f32x4::from([6.0, 7.0, 8.0, 9.0]);
+  let actual = a + 5.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_sub_const_for_f32x4() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let expected = f32x4::from([-1.0, 0.0, 1.0, 2.0]);
+  let actual = a - 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_mul_const_for_f32x4() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let expected = f32x4::from([2.0, 4.0, 6.0, 8.0]);
+  let actual = a * 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_div_const_for_f32x4() {
+  let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  let expected = f32x4::from([0.5, 1.0, 1.5, 2.0]);
+  let actual = a / 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_for_f32x4() {
   let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f32x4::from([5.0, 7.0, 17.0, 1.0]);
