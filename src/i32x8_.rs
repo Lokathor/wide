@@ -407,6 +407,44 @@ impl i32x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256i(self.avx2)
+      } else if #[cfg(target_feature="ssse3")] {
+        move_mask_i8_m128i(self.sse0) << 4 ^ move_mask_i8_m128i(self.sse1)
+      }
+      else {
+        (((self.arr[0]) < 0) as i32) << 0 |
+        (((self.arr[1]) < 0) as i32) << 1 |
+        (((self.arr[2]) < 0) as i32) << 2 |
+        (((self.arr[3]) < 0) as i32) << 3 |
+        (((self.arr[4]) < 0) as i32) << 4 |
+        (((self.arr[5]) < 0) as i32) << 5 |
+        (((self.arr[6]) < 0) as i32) << 6 |
+        (((self.arr[7]) < 0) as i32) << 7
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    self.move_mask() != 0
+  }
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    // eight lanes
+    self.move_mask() == 0b11111111
+  }
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
 }
 
 impl Not for i32x8 {

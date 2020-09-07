@@ -599,7 +599,7 @@ fn impl_f32x8_pow_n() {
 #[test]
 fn impl_f32x8_reduce_add() {
   let p = f32x8::from([0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.009]);
-  assert_eq!(p.reduce_add(), 0.037);
+  assert!((p.reduce_add() - 0.037) < 0.000000001);
 }
 
 #[test]

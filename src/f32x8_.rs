@@ -621,7 +621,7 @@ impl f32x8 {
 
     let x4 = big.blend(xb, xa);
 
-    let z = polynomial_4(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
     let z = z.mul_add(x3 * x4, x4);
 
     let z1 = z + z;
@@ -662,7 +662,7 @@ impl f32x8 {
 
     let x4 = big.blend(xb, xa);
 
-    let z = polynomial_4(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
     let z = z.mul_add(x3 * x4, x4);
 
     let z1 = z + z;
@@ -698,7 +698,7 @@ impl f32x8 {
 
     let x4 = big.blend(xb, xa);
 
-    let z = polynomial_4(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
     let z = z.mul_add(x3 * x4, x4);
 
     let z1 = z + z;
@@ -945,7 +945,7 @@ impl f32x8 {
     cast::<_, f32x8>(i32x8::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
 
-  fn sign_bit(self) -> Self {
+  pub fn sign_bit(self) -> Self {
     let t1 = cast::<_, i32x8>(self);
     let t2 = t1 >> 31;
     !cast::<_, f32x8>(t2).cmp_eq(f32x8::ZERO)
@@ -973,10 +973,10 @@ impl f32x8 {
           let d = add_horizontal_m128(c, c);
           let sum = add_m128_s(b, d);
           get_f32_from_m128_s(sum)
-      } else if #[cfg(target_feature="sse")] {
-          let v1 :f32 = self.sse0.to_array().iter().sum();
-          let v2 :f32 = self.sse1.to_array().iter().sum();
-          v1 + v2
+      } else if #[cfg(target_feature="sse2")] {
+        let a :[f32;4] = cast(self.sse0);
+        let b :[f32;4] = cast(self.sse1);
+        a.iter().sum::<f32>() + b.iter().sum::<f32>()
       } else {
           self.arr.iter().sum()
       }
@@ -1176,19 +1176,4 @@ impl Not for f32x8 {
       }
     }
   }
-}
-
-#[must_use]
-#[inline]
-fn polynomial_4(
-  x: f32x8,
-  c0: f32x8,
-  c1: f32x8,
-  c2: f32x8,
-  c3: f32x8,
-  c4: f32x8,
-) -> f32x8 {
-  let x2 = x * x;
-  let x4 = x2 * x2;
-  c3.mul_add(x, c2).mul_add(x2, c1.mul_add(x, c0) + c4 * x4)
 }
