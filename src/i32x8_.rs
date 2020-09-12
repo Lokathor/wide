@@ -130,6 +130,33 @@ impl Mul<i32> for i32x8 {
   }
 }
 
+impl Add<i32x8> for i32 {
+  type Output = i32x8;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i32x8) -> Self::Output {
+    i32x8::splat(self) * rhs
+  }
+}
+
+impl Sub<i32x8> for i32 {
+  type Output = i32x8;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i32x8) -> Self::Output {
+    i32x8::splat(self) * rhs
+  }
+}
+
+impl Mul<i32x8> for i32 {
+  type Output = i32x8;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: i32x8) -> Self::Output {
+    i32x8::splat(self) * rhs
+  }
+}
+
 impl BitAnd for i32x8 {
   type Output = Self;
   #[inline]
