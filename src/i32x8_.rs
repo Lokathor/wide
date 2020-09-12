@@ -307,10 +307,11 @@ macro_rules! impl_shr_t_for_i32x8 {
 
 impl_shr_t_for_i32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-impl i32x8 {
+impl CmpEq for i32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2) }
@@ -330,9 +331,13 @@ impl i32x8 {
       }
     }
   }
+}
+
+impl CmpGt for i32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_gt_mask_i32_m256i(self.avx2, rhs.avx2) }
@@ -352,9 +357,13 @@ impl i32x8 {
       }
     }
   }
+}
+
+impl CmpLt for i32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: !cmp_gt_mask_i32_m256i(self.avx2, rhs.avx2) }
@@ -374,6 +383,8 @@ impl i32x8 {
       }
     }
   }
+}
+impl i32x8 {
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

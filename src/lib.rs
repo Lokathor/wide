@@ -827,3 +827,55 @@ fn test_software_sqrt() {
   assert_eq!(software_sqrt(25.0), 5.0);
   assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }
+
+pub trait CmpEq<Rhs = Self> {
+  type Output;
+  fn cmp_eq(self, rhs: Rhs) -> Self::Output;
+}
+
+pub trait CmpGt<Rhs = Self> {
+  type Output;
+  fn cmp_gt(self, rhs: Rhs) -> Self::Output;
+}
+
+pub trait CmpGe<Rhs = Self> {
+  type Output;
+  fn cmp_ge(self, rhs: Rhs) -> Self::Output;
+}
+
+pub trait CmpNe<Rhs = Self> {
+  type Output;
+  fn cmp_ne(self, rhs: Rhs) -> Self::Output;
+}
+
+pub trait CmpLt<Rhs = Self> {
+  type Output;
+  fn cmp_lt(self, rhs: Rhs) -> Self::Output;
+}
+
+pub trait CmpLe<Rhs = Self> {
+  type Output;
+  fn cmp_le(self, rhs: Rhs) -> Self::Output;
+}
+
+macro_rules! bulk_impl_const_rhs_op {
+  (($op:ident,$method:ident) => [$(($lhs:ty,$rhs:ty),)+]) => {
+    $(
+    impl $op<$rhs> for $lhs {
+      type Output = Self;
+      #[inline]
+      #[must_use]
+      fn $method(self, rhs: $rhs) -> Self::Output {
+        self.$method(<$lhs>::splat(rhs))
+      }
+    }
+    )+
+  };
+}
+
+bulk_impl_const_rhs_op!((CmpEq, cmp_eq) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
+bulk_impl_const_rhs_op!((CmpLt, cmp_lt) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
+bulk_impl_const_rhs_op!((CmpGt, cmp_gt) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
+bulk_impl_const_rhs_op!((CmpNe, cmp_ne) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
+bulk_impl_const_rhs_op!((CmpLe, cmp_le) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
+bulk_impl_const_rhs_op!((CmpGe, cmp_ge) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);

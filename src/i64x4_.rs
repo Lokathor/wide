@@ -192,10 +192,11 @@ macro_rules! impl_shr_t_for_i64x4 {
 }
 impl_shr_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-impl i64x4 {
+impl CmpEq for i64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2) }
@@ -213,9 +214,13 @@ impl i64x4 {
       }
     }
   }
+}
+
+impl CmpGt for i64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
@@ -233,31 +238,13 @@ impl i64x4 {
       }
     }
   }
+}
 
+impl CmpLt for i64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_le(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: !cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="sse4.2")] {
-        Self { sse0: !cmp_gt_mask_i64_m128i(self.sse0, rhs.sse0), sse1: !cmp_gt_mask_i64_m128i(self.sse1, rhs.sse1) }
-      } else {
-        let s: [i64;4] = cast(self);
-        let r: [i64;4] = cast(rhs);
-        cast([
-          if s[0] <= r[0] { -1_i64 } else { 0 },
-          if s[1] <= r[1] { -1_i64 } else { 0 },
-          if s[2] <= r[2] { -1_i64 } else { 0 },
-          if s[3] <= r[3] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
@@ -276,7 +263,9 @@ impl i64x4 {
       }
     }
   }
+}
 
+impl i64x4 {
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

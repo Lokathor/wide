@@ -308,10 +308,11 @@ impl BitXor for f32x8 {
   }
 }
 
-impl f32x8 {
+impl CmpEq for f32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256!(self.avx, EqualOrdered, rhs.avx) }
@@ -331,32 +332,13 @@ impl f32x8 {
       }
     }
   }
+}
+
+impl CmpGe for f32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_ne(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256!(self.avx, NotEqualOrdered, rhs.avx) }
-      }
-      else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_neq_mask_m128(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128(self.sse1, rhs.sse1) }
-      } else {
-        Self { arr: [
-          if self.arr[0] != rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] != rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] != rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] != rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[4] != rhs.arr[4] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[5] != rhs.arr[5] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[6] != rhs.arr[6] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[7] != rhs.arr[7] { f32::from_bits(u32::MAX) } else { 0.0 },
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn cmp_ge(self, rhs: Self) -> Self {
+  fn cmp_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256!(self.avx, GreaterEqualOrdered, rhs.avx) }
@@ -377,9 +359,13 @@ impl f32x8 {
       }
     }
   }
+}
+
+impl CmpGt for f32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256!(self.avx, GreaterThanOrdered, rhs.avx) }
@@ -400,9 +386,40 @@ impl f32x8 {
       }
     }
   }
+}
+
+impl CmpNe for f32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_le(self, rhs: Self) -> Self {
+  fn cmp_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256!(self.avx, NotEqualOrdered, rhs.avx) }
+      }
+      else if #[cfg(target_feature="sse2")] {
+        Self { sse0: cmp_neq_mask_m128(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128(self.sse1, rhs.sse1) }
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[1] != rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[2] != rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[3] != rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[4] != rhs.arr[4] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[5] != rhs.arr[5] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[6] != rhs.arr[6] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.arr[7] != rhs.arr[7] { f32::from_bits(u32::MAX) } else { 0.0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpLe for f32x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn cmp_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256!(self.avx, LessEqualOrdered, rhs.avx) }
@@ -423,29 +440,36 @@ impl f32x8 {
       }
     }
   }
+}
+
+impl CmpLt for f32x8 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256!(self.avx, LessThanOrdered, rhs.avx) }
-      }
-      else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_lt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_lt_mask_m128(self.sse1, rhs.sse1) }
-      } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] < rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] < rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] < rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[4] < rhs.arr[4] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[5] < rhs.arr[5] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[6] < rhs.arr[6] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[7] < rhs.arr[7] { f32::from_bits(u32::MAX) } else { 0.0 },
-        ]}
-      }
+        if #[cfg(target_feature="avx")]{
+          Self { avx: cmp_op_mask_m256!(self.avx, LessThanOrdered, rhs.avx) }
+        }
+        else if #[cfg(target_feature="sse2")] {
+          Self { sse0: cmp_lt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_lt_mask_m128(self.sse1, rhs.sse1) }
+        } else {
+          Self { arr: [
+            if self.arr[0] < rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+            if self.arr[1] < rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+            if self.arr[2] < rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+            if self.arr[3] < rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+            if self.arr[4] < rhs.arr[4] { f32::from_bits(u32::MAX) } else { 0.0 },
+            if self.arr[5] < rhs.arr[5] { f32::from_bits(u32::MAX) } else { 0.0 },
+            if self.arr[6] < rhs.arr[6] { f32::from_bits(u32::MAX) } else { 0.0 },
+            if self.arr[7] < rhs.arr[7] { f32::from_bits(u32::MAX) } else { 0.0 },
+          ]}
+        }
     }
   }
+}
+
+impl f32x8 {
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
