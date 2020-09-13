@@ -415,7 +415,7 @@ impl i8x32 {
         if #[cfg(target_feature="avx2")] {
             Self { avx: blend_varying_i8_m256i(f.avx, t.avx, self.avx) }
         } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse),  sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
+        Self { sse0: blend_varying_i8_m128i(f.sse0, t.sse0, self.sse0),  sse1: blend_varying_i8_m128i(f.sse1, t.sse1, self.sse1) }
       } else {
         generic_bit_blend(self, t, f)
       }
