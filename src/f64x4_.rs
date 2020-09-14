@@ -334,7 +334,7 @@ impl CmpGt for f64x4 {
         Self { avx: cmp_op_mask_m256d!(self.avx, GreaterThanOrdered, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_gt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128d(self.sse1, rhs.sse1) }
+        Self { sse0: cmp_gt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_gt_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },

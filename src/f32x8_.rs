@@ -371,7 +371,7 @@ impl CmpGt for f32x8 {
         Self { avx: cmp_op_mask_m256!(self.avx, GreaterThanOrdered, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_gt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128(self.sse1, rhs.sse1) }
+        Self { sse0: cmp_gt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_gt_mask_m128(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
