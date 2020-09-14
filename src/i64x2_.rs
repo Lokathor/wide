@@ -158,10 +158,11 @@ macro_rules! impl_shr_t_for_i64x2 {
 
 impl_shr_t_for_i64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-impl i64x2 {
+impl CmpEq for i64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
@@ -175,9 +176,13 @@ impl i64x2 {
       }
     }
   }
+}
+
+impl CmpGt for i64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
@@ -191,10 +196,13 @@ impl i64x2 {
       }
     }
   }
+}
 
+impl CmpLt for i64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         Self { sse: !cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
@@ -208,7 +216,9 @@ impl i64x2 {
       }
     }
   }
+}
 
+impl i64x2 {
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

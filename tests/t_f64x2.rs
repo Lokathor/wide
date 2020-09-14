@@ -174,6 +174,19 @@ fn impl_f64x2_cmp_lt() {
 }
 
 #[test]
+fn impl_f64x2_const_cmp_lt() {
+  let a = f64x2::from([1.0, 2.0]);
+  let expected: [i64; 2] = [-1, 0];
+  let actual: [i64; 2] = cast(a.cmp_lt(2.0));
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([3.0, 4.0]);
+  let expected: [i64; 2] = [0, 0];
+  let actual: [i64; 2] = cast(a.cmp_lt(2.0));
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f64x2_blend() {
   let use_t: f64 = f64::from_bits(u64::MAX);
   let t = f64x2::from([1.0, 2.0]);

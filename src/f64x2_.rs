@@ -245,10 +245,11 @@ impl BitXor for f64x2 {
   }
 }
 
-impl f64x2 {
+impl CmpEq for f64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_m128d(self.sse, rhs.sse) }
@@ -260,23 +261,13 @@ impl f64x2 {
       }
     }
   }
+}
+
+impl CmpGe for f64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_ne(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_neq_mask_m128d(self.sse, rhs.sse) }
-      } else {
-        Self { arr: [
-          if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] != rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn cmp_ge(self, rhs: Self) -> Self {
+  fn cmp_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_ge_mask_m128d(self.sse, rhs.sse) }
@@ -288,9 +279,13 @@ impl f64x2 {
       }
     }
   }
+}
+
+impl CmpGt for f64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { sse: cmp_op_mask_m128d!(self.sse, GreaterThanOrdered, rhs.sse) }
@@ -305,10 +300,31 @@ impl f64x2 {
       }
     }
   }
+}
 
+impl CmpNe for f64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_le(self, rhs: Self) -> Self {
+  fn cmp_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_neq_mask_m128d(self.sse, rhs.sse) }
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] != rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpLe for f64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn cmp_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_le_mask_m128d(self.sse, rhs.sse) }
@@ -320,10 +336,13 @@ impl f64x2 {
       }
     }
   }
+}
 
+impl CmpLt for f64x2 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_m128d(self.sse, rhs.sse) }
@@ -335,6 +354,9 @@ impl f64x2 {
       }
     }
   }
+}
+
+impl f64x2 {
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

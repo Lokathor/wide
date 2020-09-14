@@ -279,10 +279,11 @@ impl BitXor for f64x4 {
   }
 }
 
-impl f64x4 {
+impl CmpEq for f64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d!(self.avx, EqualOrdered, rhs.avx) }
@@ -298,28 +299,13 @@ impl f64x4 {
       }
     }
   }
+}
+
+impl CmpGe for f64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_ne(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d!(self.avx, NotEqualOrdered, rhs.avx) }
-      }
-      else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_neq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128d(self.sse1, rhs.sse1) }
-      } else {
-        Self { arr: [
-          if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] != rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2] != rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3] != rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn cmp_ge(self, rhs: Self) -> Self {
+  fn cmp_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d!(self.avx, GreaterEqualOrdered, rhs.avx) }
@@ -336,15 +322,19 @@ impl f64x4 {
       }
     }
   }
+}
+
+impl CmpGt for f64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d!(self.avx, GreaterThanOrdered, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_gt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128d(self.sse1, rhs.sse1) }
+        Self { sse0: cmp_gt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_gt_mask_m128d(self.sse1, rhs.sse1) }
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -355,9 +345,36 @@ impl f64x4 {
       }
     }
   }
+}
+
+impl CmpNe for f64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_le(self, rhs: Self) -> Self {
+  fn cmp_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256d!(self.avx, NotEqualOrdered, rhs.avx) }
+      }
+      else if #[cfg(target_feature="sse2")] {
+        Self { sse0: cmp_neq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128d(self.sse1, rhs.sse1) }
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1] != rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[2] != rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[3] != rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpLe for f64x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn cmp_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d!(self.avx, LessEqualOrdered, rhs.avx) }
@@ -374,9 +391,13 @@ impl f64x4 {
       }
     }
   }
+}
+
+impl CmpLt for f64x4 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d!(self.avx, LessThanOrdered, rhs.avx) }
@@ -393,6 +414,9 @@ impl f64x4 {
       }
     }
   }
+}
+
+impl f64x4 {
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

@@ -175,10 +175,11 @@ impl BitXor for i8x16 {
   }
 }
 
-impl i8x16 {
+impl CmpEq for i8x16 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
@@ -204,9 +205,13 @@ impl i8x16 {
       }
     }
   }
+}
+
+impl CmpGt for i8x16 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_i8_m128i(self.sse, rhs.sse) }
@@ -232,9 +237,13 @@ impl i8x16 {
       }
     }
   }
+}
+
+impl CmpLt for i8x16 {
+  type Output = Self;
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_i8_m128i(self.sse, rhs.sse) }
@@ -260,6 +269,9 @@ impl i8x16 {
       }
     }
   }
+}
+
+impl i8x16 {
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
