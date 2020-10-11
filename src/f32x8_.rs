@@ -630,6 +630,37 @@ impl f32x8 {
       }
     }
   }
+  // Allow only for x86 with SSE and for other architectures when the `std` feature is enabled.
+  // This is done to exclude i586, which retuns invalid results for f32::trunc.
+  #[cfg(any(
+    target_feature = "avx",
+    all(feature = "std", not(any(target_arch = "x86", target_arch = "x86_64")))
+  ))]
+  #[inline]
+  #[must_use]
+  pub fn trunc_int(self) -> i32x8 {
+    pick! {
+      if #[cfg(all(target_feature="avx"))] {
+        cast(convert_truncate_to_i32_m256i_from_m256(self.avx))
+      } else {
+        let rounded: [f32; 8] = cast(self.round());
+        let rounded_ints: i32x8 = cast([
+          rounded[0].trunc() as i32,
+          rounded[1].trunc() as i32,
+          rounded[2].trunc() as i32,
+          rounded[3].trunc() as i32,
+          rounded[4].trunc() as i32,
+          rounded[5].trunc() as i32,
+          rounded[6].trunc() as i32,
+          rounded[7].trunc() as i32,
+        ]);
+        cast::<f32x8, i32x8>(self.is_finite()).blend(
+          rounded_ints,
+          i32x8::from(i32::MIN)
+        )
+      }
+    }
+  }
   #[inline]
   #[must_use]
   pub fn mul_add(self, m: Self, a: Self) -> Self {

@@ -306,6 +306,33 @@ fn impl_f32x8_round_int() {
   }
 }
 
+#[cfg(any(
+  target_feature = "avx",
+  all(feature = "std", not(any(target_arch = "x86", target_arch = "x86_64")))
+))]
+#[test]
+fn impl_f32x8_trunc_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (3.7, 3),
+    (-0.0, 0),
+    (f32::NAN, i32::MIN),
+    (f32::INFINITY, i32::MIN),
+    (f32::NEG_INFINITY, i32::MIN),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f32x8::from(f);
+    let expected = i32x8::from(i);
+    let actual = a.trunc_int();
+    assert_eq!(expected, actual);
+  }
+}
+
 #[test]
 fn impl_f32x8_mul_add() {
   let a = f32x8::from([2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2]);
