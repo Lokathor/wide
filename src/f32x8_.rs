@@ -630,11 +630,16 @@ impl f32x8 {
       }
     }
   }
-  // Allow only for x86 with SSE and for other architectures when the `std` feature is enabled.
-  // This is done to exclude i586, which retuns invalid results for f32::trunc.
+  // On i586, `f32::trunc` in the standard library will give wrong results.
   #[cfg(any(
-    target_feature = "avx",
-    all(feature = "std", not(any(target_arch = "x86", target_arch = "x86_64")))
+    all(
+      any(target_arch = "x86", target_arch = "x86_64"),
+      target_feature = "avx"
+    ),
+    all(
+      not(any(target_arch = "x86", target_arch = "x86_64")),
+      feature = "std"
+    ),
   ))]
   #[inline]
   #[must_use]
@@ -1148,9 +1153,9 @@ impl f32x8 {
     if !mask.any() {
       res
     } else {
-      let iszero = self.is_zero_or_subnormal();
+      let is_zero = self.is_zero_or_subnormal();
       let res = underflow.blend(Self::nan_log(), res);
-      let res = iszero.blend(Self::infinity(), res);
+      let res = is_zero.blend(Self::infinity(), res);
       let res = overflow.blend(self, res);
       res
     }
@@ -1208,13 +1213,13 @@ impl f32x8 {
     let yr = ef.mul_sub(y, e1);
 
     let lg = f32x8::HALF.mul_neg_add(x2, x) + lg1;
-    let x2err = (f32x8::HALF * x).mul_sub(x, f32x8::HALF * x2);
-    let lgerr = f32x8::HALF.mul_add(x2, lg - x) - lg1;
+    let x2_err = (f32x8::HALF * x).mul_sub(x, f32x8::HALF * x2);
+    let lg_err = f32x8::HALF.mul_add(x2, lg - x) - lg1;
 
     let e2 = (lg * y * f32x8::LOG2_E).round();
     let v = lg.mul_sub(y, e2 * ln2f_hi);
     let v = e2.mul_neg_add(ln2f_lo, v);
-    let v = v - (lgerr + x2err).mul_sub(y, yr * f32x8::LN_2);
+    let v = v - (lg_err + x2_err).mul_sub(y, yr * f32x8::LN_2);
 
     let x = v;
     let e3 = (x * f32x8::LOG2_E).round();
@@ -1241,8 +1246,8 @@ impl f32x8 {
     let z = overflow.blend(Self::infinity(), z);
 
     // Check for self == 0
-    let xzero = self.is_zero_or_subnormal();
-    let z = xzero.blend(
+    let x_zero = self.is_zero_or_subnormal();
+    let z = x_zero.blend(
       y.cmp_lt(f32x8::ZERO).blend(
         Self::infinity(),
         y.cmp_eq(f32x8::ZERO).blend(f32x8::ONE, f32x8::ZERO),
@@ -1250,26 +1255,26 @@ impl f32x8 {
       z,
     );
 
-    let xsign = self.sign_bit();
-    let z = if xsign.any() {
+    let x_sign = self.sign_bit();
+    let z = if x_sign.any() {
       // Y into an integer
       let yi = y.cmp_eq(y.round());
 
       // Is y odd?
-      let yodd = cast::<_, i32x8>(y.round_int() << 31).round_float();
+      let y_odd = cast::<_, i32x8>(y.round_int() << 31).round_float();
 
       let z1 =
-        yi.blend(z | yodd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
 
-      xsign.blend(z1, z)
+      x_sign.blend(z1, z)
     } else {
       z
     };
 
-    let xfinite = self.is_finite();
-    let yfinite = y.is_finite();
-    let efinite = ee.is_finite();
-    if (xfinite & yfinite & (efinite | xzero)).all() {
+    let x_finite = self.is_finite();
+    let y_finite = y.is_finite();
+    let e_finite = ee.is_finite();
+    if (x_finite & y_finite & (e_finite | x_zero)).all() {
       return z;
     }
 

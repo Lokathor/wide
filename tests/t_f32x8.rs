@@ -309,7 +309,7 @@ fn impl_f32x8_round_int() {
 #[cfg(any(
   all(
     any(target_arch = "x86", target_arch = "x86_64"),
-    target_feature = "sse"
+    target_feature = "avx"
   ),
   all(not(any(target_arch = "x86", target_arch = "x86_64")), feature = "std"),
 ))]
@@ -372,7 +372,8 @@ fn impl_f32x8_flip_signs() {
 }
 
 // NOTE: Disabled
-// #[test]
+#[cfg(target_feature = "sse")]
+#[test]
 fn impl_f32x8_asin_acos() {
   let inc = 1.0 / 2501.0 / 8.0;
   for x in -2500..=2500 {

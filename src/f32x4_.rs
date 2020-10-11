@@ -985,9 +985,9 @@ impl f32x4 {
     if !mask.any() {
       res
     } else {
-      let iszero = self.is_zero_or_subnormal();
+      let is_zero = self.is_zero_or_subnormal();
       let res = underflow.blend(Self::nan_log(), res);
-      let res = iszero.blend(Self::infinity(), res);
+      let res = is_zero.blend(Self::infinity(), res);
       let res = overflow.blend(self, res);
       res
     }
@@ -1047,13 +1047,13 @@ impl f32x4 {
     let yr = ef.mul_sub(y, e1);
 
     let lg = f32x4::HALF.mul_neg_add(x2, x) + lg1;
-    let x2err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
-    let lgerr = f32x4::HALF.mul_add(x2, lg - x) - lg1;
+    let x2_err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
+    let lg_err = f32x4::HALF.mul_add(x2, lg - x) - lg1;
 
     let e2 = (lg * y * f32x4::LOG2_E).round();
     let v = lg.mul_sub(y, e2 * ln2f_hi);
     let v = e2.mul_neg_add(ln2f_lo, v);
-    let v = v - (lgerr + x2err).mul_sub(y, yr * f32x4::LN_2);
+    let v = v - (lg_err + x2_err).mul_sub(y, yr * f32x4::LN_2);
 
     let x = v;
     let e3 = (x * f32x4::LOG2_E).round();
@@ -1085,8 +1085,8 @@ impl f32x4 {
     };
 
     // Check for self == 0
-    let xzero = self.is_zero_or_subnormal();
-    let z = xzero.blend(
+    let x_zero = self.is_zero_or_subnormal();
+    let z = x_zero.blend(
       y.cmp_lt(f32x4::ZERO).blend(
         Self::infinity(),
         y.cmp_eq(f32x4::ZERO).blend(f32x4::ONE, f32x4::ZERO),
@@ -1094,24 +1094,24 @@ impl f32x4 {
       z,
     );
 
-    let xsign = self.sign_bit();
-    let z = if xsign.any() {
+    let x_sign = self.sign_bit();
+    let z = if x_sign.any() {
       // Y into an integer
       let yi = y.cmp_eq(y.round());
       // Is y odd?
-      let yodd = cast::<_, i32x4>(y.round_int() << 31).round_float();
+      let y_odd = cast::<_, i32x4>(y.round_int() << 31).round_float();
 
       let z1 =
-        yi.blend(z | yodd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
-      xsign.blend(z1, z)
+        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+      x_sign.blend(z1, z)
     } else {
       z
     };
 
-    let xfinite = self.is_finite();
-    let yfinite = y.is_finite();
-    let efinite = ee.is_finite();
-    if (xfinite & yfinite & (efinite | xzero)).all() {
+    let x_finite = self.is_finite();
+    let y_finite = y.is_finite();
+    let e_finite = ee.is_finite();
+    if (x_finite & y_finite & (e_finite | x_zero)).all() {
       return z;
     }
 
