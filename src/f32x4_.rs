@@ -518,11 +518,16 @@ impl f32x4 {
       }
     }
   }
-  // Allow only for x86 with SSE and for other architectures when the `std` feature is enabled.
-  // This is done to exclude i586, which retuns invalid results for f32::trunc.
+  // On i586, `f32::trunc` in the standard library will give wrong results.
   #[cfg(any(
-    target_feature = "sse",
-    all(feature = "std", not(any(target_arch = "x86", target_arch = "x86_64")))
+    all(
+      any(target_arch = "x86", target_arch = "x86_64"),
+      target_feature = "sse"
+    ),
+    all(
+      not(any(target_arch = "x86", target_arch = "x86_64")),
+      feature = "std"
+    ),
   ))]
   #[inline]
   #[must_use]

@@ -307,8 +307,11 @@ fn impl_f32x8_round_int() {
 }
 
 #[cfg(any(
-  target_feature = "avx",
-  all(feature = "std", not(any(target_arch = "x86", target_arch = "x86_64")))
+  all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "sse"
+  ),
+  all(not(any(target_arch = "x86", target_arch = "x86_64")), feature = "std"),
 ))]
 #[test]
 fn impl_f32x8_trunc_int() {
