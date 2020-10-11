@@ -272,6 +272,23 @@ fn impl_f32x4_round_int() {
   }
 }
 
+#[cfg(any(
+  target_feature = "sse",
+  all(feature = "std", not(any(target_arch = "x86", target_arch = "x86_64")))
+))]
+#[test]
+fn impl_f32x4_trunc_int() {
+  let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);
+  let expected = i32x4::from([1, 2, 3, 4]);
+  let actual = a.trunc_int();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x4::from([-1.1, -2.5, -3.7, -4.0]);
+  let expected = i32x4::from([-1, -2, -3, -4]);
+  let actual = a.trunc_int();
+  assert_eq!(expected, actual);
+}
+
 #[test]
 fn impl_f32x4_mul_add() {
   let a = f32x4::from([2.0, 3.0, 4.0, 5.0]);
