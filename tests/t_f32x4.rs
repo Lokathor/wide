@@ -272,13 +272,7 @@ fn impl_f32x4_round_int() {
   }
 }
 
-#[cfg(any(
-  all(
-    any(target_arch = "x86", target_arch = "x86_64"),
-    target_feature = "sse"
-  ),
-  all(not(any(target_arch = "x86", target_arch = "x86_64")), feature = "std"),
-))]
+#[cfg(any(target_feature="sse", feature="std"))]
 #[test]
 fn impl_f32x4_trunc_int() {
   let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);

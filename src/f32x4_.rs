@@ -518,17 +518,7 @@ impl f32x4 {
       }
     }
   }
-  // On i586, `f32::trunc` in the standard library will give wrong results.
-  #[cfg(any(
-    all(
-      any(target_arch = "x86", target_arch = "x86_64"),
-      target_feature = "sse"
-    ),
-    all(
-      not(any(target_arch = "x86", target_arch = "x86_64")),
-      feature = "std"
-    ),
-  ))]
+  #[cfg(any(target_feature="sse", feature="std"))]
   #[inline]
   #[must_use]
   pub fn trunc_int(self) -> i32x4 {
@@ -536,15 +526,15 @@ impl f32x4 {
       if #[cfg(target_feature="sse2")] {
         cast(truncate_m128_to_m128i(self.sse))
       } else {
-        let rounded: [f32;4] = cast(self.round());
-        let rounded_ints: i32x4 = cast([
-          rounded[0].trunc() as i32,
-          rounded[1].trunc() as i32,
-          rounded[2].trunc() as i32,
-          rounded[3].trunc() as i32,
+        let n: [f32;4] = cast(self);
+        let ints: i32x4 = cast([
+          n[0].trunc() as i32,
+          n[1].trunc() as i32,
+          n[2].trunc() as i32,
+          n[3].trunc() as i32,
         ]);
         cast::<f32x4, i32x4>(self.is_finite()).blend(
-          rounded_ints,
+          ints,
           i32x4::from(i32::MIN)
         )
       }

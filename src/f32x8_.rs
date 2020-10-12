@@ -630,17 +630,7 @@ impl f32x8 {
       }
     }
   }
-  // On i586, `f32::trunc` in the standard library will give wrong results.
-  #[cfg(any(
-    all(
-      any(target_arch = "x86", target_arch = "x86_64"),
-      target_feature = "avx"
-    ),
-    all(
-      not(any(target_arch = "x86", target_arch = "x86_64")),
-      feature = "std"
-    ),
-  ))]
+  #[cfg(any(target_feature="avx", feature="std"))]
   #[inline]
   #[must_use]
   pub fn trunc_int(self) -> i32x8 {
@@ -648,19 +638,19 @@ impl f32x8 {
       if #[cfg(all(target_feature="avx"))] {
         cast(convert_truncate_to_i32_m256i_from_m256(self.avx))
       } else {
-        let rounded: [f32; 8] = cast(self.round());
-        let rounded_ints: i32x8 = cast([
-          rounded[0].trunc() as i32,
-          rounded[1].trunc() as i32,
-          rounded[2].trunc() as i32,
-          rounded[3].trunc() as i32,
-          rounded[4].trunc() as i32,
-          rounded[5].trunc() as i32,
-          rounded[6].trunc() as i32,
-          rounded[7].trunc() as i32,
+        let n: [f32; 8] = cast(self);
+        let ints: i32x8 = cast([
+          n[0].trunc() as i32,
+          n[1].trunc() as i32,
+          n[2].trunc() as i32,
+          n[3].trunc() as i32,
+          n[4].trunc() as i32,
+          n[5].trunc() as i32,
+          n[6].trunc() as i32,
+          n[7].trunc() as i32,
         ]);
         cast::<f32x8, i32x8>(self.is_finite()).blend(
-          rounded_ints,
+          ints,
           i32x8::from(i32::MIN)
         )
       }
