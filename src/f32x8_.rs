@@ -918,6 +918,61 @@ impl f32x8 {
   }
   #[inline]
   #[must_use]
+  pub fn recip(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: reciprocal_m256(self.avx) }
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: reciprocal_m128(self.sse0), sse1: reciprocal_m128(self.sse1) }
+      } else {
+        Self { arr: [
+          1.0 / self.arr[0],
+          1.0 / self.arr[1],
+          1.0 / self.arr[2],
+          1.0 / self.arr[3],
+          1.0 / self.arr[4],
+          1.0 / self.arr[5],
+          1.0 / self.arr[6],
+          1.0 / self.arr[7],
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn recip_sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: reciprocal_sqrt_m256(self.avx) }
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: reciprocal_sqrt_m128(self.sse0), sse1: reciprocal_sqrt_m128(self.sse1) }
+      } else if #[cfg(feature="std")] {
+        Self { arr: [
+          1.0 / self.arr[0].sqrt(),
+          1.0 / self.arr[1].sqrt(),
+          1.0 / self.arr[2].sqrt(),
+          1.0 / self.arr[3].sqrt(),
+          1.0 / self.arr[4].sqrt(),
+          1.0 / self.arr[5].sqrt(),
+          1.0 / self.arr[6].sqrt(),
+          1.0 / self.arr[7].sqrt(),
+        ]}
+      } else {
+        Self { arr: [
+          1.0 / software_sqrt(self.arr[0] as f64) as f32,
+          1.0 / software_sqrt(self.arr[1] as f64) as f32,
+          1.0 / software_sqrt(self.arr[2] as f64) as f32,
+          1.0 / software_sqrt(self.arr[3] as f64) as f32,
+          1.0 / software_sqrt(self.arr[4] as f64) as f32,
+          1.0 / software_sqrt(self.arr[5] as f64) as f32,
+          1.0 / software_sqrt(self.arr[6] as f64) as f32,
+          1.0 / software_sqrt(self.arr[7] as f64) as f32,
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
   pub fn sqrt(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {

@@ -533,6 +533,73 @@ fn impl_f32x8_to_radians() {
 }
 
 #[test]
+fn impl_f32x8_recip() {
+  {
+    let expected = f32x8::from(0.0);
+    let actual = f32x8::from(f32::INFINITY).recip();
+    assert_eq!(expected, actual);
+  }
+  {
+    let expected = f32x8::from(0.0);
+    let actual = f32x8::from(-f32::INFINITY).recip();
+    assert_eq!(expected, actual);
+  }
+  {
+    let actual = f32x8::from(f32::NAN).recip();
+    assert!(actual.is_nan().any());
+  }
+  {
+    let expected = f32x8::from(f32::INFINITY);
+    let actual = f32x8::from(0.0).recip();
+    assert_eq!(expected, actual);
+  }
+  {
+    let expected = f32x8::from(0.49987793);
+    let actual = f32x8::from(2.0).recip();
+    let diff: [f32; 8] = cast((actual - expected).abs());
+    assert!(diff[0] < 0.001);
+  }
+  {
+    let expected = f32x8::from(-0.08102417);
+    let actual = f32x8::from(-12.34).recip();
+    let diff: [f32; 8] = cast((actual - expected).abs());
+    assert!(diff[0] < 0.001);
+  }
+}
+
+#[test]
+fn impl_f32x8_recip_sqrt() {
+  {
+    let expected = f32x8::from(0.0);
+    let actual = f32x8::from(f32::INFINITY).recip_sqrt();
+    assert_eq!(expected, actual);
+  }
+  {
+    let actual = f32x8::from(-f32::INFINITY).recip_sqrt();
+    assert!(actual.is_nan().any());
+  }
+  {
+    let actual = f32x8::from(f32::NAN).recip_sqrt();
+    assert!(actual.is_nan().any());
+  }
+  {
+    let expected = f32x8::from(f32::INFINITY);
+    let actual = f32x8::from(0.0).recip_sqrt();
+    assert_eq!(expected, actual);
+  }
+  {
+    let expected = f32x8::from(0.70703125);
+    let actual = f32x8::from(2.0).recip_sqrt();
+    let diff: [f32; 8] = cast((actual - expected).abs());
+    assert!(diff[0] < 0.001);
+  }
+  {
+    let actual = f32x8::from(-12.34).recip_sqrt();
+    assert!(actual.is_nan().any());
+  }
+}
+
+#[test]
 fn impl_f32x8_sqrt() {
   for (f, e) in [
     (f32::INFINITY, f32::INFINITY),
