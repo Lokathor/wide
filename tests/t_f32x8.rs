@@ -306,7 +306,7 @@ fn impl_f32x8_round_int() {
   }
 }
 
-#[cfg(any(target_feature="avx", feature="std"))]
+#[cfg(any(target_feature="ssse3", target_feature="avx", feature="std"))]
 #[test]
 fn impl_f32x8_trunc_int() {
   for (f, i) in [

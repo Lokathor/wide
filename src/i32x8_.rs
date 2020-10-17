@@ -9,7 +9,7 @@ pick! {
   else if #[cfg(target_feature="ssse3")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-      pub struct i32x8 { sse0: m128i, sse1: m128i }
+      pub struct i32x8 { pub(crate) sse0: m128i, pub(crate) sse1: m128i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]

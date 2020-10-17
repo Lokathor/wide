@@ -630,13 +630,15 @@ impl f32x8 {
       }
     }
   }
-  #[cfg(any(target_feature="avx", feature="std"))]
+  #[cfg(any(target_feature="ssse3", target_feature="avx", feature="std"))]
   #[inline]
   #[must_use]
   pub fn trunc_int(self) -> i32x8 {
     pick! {
-      if #[cfg(all(target_feature="avx"))] {
+      if #[cfg(target_feature="avx")] {
         cast(convert_truncate_to_i32_m256i_from_m256(self.avx))
+      } else if #[cfg(target_feature="ssse3")] {
+        i32x8 { sse0: truncate_m128_to_m128i(self.sse0), sse1: truncate_m128_to_m128i(self.sse1) }
       } else {
         let n: [f32; 8] = cast(self);
         let ints: i32x8 = cast([
