@@ -5,11 +5,10 @@ pick! {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
     pub struct i32x8 { avx2: m256i }
-  }
-  else if #[cfg(target_feature="ssse3")] {
+  } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-      pub struct i32x8 { sse0: m128i, sse1: m128i }
+    pub struct i32x8 { pub(crate) sse0: m128i, pub(crate) sse1: m128i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
@@ -28,10 +27,9 @@ impl Add for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: add_i32_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
-        Self { sse0: add_i32_m128i(self.sse0, rhs.sse0) , sse1: add_i32_m128i(self.sse1, rhs.sse1)}
-      }
-      else {
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: add_i32_m128i(self.sse0, rhs.sse0), sse1: add_i32_m128i(self.sse1, rhs.sse1)}
+      } else {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
           self.arr[1].wrapping_add(rhs.arr[1]),
@@ -55,10 +53,9 @@ impl Sub for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: sub_i32_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
-        Self { sse0: sub_i32_m128i(self.sse0, rhs.sse0) , sse1: sub_i32_m128i(self.sse1, rhs.sse1)}
-      }
-      else {
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: sub_i32_m128i(self.sse0, rhs.sse0), sse1: sub_i32_m128i(self.sse1, rhs.sse1)}
+      } else {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
           self.arr[1].wrapping_sub(rhs.arr[1]),
@@ -83,9 +80,8 @@ impl Mul for i32x8 {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: mul_i32_keep_low_m256i(self.avx2, rhs.avx2) }
       } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse0: mul_i32_keep_low_m128i(self.sse0, rhs.sse0) , sse1: mul_i32_keep_low_m128i(self.sse1, rhs.sse1)}
-      }
-      else {
+        Self { sse0: mul_i32_keep_low_m128i(self.sse0, rhs.sse0), sse1: mul_i32_keep_low_m128i(self.sse1, rhs.sse1)}
+      } else {
         let arr1: [i32; 8] = cast(self);
         let arr2: [i32; 8] = cast(rhs);
         cast([
@@ -165,10 +161,9 @@ impl BitAnd for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
-        Self { sse0: bitand_m128i(self.sse0, rhs.sse0) , sse1: bitand_m128i(self.sse1, rhs.sse1)}
-      }
-      else {
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: bitand_m128i(self.sse0, rhs.sse0), sse1: bitand_m128i(self.sse1, rhs.sse1)}
+      } else {
         Self { arr: [
           self.arr[0].bitand(rhs.arr[0]),
           self.arr[1].bitand(rhs.arr[1]),
@@ -192,8 +187,8 @@ impl BitOr for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
-        Self { sse0: bitor_m128i(self.sse0, rhs.sse0) , sse1: bitor_m128i(self.sse1, rhs.sse1)}
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: bitor_m128i(self.sse0, rhs.sse0), sse1: bitor_m128i(self.sse1, rhs.sse1)}
       } else {
         Self { arr: [
           self.arr[0].bitor(rhs.arr[0]),
@@ -218,8 +213,8 @@ impl BitXor for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
-        Self { sse0: bitxor_m128i(self.sse0, rhs.sse0) , sse1: bitxor_m128i(self.sse1, rhs.sse1)}
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: bitxor_m128i(self.sse0, rhs.sse0), sse1: bitxor_m128i(self.sse1, rhs.sse1)}
       } else {
         Self { arr: [
           self.arr[0].bitxor(rhs.arr[0]),
@@ -249,10 +244,10 @@ macro_rules! impl_shl_t_for_i32x8 {
           if #[cfg(target_feature="avx2")] {
             let shift = cast([u, 0]);
             Self { avx2: shl_all_u32_m256i(self.avx2, shift) }
-          } else if #[cfg(target_feature="ssse3")] {
+          } else if #[cfg(target_feature="sse2")] {
             let shift = cast([u, 0]);
-            Self { sse0: shl_all_u32_m128i(self.sse0, shift) , sse1: shl_all_u32_m128i(self.sse1, shift)}
-          }  else {
+            Self { sse0: shl_all_u32_m128i(self.sse0, shift), sse1: shl_all_u32_m128i(self.sse1, shift)}
+          } else {
             Self { arr: [
               self.arr[0] << u,
               self.arr[1] << u,
@@ -281,13 +276,13 @@ macro_rules! impl_shr_t_for_i32x8 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         let u = rhs as u64;
         pick! {
-            if #[cfg(target_feature="avx2")] {
-              let shift = cast([u, 0]);
-              Self { avx2: shr_all_u32_m256i(self.avx2, shift) }
-            } else if #[cfg(target_feature="ssse3")] {
-              let shift = cast([u, 0]);
-              Self { sse0: shr_all_u32_m128i(self.sse0, shift) , sse1: shr_all_u32_m128i(self.sse1, shift)}
-            } else {
+          if #[cfg(target_feature="avx2")] {
+            let shift = cast([u, 0]);
+            Self { avx2: shr_all_u32_m256i(self.avx2, shift) }
+          } else if #[cfg(target_feature="sse2")] {
+            let shift = cast([u, 0]);
+            Self { sse0: shr_all_u32_m128i(self.sse0, shift), sse1: shr_all_u32_m128i(self.sse1, shift)}
+          } else {
             Self { arr: [
               self.arr[0] >> u,
               self.arr[1] >> u,
@@ -315,7 +310,7 @@ impl CmpEq for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
+      } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_eq_mask_i32_m128i(self.sse0,rhs.sse0), sse1: cmp_eq_mask_i32_m128i(self.sse1,rhs.sse1), }
       } else {
         Self { arr: [
@@ -341,7 +336,7 @@ impl CmpGt for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_gt_mask_i32_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
+      } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_gt_mask_i32_m128i(self.sse0,rhs.sse0), sse1: cmp_gt_mask_i32_m128i(self.sse1,rhs.sse1), }
       } else {
         Self { arr: [
@@ -367,7 +362,7 @@ impl CmpLt for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: !cmp_gt_mask_i32_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(target_feature="ssse3")] {
+      } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_lt_mask_i32_m128i(self.sse0,rhs.sse0), sse1: cmp_lt_mask_i32_m128i(self.sse1,rhs.sse1), }
       } else {
         Self { arr: [
@@ -392,7 +387,7 @@ impl i32x8 {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: blend_varying_i8_m256i(f.avx2, t.avx2, self.avx2) }
       } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse0: blend_varying_i8_m128i(f.sse0, t.sse0, self.sse0) , sse1: blend_varying_i8_m128i(f.sse1, t.sse1, self.sse1)}
+        Self { sse0: blend_varying_i8_m128i(f.sse0, t.sse0, self.sse0), sse1: blend_varying_i8_m128i(f.sse1, t.sse1, self.sse1)}
       } else {
         generic_bit_blend(self, t, f)
       }
@@ -404,11 +399,9 @@ impl i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: abs_i32_m256i(self.avx2) }
-      }
-      else if #[cfg(target_feature="ssse3")] {
-        Self { sse0: abs_i32_m128i(self.sse0) , sse1: abs_i32_m128i(self.sse1)}
-      }
-      else {
+      } else if #[cfg(target_feature="ssse3")] {
+        Self { sse0: abs_i32_m128i(self.sse0), sse1: abs_i32_m128i(self.sse1)}
+      } else {
         let arr: [i32; 8] = cast(self);
         cast([
           arr[0].wrapping_abs(),
@@ -455,7 +448,7 @@ impl i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         cast(convert_to_m256_from_i32_m256i(self.avx2))
-      } else if #[cfg(target_feature="ssse3")] {
+      } else if #[cfg(target_feature="sse2")] {
         cast(Self { sse0 : cast(convert_to_m128_from_i32_m128i(self.sse0)), sse1 : cast(convert_to_m128_from_i32_m128i(self.sse1)) })
       } else {
         let arr: [i32; 8] = cast(self);
@@ -479,7 +472,7 @@ impl i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         move_mask_m256i(self.avx2)
-      } else if #[cfg(target_feature="ssse3")] {
+      } else if #[cfg(target_feature="sse2")] {
         move_mask_i8_m128i(self.sse0) << 4 ^ move_mask_i8_m128i(self.sse1)
       }
       else {
@@ -518,8 +511,8 @@ impl Not for i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: self.avx2.not()  }
-      } else if #[cfg(target_feature="ssse3")] {
-        Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: self.sse0.not(), sse1: self.sse1.not() }
       } else {
         Self { arr: [
           !self.arr[0],
