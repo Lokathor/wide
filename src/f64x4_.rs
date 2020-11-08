@@ -509,6 +509,16 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  pub fn is_inf(self) -> Self {
+    let shifted_inf = u64x4::from(0xFFE0000000000000);
+    let u: u64x4 = cast(self);
+    let shift_u = u << 1_u64;
+    let out = (shift_u).cmp_eq(shifted_inf);
+    cast(out)
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -871,6 +881,142 @@ impl f64x4 {
     asin
   }
 
+  #[allow(non_upper_case_globals)]
+  pub fn atan(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x4!(MOREBITS, 6.123233995736765886130E-17);
+    const_f64_as_f64x4!(MOREBITSO2, 6.123233995736765886130E-17 * 0.5);
+    const_f64_as_f64x4!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
+
+    const_f64_as_f64x4!(P4atan, -8.750608600031904122785E-1);
+    const_f64_as_f64x4!(P3atan, -1.615753718733365076637E1);
+    const_f64_as_f64x4!(P2atan, -7.500855792314704667340E1);
+    const_f64_as_f64x4!(P1atan, -1.228866684490136173410E2);
+    const_f64_as_f64x4!(P0atan, -6.485021904942025371773E1);
+
+    const_f64_as_f64x4!(Q4atan, 2.485846490142306297962E1);
+    const_f64_as_f64x4!(Q3atan, 1.650270098316988542046E2);
+    const_f64_as_f64x4!(Q2atan, 4.328810604912902668951E2);
+    const_f64_as_f64x4!(Q1atan, 4.853903996359136964868E2);
+    const_f64_as_f64x4!(Q0atan, 1.945506571482613964425E2);
+
+    let t = self.abs();
+
+    // small:  t < 0.66
+    // medium: t <= t <= 2.4142 (1+sqrt(2))
+    // big:    t > 2.4142
+    let notbig = t.cmp_le(T3PO8);
+    let notsmal = t.cmp_ge(Self::splat(0.66));
+
+    let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
+    s = notsmal & s;
+    let mut fac = notbig.blend(MOREBITSO2, MOREBITS);
+    fac = notsmal & fac;
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    // big:    z = -1.0 / t;
+    let mut a = notbig & t;
+    a = notsmal.blend(a - Self::ONE, a);
+    let mut b = notbig & Self::ONE;
+    b = notsmal.blend(b + t, b);
+    let z = a / b;
+
+    let zz = z * z;
+
+    let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
+    let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
+
+    let mut re = (px / qx).mul_add(z * zz, z);
+    re += s + fac;
+
+    // get sign bit
+    re = (self.sign_bit()).blend(-re, re);
+
+    re
+  }
+
+  #[allow(non_upper_case_globals)]
+  pub fn atan2(self, x: Self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x4!(MOREBITS, 6.123233995736765886130E-17);
+    const_f64_as_f64x4!(MOREBITSO2, 6.123233995736765886130E-17 * 0.5);
+    const_f64_as_f64x4!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
+
+    const_f64_as_f64x4!(P4atan, -8.750608600031904122785E-1);
+    const_f64_as_f64x4!(P3atan, -1.615753718733365076637E1);
+    const_f64_as_f64x4!(P2atan, -7.500855792314704667340E1);
+    const_f64_as_f64x4!(P1atan, -1.228866684490136173410E2);
+    const_f64_as_f64x4!(P0atan, -6.485021904942025371773E1);
+
+    const_f64_as_f64x4!(Q4atan, 2.485846490142306297962E1);
+    const_f64_as_f64x4!(Q3atan, 1.650270098316988542046E2);
+    const_f64_as_f64x4!(Q2atan, 4.328810604912902668951E2);
+    const_f64_as_f64x4!(Q1atan, 4.853903996359136964868E2);
+    const_f64_as_f64x4!(Q0atan, 1.945506571482613964425E2);
+
+    let y = self;
+
+    // move in first octant
+    let x1 = x.abs();
+    let y1 = y.abs();
+    let swapxy = y1.cmp_gt(x1);
+    // swap x and y if y1 > x1
+    let mut x2 = swapxy.blend(y1, x1);
+    let mut y2 = swapxy.blend(x1, y1);
+
+    // check for special case: x and y are both +/- INF
+    let both_infinite = x.is_inf() & y.is_inf();
+    if both_infinite.any() {
+      let mone = -Self::ONE;
+      x2 = both_infinite.blend(x2 & mone, x2);
+      y2 = both_infinite.blend(y2 & mone, y2);
+    }
+
+    // x = y = 0 gives NAN here
+    let t = y2 / x2;
+
+    // small:  t < 0.66
+    // medium: t <= t <= 2.4142 (1+sqrt(2))
+    // big:    t > 2.4142
+    let notbig = t.cmp_le(T3PO8);
+    let notsmal = t.cmp_ge(Self::splat(0.66));
+
+    let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
+    s = notsmal & s;
+    let mut fac = notbig.blend(MOREBITSO2, MOREBITS);
+    fac = notsmal & fac;
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    // big:    z = -1.0 / t;
+    let mut a = notbig & t;
+    a = notsmal.blend(a - Self::ONE, a);
+    let mut b = notbig & Self::ONE;
+    b = notsmal.blend(b + t, b);
+    let z = a / b;
+
+    let zz = z * z;
+
+    let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
+    let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
+
+    let mut re = (px / qx).mul_add(z * zz, z);
+    re += s + fac;
+
+    // move back in place
+    re = swapxy.blend(Self::FRAC_PI_2 - re, re);
+    re = ((x | y).cmp_eq(Self::ZERO)).blend(Self::ZERO, re);
+    re = (x.sign_bit()).blend(Self::PI - re, re);
+
+    // get sign bit
+    re = (y.sign_bit()).blend(-re, re);
+
+    re
+  }
+
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
@@ -1168,7 +1314,7 @@ impl f64x4 {
     let px = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
     let x2 = x * x;
     let px = x2 * x * px;
-    let qx = polynomial_5n!(x, Q0, Q1, Q2, Q3, Q4, Q5);
+    let qx = polynomial_5n!(x, Q0, Q1, Q2, Q3, Q4);
     let res = px / qx;
     let res = fe.mul_add(LN2F_LO, res);
     let res = res + x2.mul_neg_add(HALF, x);

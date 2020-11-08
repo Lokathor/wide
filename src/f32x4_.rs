@@ -454,6 +454,15 @@ impl f32x4 {
     let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
     cast(out)
   }
+  #[inline]
+  #[must_use]
+  pub fn is_inf(self) -> Self {
+    let shifted_inf = u32x4::from(0xFF000000);
+    let u: u32x4 = cast(self);
+    let shift_u = u << 1_u64;
+    let out = (shift_u).cmp_eq(shifted_inf);
+    cast(out)
+  }
 
   #[inline]
   #[must_use]
@@ -701,6 +710,100 @@ impl f32x4 {
     let acos = big.blend(z3, z4);
 
     acos
+  }
+
+  #[allow(non_upper_case_globals)]
+  pub fn atan(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P3atanf, 8.05374449538E-2);
+    const_f32_as_f32x4!(P2atanf, -1.38776856032E-1);
+    const_f32_as_f32x4!(P1atanf, 1.99777106478E-1);
+    const_f32_as_f32x4!(P0atanf, -3.33329491539E-1);
+
+    let t = self.abs();
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    // big:    z = -1.0 / t;
+    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
+    let notbig = t.cmp_le(Self::SQRT_2 + Self::ONE);
+
+    let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
+    s = notsmal & s;
+
+    let mut a = notbig & t;
+    a = notsmal.blend(a - Self::ONE, a);
+    let mut b = notbig & Self::ONE;
+    b = notsmal.blend(b + t, b);
+    let z = a / b;
+
+    let zz = z * z;
+
+    // Taylor expansion
+    let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
+    re = re.mul_add(zz * z, z) + s;
+
+    // get sign bit
+    re = (self.sign_bit()).blend(-re, re);
+
+    re
+  }
+
+  #[allow(non_upper_case_globals)]
+  pub fn atan2(self, x: Self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P3atanf, 8.05374449538E-2);
+    const_f32_as_f32x4!(P2atanf, -1.38776856032E-1);
+    const_f32_as_f32x4!(P1atanf, 1.99777106478E-1);
+    const_f32_as_f32x4!(P0atanf, -3.33329491539E-1);
+
+    let y = self;
+
+    // move in first octant
+    let x1 = x.abs();
+    let y1 = y.abs();
+    let swapxy = y1.cmp_gt(x1);
+    // swap x and y if y1 > x1
+    let mut x2 = swapxy.blend(y1, x1);
+    let mut y2 = swapxy.blend(x1, y1);
+
+    // check for special case: x and y are both +/- INF
+    let both_infinite = x.is_inf() & y.is_inf();
+    if both_infinite.any() {
+      let mone = -Self::ONE;
+      x2 = both_infinite.blend(x2 & mone, x2);
+      y2 = both_infinite.blend(y2 & mone, y2);
+    }
+
+    // x = y = 0 will produce NAN. No problem, fixed below
+    let t = y2 / x2;
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
+
+    let a = notsmal.blend(t - Self::ONE, t);
+    let b = notsmal.blend(t + Self::ONE, Self::ONE);
+    let s = notsmal & Self::FRAC_PI_4;
+    let z = a / b;
+
+    let zz = z * z;
+
+    // Taylor expansion
+    let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
+    re = re.mul_add(zz * z, z) + s;
+
+    // move back in place
+    re = swapxy.blend(Self::FRAC_PI_2 - re, re);
+    re = ((x | y).cmp_eq(Self::ZERO)).blend(Self::ZERO, re);
+    re = (x.sign_bit()).blend(Self::PI - re, re);
+
+    // get sign bit
+    re = (y.sign_bit()).blend(-re, re);
+
+    re
   }
 
   #[inline]

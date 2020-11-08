@@ -378,6 +378,73 @@ fn impl_f64x4_acos() {
   }
 }
 
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "avx")]
+#[test]
+fn impl_f64x4_atan() {
+  let inc = 1.0 / 2501.0 / 4.0;
+  for x in -2500..=2500 {
+    let base = (x * 4) as f64 * inc;
+    let origs = [base, base + inc, base + 2.0 * inc, base + 3.0 * inc];
+    let actual_atans = f64x4::from(origs).atan();
+    for i in 0..4 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f64x4, expected: f64| {
+        let actual_arr: [f64; 4] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.000000000000001,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("atan", actual_atans, orig.atan());
+    }
+  }
+}
+
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "avx")]
+#[test]
+fn impl_f64x4_atan2() {
+  let inc_y = 1.0 / 51.0 / 4.0;
+  let inc_x = 1.0 / 2501.0 / 4.0;
+  for y in -50..=50 {
+    let base_y = (y * 4) as f64 * inc_y;
+    let origs_y =
+      [base_y, base_y + inc_y, base_y + 2.0 * inc_y, base_y + 3.0 * inc_y];
+    let actual_y = f64x4::from(origs_y);
+    for x in -2500..=2500 {
+      let base_x = (x * 4) as f64 * inc_x;
+      let origs_x =
+        [base_x, base_x + inc_x, base_x + 2.0 * inc_x, base_x + 3.0 * inc_x];
+      let actual_x = f64x4::from(origs_x);
+      let actual_atan2s = actual_y.atan2(actual_x);
+      for i in 0..4 {
+        let orig_y = origs_y[i];
+        let orig_x = origs_x[i];
+        let check = |name: &str, vals: f64x4, expected: f64| {
+          let actual_arr: [f64; 4] = cast(vals);
+          let actual = actual_arr[i];
+          assert!(
+            (actual - expected).abs() < 0.000000000000001,
+            "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
+            name = name,
+            orig_y = orig_y,
+            orig_x = orig_x,
+            expected = expected,
+            actual = actual
+          );
+        };
+        check("atan2", actual_atan2s, orig_y.atan2(orig_x));
+      }
+    }
+  }
+}
+
 #[test]
 fn impl_f64x4_sin_cos() {
   for x in -2500..=2500 {
