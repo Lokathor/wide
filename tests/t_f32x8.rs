@@ -476,6 +476,99 @@ fn impl_f32x8_acos() {
     }
   }
 }
+
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "avx")]
+#[test]
+fn impl_f32x8_atan() {
+  let inc = 1.0 / 2501.0 / 8.0;
+  for x in -2500..=2500 {
+    let base = (x * 8) as f32 * inc;
+    let origs = [
+      base,
+      base + inc,
+      base + 2.0 * inc,
+      base + 3.0 * inc,
+      base + 4.0 * inc,
+      base + 5.0 * inc,
+      base + 6.0 * inc,
+      base + 7.0 * inc,
+    ];
+    let actual_atans = f32x8::from(origs).atan();
+    for i in 0..8 {
+      let orig = origs[i];
+      let check = |name: &str, vals: f32x8, expected: f32| {
+        let actual_arr: [f32; 8] = cast(vals);
+        let actual = actual_arr[i];
+        assert!(
+          (actual - expected).abs() < 0.0000006,
+          "Wanted {name}({orig}) to be {expected} but got {actual}",
+          name = name,
+          orig = orig,
+          expected = expected,
+          actual = actual
+        );
+      };
+      check("atan", actual_atans, orig.atan());
+    }
+  }
+}
+
+// FIXME: remove cfg requirement once masks as their own types are implemented
+#[cfg(target_feature = "avx")]
+#[test]
+fn impl_f32x8_atan2() {
+  let inc_y = 1.0 / 51.0 / 8.0;
+  let inc_x = 1.0 / 2501.0 / 8.0;
+  for y in -50..=50 {
+    let base_y = (y * 8) as f32 * inc_y;
+    let origs_y = [
+      base_y,
+      base_y + inc_y,
+      base_y + 2.0 * inc_y,
+      base_y + 3.0 * inc_y,
+      base_y + 4.0 * inc_y,
+      base_y + 5.0 * inc_y,
+      base_y + 6.0 * inc_y,
+      base_y + 7.0 * inc_y,
+    ];
+    let actual_y = f32x8::from(origs_y);
+    for x in -2500..=2500 {
+      let base_x = (x * 8) as f32 * inc_x;
+      let origs_x = [
+        base_x,
+        base_x + inc_x,
+        base_x + 2.0 * inc_x,
+        base_x + 3.0 * inc_x,
+        base_x + 4.0 * inc_x,
+        base_x + 5.0 * inc_x,
+        base_x + 6.0 * inc_x,
+        base_x + 7.0 * inc_x,
+      ];
+      let actual_x = f32x8::from(origs_x);
+      let actual_atan2s = actual_y.atan2(actual_x);
+      for i in 0..8 {
+        let orig_y = origs_y[i];
+        let orig_x = origs_x[i];
+        let check = |name: &str, vals: f32x8, expected: f32| {
+          let actual_arr: [f32; 8] = cast(vals);
+          let actual = actual_arr[i];
+          assert!(
+          (actual - expected).abs() < 0.0000006,
+          "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
+          name = name,
+          orig_y = orig_y,
+          orig_x = orig_x,
+          expected = expected,
+          actual = actual
+        );
+        };
+        check("atan2", actual_atan2s, orig_y.atan2(orig_x));
+      }
+    }
+  }
+}
+
 #[test]
 fn impl_f32x8_sin_cos() {
   for x in -2500..=2500 {
