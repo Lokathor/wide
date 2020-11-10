@@ -365,6 +365,15 @@ fn impl_f32x8_flip_signs() {
   assert_eq!(expected, actual);
 }
 
+#[test]
+fn impl_f32x8_copysign() {
+  let a = f32x8::from([1.0, 1.0, -1.0, -1.0, 5.2, 6.7, -8.2, -12.5]);
+  let b = f32x8::from([2.0, -3.0, 4.0, -5.0, 5.2, 6.7, -8.2, -12.5]);
+  let expected = f32x8::from([1.0, -1.0, 1.0, -1.0, 5.2, 6.7, -8.2, -12.5]);
+  let actual = a.copysign(b);
+  assert_eq!(expected, actual);
+}
+
 // NOTE: Disabled
 #[cfg(target_feature = "sse")]
 #[test]

@@ -323,6 +323,15 @@ fn impl_f32x4_flip_signs() {
 }
 
 #[test]
+fn impl_f32x4_copysign() {
+  let a = f32x4::from([1.0, 1.0, -1.0, -1.0]);
+  let b = f32x4::from([2.0, -3.0, 4.0, -5.0]);
+  let expected = f32x4::from([1.0, -1.0, 1.0, -1.0]);
+  let actual = a.copysign(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f32x4_sin_cos() {
   for x in -2500..=2500 {
     let base = (x * 4) as f32;
