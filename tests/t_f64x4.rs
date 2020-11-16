@@ -293,6 +293,15 @@ fn impl_f64x4_flip_signs() {
   assert_eq!(expected, actual);
 }
 
+#[test]
+fn impl_f64x4_copysign() {
+  let a = f64x4::from([1.0, 1.0, -1.0, -1.0]);
+  let b = f64x4::from([2.0, -3.0, 4.0, -5.0]);
+  let expected = f64x4::from([1.0, -1.0, 1.0, -1.0]);
+  let actual = a.copysign(b);
+  assert_eq!(expected, actual);
+}
+
 // FIXME: remove cfg requirement once masks as their own types are implemented
 #[cfg(target_feature = "avx")]
 #[test]

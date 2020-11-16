@@ -512,6 +512,13 @@ impl f64x2 {
     self ^ (signs & Self::from(-0.0))
   }
 
+  #[inline]
+  #[must_use]
+  pub fn copysign(self, sign: Self) -> Self {
+    let magnitude_mask = Self::from(f64::from_bits(u64::MAX >> 1));
+    (self & magnitude_mask) | (sign & Self::from(-0.0))
+  }
+
   #[allow(non_upper_case_globals)]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":

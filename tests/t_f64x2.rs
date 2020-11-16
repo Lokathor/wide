@@ -351,6 +351,21 @@ fn impl_f64x2_flip_signs() {
 }
 
 #[test]
+fn impl_f64x2_copysign() {
+  let a = f64x2::from([1.0, 1.0]);
+  let b = f64x2::from([2.0, -3.0]);
+  let expected = f64x2::from([1.0, -1.0]);
+  let actual = a.copysign(b);
+  assert_eq!(expected, actual);
+  //
+  let a = f64x2::from([-1.0, -1.0]);
+  let b = f64x2::from([4.0, -5.0]);
+  let expected = f64x2::from([1.0, -1.0]);
+  let actual = a.copysign(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f64x2_sin_cos() {
   for x in -2500..=2500 {
     let base = (x * 4) as f64;
