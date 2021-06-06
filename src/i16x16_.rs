@@ -433,9 +433,9 @@ impl i16x16 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: blend_varying_i16_m256i(f.avx2, t.avx2, self.avx2) }
+        Self { avx2: blend_varying_i8_m256i(f.avx2, t.avx2, self.avx2) }
       } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i16_m128i(f.sse, t.sse, self.sse) }
+        Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
       } else {
         generic_bit_blend(self, t, f)
       }
