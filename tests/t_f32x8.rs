@@ -168,6 +168,10 @@ fn impl_f32x8_cmp_lt() {
   let expected: [i32; 8] = [-1, -1, 0, 0, 0, 0, -1, -1];
   let actual: [i32; 8] = cast(a.cmp_lt(b));
   assert_eq!(expected, actual);
+
+  let expected: [i32; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
+  let actual: [i32; 8] = cast(a.cmp_lt(a));
+  assert_eq!(expected, actual);
 }
 
 #[test]
@@ -306,7 +310,7 @@ fn impl_f32x8_round_int() {
   }
 }
 
-#[cfg(any(target_feature="avx", feature="std"))]
+#[cfg(any(target_feature = "avx", feature = "std"))]
 #[test]
 fn impl_f32x8_trunc_int() {
   for (f, i) in [

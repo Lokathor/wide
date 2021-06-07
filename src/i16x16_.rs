@@ -398,8 +398,7 @@ impl CmpLt for i16x16 {
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        //TODO: what about == ?
-        Self { avx2: !cmp_gt_mask_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: !cmp_gt_mask_i16_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i16_m256i(self.avx2,rhs.avx2) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_lt_mask_i16_m128i(self.sse0, rhs.sse0),
           sse1: cmp_lt_mask_i16_m128i(self.sse1, rhs.sse1) }

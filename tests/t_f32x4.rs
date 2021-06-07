@@ -166,6 +166,10 @@ fn impl_f32x4_cmp_lt() {
   let expected: [i32; 4] = [-1, 0, 0, 0];
   let actual: [i32; 4] = cast(a.cmp_lt(b));
   assert_eq!(expected, actual);
+
+  let expected: [i32; 4] = [0, 0, 0, 0];
+  let actual: [i32; 4] = cast(a.cmp_lt(a));
+  assert_eq!(expected, actual);
 }
 
 #[test]
@@ -279,7 +283,7 @@ fn impl_f32x4_round_int() {
   }
 }
 
-#[cfg(any(target_feature="sse", feature="std"))]
+#[cfg(any(target_feature = "sse", feature = "std"))]
 #[test]
 fn impl_f32x4_trunc_int() {
   let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);

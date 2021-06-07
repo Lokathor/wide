@@ -158,6 +158,10 @@ fn impl_f64x4_cmp_lt() {
   let expected: [i64; 4] = [-1, 0, 0, 0];
   let actual: [i64; 4] = cast(a.cmp_lt(b));
   assert_eq!(expected, actual);
+
+  let expected: [i64; 4] = [0, 0, 0, 0];
+  let actual: [i64; 4] = cast(a.cmp_lt(a));
+  assert_eq!(expected, actual);
 }
 
 #[test]

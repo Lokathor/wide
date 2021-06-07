@@ -122,6 +122,10 @@ fn impl_i32x8_cmp_lt() {
   let expected = i32x8::from([-1, -1, 0, -1, -1, -1, 0, 0]);
   let actual = a.cmp_lt(b);
   assert_eq!(expected, actual);
+
+  let expected = i32x8::from([0, 0, 0, 0, 0, 0, 0, 0]);
+  let actual = a.cmp_lt(a);
+  assert_eq!(expected, actual);
 }
 
 #[test]
