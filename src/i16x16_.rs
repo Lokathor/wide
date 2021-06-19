@@ -304,14 +304,14 @@ macro_rules! impl_shr_t_for_i16x16 {
               self.arr[5] >> u,
               self.arr[6] >> u,
               self.arr[7] >> u,
-              self.arr[8] << u,
-              self.arr[9] << u,
-              self.arr[10] << u,
-              self.arr[11] << u,
-              self.arr[12] << u,
-              self.arr[13] << u,
-              self.arr[14] << u,
-              self.arr[15] << u,
+              self.arr[8] >> u,
+              self.arr[9] >> u,
+              self.arr[10] >> u,
+              self.arr[11] >> u,
+              self.arr[12] >> u,
+              self.arr[13] >> u,
+              self.arr[14] >> u,
+              self.arr[15] >> u,
             ]}
           }
         }
