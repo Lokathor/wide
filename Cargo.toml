@@ -18,5 +18,5 @@ default = []
 std = []
 
 [dependencies]
-safe_arch = { version = "0.5", features = ["bytemuck"] }
+safe_arch = { version = "0.6", features = ["bytemuck"] }
 bytemuck = "1"
