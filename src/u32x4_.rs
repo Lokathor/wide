@@ -12,6 +12,20 @@ pick! {
   }
 }
 
+macro_rules! const_u32_as_u32x4 {
+  ($i:ident, $f:expr) => {
+    pub const $i: u32x4 =
+      unsafe { ConstUnionHack128bit { u32a4: [$f; 4] }.u32x4 };
+  };
+}
+
+impl u32x4 {
+  const_u32_as_u32x4!(ONE, 1);
+  const_u32_as_u32x4!(ZERO, 0);
+  const_u32_as_u32x4!(MAX, u32::MAX);
+  const_u32_as_u32x4!(MIN, u32::MIN);
+}
+
 unsafe impl Zeroable for u32x4 {}
 unsafe impl Pod for u32x4 {}
 
