@@ -632,7 +632,7 @@ impl f32x8 {
       }
     }
   }
-  #[cfg(any(target_feature="avx", feature="std"))]
+  #[cfg(any(target_feature = "avx", feature = "std"))]
   #[inline]
   #[must_use]
   pub fn trunc_int(self) -> i32x8 {

@@ -279,7 +279,7 @@ fn impl_f32x4_round_int() {
   }
 }
 
-#[cfg(any(target_feature="sse", feature="std"))]
+#[cfg(any(target_feature = "sse", feature = "std"))]
 #[test]
 fn impl_f32x4_trunc_int() {
   let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);

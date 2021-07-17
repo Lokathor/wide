@@ -527,7 +527,7 @@ impl f32x4 {
       }
     }
   }
-  #[cfg(any(target_feature="sse", feature="std"))]
+  #[cfg(any(target_feature = "sse", feature = "std"))]
   #[inline]
   #[must_use]
   pub fn trunc_int(self) -> i32x4 {
