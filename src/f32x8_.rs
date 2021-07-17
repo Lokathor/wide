@@ -18,9 +18,8 @@ pick! {
 
 macro_rules! const_f32_as_f32x8 {
   ($i:ident, $f:expr) => {
-    pub const $i: f32x8 = unsafe {
-      ConstUnionHack128bit { f32a8: [$f, $f, $f, $f, $f, $f, $f, $f] }.f32x8
-    };
+    pub const $i: f32x8 =
+      unsafe { ConstUnionHack256bit { f32a8: [$f; 8] }.f32x8 };
   };
 }
 

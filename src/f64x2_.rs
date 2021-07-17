@@ -15,7 +15,7 @@ pick! {
 macro_rules! const_f64_as_f64x2 {
   ($i:ident, $f:expr) => {
     pub const $i: f64x2 =
-      unsafe { ConstUnionHack128bit { f64a2: [$f, $f] }.f64x2 };
+      unsafe { ConstUnionHack128bit { f64a2: [$f; 2] }.f64x2 };
   };
 }
 
