@@ -12,7 +12,7 @@ pick! {
   }
 }
 
-impl_nonfloat_consts!(i8, 16, i8x16, i8x16, i8a16, const_i8_as_i8x16, 128);
+int_uint_consts!(i8, 16, i8x16, i8x16, i8a16, const_i8_as_i8x16, 128);
 
 unsafe impl Zeroable for i8x16 {}
 unsafe impl Pod for i8x16 {}

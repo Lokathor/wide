@@ -16,7 +16,7 @@ pick! {
   }
 }
 
-impl_nonfloat_consts!(u32, 8, u32x8, u32x8, u32a8, const_u32_as_u32x8, 256);
+int_uint_consts!(u32, 8, u32x8, u32x8, u32a8, const_u32_as_u32x8, 256);
 
 unsafe impl Zeroable for u32x8 {}
 unsafe impl Pod for u32x8 {}

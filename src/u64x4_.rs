@@ -16,7 +16,7 @@ pick! {
   }
 }
 
-impl_nonfloat_consts!(u64, 4, u64x4, u64x4, u64a4, const_u64_as_u64x4, 256);
+int_uint_consts!(u64, 4, u64x4, u64x4, u64a4, const_u64_as_u64x4, 256);
 
 unsafe impl Zeroable for u64x4 {}
 unsafe impl Pod for u64x4 {}
