@@ -12,19 +12,7 @@ pick! {
   }
 }
 
-macro_rules! const_i8_as_i8x16 {
-  ($i:ident, $f:expr) => {
-    pub const $i: i8x16 =
-      unsafe { ConstUnionHack128bit { i8a16: [$f; 16] }.i8x16 };
-  };
-}
-
-impl i8x16 {
-  const_i8_as_i8x16!(ONE, 1);
-  const_i8_as_i8x16!(ZERO, 0);
-  const_i8_as_i8x16!(MAX, i8::MAX);
-  const_i8_as_i8x16!(MIN, i8::MIN);
-}
+impl_nonfloat_consts!(i8, 16, i8x16, i8x16, i8a16, const_i8_as_i8x16, 128);
 
 unsafe impl Zeroable for i8x16 {}
 unsafe impl Pod for i8x16 {}

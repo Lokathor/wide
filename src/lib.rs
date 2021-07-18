@@ -39,6 +39,9 @@ use safe_arch::*;
 
 use bytemuck::*;
 
+#[macro_use]
+mod macros;
+
 macro_rules! pick {
   ($(if #[cfg($($test:meta),*)] {
       $($if_tokens:tt)*

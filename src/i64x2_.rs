@@ -12,19 +12,7 @@ pick! {
   }
 }
 
-macro_rules! const_i64_as_i64x2 {
-  ($i:ident, $f:expr) => {
-    pub const $i: i64x2 =
-      unsafe { ConstUnionHack128bit { i64a2: [$f; 2] }.i64x2 };
-  };
-}
-
-impl i64x2 {
-  const_i64_as_i64x2!(ONE, 1);
-  const_i64_as_i64x2!(ZERO, 0);
-  const_i64_as_i64x2!(MAX, i64::MAX);
-  const_i64_as_i64x2!(MIN, i64::MIN);
-}
+impl_nonfloat_consts!(i64, 2, i64x2, i64x2, i64a2, const_i64_as_i64x2, 128);
 
 unsafe impl Zeroable for i64x2 {}
 unsafe impl Pod for i64x2 {}

@@ -16,19 +16,7 @@ pick! {
   }
 }
 
-macro_rules! const_i8_as_i8x32 {
-  ($i:ident, $f:expr) => {
-    pub const $i: i8x32 =
-      unsafe { ConstUnionHack256bit { i8a32: [$f; 32] }.i8x32 };
-  };
-}
-
-impl i8x32 {
-  const_i8_as_i8x32!(ONE, 1);
-  const_i8_as_i8x32!(ZERO, 0);
-  const_i8_as_i8x32!(MAX, i8::MAX);
-  const_i8_as_i8x32!(MIN, i8::MIN);
-}
+impl_nonfloat_consts!(i8, 32, i8x32, i8x32, i8a32, const_i8_as_i8x32, 256);
 
 unsafe impl Zeroable for i8x32 {}
 unsafe impl Pod for i8x32 {}

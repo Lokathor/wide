@@ -16,19 +16,7 @@ pick! {
   }
 }
 
-macro_rules! const_u64_as_u64x4 {
-  ($i:ident, $f:expr) => {
-    pub const $i: u64x4 =
-      unsafe { ConstUnionHack256bit { u64a4: [$f; 4] }.u64x4 };
-  };
-}
-
-impl u64x4 {
-  const_u64_as_u64x4!(ONE, 1);
-  const_u64_as_u64x4!(ZERO, 0);
-  const_u64_as_u64x4!(MAX, u64::MAX);
-  const_u64_as_u64x4!(MIN, u64::MIN);
-}
+impl_nonfloat_consts!(u64, 4, u64x4, u64x4, u64a4, const_u64_as_u64x4, 256);
 
 unsafe impl Zeroable for u64x4 {}
 unsafe impl Pod for u64x4 {}
