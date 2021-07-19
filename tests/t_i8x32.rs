@@ -177,6 +177,13 @@ fn impl_i8x32_cmp_lt() {
   ]);
   let actual = a.cmp_lt(b);
   assert_eq!(expected, actual);
+
+  let expected = i8x32::from([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ]);
+  let actual = a.cmp_lt(a);
+  assert_eq!(expected, actual);
 }
 
 #[test]
