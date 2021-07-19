@@ -12,6 +12,8 @@ pick! {
   }
 }
 
+int_uint_consts!(i16, 8, i16x8, i16x8, i16a8, const_i16_as_i16x8, 128);
+
 unsafe impl Zeroable for i16x8 {}
 unsafe impl Pod for i16x8 {}
 

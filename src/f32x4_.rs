@@ -15,7 +15,7 @@ pick! {
 macro_rules! const_f32_as_f32x4 {
   ($i:ident, $f:expr) => {
     pub const $i: f32x4 =
-      unsafe { ConstUnionHack128bit { f32a4: [$f, $f, $f, $f] }.f32x4 };
+      unsafe { ConstUnionHack128bit { f32a4: [$f; 4] }.f32x4 };
   };
 }
 
@@ -527,7 +527,7 @@ impl f32x4 {
       }
     }
   }
-  #[cfg(any(target_feature="sse", feature="std"))]
+  #[cfg(any(target_feature = "sse", feature = "std"))]
   #[inline]
   #[must_use]
   pub fn trunc_int(self) -> i32x4 {

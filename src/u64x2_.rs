@@ -12,6 +12,8 @@ pick! {
   }
 }
 
+int_uint_consts!(u64, 2, u64x2, u64x2, u64a2, const_u64_as_u64x2, 128);
+
 unsafe impl Zeroable for u64x2 {}
 unsafe impl Pod for u64x2 {}
 
