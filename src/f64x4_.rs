@@ -286,7 +286,7 @@ impl CmpEq for f64x4 {
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d!(self.avx, EqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_eq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_eq_mask_m128d(self.sse1, rhs.sse1) }
       } else {
@@ -308,7 +308,7 @@ impl CmpGe for f64x4 {
   fn cmp_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d!(self.avx, GreaterEqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_ge_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128d(self.sse1, rhs.sse1) }
@@ -331,7 +331,7 @@ impl CmpGt for f64x4 {
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d!(self.avx, GreaterThanOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!( GreaterThanOrdered)}>(self.avx, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_gt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_gt_mask_m128d(self.sse1, rhs.sse1) }
@@ -354,7 +354,7 @@ impl CmpNe for f64x4 {
   fn cmp_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d!(self.avx, NotEqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_neq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128d(self.sse1, rhs.sse1) }
@@ -377,7 +377,7 @@ impl CmpLe for f64x4 {
   fn cmp_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d!(self.avx, LessEqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_le_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_le_mask_m128d(self.sse1, rhs.sse1) }
@@ -400,7 +400,7 @@ impl CmpLt for f64x4 {
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d!(self.avx, LessThanOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
       }
       else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_lt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_lt_mask_m128d(self.sse1, rhs.sse1) }
@@ -483,7 +483,7 @@ impl f64x4 {
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256d!(self.avx, Unordered, self.avx ) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(Unordered)}>(self.avx, self.avx ) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_unord_mask_m128d(self.sse0, self.sse0) , sse1: cmp_unord_mask_m128d(self.sse1, self.sse1) }
       } else {
@@ -522,9 +522,9 @@ impl f64x4 {
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: round_m256d!(self.avx, Nearest) }
+        Self { avx: round_m256d::<{round_op!(Nearest)}>(self.avx) }
       }  else if #[cfg(target_feature="sse4.1")] {
-        Self { sse0: round_m128d!(self.sse0, Nearest), sse1: round_m128d!(self.sse1, Nearest) }
+        Self { sse0: round_m128d::<{round_op!(Nearest)}>(self.sse0), sse1: round_m128d::<{round_op!(Nearest)}>(self.sse1) }
       } else {
           let sign_mask = f64x4::from(-0.0);
           let magic = f64x4::from(f64::from_bits(0x43300000_00000000));
@@ -1269,7 +1269,7 @@ impl f64x4 {
       if #[cfg(target_feature="avx")] {
         // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
         let lo = cast_to_m128d_from_m256d(self.avx);
-        let hi = extract_m128d_from_m256d!(self.avx,1);
+        let hi = extract_m128d_from_m256d::<1>(self.avx);
         let lo = add_m128d(lo,hi);
         let hi64 = unpack_high_m128d(lo,lo);
         let sum = add_m128d_s(lo,hi64);

@@ -288,7 +288,7 @@ impl CmpGt for f64x2 {
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { sse: cmp_op_mask_m128d!(self.sse, GreaterThanOrdered, rhs.sse) }
+        Self { sse: cmp_op_mask_m128d::<{cmp_op!(GreaterThanOrdered)}>(self.sse, rhs.sse) }
       }
       else if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_m128d(self.sse, rhs.sse) }
@@ -440,7 +440,7 @@ impl f64x2 {
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128d!(self.sse, Nearest) }
+        Self { sse: round_m128d::<{round_op!(Nearest)}>(self.sse) }
       } else {
         let sign_mask = f64x2::from(-0.0);
         let magic = f64x2::from(f64::from_bits(0x43300000_00000000));

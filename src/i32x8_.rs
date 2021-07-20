@@ -473,19 +473,12 @@ impl i32x8 {
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_m256i(self.avx2)
+        move_mask_i8_m256i(self.avx2)
       } else if #[cfg(target_feature="sse2")] {
-        move_mask_i8_m128i(self.sse0) << 4 ^ move_mask_i8_m128i(self.sse1)
+        move_mask_i8_m128i(self.sse0) << 16 | move_mask_i8_m128i(self.sse1)
       }
       else {
-        (((self.arr[0]) < 0) as i32) << 0 |
-        (((self.arr[1]) < 0) as i32) << 1 |
-        (((self.arr[2]) < 0) as i32) << 2 |
-        (((self.arr[3]) < 0) as i32) << 3 |
-        (((self.arr[4]) < 0) as i32) << 4 |
-        (((self.arr[5]) < 0) as i32) << 5 |
-        (((self.arr[6]) < 0) as i32) << 6 |
-        (((self.arr[7]) < 0) as i32) << 7
+        unsafe { core::mem::transmute::<_, i8x32>(self) }.move_mask();
       }
     }
   }
@@ -497,8 +490,7 @@ impl i32x8 {
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    // eight lanes
-    self.move_mask() == 0b11111111
+    self.move_mask() == (u32::MAX as i32)
   }
   #[inline]
   #[must_use]

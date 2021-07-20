@@ -469,7 +469,7 @@ impl f32x4 {
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128!(self.sse, Nearest) }
+        Self { sse: round_m128::<{round_op!(Nearest)}>(self.sse) }
       } else if #[cfg(target_feature="sse2")] {
         let mi: m128i = convert_to_i32_m128i_from_m128(self.sse);
         let f: f32x4 = f32x4 { sse: convert_to_m128_from_i32_m128i(mi) };

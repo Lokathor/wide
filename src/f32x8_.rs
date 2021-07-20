@@ -312,7 +312,7 @@ impl CmpEq for f32x8 {
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256!(self.avx, EqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_eq_mask_m128(self.sse0, rhs.sse0), sse1: cmp_eq_mask_m128(self.sse1, rhs.sse1) }
       } else {
@@ -338,7 +338,7 @@ impl CmpGe for f32x8 {
   fn cmp_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256!(self.avx, GreaterEqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_ge_mask_m128(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128(self.sse1, rhs.sse1) }
       } else {
@@ -364,7 +364,7 @@ impl CmpGt for f32x8 {
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256!(self.avx, GreaterThanOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_gt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_gt_mask_m128(self.sse1, rhs.sse1) }
       } else {
@@ -390,7 +390,7 @@ impl CmpNe for f32x8 {
   fn cmp_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256!(self.avx, NotEqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_neq_mask_m128(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128(self.sse1, rhs.sse1) }
       } else {
@@ -416,7 +416,7 @@ impl CmpLe for f32x8 {
   fn cmp_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256!(self.avx, LessEqualOrdered, rhs.avx) }
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_le_mask_m128(self.sse0, rhs.sse0), sse1: cmp_le_mask_m128(self.sse1, rhs.sse1) }
       } else {
@@ -442,7 +442,7 @@ impl CmpLt for f32x8 {
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
         if #[cfg(target_feature="avx")] {
-          Self { avx: cmp_op_mask_m256!(self.avx, LessThanOrdered, rhs.avx) }
+          Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
         } else if #[cfg(target_feature="sse2")] {
           Self { sse0: cmp_lt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_lt_mask_m128(self.sse1, rhs.sse1) }
         } else {
@@ -530,7 +530,7 @@ impl f32x8 {
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256!(self.avx, Unordered, self.avx ) }
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.avx, self.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_unord_mask_m128(self.sse0, self.sse0) , sse1: cmp_unord_mask_m128(self.sse1, self.sse1) }
       } else {
@@ -572,9 +572,9 @@ impl f32x8 {
     pick! {
       // NOTE: Is there an SSE2 version of this? f32x4 version probably translates but I've not had time to figure it out
       if #[cfg(target_feature="avx")] {
-        Self { avx: round_m256!(self.avx, Nearest) }
+        Self { avx: round_m256::<{round_op!(Nearest)}>(self.avx) }
       }  else if #[cfg(target_feature="sse4.1")] {
-        Self { sse0: round_m128!(self.sse0, Nearest), sse1: round_m128!(self.sse1, Nearest) }
+        Self { sse0: round_m128::<{round_op!(Nearest)}>(self.sse0), sse1: round_m128::<{round_op!(Nearest)}>(self.sse1) }
       } else {
         // Note(Lokathor): This software fallback is probably very slow compared
         // to having a hardware option available, even just the sse2 version is
@@ -1232,14 +1232,14 @@ impl f32x8 {
     pick! {
       // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
       if #[cfg(target_feature="avx")]{
-        let hi_quad = extract_m128_from_m256!(self.avx,1);
+        let hi_quad = extract_m128_from_m256::<1>(self.avx);
         let lo_quad = cast_to_m128_from_m256(self.avx);
         let sum_quad = add_m128(lo_quad,hi_quad);
         let lo_dual = sum_quad;
         let hi_dual = move_high_low_m128(sum_quad,sum_quad);
         let sum_dual = add_m128(lo_dual,hi_dual);
         let lo = sum_dual;
-        let hi = shuffle_ai_f32_all_m128!(sum_dual,[1,0,0,0]);
+        let hi = shuffle_abi_f32_all_m128::<0b_01>(sum_dual, sum_dual);
         let sum = add_m128_s(lo, hi);
         get_f32_from_m128_s(sum)
       }
