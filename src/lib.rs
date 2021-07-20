@@ -932,3 +932,4 @@ bulk_impl_const_rhs_op!((CmpGt, cmp_gt) => [(f64x4, f64), (f64x2, f64), (f32x4,f
 bulk_impl_const_rhs_op!((CmpNe, cmp_ne) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
 bulk_impl_const_rhs_op!((CmpLe, cmp_le) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
 bulk_impl_const_rhs_op!((CmpGe, cmp_ge) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
+
