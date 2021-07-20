@@ -302,7 +302,7 @@ union ConstUnionHack256bit {
   f32x8:  f32x8,
   f64x4:  f64x4,
   i8x32:  i8x32,
-  // i16x16: i16x16,
+  i16x16: i16x16,
   i32x8:  i32x8,
   i64x4:  i64x4,
   // u8x32:  u8x32,
