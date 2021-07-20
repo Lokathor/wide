@@ -11,7 +11,7 @@ pick! {
     pub struct i16x16 { pub(crate) sse0: m128i, pub(crate) sse1: m128i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
-    #[repr(C, align(16))]
+    #[repr(C, align(32))]
     pub struct i16x16 { arr: [i16;16] }
   }
 }
