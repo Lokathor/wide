@@ -478,7 +478,13 @@ impl i32x8 {
         move_mask_i8_m128i(self.sse0) << 16 | move_mask_i8_m128i(self.sse1)
       }
       else {
-        unsafe { core::mem::transmute::<_, i8x32>(self) }.move_mask();
+        let mut out = 0;
+        for (index, i_eight) in unsafe { core::mem::transmute::<_, [i8; 32]>(self.arr) }.iter().copied().enumerate() {
+          if i_eight < 0 {
+            out |= (1 << index);
+          }
+        }
+        out
       }
     }
   }
