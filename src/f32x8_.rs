@@ -16,37 +16,7 @@ pick! {
   }
 }
 
-macro_rules! const_f32_as_f32x8 {
-  ($i:ident, $f:expr) => {
-    pub const $i: f32x8 =
-      unsafe { ConstUnionHack256bit { f32a8: [$f; 8] }.f32x8 };
-  };
-}
-
-impl f32x8 {
-  const_f32_as_f32x8!(ONE, 1.0);
-  const_f32_as_f32x8!(HALF, 0.5);
-  const_f32_as_f32x8!(ZERO, 0.0);
-  const_f32_as_f32x8!(E, core::f32::consts::E);
-  const_f32_as_f32x8!(FRAC_1_PI, core::f32::consts::FRAC_1_PI);
-  const_f32_as_f32x8!(FRAC_2_PI, core::f32::consts::FRAC_2_PI);
-  const_f32_as_f32x8!(FRAC_2_SQRT_PI, core::f32::consts::FRAC_2_SQRT_PI);
-  const_f32_as_f32x8!(FRAC_1_SQRT_2, core::f32::consts::FRAC_1_SQRT_2);
-  const_f32_as_f32x8!(FRAC_PI_2, core::f32::consts::FRAC_PI_2);
-  const_f32_as_f32x8!(FRAC_PI_3, core::f32::consts::FRAC_PI_3);
-  const_f32_as_f32x8!(FRAC_PI_4, core::f32::consts::FRAC_PI_4);
-  const_f32_as_f32x8!(FRAC_PI_6, core::f32::consts::FRAC_PI_6);
-  const_f32_as_f32x8!(FRAC_PI_8, core::f32::consts::FRAC_PI_8);
-  const_f32_as_f32x8!(LN_2, core::f32::consts::LN_2);
-  const_f32_as_f32x8!(LN_10, core::f32::consts::LN_10);
-  const_f32_as_f32x8!(LOG2_E, core::f32::consts::LOG2_E);
-  const_f32_as_f32x8!(LOG10_E, core::f32::consts::LOG10_E);
-  const_f32_as_f32x8!(LOG10_2, core::f32::consts::LOG10_2);
-  const_f32_as_f32x8!(LOG2_10, core::f32::consts::LOG2_10);
-  const_f32_as_f32x8!(PI, core::f32::consts::PI);
-  const_f32_as_f32x8!(SQRT_2, core::f32::consts::SQRT_2);
-  const_f32_as_f32x8!(TAU, 6.28318530717958647692528676655900577_f32);
-}
+float_consts!(f32, 8, f32x8, f32x8, f32a8, const_f32_as_f32x8, 256);
 
 unsafe impl Zeroable for f32x8 {}
 unsafe impl Pod for f32x8 {}
