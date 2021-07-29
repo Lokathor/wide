@@ -133,7 +133,7 @@ impl Add<i32x8> for i32 {
   #[inline]
   #[must_use]
   fn add(self, rhs: i32x8) -> Self::Output {
-    i32x8::splat(self) * rhs
+    i32x8::splat(self) + rhs
   }
 }
 
@@ -142,7 +142,7 @@ impl Sub<i32x8> for i32 {
   #[inline]
   #[must_use]
   fn sub(self, rhs: i32x8) -> Self::Output {
-    i32x8::splat(self) * rhs
+    i32x8::splat(self) - rhs
   }
 }
 
@@ -481,7 +481,7 @@ impl i32x8 {
         let mut out = 0;
         for (index, i_eight) in unsafe { core::mem::transmute::<_, [i8; 32]>(self.arr) }.iter().copied().enumerate() {
           if i_eight < 0 {
-            out |= (1 << index);
+            out |= 1 << index;
           }
         }
         out
