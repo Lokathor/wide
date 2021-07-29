@@ -41,7 +41,7 @@ impl f32x4 {
   const_f32_as_f32x4!(LOG2_10, core::f32::consts::LOG2_10);
   const_f32_as_f32x4!(PI, core::f32::consts::PI);
   const_f32_as_f32x4!(SQRT_2, core::f32::consts::SQRT_2);
-  const_f32_as_f32x4!(TAU, 6.28318530717958647692528676655900577_f32);
+  const_f32_as_f32x4!(TAU, core::f32::consts::TAU);
 }
 
 unsafe impl Zeroable for f32x4 {}
