@@ -1353,10 +1353,9 @@ impl Not for f64x2 {
       if #[cfg(target_feature="sse2")] {
         Self { sse: self.sse.not() }
       } else {
-
         Self { arr: [
-          (self.arr[0].to_bits() ^ u64::MAX) as f64,
-          (self.arr[1].to_bits() ^ u64::MAX) as f64,
+          f64::from_bits(!self.arr[0].to_bits()),
+          f64::from_bits(!self.arr[1].to_bits()),
         ]}
       }
     }
