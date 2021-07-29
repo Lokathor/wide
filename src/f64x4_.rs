@@ -1486,10 +1486,10 @@ impl Not for f64x4 {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
         Self { arr: [
-          (self.arr[0].to_bits() ^ u64::MAX) as f64,
-          (self.arr[1].to_bits() ^ u64::MAX) as f64,
-          (self.arr[2].to_bits() ^ u64::MAX) as f64,
-          (self.arr[3].to_bits() ^ u64::MAX) as f64,
+          f64::from_bits(!self.arr[0].to_bits()),
+          f64::from_bits(!self.arr[1].to_bits()),
+          f64::from_bits(!self.arr[2].to_bits()),
+          f64::from_bits(!self.arr[3].to_bits()),
         ]}
       }
     }

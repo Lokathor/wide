@@ -260,10 +260,10 @@ impl Not for u64x4 {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
       } else {
         Self { arr: [
-          (self.arr[0] as u64 ^ u64::MAX) as u64,
-          (self.arr[1] as u64 ^ u64::MAX) as u64,
-          (self.arr[2] as u64 ^ u64::MAX) as u64,
-          (self.arr[3] as u64 ^ u64::MAX) as u64,
+          !self.arr[0],
+          !self.arr[1],
+          !self.arr[2],
+          !self.arr[3],
         ]}
       }
     }
