@@ -46,7 +46,7 @@ impl f64x4 {
   const_f64_as_f64x4!(LOG2_10, core::f64::consts::LOG2_10);
   const_f64_as_f64x4!(PI, core::f64::consts::PI);
   const_f64_as_f64x4!(SQRT_2, core::f64::consts::SQRT_2);
-  const_f64_as_f64x4!(TAU, 6.28318530717958647692528676655900577_f64);
+  const_f64_as_f64x4!(TAU, core::f64::consts::TAU);
 }
 
 unsafe impl Zeroable for f64x4 {}
