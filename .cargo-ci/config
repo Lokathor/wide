@@ -7,3 +7,7 @@
 # This can cause weirdness!
 rustflags = ["-Ctarget-cpu=native"]
 rustdocflags = ["-Ctarget-cpu=native"]
+
+[target.wasm32-wasi]
+runner = "wasmtime run --wasm-features all --dir ."
+rustflags = ["-Ctarget-feature=+simd128,+bulk-memory,+nontrapping-fptoint,+sign-ext"]

@@ -6,40 +6,40 @@ on:
 
 jobs:
   build_test:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.rust.os }}
     strategy:
       matrix:
         rust:
         # x86 without sse/sse2 on by default
-        - { target: i586-pc-windows-msvc, toolchain: 1.52.0 }
-        - { target: i586-pc-windows-msvc, toolchain: stable }
-        - { target: i586-pc-windows-msvc, toolchain: beta }
-        - { target: i586-pc-windows-msvc, toolchain: nightly }
+        - { target: i586-pc-windows-msvc, toolchain: 1.52.0, os: windows-latest }
+        - { target: i586-pc-windows-msvc, toolchain: stable, os: windows-latest }
+        - { target: i586-pc-windows-msvc, toolchain: beta, os: windows-latest }
+        - { target: i586-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86
-        - { target: i686-pc-windows-msvc, toolchain: 1.52.0 }
-        - { target: i686-pc-windows-msvc, toolchain: stable }
-        - { target: i686-pc-windows-msvc, toolchain: beta }
-        - { target: i686-pc-windows-msvc, toolchain: nightly }
+        - { target: i686-pc-windows-msvc, toolchain: 1.52.0, os: windows-latest }
+        - { target: i686-pc-windows-msvc, toolchain: stable, os: windows-latest }
+        - { target: i686-pc-windows-msvc, toolchain: beta, os: windows-latest }
+        - { target: i686-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86_64
-        - { target: x86_64-pc-windows-msvc, toolchain: 1.52.0 }
-        - { target: x86_64-pc-windows-msvc, toolchain: stable }
-        - { target: x86_64-pc-windows-msvc, toolchain: beta }
-        - { target: x86_64-pc-windows-msvc, toolchain: nightly }
+        - { target: x86_64-pc-windows-msvc, toolchain: 1.52.0, os: windows-latest }
+        - { target: x86_64-pc-windows-msvc, toolchain: stable, os: windows-latest }
+        - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
+        - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         ## arm
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: 1.52.0 }
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: stable }
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: beta }
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: nightly }
+        #- { target: arm-unknown-linux-gnueabihf, toolchain: 1.52.0, os: ubuntu-latest }
+        #- { target: arm-unknown-linux-gnueabihf, toolchain: stable, os: ubuntu-latest }
+        #- { target: arm-unknown-linux-gnueabihf, toolchain: beta, os: ubuntu-latest }
+        #- { target: arm-unknown-linux-gnueabihf, toolchain: nightly, os: ubuntu-latest }
         ## aarch64
-        #- { target: aarch64-unknown-linux-gnu, toolchain: 1.52.0 }
-        #- { target: aarch64-unknown-linux-gnu, toolchain: stable }
-        #- { target: aarch64-unknown-linux-gnu, toolchain: beta }
-        #- { target: aarch64-unknown-linux-gnu, toolchain: nightly }
-        ## wasm32
-        #- { target: wasm32-unknown-unknown, toolchain: 1.52.0 }
-        #- { target: wasm32-unknown-unknown, toolchain: stable }
-        #- { target: wasm32-unknown-unknown, toolchain: beta }
-        #- { target: wasm32-unknown-unknown, toolchain: nightly }
+        #- { target: aarch64-unknown-linux-gnu, toolchain: 1.52.0, os: ubuntu-latest }
+        #- { target: aarch64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
+        #- { target: aarch64-unknown-linux-gnu, toolchain: beta, os: ubuntu-latest }
+        #- { target: aarch64-unknown-linux-gnu, toolchain: nightly, os: ubuntu-latest }
+        # wasm32
+        - { target: wasm32-wasi, toolchain: 1.54.0, os: ubuntu-latest }
+        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest }
+        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest }
+        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest }
     steps:
     - uses: actions/checkout@v1
     - uses: actions-rs/toolchain@v1
@@ -48,19 +48,33 @@ jobs:
         target:  ${{ matrix.rust.target }}
         profile: minimal
         default: true
+
+    - name: Install wasmtime
+      if: matrix.rust.target == 'wasm32-wasi'
+      run: |
+        curl https://wasmtime.dev/install.sh -sSf | bash
+        echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
+
     - name: Build the crate
       run: cargo build --target ${{ matrix.rust.target }}
+
     - name: Test with default CPU features.
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
+      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
+      env:
+        CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }}
     - name: Test with default CPU features + All Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
+      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
+      env:
+        CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --all-features
+
     - name: switch over to native cpu features
       run: mv .cargo-ci .cargo
+
     - name: Test with 'native' CPU features.
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
+      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }}
     - name: Test with 'native' CPU features + All Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc'
+      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --all-features

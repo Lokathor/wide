@@ -5,6 +5,24 @@ pick! {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
     pub struct f64x2 { sse: m128d }
+  } else if #[cfg(target_feature="simd128")] {
+    use core::arch::wasm32::*;
+
+    #[derive(Clone, Copy)]
+    #[repr(transparent)]
+    pub struct f64x2 { simd: v128 }
+
+    impl Default for f64x2 {
+      fn default() -> Self {
+        Self::splat(0.0)
+      }
+    }
+
+    impl PartialEq for f64x2 {
+      fn eq(&self, other: &Self) -> bool {
+        u64x2_all_true(f64x2_eq(self.simd, other.simd))
+      }
+    }
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
@@ -55,6 +73,8 @@ impl Add for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: add_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_add(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0] + rhs.arr[0],
@@ -73,6 +93,8 @@ impl Sub for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: sub_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_sub(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0] - rhs.arr[0],
@@ -91,6 +113,8 @@ impl Mul for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: mul_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_mul(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0] * rhs.arr[0],
@@ -109,6 +133,8 @@ impl Div for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: div_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_div(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0] / rhs.arr[0],
@@ -199,6 +225,8 @@ impl BitAnd for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitand_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_and(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           f64::from_bits(self.arr[0].to_bits() & rhs.arr[0].to_bits()),
@@ -217,6 +245,8 @@ impl BitOr for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitor_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_or(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           f64::from_bits(self.arr[0].to_bits() | rhs.arr[0].to_bits()),
@@ -235,6 +265,8 @@ impl BitXor for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitxor_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_xor(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           f64::from_bits(self.arr[0].to_bits() ^ rhs.arr[0].to_bits()),
@@ -253,6 +285,8 @@ impl CmpEq for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_eq(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] == rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -271,6 +305,8 @@ impl CmpGe for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_ge_mask_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_ge(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] >= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -289,9 +325,10 @@ impl CmpGt for f64x2 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { sse: cmp_op_mask_m128d::<{cmp_op!(GreaterThanOrdered)}>(self.sse, rhs.sse) }
-      }
-      else if #[cfg(target_feature="sse2")] {
+      } else if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_gt(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -310,6 +347,8 @@ impl CmpNe for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_neq_mask_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_ne(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -328,6 +367,8 @@ impl CmpLe for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_le_mask_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_le(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] <= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -346,6 +387,8 @@ impl CmpLt for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_lt(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] < rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -363,6 +406,8 @@ impl f64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_m128d(f.sse, t.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
       } else {
         generic_bit_blend(self, t, f)
       }
@@ -371,15 +416,64 @@ impl f64x2 {
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
-    let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
-    self & non_sign_bits
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_abs(self.simd) }
+      } else {
+        let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
+        self & non_sign_bits
+      }
+    }
   }
+
+  /// Calculates the lanewise maximum of both vectors. This is a faster
+  /// implementation than `max`, but it doesn't specify any behavior if NaNs are
+  /// involved.
+  #[inline]
+  #[must_use]
+  pub fn fast_max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: max_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: f64x2_pmax(self.simd, rhs.simd),
+        }
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
+          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
+        ]}
+      }
+    }
+  }
+
+  /// Calculates the lanewise maximum of both vectors. If either lane is NaN,
+  /// the other lane gets chosen. Use `fast_max` for a faster implementation
+  /// that doesn't handle NaNs.
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: max_m128d(self.sse, rhs.sse) }
+        // max_m128d seems to do rhs < self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { sse: max_m128d(self.sse, rhs.sse) })
+      } else if #[cfg(target_feature="simd128")] {
+        // WASM has two max intrinsics:
+        // - max: This propagates NaN, that's the opposite of what we need.
+        // - pmax: This is defined as self < rhs ? rhs : self, which basically
+        //   chooses self if either is NaN.
+        //
+        // pmax is what we want, but we need to specifically check self for NaN.
+        Self {
+          simd: v128_bitselect(
+            rhs.simd,
+            f64x2_pmax(self.simd, rhs.simd),
+            f64x2_ne(self.simd, self.simd), // NaN check
+          )
+        }
       } else {
         Self { arr: [
           self.arr[0].max(rhs.arr[0]),
@@ -388,12 +482,55 @@ impl f64x2 {
       }
     }
   }
+
+  /// Calculates the lanewise minimum of both vectors. This is a faster
+  /// implementation than `min`, but it doesn't specify any behavior if NaNs are
+  /// involved.
+  #[inline]
+  #[must_use]
+  pub fn fast_min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: min_m128d(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: f64x2_pmin(self.simd, rhs.simd),
+        }
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
+          if self.arr[1] < rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
+        ]}
+      }
+    }
+  }
+
+  /// Calculates the lanewise minimum of both vectors. If either lane is NaN,
+  /// the other lane gets chosen. Use `fast_min` for a faster implementation
+  /// that doesn't handle NaNs.
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: min_m128d(self.sse, rhs.sse) }
+        // min_m128d seems to do rhs < self ? rhs : self. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { sse: min_m128d(self.sse, rhs.sse) })
+      } else if #[cfg(target_feature="simd128")] {
+        // WASM has two min intrinsics:
+        // - min: This propagates NaN, that's the opposite of what we need.
+        // - pmin: This is defined as rhs < self ? rhs : self, which basically
+        //   chooses self if either is NaN.
+        //
+        // pmin is what we want, but we need to specifically check self for NaN.
+        Self {
+          simd: v128_bitselect(
+            rhs.simd,
+            f64x2_pmin(self.simd, rhs.simd),
+            f64x2_ne(self.simd, self.simd), // NaN check
+          )
+        }
       } else {
         Self { arr: [
           self.arr[0].min(rhs.arr[0]),
@@ -402,12 +539,15 @@ impl f64x2 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_unord_mask_m128d(self.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_ne(self.simd, self.simd) }
       } else {
         Self { arr: [
           if self.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -441,6 +581,8 @@ impl f64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: round_m128d::<{round_op!(Nearest)}>(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_nearest(self.simd) }
       } else {
         let sign_mask = f64x2::from(-0.0);
         let magic = f64x2::from(f64::from_bits(0x43300000_00000000));
@@ -454,9 +596,7 @@ impl f64x2 {
   #[must_use]
   pub fn round_int(self) -> i64x2 {
     let rounded: [f64; 2] = cast(self.round());
-    let rounded_ints: i64x2 = cast([rounded[0] as i64, rounded[1] as i64]);
-    cast::<f64x2, i64x2>(self.is_finite())
-      .blend(rounded_ints, i64x2::from(i64::MIN))
+    cast([rounded[0] as i64, rounded[1] as i64])
   }
   #[inline]
   #[must_use]
@@ -1014,6 +1154,8 @@ impl f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: sqrt_m128d(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_sqrt(self.simd) }
       } else if #[cfg(feature="std")] {
         Self { arr: [
           self.arr[0].sqrt(),
@@ -1033,6 +1175,8 @@ impl f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         move_mask_m128d(self.sse)
+      } else if #[cfg(target_feature="simd128")] {
+        u64x2_bitmask(self.simd) as i32
       } else {
         (((self.arr[0].to_bits() as i64) < 0) as i32) << 0 |
         (((self.arr[1].to_bits() as i64) < 0) as i32) << 1
@@ -1042,13 +1186,25 @@ impl f64x2 {
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    self.move_mask() != 0
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        v128_any_true(self.simd)
+      } else {
+        self.move_mask() != 0
+      }
+    }
   }
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    // two lanes
-    self.move_mask() == 0b11
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        u64x2_all_true(self.simd)
+      } else {
+        // two lanes
+        self.move_mask() == 0b11
+      }
+    }
   }
   #[inline]
   #[must_use]
@@ -1148,16 +1304,16 @@ impl f64x2 {
 
   pub fn reduce_add(self) -> f64 {
     pick! {
-    if #[cfg(target_feature="ssse3")] {
-      let a = add_horizontal_m128d(self.sse, self.sse);
-      a.to_array()[0]
-        }  else if #[cfg(target_feature="sse2")] {
-          let a :[f64;2] = cast(self.sse);
-          a.iter().sum::<f64>()
-        } else  {
-            self.arr.iter().sum()
-          }
-        }
+      if #[cfg(target_feature="ssse3")] {
+        let a = add_horizontal_m128d(self.sse, self.sse);
+        a.to_array()[0]
+      } else if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let a: [f64;2] = cast(self);
+        a.iter().sum()
+      } else {
+        self.arr.iter().sum()
+      }
+    }
   }
 
   #[inline]
@@ -1352,6 +1508,8 @@ impl Not for f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: self.sse.not() }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_not(self.simd) }
       } else {
         Self { arr: [
           f64::from_bits(!self.arr[0].to_bits()),

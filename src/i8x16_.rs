@@ -5,6 +5,26 @@ pick! {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct i8x16 { sse: m128i }
+  } else if #[cfg(target_feature="simd128")] {
+    use core::arch::wasm32::*;
+
+    #[derive(Clone, Copy)]
+    #[repr(transparent)]
+    pub struct i8x16 { simd: v128 }
+
+    impl Default for i8x16 {
+      fn default() -> Self {
+        Self::splat(0)
+      }
+    }
+
+    impl PartialEq for i8x16 {
+      fn eq(&self, other: &Self) -> bool {
+        u8x16_all_true(i8x16_eq(self.simd, other.simd))
+      }
+    }
+
+    impl Eq for i8x16 { }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
@@ -25,6 +45,8 @@ impl Add for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: add_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_add(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
@@ -57,6 +79,8 @@ impl Sub for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: sub_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_sub(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
@@ -89,6 +113,8 @@ impl BitAnd for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_and(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].bitand(rhs.arr[0]),
@@ -121,6 +147,8 @@ impl BitOr for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_or(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].bitor(rhs.arr[0]),
@@ -153,6 +181,8 @@ impl BitXor for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_xor(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].bitxor(rhs.arr[0]),
@@ -185,6 +215,8 @@ impl CmpEq for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_eq(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] == rhs.arr[0] { -1 } else { 0 },
@@ -217,6 +249,8 @@ impl CmpGt for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_gt(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
@@ -249,6 +283,8 @@ impl CmpLt for i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_lt(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
@@ -280,6 +316,8 @@ impl i8x16 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
       } else {
         generic_bit_blend(self, t, f)
       }
@@ -291,6 +329,8 @@ impl i8x16 {
     pick! {
       if #[cfg(target_feature="ssse3")] {
         Self { sse: abs_i8_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_abs(self.simd) }
       } else {
         let arr: [i8; 16] = cast(self);
         cast([
@@ -320,6 +360,8 @@ impl i8x16 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: max_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_max(self.simd, rhs.simd) }
       } else {
         self.cmp_lt(rhs).blend(rhs, self)
       }
@@ -331,6 +373,8 @@ impl i8x16 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: min_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_min(self.simd, rhs.simd) }
       } else {
         self.cmp_lt(rhs).blend(self, rhs)
       }
@@ -343,8 +387,9 @@ impl i8x16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         move_mask_i8_m128i(self.sse)
-      }
-      else {
+      } else if #[cfg(target_feature="simd128")] {
+        i8x16_bitmask(self.simd) as i32
+      } else {
         ((self.arr[0] < 0) as i32) << 0 |
         ((self.arr[1] < 0) as i32) << 1 |
         ((self.arr[2] < 0) as i32) << 2 |
@@ -367,13 +412,25 @@ impl i8x16 {
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    self.move_mask() != 0
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        v128_any_true(self.simd)
+      } else {
+        self.move_mask() != 0
+      }
+    }
   }
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    // eight lanes
-    self.move_mask() == 0b1111111111111111
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        u8x16_all_true(self.simd)
+      } else {
+        // sixteen lanes
+        self.move_mask() == 0b1111_1111_1111_1111
+      }
+    }
   }
   #[inline]
   #[must_use]
