@@ -1,14 +1,6 @@
 use wide::*;
 
 #[test]
-#[cfg(not(target_feature = "avx2"))]
-fn size_align() {
-  assert_eq!(core::mem::size_of::<i8x32>(), 32);
-  assert_eq!(core::mem::align_of::<i8x32>(), 16);
-}
-
-#[test]
-#[cfg(target_feature = "avx2")]
 fn size_align() {
   assert_eq!(core::mem::size_of::<i8x32>(), 32);
   assert_eq!(core::mem::align_of::<i8x32>(), 32);
@@ -179,8 +171,8 @@ fn impl_i8x32_cmp_lt() {
   assert_eq!(expected, actual);
 
   let expected = i8x32::from([
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0,
   ]);
   let actual = a.cmp_lt(a);
   assert_eq!(expected, actual);

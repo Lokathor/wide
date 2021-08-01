@@ -5,6 +5,26 @@ pick! {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct u64x2 { sse: m128i }
+  } else if #[cfg(target_feature="simd128")] {
+    use core::arch::wasm32::*;
+
+    #[derive(Clone, Copy)]
+    #[repr(transparent)]
+    pub struct u64x2 { simd: v128 }
+
+    impl Default for u64x2 {
+      fn default() -> Self {
+        Self::splat(0)
+      }
+    }
+
+    impl PartialEq for u64x2 {
+      fn eq(&self, other: &Self) -> bool {
+        u64x2_all_true(u64x2_eq(self.simd, other.simd))
+      }
+    }
+
+    impl Eq for u64x2 { }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
@@ -25,6 +45,8 @@ impl Add for u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: add_i64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_add(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
@@ -43,6 +65,8 @@ impl Sub for u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: sub_i64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_sub(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
@@ -61,6 +85,8 @@ impl BitAnd for u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_and(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].bitand(rhs.arr[0]),
@@ -79,6 +105,8 @@ impl BitOr for u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_or(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].bitor(rhs.arr[0]),
@@ -97,6 +125,8 @@ impl BitXor for u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_xor(self.simd, rhs.simd) }
       } else {
         Self { arr: [
           self.arr[0].bitxor(rhs.arr[0]),
@@ -115,12 +145,14 @@ macro_rules! impl_shl_t_for_u64x2 {
       #[inline]
       #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
-        let u = rhs as u64;
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([u, 0]);
+            let shift = cast([rhs as u64, 0]);
             Self { sse: shl_all_u64_m128i(self.sse, shift) }
+          } else if #[cfg(target_feature="simd128")] {
+            Self { simd: u64x2_shl(self.simd, rhs as u32) }
           } else {
+            let u = rhs as u64;
             Self { arr: [
               self.arr[0] << u,
               self.arr[1] << u,
@@ -141,12 +173,14 @@ macro_rules! impl_shr_t_for_u64x2 {
       #[inline]
       #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
-        let u = rhs as u64;
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([u, 0]);
+            let shift = cast([rhs as u64, 0]);
             Self { sse: shr_all_u64_m128i(self.sse, shift) }
+          } else if #[cfg(target_feature="simd128")] {
+            Self { simd: u64x2_shr(self.simd, rhs as u32) }
           } else {
+            let u = rhs as u64;
             Self { arr: [
               self.arr[0] >> u,
               self.arr[1] >> u,
@@ -166,9 +200,11 @@ impl u64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_eq(self.simd, rhs.simd) }
       } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
         cast([
           if s[0] == r[0] { -1_i64 } else { 0 },
           if s[1] == r[1] { -1_i64 } else { 0 },
@@ -183,8 +219,9 @@ impl u64x2 {
       if #[cfg(target_feature="sse4.2")] {
         Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
       } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
+        // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
         cast([
           if s[0] > r[0] { -1_i64 } else { 0 },
           if s[1] > r[1] { -1_i64 } else { 0 },
@@ -199,6 +236,8 @@ impl u64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
       } else {
         generic_bit_blend(self, t, f)
       }

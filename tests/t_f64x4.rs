@@ -184,19 +184,49 @@ fn impl_f64x4_abs() {
 }
 
 #[test]
+fn impl_f64x4_fast_max() {
+  let a = f64x4::from([1.0, 5.0, 3.0, -0.0]);
+  let b = f64x4::from([2.0, f64::NEG_INFINITY, f64::INFINITY, 0.0]);
+  let expected = f64x4::from([2.0, 5.0, f64::INFINITY, 0.0]);
+  let actual = a.fast_max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f64x4_max() {
-  let a = f64x4::from([1.0, 5.0, 3.0, f64::NAN]);
-  let b = f64x4::from([2.0, f64::NEG_INFINITY, f64::INFINITY, 10.0]);
-  let expected = f64x4::from([2.0, 5.0, f64::INFINITY, 10.0]);
+  let a = f64x4::from([1.0, 5.0, 3.0, -0.0]);
+  let b = f64x4::from([2.0, f64::NEG_INFINITY, f64::INFINITY, 0.0]);
+  let expected = f64x4::from([2.0, 5.0, f64::INFINITY, 0.0]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+
+  let a = f64x4::from([f64::NAN, 5.0, f64::INFINITY, f64::NAN]);
+  let b = f64x4::from([2.0, f64::NAN, f64::NAN, f64::INFINITY]);
+  let expected = f64x4::from([2.0, 5.0, f64::INFINITY, f64::INFINITY]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
 }
 
 #[test]
+fn impl_f64x4_fast_min() {
+  let a = f64x4::from([1.0, 5.0, 3.0, -0.0]);
+  let b = f64x4::from([2.0, f64::NEG_INFINITY, f64::INFINITY, 0.0]);
+  let expected = f64x4::from([1.0, f64::NEG_INFINITY, 3.0, -0.0]);
+  let actual = a.fast_min(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f64x4_min() {
-  let a = f64x4::from([1.0, 5.0, 3.0, f64::NAN]);
-  let b = f64x4::from([2.0, f64::NEG_INFINITY, f64::INFINITY, 10.0]);
-  let expected = f64x4::from([1.0, f64::NEG_INFINITY, 3.0, 10.0]);
+  let a = f64x4::from([1.0, 5.0, 3.0, -0.0]);
+  let b = f64x4::from([2.0, f64::NEG_INFINITY, f64::INFINITY, 0.0]);
+  let expected = f64x4::from([1.0, f64::NEG_INFINITY, 3.0, -0.0]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+
+  let a = f64x4::from([f64::NAN, 5.0, f64::INFINITY, f64::NAN]);
+  let b = f64x4::from([2.0, f64::NAN, f64::NAN, f64::INFINITY]);
+  let expected = f64x4::from([2.0, 5.0, f64::INFINITY, f64::INFINITY]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
@@ -254,8 +284,8 @@ fn impl_f64x4_round_int() {
     (2.5, 2),
     (0.0, 0),
     (-0.0, 0),
-    (f64::NAN, i64::MIN),
-    (f64::INFINITY, i64::MIN),
+    (f64::NAN, 0),
+    (f64::INFINITY, i64::MAX),
     (f64::NEG_INFINITY, i64::MIN),
   ]
   .iter()
@@ -561,28 +591,28 @@ fn test_f64x4_move_mask() {
 
 #[test]
 fn test_f64x4_any() {
-  let a = f64x4::from([-1.0, 0.0, -2.0, -3.0]);
+  let a = f64x4::from([-1.0, 0.0, -2.0, f64::NAN]).is_nan();
   assert!(a.any());
   //
-  let a = f64x4::from([1.0, 0.0, 2.0, 3.0]);
+  let a = f64x4::from([1.0, 0.0, 2.0, 3.0]).is_nan();
   assert!(!a.any());
 }
 
 #[test]
 fn test_f64x4_all() {
-  let a = f64x4::from([-1.0, -0.5, -2.0, -3.0]);
+  let a = f64x4::from([f64::NAN, f64::NAN, f64::NAN, f64::NAN]).is_nan();
   assert!(a.all());
   //
-  let a = f64x4::from([1.0, -0.0, 2.0, 3.0]);
+  let a = f64x4::from([1.0, -0.0, 2.0, f64::NAN]).is_nan();
   assert!(!a.all());
 }
 
 #[test]
 fn test_f64x4_none() {
-  let a = f64x4::from([1.0, 0.0, 2.0, 3.0]);
+  let a = f64x4::from([1.0, 0.0, 2.0, 3.0]).is_nan();
   assert!(a.none());
   //
-  let a = f64x4::from([1.0, -0.0, 2.0, 3.0]);
+  let a = f64x4::from([1.0, -0.0, 2.0, f64::NAN]).is_nan();
   assert!(!a.none());
 }
 

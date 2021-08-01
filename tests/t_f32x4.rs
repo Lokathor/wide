@@ -192,18 +192,48 @@ fn impl_f32x4_abs() {
 }
 
 #[test]
+fn impl_f32x4_fast_max() {
+  let a = f32x4::from([1.0, 5.0, 3.0, -4.0]);
+  let b = f32x4::from([2.0, 3.0, -5.0, -10.0]);
+  let expected = f32x4::from([2.0, 5.0, 3.0, -4.0]);
+  let actual = a.fast_max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f32x4_max() {
+  let a = f32x4::from([1.0, 5.0, -3.0, -0.0]);
+  let b = f32x4::from([2.0, -5.0, -1.0, 0.0]);
+  let expected = f32x4::from([2.0, 5.0, -1.0, 0.0]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+
   let a = f32x4::from([1.0, 5.0, 3.0, f32::NAN]);
-  let b = f32x4::from([2.0, f32::NEG_INFINITY, f32::INFINITY, 10.0]);
-  let expected = f32x4::from([2.0, 5.0, f32::INFINITY, 10.0]);
+  let b = f32x4::from([f32::NAN, f32::NEG_INFINITY, f32::INFINITY, 10.0]);
+  let expected = f32x4::from([1.0, 5.0, f32::INFINITY, 10.0]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
 }
 
 #[test]
+fn impl_f32x4_fast_min() {
+  let a = f32x4::from([1.0, 5.0, 3.0, -4.0]);
+  let b = f32x4::from([2.0, 3.0, -5.0, -10.0]);
+  let expected = f32x4::from([1.0, 3.0, -5.0, -10.0]);
+  let actual = a.fast_min(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f32x4_min() {
+  let a = f32x4::from([1.0, 5.0, -3.0, -0.0]);
+  let b = f32x4::from([2.0, -5.0, -1.0, 0.0]);
+  let expected = f32x4::from([1.0, -5.0, -3.0, -0.0]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+
   let a = f32x4::from([1.0, 5.0, 3.0, f32::NAN]);
-  let b = f32x4::from([2.0, f32::NEG_INFINITY, f32::INFINITY, 10.0]);
+  let b = f32x4::from([f32::NAN, f32::NEG_INFINITY, f32::INFINITY, 10.0]);
   let expected = f32x4::from([1.0, f32::NEG_INFINITY, 3.0, 10.0]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
@@ -261,6 +291,19 @@ fn impl_f32x4_round() {
 }
 
 #[test]
+fn impl_f32x4_fast_round_int() {
+  for (f, i) in [(1.0, 1), (1.1, 1), (-2.1, -2), (2.5, 2), (0.0, 0), (-0.0, 0)]
+    .iter()
+    .copied()
+  {
+    let a = f32x4::from(f);
+    let expected = i32x4::from(i);
+    let actual = a.fast_round_int();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_f32x4_round_int() {
   for (f, i) in [
     (1.0, 1),
@@ -269,8 +312,8 @@ fn impl_f32x4_round_int() {
     (2.5, 2),
     (0.0, 0),
     (-0.0, 0),
-    (f32::NAN, i32::MIN),
-    (f32::INFINITY, i32::MIN),
+    (f32::NAN, 0),
+    (f32::INFINITY, i32::MAX),
     (f32::NEG_INFINITY, i32::MIN),
   ]
   .iter()
@@ -283,7 +326,19 @@ fn impl_f32x4_round_int() {
   }
 }
 
-#[cfg(any(target_feature = "sse", feature = "std"))]
+#[test]
+fn impl_f32x4_fast_trunc_int() {
+  let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);
+  let expected = i32x4::from([1, 2, 3, 4]);
+  let actual = a.fast_trunc_int();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x4::from([-1.1, -2.5, -3.7, -4.0]);
+  let expected = i32x4::from([-1, -2, -3, -4]);
+  let actual = a.fast_trunc_int();
+  assert_eq!(expected, actual);
+}
+
 #[test]
 fn impl_f32x4_trunc_int() {
   let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);
@@ -293,6 +348,11 @@ fn impl_f32x4_trunc_int() {
   //
   let a = f32x4::from([-1.1, -2.5, -3.7, -4.0]);
   let expected = i32x4::from([-1, -2, -3, -4]);
+  let actual = a.trunc_int();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x4::from([f32::NEG_INFINITY, f32::INFINITY, f32::NAN, 0.0]);
+  let expected = i32x4::from([i32::MIN, i32::MAX, 0, 0]);
   let actual = a.trunc_int();
   assert_eq!(expected, actual);
 }
@@ -657,28 +717,28 @@ fn test_f32x4_move_mask() {
 
 #[test]
 fn test_f32x4_any() {
-  let a = f32x4::from([-1.0, 0.0, -2.0, -3.0]);
+  let a = f32x4::from([-1.0, 0.0, -2.0, f32::NAN]).is_nan();
   assert!(a.any());
   //
-  let a = f32x4::from([1.0, 0.0, 2.0, 3.0]);
+  let a = f32x4::from([1.0, 0.0, 2.0, 3.0]).is_nan();
   assert!(!a.any());
 }
 
 #[test]
 fn test_f32x4_all() {
-  let a = f32x4::from([-1.0, -0.0, -2.0, -3.0]);
+  let a = f32x4::from([f32::NAN; 4]).is_nan();
   assert!(a.all());
   //
-  let a = f32x4::from([1.0, -0.0, 2.0, 3.0]);
+  let a = f32x4::from([1.0, -0.0, 2.0, f32::NAN]).is_nan();
   assert!(!a.all());
 }
 
 #[test]
 fn test_f32x4_none() {
-  let a = f32x4::from([1.0, 0.0, 2.0, 3.0]);
+  let a = f32x4::from([1.0, 0.0, 2.0, 3.0]).is_nan();
   assert!(a.none());
   //
-  let a = f32x4::from([1.0, -0.0, 2.0, 3.0]);
+  let a = f32x4::from([1.0, -0.0, 2.0, f32::NAN]).is_nan();
   assert!(!a.none());
 }
 

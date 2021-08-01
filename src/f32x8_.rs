@@ -9,6 +9,25 @@ pick! {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
     pub struct f32x8 { sse0: m128, sse1: m128 }
+  } else if #[cfg(target_feature="simd128")] {
+    use core::arch::wasm32::*;
+
+    #[derive(Clone, Copy)]
+    #[repr(C, align(32))]
+    pub struct f32x8 { simd0: v128, simd1: v128 }
+
+    impl Default for f32x8 {
+      fn default() -> Self {
+        Self::splat(0.0)
+      }
+    }
+
+    impl PartialEq for f32x8 {
+      fn eq(&self, other: &Self) -> bool {
+        u32x4_all_true(f32x4_eq(self.simd0, other.simd0)) &
+          u32x4_all_true(f32x4_eq(self.simd1, other.simd1))
+      }
+    }
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
@@ -61,6 +80,8 @@ impl Add for f32x8 {
         Self { avx: add_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: add_m128(self.sse0, rhs.sse0), sse1: add_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_add(self.simd0, rhs.simd0), simd1: f32x4_add(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           self.arr[0] + rhs.arr[0],
@@ -87,6 +108,8 @@ impl Sub for f32x8 {
         Self { avx: sub_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: sub_m128(self.sse0, rhs.sse0), sse1: sub_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_sub(self.simd0, rhs.simd0), simd1: f32x4_sub(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           self.arr[0] - rhs.arr[0],
@@ -113,6 +136,8 @@ impl Mul for f32x8 {
         Self { avx: mul_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: mul_m128(self.sse0, rhs.sse0), sse1: mul_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_mul(self.simd0, rhs.simd0), simd1: f32x4_mul(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           self.arr[0] * rhs.arr[0],
@@ -139,6 +164,8 @@ impl Div for f32x8 {
         Self { avx: div_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: div_m128(self.sse0, rhs.sse0), sse1: div_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_div(self.simd0, rhs.simd0), simd1: f32x4_div(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           self.arr[0] / rhs.arr[0],
@@ -237,6 +264,8 @@ impl BitAnd for f32x8 {
         Self { avx: bitand_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: bitand_m128(self.sse0, rhs.sse0), sse1: bitand_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: v128_and(self.simd0, rhs.simd0), simd1: v128_and(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           f32::from_bits(self.arr[0].to_bits() & rhs.arr[0].to_bits()),
@@ -263,6 +292,8 @@ impl BitOr for f32x8 {
         Self { avx: bitor_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: bitor_m128(self.sse0, rhs.sse0), sse1: bitor_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: v128_or(self.simd0, rhs.simd0), simd1: v128_or(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           f32::from_bits(self.arr[0].to_bits() | rhs.arr[0].to_bits()),
@@ -289,6 +320,8 @@ impl BitXor for f32x8 {
         Self { avx: bitxor_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: bitxor_m128(self.sse0, rhs.sse0), sse1: bitxor_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: v128_xor(self.simd0, rhs.simd0), simd1: v128_xor(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           f32::from_bits(self.arr[0].to_bits() ^ rhs.arr[0].to_bits()),
@@ -315,6 +348,8 @@ impl CmpEq for f32x8 {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_eq_mask_m128(self.sse0, rhs.sse0), sse1: cmp_eq_mask_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_eq(self.simd0, rhs.simd0), simd1: f32x4_eq(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           if self.arr[0] == rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -341,6 +376,8 @@ impl CmpGe for f32x8 {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_ge_mask_m128(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_ge(self.simd0, rhs.simd0), simd1: f32x4_ge(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           if self.arr[0] >= rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -367,6 +404,8 @@ impl CmpGt for f32x8 {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_gt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_gt_mask_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_gt(self.simd0, rhs.simd0), simd1: f32x4_gt(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -393,6 +432,8 @@ impl CmpNe for f32x8 {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_neq_mask_m128(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_ne(self.simd0, rhs.simd0), simd1: f32x4_ne(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           if self.arr[0] != rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -419,6 +460,8 @@ impl CmpLe for f32x8 {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_le_mask_m128(self.sse0, rhs.sse0), sse1: cmp_le_mask_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_le(self.simd0, rhs.simd0), simd1: f32x4_le(self.simd1, rhs.simd1) }
       } else {
         Self { arr: [
           if self.arr[0] <= rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -445,6 +488,8 @@ impl CmpLt for f32x8 {
           Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
         } else if #[cfg(target_feature="sse2")] {
           Self { sse0: cmp_lt_mask_m128(self.sse0, rhs.sse0), sse1: cmp_lt_mask_m128(self.sse1, rhs.sse1) }
+        } else if #[cfg(target_feature="simd128")] {
+          Self { simd0: f32x4_lt(self.simd0, rhs.simd0), simd1: f32x4_lt(self.simd1, rhs.simd1) }
         } else {
           Self { arr: [
             if self.arr[0] < rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -470,6 +515,8 @@ impl f32x8 {
         Self { avx: blend_varying_m256(f.avx, t.avx, self.avx) }
       } else if #[cfg(target_feature="sse4.1")] {
         Self { sse0: blend_varying_m128(f.sse0, t.sse0, self.sse0), sse1: blend_varying_m128(f.sse1, t.sse1, self.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: v128_bitselect(t.simd0, f.simd0, self.simd0), simd1: v128_bitselect(t.simd1, f.simd1, self.simd1) }
       } else {
         generic_bit_blend(self, t, f)
       }
@@ -478,17 +525,79 @@ impl f32x8 {
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
-    let non_sign_bits = f32x8::from(f32::from_bits(i32::MAX as u32));
-    self & non_sign_bits
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_abs(self.simd0), simd1: f32x4_abs(self.simd1) }
+      } else {
+        let non_sign_bits = f32x8::from(f32::from_bits(i32::MAX as u32));
+        self & non_sign_bits
+      }
+    }
   }
+
+  /// Calculates the lanewise maximum of both vectors. This is a faster
+  /// implementation than `max`, but it doesn't specify any behavior if NaNs are
+  /// involved.
   #[inline]
   #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
+  pub fn fast_max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: max_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: max_m128(self.sse0, rhs.sse0), sse1: max_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_pmax(self.simd0, rhs.simd0), simd1: f32x4_pmax(self.simd1, rhs.simd1) }
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
+          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
+          if self.arr[2] < rhs.arr[2] { rhs.arr[2] } else { self.arr[2] },
+          if self.arr[3] < rhs.arr[3] { rhs.arr[3] } else { self.arr[3] },
+          if self.arr[4] < rhs.arr[4] { rhs.arr[4] } else { self.arr[4] },
+          if self.arr[5] < rhs.arr[5] { rhs.arr[5] } else { self.arr[5] },
+          if self.arr[6] < rhs.arr[6] { rhs.arr[6] } else { self.arr[6] },
+          if self.arr[7] < rhs.arr[7] { rhs.arr[7] } else { self.arr[7] },
+        ]}
+      }
+    }
+  }
+
+  /// Calculates the lanewise maximum of both vectors. This doesn't match
+  /// IEEE-754 and instead is defined as `self < rhs ? rhs : self`.
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // max_m256 seems to do rhs < self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { avx: max_m256(self.avx, rhs.avx) })
+      } else if #[cfg(target_feature="sse2")] {
+        // max_m128 seems to do rhs < self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { sse0: max_m128(self.sse0, rhs.sse0), sse1: max_m128(self.sse1, rhs.sse1) })
+      } else if #[cfg(target_feature="simd128")] {
+        // WASM has two max intrinsics:
+        // - max: This propagates NaN, that's the opposite of what we need.
+        // - pmax: This is defined as self < rhs ? rhs : self, which basically
+        //   chooses self if either is NaN.
+        //
+        // pmax is what we want, but we need to specifically check self for NaN.
+        Self {
+          simd0: v128_bitselect(
+            rhs.simd0,
+            f32x4_pmax(self.simd0, rhs.simd0),
+            f32x4_ne(self.simd0, self.simd0), // NaN check
+          ),
+          simd1: v128_bitselect(
+            rhs.simd1,
+            f32x4_pmax(self.simd1, rhs.simd1),
+            f32x4_ne(self.simd1, self.simd1), // NaN check
+          ),
+        }
       } else {
         Self { arr: [
           self.arr[0].max(rhs.arr[0]),
@@ -503,14 +612,71 @@ impl f32x8 {
       }
     }
   }
+
+  /// Calculates the lanewise minimum of both vectors. This is a faster
+  /// implementation than `min`, but it doesn't specify any behavior if NaNs are
+  /// involved.
   #[inline]
   #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
+  pub fn fast_min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: min_m256(self.avx, rhs.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: min_m128(self.sse0, rhs.sse0), sse1: min_m128(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_pmin(self.simd0, rhs.simd0), simd1: f32x4_pmin(self.simd1, rhs.simd1) }
+      } else {
+        Self { arr: [
+          if self.arr[0] > rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
+          if self.arr[1] > rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
+          if self.arr[2] > rhs.arr[2] { rhs.arr[2] } else { self.arr[2] },
+          if self.arr[3] > rhs.arr[3] { rhs.arr[3] } else { self.arr[3] },
+          if self.arr[4] > rhs.arr[4] { rhs.arr[4] } else { self.arr[4] },
+          if self.arr[5] > rhs.arr[5] { rhs.arr[5] } else { self.arr[5] },
+          if self.arr[6] > rhs.arr[6] { rhs.arr[6] } else { self.arr[6] },
+          if self.arr[7] > rhs.arr[7] { rhs.arr[7] } else { self.arr[7] },
+        ]}
+      }
+    }
+  }
+
+  /// Calculates the lanewise minimum of both vectors. If either lane is NaN,
+  /// the other lane gets chosen. Use `fast_min` for a faster implementation
+  /// that doesn't handle NaNs.
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // min_m256 seems to do rhs > self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { avx: min_m256(self.avx, rhs.avx) })
+      } else if #[cfg(target_feature="sse2")] {
+        // min_m128 seems to do rhs > self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { sse0: min_m128(self.sse0, rhs.sse0), sse1: min_m128(self.sse1, rhs.sse1) })
+      } else if #[cfg(target_feature="simd128")] {
+        // WASM has two min intrinsics:
+        // - min: This propagates NaN, that's the opposite of what we need.
+        // - pmin: This is defined as rhs < self ? rhs : self, which basically
+        //   chooses self if either is NaN.
+        //
+        // pmin is what we want, but we need to specifically check self for NaN.
+        Self {
+          simd0: v128_bitselect(
+            rhs.simd0,
+            f32x4_pmin(self.simd0, rhs.simd0),
+            f32x4_ne(self.simd0, self.simd0), // NaN check
+          ),
+          simd1: v128_bitselect(
+            rhs.simd1,
+            f32x4_pmin(self.simd1, rhs.simd1),
+            f32x4_ne(self.simd1, self.simd1), // NaN check
+          ),
+        }
       } else {
         Self { arr: [
           self.arr[0].min(rhs.arr[0]),
@@ -533,6 +699,8 @@ impl f32x8 {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.avx, self.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: cmp_unord_mask_m128(self.sse0, self.sse0) , sse1: cmp_unord_mask_m128(self.sse1, self.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_ne(self.simd0, self.simd0), simd1: f32x4_ne(self.simd1, self.simd1) }
       } else {
         Self { arr: [
           if self.arr[0].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -575,6 +743,8 @@ impl f32x8 {
         Self { avx: round_m256::<{round_op!(Nearest)}>(self.avx) }
       }  else if #[cfg(target_feature="sse4.1")] {
         Self { sse0: round_m128::<{round_op!(Nearest)}>(self.sse0), sse1: round_m128::<{round_op!(Nearest)}>(self.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_nearest(self.simd0), simd1: f32x4_nearest(self.simd1) }
       } else {
         // Note(Lokathor): This software fallback is probably very slow compared
         // to having a hardware option available, even just the sse2 version is
@@ -605,17 +775,53 @@ impl f32x8 {
       }
     }
   }
+
+  /// Rounds each lane into an integer. This is a faster implementation than
+  /// `round_int`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
   #[inline]
   #[must_use]
-  pub fn round_int(self) -> i32x8 {
+  pub fn fast_round_int(self) -> i32x8 {
     pick! {
       if #[cfg(target_feature="avx")] {
         cast(convert_to_i32_m256i_from_m256(self.avx))
       } else if #[cfg(target_feature="sse2")] {
         i32x8 { sse0: convert_to_i32_m128i_from_m128(self.sse0), sse1: convert_to_i32_m128i_from_m128(self.sse1) }
       } else {
+        self.round_int()
+      }
+    }
+  }
+
+  /// Rounds each lane into an integer. This saturates out of range values and
+  /// turns NaNs into 0. Use `fast_round_int` for a faster implementation that
+  /// doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn round_int(self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // Based on: https://github.com/v8/v8/blob/121df413a3abb5272e971e61bebf0e84efa175f2/src/compiler/backend/ia32/code-generator-ia32.cc#L2457
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let scratch: i32x8 = cast(non_nan_mask ^ non_nan);
+        let dst: i32x8 = cast(convert_to_i32_m256i_from_m256(non_nan.avx));
+        dst ^ ((scratch & dst) >> 31)
+      } else if #[cfg(target_feature="sse2")] {
+        // Based on: https://github.com/v8/v8/blob/121df413a3abb5272e971e61bebf0e84efa175f2/src/compiler/backend/ia32/code-generator-ia32.cc#L2457
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let scratch: i32x8 = cast(non_nan_mask ^ non_nan);
+        let dst: i32x8 = i32x8 { sse0: convert_to_i32_m128i_from_m128(non_nan.sse0), sse1: convert_to_i32_m128i_from_m128(non_nan.sse1) };
+        dst ^ ((scratch & dst) >> 31)
+      } else if #[cfg(target_feature="simd128")] {
+        cast(Self {
+          simd0: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd0)),
+          simd1: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd1)),
+        })
+      } else {
         let rounded: [f32; 8] = cast(self.round());
-        let rounded_ints: i32x8 = cast([
+        cast([
           rounded[0] as i32,
           rounded[1] as i32,
           rounded[2] as i32,
@@ -624,39 +830,66 @@ impl f32x8 {
           rounded[5] as i32,
           rounded[6] as i32,
           rounded[7] as i32,
-        ]);
-        cast::<f32x8, i32x8>(self.is_finite()).blend(
-          rounded_ints,
-          i32x8::from(i32::MIN)
-        )
+        ])
       }
     }
   }
-  #[cfg(any(target_feature = "avx", feature = "std"))]
+
+  /// Truncates each lane into an integer. This is a faster implementation than
+  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
   #[inline]
   #[must_use]
-  pub fn trunc_int(self) -> i32x8 {
+  pub fn fast_trunc_int(self) -> i32x8 {
     pick! {
       if #[cfg(all(target_feature="avx"))] {
         cast(convert_truncate_to_i32_m256i_from_m256(self.avx))
       } else if #[cfg(target_feature="sse2")] {
         i32x8 { sse0: truncate_m128_to_m128i(self.sse0), sse1: truncate_m128_to_m128i(self.sse1) }
       } else {
+        self.trunc_int()
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This saturates out of range values
+  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
+  /// that doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn trunc_int(self) -> i32x8 {
+    pick! {
+        if #[cfg(target_feature="avx")] {
+        // Based on: https://github.com/v8/v8/blob/121df413a3abb5272e971e61bebf0e84efa175f2/src/compiler/backend/ia32/code-generator-ia32.cc#L2457
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let scratch: i32x8 = cast(non_nan_mask ^ non_nan);
+        let dst: i32x8 = cast(convert_truncate_to_i32_m256i_from_m256(non_nan.avx));
+        dst ^ ((scratch & dst) >> 31)
+      } else if #[cfg(target_feature="sse2")] {
+        // Based on: https://github.com/v8/v8/blob/121df413a3abb5272e971e61bebf0e84efa175f2/src/compiler/backend/ia32/code-generator-ia32.cc#L2457
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let scratch: i32x8 = cast(non_nan_mask ^ non_nan);
+        let dst: i32x8 = i32x8 { sse0: truncate_m128_to_m128i(non_nan.sse0), sse1: truncate_m128_to_m128i(non_nan.sse1) };
+        dst ^ ((scratch & dst) >> 31)
+      } else if #[cfg(target_feature="simd128")] {
+        cast(Self {
+          simd0: i32x4_trunc_sat_f32x4(self.simd0),
+          simd1: i32x4_trunc_sat_f32x4(self.simd1),
+        })
+      } else {
         let n: [f32; 8] = cast(self);
-        let ints: i32x8 = cast([
-          n[0].trunc() as i32,
-          n[1].trunc() as i32,
-          n[2].trunc() as i32,
-          n[3].trunc() as i32,
-          n[4].trunc() as i32,
-          n[5].trunc() as i32,
-          n[6].trunc() as i32,
-          n[7].trunc() as i32,
-        ]);
-        cast::<f32x8, i32x8>(self.is_finite()).blend(
-          ints,
-          i32x8::from(i32::MIN)
-        )
+        cast([
+          n[0] as i32,
+          n[1] as i32,
+          n[2] as i32,
+          n[3] as i32,
+          n[4] as i32,
+          n[5] as i32,
+          n[6] as i32,
+          n[7] as i32,
+        ])
       }
     }
   }
@@ -1025,6 +1258,9 @@ impl f32x8 {
         Self { avx: reciprocal_m256(self.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: reciprocal_m128(self.sse0), sse1: reciprocal_m128(self.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        let one = f32x4_splat(1.0);
+        Self { simd0: f32x4_div(one, self.simd0), simd1: f32x4_div(one, self.simd1) }
       } else {
         Self { arr: [
           1.0 / self.arr[0],
@@ -1047,6 +1283,9 @@ impl f32x8 {
         Self { avx: reciprocal_sqrt_m256(self.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: reciprocal_sqrt_m128(self.sse0), sse1: reciprocal_sqrt_m128(self.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        let one = f32x4_splat(1.0);
+        Self { simd0: f32x4_div(one, f32x4_sqrt(self.simd0)), simd1: f32x4_div(one, f32x4_sqrt(self.simd1)) }
       } else if #[cfg(feature="std")] {
         Self { arr: [
           1.0 / self.arr[0].sqrt(),
@@ -1080,6 +1319,8 @@ impl f32x8 {
         Self { avx: sqrt_m256(self.avx) }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: sqrt_m128(self.sse0), sse1: sqrt_m128(self.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: f32x4_sqrt(self.simd0), simd1: f32x4_sqrt(self.simd1) }
       } else if #[cfg(feature="std")] {
         Self { arr: [
           self.arr[0].sqrt(),
@@ -1113,8 +1354,9 @@ impl f32x8 {
         move_mask_m256(self.avx)
       } else if #[cfg(target_feature="sse2")] {
         (move_mask_m128(self.sse1) << 4) ^ move_mask_m128(self.sse0)
-      }
-      else {
+      } else if #[cfg(target_feature="simd128")] {
+        ((u32x4_bitmask(self.simd1) as i32) << 4) ^ u32x4_bitmask(self.simd0) as i32
+      } else {
         (((self.arr[0].to_bits() as i32) < 0) as i32) << 0 |
         (((self.arr[1].to_bits() as i32) < 0) as i32) << 1 |
         (((self.arr[2].to_bits() as i32) < 0) as i32) << 2 |
@@ -1129,13 +1371,25 @@ impl f32x8 {
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    self.move_mask() != 0
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        v128_any_true(self.simd0) | v128_any_true(self.simd1)
+      } else {
+        self.move_mask() != 0
+      }
+    }
   }
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    // eight lanes
-    self.move_mask() == 0b11111111
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        u32x4_all_true(self.simd0) & u32x4_all_true(self.simd1)
+      } else {
+        // eight lanes
+        self.move_mask() == 0b11111111
+      }
+    }
   }
   #[inline]
   #[must_use]
@@ -1250,12 +1504,9 @@ impl f32x8 {
         let d = add_horizontal_m128(c, c);
         let sum = add_m128_s(b, d);
         get_f32_from_m128_s(sum)
-      } else if #[cfg(target_feature="sse2")] {
-        let a :[f32;4] = cast(self.sse0);
-        let b :[f32;4] = cast(self.sse1);
-        a.iter().sum::<f32>() + b.iter().sum::<f32>()
       } else {
-          self.arr.iter().sum()
+        let arr: [f32; 8] = cast(self);
+        arr.iter().sum()
       }
     }
   }
@@ -1439,6 +1690,8 @@ impl Not for f32x8 {
         Self { avx: self.avx.not()  }
       } else if #[cfg(target_feature="sse2")] {
         Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: v128_not(self.simd0), simd1: v128_not(self.simd1) }
       } else {
         Self { arr: [
           f32::from_bits(!self.arr[0].to_bits()),

@@ -216,19 +216,73 @@ fn impl_f64x2_abs() {
 }
 
 #[test]
+fn impl_f64x2_fast_max() {
+  let a = f64x2::from([-0.0, -5.0]);
+  let b = f64x2::from([0.0, 3.0]);
+  let expected = f64x2::from([0.0, 3.0]);
+  let actual = a.fast_max(b);
+  assert_eq!(expected, actual);
+
+  let a = f64x2::from([f64::NEG_INFINITY, 5.0]);
+  let b = f64x2::from([2.0, f64::INFINITY]);
+  let expected = f64x2::from([2.0, f64::INFINITY]);
+  let actual = a.fast_max(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f64x2_max() {
+  let a = f64x2::from([-0.0, -5.0]);
+  let b = f64x2::from([0.0, 3.0]);
+  let expected = f64x2::from([0.0, 3.0]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+
+  let a = f64x2::from([f64::NEG_INFINITY, 5.0]);
+  let b = f64x2::from([2.0, f64::INFINITY]);
+  let expected = f64x2::from([2.0, f64::INFINITY]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+
   let a = f64x2::from([f64::NAN, 5.0]);
-  let b = f64x2::from([2.0, f64::NEG_INFINITY]);
+  let b = f64x2::from([2.0, f64::NAN]);
   let expected = f64x2::from([2.0, 5.0]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
 }
 
 #[test]
+fn impl_f64x2_fast_min() {
+  let a = f64x2::from([-0.0, -5.0]);
+  let b = f64x2::from([0.0, 3.0]);
+  let expected = f64x2::from([-0.0, -5.0]);
+  let actual = a.fast_min(b);
+  assert_eq!(expected, actual);
+
+  let a = f64x2::from([f64::NEG_INFINITY, 5.0]);
+  let b = f64x2::from([2.0, f64::INFINITY]);
+  let expected = f64x2::from([f64::NEG_INFINITY, 5.0]);
+  let actual = a.fast_min(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f64x2_min() {
+  let a = f64x2::from([-0.0, -5.0]);
+  let b = f64x2::from([0.0, 3.0]);
+  let expected = f64x2::from([-0.0, -5.0]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+
+  let a = f64x2::from([f64::NEG_INFINITY, 5.0]);
+  let b = f64x2::from([2.0, f64::INFINITY]);
+  let expected = f64x2::from([f64::NEG_INFINITY, 5.0]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+
   let a = f64x2::from([f64::NAN, 5.0]);
-  let b = f64x2::from([2.0, f64::NEG_INFINITY]);
-  let expected = f64x2::from([2.0, f64::NEG_INFINITY]);
+  let b = f64x2::from([2.0, f64::NAN]);
+  let expected = f64x2::from([2.0, 5.0]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
@@ -306,8 +360,8 @@ fn impl_f64x2_round_int() {
     (2.5, 2),
     (0.0, 0),
     (-0.0, 0),
-    (f64::NAN, i64::MIN),
-    (f64::INFINITY, i64::MIN),
+    (f64::NAN, 0),
+    (f64::INFINITY, i64::MAX),
     (f64::NEG_INFINITY, i64::MIN),
   ]
   .iter()
@@ -633,28 +687,28 @@ fn impl_f64x2_exp() {
 
 #[test]
 fn test_f64x2_any() {
-  let a = f64x2::from([-1.0, 0.0]);
+  let a = f64x2::from([-1.0, f64::NAN]).is_nan();
   assert!(a.any());
   //
-  let a = f64x2::from([1.0, 0.0]);
+  let a = f64x2::from([1.0, 0.0]).is_nan();
   assert!(!a.any());
 }
 
 #[test]
 fn test_f64x2_all() {
-  let a = f64x2::from([-1.0, -0.0]);
+  let a = f64x2::from([f64::NAN, f64::NAN]).is_nan();
   assert!(a.all());
   //
-  let a = f64x2::from([1.0, -0.0]);
+  let a = f64x2::from([1.0, f64::NAN]).is_nan();
   assert!(!a.all());
 }
 
 #[test]
 fn test_f64x2_none() {
-  let a = f64x2::from([1.0, 0.0]);
+  let a = f64x2::from([1.0, 0.0]).is_nan();
   assert!(a.none());
   //
-  let a = f64x2::from([1.0, -0.0]);
+  let a = f64x2::from([1.0, f64::NAN]).is_nan();
   assert!(!a.none());
 }
 

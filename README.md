@@ -9,5 +9,4 @@ A crate to help you go wide.
 
 Specifically, this has portable "wide" data types that do their best to be SIMD when possible.
 
-On `x86` and `x86_64` this is done with explicit intrinsic usage (via [safe_arch](https://docs.rs/safe_arch)), and on other architectures this is done by carefully writing functions so that LLVM hopefully does the right thing. When Rust stabilizes more explicit intrinsics then they can go into `safe_arch` and then they can get used here.
-
+On `x86`, `x86_64` and `wasm32` this is done with explicit intrinsic usage (via [safe_arch](https://docs.rs/safe_arch)), and on other architectures this is done by carefully writing functions so that LLVM hopefully does the right thing. When Rust stabilizes more explicit intrinsics then they can go into `safe_arch` and then they can get used here.
