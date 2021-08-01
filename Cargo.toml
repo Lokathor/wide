@@ -11,7 +11,7 @@ edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
 
 [features]
-default = []
+default = ["std"]
 
 # Activate `std` within the crate. Currently this gives a much faster `sqrt`
 # impl when an explicit hardware sqrt isn't available.
