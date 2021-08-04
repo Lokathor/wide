@@ -145,6 +145,42 @@ impl Sub for i8x32 {
   }
 }
 
+impl Add<i8> for i8x32 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i8) -> Self::Output {
+    self.add(Self::splat(rhs))
+  }
+}
+
+impl Sub<i8> for i8x32 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i8) -> Self::Output {
+    self.sub(Self::splat(rhs))
+  }
+}
+
+impl Add<i8x32> for i8 {
+  type Output = i8x32;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i8x32) -> Self::Output {
+    i8x32::splat(self).add(rhs)
+  }
+}
+
+impl Sub<i8x32> for i8 {
+  type Output = i8x32;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i8x32) -> Self::Output {
+    i8x32::splat(self).sub(rhs)
+  }
+}
+
 impl BitAnd for i8x32 {
   type Output = Self;
   #[inline]
