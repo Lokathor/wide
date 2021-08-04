@@ -1,3 +1,4 @@
+use std::num::Wrapping;
 use wide::*;
 
 #[test]
@@ -22,6 +23,24 @@ fn impl_sub_for_u32x8() {
   let expected =
     u32x8::from([8984, 4294967280, 0, u32::MAX, 4294967293, 0, 7, 5]);
   let actual = a - b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_mul_for_u32x8() {
+  let a = u32x8::from([1, 2, u32::MIN + 1, u32::MAX, 123, u32::MIN, 9, 3802]);
+  let b = u32x8::from([17, 18, 1, 32, 456, 4, 190, 100]);
+  let expected = u32x8::from([
+    17,
+    36,
+    1,
+    (Wrapping(u32::MAX) * Wrapping(32)).0,
+    123 * 456,
+    0,
+    190 * 9,
+    380200,
+  ]);
+  let actual = a * b;
   assert_eq!(expected, actual);
 }
 

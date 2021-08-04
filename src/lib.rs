@@ -183,7 +183,8 @@ macro_rules! polynomial_13 {
 }
 
 macro_rules! polynomial_13m {
-  // return  ((c8+c9*x) + (c10+c11*x)*x2 + (c12+c13*x)*x4)*x8 + (((c6+c7*x)*x2 + (c4+c5*x))*x4 + ((c2+c3*x)*x2 + x));
+  // return  ((c8+c9*x) + (c10+c11*x)*x2 + (c12+c13*x)*x4)*x8 + (((c6+c7*x)*x2 +
+  // (c4+c5*x))*x4 + ((c2+c3*x)*x2 + x));
   ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
     let x = $x;
     let x2 = x * x;
@@ -932,4 +933,3 @@ bulk_impl_const_rhs_op!((CmpGt, cmp_gt) => [(f64x4, f64), (f64x2, f64), (f32x4,f
 bulk_impl_const_rhs_op!((CmpNe, cmp_ne) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
 bulk_impl_const_rhs_op!((CmpLe, cmp_le) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
 bulk_impl_const_rhs_op!((CmpGe, cmp_ge) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
-

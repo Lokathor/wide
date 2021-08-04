@@ -81,6 +81,84 @@ impl Sub for u32x4 {
   }
 }
 
+impl Mul for u32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: mul_i32_keep_low_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_mul(self.simd, rhs.simd) }
+      } else {
+        let arr1: [u32; 4] = cast(self);
+        let arr2: [u32; 4] = cast(rhs);
+        cast([
+          arr1[0].wrapping_mul(arr2[0]),
+          arr1[1].wrapping_mul(arr2[1]),
+          arr1[2].wrapping_mul(arr2[2]),
+          arr1[3].wrapping_mul(arr2[3]),
+        ])
+      }
+    }
+  }
+}
+
+impl Add<u32> for u32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: u32) -> Self::Output {
+    self.add(Self::splat(rhs))
+  }
+}
+
+impl Sub<u32> for u32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: u32) -> Self::Output {
+    self.sub(Self::splat(rhs))
+  }
+}
+
+impl Mul<u32> for u32x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: u32) -> Self::Output {
+    self.mul(Self::splat(rhs))
+  }
+}
+
+impl Add<u32x4> for u32 {
+  type Output = u32x4;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: u32x4) -> Self::Output {
+    u32x4::splat(self).add(rhs)
+  }
+}
+
+impl Sub<u32x4> for u32 {
+  type Output = u32x4;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: u32x4) -> Self::Output {
+    u32x4::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<u32x4> for u32 {
+  type Output = u32x4;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: u32x4) -> Self::Output {
+    u32x4::splat(self).mul(rhs)
+  }
+}
+
 impl BitAnd for u32x4 {
   type Output = Self;
   #[inline]

@@ -77,6 +77,81 @@ impl Sub for i64x2 {
   }
 }
 
+//we should try to implement this on sse2
+impl Mul for i64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_mul(self.simd, rhs.simd) }
+      } else {
+        let arr1: [i64; 2] = cast(self);
+        let arr2: [i64; 2] = cast(rhs);
+        cast([
+          arr1[0].wrapping_mul(arr2[0]),
+          arr1[1].wrapping_mul(arr2[1]),
+        ])
+      }
+    }
+  }
+}
+
+impl Add<i64> for i64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i64) -> Self::Output {
+    self.add(Self::splat(rhs))
+  }
+}
+
+impl Sub<i64> for i64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i64) -> Self::Output {
+    self.sub(Self::splat(rhs))
+  }
+}
+
+impl Mul<i64> for i64x2 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: i64) -> Self::Output {
+    self.mul(Self::splat(rhs))
+  }
+}
+
+impl Add<i64x2> for i64 {
+  type Output = i64x2;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i64x2) -> Self::Output {
+    i64x2::splat(self).add(rhs)
+  }
+}
+
+impl Sub<i64x2> for i64 {
+  type Output = i64x2;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i64x2) -> Self::Output {
+    i64x2::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<i64x2> for i64 {
+  type Output = i64x2;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: i64x2) -> Self::Output {
+    i64x2::splat(self).mul(rhs)
+  }
+}
+
 impl BitAnd for i64x2 {
   type Output = Self;
   #[inline]
