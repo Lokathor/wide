@@ -25,6 +25,15 @@ fn impl_sub_for_i64x2() {
 }
 
 #[test]
+fn impl_mul_for_i64x2() {
+  let a = i64x2::from([i64::MIN + 1, 24]);
+  let b = i64x2::from([1, -26]);
+  let expected = i64x2::from([i64::MIN + 1, 24 * -26]);
+  let actual = a * b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_bitand_for_i64x2() {
   let a = i64x2::from([1, 1]);
   let b = i64x2::from([0, 1]);

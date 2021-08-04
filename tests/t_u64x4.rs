@@ -1,3 +1,4 @@
+use std::num::Wrapping;
 use wide::*;
 
 #[test]
@@ -21,6 +22,15 @@ fn impl_sub_for_u64x4() {
   let b = u64x4::from([1, 1, 3, 3]);
   let expected = u64x4::from([0, u64::MAX, 6, 9]);
   let actual = a - b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_mul_for_u64x4() {
+  let a = u64x4::from([u64::MIN + 1, u64::MAX, 30, 70]);
+  let b = u64x4::from([2, 2, 10, 20]);
+  let expected = u64x4::from([2, (Wrapping(u64::MAX) * Wrapping(2)).0, 300, 1400]);
+  let actual = a * b;
   assert_eq!(expected, actual);
 }
 
