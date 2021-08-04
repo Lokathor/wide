@@ -125,6 +125,33 @@ impl Mul<i64> for i64x2 {
   }
 }
 
+impl Add<i64x2> for i64 {
+  type Output = i64x2;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i64x2) -> Self::Output {
+    i64x2::splat(self).add(rhs)
+  }
+}
+
+impl Sub<i64x2> for i64 {
+  type Output = i64x2;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i64x2) -> Self::Output {
+    i64x2::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<i64x2> for i64 {
+  type Output = i64x2;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: i64x2) -> Self::Output {
+    i64x2::splat(self).mul(rhs)
+  }
+}
+
 impl BitAnd for i64x2 {
   type Output = Self;
   #[inline]

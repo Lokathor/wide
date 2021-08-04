@@ -163,6 +163,60 @@ impl Mul for i16x16 {
   }
 }
 
+impl Add<i16> for i16x16 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i16) -> Self::Output {
+    self.add(Self::splat(rhs))
+  }
+}
+
+impl Sub<i16> for i16x16 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i16) -> Self::Output {
+    self.sub(Self::splat(rhs))
+  }
+}
+
+impl Mul<i16> for i16x16 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: i16) -> Self::Output {
+    self.mul(Self::splat(rhs))
+  }
+}
+
+impl Add<i16x16> for i16 {
+  type Output = i16x16;
+  #[inline]
+  #[must_use]
+  fn add(self, rhs: i16x16) -> Self::Output {
+    i16x16::splat(self).add(rhs)
+  }
+}
+
+impl Sub<i16x16> for i16 {
+  type Output = i16x16;
+  #[inline]
+  #[must_use]
+  fn sub(self, rhs: i16x16) -> Self::Output {
+    i16x16::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<i16x16> for i16 {
+  type Output = i16x16;
+  #[inline]
+  #[must_use]
+  fn mul(self, rhs: i16x16) -> Self::Output {
+    i16x16::splat(self).mul(rhs)
+  }
+}
+
 impl BitAnd for i16x16 {
   type Output = Self;
   #[inline]
