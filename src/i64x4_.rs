@@ -98,7 +98,7 @@ impl Mul for i64x4 {
       if #[cfg(target_feature="simd128")] {
         Self { simd0: i64x2_mul(self.simd0, rhs.simd0), simd1: i64x2_mul(self.simd1, rhs.simd1) }
       } else {
-        let arr1: [i64; 4] = cast(self); 
+        let arr1: [i64; 4] = cast(self);
         let arr2: [i64; 4] = cast(rhs);
         cast([
           arr1[0].wrapping_mul(arr2[0]),

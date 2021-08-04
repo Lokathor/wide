@@ -29,8 +29,16 @@ fn impl_sub_for_u16x8() {
 fn impl_mul_for_u16x8() {
   let a = u16x8::from([1, 2, u16::MAX, 4, 5, 6, u16::MIN + 1, u16::MIN]);
   let b = u16x8::from([17, 18, 190, 20, 21, 22, 1, 1]);
-  let expected =
-    u16x8::from([17, 36, (Wrapping(u16::MAX) * Wrapping(190)).0, 80, 105, 132, u16::MIN + 1, u16::MIN]);
+  let expected = u16x8::from([
+    17,
+    36,
+    (Wrapping(u16::MAX) * Wrapping(190)).0,
+    80,
+    105,
+    132,
+    u16::MIN + 1,
+    u16::MIN,
+  ]);
   let actual = a * b;
   assert_eq!(expected, actual);
 }

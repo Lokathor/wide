@@ -29,7 +29,8 @@ fn impl_sub_for_u32x4() {
 fn impl_mul_for_u32x4() {
   let a = u32x4::from([1, 2, u32::MIN + 1, u32::MAX]);
   let b = u32x4::from([17, 18, 1, 32]);
-  let expected = u32x4::from([17, 36, 1, (Wrapping(u32::MAX) * Wrapping(32)).0]);
+  let expected =
+    u32x4::from([17, 36, 1, (Wrapping(u32::MAX) * Wrapping(32)).0]);
   let actual = a * b;
   assert_eq!(expected, actual);
 }
