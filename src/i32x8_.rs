@@ -572,7 +572,7 @@ impl i32x8 {
     !self.any()
   }
 
-  pub fn as_slice(self) -> [i32; 8] {
+  pub fn to_array(self) -> [i32; 8] {
     cast(self)
   }
 }

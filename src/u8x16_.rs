@@ -348,7 +348,7 @@ impl u8x16 {
     }
   }
 
-  pub fn as_slice(self) -> [u8; 16] {
+  pub fn to_array(self) -> [u8; 16] {
     cast(self)
   }
 }

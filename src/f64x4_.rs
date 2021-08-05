@@ -1636,7 +1636,7 @@ impl f64x4 {
     Self::pow_f64x4(self, f64x4::splat(y))
   }
 
-  pub fn as_slice(self) -> [f64; 4] {
+  pub fn to_array(self) -> [f64; 4] {
     cast(self)
   }
 }

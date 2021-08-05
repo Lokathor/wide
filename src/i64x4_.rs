@@ -404,7 +404,7 @@ impl i64x4 {
     cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
   }
 
-  pub fn as_slice(self) -> [i64; 4] {
+  pub fn to_array(self) -> [i64; 4] {
     cast(self)
   }
 }

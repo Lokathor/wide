@@ -475,7 +475,7 @@ impl i32x4 {
     !self.any()
   }
 
-  pub fn as_slice(self) -> [i32; 4] {
+  pub fn to_array(self) -> [i32; 4] {
     cast(self)
   }
 }

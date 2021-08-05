@@ -1501,7 +1501,7 @@ impl f64x2 {
     Self::pow_f64x2(self, f64x2::splat(y))
   }
 
-  pub fn as_slice(self) -> [f64; 2] {
+  pub fn to_array(self) -> [f64; 2] {
     cast(self)
   }
 }

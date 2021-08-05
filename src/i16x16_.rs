@@ -657,7 +657,7 @@ impl i16x16 {
     }
   }
 
-  pub fn as_slice(self) -> [i16; 16] {
+  pub fn to_array(self) -> [i16; 16] {
     cast(self)
   }
 }

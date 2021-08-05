@@ -474,7 +474,7 @@ impl i8x16 {
     !self.any()
   }
 
-  pub fn as_slice(self) -> [i8; 16] {
+  pub fn to_array(self) -> [i8; 16] {
     cast(self)
   }
 }

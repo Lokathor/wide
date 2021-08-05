@@ -355,7 +355,7 @@ impl i64x2 {
     cast([arr[0] as f64, arr[1] as f64])
   }
 
-  pub fn as_slice(self) -> [i64; 2] {
+  pub fn to_array(self) -> [i64; 2] {
     cast(self)
   }
 }

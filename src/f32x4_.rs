@@ -1464,7 +1464,7 @@ impl f32x4 {
     Self::pow_f32x4(self, f32x4::splat(y))
   }
 
-  pub fn as_slice(self) -> [f32; 4] {
+  pub fn to_array(self) -> [f32; 4] {
     cast(self)
   }
 }
