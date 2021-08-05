@@ -407,6 +407,10 @@ impl u32x8 {
       }
     }
   }
+
+  pub fn to_array(self) -> [u32; 8] {
+    cast(self)
+  }
 }
 
 impl Not for u32x8 {

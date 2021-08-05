@@ -399,4 +399,8 @@ impl u16x8 {
       }
     }
   }
+
+  pub fn to_array(self) -> [u16; 8] {
+    cast(self)
+  }
 }

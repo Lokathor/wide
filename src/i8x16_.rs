@@ -473,4 +473,8 @@ impl i8x16 {
   pub fn none(self) -> bool {
     !self.any()
   }
+
+  pub fn to_array(self) -> [i8; 16] {
+    cast(self)
+  }
 }

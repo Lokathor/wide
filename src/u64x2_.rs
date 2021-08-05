@@ -318,4 +318,8 @@ impl u64x2 {
       }
     }
   }
+
+  pub fn to_array(self) -> [u64; 2] {
+    cast(self)
+  }
 }

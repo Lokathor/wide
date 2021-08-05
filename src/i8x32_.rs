@@ -588,4 +588,8 @@ impl i8x32 {
       }
     }
   }
+
+  pub fn to_array(self) -> [i8; 32] {
+    cast(self)
+  }
 }

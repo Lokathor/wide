@@ -1463,4 +1463,8 @@ impl f32x4 {
   pub fn powf(self, y: f32) -> Self {
     Self::pow_f32x4(self, f32x4::splat(y))
   }
+
+  pub fn to_array(self) -> [f32; 4] {
+    cast(self)
+  }
 }

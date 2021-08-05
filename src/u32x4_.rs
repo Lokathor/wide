@@ -357,4 +357,8 @@ impl u32x4 {
       }
     }
   }
+
+  pub fn to_array(self) -> [u32; 4] {
+    cast(self)
+  }
 }

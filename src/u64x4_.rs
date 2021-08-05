@@ -365,6 +365,10 @@ impl u64x4 {
       }
     }
   }
+
+  pub fn to_array(self) -> [u64; 4] {
+    cast(self)
+  }
 }
 
 impl Not for u64x4 {

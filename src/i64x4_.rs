@@ -403,6 +403,10 @@ impl i64x4 {
     let arr: [i64; 4] = cast(self);
     cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
   }
+
+  pub fn to_array(self) -> [i64; 4] {
+    cast(self)
+  }
 }
 
 impl Not for i64x4 {

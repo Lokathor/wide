@@ -1680,6 +1680,10 @@ impl f32x8 {
   pub fn powf(self, y: f32) -> Self {
     Self::pow_f32x8(self, f32x8::splat(y))
   }
+
+  pub fn to_array(self) -> [f32; 8] {
+    cast(self)
+  }
 }
 
 impl Not for f32x8 {

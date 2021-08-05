@@ -474,4 +474,8 @@ impl i32x4 {
   pub fn none(self) -> bool {
     !self.any()
   }
+
+  pub fn to_array(self) -> [i32; 4] {
+    cast(self)
+  }
 }
