@@ -456,4 +456,8 @@ impl i16x8 {
       }
     }
   }
+
+  pub fn as_slice(self) -> [i16; 8] {
+    cast(self)
+  }
 }

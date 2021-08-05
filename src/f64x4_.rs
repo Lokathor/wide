@@ -1635,6 +1635,10 @@ impl f64x4 {
   pub fn powf(self, y: f64) -> Self {
     Self::pow_f64x4(self, f64x4::splat(y))
   }
+
+  pub fn as_slice(self) -> [f64; 4] {
+    cast(self)
+  }
 }
 
 impl Not for f64x4 {

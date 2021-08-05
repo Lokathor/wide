@@ -571,6 +571,10 @@ impl i32x8 {
   pub fn none(self) -> bool {
     !self.any()
   }
+
+  pub fn as_slice(self) -> [i32; 8] {
+    cast(self)
+  }
 }
 
 impl Not for i32x8 {

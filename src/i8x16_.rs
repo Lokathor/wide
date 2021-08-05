@@ -473,4 +473,8 @@ impl i8x16 {
   pub fn none(self) -> bool {
     !self.any()
   }
+
+  pub fn as_slice(self) -> [i8; 16] {
+    cast(self)
+  }
 }

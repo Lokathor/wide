@@ -357,4 +357,8 @@ impl u32x4 {
       }
     }
   }
+
+  pub fn as_slice(self) -> [u32; 4] {
+    cast(self)
+  }
 }

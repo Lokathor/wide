@@ -354,4 +354,8 @@ impl i64x2 {
     let arr: [i64; 2] = cast(self);
     cast([arr[0] as f64, arr[1] as f64])
   }
+
+  pub fn as_slice(self) -> [i64; 2] {
+    cast(self)
+  }
 }

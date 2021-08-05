@@ -365,6 +365,10 @@ impl u64x4 {
       }
     }
   }
+
+  pub fn as_slice(self) -> [u64; 4] {
+    cast(self)
+  }
 }
 
 impl Not for u64x4 {

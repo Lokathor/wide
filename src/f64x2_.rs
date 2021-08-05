@@ -1500,6 +1500,10 @@ impl f64x2 {
   pub fn powf(self, y: f64) -> Self {
     Self::pow_f64x2(self, f64x2::splat(y))
   }
+
+  pub fn as_slice(self) -> [f64; 2] {
+    cast(self)
+  }
 }
 
 impl Not for f64x2 {

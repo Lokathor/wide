@@ -588,4 +588,8 @@ impl i8x32 {
       }
     }
   }
+
+  pub fn as_slice(self) -> [i8; 32] {
+    cast(self)
+  }
 }
