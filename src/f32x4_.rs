@@ -676,12 +676,12 @@ impl f32x4 {
   pub fn round_int(self) -> i32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        // Based on: https://github.com/v8/v8/blob/121df413a3abb5272e971e61bebf0e84efa175f2/src/compiler/backend/ia32/code-generator-ia32.cc#L2457
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
         let non_nan_mask = self.cmp_eq(self);
         let non_nan = self & non_nan_mask;
-        let scratch: i32x4 = cast(non_nan_mask ^ non_nan);
-        let dst: i32x4 = cast(convert_to_i32_m128i_from_m128(non_nan.sse));
-        dst ^ ((scratch & dst) >> 31)
+        let flip_to_max: i32x4 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let cast: i32x4 = cast(convert_to_i32_m128i_from_m128(non_nan.sse));
+        flip_to_max ^ cast
       } else if #[cfg(target_feature="simd128")] {
         cast(Self { simd: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd)) })
       } else {
@@ -719,12 +719,12 @@ impl f32x4 {
   pub fn trunc_int(self) -> i32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        // Based on: https://github.com/v8/v8/blob/121df413a3abb5272e971e61bebf0e84efa175f2/src/compiler/backend/ia32/code-generator-ia32.cc#L2457
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
         let non_nan_mask = self.cmp_eq(self);
         let non_nan = self & non_nan_mask;
-        let scratch: i32x4 = cast(non_nan_mask ^ non_nan);
-        let dst: i32x4 = cast(truncate_m128_to_m128i(non_nan.sse));
-        dst ^ ((scratch & dst) >> 31)
+        let flip_to_max: i32x4 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let cast: i32x4 = cast(truncate_m128_to_m128i(non_nan.sse));
+        flip_to_max ^ cast
       } else if #[cfg(target_feature="simd128")] {
         cast(Self { simd: i32x4_trunc_sat_f32x4(self.simd) })
       } else {
