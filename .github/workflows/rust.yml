@@ -75,11 +75,7 @@ jobs:
     - name: Test with 'native' CPU features + No Default Cargo Features
       if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
-      env:
-        CARGO_TARGET_DIR: "target-native"
 
     - name: Test with 'native' CPU features + All Cargo Features
       if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --all-features
-      env:
-        CARGO_TARGET_DIR: "target-native"
