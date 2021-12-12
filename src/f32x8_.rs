@@ -1684,6 +1684,10 @@ impl f32x8 {
   pub fn to_array(self) -> [f32; 8] {
     cast(self)
   }
+
+  pub fn as_array_ref(&self) -> &[f32; 8] {
+    cast_ref(self)
+  }
 }
 
 impl Not for f32x8 {

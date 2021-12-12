@@ -369,6 +369,10 @@ impl u64x4 {
   pub fn to_array(self) -> [u64; 4] {
     cast(self)
   }
+
+  pub fn as_array_ref(&self) -> &[u64; 4] {
+    cast_ref(self)
+  }
 }
 
 impl Not for u64x4 {

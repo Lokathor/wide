@@ -1639,6 +1639,10 @@ impl f64x4 {
   pub fn to_array(self) -> [f64; 4] {
     cast(self)
   }
+
+  pub fn as_array_ref(&self) -> &[f64; 4] {
+    cast_ref(self)
+  }
 }
 
 impl Not for f64x4 {

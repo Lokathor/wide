@@ -592,4 +592,8 @@ impl i8x32 {
   pub fn to_array(self) -> [i8; 32] {
     cast(self)
   }
+
+  pub fn as_array_ref(&self) -> &[i8; 32] {
+    cast_ref(self)
+  }
 }

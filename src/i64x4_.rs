@@ -407,6 +407,10 @@ impl i64x4 {
   pub fn to_array(self) -> [i64; 4] {
     cast(self)
   }
+
+  pub fn as_array_ref(&self) -> &[i64; 4] {
+    cast_ref(self)
+  }
 }
 
 impl Not for i64x4 {
