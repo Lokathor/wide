@@ -411,6 +411,10 @@ impl u32x8 {
   pub fn to_array(self) -> [u32; 8] {
     cast(self)
   }
+
+  pub fn as_array_ref(&self) -> &[u32; 8] {
+    cast_ref(self)
+  }
 }
 
 impl Not for u32x8 {

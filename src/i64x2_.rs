@@ -358,4 +358,8 @@ impl i64x2 {
   pub fn to_array(self) -> [i64; 2] {
     cast(self)
   }
+
+  pub fn as_array_ref(&self) -> &[i64; 2] {
+    cast_ref(self)
+  }
 }
