@@ -750,6 +750,9 @@ fn software_sqrt(x: f64) -> f64 {
   }
   // inf and nan
   {
+    if x.is_nan() {
+      f64::NAN
+    }
     if ix0 & 0x7ff00000 == 0x7ff00000 {
       return x * x + x;
     }
