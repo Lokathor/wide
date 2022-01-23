@@ -271,6 +271,11 @@ impl_shr_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl u64x2 {
   #[inline]
   #[must_use]
+  pub fn new(array: [u64; 2]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {

@@ -291,6 +291,11 @@ impl_shr_t_for_u32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl u32x8 {
   #[inline]
   #[must_use]
+  pub fn new(array: [u32; 8]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

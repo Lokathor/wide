@@ -562,6 +562,11 @@ impl CmpLt for i16x16 {
 impl i16x16 {
   #[inline]
   #[must_use]
+  pub fn new(array: [i16; 16]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

@@ -336,6 +336,11 @@ impl CmpLt for i64x2 {
 impl i64x2 {
   #[inline]
   #[must_use]
+  pub fn new(array: [i64; 2]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {

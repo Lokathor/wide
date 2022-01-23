@@ -348,6 +348,11 @@ impl CmpLt for i8x16 {
 impl i8x16 {
   #[inline]
   #[must_use]
+  pub fn new(array: [i8; 16]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {

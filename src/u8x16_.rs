@@ -246,6 +246,11 @@ impl BitXor for u8x16 {
 impl u8x16 {
   #[inline]
   #[must_use]
+  pub fn new(array: [u8; 16]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {

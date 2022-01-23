@@ -509,6 +509,11 @@ impl CmpLt for f32x8 {
 impl f32x8 {
   #[inline]
   #[must_use]
+  pub fn new(array: [f32; 8]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {

@@ -457,6 +457,11 @@ impl CmpLt for f64x4 {
 impl f64x4 {
   #[inline]
   #[must_use]
+  pub fn new(array: [f64; 4]) -> Self {
+    Self::from(array)
+  }
+  #[inline]
+  #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
