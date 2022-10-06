@@ -662,10 +662,12 @@ impl i16x16 {
     }
   }
 
+  #[inline]
   pub fn to_array(self) -> [i16; 16] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[i16; 16] {
     cast_ref(self)
   }

@@ -409,10 +409,12 @@ impl i64x4 {
     cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
   }
 
+  #[inline]
   pub fn to_array(self) -> [i64; 4] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[i64; 4] {
     cast_ref(self)
   }

@@ -1686,10 +1686,12 @@ impl f32x8 {
     Self::pow_f32x8(self, f32x8::splat(y))
   }
 
+  #[inline]
   pub fn to_array(self) -> [f32; 8] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[f32; 8] {
     cast_ref(self)
   }

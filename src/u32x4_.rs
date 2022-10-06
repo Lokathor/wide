@@ -363,10 +363,12 @@ impl u32x4 {
     }
   }
 
+  #[inline]
   pub fn to_array(self) -> [u32; 4] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[u32; 4] {
     cast_ref(self)
   }

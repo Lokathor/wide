@@ -577,10 +577,12 @@ impl i32x8 {
     !self.any()
   }
 
+  #[inline]
   pub fn to_array(self) -> [i32; 8] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[i32; 8] {
     cast_ref(self)
   }
