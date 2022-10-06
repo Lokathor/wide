@@ -360,10 +360,12 @@ impl i64x2 {
     cast([arr[0] as f64, arr[1] as f64])
   }
 
+  #[inline]
   pub fn to_array(self) -> [i64; 2] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[i64; 2] {
     cast_ref(self)
   }

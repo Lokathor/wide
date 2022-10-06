@@ -480,10 +480,12 @@ impl i32x4 {
     !self.any()
   }
 
+  #[inline]
   pub fn to_array(self) -> [i32; 4] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[i32; 4] {
     cast_ref(self)
   }

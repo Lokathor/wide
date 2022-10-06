@@ -1506,10 +1506,12 @@ impl f64x2 {
     Self::pow_f64x2(self, f64x2::splat(y))
   }
 
+  #[inline]
   pub fn to_array(self) -> [f64; 2] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[f64; 2] {
     cast_ref(self)
   }

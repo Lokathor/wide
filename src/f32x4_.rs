@@ -1470,10 +1470,12 @@ impl f32x4 {
     Self::pow_f32x4(self, f32x4::splat(y))
   }
 
+  #[inline]
   pub fn to_array(self) -> [f32; 4] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[f32; 4] {
     cast_ref(self)
   }

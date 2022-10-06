@@ -479,10 +479,12 @@ impl i8x16 {
     !self.any()
   }
 
+  #[inline]
   pub fn to_array(self) -> [i8; 16] {
     cast(self)
   }
 
+  #[inline]
   pub fn as_array_ref(&self) -> &[i8; 16] {
     cast_ref(self)
   }
