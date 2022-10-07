@@ -806,6 +806,7 @@ impl f32x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -845,6 +846,7 @@ impl f32x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn asin(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -915,6 +917,7 @@ impl f32x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn atan(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -953,6 +956,7 @@ impl f32x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn atan2(self, x: Self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -974,9 +978,9 @@ impl f32x4 {
     // check for special case: x and y are both +/- INF
     let both_infinite = x.is_inf() & y.is_inf();
     if both_infinite.any() {
-      let mone = -Self::ONE;
-      x2 = both_infinite.blend(x2 & mone, x2);
-      y2 = both_infinite.blend(y2 & mone, y2);
+      let minus_one = -Self::ONE;
+      x2 = both_infinite.blend(x2 & minus_one, x2);
+      y2 = both_infinite.blend(y2 & minus_one, y2);
     }
 
     // x = y = 0 will produce NAN. No problem, fixed below
@@ -1265,31 +1269,31 @@ impl f32x4 {
     );
     cast::<_, f32x4>(t2)
   }
-
+  #[inline]
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i32x4>(self);
     let t = t & i32x4::splat(0x7F800000);
     i32x4::round_float(t.cmp_eq(i32x4::splat(0)))
   }
-
+  #[inline]
   fn infinity() -> Self {
     cast::<_, f32x4>(i32x4::splat(0x7F800000))
   }
-
+  #[inline]
   fn nan_log() -> Self {
     cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
-
+  #[inline]
   fn nan_pow() -> Self {
     cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
-
+  #[inline]
   pub fn sign_bit(self) -> Self {
     let t1 = cast::<_, i32x4>(self);
     let t2 = t1 >> 31;
     !cast::<_, f32x4>(t2).cmp_eq(f32x4::ZERO)
   }
-
+  #[inline]
   pub fn reduce_add(self) -> f32 {
     let arr: [f32; 4] = cast(self);
     arr.iter().sum()
@@ -1466,6 +1470,7 @@ impl f32x4 {
     (self.is_nan() | y.is_nan()).blend(self + y, z)
   }
 
+  #[inline]
   pub fn powf(self, y: f32) -> Self {
     Self::pow_f32x4(self, f32x4::splat(y))
   }

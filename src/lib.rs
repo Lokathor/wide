@@ -1,5 +1,12 @@
 #![no_std]
 #![allow(non_camel_case_types)]
+#![warn(clippy::missing_inline_in_public_items)]
+#![allow(clippy::eq_op)]
+#![allow(clippy::excessive_precision)]
+#![allow(clippy::let_and_return)]
+#![allow(clippy::unusual_byte_groupings)]
+#![allow(clippy::misrefactored_assign_op)]
+#![cfg_attr(test, allow(clippy::approx_constant))]
 
 //! A crate to help you go wide.
 //!
@@ -440,6 +447,7 @@ macro_rules! impl_simple_sum {
   ($($t:ty),+ $(,)?) => {
     $(
       impl<RHS> core::iter::Sum<RHS> for $t where $t: AddAssign<RHS> {
+        #[inline]
         fn sum<I: Iterator<Item = RHS>>(iter: I) -> Self {
           let mut total = Self::zeroed();
           for val in iter {
@@ -460,6 +468,7 @@ macro_rules! impl_floating_product {
   ($($t:ty),+ $(,)?) => {
     $(
       impl<RHS> core::iter::Product<RHS> for $t where $t: MulAssign<RHS> {
+        #[inline]
         fn product<I: Iterator<Item = RHS>>(iter: I) -> Self {
           let mut total = Self::from(1.0);
           for val in iter {
@@ -480,6 +489,7 @@ macro_rules! impl_integer_product {
   ($($t:ty),+ $(,)?) => {
     $(
       impl<RHS> core::iter::Product<RHS> for $t where $t: MulAssign<RHS> {
+        #[inline]
         fn product<I: Iterator<Item = RHS>>(iter: I) -> Self {
           let mut total = Self::from(1);
           for val in iter {
@@ -556,6 +566,7 @@ macro_rules! impl_formatter_for {
     $( // do per trait
       $( // do per simd type
         impl $trait for $simd {
+          #[allow(clippy::missing_inline_in_public_items)]
           fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
             let a: $arr = cast(*self);
             write!(f, "(")?;
@@ -604,6 +615,7 @@ impl_formatter_for! {
 macro_rules! from_array {
   ($ty:ty,$dst:ty,$dst_wide:ident,32) => {
     impl From<&[$ty]> for $dst_wide {
+      #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
           32 => $dst_wide::from([src[0] as $dst, src[1] as $dst, src[2] as $dst, src[3] as $dst, src[4] as $dst, src[5] as $dst, src[6] as $dst, src[7] as $dst, src[8] as $dst, src[9] as $dst, src[10] as $dst, src[11] as $dst, src[12] as $dst, src[13] as $dst, src[14] as $dst, src[15] as $dst, src[16] as $dst, src[17] as $dst, src[18] as $dst, src[19] as $dst, src[20] as $dst, src[21] as $dst, src[22] as $dst, src[23] as $dst, src[24] as $dst, src[25] as $dst, src[26] as $dst, src[27] as $dst, src[28] as $dst, src[29] as $dst, src[30] as $dst, src[31] as $dst,]),
@@ -647,6 +659,7 @@ macro_rules! from_array {
   };
   ($ty:ty,$dst:ty,$dst_wide:ident,16) => {
     impl From<&[$ty]> for $dst_wide {
+      #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
           16 => $dst_wide::from([src[0] as $dst, src[1] as $dst, src[2] as $dst, src[3] as $dst, src[4] as $dst, src[5] as $dst, src[6] as $dst, src[7] as $dst, src[8] as $dst, src[9] as $dst, src[10] as $dst, src[11] as $dst, src[12] as $dst, src[13] as $dst, src[14] as $dst, src[15] as $dst,]),
@@ -674,6 +687,7 @@ macro_rules! from_array {
   };
   ($ty:ty,$dst:ty,$dst_wide:ident,8) => {
     impl From<&[$ty]> for $dst_wide {
+      #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
           8 => $dst_wide::from([src[0] as $dst, src[1] as $dst, src[2] as $dst, src[3] as $dst, src[4] as $dst, src[5] as $dst, src[6] as $dst, src[7] as $dst,]),
@@ -694,6 +708,7 @@ macro_rules! from_array {
   };
   ($ty:ty,$dst:ty,$dst_wide:ident,4) => {
     impl From<&[$ty]> for $dst_wide {
+      #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
           4 => $dst_wide::from([src[0] as $dst, src[1] as $dst, src[2] as $dst, src[3] as $dst,]),

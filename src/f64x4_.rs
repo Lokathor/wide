@@ -695,7 +695,7 @@ impl f64x4 {
   #[inline]
   #[must_use]
   pub fn round_int(self) -> i64x4 {
-    // NOTE:No optimisation for this currently available so delegate to LLVM
+    // NOTE:No optimization for this currently available so delegate to LLVM
     let rounded: [f64; 4] = cast(self.round());
     cast([
       rounded[0] as i64,
@@ -779,6 +779,7 @@ impl f64x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -817,22 +818,22 @@ impl f64x4 {
     let x4 = x2 * x2;
     let x5 = x4 * x1;
 
-    let dobig = big.any();
-    let dosmall = !big.all();
+    let do_big = big.any();
+    let do_small = !big.all();
 
     let mut rx = f64x4::default();
     let mut sx = f64x4::default();
     let mut px = f64x4::default();
     let mut qx = f64x4::default();
 
-    if dobig {
+    if do_big {
       rx = x3.mul_add(R3asin, x2 * R2asin)
         + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
       sx =
         x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
 
-    if dosmall {
+    if do_small {
       px = x3.mul_add(P3asin, P0asin)
         + x4.mul_add(P4asin, x1 * P1asin)
         + x5.mul_add(P5asin, x2 * P2asin);
@@ -848,12 +849,12 @@ impl f64x4 {
 
     let mut z1 = f64x4::default();
     let mut z2 = f64x4::default();
-    if dobig {
+    if do_big {
       let xb = (x1 + x1).sqrt();
       z1 = xb.mul_add(y1, xb);
     }
 
-    if dosmall {
+    if do_small {
       z2 = xa.mul_add(y1, xa);
     }
 
@@ -871,6 +872,7 @@ impl f64x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn acos(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -909,21 +911,21 @@ impl f64x4 {
     let x4 = x2 * x2;
     let x5 = x4 * x1;
 
-    let dobig = big.any();
-    let dosmall = !big.all();
+    let do_big = big.any();
+    let do_small = !big.all();
 
     let mut rx = f64x4::default();
     let mut sx = f64x4::default();
     let mut px = f64x4::default();
     let mut qx = f64x4::default();
 
-    if dobig {
+    if do_big {
       rx = x3.mul_add(R3asin, x2 * R2asin)
         + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
       sx =
         x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
-    if dosmall {
+    if do_small {
       px = x3.mul_add(P3asin, P0asin)
         + x4.mul_add(P4asin, x1 * P1asin)
         + x5.mul_add(P5asin, x2 * P2asin);
@@ -939,12 +941,12 @@ impl f64x4 {
 
     let mut z1 = f64x4::default();
     let mut z2 = f64x4::default();
-    if dobig {
+    if do_big {
       let xb = (x1 + x1).sqrt();
       z1 = xb.mul_add(y1, xb);
     }
 
-    if dosmall {
+    if do_small {
       z2 = xa.mul_add(y1, xa);
     }
 
@@ -996,21 +998,21 @@ impl f64x4 {
     let x4 = x2 * x2;
     let x5 = x4 * x1;
 
-    let dobig = big.any();
-    let dosmall = !big.all();
+    let do_big = big.any();
+    let do_small = !big.all();
 
     let mut rx = f64x4::default();
     let mut sx = f64x4::default();
     let mut px = f64x4::default();
     let mut qx = f64x4::default();
 
-    if dobig {
+    if do_big {
       rx = x3.mul_add(R3asin, x2 * R2asin)
         + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
       sx =
         x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
     }
-    if dosmall {
+    if do_small {
       px = x3.mul_add(P3asin, P0asin)
         + x4.mul_add(P4asin, x1 * P1asin)
         + x5.mul_add(P5asin, x2 * P2asin);
@@ -1026,12 +1028,12 @@ impl f64x4 {
 
     let mut z1 = f64x4::default();
     let mut z2 = f64x4::default();
-    if dobig {
+    if do_big {
       let xb = (x1 + x1).sqrt();
       z1 = xb.mul_add(y1, xb);
     }
 
-    if dosmall {
+    if do_small {
       z2 = xa.mul_add(y1, xa);
     }
 
@@ -1044,11 +1046,12 @@ impl f64x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn atan(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f64_as_f64x4!(MOREBITS, 6.123233995736765886130E-17);
-    const_f64_as_f64x4!(MOREBITSO2, 6.123233995736765886130E-17 * 0.5);
+    const_f64_as_f64x4!(MORE_BITS, 6.123233995736765886130E-17);
+    const_f64_as_f64x4!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
     const_f64_as_f64x4!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
 
     const_f64_as_f64x4!(P4atan, -8.750608600031904122785E-1);
@@ -1073,7 +1076,7 @@ impl f64x4 {
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
-    let mut fac = notbig.blend(MOREBITSO2, MOREBITS);
+    let mut fac = notbig.blend(MORE_BITS_O2, MORE_BITS);
     fac = notsmal & fac;
 
     // small:  z = t / 1.0;
@@ -1100,11 +1103,12 @@ impl f64x4 {
   }
 
   #[allow(non_upper_case_globals)]
+  #[inline]
   pub fn atan2(self, x: Self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f64_as_f64x4!(MOREBITS, 6.123233995736765886130E-17);
-    const_f64_as_f64x4!(MOREBITSO2, 6.123233995736765886130E-17 * 0.5);
+    const_f64_as_f64x4!(MORE_BITS, 6.123233995736765886130E-17);
+    const_f64_as_f64x4!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
     const_f64_as_f64x4!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
 
     const_f64_as_f64x4!(P4atan, -8.750608600031904122785E-1);
@@ -1132,9 +1136,9 @@ impl f64x4 {
     // check for special case: x and y are both +/- INF
     let both_infinite = x.is_inf() & y.is_inf();
     if both_infinite.any() {
-      let mone = -Self::ONE;
-      x2 = both_infinite.blend(x2 & mone, x2);
-      y2 = both_infinite.blend(y2 & mone, y2);
+      let minus_one = -Self::ONE;
+      x2 = both_infinite.blend(x2 & minus_one, x2);
+      y2 = both_infinite.blend(y2 & minus_one, y2);
     }
 
     // x = y = 0 gives NAN here
@@ -1148,7 +1152,7 @@ impl f64x4 {
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
-    let mut fac = notbig.blend(MOREBITSO2, MOREBITS);
+    let mut fac = notbig.blend(MORE_BITS_O2, MORE_BITS);
     fac = notsmal & fac;
 
     // small:  z = t / 1.0;
@@ -1408,31 +1412,31 @@ impl f64x4 {
     );
     cast::<_, f64x4>(t2)
   }
-
+  #[inline]
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i64x4>(self);
     let t = t & i64x4::splat(0x7FF0000000000000);
     i64x4::round_float(t.cmp_eq(i64x4::splat(0)))
   }
-
+  #[inline]
   fn infinity() -> Self {
     cast::<_, f64x4>(i64x4::splat(0x7FF0000000000000))
   }
-
+  #[inline]
   fn nan_log() -> Self {
     cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
   }
-
+  #[inline]
   fn nan_pow() -> Self {
     cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
   }
-
+  #[inline]
   fn sign_bit(self) -> Self {
     let t1 = cast::<_, i64x4>(self);
     let t2 = t1 >> 63;
     !cast::<_, f64x4>(t2).cmp_eq(f64x4::ZERO)
   }
-
+  #[inline]
   pub fn reduce_add(self) -> f64 {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -1498,9 +1502,9 @@ impl f64x4 {
     if !mask.any() {
       res
     } else {
-      let iszero = self.is_zero_or_subnormal();
+      let is_zero = self.is_zero_or_subnormal();
       let res = underflow.blend(Self::nan_log(), res);
-      let res = iszero.blend(Self::infinity(), res);
+      let res = is_zero.blend(Self::infinity(), res);
       let res = overflow.blend(self, res);
       res
     }
@@ -1569,12 +1573,12 @@ impl f64x4 {
 
     let lg = f64x4::HALF.mul_neg_add(x2, x) + lg1;
     let x2err = (f64x4::HALF * x).mul_sub(x, f64x4::HALF * x2);
-    let lgerr = f64x4::HALF.mul_add(x2, lg - x) - lg1;
+    let lg_err = f64x4::HALF.mul_add(x2, lg - x) - lg1;
 
     let e2 = (lg * y * f64x4::LOG2_E).round();
     let v = lg.mul_sub(y, e2 * ln2d_hi);
     let v = e2.mul_neg_add(ln2d_lo, v);
-    let v = v - (lgerr + x2err).mul_sub(y, yr * f64x4::LN_2);
+    let v = v - (lg_err + x2err).mul_sub(y, yr * f64x4::LN_2);
 
     let x = v;
     let e3 = (x * f64x4::LOG2_E).round();
@@ -1603,8 +1607,8 @@ impl f64x4 {
     };
 
     // Check for self == 0
-    let xzero = self.is_zero_or_subnormal();
-    let z = xzero.blend(
+    let x_zero = self.is_zero_or_subnormal();
+    let z = x_zero.blend(
       y.cmp_lt(f64x4::ZERO).blend(
         Self::infinity(),
         y.cmp_eq(f64x4::ZERO).blend(f64x4::ONE, f64x4::ZERO),
@@ -1612,31 +1616,31 @@ impl f64x4 {
       z,
     );
 
-    let xsign = self.sign_bit();
+    let x_sign = self.sign_bit();
 
-    let z = if xsign.any() {
+    let z = if x_sign.any() {
       // Y into an integer
       let yi = y.cmp_eq(y.round());
       // Is y odd?
-      let yodd = cast::<_, i64x4>(y.round_int() << 63).round_float();
+      let y_odd = cast::<_, i64x4>(y.round_int() << 63).round_float();
       let z1 =
-        yi.blend(z | yodd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
-      xsign.blend(z1, z)
+        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+      x_sign.blend(z1, z)
     } else {
       z
     };
 
-    let xfinite = self.is_finite();
-    let yfinite = y.is_finite();
-    let efinite = ee.is_finite();
+    let x_finite = self.is_finite();
+    let y_finite = y.is_finite();
+    let e_finite = ee.is_finite();
 
-    if (xfinite & yfinite & (efinite | xzero)).all() {
+    if (x_finite & y_finite & (e_finite | x_zero)).all() {
       return z;
     }
 
     (self.is_nan() | y.is_nan()).blend(self + y, z)
   }
-
+  #[inline]
   pub fn powf(self, y: f64) -> Self {
     Self::pow_f64x4(self, f64x4::splat(y))
   }
@@ -1654,6 +1658,7 @@ impl f64x4 {
 
 impl Not for f64x4 {
   type Output = Self;
+  #[inline]
   fn not(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {

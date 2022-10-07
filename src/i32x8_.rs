@@ -590,6 +590,7 @@ impl i32x8 {
 
 impl Not for i32x8 {
   type Output = Self;
+  #[inline]
   fn not(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

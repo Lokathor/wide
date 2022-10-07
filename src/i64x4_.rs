@@ -422,6 +422,7 @@ impl i64x4 {
 
 impl Not for i64x4 {
   type Output = Self;
+  #[inline]
   fn not(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
