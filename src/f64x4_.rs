@@ -682,13 +682,14 @@ impl f64x4 {
         Self { sse0: round_m128d::<{round_op!(Nearest)}>(self.sse0), sse1: round_m128d::<{round_op!(Nearest)}>(self.sse1) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd0: f64x2_nearest(self.simd0), simd1: f64x2_nearest(self.simd1) }
-      } else if #[cfg(feature="std")] {
-        Self { arr: [
-          self.arr[0].round(),
-          self.arr[1].round(),
-          self.arr[2].round(),
-          self.arr[3].round(),
-        ]}
+      } else if #[cfg(all(feature="std", not(target_arch="wasm32")))] {
+        let data = self.to_array();
+        Self::new([
+          data[0].round(),
+          data[1].round(),
+          data[2].round(),
+          data[3].round(),
+        ])
       } else {
           let sign_mask = f64x4::from(-0.0);
           let magic = f64x4::from(f64::from_bits(0x43300000_00000000));

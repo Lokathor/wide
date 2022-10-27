@@ -628,13 +628,14 @@ impl f32x4 {
         mask.blend(self, f)
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_nearest(self.simd) }
-      } else if #[cfg(feature="std")] {
-        Self { arr: [
-          self.arr[0].round(),
-          self.arr[1].round(),
-          self.arr[2].round(),
-          self.arr[3].round(),
-        ]}
+      } else if #[cfg(all(feature="std", not(target_arch="wasm32")))] {
+        let data = self.to_array();
+        Self::new([
+          data[0].round(),
+          data[1].round(),
+          data[2].round(),
+          data[3].round(),
+        ])
       } else {
         // Note(Lokathor): This software fallback is probably very slow compared
         // to having a hardware option available, even just the sse2 version is
