@@ -4,17 +4,17 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i8x32 { avx: m256i }
+    pub struct i8x32 { pub(crate) avx: m256i }
   } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i8x32 { sse0: m128i, sse1: m128i }
+    pub struct i8x32 { pub(crate) sse0: m128i, pub(crate) sse1: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(C, align(32))]
-    pub struct i8x32 { simd0: v128, simd1: v128 }
+    pub struct i8x32 { pub(crate) simd0: v128, pub(crate) simd1: v128 }
 
     impl Default for i8x32 {
       fn default() -> Self {
@@ -32,7 +32,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i8x32 { arr: [i8;32] }
+    pub struct i8x32 { pub(crate) arr: [i8;32] }
   }
 }
 

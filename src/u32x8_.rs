@@ -4,17 +4,17 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u32x8 { avx2: m256i }
+    pub struct u32x8 { pub(crate) avx2: m256i }
   } else if #[cfg(target_feature="sse")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u32x8 { sse0: m128i, sse1: m128i }
+    pub struct u32x8 { pub(crate) sse0: m128i, pub(crate) sse1: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(C, align(32))]
-    pub struct u32x8 { simd0: v128, simd1: v128 }
+    pub struct u32x8 { pub(crate) simd0: v128, pub(crate) simd1: v128 }
 
     impl Default for u32x8 {
       fn default() -> Self {
@@ -32,7 +32,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u32x8 { arr: [u32;8] }
+    pub struct u32x8 { pub(crate) arr: [u32;8] }
   }
 }
 
@@ -421,6 +421,27 @@ impl u32x8 {
   #[inline]
   pub fn as_array_ref(&self) -> &[u32; 8] {
     cast_ref(self)
+  }
+
+  /// Converts the u32 elements within this struct to f32 elements.
+  #[inline]
+  pub fn to_f32x8(self) -> f32x8 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        f32x8 { avx: convert_to_m256_from_i32_m256i(self.avx2) }
+      } else {
+        f32x8::new([
+          self.arr[0] as f32,
+          self.arr[1] as f32,
+          self.arr[2] as f32,
+          self.arr[3] as f32,
+          self.arr[4] as f32,
+          self.arr[5] as f32,
+          self.arr[6] as f32,
+          self.arr[7] as f32,
+        ])
+      }
+    }
   }
 }
 

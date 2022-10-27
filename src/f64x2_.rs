@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
-    pub struct f64x2 { sse: m128d }
+    pub struct f64x2 { pub(crate) sse: m128d }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct f64x2 { simd: v128 }
+    pub struct f64x2 { pub(crate) simd: v128 }
 
     impl Default for f64x2 {
       fn default() -> Self {
@@ -26,7 +26,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
-    pub struct f64x2 { arr: [f64;2] }
+    pub struct f64x2 { pub(crate) arr: [f64;2] }
   }
 }
 
@@ -1526,6 +1526,70 @@ impl f64x2 {
   #[inline]
   pub fn as_array_ref(&self) -> &[f64; 2] {
     cast_ref(self)
+  }
+
+  /// Converts the f64 elements within this struct to f32 elements.
+  ///
+  /// The first two elements will be the downcast values from this struct.
+  /// The remaining elements will be zero.
+  #[inline]
+  pub fn to_f32x4(self) -> f32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        f32x4 { sse: convert_to_m128_from_m128d(self.sse) }
+      } else {
+        f32x4::new([
+          self.arr[0] as f32,
+          self.arr[1] as f32,
+          0.0f32,
+          0.0f32
+        ])
+      }
+    }
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are truncated.
+  ///
+  /// The first two elements will be the downcast values from this struct.
+  /// The remaining elements will be zero.
+  #[inline]
+  pub fn to_i32x4_truncate(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        i32x4 { sse: truncate_m128d_to_m128i(self.sse) }
+      } else {
+        i32x4::new([
+          self.arr[0] as i32,
+          self.arr[1] as i32,
+          0i32,
+          0i32,
+        ])
+      }
+    }
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are rounded to the nearest integer.
+  ///
+  /// The first two elements will be the downcast values from this struct.
+  /// The remaining elements will be zero.
+  #[inline]
+  pub fn to_i32x4_round(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        i32x4 { sse: convert_to_i32_m128i_from_m128d(self.sse) }
+      } else {
+        i32x4::new([
+          self.arr[0].round() as i32,
+          self.arr[1].round() as i32,
+          0i32,
+          0i32,
+        ])
+      }
+    }
   }
 }
 

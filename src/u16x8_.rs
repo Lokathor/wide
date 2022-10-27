@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct u16x8 { sse: m128i }
+    pub struct u16x8 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct u16x8 { simd: v128 }
+    pub struct u16x8 { pub(crate) simd: v128 }
 
     impl Default for u16x8 {
       fn default() -> Self {
@@ -28,7 +28,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct u16x8 { arr: [u16;8] }
+    pub struct u16x8 { pub(crate) arr: [u16;8] }
   }
 }
 
@@ -413,5 +413,157 @@ impl u16x8 {
   #[inline]
   pub fn as_array_ref(&self) -> &[u16; 8] {
     cast_ref(self)
+  }
+
+  /// Converts the first four u16 elements within this struct to u32 elements.
+  ///
+  /// The remaining elements will be discarded.
+  #[inline]
+  pub fn to_u32x4(self) -> u32x4 {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        u32x4 { sse: convert_to_u32_m128i_from_lower4_u16_m128i(self.sse) }
+      } else {
+        u32x4::new([
+          u32::from(self.arr[0]),
+          u32::from(self.arr[1]),
+          u32::from(self.arr[2]),
+          u32::from(self.arr[3]),
+        ])
+      }
+    }
+  }
+
+  /// Converts the first four u16 elements within this struct to i32 elements.
+  ///
+  /// The remaining elements will be discarded.
+  #[inline]
+  pub fn to_i32x4(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        i32x4 { sse: convert_to_u32_m128i_from_lower4_u16_m128i(self.sse) }
+      } else {
+        i32x4::new([
+          i32::from(self.arr[0]),
+          i32::from(self.arr[1]),
+          i32::from(self.arr[2]),
+          i32::from(self.arr[3]),
+        ])
+      }
+    }
+  }
+
+  /// Converts the u16 elements within this struct to u32 elements.
+  #[inline]
+  pub fn to_u32x8(self) -> u32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(self.sse) }
+      } else {
+        u32x8::new([
+          u32::from(self.arr[0]),
+          u32::from(self.arr[1]),
+          u32::from(self.arr[2]),
+          u32::from(self.arr[3]),
+          u32::from(self.arr[4]),
+          u32::from(self.arr[5]),
+          u32::from(self.arr[6]),
+          u32::from(self.arr[7]),
+        ])
+      }
+    }
+  }
+
+  /// Converts the u16 elements within this struct to i32 elements.
+  #[inline]
+  pub fn to_i32x8(self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(self.sse) }
+      } else {
+        i32x8::new([
+          i32::from(self.arr[0]),
+          i32::from(self.arr[1]),
+          i32::from(self.arr[2]),
+          i32::from(self.arr[3]),
+          i32::from(self.arr[4]),
+          i32::from(self.arr[5]),
+          i32::from(self.arr[6]),
+          i32::from(self.arr[7]),
+        ])
+      }
+    }
+  }
+
+  /// Converts the first two u16 elements within this struct to u64 elements.
+  ///
+  /// The remaining elements will be discarded.
+  #[inline]
+  pub fn to_u64x2(self) -> u64x2 {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        u64x2 { sse: convert_to_u64_m128i_from_lower2_u16_m128i(self.sse) }
+      } else {
+        u64x2::new([
+          u64::from(self.arr[0]),
+          u64::from(self.arr[1]),
+        ])
+      }
+    }
+  }
+
+  /// Converts the first two u16 elements within this struct to i64 elements.
+  ///
+  /// The remaining elements will be discarded.
+  #[inline]
+  pub fn to_i64x2(self) -> i64x2 {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        i64x2 { sse: convert_to_u64_m128i_from_lower2_u16_m128i(self.sse) }
+      } else {
+        i64x2::new([
+          i64::from(self.arr[0]),
+          i64::from(self.arr[1]),
+        ])
+      }
+    }
+  }
+
+  /// Converts the first four u16 elements within this struct to u64 elements.
+  ///
+  /// The remaining elements will be discarded.
+  #[inline]
+  pub fn to_u64x4(self) -> u64x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        u64x4 { avx2: convert_to_i64_m256i_from_lower4_u16_m128i(self.sse) }
+      } else {
+        u64x4::new([
+          u64::from(self.arr[0]),
+          u64::from(self.arr[1]),
+          u64::from(self.arr[2]),
+          u64::from(self.arr[3]),
+        ])
+      }
+    }
+  }
+
+  /// Converts the first four u16 elements within this struct to i64 elements.
+  ///
+  /// The remaining elements will be discarded.
+  #[inline]
+  pub fn to_i64x4(self) -> i64x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i64x4 { avx2: convert_to_i64_m256i_from_lower4_u16_m128i(self.sse) }
+      } else {
+        i64x4::new([
+          i64::from(self.arr[0]),
+          i64::from(self.arr[1]),
+          i64::from(self.arr[2]),
+          i64::from(self.arr[3]),
+        ])
+      }
+    }
   }
 }

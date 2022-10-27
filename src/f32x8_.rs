@@ -4,17 +4,17 @@ pick! {
   if #[cfg(target_feature="avx")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f32x8 { avx: m256 }
+    pub struct f32x8 { pub(crate) avx: m256 }
   } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f32x8 { sse0: m128, sse1: m128 }
+    pub struct f32x8 { pub(crate) sse0: m128, pub(crate)  sse1: m128 }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(C, align(32))]
-    pub struct f32x8 { simd0: v128, simd1: v128 }
+    pub struct f32x8 { pub(crate) simd0: v128, pub(crate) simd1: v128 }
 
     impl Default for f32x8 {
       fn default() -> Self {
@@ -31,7 +31,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f32x8 { arr: [f32;8] }
+    pub struct f32x8 { pub(crate) arr: [f32;8] }
   }
 }
 
@@ -1697,6 +1697,52 @@ impl f32x8 {
   #[inline]
   pub fn as_array_ref(&self) -> &[f32; 8] {
     cast_ref(self)
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are truncated.
+  #[inline]
+  pub fn to_i32x8_truncate(self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x8 { avx2: convert_truncate_to_i32_m256i_from_m256(self.avx) }
+      } else {
+        i32x8::new([
+          self.arr[0] as i32,
+          self.arr[1] as i32,
+          self.arr[2] as i32,
+          self.arr[3] as i32,
+          self.arr[4] as i32,
+          self.arr[5] as i32,
+          self.arr[6] as i32,
+          self.arr[7] as i32,
+        ])
+      }
+    }
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are rounded to the nearest integer.
+  #[inline]
+  pub fn to_i32x8_round(self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x8 { avx2: convert_to_i32_m256i_from_m256(self.avx) }
+      } else {
+        i32x8::new([
+          self.arr[0].round() as i32,
+          self.arr[1].round() as i32,
+          self.arr[2].round() as i32,
+          self.arr[3].round() as i32,
+          self.arr[4].round() as i32,
+          self.arr[5].round() as i32,
+          self.arr[6].round() as i32,
+          self.arr[7].round() as i32,
+        ])
+      }
+    }
   }
 }
 
