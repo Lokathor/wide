@@ -750,6 +750,17 @@ impl f32x8 {
         Self { sse0: round_m128::<{round_op!(Nearest)}>(self.sse0), sse1: round_m128::<{round_op!(Nearest)}>(self.sse1) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd0: f32x4_nearest(self.simd0), simd1: f32x4_nearest(self.simd1) }
+      } else if #[cfg(feature="std")] {
+        Self { arr: [
+          self.arr[0].round(),
+          self.arr[1].round(),
+          self.arr[2].round(),
+          self.arr[3].round(),
+          self.arr[4].round(),
+          self.arr[5].round(),
+          self.arr[6].round(),
+          self.arr[7].round(),
+        ]}
       } else {
         // Note(Lokathor): This software fallback is probably very slow compared
         // to having a hardware option available, even just the sse2 version is
