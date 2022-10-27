@@ -1731,15 +1731,16 @@ impl f32x8 {
       if #[cfg(target_feature="avx2")] {
         i32x8 { avx2: convert_to_i32_m256i_from_m256(self.avx) }
       } else {
+        let rounded = self.round().to_array();
         i32x8::new([
-          self.arr[0].round() as i32,
-          self.arr[1].round() as i32,
-          self.arr[2].round() as i32,
-          self.arr[3].round() as i32,
-          self.arr[4].round() as i32,
-          self.arr[5].round() as i32,
-          self.arr[6].round() as i32,
-          self.arr[7].round() as i32,
+          rounded[0] as i32,
+          rounded[1] as i32,
+          rounded[2] as i32,
+          rounded[3] as i32,
+          rounded[4] as i32,
+          rounded[5] as i32,
+          rounded[6] as i32,
+          rounded[7] as i32,
         ])
       }
     }

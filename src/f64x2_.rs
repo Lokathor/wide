@@ -1582,9 +1582,10 @@ impl f64x2 {
       if #[cfg(target_feature="sse2")] {
         i32x4 { sse: convert_to_i32_m128i_from_m128d(self.sse) }
       } else {
+        let rounded = self.round().to_array();
         i32x4::new([
-          self.arr[0].round() as i32,
-          self.arr[1].round() as i32,
+          rounded[0] as i32,
+          rounded[1] as i32,
           0i32,
           0i32,
         ])
