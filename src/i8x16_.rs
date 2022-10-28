@@ -493,6 +493,7 @@ impl i8x16 {
   ///
   /// The remaining elements will be discarded.
   #[inline]
+  #[must_use]
   pub fn to_i16x8(self) -> i16x8 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
@@ -514,6 +515,7 @@ impl i8x16 {
 
   /// Converts the i8 elements within this struct to i16 elements.
   #[inline]
+  #[must_use]
   pub fn to_i16x16(self) -> i16x16 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -545,6 +547,7 @@ impl i8x16 {
   ///
   /// The remaining elements will be discarded.
   #[inline]
+  #[must_use]
   pub fn to_i32x4(self) -> i32x4 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
@@ -564,6 +567,7 @@ impl i8x16 {
   ///
   /// The remaining elements will be discarded.
   #[inline]
+  #[must_use]
   pub fn to_i32x8(self) -> i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -587,6 +591,7 @@ impl i8x16 {
   ///
   /// The remaining elements will be discarded.
   #[inline]
+  #[must_use]
   pub fn to_i64x2(self) -> i64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
@@ -604,6 +609,7 @@ impl i8x16 {
   ///
   /// The remaining elements will be discarded.
   #[inline]
+  #[must_use]
   pub fn to_i64x4(self) -> i64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {

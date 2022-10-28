@@ -599,9 +599,9 @@ impl f64x2 {
   }
   #[inline]
   #[must_use]
+  #[deprecated(note = "use `to_i64x2_round` instead")]
   pub fn round_int(self) -> i64x2 {
-    let rounded: [f64; 2] = cast(self.round());
-    cast([rounded[0] as i64, rounded[1] as i64])
+    self.to_i64x2_round()
   }
   #[inline]
   #[must_use]
@@ -1098,7 +1098,7 @@ impl f64x2 {
     let xa = self.abs();
 
     let y = (xa * TWO_OVER_PI).round();
-    let q = y.round_int();
+    let q = y.to_i64x2_round();
 
     let x = y.mul_neg_add(DP3, y.mul_neg_add(DP2, y.mul_neg_add(DP1, xa)));
 
@@ -1459,7 +1459,7 @@ impl f64x2 {
       polynomial_13m!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
         + f64x2::ONE;
     let ee = e1 + e2 + e3;
-    let ei = cast::<_, i64x2>(ee.round_int());
+    let ei = cast::<_, i64x2>(ee.to_i64x2_round());
     let ej = cast::<_, i64x2>(ei + (cast::<_, i64x2>(z) >> 52));
 
     let overflow = cast::<_, f64x2>(!ej.cmp_lt(i64x2::splat(0x07FF)))
@@ -1493,7 +1493,7 @@ impl f64x2 {
       // Y into an integer
       let yi = y.cmp_eq(y.round());
       // Is y odd?
-      let y_odd = cast::<_, i64x2>(y.round_int() << 63).round_float();
+      let y_odd = cast::<_, i64x2>(y.to_i64x2_round() << 63).round_float();
 
       let z1 =
         yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
@@ -1533,6 +1533,7 @@ impl f64x2 {
   /// The first two elements will be the downcast values from this struct.
   /// The remaining elements will be zero.
   #[inline]
+  #[must_use]
   pub fn to_f32x4(self) -> f32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -1548,13 +1549,14 @@ impl f64x2 {
     }
   }
 
-  /// Converts the f32 elements within this struct to i32 elements.
+  /// Converts the f64 elements within this struct to i32 elements.
   ///
   /// The decimal portions of the values are truncated.
   ///
   /// The first two elements will be the downcast values from this struct.
   /// The remaining elements will be zero.
   #[inline]
+  #[must_use]
   pub fn to_i32x4_truncate(self) -> i32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -1570,13 +1572,14 @@ impl f64x2 {
     }
   }
 
-  /// Converts the f32 elements within this struct to i32 elements.
+  /// Converts the f64 elements within this struct to i32 elements.
   ///
   /// The decimal portions of the values are rounded to the nearest integer.
   ///
   /// The first two elements will be the downcast values from this struct.
   /// The remaining elements will be zero.
   #[inline]
+  #[must_use]
   pub fn to_i32x4_round(self) -> i32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -1591,6 +1594,18 @@ impl f64x2 {
         ])
       }
     }
+  }
+
+  /// Converts the f64 elements within this struct to i64 elements.
+  ///
+  /// The decimal portions of the values are rounded to the nearest integer.
+  ///
+  /// There is no direct SIMD instruction for this, so it may be slower than `to_i32x4_round`.
+  #[inline]
+  #[must_use]
+  pub fn to_i64x2_round(self) -> i64x2 {
+    let rounded: [f64; 2] = cast(self.round());
+    cast([rounded[0] as i64, rounded[1] as i64])
   }
 }
 

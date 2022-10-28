@@ -494,6 +494,7 @@ impl i32x4 {
   ///
   /// The remaining elements will be discarded.
   #[inline]
+  #[must_use]
   pub fn to_i64x2(self) -> i64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
@@ -509,6 +510,7 @@ impl i32x4 {
 
   /// Converts the i32 elements within this struct to i64 elements.
   #[inline]
+  #[must_use]
   pub fn to_i64x4(self) -> i64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -528,6 +530,7 @@ impl i32x4 {
   ///
   /// The remaining elements will be discarded.
   #[inline]
+  #[must_use]
   pub fn to_f64x2(self) -> f64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -543,6 +546,7 @@ impl i32x4 {
 
   /// Converts the i32 elements within this struct to f64 elements.
   #[inline]
+  #[must_use]
   pub fn to_f64x4(self) -> f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -560,6 +564,7 @@ impl i32x4 {
 
   /// Converts the i32 elements within this struct to f32 elements.
   #[inline]
+  #[must_use]
   pub fn to_f32x4(self) -> f32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {

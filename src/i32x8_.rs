@@ -589,6 +589,7 @@ impl i32x8 {
 
   /// Converts the i32 elements within this struct to f32 elements.
   #[inline]
+  #[must_use]
   pub fn to_f32x8(self) -> f32x8 {
     pick! {
       if #[cfg(target_feature="avx")] {
