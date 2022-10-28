@@ -431,15 +431,16 @@ impl u32x8 {
       if #[cfg(target_feature="avx")] {
         f32x8 { avx: convert_to_m256_from_i32_m256i(self.avx2) }
       } else {
+        let arr = self.to_array();
         f32x8::new([
-          self.arr[0] as f32,
-          self.arr[1] as f32,
-          self.arr[2] as f32,
-          self.arr[3] as f32,
-          self.arr[4] as f32,
-          self.arr[5] as f32,
-          self.arr[6] as f32,
-          self.arr[7] as f32,
+          arr[0] as f32,
+          arr[1] as f32,
+          arr[2] as f32,
+          arr[3] as f32,
+          arr[4] as f32,
+          arr[5] as f32,
+          arr[6] as f32,
+          arr[7] as f32,
         ])
       }
     }

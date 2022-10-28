@@ -1657,11 +1657,12 @@ impl f64x4 {
       if #[cfg(target_feature="avx2")] {
         f32x4 { sse: convert_to_m128_from_m256d(self.avx) }
       } else {
+        let arr = self.to_array();
         f32x4::new([
-          self.arr[0] as f32,
-          self.arr[1] as f32,
-          self.arr[2] as f32,
-          self.arr[3] as f32,
+          arr[0] as f32,
+          arr[1] as f32,
+          arr[2] as f32,
+          arr[3] as f32,
         ])
       }
     }
@@ -1677,11 +1678,12 @@ impl f64x4 {
       if #[cfg(target_feature="avx2")] {
         i32x4 { sse: convert_truncate_to_i32_m128i_from_m256d(self.avx) }
       } else {
+        let arr = self.to_array();
         i32x4::new([
-          self.arr[0] as i32,
-          self.arr[1] as i32,
-          self.arr[2] as i32,
-          self.arr[3] as i32,
+          arr[0] as i32,
+          arr[1] as i32,
+          arr[2] as i32,
+          arr[3] as i32,
         ])
       }
     }

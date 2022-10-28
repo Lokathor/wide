@@ -383,9 +383,10 @@ impl u32x4 {
       if #[cfg(target_feature="sse4.1")] {
         u64x2 { sse: convert_to_u64_m128i_from_lower2_u32_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         u64x2::new([
-          u64::from(self.arr[0]),
-          u64::from(self.arr[1]),
+          u64::from(arr[0]),
+          u64::from(arr[1]),
         ])
       }
     }
@@ -401,9 +402,10 @@ impl u32x4 {
       if #[cfg(target_feature="sse4.1")] {
         i64x2 { sse: convert_to_u64_m128i_from_lower2_u32_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i64x2::new([
-          i64::from(self.arr[0]),
-          i64::from(self.arr[1]),
+          i64::from(arr[0]),
+          i64::from(arr[1]),
         ])
       }
     }
@@ -417,11 +419,12 @@ impl u32x4 {
       if #[cfg(target_feature="avx2")] {
         u64x4 { avx2: convert_to_i64_m256i_from_lower4_u16_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         u64x4::new([
-          u64::from(self.arr[0]),
-          u64::from(self.arr[1]),
-          u64::from(self.arr[2]),
-          u64::from(self.arr[3]),
+          u64::from(arr[0]),
+          u64::from(arr[1]),
+          u64::from(arr[2]),
+          u64::from(arr[3]),
         ])
       }
     }
@@ -435,11 +438,12 @@ impl u32x4 {
       if #[cfg(target_feature="avx2")] {
         i64x4 { avx2: convert_to_i64_m256i_from_lower4_u16_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i64x4::new([
-          i64::from(self.arr[0]),
-          i64::from(self.arr[1]),
-          i64::from(self.arr[2]),
-          i64::from(self.arr[3]),
+          i64::from(arr[0]),
+          i64::from(arr[1]),
+          i64::from(arr[2]),
+          i64::from(arr[3]),
         ])
       }
     }
@@ -455,9 +459,10 @@ impl u32x4 {
       if #[cfg(target_feature="sse2")] {
         f64x2 { sse: convert_to_m128d_from_lower2_i32_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         f64x2::new([
-          f64::from(self.arr[0]),
-          f64::from(self.arr[1]),
+          f64::from(arr[0]),
+          f64::from(arr[1]),
         ])
       }
     }
@@ -471,11 +476,12 @@ impl u32x4 {
       if #[cfg(target_feature="avx")] {
         f64x4 { avx: convert_to_m256d_from_i32_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         f64x4::new([
-          f64::from(self.arr[0]),
-          f64::from(self.arr[1]),
-          f64::from(self.arr[2]),
-          f64::from(self.arr[3]),
+          f64::from(arr[0]),
+          f64::from(arr[1]),
+          f64::from(arr[2]),
+          f64::from(arr[3]),
         ])
       }
     }
@@ -489,11 +495,12 @@ impl u32x4 {
       if #[cfg(target_feature="sse2")] {
         f32x4 { sse: convert_to_m128_from_i32_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         f32x4::new([
-          self.arr[0] as f32,
-          self.arr[1] as f32,
-          self.arr[2] as f32,
-          self.arr[3] as f32,
+          arr[0] as f32,
+          arr[1] as f32,
+          arr[2] as f32,
+          arr[3] as f32,
         ])
       }
     }

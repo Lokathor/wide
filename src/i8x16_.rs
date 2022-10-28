@@ -499,15 +499,16 @@ impl i8x16 {
       if #[cfg(target_feature="sse4.1")] {
         i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i16x8::new([
-          i16::from(self.arr[0]),
-          i16::from(self.arr[1]),
-          i16::from(self.arr[2]),
-          i16::from(self.arr[3]),
-          i16::from(self.arr[4]),
-          i16::from(self.arr[5]),
-          i16::from(self.arr[6]),
-          i16::from(self.arr[7]),
+          i16::from(arr[0]),
+          i16::from(arr[1]),
+          i16::from(arr[2]),
+          i16::from(arr[3]),
+          i16::from(arr[4]),
+          i16::from(arr[5]),
+          i16::from(arr[6]),
+          i16::from(arr[7]),
         ])
       }
     }
@@ -521,23 +522,24 @@ impl i8x16 {
       if #[cfg(target_feature="avx2")] {
         i16x16 { avx2: convert_to_i16_m256i_from_i8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i16x16::new([
-          i16::from(self.arr[0]),
-          i16::from(self.arr[1]),
-          i16::from(self.arr[2]),
-          i16::from(self.arr[3]),
-          i16::from(self.arr[4]),
-          i16::from(self.arr[5]),
-          i16::from(self.arr[6]),
-          i16::from(self.arr[7]),
-          i16::from(self.arr[8]),
-          i16::from(self.arr[9]),
-          i16::from(self.arr[10]),
-          i16::from(self.arr[11]),
-          i16::from(self.arr[12]),
-          i16::from(self.arr[13]),
-          i16::from(self.arr[14]),
-          i16::from(self.arr[15]),
+          i16::from(arr[0]),
+          i16::from(arr[1]),
+          i16::from(arr[2]),
+          i16::from(arr[3]),
+          i16::from(arr[4]),
+          i16::from(arr[5]),
+          i16::from(arr[6]),
+          i16::from(arr[7]),
+          i16::from(arr[8]),
+          i16::from(arr[9]),
+          i16::from(arr[10]),
+          i16::from(arr[11]),
+          i16::from(arr[12]),
+          i16::from(arr[13]),
+          i16::from(arr[14]),
+          i16::from(arr[15]),
         ])
       }
     }
@@ -553,11 +555,12 @@ impl i8x16 {
       if #[cfg(target_feature="sse4.1")] {
         i32x4 { sse: convert_to_i32_m128i_from_lower4_i8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i32x4::new([
-          i32::from(self.arr[0]),
-          i32::from(self.arr[1]),
-          i32::from(self.arr[2]),
-          i32::from(self.arr[3]),
+          i32::from(arr[0]),
+          i32::from(arr[1]),
+          i32::from(arr[2]),
+          i32::from(arr[3]),
         ])
       }
     }
@@ -573,15 +576,16 @@ impl i8x16 {
       if #[cfg(target_feature="avx2")] {
         i32x8 { avx2: convert_to_i32_m256i_from_lower8_i8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i32x8::new([
-          i32::from(self.arr[0]),
-          i32::from(self.arr[1]),
-          i32::from(self.arr[2]),
-          i32::from(self.arr[3]),
-          i32::from(self.arr[4]),
-          i32::from(self.arr[5]),
-          i32::from(self.arr[6]),
-          i32::from(self.arr[7]),
+          i32::from(arr[0]),
+          i32::from(arr[1]),
+          i32::from(arr[2]),
+          i32::from(arr[3]),
+          i32::from(arr[4]),
+          i32::from(arr[5]),
+          i32::from(arr[6]),
+          i32::from(arr[7]),
         ])
       }
     }
@@ -597,9 +601,10 @@ impl i8x16 {
       if #[cfg(target_feature="sse4.1")] {
         i64x2 { sse: convert_to_i64_m128i_from_lower2_i8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i64x2::new([
-          i64::from(self.arr[0]),
-          i64::from(self.arr[1]),
+          i64::from(arr[0]),
+          i64::from(arr[1]),
         ])
       }
     }
@@ -615,11 +620,12 @@ impl i8x16 {
       if #[cfg(target_feature="avx2")] {
         i64x4 { avx2: convert_to_i64_m256i_from_lower4_i8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i64x4::new([
-          i64::from(self.arr[0]),
-          i64::from(self.arr[1]),
-          i64::from(self.arr[2]),
-          i64::from(self.arr[3]),
+          i64::from(arr[0]),
+          i64::from(arr[1]),
+          i64::from(arr[2]),
+          i64::from(arr[3]),
         ])
       }
     }

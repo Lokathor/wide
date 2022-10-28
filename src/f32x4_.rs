@@ -1449,9 +1449,10 @@ impl f32x4 {
       if #[cfg(target_feature="sse2")] {
         f64x2 { sse: convert_to_m128d_from_lower2_m128(self.sse) }
       } else {
+        let arr = self.to_array();
         f64x2::new([
-          f64::from(self.arr[0]),
-          f64::from(self.arr[1]),
+          f64::from(arr[0]),
+          f64::from(arr[1]),
         ])
       }
     }
@@ -1465,11 +1466,12 @@ impl f32x4 {
       if #[cfg(target_feature="avx")] {
         f64x4 { avx: convert_to_m256d_from_m128(self.sse) }
       } else {
+        let arr = self.to_array();
         f64x4::new([
-          f64::from(self.arr[0]),
-          f64::from(self.arr[1]),
-          f64::from(self.arr[2]),
-          f64::from(self.arr[3]),
+          f64::from(arr[0]),
+          f64::from(arr[1]),
+          f64::from(arr[2]),
+          f64::from(arr[3]),
         ])
       }
     }

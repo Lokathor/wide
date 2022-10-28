@@ -1539,9 +1539,10 @@ impl f64x2 {
       if #[cfg(target_feature="sse2")] {
         f32x4 { sse: convert_to_m128_from_m128d(self.sse) }
       } else {
+        let arr = self.to_array();
         f32x4::new([
-          self.arr[0] as f32,
-          self.arr[1] as f32,
+          arr[0] as f32,
+          arr[1] as f32,
           0.0f32,
           0.0f32
         ])
@@ -1562,9 +1563,10 @@ impl f64x2 {
       if #[cfg(target_feature="sse2")] {
         i32x4 { sse: truncate_m128d_to_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i32x4::new([
-          self.arr[0] as i32,
-          self.arr[1] as i32,
+          arr[0] as i32,
+          arr[1] as i32,
           0i32,
           0i32,
         ])

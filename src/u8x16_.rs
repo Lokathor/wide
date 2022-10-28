@@ -373,15 +373,16 @@ impl u8x16 {
       if #[cfg(target_feature="sse4.1")] {
         u16x8 { sse: convert_to_u16_m128i_from_lower8_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         u16x8::new([
-          u16::from(self.arr[0]),
-          u16::from(self.arr[1]),
-          u16::from(self.arr[2]),
-          u16::from(self.arr[3]),
-          u16::from(self.arr[4]),
-          u16::from(self.arr[5]),
-          u16::from(self.arr[6]),
-          u16::from(self.arr[7]),
+          u16::from(arr[0]),
+          u16::from(arr[1]),
+          u16::from(arr[2]),
+          u16::from(arr[3]),
+          u16::from(arr[4]),
+          u16::from(arr[5]),
+          u16::from(arr[6]),
+          u16::from(arr[7]),
         ])
       }
     }
@@ -397,15 +398,16 @@ impl u8x16 {
       if #[cfg(target_feature="sse4.1")] {
         i16x8 { sse: convert_to_u16_m128i_from_lower8_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i16x8::new([
-          i16::from(self.arr[0]),
-          i16::from(self.arr[1]),
-          i16::from(self.arr[2]),
-          i16::from(self.arr[3]),
-          i16::from(self.arr[4]),
-          i16::from(self.arr[5]),
-          i16::from(self.arr[6]),
-          i16::from(self.arr[7]),
+          i16::from(arr[0]),
+          i16::from(arr[1]),
+          i16::from(arr[2]),
+          i16::from(arr[3]),
+          i16::from(arr[4]),
+          i16::from(arr[5]),
+          i16::from(arr[6]),
+          i16::from(arr[7]),
         ])
       }
     }
@@ -419,23 +421,24 @@ impl u8x16 {
       if #[cfg(target_feature="avx2")] {
         i16x16 { avx2: convert_to_i16_m256i_from_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i16x16::new([
-          i16::from(self.arr[0]),
-          i16::from(self.arr[1]),
-          i16::from(self.arr[2]),
-          i16::from(self.arr[3]),
-          i16::from(self.arr[4]),
-          i16::from(self.arr[5]),
-          i16::from(self.arr[6]),
-          i16::from(self.arr[7]),
-          i16::from(self.arr[8]),
-          i16::from(self.arr[9]),
-          i16::from(self.arr[10]),
-          i16::from(self.arr[11]),
-          i16::from(self.arr[12]),
-          i16::from(self.arr[13]),
-          i16::from(self.arr[14]),
-          i16::from(self.arr[15]),
+          i16::from(arr[0]),
+          i16::from(arr[1]),
+          i16::from(arr[2]),
+          i16::from(arr[3]),
+          i16::from(arr[4]),
+          i16::from(arr[5]),
+          i16::from(arr[6]),
+          i16::from(arr[7]),
+          i16::from(arr[8]),
+          i16::from(arr[9]),
+          i16::from(arr[10]),
+          i16::from(arr[11]),
+          i16::from(arr[12]),
+          i16::from(arr[13]),
+          i16::from(arr[14]),
+          i16::from(arr[15]),
         ])
       }
     }
@@ -451,11 +454,12 @@ impl u8x16 {
       if #[cfg(target_feature="sse4.1")] {
         u32x4 { sse: convert_to_u32_m128i_from_lower4_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         u32x4::new([
-          u32::from(self.arr[0]),
-          u32::from(self.arr[1]),
-          u32::from(self.arr[2]),
-          u32::from(self.arr[3]),
+          u32::from(arr[0]),
+          u32::from(arr[1]),
+          u32::from(arr[2]),
+          u32::from(arr[3]),
         ])
       }
     }
@@ -471,11 +475,12 @@ impl u8x16 {
       if #[cfg(target_feature="sse4.1")] {
         i32x4 { sse: convert_to_u32_m128i_from_lower4_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i32x4::new([
-          i32::from(self.arr[0]),
-          i32::from(self.arr[1]),
-          i32::from(self.arr[2]),
-          i32::from(self.arr[3]),
+          i32::from(arr[0]),
+          i32::from(arr[1]),
+          i32::from(arr[2]),
+          i32::from(arr[3]),
         ])
       }
     }
@@ -493,15 +498,16 @@ impl u8x16 {
         // It calls `_mm256_cvtepu8_epi32`.
         u32x8 { avx2: convert_to_i16_m256i_from_lower8_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         u32x8::new([
-          u32::from(self.arr[0]),
-          u32::from(self.arr[1]),
-          u32::from(self.arr[2]),
-          u32::from(self.arr[3]),
-          u32::from(self.arr[4]),
-          u32::from(self.arr[5]),
-          u32::from(self.arr[6]),
-          u32::from(self.arr[7]),
+          u32::from(arr[0]),
+          u32::from(arr[1]),
+          u32::from(arr[2]),
+          u32::from(arr[3]),
+          u32::from(arr[4]),
+          u32::from(arr[5]),
+          u32::from(arr[6]),
+          u32::from(arr[7]),
         ])
       }
     }
@@ -519,15 +525,16 @@ impl u8x16 {
         // It calls `_mm256_cvtepu8_epi32`.
         i32x8 { avx2: convert_to_i16_m256i_from_lower8_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i32x8::new([
-          i32::from(self.arr[0]),
-          i32::from(self.arr[1]),
-          i32::from(self.arr[2]),
-          i32::from(self.arr[3]),
-          i32::from(self.arr[4]),
-          i32::from(self.arr[5]),
-          i32::from(self.arr[6]),
-          i32::from(self.arr[7]),
+          i32::from(arr[0]),
+          i32::from(arr[1]),
+          i32::from(arr[2]),
+          i32::from(arr[3]),
+          i32::from(arr[4]),
+          i32::from(arr[5]),
+          i32::from(arr[6]),
+          i32::from(arr[7]),
         ])
       }
     }
@@ -543,9 +550,10 @@ impl u8x16 {
       if #[cfg(target_feature="sse4.1")] {
         u64x2 { sse: convert_to_u64_m128i_from_lower2_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         u64x2::new([
-          u64::from(self.arr[0]),
-          u64::from(self.arr[1]),
+          u64::from(arr[0]),
+          u64::from(arr[1]),
         ])
       }
     }
@@ -561,9 +569,10 @@ impl u8x16 {
       if #[cfg(target_feature="sse4.1")] {
         i64x2 { sse: convert_to_u64_m128i_from_lower2_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i64x2::new([
-          i64::from(self.arr[0]),
-          i64::from(self.arr[1]),
+          i64::from(arr[0]),
+          i64::from(arr[1]),
         ])
       }
     }
@@ -581,11 +590,12 @@ impl u8x16 {
         // It calls `_mm256_cvtepu8_epi64`.
         u64x4 { avx2: convert_to_i16_m256i_from_lower4_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         u64x4::new([
-          u64::from(self.arr[0]),
-          u64::from(self.arr[1]),
-          u64::from(self.arr[2]),
-          u64::from(self.arr[3]),
+          u64::from(arr[0]),
+          u64::from(arr[1]),
+          u64::from(arr[2]),
+          u64::from(arr[3]),
         ])
       }
     }
@@ -603,11 +613,12 @@ impl u8x16 {
         // It calls `_mm256_cvtepu8_epi64`.
         i64x4 { avx2: convert_to_i16_m256i_from_lower4_u8_m128i(self.sse) }
       } else {
+        let arr = self.to_array();
         i64x4::new([
-          i64::from(self.arr[0]),
-          i64::from(self.arr[1]),
-          i64::from(self.arr[2]),
-          i64::from(self.arr[3]),
+          i64::from(arr[0]),
+          i64::from(arr[1]),
+          i64::from(arr[2]),
+          i64::from(arr[3]),
         ])
       }
     }
