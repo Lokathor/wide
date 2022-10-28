@@ -664,7 +664,7 @@ impl f32x4 {
   /// values you get implementation defined behavior.
   #[inline]
   #[must_use]
-  #[deprecated(note = "use `to_i32x4_round_fast` instead")]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x4_round_fast` instead")]
   pub fn fast_round_int(self) -> i32x4 {
     self.to_i32x4_round_fast()
   }
@@ -674,7 +674,7 @@ impl f32x4 {
   /// doesn't handle out of range values or NaNs.
   #[inline]
   #[must_use]
-  #[deprecated(note = "use `to_i32x4_round` instead")]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x4_round` instead")]
   pub fn round_int(self) -> i32x4 {
     self.to_i32x4_round()
   }
@@ -684,7 +684,7 @@ impl f32x4 {
   /// values you get implementation defined behavior.
   #[inline]
   #[must_use]
-  #[deprecated(note = "use `to_i32x4_truncate_fast` instead")]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x4_truncate_fast` instead")]
   pub fn fast_trunc_int(self) -> i32x4 {
     self.to_i32x4_truncate_fast()
   }
@@ -694,7 +694,7 @@ impl f32x4 {
   /// that doesn't handle out of range values or NaNs.
   #[inline]
   #[must_use]
-  #[deprecated(note = "use `to_i32x4_truncate` instead")]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x4_truncate` instead")]
   pub fn trunc_int(self) -> i32x4 {
     self.to_i32x4_truncate()
   }

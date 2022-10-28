@@ -694,7 +694,7 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
-  #[deprecated(note = "use `to_i64x4_round` instead")]
+  #[deprecated(since = "0.7.6", note = "use `to_i64x4_round` instead")]
   pub fn round_int(self) -> i64x4 {
     self.to_i64x4_round()
   }
