@@ -353,16 +353,19 @@ impl u32x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd0: u32x4_lt(self.simd0, rhs.simd0), simd1: u32x4_lt(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { u32::MAX } else { 0 },
-          if self.arr[1] < rhs.arr[1] { u32::MAX } else { 0 },
-          if self.arr[2] < rhs.arr[2] { u32::MAX } else { 0 },
-          if self.arr[3] < rhs.arr[3] { u32::MAX } else { 0 },
-          if self.arr[4] < rhs.arr[4] { u32::MAX } else { 0 },
-          if self.arr[5] < rhs.arr[5] { u32::MAX } else { 0 },
-          if self.arr[6] < rhs.arr[6] { u32::MAX } else { 0 },
-          if self.arr[7] < rhs.arr[7] { u32::MAX } else { 0 },
-        ]}
+        let s_arr: [u32; 8] = cast(self);
+        let r_arr: [u32; 8] = cast(rhs);
+        let out_arr: [u32; 8] = [
+          if s_arr[0] < r_arr[0] { u32::MAX } else { 0 },
+          if s_arr[1] < r_arr[1] { u32::MAX } else { 0 },
+          if s_arr[2] < r_arr[2] { u32::MAX } else { 0 },
+          if s_arr[3] < r_arr[3] { u32::MAX } else { 0 },
+          if s_arr[4] < r_arr[4] { u32::MAX } else { 0 },
+          if s_arr[5] < r_arr[5] { u32::MAX } else { 0 },
+          if s_arr[6] < r_arr[6] { u32::MAX } else { 0 },
+          if s_arr[7] < r_arr[7] { u32::MAX } else { 0 },
+        ];
+        cast(out_arr)
       }
     }
   }
