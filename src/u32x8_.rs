@@ -346,11 +346,7 @@ impl u32x8 {
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2 ) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_lt_mask_i32_m128i(self.sse0,rhs.sse0), sse1: cmp_lt_mask_i32_m128i(self.sse1,rhs.sse1), }
-      } else if #[cfg(target_feature="simd128")] {
+      if #[cfg(target_feature="simd128")] {
         Self { simd0: u32x4_lt(self.simd0, rhs.simd0), simd1: u32x4_lt(self.simd1, rhs.simd1) }
       } else {
         let s_arr: [u32; 8] = cast(self);
