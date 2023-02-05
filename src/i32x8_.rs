@@ -4,7 +4,7 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i32x8 { avx2: m256i }
+    pub struct i32x8 { pub(crate) avx2: m256i }
   } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
@@ -14,7 +14,7 @@ pick! {
 
     #[derive(Clone, Copy)]
     #[repr(C, align(32))]
-    pub struct i32x8 { simd0: v128, simd1: v128 }
+    pub struct i32x8 { pub(crate) simd0: v128, pub(crate) simd1: v128 }
 
     impl Default for i32x8 {
       fn default() -> Self {
@@ -32,7 +32,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i32x8 { arr: [i32;8] }
+    pub struct i32x8 { pub(crate) arr: [i32;8] }
   }
 }
 
@@ -585,6 +585,29 @@ impl i32x8 {
   #[inline]
   pub fn as_array_ref(&self) -> &[i32; 8] {
     cast_ref(self)
+  }
+
+  /// Converts the i32 elements within this struct to f32 elements.
+  #[inline]
+  #[must_use]
+  pub fn to_f32x8(self) -> f32x8 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        f32x8 { avx: convert_to_m256_from_i32_m256i(self.avx2) }
+      } else {
+        let arr = self.to_array();
+        f32x8::new([
+          arr[0] as f32,
+          arr[1] as f32,
+          arr[2] as f32,
+          arr[3] as f32,
+          arr[4] as f32,
+          arr[5] as f32,
+          arr[6] as f32,
+          arr[7] as f32,
+        ])
+      }
+    }
   }
 }
 

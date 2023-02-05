@@ -4,17 +4,17 @@ pick! {
   if #[cfg(target_feature="avx")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f32x8 { avx: m256 }
+    pub struct f32x8 { pub(crate) avx: m256 }
   } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f32x8 { sse0: m128, sse1: m128 }
+    pub struct f32x8 { pub(crate) sse0: m128, pub(crate)  sse1: m128 }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(C, align(32))]
-    pub struct f32x8 { simd0: v128, simd1: v128 }
+    pub struct f32x8 { pub(crate) simd0: v128, pub(crate) simd1: v128 }
 
     impl Default for f32x8 {
       fn default() -> Self {
@@ -31,7 +31,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f32x8 { arr: [f32;8] }
+    pub struct f32x8 { pub(crate) arr: [f32;8] }
   }
 }
 
@@ -786,16 +786,9 @@ impl f32x8 {
   /// values you get implementation defined behavior.
   #[inline]
   #[must_use]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x8_round_fast` instead")]
   pub fn fast_round_int(self) -> i32x8 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        cast(convert_to_i32_m256i_from_m256(self.avx))
-      } else if #[cfg(target_feature="sse2")] {
-        i32x8 { sse0: convert_to_i32_m128i_from_m128(self.sse0), sse1: convert_to_i32_m128i_from_m128(self.sse1) }
-      } else {
-        self.round_int()
-      }
-    }
+    self.to_i32x8_round_fast()
   }
 
   /// Rounds each lane into an integer. This saturates out of range values and
@@ -803,41 +796,9 @@ impl f32x8 {
   /// doesn't handle out of range values or NaNs.
   #[inline]
   #[must_use]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x8_round` instead")]
   pub fn round_int(self) -> i32x8 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
-        let cast: i32x8 = cast(convert_to_i32_m256i_from_m256(non_nan.avx));
-        flip_to_max ^ cast
-      } else if #[cfg(target_feature="sse2")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
-        let cast: i32x8 = i32x8 { sse0: convert_to_i32_m128i_from_m128(non_nan.sse0), sse1: convert_to_i32_m128i_from_m128(non_nan.sse1) };
-        flip_to_max ^ cast
-      } else if #[cfg(target_feature="simd128")] {
-        cast(Self {
-          simd0: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd0)),
-          simd1: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd1)),
-        })
-      } else {
-        let rounded: [f32; 8] = cast(self.round());
-        cast([
-          rounded[0] as i32,
-          rounded[1] as i32,
-          rounded[2] as i32,
-          rounded[3] as i32,
-          rounded[4] as i32,
-          rounded[5] as i32,
-          rounded[6] as i32,
-          rounded[7] as i32,
-        ])
-      }
-    }
+    self.to_i32x8_round()
   }
 
   /// Truncates each lane into an integer. This is a faster implementation than
@@ -845,16 +806,9 @@ impl f32x8 {
   /// values you get implementation defined behavior.
   #[inline]
   #[must_use]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x8_truncate_fast` instead")]
   pub fn fast_trunc_int(self) -> i32x8 {
-    pick! {
-      if #[cfg(all(target_feature="avx"))] {
-        cast(convert_truncate_to_i32_m256i_from_m256(self.avx))
-      } else if #[cfg(target_feature="sse2")] {
-        i32x8 { sse0: truncate_m128_to_m128i(self.sse0), sse1: truncate_m128_to_m128i(self.sse1) }
-      } else {
-        self.trunc_int()
-      }
-    }
+    self.to_i32x8_truncate_fast()
   }
 
   /// Truncates each lane into an integer. This saturates out of range values
@@ -862,41 +816,9 @@ impl f32x8 {
   /// that doesn't handle out of range values or NaNs.
   #[inline]
   #[must_use]
+  #[deprecated(since = "0.7.6", note = "use `to_i32x8_truncate` instead")]
   pub fn trunc_int(self) -> i32x8 {
-    pick! {
-        if #[cfg(target_feature="avx")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
-        let cast: i32x8 = cast(convert_truncate_to_i32_m256i_from_m256(non_nan.avx));
-        flip_to_max ^ cast
-      } else if #[cfg(target_feature="sse2")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
-        let cast: i32x8 = i32x8 { sse0: truncate_m128_to_m128i(non_nan.sse0), sse1: truncate_m128_to_m128i(non_nan.sse1) };
-        flip_to_max ^ cast
-      } else if #[cfg(target_feature="simd128")] {
-        cast(Self {
-          simd0: i32x4_trunc_sat_f32x4(self.simd0),
-          simd1: i32x4_trunc_sat_f32x4(self.simd1),
-        })
-      } else {
-        let n: [f32; 8] = cast(self);
-        cast([
-          n[0] as i32,
-          n[1] as i32,
-          n[2] as i32,
-          n[3] as i32,
-          n[4] as i32,
-          n[5] as i32,
-          n[6] as i32,
-          n[7] as i32,
-        ])
-      }
-    }
+    self.to_i32x8_truncate()
   }
   #[inline]
   #[must_use]
@@ -1200,7 +1122,7 @@ impl f32x8 {
 
     // Find quadrant
     let y = (xa * TWO_OVER_PI).round();
-    let q: i32x8 = y.round_int();
+    let q: i32x8 = y.to_i32x8_round();
 
     let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
 
@@ -1635,7 +1557,7 @@ impl f32x8 {
     );
 
     let ee = e1 + e2 + e3;
-    let ei = cast::<_, i32x8>(ee.round_int());
+    let ei = cast::<_, i32x8>(ee.to_i32x8_round());
     let ej = cast::<_, i32x8>(ei + (cast::<_, i32x8>(z) >> 23));
 
     let overflow = cast::<_, f32x8>(ej.cmp_gt(i32x8::splat(0x0FF)))
@@ -1665,7 +1587,7 @@ impl f32x8 {
       let yi = y.cmp_eq(y.round());
 
       // Is y odd?
-      let y_odd = cast::<_, i32x8>(y.round_int() << 31).round_float();
+      let y_odd = cast::<_, i32x8>(y.to_i32x8_round() << 31).round_float();
 
       let z1 =
         yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
@@ -1697,6 +1619,140 @@ impl f32x8 {
   #[inline]
   pub fn as_array_ref(&self) -> &[f32; 8] {
     cast_ref(self)
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are truncated.
+  ///
+  /// This is a faster implementation than
+  /// `to_i32x8_truncate`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
+  #[inline]
+  #[must_use]
+  pub fn to_i32x8_truncate_fast(self) -> i32x8 {
+    pick! {
+      if #[cfg(all(target_feature="avx"))] {
+        cast(convert_truncate_to_i32_m256i_from_m256(self.avx))
+      } else if #[cfg(target_feature="sse2")] {
+        i32x8 { sse0: truncate_m128_to_m128i(self.sse0), sse1: truncate_m128_to_m128i(self.sse1) }
+      } else {
+        self.trunc_int()
+      }
+    }
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are truncated.
+  ///
+  /// This saturates out of range values
+  /// and turns NaNs into 0. Use `to_i32x8_truncate_fast` for a faster implementation
+  /// that doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn to_i32x8_truncate(self) -> i32x8 {
+    pick! {
+        if #[cfg(target_feature="avx")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let cast: i32x8 = cast(convert_truncate_to_i32_m256i_from_m256(non_nan.avx));
+        flip_to_max ^ cast
+      } else if #[cfg(target_feature="sse2")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let cast: i32x8 = i32x8 { sse0: truncate_m128_to_m128i(non_nan.sse0), sse1: truncate_m128_to_m128i(non_nan.sse1) };
+        flip_to_max ^ cast
+      } else if #[cfg(target_feature="simd128")] {
+        cast(Self {
+          simd0: i32x4_trunc_sat_f32x4(self.simd0),
+          simd1: i32x4_trunc_sat_f32x4(self.simd1),
+        })
+      } else {
+        let n: [f32; 8] = cast(self);
+        cast([
+          n[0] as i32,
+          n[1] as i32,
+          n[2] as i32,
+          n[3] as i32,
+          n[4] as i32,
+          n[5] as i32,
+          n[6] as i32,
+          n[7] as i32,
+        ])
+      }
+    }
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are rounded to the nearest integer.
+  ///
+  /// This is a faster implementation than
+  /// `to_i32x8_round`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
+  #[inline]
+  #[must_use]
+  pub fn to_i32x8_round_fast(self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        cast(convert_to_i32_m256i_from_m256(self.avx))
+      } else if #[cfg(target_feature="sse2")] {
+        i32x8 { sse0: convert_to_i32_m128i_from_m128(self.sse0), sse1: convert_to_i32_m128i_from_m128(self.sse1) }
+      } else {
+        self.round_int()
+      }
+    }
+  }
+
+  /// Converts the f32 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are rounded to the nearest integer.
+  ///
+  /// This saturates out of range values and
+  /// turns NaNs into 0. Use `to_i32x8_round_fast` for a faster implementation that
+  /// doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn to_i32x8_round(self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let cast: i32x8 = cast(convert_to_i32_m256i_from_m256(non_nan.avx));
+        flip_to_max ^ cast
+      } else if #[cfg(target_feature="sse2")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.cmp_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let cast: i32x8 = i32x8 { sse0: convert_to_i32_m128i_from_m128(non_nan.sse0), sse1: convert_to_i32_m128i_from_m128(non_nan.sse1) };
+        flip_to_max ^ cast
+      } else if #[cfg(target_feature="simd128")] {
+        cast(Self {
+          simd0: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd0)),
+          simd1: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd1)),
+        })
+      } else {
+        let rounded: [f32; 8] = cast(self.round());
+        cast([
+          rounded[0] as i32,
+          rounded[1] as i32,
+          rounded[2] as i32,
+          rounded[3] as i32,
+          rounded[4] as i32,
+          rounded[5] as i32,
+          rounded[6] as i32,
+          rounded[7] as i32,
+        ])
+      }
+    }
   }
 }
 

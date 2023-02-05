@@ -4,17 +4,17 @@ pick! {
   if #[cfg(target_feature="avx")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f64x4 { avx: m256d }
+    pub struct f64x4 { pub(crate) avx: m256d }
   } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f64x4 { sse0: m128d, sse1: m128d }
+    pub struct f64x4 { pub(crate) sse0: m128d, pub(crate) sse1: m128d }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(C, align(32))]
-    pub struct f64x4 { simd0: v128, simd1: v128 }
+    pub struct f64x4 { pub(crate) simd0: v128, pub(crate) simd1: v128 }
 
     impl Default for f64x4 {
       fn default() -> Self {
@@ -31,7 +31,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f64x4 { arr: [f64;4] }
+    pub struct f64x4 { pub(crate) arr: [f64;4] }
   }
 }
 
@@ -694,15 +694,9 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  #[deprecated(since = "0.7.6", note = "use `to_i64x4_round` instead")]
   pub fn round_int(self) -> i64x4 {
-    // NOTE:No optimization for this currently available so delegate to LLVM
-    let rounded: [f64; 4] = cast(self.round());
-    cast([
-      rounded[0] as i64,
-      rounded[1] as i64,
-      rounded[2] as i64,
-      rounded[3] as i64,
-    ])
+    self.to_i64x4_round()
   }
 
   #[inline]
@@ -1213,7 +1207,7 @@ impl f64x4 {
     let xa = self.abs();
 
     let y = (xa * TWO_OVER_PI).round();
-    let q = y.round_int();
+    let q = y.to_i64x4_round();
 
     let x = y.mul_neg_add(DP3, y.mul_neg_add(DP2, y.mul_neg_add(DP1, xa)));
 
@@ -1587,7 +1581,7 @@ impl f64x4 {
       polynomial_13m!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
         + f64x4::ONE;
     let ee = e1 + e2 + e3;
-    let ei = cast::<_, i64x4>(ee.round_int());
+    let ei = cast::<_, i64x4>(ee.to_i64x4_round());
     let ej = cast::<_, i64x4>(ei + (cast::<_, i64x4>(z) >> 52));
 
     let overflow = cast::<_, f64x4>(!ej.cmp_lt(i64x4::splat(0x07FF)))
@@ -1622,7 +1616,7 @@ impl f64x4 {
       // Y into an integer
       let yi = y.cmp_eq(y.round());
       // Is y odd?
-      let y_odd = cast::<_, i64x4>(y.round_int() << 63).round_float();
+      let y_odd = cast::<_, i64x4>(y.to_i64x4_round() << 63).round_float();
       let z1 =
         yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
       x_sign.blend(z1, z)
@@ -1653,6 +1647,84 @@ impl f64x4 {
   #[inline]
   pub fn as_array_ref(&self) -> &[f64; 4] {
     cast_ref(self)
+  }
+
+  /// Converts the f64 elements within this struct to f32 elements.
+  #[inline]
+  #[must_use]
+  pub fn to_f32x4(self) -> f32x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        f32x4 { sse: convert_to_m128_from_m256d(self.avx) }
+      } else {
+        let arr = self.to_array();
+        f32x4::new([
+          arr[0] as f32,
+          arr[1] as f32,
+          arr[2] as f32,
+          arr[3] as f32,
+        ])
+      }
+    }
+  }
+
+  /// Converts the f64 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are truncated.
+  #[inline]
+  #[must_use]
+  pub fn to_i32x4_truncate(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x4 { sse: convert_truncate_to_i32_m128i_from_m256d(self.avx) }
+      } else {
+        let arr = self.to_array();
+        i32x4::new([
+          arr[0] as i32,
+          arr[1] as i32,
+          arr[2] as i32,
+          arr[3] as i32,
+        ])
+      }
+    }
+  }
+
+  /// Converts the f64 elements within this struct to i32 elements.
+  ///
+  /// The decimal portions of the values are rounded to the nearest integer.
+  #[inline]
+  #[must_use]
+  pub fn to_i32x4_round(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x4 { sse: convert_to_i32_m128i_from_m256d(self.avx) }
+      } else {
+        let rounded = self.round().to_array();
+        i32x4::new([
+          rounded[0] as i32,
+          rounded[1] as i32,
+          rounded[2] as i32,
+          rounded[3] as i32,
+        ])
+      }
+    }
+  }
+
+  /// Converts the f64 elements within this struct to i64 elements.
+  ///
+  /// The decimal portions of the values are rounded to the nearest integer.
+  ///
+  /// There is no direct SIMD instruction for this, so it may be slower than `to_i32x4_round`.
+  #[inline]
+  #[must_use]
+  pub fn to_i64x4_round(self) -> i64x4 {
+    let rounded: [f64; 4] = cast(self.round());
+    cast([
+      rounded[0] as i64,
+      rounded[1] as i64,
+      rounded[2] as i64,
+      rounded[3] as i64,
+    ])
   }
 }
 

@@ -4,7 +4,7 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i16x16 { avx2: m256i }
+    pub struct i16x16 { pub(crate) avx2: m256i }
   } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
@@ -14,7 +14,7 @@ pick! {
 
     #[derive(Clone, Copy)]
     #[repr(C, align(32))]
-    pub struct i16x16 { simd0: v128, simd1: v128 }
+    pub struct i16x16 { pub(crate) simd0: v128, pub(crate) simd1: v128 }
 
     impl Default for i16x16 {
       fn default() -> Self {
@@ -32,7 +32,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i16x16 { arr: [i16;16] }
+    pub struct i16x16 { pub(crate) arr: [i16;16] }
   }
 }
 
