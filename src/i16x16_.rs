@@ -740,6 +740,8 @@ impl i16x16 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: mul_i16_scale_round_m256i(self.avx2, rhs.avx2) }
+      } else if #[cfg(target_feature="ssse3")] {
+        Self { sse0:  mul_i16_scale_round_m128i(self.sse0, rhs.sse0), sse1:  mul_i16_scale_round_m128i(self.sse1, rhs.sse1) }
       } else if #[cfg(target_feature="sse2")] {
         // unfortunately mul_i16_scale_round_m128i only got added in sse3
         let hi0 = mul_i16_keep_high_m128i(self.sse0, rhs.sse0);
