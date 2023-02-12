@@ -760,7 +760,7 @@ impl i16x16 {
 
         Self { sse0: s0, sse1: s1 }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: vqrdmulhq_n_s16(self.simd, rhs.simd) }
+        Self { simd0: vqrdmulhq_n_s16(self.simd0, rhs.simd0), simd1: vqrdmulhq_n_s16(self.simd1, rhs.simd1) }
       } else {
         // compiler does a surprisingly good job of vectorizing this
         Self { arr: [
