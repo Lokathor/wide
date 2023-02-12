@@ -529,7 +529,7 @@ impl i16x8 {
         let s = pack_i32_to_i16_m128i(v1, v2);
         Self { sse: s }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: vqrdmulhq_n_s16(self.simd, rhs.simd) }
+        Self { simd: i16x8_q15mulr_sat(self.simd, rhs.simd) }
       } else {
         // compiler does a surprisingly good job of vectorizing this
         Self { arr: [

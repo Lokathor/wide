@@ -730,7 +730,8 @@ impl i16x16 {
   /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
-  /// - vqrdmulhq_n_s16 instruction on simd128
+  /// - vqrdmulhq_n_s16 instruction on neon
+  /// - i16x8_q15mulr_sat on simd128
   /// - _mm256_mulhrs_epi16 on avx2
   /// - emulated via mul_i16_* on sse2
   #[inline]
@@ -760,7 +761,7 @@ impl i16x16 {
 
         Self { sse0: s0, sse1: s1 }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: vqrdmulhq_n_s16(self.simd0, rhs.simd0), simd1: vqrdmulhq_n_s16(self.simd1, rhs.simd1) }
+        Self { simd0: i16x8_q15mulr_sat(self.simd0, rhs.simd0), simd1: i16x8_q15mulr_sat(self.simd1, rhs.simd1) }
       } else {
         // compiler does a surprisingly good job of vectorizing this
         Self { arr: [
