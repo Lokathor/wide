@@ -5,7 +5,7 @@ pick! {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
     pub struct u32x8 { avx2: m256i }
-  } else if #[cfg(target_feature="sse")] {
+  } else if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
     pub struct u32x8 { sse0: m128i, sse1: m128i }

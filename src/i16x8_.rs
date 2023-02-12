@@ -533,14 +533,14 @@ impl i16x8 {
       } else {
         // compiler does a surprisingly good job of vectorizing this
         Self { arr: [
-          self.arr[0] = ((i32::from(self.arr[0]) * i32::from(hrs.arr[0]) + 0x4000) >> 15) as i16,
-          self.arr[1] = ((i32::from(self.arr[1]) * i32::from(hrs.arr[1]) + 0x4000) >> 15) as i16,
-          self.arr[2] = ((i32::from(self.arr[2]) * i32::from(hrs.arr[2]) + 0x4000) >> 15) as i16,
-          self.arr[3] = ((i32::from(self.arr[3]) * i32::from(hrs.arr[3]) + 0x4000) >> 15) as i16,
-          self.arr[4] = ((i32::from(self.arr[4]) * i32::from(hrs.arr[4]) + 0x4000) >> 15) as i16,
-          self.arr[5] = ((i32::from(self.arr[5]) * i32::from(hrs.arr[5]) + 0x4000) >> 15) as i16,
-          self.arr[6] = ((i32::from(self.arr[6]) * i32::from(hrs.arr[6]) + 0x4000) >> 15) as i16,
-          self.arr[7] = ((i32::from(self.arr[7]) * i32::from(hrs.arr[7]) + 0x4000) >> 15) as i16,          ]}
+          ((i32::from(self.arr[0]) * i32::from(rhs.arr[0]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[1]) * i32::from(rhs.arr[1]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[2]) * i32::from(rhs.arr[2]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[3]) * i32::from(rhs.arr[3]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[4]) * i32::from(rhs.arr[4]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[5]) * i32::from(rhs.arr[5]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,          ]}
       }
     }
   }
