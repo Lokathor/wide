@@ -595,6 +595,103 @@ impl i8x32 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: add_saturating_i8_m256i(self.avx, rhs.avx) }
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: add_saturating_i8_m128i(self.sse0, rhs.sse0), sse1: add_saturating_i8_m128i(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: i8x16_add_sat(self.simd0, rhs.simd0), simd1: i8x16_add_sat(self.simd1, rhs.simd1) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_add(rhs.arr[0]),
+          self.arr[1].saturating_add(rhs.arr[1]),
+          self.arr[2].saturating_add(rhs.arr[2]),
+          self.arr[3].saturating_add(rhs.arr[3]),
+          self.arr[4].saturating_add(rhs.arr[4]),
+          self.arr[5].saturating_add(rhs.arr[5]),
+          self.arr[6].saturating_add(rhs.arr[6]),
+          self.arr[7].saturating_add(rhs.arr[7]),
+          self.arr[8].saturating_add(rhs.arr[8]),
+          self.arr[9].saturating_add(rhs.arr[9]),
+          self.arr[10].saturating_add(rhs.arr[10]),
+          self.arr[11].saturating_add(rhs.arr[11]),
+          self.arr[12].saturating_add(rhs.arr[12]),
+          self.arr[13].saturating_add(rhs.arr[13]),
+          self.arr[14].saturating_add(rhs.arr[14]),
+          self.arr[15].saturating_add(rhs.arr[15]),
+          self.arr[16].saturating_add(rhs.arr[16]),
+          self.arr[17].saturating_add(rhs.arr[17]),
+          self.arr[18].saturating_add(rhs.arr[18]),
+          self.arr[19].saturating_add(rhs.arr[19]),
+          self.arr[20].saturating_add(rhs.arr[20]),
+          self.arr[21].saturating_add(rhs.arr[21]),
+          self.arr[22].saturating_add(rhs.arr[22]),
+          self.arr[23].saturating_add(rhs.arr[23]),
+          self.arr[24].saturating_add(rhs.arr[24]),
+          self.arr[25].saturating_add(rhs.arr[25]),
+          self.arr[26].saturating_add(rhs.arr[26]),
+          self.arr[27].saturating_add(rhs.arr[27]),
+          self.arr[28].saturating_add(rhs.arr[28]),
+          self.arr[29].saturating_add(rhs.arr[29]),
+          self.arr[30].saturating_add(rhs.arr[30]),
+          self.arr[31].saturating_add(rhs.arr[31]),
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: sub_saturating_i8_m256i(self.avx, rhs.avx) }
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: sub_saturating_i8_m128i(self.sse0, rhs.sse0), sse1: sub_saturating_i8_m128i(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: i8x16_sub_sat(self.simd0, rhs.simd0), simd1: i8x16_sub_sat(self.simd1, rhs.simd1) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_sub(rhs.arr[0]),
+          self.arr[1].saturating_sub(rhs.arr[1]),
+          self.arr[2].saturating_sub(rhs.arr[2]),
+          self.arr[3].saturating_sub(rhs.arr[3]),
+          self.arr[4].saturating_sub(rhs.arr[4]),
+          self.arr[5].saturating_sub(rhs.arr[5]),
+          self.arr[6].saturating_sub(rhs.arr[6]),
+          self.arr[7].saturating_sub(rhs.arr[7]),
+          self.arr[8].saturating_sub(rhs.arr[8]),
+          self.arr[9].saturating_sub(rhs.arr[9]),
+          self.arr[10].saturating_sub(rhs.arr[10]),
+          self.arr[11].saturating_sub(rhs.arr[11]),
+          self.arr[12].saturating_sub(rhs.arr[12]),
+          self.arr[13].saturating_sub(rhs.arr[13]),
+          self.arr[14].saturating_sub(rhs.arr[14]),
+          self.arr[15].saturating_sub(rhs.arr[15]),
+          self.arr[16].saturating_sub(rhs.arr[16]),
+          self.arr[17].saturating_sub(rhs.arr[17]),
+          self.arr[18].saturating_sub(rhs.arr[18]),
+          self.arr[19].saturating_sub(rhs.arr[19]),
+          self.arr[20].saturating_sub(rhs.arr[20]),
+          self.arr[21].saturating_sub(rhs.arr[21]),
+          self.arr[22].saturating_sub(rhs.arr[22]),
+          self.arr[23].saturating_sub(rhs.arr[23]),
+          self.arr[24].saturating_sub(rhs.arr[24]),
+          self.arr[25].saturating_sub(rhs.arr[25]),
+          self.arr[26].saturating_sub(rhs.arr[26]),
+          self.arr[27].saturating_sub(rhs.arr[27]),
+          self.arr[28].saturating_sub(rhs.arr[28]),
+          self.arr[29].saturating_sub(rhs.arr[29]),
+          self.arr[30].saturating_sub(rhs.arr[30]),
+          self.arr[31].saturating_sub(rhs.arr[31]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
   pub fn to_array(self) -> [i8; 32] {
     cast(self)
   }

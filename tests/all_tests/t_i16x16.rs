@@ -97,6 +97,113 @@ fn impl_sub_for_i16x16() {
 }
 
 #[test]
+fn impl_saturating_add_for_i16x16() {
+  let a = i16x16::from([
+    1,
+    2,
+    i16::MAX - 1,
+    i16::MAX - 1,
+    15,
+    20,
+    5000,
+    2990,
+    1,
+    2,
+    i16::MAX - 1,
+    i16::MAX - 1,
+    15,
+    20,
+    5000,
+    2990,
+  ]);
+  let b = i16x16::from([
+    17, 18, 1, 2, 20, 5, 900, 900, 17, 18, 1, 2, 20, 5, 900, 900,
+  ]);
+  let expected = i16x16::from([
+    18,
+    20,
+    i16::MAX,
+    i16::MAX,
+    35,
+    25,
+    5900,
+    3890,
+    18,
+    20,
+    i16::MAX,
+    i16::MAX,
+    35,
+    25,
+    5900,
+    3890,
+  ]);
+  let actual = a.saturating_add(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_saturating_sub_for_i16x16() {
+  let a = i16x16::from([
+    1,
+    2,
+    i16::MIN + 1,
+    i16::MIN,
+    15,
+    20,
+    5000,
+    2990,
+    1,
+    2,
+    i16::MIN + 1,
+    i16::MIN,
+    15,
+    20,
+    5000,
+    2990,
+  ]);
+  let b = i16x16::from([
+    17, -18, 1, 1, 20, 5, 900, 900, 17, -18, 1, 1, 20, 5, 900, 900,
+  ]);
+  let expected = i16x16::from([
+    -16,
+    20,
+    i16::MIN,
+    i16::MIN,
+    -5,
+    15,
+    4100,
+    2090,
+    -16,
+    20,
+    i16::MIN,
+    i16::MIN,
+    -5,
+    15,
+    4100,
+    2090,
+  ]);
+  let actual = a.saturating_sub(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_mul_scale_i16x16() {
+  let a = i16x16::from([
+    0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300,
+    1400, 1500,
+  ]);
+  let b = i16x16::from([
+    0, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000,
+    2100, 2200, 2300,
+  ]);
+  let actual = a.mul_scale_round(b);
+  let expected = i16x16::from([
+    0, 3, 6, 10, 15, 20, 26, 32, 39, 47, 55, 64, 73, 83, 94, 105,
+  ]);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_mul_for_i16x16() {
   let a = i16x16::from([
     1,

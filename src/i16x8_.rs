@@ -545,6 +545,7 @@ impl i16x8 {
       }
     }
   }
+
   #[inline]
   pub fn to_array(self) -> [i16; 8] {
     cast(self)
