@@ -25,6 +25,34 @@ fn impl_sub_for_i16x8() {
 }
 
 #[test]
+fn impl_add_saturating_for_i16x8() {
+  let a = i16x8::from([i16::MAX, i16::MIN, 3, 4, -1, -2, -3, -4]);
+  let b = i16x8::from([i16::MAX, i16::MIN, 7, 8, -15, -26, -37, 48]);
+  let expected = i16x8::from([i16::MAX, i16::MIN, 10, 12, -16, -28, -40, 44]);
+  let actual = a.saturating_add(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_mul_scale_i16x8() {
+  let a = i16x8::from([100, 200, 300, 400, 500, -600, 700, -800]);
+  let b = i16x8::from([900, 1000, 1100, 1200, 1300, -1400, -1500, 1600]);
+  let actual = a.mul_scale_round(b);
+  let expected = i16x8::from([3, 6, 10, 15, 20, 26, -32, -39]);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_sub_saturating_for_i16x8() {
+  let a = i16x8::from([1, 2, 3, 4, 5, i16::MIN, i16::MIN + 1, i16::MAX]);
+  let b = i16x8::from([17, -18, 190, -20, 21, -1, 1, -1]);
+  let expected =
+    i16x8::from([-16, 20, -187, 24, -16, i16::MIN + 1, i16::MIN, i16::MAX]);
+  let actual = a.saturating_sub(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_mul_for_i16x8() {
   let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
   let b = i16x8::from([17, -18, 190, -20, 21, -22, 1, 1]);
