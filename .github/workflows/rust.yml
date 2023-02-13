@@ -95,11 +95,11 @@ jobs:
           cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
-          RUSTFLAGS: "-C target-feature=+neon"
+          RUSTFLAGS: "-C target-feature=+aarch64"
       - name: test
         run: >
           cargo test --tests --benches --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
         env:
           FEATURES: ${{ matrix.features }}
-          RUSTFLAGS: "-C target-feature=+neon"
+          RUSTFLAGS: "-C target-feature=+aarch64"
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
