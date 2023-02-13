@@ -449,7 +449,7 @@ impl i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vbslq_s16(t.neon, f.neon, self.neon) }}
+        unsafe {Self { neon: vbslq_s16(vreinterpretq_u16_s16(self.neon), t.neon, f.neon) }}
       } else {
         generic_bit_blend(self, t, f)
       }
