@@ -75,7 +75,6 @@ jobs:
     strategy:
       matrix:
         rust: [1.52.1,stable,nightly]
-        features: ["", "nightly_aarch64_neon"]
 
     steps:
       - name: Installing emulator and linker
