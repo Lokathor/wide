@@ -39,7 +39,7 @@ pick! {
 
     impl PartialEq for i16x8 {
       fn eq(&self, other: &Self) -> bool {
-        unsafe { vminvq_u16(vceqq_s16(self.neon, other.neon))==1 }
+        unsafe { vminvq_u16(vceqq_s16(self.neon, other.neon))==u16::MAX }
       }
     }
 
@@ -489,7 +489,7 @@ impl i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_max(self.simd, rhs.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vmaxq_s16(self.neon, rhs.neon) }}
       } else {
         self.cmp_lt(rhs).blend(rhs, self)
       }
@@ -504,7 +504,7 @@ impl i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_min(self.simd, rhs.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vminq_s16(self.neon, rhs.neon) }}
       } else {
         self.cmp_lt(rhs).blend(self, rhs)
       }
