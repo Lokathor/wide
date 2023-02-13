@@ -25,6 +25,9 @@ pick! {
     }
 
     impl Eq for i16x8 { }
+  } else  if #[cfg(target_feature="aarch64")] {
+    use core::arch::aarch64::*;
+    pub struct i16x8 { neon : int16x8_t }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
@@ -47,6 +50,8 @@ impl Add for i16x8 {
         Self { sse: add_i16_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_add(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="aarch64")] {
+        Self { neon: vqaddq_s16(self.neon, rhs.neon) }
       } else {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
