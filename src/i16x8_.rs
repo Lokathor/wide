@@ -329,7 +329,7 @@ macro_rules! impl_shr_t_for_i16x8 {
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: i16x8_shr(self.simd, rhs as u32) }
           } else if #[cfg(target_arch="aarch64")] {
-            unsafe {Self { neon: vshlq_s16(self.neon, vmovq_n_s16(rhs as i16)) }}
+            unsafe {Self { neon: vshlq_s16(self.neon, vmovq_n_s16( -(rhs as i16))) }}
           } else {
             let u = rhs as u64;
             Self { arr: [
@@ -449,7 +449,7 @@ impl i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, t.neon) }}
+        unsafe {Self { neon: vbslq_s16(t.neon, f.neon, self.neon) }}
       } else {
         generic_bit_blend(self, t, f)
       }
