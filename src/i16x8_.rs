@@ -60,7 +60,7 @@ impl Add for i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_add(self.simd, rhs.simd) }
       } else if #[cfg(target_feature="neon")] {
-        unsafe { Self { neon: vqaddq_s16(self.neon, rhs.neon) } }
+        unsafe { Self { neon: vaddq_s16(self.neon, rhs.neon) } }
       } else {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
@@ -88,7 +88,7 @@ impl Sub for i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_sub(self.simd, rhs.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vsubq_s16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
@@ -116,7 +116,7 @@ impl Mul for i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_mul(self.simd, rhs.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vmulq_s16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].wrapping_mul(rhs.arr[0]),
@@ -198,7 +198,7 @@ impl BitAnd for i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_and(self.simd, rhs.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vandq_s16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].bitand(rhs.arr[0]),
@@ -226,7 +226,7 @@ impl BitOr for i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_or(self.simd, rhs.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vorrq_s16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].bitor(rhs.arr[0]),
