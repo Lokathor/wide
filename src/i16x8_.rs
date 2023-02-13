@@ -37,6 +37,13 @@ pick! {
       }
     }
 
+    impl PartialEq for i16x8 {
+      fn eq(&self, other: &Self) -> bool {
+        unsafe { vminvq_u16(vceqq_s16(self.neon, other.neon))==1 }
+      }
+    }
+
+
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
@@ -254,7 +261,7 @@ impl BitXor for i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_xor(self.simd, rhs.simd) }
       } else if #[cfg(target_arch="aarch64")] {
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: veorq_s16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].bitxor(rhs.arr[0]),
