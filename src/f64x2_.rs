@@ -438,7 +438,7 @@ impl f64x2 {
   #[must_use]
   pub fn fast_max(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         Self { sse: max_m128d(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
@@ -495,7 +495,7 @@ impl f64x2 {
   #[must_use]
   pub fn fast_min(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         Self { sse: min_m128d(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {

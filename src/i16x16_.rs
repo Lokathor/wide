@@ -663,6 +663,132 @@ impl i16x16 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: add_saturating_i16_m256i(self.avx2, rhs.avx2) }
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: add_saturating_i16_m128i(self.sse0, rhs.sse0), sse1: add_saturating_i16_m128i(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: i16x8_add_sat(self.simd0, rhs.simd0), simd1: i16x8_add_sat(self.simd1, rhs.simd1) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_add(rhs.arr[0]),
+          self.arr[1].saturating_add(rhs.arr[1]),
+          self.arr[2].saturating_add(rhs.arr[2]),
+          self.arr[3].saturating_add(rhs.arr[3]),
+          self.arr[4].saturating_add(rhs.arr[4]),
+          self.arr[5].saturating_add(rhs.arr[5]),
+          self.arr[6].saturating_add(rhs.arr[6]),
+          self.arr[7].saturating_add(rhs.arr[7]),
+          self.arr[8].saturating_add(rhs.arr[8]),
+          self.arr[9].saturating_add(rhs.arr[9]),
+          self.arr[10].saturating_add(rhs.arr[10]),
+          self.arr[11].saturating_add(rhs.arr[11]),
+          self.arr[12].saturating_add(rhs.arr[12]),
+          self.arr[13].saturating_add(rhs.arr[13]),
+          self.arr[14].saturating_add(rhs.arr[14]),
+          self.arr[15].saturating_add(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: sub_saturating_i16_m256i(self.avx2, rhs.avx2) }
+      } else if #[cfg(target_feature="sse2")] {
+        Self { sse0: sub_saturating_i16_m128i(self.sse0, rhs.sse0), sse1: sub_saturating_i16_m128i(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: i16x8_sub_sat(self.simd0, rhs.simd0), simd1: i16x8_sub_sat(self.simd1, rhs.simd1) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_sub(rhs.arr[0]),
+          self.arr[1].saturating_sub(rhs.arr[1]),
+          self.arr[2].saturating_sub(rhs.arr[2]),
+          self.arr[3].saturating_sub(rhs.arr[3]),
+          self.arr[4].saturating_sub(rhs.arr[4]),
+          self.arr[5].saturating_sub(rhs.arr[5]),
+          self.arr[6].saturating_sub(rhs.arr[6]),
+          self.arr[7].saturating_sub(rhs.arr[7]),
+          self.arr[8].saturating_sub(rhs.arr[8]),
+          self.arr[9].saturating_sub(rhs.arr[9]),
+          self.arr[10].saturating_sub(rhs.arr[10]),
+          self.arr[11].saturating_sub(rhs.arr[11]),
+          self.arr[12].saturating_sub(rhs.arr[12]),
+          self.arr[13].saturating_sub(rhs.arr[13]),
+          self.arr[14].saturating_sub(rhs.arr[14]),
+          self.arr[15].saturating_sub(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+
+  /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
+  /// lane, effectively multiplying by a 16 bit fixed point number between -1
+  /// and 1. This corresponds to the following instructions:
+  /// - vqrdmulhq_n_s16 instruction on neon
+  /// - i16x8_q15mulr_sat on simd128
+  /// - _mm256_mulhrs_epi16 on avx2
+  /// - emulated via mul_i16_* on sse2
+  #[inline]
+  #[must_use]
+  pub fn mul_scale_round(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: mul_i16_scale_round_m256i(self.avx2, rhs.avx2) }
+      } else if #[cfg(target_feature="ssse3")] {
+        Self { sse0:  mul_i16_scale_round_m128i(self.sse0, rhs.sse0), sse1:  mul_i16_scale_round_m128i(self.sse1, rhs.sse1) }
+      } else if #[cfg(target_feature="sse2")] {
+        // unfortunately mul_i16_scale_round_m128i only got added in sse3
+        let hi0 = mul_i16_keep_high_m128i(self.sse0, rhs.sse0);
+        let lo0 = mul_i16_keep_low_m128i(self.sse0, rhs.sse0);
+        let mut v10 = unpack_low_i16_m128i(lo0, hi0);
+        let mut v20 = unpack_high_i16_m128i(lo0, hi0);
+        let a = set_splat_i32_m128i(0x4000);
+        v10 = shr_imm_i32_m128i::<15>(add_i32_m128i(v10, a));
+        v20 = shr_imm_i32_m128i::<15>(add_i32_m128i(v20, a));
+        let s0 = pack_i32_to_i16_m128i(v10, v20);
+
+        let hi1 = mul_i16_keep_high_m128i(self.sse1, rhs.sse1);
+        let lo1 = mul_i16_keep_low_m128i(self.sse1, rhs.sse1);
+        let mut v11 = unpack_low_i16_m128i(lo1, hi1);
+        let mut v21 = unpack_high_i16_m128i(lo1, hi1);
+        v11 = shr_imm_i32_m128i::<15>(add_i32_m128i(v11, a));
+        v21 = shr_imm_i32_m128i::<15>(add_i32_m128i(v21, a));
+        let s1 = pack_i32_to_i16_m128i(v11, v21);
+
+        Self { sse0: s0, sse1: s1 }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd0: i16x8_q15mulr_sat(self.simd0, rhs.simd0), simd1: i16x8_q15mulr_sat(self.simd1, rhs.simd1) }
+      } else {
+        // compiler does a surprisingly good job of vectorizing this
+        Self { arr: [
+          ((i32::from(self.arr[0]) * i32::from(rhs.arr[0]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[1]) * i32::from(rhs.arr[1]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[2]) * i32::from(rhs.arr[2]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[3]) * i32::from(rhs.arr[3]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[4]) * i32::from(rhs.arr[4]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[5]) * i32::from(rhs.arr[5]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[8]) * i32::from(rhs.arr[8]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[9]) * i32::from(rhs.arr[9]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[10]) * i32::from(rhs.arr[10]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[11]) * i32::from(rhs.arr[11]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[12]) * i32::from(rhs.arr[12]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[13]) * i32::from(rhs.arr[13]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[14]) * i32::from(rhs.arr[14]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[15]) * i32::from(rhs.arr[15]) + 0x4000) >> 15) as i16,
+        ]}
+      }
+    }
+  }
+
+  #[inline]
   pub fn to_array(self) -> [i16; 16] {
     cast(self)
   }

@@ -47,6 +47,29 @@ fn impl_sub_for_u8x16() {
 }
 
 #[test]
+fn impl_saturating_add_for_u8x16() {
+  let a =
+    u8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 250, 250]);
+  let b =
+    u8x16::from([17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 5, 6]);
+  let expected = u8x16::from([
+    18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 255, 255,
+  ]);
+  let actual = a.saturating_add(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_saturating_sub_for_u8x16() {
+  let a = u8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1, 0]);
+  let b =
+    u8x16::from([170, 18, 10, 200, 241, 2, 93, 4, 12, 8, 27, 28, 29, 30, 1, 1]);
+  let expected = u8x16::from([0, 0, 0, 0, 0, 4, 0, 4, 0, 2, 0, 0, 0, 0, 0, 0]);
+  let actual = a.saturating_sub(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_bitand_for_u8x16() {
   let a = u8x16::from([0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]);
   let b = u8x16::from([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]);

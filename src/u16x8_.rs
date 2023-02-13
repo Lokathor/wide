@@ -406,6 +406,51 @@ impl u16x8 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: add_saturating_u16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_add_sat(self.simd, rhs.simd) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_add(rhs.arr[0]),
+          self.arr[1].saturating_add(rhs.arr[1]),
+          self.arr[2].saturating_add(rhs.arr[2]),
+          self.arr[3].saturating_add(rhs.arr[3]),
+          self.arr[4].saturating_add(rhs.arr[4]),
+          self.arr[5].saturating_add(rhs.arr[5]),
+          self.arr[6].saturating_add(rhs.arr[6]),
+          self.arr[7].saturating_add(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: sub_saturating_u16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_sub_sat(self.simd, rhs.simd) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_sub(rhs.arr[0]),
+          self.arr[1].saturating_sub(rhs.arr[1]),
+          self.arr[2].saturating_sub(rhs.arr[2]),
+          self.arr[3].saturating_sub(rhs.arr[3]),
+          self.arr[4].saturating_sub(rhs.arr[4]),
+          self.arr[5].saturating_sub(rhs.arr[5]),
+          self.arr[6].saturating_sub(rhs.arr[6]),
+          self.arr[7].saturating_sub(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
   pub fn to_array(self) -> [u16; 8] {
     cast(self)
   }

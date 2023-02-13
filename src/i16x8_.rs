@@ -461,6 +461,91 @@ impl i16x8 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: add_saturating_i16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i16x8_add_sat(self.simd, rhs.simd) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_add(rhs.arr[0]),
+          self.arr[1].saturating_add(rhs.arr[1]),
+          self.arr[2].saturating_add(rhs.arr[2]),
+          self.arr[3].saturating_add(rhs.arr[3]),
+          self.arr[4].saturating_add(rhs.arr[4]),
+          self.arr[5].saturating_add(rhs.arr[5]),
+          self.arr[6].saturating_add(rhs.arr[6]),
+          self.arr[7].saturating_add(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: sub_saturating_i16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i16x8_sub_sat(self.simd, rhs.simd) }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_sub(rhs.arr[0]),
+          self.arr[1].saturating_sub(rhs.arr[1]),
+          self.arr[2].saturating_sub(rhs.arr[2]),
+          self.arr[3].saturating_sub(rhs.arr[3]),
+          self.arr[4].saturating_sub(rhs.arr[4]),
+          self.arr[5].saturating_sub(rhs.arr[5]),
+          self.arr[6].saturating_sub(rhs.arr[6]),
+          self.arr[7].saturating_sub(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+  /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
+  /// lane, effectively multiplying by a 16 bit fixed point number between -1
+  /// and 1. This corresponds to the following instructions:
+  /// - vqrdmulhq_n_s16 instruction on neon
+  /// - i16x8_q15mulr_sat on simd128
+  /// - _mm_mulhrs_epi16 on ssse3
+  /// - emulated via mul_i16_* on sse2
+  #[inline]
+  #[must_use]
+  pub fn mul_scale_round(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse:  mul_i16_scale_round_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        // unfortunately mul_i16_scale_round_m128i only got added in sse3
+        let hi = mul_i16_keep_high_m128i(self.sse, rhs.sse);
+        let lo = mul_i16_keep_low_m128i(self.sse, rhs.sse);
+        let mut v1 = unpack_low_i16_m128i(lo, hi);
+        let mut v2 = unpack_high_i16_m128i(lo, hi);
+        let a = set_splat_i32_m128i(0x4000);
+        v1 = shr_imm_i32_m128i::<15>(add_i32_m128i(v1, a));
+        v2 = shr_imm_i32_m128i::<15>(add_i32_m128i(v2, a));
+        let s = pack_i32_to_i16_m128i(v1, v2);
+        Self { sse: s }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i16x8_q15mulr_sat(self.simd, rhs.simd) }
+      } else {
+        // compiler does a surprisingly good job of vectorizing this
+        Self { arr: [
+          ((i32::from(self.arr[0]) * i32::from(rhs.arr[0]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[1]) * i32::from(rhs.arr[1]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[2]) * i32::from(rhs.arr[2]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[3]) * i32::from(rhs.arr[3]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[4]) * i32::from(rhs.arr[4]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[5]) * i32::from(rhs.arr[5]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
+          ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,
+        ]}
+      }
+    }
+  }
 
   #[inline]
   pub fn to_array(self) -> [i16; 8] {
