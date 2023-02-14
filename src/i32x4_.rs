@@ -25,6 +25,27 @@ pick! {
     }
 
     impl Eq for i32x4 { }
+  } else if #[cfg(target_feature="neon")] {
+    use core::arch::aarch64::*;
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    pub struct i32x4 { neon : int32x4_t }
+
+    impl Default for i32x4 {
+      #[inline]
+      #[must_use]
+      fn default() -> Self {
+        Self::splat(0)
+      }
+    }
+
+    impl PartialEq for i32x4 {
+      #[inline]
+      #[must_use]
+      fn eq(&self, other: &Self) -> bool {
+        unsafe { vminvq_u32(vceqq_s32(self.neon, other.neon))==u32::MAX }
+      }
+    }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
@@ -47,6 +68,8 @@ impl Add for i32x4 {
         Self { sse: add_i32_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_add(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe { Self { neon: vaddq_s32(self.neon, rhs.neon) } }
       } else {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
@@ -69,6 +92,8 @@ impl Sub for i32x4 {
         Self { sse: sub_i32_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_sub(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vsubq_s32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
@@ -91,6 +116,8 @@ impl Mul for i32x4 {
         Self { sse: mul_i32_keep_low_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_mul(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vmulq_s32(self.neon, rhs.neon) }}
       } else {
         let arr1: [i32; 4] = cast(self);
         let arr2: [i32; 4] = cast(rhs);
@@ -169,6 +196,8 @@ impl BitAnd for i32x4 {
         Self { sse: bitand_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_and(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vandq_s32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].bitand(rhs.arr[0]),
@@ -191,6 +220,8 @@ impl BitOr for i32x4 {
         Self { sse: bitor_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_or(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vorrq_s32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].bitor(rhs.arr[0]),
@@ -213,6 +244,8 @@ impl BitXor for i32x4 {
         Self { sse: bitxor_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_xor(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: veorq_s32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].bitxor(rhs.arr[0]),
@@ -239,6 +272,8 @@ macro_rules! impl_shl_t_for_i32x4 {
             Self { sse: shl_all_u32_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: i32x4_shl(self.simd, rhs as u32) }
+          } else if #[cfg(target_feature="neon")] {
+            unsafe {Self { neon: vshlq_s32(self.neon, vmovq_n_s32(rhs as i32)) }}
           } else {
             let u = rhs as u64;
             Self { arr: [
@@ -269,6 +304,8 @@ macro_rules! impl_shr_t_for_i32x4 {
             Self { sse: shr_all_i32_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: i32x4_shr(self.simd, rhs as u32) }
+          } else if #[cfg(target_feature="neon")] {
+            unsafe {Self { neon: vshlq_s32(self.neon, vmovq_n_s32( -(rhs as i32))) }}
           } else {
             let u = rhs as u64;
             Self { arr: [
@@ -295,6 +332,8 @@ impl CmpEq for i32x4 {
         Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_eq(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vreinterpretq_s32_u32(vceqq_s32(self.neon, rhs.neon)) }}
       } else {
         Self { arr: [
           if self.arr[0] == rhs.arr[0] { -1 } else { 0 },
@@ -317,6 +356,8 @@ impl CmpGt for i32x4 {
         Self { sse: cmp_gt_mask_i32_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_gt(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vreinterpretq_s32_u32(vcgtq_s32(self.neon, rhs.neon)) }}
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
@@ -339,6 +380,8 @@ impl CmpLt for i32x4 {
         Self { sse: cmp_lt_mask_i32_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_lt(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vreinterpretq_s32_u32(vcltq_s32(self.neon, rhs.neon)) }}
       } else {
         Self { arr: [
           if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
@@ -365,6 +408,8 @@ impl i32x4 {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vbslq_s32(vreinterpretq_u32_s32(self.neon), t.neon, f.neon) }}
       } else {
         generic_bit_blend(self, t, f)
       }
@@ -378,6 +423,8 @@ impl i32x4 {
         Self { sse: abs_i32_m128i(self.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_abs(self.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vabsq_s32(self.neon) }}
       } else {
         let arr: [i32; 4] = cast(self);
         cast([
@@ -410,6 +457,8 @@ impl i32x4 {
         Self { sse: min_i32_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_min(self.simd, rhs.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vminq_s32(self.neon, rhs.neon) }}
       } else {
         self.cmp_lt(rhs).blend(self, rhs)
       }
@@ -423,6 +472,8 @@ impl i32x4 {
         cast(convert_to_m128_from_i32_m128i(self.sse))
       } else if #[cfg(target_feature="simd128")] {
         cast(Self { simd: f32x4_convert_i32x4(self.simd) })
+      } else if #[cfg(target_feature="neon")] {
+        cast(unsafe {Self { neon: vreinterpretq_s32_f32(vcvtq_f32_s32(self.neon)) }})
       } else {
         let arr: [i32; 4] = cast(self);
         cast([
@@ -443,6 +494,21 @@ impl i32x4 {
         move_mask_i8_m128i(self.sse)
       } else if #[cfg(target_feature="simd128")] {
         i32x4_bitmask(self.simd) as i32
+      } else if #[cfg(target_feature="neon")] {
+        unsafe
+        {
+          let as_u32 = vreinterpretq_u32_s32(self.neon);
+
+          // mask the top bit
+          let masked = vandq_u32(as_u32, vdupq_n_u32(0x80000000));
+
+          // shift by appropriate amount
+          let shiftby : [i32;4] = [-31,-30,-29,-28];
+          let out = vshlq_u32(masked, vld1q_s32(shiftby.as_ptr()) );
+
+          // horizontal add everything and return it
+          vaddvq_u32(out) as i32
+        }
       } else {
         ((self.arr[0] < 0) as i32) << 0 |
         ((self.arr[1] < 0) as i32) << 1 |

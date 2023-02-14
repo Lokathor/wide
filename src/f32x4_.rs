@@ -750,6 +750,8 @@ impl f32x4 {
         flip_to_max ^ cast
       } else if #[cfg(target_feature="simd128")] {
         cast(Self { simd: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd)) })
+      } else if #[cfg(target_feature="neon")] {
+        cast(unsafe {Self { neon: vreinterpretq_f32_s32(vcvtnq_s32_f32(self.neon)) }})
       } else {
         let rounded: [f32; 4] = cast(self.round());
         cast([
@@ -793,6 +795,8 @@ impl f32x4 {
         flip_to_max ^ cast
       } else if #[cfg(target_feature="simd128")] {
         cast(Self { simd: i32x4_trunc_sat_f32x4(self.simd) })
+      } else if #[cfg(target_feature="neon")] {
+        cast(unsafe {Self { neon: vreinterpretq_f32_s32(vcvtq_s32_f32(self.neon)) }})
       } else {
         let n: [f32;4] = cast(self);
         cast([
