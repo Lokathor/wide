@@ -622,7 +622,7 @@ impl f32x4 {
           )
         }
       } else if #[cfg(target_feature="neon")] {
-        unsafe {Self { neon: vminq_f32(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vminnmq_f32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].min(rhs.arr[0]),
@@ -686,6 +686,8 @@ impl f32x4 {
         mask.blend(self, f)
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_nearest(self.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vrndaq_f32(self.neon) }}
       } else {
         // Note(Lokathor): This software fallback is probably very slow compared
         // to having a hardware option available, even just the sse2 version is
@@ -1243,10 +1245,10 @@ impl f32x4 {
           let as_u32 = vreinterpretq_u32_f32(self.neon);
 
           // mask the top bit
-          let masked = vandq_u32(as_u32, vdupq_n_u32(0x8000));
+          let masked = vandq_u32(as_u32, vdupq_n_u32(0x80000000));
 
           // shift by appropriate amount
-          let shiftby = [-15i32,-14,-13,-12];
+          let shiftby : [i32;4] = [-31,-30,-29,-28];
           let out = vshlq_u32(masked, vld1q_s32(shiftby.as_ptr()) );
 
           // horizontal add everything and return it
