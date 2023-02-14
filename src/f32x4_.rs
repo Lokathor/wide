@@ -1246,7 +1246,7 @@ impl f32x4 {
           let masked = vandq_u32(as_u32, vdupq_n_u32(0x8000));
 
           // shift by appropriate amount
-          let shiftby = [-7i32,-6,-5,-4];
+          let shiftby = [-15i32,-14,-13,-12];
           let out = vshlq_u32(masked, vld1q_s32(shiftby.as_ptr()) );
 
           // horizontal add everything and return it
