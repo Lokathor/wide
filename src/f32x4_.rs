@@ -497,6 +497,8 @@ impl f32x4 {
     pick! {
       if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_abs(self.simd) }
+      } else if #[cfg(target_feature="neon")] {
+        unsafe {Self { neon: vabsq_f32(self.neon) }}
       } else {
         let non_sign_bits = f32x4::from(f32::from_bits(i32::MAX as u32));
         self & non_sign_bits
