@@ -43,7 +43,7 @@ pick! {
       fn eq(&self, other: &Self) -> bool {
         unsafe
         { let e = vceqq_f64(self.neon, other.neon);
-          vgetq_lane_u64(e,0) == 0 && vgetq_lane_u64(e,1) == 0
+          vgetq_lane_u64(e,0) == u64::MAX && vgetq_lane_u64(e,1) == u64::MAX
         }
       }
 
