@@ -362,7 +362,7 @@ impl CmpGe for f32x4 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_ge(self.simd, rhs.simd) }
       } else if #[cfg(target_feature="neon")] {
-        unsafe {Self { neon: vreinterpretq_f32_u32(vcgtq_f32(self.neon, rhs.neon)) }}
+        unsafe {Self { neon: vreinterpretq_f32_u32(vcgeq_f32(self.neon, rhs.neon)) }}
       } else {
         Self { arr: [
           if self.arr[0] >= rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -386,7 +386,7 @@ impl CmpGt for f32x4 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_gt(self.simd, rhs.simd) }
       } else if #[cfg(target_feature="neon")] {
-        unsafe {Self { neon: vreinterpretq_f32_u32(vcltq_f32(self.neon, rhs.neon)) }}
+        unsafe {Self { neon: vreinterpretq_f32_u32(vcgtq_f32(self.neon, rhs.neon)) }}
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -458,7 +458,7 @@ impl CmpLt for f32x4 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_lt(self.simd, rhs.simd) }
       } else if #[cfg(target_feature="neon")] {
-        unsafe {Self { neon: vreinterpretq_f32_u32(vcgeq_f32(self.neon, rhs.neon)) }}
+        unsafe {Self { neon: vreinterpretq_f32_u32(vcltq_f32(self.neon, rhs.neon)) }}
       } else {
         Self { arr: [
           if self.arr[0] < rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -557,7 +557,7 @@ impl f32x4 {
           )
         }
       } else if #[cfg(target_feature="neon")] {
-        unsafe {Self { neon: vmaxq_f32(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vmaxnmq_f32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           self.arr[0].max(rhs.arr[0]),
