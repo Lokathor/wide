@@ -290,7 +290,7 @@ macro_rules! impl_shr_t_for_u64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u64x2_shr(self.simd, rhs as u32) }
           } else if #[cfg(target_feature="neon")] {
-            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64)) }}
+            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-(rhs as i64))) }}
           } else {
             let u = rhs as u64;
             Self { arr: [

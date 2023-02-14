@@ -93,7 +93,7 @@ impl Sub for i64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i64x2_sub(self.simd, rhs.simd) }
       } else if #[cfg(target_feature="neon")] {
-        unsafe { Self { neon: vaddq_s64(self.neon, rhs.neon) } }
+        unsafe { Self { neon: vsubq_s64(self.neon, rhs.neon) } }
       } else {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
