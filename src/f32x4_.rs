@@ -687,7 +687,7 @@ impl f32x4 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_nearest(self.simd) }
       } else if #[cfg(target_feature="neon")] {
-        unsafe {Self { neon: vrndaq_f32(self.neon) }}
+        unsafe {Self { neon: vrndnq_f32(self.neon) }}
       } else {
         // Note(Lokathor): This software fallback is probably very slow compared
         // to having a hardware option available, even just the sse2 version is
