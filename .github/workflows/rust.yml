@@ -122,7 +122,7 @@ jobs:
       - name: Installing emulator and linker
         run: |
           sudo apt-get update
-          sudo apt-get install qemu binfmt-support qemu-user-static gcc-mips-linux-gnu binutils-mips-linux-gnu
+          sudo apt-get install qemu gcc libc6-dev ca-certificates gcc-mips-linux-gnu libc6-dev-mips-cross binfmt-support qemu-user-static qemu-system-mips
       - name: Installing Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -135,9 +135,11 @@ jobs:
           cargo build --verbose --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
         env:
           CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER: mips-linux-gnu-gcc
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER: qemu-mips-static
       - name: test
         run: >
           cargo test --tests --benches --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
         env:
           FEATURES: ${{ matrix.features }}
           CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER: mips-linux-gnu-gcc
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER: qemu-mips-static
