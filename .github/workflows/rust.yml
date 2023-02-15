@@ -115,8 +115,8 @@ jobs:
 
     strategy:
       matrix:
-        rust: [1.59,stable,nightly]
-        features: ["", "std"]
+        rust: [stable,nightly]
+        features: ["std"]
 
     steps:
       - name: Installing emulator and linker
