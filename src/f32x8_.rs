@@ -602,7 +602,8 @@ impl f32x8 {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_add_m256(self.avx, m.avx, a.avx) }
       } else if #[cfg(target_feature="avx")] {
-        self * m + a
+        // still want to use 256 bit ops
+        (self * m) + a
       } else {
         Self {
           a : self.a.mul_add(m.a, a.a),
@@ -619,7 +620,8 @@ impl f32x8 {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_sub_m256(self.avx, m.avx, a.avx) }
       } else if #[cfg(target_feature="avx")] {
-        self * m - a
+        // still want to use 256 bit ops
+        (self * m) - a
       } else {
         Self {
           a : self.a.mul_sub(m.a, a.a),
@@ -636,7 +638,8 @@ impl f32x8 {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_neg_add_m256(self.avx, m.avx, a.avx) }
       } else if #[cfg(target_feature="avx")] {
-        self * -m + a
+        // still want to use 256 bit ops
+        a - (self * m)
       } else {
         Self {
           a : self.a.mul_neg_add(m.a, a.a),
@@ -653,7 +656,8 @@ impl f32x8 {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_neg_sub_m256(self.avx, m.avx, a.avx) }
       } else if #[cfg(target_feature="avx")] {
-        self * -m - a
+        // still want to use 256 bit ops
+        -(self * m) - a
       } else {
         Self {
           a : self.a.mul_neg_sub(m.a, a.a),
