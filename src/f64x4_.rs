@@ -537,6 +537,8 @@ impl f64x4 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_add_m256d(self.avx, m.avx, a.avx) }
+      } else if #[cfg(target_feature="avx")] {
+        self * m + a
       } else {
         Self {
           a : self.a.mul_add(m.a, a.a),
@@ -552,6 +554,8 @@ impl f64x4 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_sub_m256d(self.avx, m.avx, a.avx) }
+      } else if #[cfg(target_feature="avx")] {
+        self * m - a
       } else {
         Self {
           a : self.a.mul_sub(m.a, a.a),
@@ -567,6 +571,8 @@ impl f64x4 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_neg_add_m256d(self.avx, m.avx, a.avx) }
+      } else if #[cfg(target_feature="avx")] {
+        self * -m + a
       } else {
         Self {
           a : self.a.mul_neg_add(m.a, a.a),
@@ -582,7 +588,9 @@ impl f64x4 {
     pick! {
        if #[cfg(all(target_feature="avx",target_feature="fma"))] {
          Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, a.avx) }
-       } else {
+        } else if #[cfg(target_feature="avx")] {
+          self * -m - a
+         } else {
          Self {
            a : self.a.mul_neg_sub(m.a, a.a),
            b : self.b.mul_neg_sub(m.b, a.b),

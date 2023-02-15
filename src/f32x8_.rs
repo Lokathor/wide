@@ -376,7 +376,17 @@ impl f32x8 {
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
-    Self { a: self.a.abs(), b: self.b.abs() }
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        let non_sign_bits = f32x8::from(f32::from_bits(i32::MAX as u32));
+        self & non_sign_bits
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
   }
 
   /// Calculates the lanewise maximum of both vectors. This is a faster
@@ -591,6 +601,8 @@ impl f32x8 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_add_m256(self.avx, m.avx, a.avx) }
+      } else if #[cfg(target_feature="avx")] {
+        self * m + a
       } else {
         Self {
           a : self.a.mul_add(m.a, a.a),
@@ -606,6 +618,8 @@ impl f32x8 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_sub_m256(self.avx, m.avx, a.avx) }
+      } else if #[cfg(target_feature="avx")] {
+        self * m - a
       } else {
         Self {
           a : self.a.mul_sub(m.a, a.a),
@@ -621,6 +635,8 @@ impl f32x8 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_neg_add_m256(self.avx, m.avx, a.avx) }
+      } else if #[cfg(target_feature="avx")] {
+        self * -m + a
       } else {
         Self {
           a : self.a.mul_neg_add(m.a, a.a),
@@ -636,6 +652,8 @@ impl f32x8 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_neg_sub_m256(self.avx, m.avx, a.avx) }
+      } else if #[cfg(target_feature="avx")] {
+        self * -m - a
       } else {
         Self {
           a : self.a.mul_neg_sub(m.a, a.a),

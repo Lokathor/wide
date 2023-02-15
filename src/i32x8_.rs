@@ -366,7 +366,7 @@ impl i32x8 {
       if #[cfg(target_feature="avx2")] {
         move_mask_i8_m256i(self.avx2)
       } else {
-        self.a.move_mask() + self.b.move_mask() << 4
+        self.a.move_mask() | (self.b.move_mask() << 4)
       }
     }
   }
@@ -384,12 +384,18 @@ impl i32x8 {
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    self.a.all() && self.b.all()
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx2) == 0b11111111
+      } else {
+        self.a.all() && self.b.all()
+      }
+    }
   }
   #[inline]
   #[must_use]
   pub fn none(self) -> bool {
-    self.a.none() && self.b.none()
+    !self.any()
   }
 
   #[inline]
