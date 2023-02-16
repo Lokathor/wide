@@ -1,3 +1,0 @@
-[target.mips-unknown-linux-musl]
-runner = "qemu-mips-static"
-rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-s"]

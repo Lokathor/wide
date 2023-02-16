@@ -103,8 +103,14 @@ jobs:
       - name: build
         run: >
           cargo build --verbose --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-arg=-s"
       - name: test
         run: >
           cargo test --tests --benches --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
         env:
           FEATURES: ${{ matrix.features }}
+	        CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_RUNNER: qemu-mips-static
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-arg=-s"
+
