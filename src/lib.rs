@@ -21,8 +21,8 @@
 //! ## Crate Features
 //!
 //! * `std`: This causes the feature to link to `std`.
-//!   * Currently this just improves the performance of `sqrt` when an explicit
-//!     SIMD `sqrt` isn't available.
+//!   * This improves the performance of some methods such as `sqrt` and `round`
+//!     when an explicit SIMD `sqrt` isn't available.
 
 // Note(Lokathor): Due to standard library magic, the std-only methods for f32
 // and f64 will automatically be available simply by declaring this.
