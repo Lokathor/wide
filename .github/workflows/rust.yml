@@ -102,21 +102,20 @@ jobs:
       - name: build
         run: >
           cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
       - name: test
         run: >
           cargo test --tests --benches --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
         env:
           FEATURES: ${{ matrix.features }}
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+
   cross_compile_mips:
+    # this target is just for makring sure we aren't breaking endian-ness, since MIPS is one of the few big-endian targets
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         rust: [stable,nightly]
-        features: ["std"]
+        features: ["", "std"]
 
     steps:
       - name: Installing emulator and linker
@@ -133,13 +132,8 @@ jobs:
       - name: build
         run: >
           cargo build --verbose --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
-        env:
-          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER: mips-linux-gnu-gcc
-          CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER: qemu-mips-static
       - name: test
         run: >
           cargo test --tests --benches --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
         env:
           FEATURES: ${{ matrix.features }}
-          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER: mips-linux-gnu-gcc
-          CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER: qemu-mips-static
