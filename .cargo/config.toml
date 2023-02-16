@@ -1,7 +1,3 @@
-[target.aarch64-unknown-linux-musl]
-linker = "aarch64-linux-gnu-gcc"
-
 [target.mips-unknown-linux-musl]
-linker = "mips-linux-musl-gcc"
 runner = "qemu-mips-static"
 rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-s"]
