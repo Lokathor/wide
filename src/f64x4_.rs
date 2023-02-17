@@ -5,33 +5,10 @@ pick! {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
     pub struct f64x4 { avx: m256d }
-  } else if #[cfg(target_feature="sse2")] {
-    #[derive(Default, Clone, Copy, PartialEq)]
-    #[repr(C, align(32))]
-    pub struct f64x4 { sse0: m128d, sse1: m128d }
-  } else if #[cfg(target_feature="simd128")] {
-    use core::arch::wasm32::*;
-
-    #[derive(Clone, Copy)]
-    #[repr(C, align(32))]
-    pub struct f64x4 { simd0: v128, simd1: v128 }
-
-    impl Default for f64x4 {
-      fn default() -> Self {
-        Self::splat(0.0)
-      }
-    }
-
-    impl PartialEq for f64x4 {
-      fn eq(&self, other: &Self) -> bool {
-        u64x2_all_true(f64x2_eq(self.simd0, other.simd0)) &
-          u64x2_all_true(f64x2_eq(self.simd1, other.simd1))
-      }
-    }
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f64x4 { arr: [f64;4] }
+    pub struct f64x4 { a : f64x2, b : f64x2 }
   }
 }
 
@@ -76,21 +53,15 @@ impl Add for f64x4 {
   #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
-    if #[cfg(target_feature="avx")] {
-      Self { avx: add_m256d(self.avx, rhs.avx) }
-    } else if #[cfg(target_feature="sse2")] {
-      Self { sse0: add_m128d(self.sse0, rhs.sse0), sse1: add_m128d(self.sse1, rhs.sse1) }
-    } else if #[cfg(target_feature="simd128")] {
-      Self { simd0: f64x2_add(self.simd0, rhs.simd0), simd1: f64x2_add(self.simd1, rhs.simd1) }
-    } else {
-          Self { arr: [
-            self.arr[0] + rhs.arr[0],
-            self.arr[1] + rhs.arr[1],
-            self.arr[2] + rhs.arr[2],
-            self.arr[3] + rhs.arr[3],
-          ]}
+      if #[cfg(target_feature="avx")] {
+        Self { avx: add_m256d(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.add(rhs.a),
+          b : self.b.add(rhs.b),
         }
       }
+    }
   }
 }
 
@@ -102,17 +73,11 @@ impl Sub for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: sub_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: sub_m128d(self.sse0, rhs.sse0), sse1: sub_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_sub(self.simd0, rhs.simd0), simd1: f64x2_sub(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          self.arr[0] - rhs.arr[0],
-          self.arr[1] - rhs.arr[1],
-          self.arr[2] - rhs.arr[2],
-          self.arr[3] - rhs.arr[3],
-        ]}
+        Self {
+          a : self.a.sub(rhs.a),
+          b : self.b.sub(rhs.b),
+        }
       }
     }
   }
@@ -126,17 +91,11 @@ impl Mul for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: mul_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: mul_m128d(self.sse0, rhs.sse0), sse1: mul_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_mul(self.simd0, rhs.simd0), simd1: f64x2_mul(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          self.arr[0] * rhs.arr[0],
-          self.arr[1] * rhs.arr[1],
-          self.arr[2] * rhs.arr[2],
-          self.arr[3] * rhs.arr[3],
-        ]}
+        Self {
+          a : self.a.mul(rhs.a),
+          b : self.b.mul(rhs.b),
+        }
       }
     }
   }
@@ -150,17 +109,11 @@ impl Div for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: div_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: div_m128d(self.sse0, rhs.sse0), sse1: div_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_div(self.simd0, rhs.simd0), simd1: f64x2_div(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          self.arr[0] / rhs.arr[0],
-          self.arr[1] / rhs.arr[1],
-          self.arr[2] / rhs.arr[2],
-          self.arr[3] / rhs.arr[3],
-        ]}
+        Self {
+          a : self.a.div(rhs.a),
+          b : self.b.div(rhs.b),
+        }
       }
     }
   }
@@ -246,17 +199,11 @@ impl BitAnd for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: bitand_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: bitand_m128d(self.sse0, rhs.sse0), sse1: bitand_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: v128_and(self.simd0, rhs.simd0), simd1: v128_and(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          f64::from_bits(self.arr[0].to_bits() & rhs.arr[0].to_bits()),
-          f64::from_bits(self.arr[1].to_bits() & rhs.arr[1].to_bits()),
-          f64::from_bits(self.arr[2].to_bits() & rhs.arr[2].to_bits()),
-          f64::from_bits(self.arr[3].to_bits() & rhs.arr[3].to_bits()),
-        ]}
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
       }
     }
   }
@@ -270,17 +217,11 @@ impl BitOr for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: bitor_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: bitor_m128d(self.sse0, rhs.sse0), sse1: bitor_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: v128_or(self.simd0, rhs.simd0), simd1: v128_or(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          f64::from_bits(self.arr[0].to_bits() | rhs.arr[0].to_bits()),
-          f64::from_bits(self.arr[1].to_bits() | rhs.arr[1].to_bits()),
-          f64::from_bits(self.arr[2].to_bits() | rhs.arr[2].to_bits()),
-          f64::from_bits(self.arr[3].to_bits() | rhs.arr[3].to_bits()),
-        ]}
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
       }
     }
   }
@@ -294,17 +235,11 @@ impl BitXor for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: bitxor_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: bitxor_m128d(self.sse0, rhs.sse0), sse1: bitxor_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: v128_xor(self.simd0, rhs.simd0), simd1: v128_xor(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          f64::from_bits(self.arr[0].to_bits() ^ rhs.arr[0].to_bits()),
-          f64::from_bits(self.arr[1].to_bits() ^ rhs.arr[1].to_bits()),
-          f64::from_bits(self.arr[2].to_bits() ^ rhs.arr[2].to_bits()),
-          f64::from_bits(self.arr[3].to_bits() ^ rhs.arr[3].to_bits()),
-        ]}
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
       }
     }
   }
@@ -318,17 +253,11 @@ impl CmpEq for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_eq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_eq_mask_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_eq(self.simd0, rhs.simd0), simd1: f64x2_eq(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] == rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] == rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2] == rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3] == rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        Self {
+          a : self.a.cmp_eq(rhs.a),
+          b : self.b.cmp_eq(rhs.b),
+        }
       }
     }
   }
@@ -342,17 +271,11 @@ impl CmpGe for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_ge_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_ge_mask_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_ge(self.simd0, rhs.simd0), simd1: f64x2_ge(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] >= rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2] >= rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3] >= rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        Self {
+          a : self.a.cmp_ge(rhs.a),
+          b : self.b.cmp_ge(rhs.b),
+        }
       }
     }
   }
@@ -366,17 +289,11 @@ impl CmpGt for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!( GreaterThanOrdered)}>(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_gt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_gt_mask_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_gt(self.simd0, rhs.simd0), simd1: f64x2_gt(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] > rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] > rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2] > rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3] > rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        Self {
+          a : self.a.cmp_gt(rhs.a),
+          b : self.b.cmp_gt(rhs.b),
+        }
       }
     }
   }
@@ -390,17 +307,11 @@ impl CmpNe for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_neq_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_neq_mask_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_ne(self.simd0, rhs.simd0), simd1: f64x2_ne(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] != rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2] != rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3] != rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        Self {
+          a : self.a.cmp_ne(rhs.a),
+          b : self.b.cmp_ne(rhs.b),
+        }
       }
     }
   }
@@ -414,17 +325,11 @@ impl CmpLe for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_le_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_le_mask_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_le(self.simd0, rhs.simd0), simd1: f64x2_le(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] <= rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2] <= rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3] <= rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        Self {
+          a : self.a.cmp_le(rhs.a),
+          b : self.b.cmp_le(rhs.b),
+        }
       }
     }
   }
@@ -438,17 +343,11 @@ impl CmpLt for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_lt_mask_m128d(self.sse0, rhs.sse0), sse1: cmp_lt_mask_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_lt(self.simd0, rhs.simd0), simd1: f64x2_lt(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] < rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2] < rhs.arr[2] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3] < rhs.arr[3] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        Self {
+          a : self.a.cmp_lt(rhs.a),
+          b : self.b.cmp_lt(rhs.b),
+        }
       }
     }
   }
@@ -466,12 +365,11 @@ impl f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: blend_varying_m256d(f.avx, t.avx, self.avx) }
-      } else if  #[cfg(target_feature="sse4.1")] {
-        Self { sse0: blend_varying_m128d(f.sse0, t.sse0, self.sse0), sse1: blend_varying_m128d(f.sse1, t.sse1, self.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: v128_bitselect(t.simd0, f.simd0, self.simd0), simd1: v128_bitselect(t.simd1, f.simd1, self.simd1) }
       } else {
-        generic_bit_blend(self, t, f)
+        Self {
+          a : self.a.blend(t.a, f.a),
+          b : self.b.blend(t.b, f.b),
+        }
       }
     }
   }
@@ -480,11 +378,14 @@ impl f64x4 {
   #[must_use]
   pub fn abs(self) -> Self {
     pick! {
-      if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_abs(self.simd0), simd1: f64x2_abs(self.simd1) }
-      } else {
+      if #[cfg(target_feature="avx")] {
         let non_sign_bits = f64x4::from(f64::from_bits(i64::MAX as u64));
         self & non_sign_bits
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
       }
     }
   }
@@ -498,17 +399,11 @@ impl f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: max_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: max_m128d(self.sse0, rhs.sse0), sse1: max_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_pmax(self.simd0, rhs.simd0), simd1: f64x2_pmax(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
-          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
-          if self.arr[2] < rhs.arr[2] { rhs.arr[2] } else { self.arr[2] },
-          if self.arr[3] < rhs.arr[3] { rhs.arr[3] } else { self.arr[3] },
-        ]}
+        Self {
+          a : self.a.fast_max(rhs.a),
+          b : self.b.fast_max(rhs.b),
+        }
       }
     }
   }
@@ -525,37 +420,11 @@ impl f64x4 {
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
         rhs.is_nan().blend(self, Self { avx: max_m256d(self.avx, rhs.avx) })
-      } else if #[cfg(target_feature="sse2")] {
-        // max_m128d seems to do rhs < self ? self : rhs. So if there's any NaN
-        // involved, it chooses rhs, so we need to specifically check rhs for
-        // NaN.
-        rhs.is_nan().blend(self, Self { sse0: max_m128d(self.sse0, rhs.sse0), sse1: max_m128d(self.sse1, rhs.sse1) })
-      } else if #[cfg(target_feature="simd128")] {
-        // WASM has two max intrinsics:
-        // - max: This propagates NaN, that's the opposite of what we need.
-        // - pmax: This is defined as self < rhs ? rhs : self, which basically
-        //   chooses self if either is NaN.
-        //
-        // pmax is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd0: v128_bitselect(
-            rhs.simd0,
-            f64x2_pmax(self.simd0, rhs.simd0),
-            f64x2_ne(self.simd0, self.simd0), // NaN check
-          ),
-          simd1: v128_bitselect(
-            rhs.simd1,
-            f64x2_pmax(self.simd1, rhs.simd1),
-            f64x2_ne(self.simd1, self.simd1), // NaN check
-          ),
-        }
       } else {
-        Self { arr: [
-          self.arr[0].max(rhs.arr[0]),
-          self.arr[1].max(rhs.arr[1]),
-          self.arr[2].max(rhs.arr[2]),
-          self.arr[3].max(rhs.arr[3]),
-        ]}
+        Self {
+          a : self.a.max(rhs.a),
+          b : self.b.max(rhs.b),
+        }
       }
     }
   }
@@ -569,17 +438,11 @@ impl f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: min_m256d(self.avx, rhs.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: min_m128d(self.sse0, rhs.sse0), sse1: min_m128d(self.sse1, rhs.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_pmin(self.simd0, rhs.simd0), simd1: f64x2_pmin(self.simd1, rhs.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
-          if self.arr[1] < rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
-          if self.arr[2] < rhs.arr[2] { self.arr[2] } else { rhs.arr[2] },
-          if self.arr[3] < rhs.arr[3] { self.arr[3] } else { rhs.arr[3] },
-        ]}
+        Self {
+          a : self.a.fast_min(rhs.a),
+          b : self.b.fast_min(rhs.b),
+        }
       }
     }
   }
@@ -596,37 +459,11 @@ impl f64x4 {
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
         rhs.is_nan().blend(self, Self { avx: min_m256d(self.avx, rhs.avx) })
-      } else if #[cfg(target_feature="sse2")] {
-        // min_m128d seems to do rhs < self ? self : rhs. So if there's any NaN
-        // involved, it chooses rhs, so we need to specifically check rhs for
-        // NaN.
-        rhs.is_nan().blend(self, Self { sse0: min_m128d(self.sse0, rhs.sse0), sse1: min_m128d(self.sse1, rhs.sse1) })
-      } else if #[cfg(target_feature="simd128")] {
-        // WASM has two min intrinsics:
-        // - min: This propagates NaN, that's the opposite of what we need.
-        // - pmin: This is defined as rhs < self ? rhs : self, which basically
-        //   chooses self if either is NaN.
-        //
-        // pmin is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd0: v128_bitselect(
-            rhs.simd0,
-            f64x2_pmin(self.simd0, rhs.simd0),
-            f64x2_ne(self.simd0, self.simd0), // NaN check
-          ),
-          simd1: v128_bitselect(
-            rhs.simd1,
-            f64x2_pmin(self.simd1, rhs.simd1),
-            f64x2_ne(self.simd1, self.simd1), // NaN check
-          ),
-        }
       } else {
-        Self { arr: [
-          self.arr[0].min(rhs.arr[0]),
-          self.arr[1].min(rhs.arr[1]),
-          self.arr[2].min(rhs.arr[2]),
-          self.arr[3].min(rhs.arr[3]),
-        ]}
+        Self {
+          a : self.a.min(rhs.a),
+          b : self.b.min(rhs.b),
+        }
       }
     }
   }
@@ -637,17 +474,11 @@ impl f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(Unordered)}>(self.avx, self.avx ) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: cmp_unord_mask_m128d(self.sse0, self.sse0) , sse1: cmp_unord_mask_m128d(self.sse1, self.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_ne(self.simd0, self.simd0) , simd1: f64x2_ne(self.simd1, self.simd1) }
       } else {
-        Self { arr: [
-          if self.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[2].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[3].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        Self {
+          a : self.a.is_nan(),
+          b : self.b.is_nan(),
+        }
       }
     }
   }
@@ -678,16 +509,11 @@ impl f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: round_m256d::<{round_op!(Nearest)}>(self.avx) }
-      }  else if #[cfg(target_feature="sse4.1")] {
-        Self { sse0: round_m128d::<{round_op!(Nearest)}>(self.sse0), sse1: round_m128d::<{round_op!(Nearest)}>(self.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_nearest(self.simd0), simd1: f64x2_nearest(self.simd1) }
       } else {
-          let sign_mask = f64x4::from(-0.0);
-          let magic = f64x4::from(f64::from_bits(0x43300000_00000000));
-          let sign = self & sign_mask;
-          let signed_magic = magic | sign;
-          self + signed_magic - signed_magic
+        Self {
+          a : self.a.round(),
+          b : self.b.round(),
+        }
       }
     }
   }
@@ -711,11 +537,14 @@ impl f64x4 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_add_m256d(self.avx, m.avx, a.avx) }
-      } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
-      {
-        Self { sse0: fused_mul_add_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_add_m128d(self.sse1, m.sse1, a.sse1) }
-      } else {
+      } else if #[cfg(target_feature="avx")] {
+        // still want to use 256 bit ops
         (self * m) + a
+      } else {
+        Self {
+          a : self.a.mul_add(m.a, a.a),
+          b : self.b.mul_add(m.b, a.b),
+        }
       }
     }
   }
@@ -726,11 +555,14 @@ impl f64x4 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_sub_m256d(self.avx, m.avx, a.avx) }
-      } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
-      {
-        Self { sse0: fused_mul_sub_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_sub_m128d(self.sse1, m.sse1, a.sse1) }
-      } else {
+      } else if #[cfg(target_feature="avx")] {
+        // still want to use 256 bit ops
         (self * m) - a
+      } else {
+        Self {
+          a : self.a.mul_sub(m.a, a.a),
+          b : self.b.mul_sub(m.b, a.b),
+        }
       }
     }
   }
@@ -741,11 +573,14 @@ impl f64x4 {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self { avx: fused_mul_neg_add_m256d(self.avx, m.avx, a.avx) }
-      } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
-      {
-        Self { sse0: fused_mul_neg_add_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_neg_add_m128d(self.sse1, m.sse1, a.sse1) }
-      }  else {
+      } else if #[cfg(target_feature="avx")] {
+        // still want to use 256 bit ops
         a - (self * m)
+      } else {
+        Self {
+          a : self.a.mul_neg_add(m.a, a.a),
+          b : self.b.mul_neg_add(m.b, a.b),
+        }
       }
     }
   }
@@ -754,14 +589,17 @@ impl f64x4 {
   #[must_use]
   pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
     pick! {
-        if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-          Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, a.avx) }
-        } else if #[cfg(all(target_feature="avx",target_feature="fma"))]
-        {
-          Self { sse0: fused_mul_neg_sub_m128d(self.sse0, m.sse0, a.sse0), sse1: fused_mul_neg_sub_m128d(self.sse1, m.sse1, a.sse1) }
-        }  else {
-           -(self * m) - a
-        }
+       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+         Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, a.avx) }
+        } else if #[cfg(target_feature="avx")] {
+          // still want to use 256 bit ops
+          -(self * m) - a
+        } else {
+         Self {
+           a : self.a.mul_neg_sub(m.a, a.a),
+           b : self.b.mul_neg_sub(m.b, a.b),
+         }
+       }
     }
   }
 
@@ -1279,24 +1117,11 @@ impl f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: sqrt_m256d(self.avx) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: sqrt_m128d(self.sse0), sse1: sqrt_m128d(self.sse1) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: f64x2_sqrt(self.simd0), simd1: f64x2_sqrt(self.simd1) }
-      } else if #[cfg(feature="std")] {
-        Self { arr: [
-          self.arr[0].sqrt(),
-          self.arr[1].sqrt(),
-          self.arr[2].sqrt(),
-          self.arr[3].sqrt(),
-        ]}
       } else {
-        Self { arr: [
-          software_sqrt(self.arr[0] as f64) as f64,
-          software_sqrt(self.arr[1] as f64) as f64,
-          software_sqrt(self.arr[2] as f64) as f64,
-          software_sqrt(self.arr[3] as f64) as f64,
-        ]}
+        Self {
+          a : self.a.sqrt(),
+          b : self.b.sqrt(),
+        }
       }
     }
   }
@@ -1306,15 +1131,8 @@ impl f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         move_mask_m256d(self.avx)
-      } else if #[cfg(target_feature="sse2")] {
-        (move_mask_m128d(self.sse1) << 2) ^ move_mask_m128d(self.sse0)
-      } else if #[cfg(target_feature="simd128")] {
-        ((u64x2_bitmask(self.simd1) as i32) << 2) ^ u64x2_bitmask(self.simd0) as i32
       } else {
-        (((self.arr[0].to_bits() as i64) < 0) as i32) << 0 |
-        (((self.arr[1].to_bits() as i64) < 0) as i32) << 1 |
-        (((self.arr[2].to_bits() as i64) < 0) as i32) << 2 |
-        (((self.arr[3].to_bits() as i64) < 0) as i32) << 3
+        (self.b.move_mask() << 2) | self.a.move_mask()
       }
     }
   }
@@ -1322,10 +1140,10 @@ impl f64x4 {
   #[must_use]
   pub fn any(self) -> bool {
     pick! {
-      if #[cfg(target_feature="simd128")] {
-        v128_any_true(self.simd0) | v128_any_true(self.simd1)
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) != 0
       } else {
-        self.move_mask() != 0
+        self.a.any() || self.b.any()
       }
     }
   }
@@ -1333,11 +1151,10 @@ impl f64x4 {
   #[must_use]
   pub fn all(self) -> bool {
     pick! {
-      if #[cfg(target_feature="simd128")] {
-        u64x2_all_true(self.simd0) & u64x2_all_true(self.simd1)
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) == 0b1111
       } else {
-        // four lanes
-        self.move_mask() == 0b1111
+        self.a.all() && self.b.all()
       }
     }
   }
@@ -1447,13 +1264,8 @@ impl f64x4 {
         let hi64 = unpack_high_m128d(lo,lo);
         let sum = add_m128d_s(lo,hi64);
         get_f64_from_m128d_s(sum)
-      } else if #[cfg(target_feature="ssse3")] {
-        let a = add_horizontal_m128d(self.sse0, self.sse0);
-        let b = add_horizontal_m128d(self.sse1, self.sse1);
-        get_f64_from_m128d_s(a) + get_f64_from_m128d_s(b)
       } else {
-        let arr: [f64; 4] = cast(self);
-        arr.iter().sum()
+        self.a.reduce_add() + self.b.reduce_add()
       }
     }
   }
@@ -1663,17 +1475,11 @@ impl Not for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: self.avx.not()  }
-      } else if #[cfg(target_feature="sse2")] {
-        Self { sse0: self.sse0.not() , sse1: self.sse1.not() }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd0: v128_not(self.simd0), simd1: v128_not(self.simd1) }
       } else {
-        Self { arr: [
-          f64::from_bits(!self.arr[0].to_bits()),
-          f64::from_bits(!self.arr[1].to_bits()),
-          f64::from_bits(!self.arr[2].to_bits()),
-          f64::from_bits(!self.arr[3].to_bits()),
-        ]}
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
       }
     }
   }
