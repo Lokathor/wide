@@ -26,10 +26,10 @@ jobs:
         - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # wasm32
-        - { target: wasm32-wasi, toolchain: 1.54.0, os: ubuntu-latest }
-        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest }
-        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest }
-        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest }
+        - { target: wasm32-wasi, toolchain: 1.54.0, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
     steps:
     - uses: actions/checkout@v1
     - uses: actions-rs/toolchain@v1
@@ -42,7 +42,7 @@ jobs:
     - name: Install wasmtime
       if: matrix.rust.target == 'wasm32-wasi'
       run: |
-        curl https://wasmtime.dev/install.sh -sSf | bash
+        curl https://wasmtime.dev/install.sh -sSf | bash -s -- --version ${{ matrix.rust.wasmtime }}
         echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
 
     - name: Build the crate
@@ -69,6 +69,42 @@ jobs:
     - name: Test with 'native' CPU features + All Cargo Features
       if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --all-features
+  cross_compile_mips:
+    # this target is just for makring sure we aren't breaking endian-ness, since MIPS is one of the few big-endian targets
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        rust: [stable,nightly]
+        features: ["", "std"]
+
+    steps:
+      - name: Installing emulator and linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install qemu gcc libc6-dev ca-certificates gcc-mips-linux-gnu libc6-dev-mips-cross binfmt-support qemu-user-static qemu-system-mips
+      - name: Installing Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          override: true
+          toolchain: ${{ matrix.rust }}
+          target: mips-unknown-linux-musl
+      - uses: actions/checkout@v2
+      - name: build
+        run: >
+          cargo build --verbose --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-arg=-s"
+      - name: test
+        run: >
+          cargo test --tests --benches --no-default-features --target mips-unknown-linux-musl --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_RUNNER: qemu-mips-static
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER: mips-linux-gnu-gcc
+          CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-arg=-s"
+
   cross_compile_aarch64:
     runs-on: ubuntu-latest
 

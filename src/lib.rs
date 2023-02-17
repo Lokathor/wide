@@ -757,11 +757,22 @@ fn software_sqrt(x: f64) -> f64 {
   let mut ix1: wu32;
   let mut q1: wu32;
   // extract data
-  {
-    let [low, high]: [u32; 2] = cast(x);
-    ix0 = high as i32;
-    ix1 = w(low);
+
+  pick! {
+    if #[cfg(target_endian = "little")]  
+    {
+      let [low, high]: [u32; 2] = cast(x);
+      ix0 = high as i32;
+      ix1 = w(low);
+    }
+    else
+    {
+      let [high, low]: [u32; 2] = cast(x);
+      ix0 = high as i32;
+      ix1 = w(low);
+    }
   }
+
   // inf and nan
   {
     if x.is_nan() {
@@ -881,7 +892,16 @@ fn software_sqrt(x: f64) -> f64 {
   }
   ix0 += m << 20;
 
-  cast::<[u32; 2], f64>([ix1.0, ix0 as u32])
+  pick! {
+    if #[cfg(target_endian = "little")]  
+    {
+      cast::<[u32; 2], f64>([ix1.0, ix0 as u32])
+    }
+    else
+    {
+      cast::<[u32; 2], f64>([ix0 as u32, ix1.0])
+    }
+  }
 }
 
 #[test]
