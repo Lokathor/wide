@@ -25,7 +25,7 @@ pick! {
     }
 
     impl Eq for u64x2 { }
-  } else if #[cfg(target_feature="neon")] {
+  } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
@@ -48,6 +48,8 @@ pick! {
         }
       }
     }
+
+    impl Eq for u64x2 { }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
@@ -70,7 +72,7 @@ impl Add for u64x2 {
         Self { sse: add_i64_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u64x2_add(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vaddq_u64(self.neon, rhs.neon) } }
       } else {
         Self { arr: [
@@ -92,7 +94,7 @@ impl Sub for u64x2 {
         Self { sse: sub_i64_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u64x2_sub(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vsubq_u64(self.neon, rhs.neon) } }
       } else {
         Self { arr: [
@@ -189,7 +191,7 @@ impl BitAnd for u64x2 {
         Self { sse: bitand_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_and(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vandq_u64(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -211,7 +213,7 @@ impl BitOr for u64x2 {
         Self { sse: bitor_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_or(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vorrq_u64(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -233,7 +235,7 @@ impl BitXor for u64x2 {
         Self { sse: bitxor_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_xor(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: veorq_u64(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -259,7 +261,7 @@ macro_rules! impl_shl_t_for_u64x2 {
             Self { sse: shl_all_u64_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u64x2_shl(self.simd, rhs as u32) }
-          } else if #[cfg(target_feature="neon")] {
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64)) }}
           } else {
             let u = rhs as u64;
@@ -289,7 +291,7 @@ macro_rules! impl_shr_t_for_u64x2 {
             Self { sse: shr_all_u64_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u64x2_shr(self.simd, rhs as u32) }
-          } else if #[cfg(target_feature="neon")] {
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-(rhs as i64))) }}
           } else {
             let u = rhs as u64;
@@ -319,7 +321,7 @@ impl u64x2 {
         Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u64x2_eq(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vceqq_u64(self.neon, rhs.neon) } }
       } else {
         let s: [u64;2] = cast(self);
@@ -337,7 +339,7 @@ impl u64x2 {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vcgtq_u64(self.neon, rhs.neon) }}
       } else {
         // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
@@ -359,7 +361,7 @@ impl u64x2 {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vbslq_u64(self.neon, t.neon, f.neon) }}
       } else {
         generic_bit_blend(self, t, f)

@@ -25,7 +25,7 @@ pick! {
     }
 
     impl Eq for u16x8 { }
-  } else if #[cfg(target_feature="neon")] {
+  } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
       use core::arch::aarch64::*;
       #[repr(C)]
       #[derive(Copy, Clone)]
@@ -68,7 +68,7 @@ impl Add for u16x8 {
         Self { sse: add_i16_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_add(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vaddq_u16(self.neon, rhs.neon) } }
       } else {
         Self { arr: [
@@ -96,7 +96,7 @@ impl Sub for u16x8 {
         Self { sse: sub_i16_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_sub(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vsubq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -124,7 +124,7 @@ impl Mul for u16x8 {
         Self { sse: mul_i16_keep_low_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_mul(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmulq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -206,7 +206,7 @@ impl BitAnd for u16x8 {
         Self { sse: bitand_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_and(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vandq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -234,7 +234,7 @@ impl BitOr for u16x8 {
         Self { sse: bitor_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_or(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vorrq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -262,7 +262,7 @@ impl BitXor for u16x8 {
         Self { sse: bitxor_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_xor(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: veorq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -294,7 +294,7 @@ macro_rules! impl_shl_t_for_u16x8 {
             Self { sse: shl_all_u16_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u16x8_shl(self.simd, rhs as u32) }
-          } else if #[cfg(target_feature="neon")] {
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs as i16)) }}
           } else {
             let u = rhs as u64;
@@ -330,7 +330,7 @@ macro_rules! impl_shr_t_for_u16x8 {
             Self { sse: shr_all_u16_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u16x8_shr(self.simd, rhs as u32) }
-          } else if #[cfg(target_feature="neon")] {
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16( -(rhs as i16))) }}
           } else {
             let u = rhs as u64;
@@ -366,7 +366,7 @@ impl u16x8 {
         Self { sse: cmp_eq_mask_i16_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_eq(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vceqq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -390,7 +390,7 @@ impl u16x8 {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vbslq_u16(self.neon, t.neon, f.neon) }}
       } else {
         generic_bit_blend(self, t, f)
@@ -405,7 +405,7 @@ impl u16x8 {
         Self { sse: max_u8_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_max(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmaxq_u16(self.neon, rhs.neon) }}
       } else {
         let arr: [u16; 8] = cast(self);
@@ -431,7 +431,7 @@ impl u16x8 {
         Self { sse: min_u8_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_min(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_u16(self.neon, rhs.neon) }}
       } else {
         let arr: [u16; 8] = cast(self);
@@ -458,7 +458,7 @@ impl u16x8 {
         Self { sse: add_saturating_u16_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_add_sat(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vqaddq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -482,7 +482,7 @@ impl u16x8 {
         Self { sse: sub_saturating_u16_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u16x8_sub_sat(self.simd, rhs.simd) }
-      } else if #[cfg(target_feature="neon")] {
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vqsubq_u16(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
