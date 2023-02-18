@@ -25,16 +25,6 @@ jobs:
         - { target: x86_64-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
-        ## arm
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: 1.52.1, os: ubuntu-latest }
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: stable, os: ubuntu-latest }
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: beta, os: ubuntu-latest }
-        #- { target: arm-unknown-linux-gnueabihf, toolchain: nightly, os: ubuntu-latest }
-        ## aarch64
-        #- { target: aarch64-unknown-linux-gnu, toolchain: 1.52.1, os: ubuntu-latest }
-        #- { target: aarch64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
-        #- { target: aarch64-unknown-linux-gnu, toolchain: beta, os: ubuntu-latest }
-        #- { target: aarch64-unknown-linux-gnu, toolchain: nightly, os: ubuntu-latest }
         # wasm32
         - { target: wasm32-wasi, toolchain: 1.54.0, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
@@ -115,3 +105,35 @@ jobs:
           CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER: mips-linux-gnu-gcc
           CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=+crt-static -C link-arg=-s"
 
+  cross_compile_aarch64:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        rust: [1.59,stable,nightly]
+        features: ["", "std"]
+
+    steps:
+      - name: Installing emulator and linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install qemu binfmt-support qemu-user-static gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+
+      - name: Installing Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          override: true
+          toolchain: ${{ matrix.rust }}
+          target: aarch64-unknown-linux-musl
+      - uses: actions/checkout@v2
+      - name: build
+        run: >
+          cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+      - name: test
+        run: >
+          cargo test --tests --benches --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
