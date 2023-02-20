@@ -562,6 +562,7 @@ impl i16x8 {
       }
     }
   }
+
   /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
@@ -602,6 +603,128 @@ impl i16x8 {
           ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
           ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,
         ]}
+      }
+    }
+  }
+
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i16x8; 8]) -> [i16x8; 8] {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let a1 = unpack_low_i16_m128i(data[0].sse, data[1].sse);
+        let a2 = unpack_high_i16_m128i(data[0].sse, data[1].sse);
+        let a3 = unpack_low_i16_m128i(data[2].sse, data[3].sse);
+        let a4 = unpack_high_i16_m128i(data[2].sse, data[3].sse);
+        let a5 = unpack_low_i16_m128i(data[4].sse, data[5].sse);
+        let a6 = unpack_high_i16_m128i(data[4].sse, data[5].sse);
+        let a7 = unpack_low_i16_m128i(data[6].sse, data[7].sse);
+        let a8 = unpack_high_i16_m128i(data[6].sse, data[7].sse);
+
+        let b1 = unpack_low_i32_m128i(a1, a3);
+        let b2 = unpack_high_i32_m128i(a1, a3);
+        let b3 = unpack_low_i32_m128i(a2, a4);
+        let b4 = unpack_high_i32_m128i(a2, a4);
+        let b5 = unpack_low_i32_m128i(a5, a7);
+        let b6 = unpack_high_i32_m128i(a5, a7);
+        let b7 = unpack_low_i32_m128i(a6, a8);
+        let b8 = unpack_high_i32_m128i(a6, a8);
+
+        [
+          i16x8 { sse: unpack_low_i64_m128i(b1, b5) },
+          i16x8 { sse: unpack_high_i64_m128i(b1, b5) },
+          i16x8 { sse: unpack_low_i64_m128i(b2, b6) },
+          i16x8 { sse: unpack_high_i64_m128i(b2, b6) },
+          i16x8 { sse: unpack_low_i64_m128i(b3, b7) },
+          i16x8 { sse: unpack_high_i64_m128i(b3, b7) },
+          i16x8 { sse: unpack_low_i64_m128i(b4, b8) },
+          i16x8 { sse: unpack_high_i64_m128i(b4, b8) } ,
+        ]
+     } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          let a1 = vtrnq_s16(data[0].neon, data[1].neon);
+          let a2 = vtrnq_s16(data[2].neon, data[3].neon);
+          let a3 = vtrnq_s16(data[4].neon, data[5].neon);
+          let a4 = vtrnq_s16(data[6].neon, data[7].neon);
+
+          let b1 = vtrnq_s32(vreinterpretq_s32_s16(a1.0), vreinterpretq_s32_s16(a2.0));
+          let b2 = vtrnq_s32(vreinterpretq_s32_s16(a1.1), vreinterpretq_s32_s16(a2.1));
+          let b3 = vtrnq_s32(vreinterpretq_s32_s16(a3.0), vreinterpretq_s32_s16(a4.0));
+          let b4 = vtrnq_s32(vreinterpretq_s32_s16(a3.1), vreinterpretq_s32_s16(a4.1));
+
+          [
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b1.0), vget_low_s32(b3.0))) },
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b2.0), vget_low_s32(b4.0))) },
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b1.1), vget_low_s32(b3.1))) },
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b2.1), vget_low_s32(b4.1))) },
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b1.0), vget_high_s32(b3.0))) },
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b2.0), vget_high_s32(b4.0))) },
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b1.1), vget_high_s32(b3.1))) },
+            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b2.1), vget_high_s32(b4.1))) },
+          ]
+        }
+      } else if #[cfg(target_feature="simd128")] {
+        #[inline] fn lo_i16(a : v128, b : v128) -> v128 { i16x8_shuffle::<0, 8, 1, 9, 2, 10, 3, 11>(a,b) }
+        #[inline] fn hi_i16(a : v128, b : v128) -> v128 { i16x8_shuffle::<4, 12, 5, 13, 6, 14, 7, 15>(a,b) }
+        #[inline] fn lo_i32(a : v128, b : v128) -> v128 { i32x4_shuffle::<0, 4, 1, 5>(a,b) }
+        #[inline] fn hi_i32(a : v128, b : v128) -> v128 { i32x4_shuffle::<2, 6, 3, 7>(a,b) }
+        #[inline] fn lo_i64(a : v128, b : v128) -> v128 { i64x2_shuffle::<0, 2>(a,b) }
+        #[inline] fn hi_i64(a : v128, b : v128) -> v128 { i64x2_shuffle::<1, 3>(a,b) }
+
+        let a1 = lo_i16(data[0].simd, data[1].simd);
+        let a2 = hi_i16(data[0].simd, data[1].simd);
+        let a3 = lo_i16(data[2].simd, data[3].simd);
+        let a4 = hi_i16(data[2].simd, data[3].simd);
+        let a5 = lo_i16(data[4].simd, data[5].simd);
+        let a6 = hi_i16(data[4].simd, data[5].simd);
+        let a7 = lo_i16(data[6].simd, data[7].simd);
+        let a8 = hi_i16(data[6].simd, data[7].simd);
+
+        let b1 = lo_i32(a1, a3);
+        let b2 = hi_i32(a1, a3);
+        let b3 = lo_i32(a2, a4);
+        let b4 = hi_i32(a2, a4);
+        let b5 = lo_i32(a5, a7);
+        let b6 = hi_i32(a5, a7);
+        let b7 = lo_i32(a6, a8);
+        let b8 = hi_i32(a6, a8);
+
+        [
+          i16x8 { simd: lo_i64(b1, b5) },
+          i16x8 { simd: hi_i64(b1, b5) },
+          i16x8 { simd: lo_i64(b2, b6) },
+          i16x8 { simd: hi_i64(b2, b6) },
+          i16x8 { simd: lo_i64(b3, b7) },
+          i16x8 { simd: hi_i64(b3, b7) },
+          i16x8 { simd: lo_i64(b4, b8) },
+          i16x8 { simd: hi_i64(b4, b8) } ,
+        ]
+
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[i16x8; 8], index: usize) -> i16x8 {
+          i16x8::new([
+            data[0].as_array_ref()[index],
+            data[1].as_array_ref()[index],
+            data[2].as_array_ref()[index],
+            data[3].as_array_ref()[index],
+            data[4].as_array_ref()[index],
+            data[5].as_array_ref()[index],
+            data[6].as_array_ref()[index],
+            data[7].as_array_ref()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+          transpose_column(&data, 4),
+          transpose_column(&data, 5),
+          transpose_column(&data, 6),
+          transpose_column(&data, 7),
+        ]
       }
     }
   }
