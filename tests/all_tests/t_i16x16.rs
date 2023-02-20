@@ -209,7 +209,7 @@ fn impl_mul_scale_n_i16x16() {
     0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300,
     1400, 1500,
   ]);
-  let actual = a.mul_scale_round(16400); // slightly higher than 0.5 to test rounding
+  let actual = a.mul_scale_round_n(16400); // slightly higher than 0.5 to test rounding
   let expected = i16x16::from([
     0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 551, 601, 651, 701, 751,
   ]);

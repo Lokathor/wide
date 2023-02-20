@@ -45,7 +45,7 @@ fn impl_mul_scale_i16x8() {
 #[test]
 fn impl_mul_scale_n_i16x8() {
   let a = i16x8::from([100, 200, 300, 400, 500, -600, 700, -800]);
-  let actual = a.mul_scale_round(0x4000);
+  let actual = a.mul_scale_round_n(0x4000);
   let expected = i16x8::from([50, 100, 150, 200, 250, -300, 350, -400]);
   assert_eq!(expected, actual);
 }
