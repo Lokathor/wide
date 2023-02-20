@@ -325,8 +325,8 @@ impl MulScaleRound<i16> for i16x16 {
         Self { avx2: mul_i16_scale_round_m256i(self.avx2, set_splat_i16_m256i(rhs)) }
       } else {
         Self {
-          a : self.a.mul_scale_round(rhs.a),
-          b : self.b.mul_scale_round(rhs.b),
+          a : self.a.mul_scale_round(rhs),
+          b : self.b.mul_scale_round(rhs),
         }
       }
     }
