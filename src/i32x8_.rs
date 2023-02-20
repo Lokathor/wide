@@ -398,6 +398,36 @@ impl i32x8 {
     !self.any()
   }
 
+  /// transpose matrix of 8x8 i16 matrix
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i32x8; 8]) -> [i32x8; 8] {
+    #[inline(always)]
+    fn transpose_column(data: &[i32x8; 8], index: usize) -> i32x8 {
+      i32x8::new([
+        data[0].as_array_ref()[index],
+        data[1].as_array_ref()[index],
+        data[2].as_array_ref()[index],
+        data[3].as_array_ref()[index],
+        data[4].as_array_ref()[index],
+        data[5].as_array_ref()[index],
+        data[6].as_array_ref()[index],
+        data[7].as_array_ref()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+    ]
+  }
+
   #[inline]
   pub fn to_array(self) -> [i32; 8] {
     cast(self)

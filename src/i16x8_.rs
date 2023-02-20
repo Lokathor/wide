@@ -607,6 +607,7 @@ impl i16x8 {
     }
   }
 
+  /// transpose matrix of 8x8 i16 matrix
   #[must_use]
   #[inline]
   pub fn transpose(data: [i16x8; 8]) -> [i16x8; 8] {
@@ -642,6 +643,7 @@ impl i16x8 {
         ]
      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
+          // neon doesn't have shuffle, but it does have a transpose function
           let a1 = vtrnq_s16(data[0].neon, data[1].neon);
           let a2 = vtrnq_s16(data[2].neon, data[3].neon);
           let a3 = vtrnq_s16(data[4].neon, data[5].neon);

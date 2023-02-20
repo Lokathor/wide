@@ -63,7 +63,7 @@ fn impl_mul_for_i16x8() {
 }
 
 #[test]
-fn impl_transpose() {
+fn impl_transpose_for_i16x8() {
   let a = [
     i16x8::new([0, 1, 2, 3, 4, 5, 6, 7]),
     i16x8::new([8, 9, 10, 11, 12, 13, 14, 15]),
