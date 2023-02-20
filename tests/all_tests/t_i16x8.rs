@@ -43,6 +43,14 @@ fn impl_mul_scale_i16x8() {
 }
 
 #[test]
+fn impl_mul_scale_n_i16x8() {
+  let a = i16x8::from([100, 200, 300, 400, 500, -600, 700, -800]);
+  let actual = a.mul_scale_round(0x4000);
+  let expected = i16x8::from([50, 100, 150, 200, 250, -300, 350, -400]);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_saturating_for_i16x8() {
   let a = i16x8::from([1, 2, 3, 4, 5, i16::MIN, i16::MIN + 1, i16::MAX]);
   let b = i16x8::from([17, -18, 190, -20, 21, -1, 1, -1]);
