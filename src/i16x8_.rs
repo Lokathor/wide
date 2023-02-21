@@ -642,27 +642,38 @@ impl i16x8 {
           i16x8 { sse: unpack_high_i64_m128i(b4, b8) } ,
         ]
      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+
+          #[inline] fn vtrq32(a : int16x8_t, b : int16x8_t) -> (int16x8_t, int16x8_t)
+          {
+              unsafe {
+                let r = vtrnq_s32(vreinterpretq_s32_s16(a),vreinterpretq_s32_s16(b));
+                (vreinterpretq_s16_s32(r.0), vreinterpretq_s16_s32(r.1))
+              }
+          }
+
         unsafe {
-          // neon doesn't have shuffle, but it does have a transpose function
-          let a1 = vtrnq_s16(data[0].neon, data[1].neon);
-          let a2 = vtrnq_s16(data[2].neon, data[3].neon);
-          let a3 = vtrnq_s16(data[4].neon, data[5].neon);
-          let a4 = vtrnq_s16(data[6].neon, data[7].neon);
+          let (q0,q2) = vtrq32(data[0].neon, data[2].neon);
+          let (q1,q3) = vtrq32(data[1].neon, data[3].neon);
+          let (q4,q6) = vtrq32(data[4].neon, data[6].neon);
+          let (q5,q7) = vtrq32(data[5].neon, data[7].neon);
 
-          let b1 = vtrnq_s32(vreinterpretq_s32_s16(a1.0), vreinterpretq_s32_s16(a2.0));
-          let b2 = vtrnq_s32(vreinterpretq_s32_s16(a1.1), vreinterpretq_s32_s16(a2.1));
-          let b3 = vtrnq_s32(vreinterpretq_s32_s16(a3.0), vreinterpretq_s32_s16(a4.0));
-          let b4 = vtrnq_s32(vreinterpretq_s32_s16(a3.1), vreinterpretq_s32_s16(a4.1));
+          let b1 = vtrnq_s16(q0, q1);
+          let b2 = vtrnq_s16(q2, q3);
+          let b3 = vtrnq_s16(q4, q5);
+          let b4 = vtrnq_s16(q6, q7);
 
+          // There is no vtrnq_s64 unfortunately, so there's this mess
+          // which does a somewhat reasonable job, but not as good as the
+          // assembly versions which just swap the 64 bit register aliases.
           [
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b1.0), vget_low_s32(b3.0))) },
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b2.0), vget_low_s32(b4.0))) },
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b1.1), vget_low_s32(b3.1))) },
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_low_s32(b2.1), vget_low_s32(b4.1))) },
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b1.0), vget_high_s32(b3.0))) },
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b2.0), vget_high_s32(b4.0))) },
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b1.1), vget_high_s32(b3.1))) },
-            i16x8 { neon: vreinterpretq_s16_s32(vcombine_s32(vget_high_s32(b2.1), vget_high_s32(b4.1))) },
+            i16x8 { neon: vcombine_s16(vget_low_s16(b1.0), vget_low_s16(b3.0)) },
+            i16x8 { neon: vcombine_s16(vget_low_s16(b1.1), vget_low_s16(b3.1)) },
+            i16x8 { neon: vcombine_s16(vget_low_s16(b2.0), vget_low_s16(b4.0)) },
+            i16x8 { neon: vcombine_s16(vget_low_s16(b2.1), vget_low_s16(b4.1)) },
+            i16x8 { neon: vcombine_s16(vget_high_s16(b1.0), vget_high_s16(b3.0)) },
+            i16x8 { neon: vcombine_s16(vget_high_s16(b1.1), vget_high_s16(b3.1)) },
+            i16x8 { neon: vcombine_s16(vget_high_s16(b2.0), vget_high_s16(b4.0)) },
+            i16x8 { neon: vcombine_s16(vget_high_s16(b2.1), vget_high_s16(b4.1)) },
           ]
         }
       } else if #[cfg(target_feature="simd128")] {
