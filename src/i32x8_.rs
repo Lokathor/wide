@@ -398,7 +398,7 @@ impl i32x8 {
     !self.any()
   }
 
-  /// transpose matrix of 8x8 i32 matrix
+  /// Transpose matrix of 8x8 i32 matrix. Currently only accelerated on AVX2.
   #[must_use]
   #[inline]
   pub fn transpose(data: [i32x8; 8]) -> [i32x8; 8] {
