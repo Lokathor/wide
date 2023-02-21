@@ -1374,7 +1374,7 @@ impl f32x8 {
         // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
 
         #[inline(always)]
-        fn transpose_column(data: &[i32x8; 8], index: usize) -> i32x8 {
+        fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
           f32x8::new([
             data[0].as_array_ref()[index],
             data[1].as_array_ref()[index],
