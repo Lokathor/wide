@@ -177,31 +177,18 @@ fn test_dequantize_and_idct_i16() {
   assert_eq!(expected_output, output);
 }
 
-fn stbi_f2f(x: f32) -> i32 {
+fn to_fixed(x: f32) -> i32 {
   (x * 4096.0 + 0.5) as i32
 }
 
-#[inline]
 fn kernel_x([s0, s2, s4, s6]: [i32x8; 4], x_scale: i32) -> [i32x8; 4] {
   // Even `chunk` indicies
-  let (v2, v3);
-  {
-    let p2 = s2;
-    let p3 = s6;
+  let p1 = (s2 + s6) * to_fixed(0.5411961);
+  let v2 = p1 + s6 * to_fixed(-1.847759065);
+  let v3 = p1 + s2 * to_fixed(0.765366865);
 
-    let p1 = (p2 + p3) * stbi_f2f(0.5411961);
-    v2 = p1 + p3 * stbi_f2f(-1.847759065);
-    v3 = p1 + p2 * stbi_f2f(0.765366865);
-  }
-
-  let (v0, t1);
-  {
-    let p2 = s0;
-    let p3 = s4;
-
-    v0 = (p2 + p3) << 12;
-    t1 = (p2 - p3) << 12;
-  }
+  let v0 = (s0 + s4) << 12;
+  let t1 = (s0 - s4) << 12;
 
   let x0 = v0 + v3;
   let x3 = v0 - v3;
@@ -211,7 +198,6 @@ fn kernel_x([s0, s2, s4, s6]: [i32x8; 4], x_scale: i32) -> [i32x8; 4] {
   [x0 + x_scale, x1 + x_scale, x2 + x_scale, x3 + x_scale]
 }
 
-#[inline]
 fn kernel_t([s1, s3, s5, s7]: [i32x8; 4]) -> [i32x8; 4] {
   // Odd `chunk` indicies
   let mut t0 = s7;
@@ -223,17 +209,17 @@ fn kernel_t([s1, s3, s5, s7]: [i32x8; 4]) -> [i32x8; 4] {
   let p4 = t1 + t3;
   let p1 = t0 + t3;
   let p2 = t1 + t2;
-  let p5 = (p3 + p4) * stbi_f2f(1.175875602);
+  let p5 = (p3 + p4) * to_fixed(1.175875602);
 
-  t0 = t0 * stbi_f2f(0.298631336);
-  t1 = t1 * stbi_f2f(2.053119869);
-  t2 = t2 * stbi_f2f(3.072711026);
-  t3 = t3 * stbi_f2f(1.501321110);
+  t0 = t0 * to_fixed(0.298631336);
+  t1 = t1 * to_fixed(2.053119869);
+  t2 = t2 * to_fixed(3.072711026);
+  t3 = t3 * to_fixed(1.501321110);
 
-  let p1 = p5 + p1 * stbi_f2f(-0.899976223);
-  let p2 = p5 + p2 * stbi_f2f(-2.562915447);
-  let p3 = p3 * stbi_f2f(-1.961570560);
-  let p4 = p4 * stbi_f2f(-0.390180644);
+  let p1 = p5 + p1 * to_fixed(-0.899976223);
+  let p2 = p5 + p2 * to_fixed(-2.562915447);
+  let p3 = p3 * to_fixed(-1.961570560);
+  let p4 = p4 * to_fixed(-0.390180644);
 
   t3 += p1 + p4;
   t2 += p2 + p3;
