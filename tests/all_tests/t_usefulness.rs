@@ -214,48 +214,51 @@ fn test_dequantize_and_idct_i32() {
     (x * 4096.0 + 0.5) as i32
   }
 
-  fn kernel_i32([s0, s1, s2, s3, s4, s5, s6, s7]: [i32x8; 8]) -> [i32x8; 8] {
-    // Even `chunk` indicies
-    let xp1 = (s2 + s6) * to_fixed(0.5411961);
-    let xv2 = xp1 + s6 * to_fixed(-1.847759065);
-    let xv3 = xp1 + s2 * to_fixed(0.765366865);
+  fn kernel_i32(
+    [s0, s1, s2, s3, s4, s5, s6, s7]: [i32x8; 8],
+    rounding_factor: i32,
+    shift_right: i32,
+  ) -> [i32x8; 8] {
+    // kernel x
+    let at = (s2 + s6) * to_fixed(0.5411961);
 
-    let xv0 = (s0 + s4) << 12;
-    let xt1 = (s0 - s4) << 12;
+    let a0 = (s0 + s4) << 12; // multiply by 1, ie 4096 in fixed point)
+    let a1 = (s0 - s4) << 12; // multiply by 1, ie 4096 in fixed point)
+    let a2 = at + s6 * to_fixed(-1.847759065);
+    let a3 = at + s2 * to_fixed(0.765366865);
 
-    let x0 = xv0 + xv3;
-    let x1 = xt1 + xv2;
-    let x2 = xt1 - xv2;
-    let x3 = xv0 - xv3;
+    let x0 = a0 + a3 + rounding_factor; // add rounding factor here to avoid extra addition
+    let x1 = a1 + a2 + rounding_factor;
+    let x2 = a1 - a2 + rounding_factor;
+    let x3 = a0 - a3 + rounding_factor;
 
-    // Odd `chunk` indicies
-    let mut t0 = s7;
-    let mut t1 = s5;
-    let mut t2 = s3;
-    let mut t3 = s1;
+    // kernel t
+    let b0 = s7 + s1;
+    let b1 = s5 + s3;
+    let b2 = s7 + s3;
+    let b3 = s5 + s1;
 
-    let tp1 = t0 + t3;
-    let tp2 = t1 + t2;
-    let tp3 = t0 + t2;
-    let tp4 = t1 + t3;
-    let tp5 = (tp3 + tp4) * to_fixed(1.175875602);
+    let ct = (b2 + b3) * to_fixed(1.175875602);
+    let c0 = ct + b0 * to_fixed(-0.899976223);
+    let c1 = ct + b1 * to_fixed(-2.562915447);
+    let c2 = b2 * to_fixed(-1.961570560);
+    let c3 = b3 * to_fixed(-0.390180644);
 
-    t0 = t0 * to_fixed(0.298631336);
-    t1 = t1 * to_fixed(2.053119869);
-    t2 = t2 * to_fixed(3.072711026);
-    t3 = t3 * to_fixed(1.501321110);
+    let t0 = s7 * to_fixed(0.298631336) + c0 + c2;
+    let t1 = s5 * to_fixed(2.053119869) + c1 + c3;
+    let t2 = s3 * to_fixed(3.072711026) + c1 + c2;
+    let t3 = s1 * to_fixed(1.501321110) + c0 + c3;
 
-    let tp1 = tp5 + tp1 * to_fixed(-0.899976223);
-    let tp2 = tp5 + tp2 * to_fixed(-2.562915447);
-    let tp3 = tp3 * to_fixed(-1.961570560);
-    let tp4 = tp4 * to_fixed(-0.390180644);
-
-    t0 += tp1 + tp3;
-    t1 += tp2 + tp4;
-    t2 += tp2 + tp3;
-    t3 += tp1 + tp4;
-
-    [x0, x1, x2, x3, t0, t1, t2, t3]
+    [
+      (x0 + t3) >> shift_right,
+      (x1 + t2) >> shift_right,
+      (x2 + t1) >> shift_right,
+      (x3 + t0) >> shift_right,
+      (x3 - t0) >> shift_right,
+      (x2 - t1) >> shift_right,
+      (x1 - t2) >> shift_right,
+      (x0 - t3) >> shift_right,
+    ]
   }
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -296,51 +299,13 @@ fn test_dequantize_and_idct_i32() {
     c[7] * q[7],
   ];
 
-  let [mut x0, mut x1, mut x2, mut x3, t0, t1, t2, t3] = kernel_i32(scaled);
-
   // add rounding factor before shifting right
-  const T_ROUND_FACTOR: i32 = 1 << 9;
-
-  x0 = x0 + T_ROUND_FACTOR;
-  x1 = x1 + T_ROUND_FACTOR;
-  x2 = x2 + T_ROUND_FACTOR;
-  x3 = x3 + T_ROUND_FACTOR;
-
-  let pass1 = [
-    (x0 + t3) >> 10,
-    (x1 + t2) >> 10,
-    (x2 + t1) >> 10,
-    (x3 + t0) >> 10,
-    (x3 - t0) >> 10,
-    (x2 - t1) >> 10,
-    (x1 - t2) >> 10,
-    (x0 - t3) >> 10,
-  ];
-
+  let pass1 = kernel_i32(scaled, 1 << 9, 10);
   let transpose1 = i32x8::transpose(pass1);
-
-  let [mut x0, mut x1, mut x2, mut x3, t0, t1, t2, t3] = kernel_i32(transpose1);
 
   // add rounding factor befor shifting right (include rebasing from -128..128
   // to 0..256)
-  const X_ROUND_FACTOR: i32 = 65536 + (128 << 17);
-
-  x0 = x0 + X_ROUND_FACTOR;
-  x1 = x1 + X_ROUND_FACTOR;
-  x2 = x2 + X_ROUND_FACTOR;
-  x3 = x3 + X_ROUND_FACTOR;
-
-  let pass2 = [
-    (x0 + t3) >> 17,
-    (x1 + t2) >> 17,
-    (x2 + t1) >> 17,
-    (x3 + t0) >> 17,
-    (x3 - t0) >> 17,
-    (x2 - t1) >> 17,
-    (x1 - t2) >> 17,
-    (x0 - t3) >> 17,
-  ];
-
+  let pass2 = kernel_i32(transpose1, 65536 + (128 << 17), 17);
   let result = i32x8::transpose(pass2);
 
   let output: [i32; 64] = cast(result);
