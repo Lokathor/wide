@@ -1327,6 +1327,80 @@ impl f32x8 {
     Self::pow_f32x8(self, f32x8::splat(y))
   }
 
+  /// Transpose matrix of 8x8 f32 matrix. Currently only accelerated on AVX.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [f32x8; 8]) -> [f32x8; 8] {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        let a0 = unpack_lo_m256(data[0].avx, data[1].avx);
+        let a1 = unpack_hi_m256(data[0].avx, data[1].avx);
+        let a2 = unpack_lo_m256(data[2].avx, data[3].avx);
+        let a3 = unpack_hi_m256(data[2].avx, data[3].avx);
+        let a4 = unpack_lo_m256(data[4].avx, data[5].avx);
+        let a5 = unpack_hi_m256(data[4].avx, data[5].avx);
+        let a6 = unpack_lo_m256(data[6].avx, data[7].avx);
+        let a7 = unpack_hi_m256(data[6].avx, data[7].avx);
+
+        pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
+          (z << 6) | (y << 4) | (x << 2) | w
+        }
+
+        const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
+        const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
+
+        // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
+        // (since blend runs on a different port than shuffle)
+        let b0 = shuffle_m256::<SHUFF_LO>(a0,a2);
+        let b1 = shuffle_m256::<SHUFF_HI>(a0,a2);
+        let b2 = shuffle_m256::<SHUFF_LO>(a1,a3);
+        let b3 = shuffle_m256::<SHUFF_HI>(a1,a3);
+        let b4 = shuffle_m256::<SHUFF_LO>(a4,a6);
+        let b5 = shuffle_m256::<SHUFF_HI>(a4,a6);
+        let b6 = shuffle_m256::<SHUFF_LO>(a5,a7);
+        let b7 = shuffle_m256::<SHUFF_HI>(a5,a7);
+
+        [
+          f32x8 { avx: permute2z_m256::<0x20>(b0, b4) },
+          f32x8 { avx: permute2z_m256::<0x20>(b1, b5) },
+          f32x8 { avx: permute2z_m256::<0x20>(b2, b6) },
+          f32x8 { avx: permute2z_m256::<0x20>(b3, b7) },
+          f32x8 { avx: permute2z_m256::<0x31>(b0, b4) },
+          f32x8 { avx: permute2z_m256::<0x31>(b1, b5) },
+          f32x8 { avx: permute2z_m256::<0x31>(b2, b6) },
+          f32x8 { avx: permute2z_m256::<0x31>(b3, b7) }
+        ]
+      } else {
+        // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
+
+        #[inline(always)]
+        fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
+          f32x8::new([
+            data[0].as_array_ref()[index],
+            data[1].as_array_ref()[index],
+            data[2].as_array_ref()[index],
+            data[3].as_array_ref()[index],
+            data[4].as_array_ref()[index],
+            data[5].as_array_ref()[index],
+            data[6].as_array_ref()[index],
+            data[7].as_array_ref()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+          transpose_column(&data, 4),
+          transpose_column(&data, 5),
+          transpose_column(&data, 6),
+          transpose_column(&data, 7),
+        ]
+      }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [f32; 8] {
     cast(self)
