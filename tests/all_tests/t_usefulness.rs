@@ -170,14 +170,23 @@ fn test_dequantize_and_idct_i16() {
 
   // offset to recenter to 0..256 and round properly
   const ROUND_OFFSET: i16 = 0x2020;
+  let round_offset = i16x8::splat(ROUND_OFFSET);
 
-  let output: [i16; 64] = cast(
-    result
-      .map(|x| (x.saturating_add(i16x8::splat(ROUND_OFFSET)) >> (SHIFT + 3))),
-  );
+  let result_adj = [
+    result[0].saturating_add(round_offset) >> (SHIFT + 3),
+    result[1].saturating_add(round_offset) >> (SHIFT + 3),
+    result[2].saturating_add(round_offset) >> (SHIFT + 3),
+    result[3].saturating_add(round_offset) >> (SHIFT + 3),
+    result[4].saturating_add(round_offset) >> (SHIFT + 3),
+    result[5].saturating_add(round_offset) >> (SHIFT + 3),
+    result[6].saturating_add(round_offset) >> (SHIFT + 3),
+    result[7].saturating_add(round_offset) >> (SHIFT + 3),
+  ];
+
+  let output: [i16; 64] = cast(result_adj);
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
-	    let expected_output = [		
+	    let expected_output = [
 	        118, 92, 110, 83, 77, 93, 144, 198,		
 	        172, 116, 114, 87, 78, 93, 146, 191,		
 	        194, 107, 91, 76, 71, 93, 160, 198,		
@@ -250,7 +259,7 @@ fn test_dequantize_and_idct_i32() {
   }
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
-	    let coefficients: [i32; 8 * 8] = [		
+	    let coefficients: [i32; 8 * 8] = [
           -14, -39, 58, -2, 3, 3, 0, 1,		
 	        11, 27, 4, -3, 3, 0, 1, 0,		
 	        -6, -13, -9, -1, -2, -1, 0, 0,		
@@ -262,7 +271,7 @@ fn test_dequantize_and_idct_i32() {
 	    ];
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
-	    let quantization_table: [i32; 8 * 8] = [		
+	    let quantization_table: [i32; 8 * 8] = [
 	        8, 6, 5, 8, 12, 20, 26, 31,		
 	        6, 6, 7, 10, 13, 29, 30, 28,		
 	        7, 7, 8, 12, 20, 29, 35, 28,		
