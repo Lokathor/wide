@@ -40,17 +40,21 @@ fn unpack_modify_and_repack_rgba_values() {
 }
 
 /// Implement JPEG IDCT using i16x8. This has slightly different behavior than
-/// the normal 32 bit scalar implementation. It's a bit more accurate in some
-/// ways (since the constants are encoded in 15 bits instead of 12) but is more
-/// subject to hitting saturation during intermediate calculations, although
-/// that should normally be a problem for photographic JPEGs.
+/// the normal 32 bit scalar implementation in libjpeg. It's a bit more accurate
+/// in some ways (since the constants are encoded in 15 bits instead of 12) but
+/// is more subject to hitting saturation during intermediate calculations,
+/// although that should normally not be a problem for photographic JPEGs.
+///
+/// The main downside of this approach is that it is very slow to do saturating
+/// math on scalar types on some CPUs, so if you need bit-exact behavior on
+/// different architectures this is not the algorithm for you.
 #[test]
 fn test_dequantize_and_idct_i16() {
   fn to_fixed(x: f32) -> i16 {
     (x * 32767.0 + 0.5) as i16
   }
 
-  fn idct_kernel_i16(data: [i16x8; 8]) -> [i16x8; 8] {
+  fn kernel_i16(data: [i16x8; 8]) -> [i16x8; 8] {
     // kernel x
     let a2 = data[2];
     let a6 = data[6];
@@ -163,24 +167,24 @@ fn test_dequantize_and_idct_i16() {
     c[7] * q[7] << SHIFT,
   ];
 
-  let pass1 = idct_kernel_i16(data);
+  let pass1 = kernel_i16(data);
   let transpose1 = i16x8::transpose(pass1);
-  let pass2 = idct_kernel_i16(transpose1);
+  let pass2 = kernel_i16(transpose1);
   let result = i16x8::transpose(pass2);
 
   // offset to recenter to 0..256 and round properly
-  const ROUND_OFFSET: i16 = 0x2020;
-  let round_offset = i16x8::splat(ROUND_OFFSET);
+  const ROUND_FACTOR: i16 = 0x2020;
+  let round_factor = i16x8::splat(ROUND_FACTOR);
 
   let result_adj = [
-    result[0].saturating_add(round_offset) >> (SHIFT + 3),
-    result[1].saturating_add(round_offset) >> (SHIFT + 3),
-    result[2].saturating_add(round_offset) >> (SHIFT + 3),
-    result[3].saturating_add(round_offset) >> (SHIFT + 3),
-    result[4].saturating_add(round_offset) >> (SHIFT + 3),
-    result[5].saturating_add(round_offset) >> (SHIFT + 3),
-    result[6].saturating_add(round_offset) >> (SHIFT + 3),
-    result[7].saturating_add(round_offset) >> (SHIFT + 3),
+    result[0].saturating_add(round_factor) >> (2 * SHIFT),
+    result[1].saturating_add(round_factor) >> (2 * SHIFT),
+    result[2].saturating_add(round_factor) >> (2 * SHIFT),
+    result[3].saturating_add(round_factor) >> (2 * SHIFT),
+    result[4].saturating_add(round_factor) >> (2 * SHIFT),
+    result[5].saturating_add(round_factor) >> (2 * SHIFT),
+    result[6].saturating_add(round_factor) >> (2 * SHIFT),
+    result[7].saturating_add(round_factor) >> (2 * SHIFT),
   ];
 
   let output: [i16; 64] = cast(result_adj);
@@ -200,62 +204,58 @@ fn test_dequantize_and_idct_i16() {
   assert_eq!(expected_output, output);
 }
 
-/// Implement JPEG IDCT using i16x8. This is most similar to the scalar
-/// version which has slightly different rounding propertis than the 16 bit
-/// version. Some decoders are forced to use this if they want bit-by-bit
-/// compability between different architectures.
+/// Implement JPEG IDCT using i32x8. This is most similar to the scalar
+/// libjpeg version which has slightly different rounding propertis than the 16
+/// bit version. Some decoders are forced to use this if they want bit-by-bit
+/// compability across all architectures.
 #[test]
 fn test_dequantize_and_idct_i32() {
   fn to_fixed(x: f32) -> i32 {
     (x * 4096.0 + 0.5) as i32
   }
 
-  fn kernel_x([s0, s2, s4, s6]: [i32x8; 4], x_scale: i32) -> [i32x8; 4] {
+  fn kernel_i32([s0, s1, s2, s3, s4, s5, s6, s7]: [i32x8; 8]) -> [i32x8; 8] {
     // Even `chunk` indicies
-    let p1 = (s2 + s6) * to_fixed(0.5411961);
-    let v2 = p1 + s6 * to_fixed(-1.847759065);
-    let v3 = p1 + s2 * to_fixed(0.765366865);
+    let xp1 = (s2 + s6) * to_fixed(0.5411961);
+    let xv2 = xp1 + s6 * to_fixed(-1.847759065);
+    let xv3 = xp1 + s2 * to_fixed(0.765366865);
 
-    let v0 = (s0 + s4) << 12;
-    let t1 = (s0 - s4) << 12;
+    let xv0 = (s0 + s4) << 12;
+    let xt1 = (s0 - s4) << 12;
 
-    let x0 = v0 + v3;
-    let x3 = v0 - v3;
-    let x1 = t1 + v2;
-    let x2 = t1 - v2;
+    let x0 = xv0 + xv3;
+    let x1 = xt1 + xv2;
+    let x2 = xt1 - xv2;
+    let x3 = xv0 - xv3;
 
-    [x0 + x_scale, x1 + x_scale, x2 + x_scale, x3 + x_scale]
-  }
-
-  fn kernel_t([s1, s3, s5, s7]: [i32x8; 4]) -> [i32x8; 4] {
     // Odd `chunk` indicies
     let mut t0 = s7;
     let mut t1 = s5;
     let mut t2 = s3;
     let mut t3 = s1;
 
-    let p1 = t0 + t3;
-    let p2 = t1 + t2;
-    let p3 = t0 + t2;
-    let p4 = t1 + t3;
-    let p5 = (p3 + p4) * to_fixed(1.175875602);
+    let tp1 = t0 + t3;
+    let tp2 = t1 + t2;
+    let tp3 = t0 + t2;
+    let tp4 = t1 + t3;
+    let tp5 = (tp3 + tp4) * to_fixed(1.175875602);
 
     t0 = t0 * to_fixed(0.298631336);
     t1 = t1 * to_fixed(2.053119869);
     t2 = t2 * to_fixed(3.072711026);
     t3 = t3 * to_fixed(1.501321110);
 
-    let p1 = p5 + p1 * to_fixed(-0.899976223);
-    let p2 = p5 + p2 * to_fixed(-2.562915447);
-    let p3 = p3 * to_fixed(-1.961570560);
-    let p4 = p4 * to_fixed(-0.390180644);
+    let tp1 = tp5 + tp1 * to_fixed(-0.899976223);
+    let tp2 = tp5 + tp2 * to_fixed(-2.562915447);
+    let tp3 = tp3 * to_fixed(-1.961570560);
+    let tp4 = tp4 * to_fixed(-0.390180644);
 
-    t0 += p1 + p3;
-    t1 += p2 + p4;
-    t2 += p2 + p3;
-    t3 += p1 + p4;
+    t0 += tp1 + tp3;
+    t1 += tp2 + tp4;
+    t2 += tp2 + tp3;
+    t3 += tp1 + tp4;
 
-    [t0, t1, t2, t3]
+    [x0, x1, x2, x3, t0, t1, t2, t3]
   }
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -285,17 +285,26 @@ fn test_dequantize_and_idct_i32() {
   let c: [i32x8; 8] = cast(coefficients);
   let q: [i32x8; 8] = cast(quantization_table);
 
-  let s0 = c[0] * q[0];
-  let s1 = c[1] * q[1];
-  let s2 = c[2] * q[2];
-  let s3 = c[3] * q[3];
-  let s4 = c[4] * q[4];
-  let s5 = c[5] * q[5];
-  let s6 = c[6] * q[6];
-  let s7 = c[7] * q[7];
+  let scaled = [
+    c[0] * q[0],
+    c[1] * q[1],
+    c[2] * q[2],
+    c[3] * q[3],
+    c[4] * q[4],
+    c[5] * q[5],
+    c[6] * q[6],
+    c[7] * q[7],
+  ];
 
-  let [x0, x1, x2, x3] = kernel_x([s0, s2, s4, s6], 1 << 9);
-  let [t0, t1, t2, t3] = kernel_t([s1, s3, s5, s7]);
+  let [mut x0, mut x1, mut x2, mut x3, t0, t1, t2, t3] = kernel_i32(scaled);
+
+  // add rounding factor before shifting right
+  const T_ROUND_FACTOR: i32 = 1 << 9;
+
+  x0 = x0 + T_ROUND_FACTOR;
+  x1 = x1 + T_ROUND_FACTOR;
+  x2 = x2 + T_ROUND_FACTOR;
+  x3 = x3 + T_ROUND_FACTOR;
 
   let pass1 = [
     (x0 + t3) >> 10,
@@ -310,16 +319,18 @@ fn test_dequantize_and_idct_i32() {
 
   let transpose1 = i32x8::transpose(pass1);
 
-  const X_SCALE: i32 = 65536 + (128 << 17);
+  let [mut x0, mut x1, mut x2, mut x3, t0, t1, t2, t3] = kernel_i32(transpose1);
 
-  let [x0, x1, x2, x3] = kernel_x(
-    [transpose1[0], transpose1[2], transpose1[4], transpose1[6]],
-    X_SCALE,
-  );
-  let [t0, t1, t2, t3] =
-    kernel_t([transpose1[1], transpose1[3], transpose1[5], transpose1[7]]);
+  // add rounding factor befor shifting right (include rebasing from -128..128
+  // to 0..256)
+  const X_ROUND_FACTOR: i32 = 65536 + (128 << 17);
 
-  let result = [
+  x0 = x0 + X_ROUND_FACTOR;
+  x1 = x1 + X_ROUND_FACTOR;
+  x2 = x2 + X_ROUND_FACTOR;
+  x3 = x3 + X_ROUND_FACTOR;
+
+  let pass2 = [
     (x0 + t3) >> 17,
     (x1 + t2) >> 17,
     (x2 + t1) >> 17,
@@ -330,7 +341,9 @@ fn test_dequantize_and_idct_i32() {
     (x0 - t3) >> 17,
   ];
 
-  let output: [i32; 64] = cast(i32x8::transpose(result));
+  let result = i32x8::transpose(pass2);
+
+  let output: [i32; 64] = cast(result);
 
   // same as other DCT test with some minor rounding differences
   #[cfg_attr(rustfmt, rustfmt_skip)]
