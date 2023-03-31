@@ -419,7 +419,7 @@ impl i16x16 {
     }
   }
 
-  /// returns low i16 of i32, saturating values that are too large
+  /// converts i16 to i8, saturating values that are too large
   pub fn pack_to_i8_saturate(self) -> i8x16 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -460,14 +460,14 @@ impl i16x16 {
     }
   }
 
-  /// returns low i8 of i16, truncating the upper bits if they are set
+  /// converts i16 to i8, truncating the upper bits if they are set
   pub fn pack_to_i8_truncate(self) -> i8x16 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = self.avx2.bitand(set_splat_i16_m256i(0xff));
         i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
       } else if #[cfg(target_feature="sse2")] {
-        let mask = set_splat_i32_m128i(0xff);
+        let mask = set_splat_i16_m128i(0xff);
         i8x16 { sse: pack_i16_to_i8_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
       } else {
       i16x8::new([
