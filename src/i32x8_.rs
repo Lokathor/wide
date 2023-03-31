@@ -480,7 +480,7 @@ impl i32x8 {
       } else if #[cfg(target_feature="sse2")] {
         i16x8 { sse: pack_i32_to_i16_m128i( self.a.sse, self.b.sse ) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        use std::arch::aarch64::*;
+        use core::arch::aarch64::*;
 
         unsafe {
           i16x8 { neon: vreinterpretq_m128i_s16(vcombine_s16(vqmovn_s32(vreinterpretq_s32_m128i(self.a.neon)), vqmovn_s32(vreinterpretq_s32_m128i(self.b.neon)))) }
@@ -521,7 +521,7 @@ impl i32x8 {
         let mask = set_splat_i32_m128i(0xffff);
         i16x8 { sse: pack_i32_to_i16_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        use std::arch::aarch64::*;
+        use core::arch::aarch64::*;
 
         unsafe {
           let a1 = vget_low_s16(vreinterpretq_s16_s32(self.a.neon));
