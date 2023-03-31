@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct i8x16 { sse: m128i }
+    pub struct i8x16 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct i8x16 { simd: v128 }
+    pub struct i8x16 { pub(crate) simd: v128 }
 
     impl Default for i8x16 {
       fn default() -> Self {
@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct i8x16 { neon : int8x16_t }
+    pub struct i8x16 { pub(crate) neon : int8x16_t }
 
     impl Default for i8x16 {
       #[inline]
@@ -602,6 +602,36 @@ impl i8x16 {
           self.arr[14].saturating_sub(rhs.arr[14]),
           self.arr[15].saturating_sub(rhs.arr[15]),
         ]}
+      }
+    }
+  }
+
+  /// widens and sign extends to i16x16
+  pub fn convert_to_i16(self) -> i16x16 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(self.sse) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        i16x16 { a: i16x8 { sse:convert_to_i16_m128i_from_lower8_i8_m128i(self.sse) }, b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(self.sse,self.sse)) } }
+      } else {
+        i16x16::new([
+          self.as_array_ref()[0] as i16,
+          self.as_array_ref()[1] as i16,
+          self.as_array_ref()[2] as i16,
+          self.as_array_ref()[3] as i16,
+          self.as_array_ref()[4] as i16,
+          self.as_array_ref()[5] as i16,
+          self.as_array_ref()[6] as i16,
+          self.as_array_ref()[7] as i16,
+          self.as_array_ref()[8] as i16,
+          self.as_array_ref()[9] as i16,
+          self.as_array_ref()[10] as i16,
+          self.as_array_ref()[11] as i16,
+          self.as_array_ref()[12] as i16,
+          self.as_array_ref()[13] as i16,
+          self.as_array_ref()[14] as i16,
+          self.as_array_ref()[15] as i16,
+          ])
       }
     }
   }

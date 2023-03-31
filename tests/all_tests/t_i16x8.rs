@@ -229,3 +229,12 @@ fn impl_i16x8_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i16x8_widen_i32() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+  let actual = a.convert_to_i32();
+  let expected =
+    i32x8::from([1, 2, 3, 4, 5, 6, (i16::MIN + 1) as i32, i16::MIN as i32]);
+  assert_eq!(expected, actual);
+}

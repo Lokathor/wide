@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i32x8 { avx2: m256i }
+    pub struct i32x8 { pub(crate) avx2: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i32x8 { a : i32x4, b : i32x4}
+    pub struct i32x8 { pub(crate) a : i32x4, pub(crate) b : i32x4}
   }
 }
 
@@ -468,6 +468,79 @@ impl i32x8 {
           transpose_column(&data, 6),
           transpose_column(&data, 7),
         ]
+      }
+    }
+  }
+
+  /// returns low i16 of i32, saturating values that are too large
+  pub fn pack_to_i16_saturate(self) -> i16x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(self.avx2), extract_m128i_from_m256i::<1>(self.avx2))  }
+      } else if #[cfg(target_feature="sse2")] {
+        i16x8 { sse: pack_i32_to_i16_m128i( self.a.sse, self.b.sse ) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        use std::arch::aarch64::*;
+
+        unsafe {
+          i16x8 { neon: vreinterpretq_m128i_s16(vcombine_s16(vqmovn_s32(vreinterpretq_s32_m128i(self.a.neon)), vqmovn_s32(vreinterpretq_s32_m128i(self.b.neon)))) }
+        }
+      } else {
+        fn clamp(a : i32) -> i16 {
+            if a < i16::MIN as i32 {
+                i16::MIN
+            }
+            else if a > i16::MAX as i32 {
+                i16::MAX
+            } else {
+                a as i16
+            }
+        }
+
+        i16x8::new([
+          clamp(self.as_array_ref()[0]),
+          clamp(self.as_array_ref()[1]),
+          clamp(self.as_array_ref()[2]),
+          clamp(self.as_array_ref()[3]),
+          clamp(self.as_array_ref()[4]),
+          clamp(self.as_array_ref()[5]),
+          clamp(self.as_array_ref()[6]),
+          clamp(self.as_array_ref()[7]),
+        ])
+      }
+    }
+  }
+
+  /// returns low i16 of i32, truncating the upper bits if they are set
+  pub fn pack_to_i16_truncate(self) -> i16x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a = self.avx2.bitand(set_splat_i32_m256i(0xffff));
+        i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
+      } else if #[cfg(target_feature="sse2")] {
+        let mask = set_splat_i32_m128i(0xffff);
+        i16x8 { sse: pack_i32_to_i16_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        use std::arch::aarch64::*;
+
+        unsafe {
+          let a1 = vget_low_s16(vreinterpretq_s16_s32(self.a.neon));
+          let b1 = vget_low_s16(vreinterpretq_s16_s32(self.b.neon));
+          let result = vzip_s16(a1, b1);
+
+          i16x8 { neon: vcombine_s16(result.0, result.1) }
+        }
+      } else {
+      i16x8::new([
+        self.as_array_ref()[0] as i16,
+        self.as_array_ref()[1] as i16,
+        self.as_array_ref()[2] as i16,
+        self.as_array_ref()[3] as i16,
+        self.as_array_ref()[4] as i16,
+        self.as_array_ref()[5] as i16,
+        self.as_array_ref()[6] as i16,
+        self.as_array_ref()[7] as i16,
+      ])
       }
     }
   }

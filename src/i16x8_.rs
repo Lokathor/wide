@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct i16x8 { sse: m128i }
+    pub struct i16x8 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct i16x8 { simd: v128 }
+    pub struct i16x8 { pub(crate) simd: v128 }
 
     impl Default for i16x8 {
       fn default() -> Self {
@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct i16x8 { neon : int16x8_t }
+    pub struct i16x8 { pub(crate) neon : int16x8_t }
 
     impl Default for i16x8 {
       #[inline]
@@ -51,7 +51,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct i16x8 { arr: [i16;8] }
+    pub struct i16x8 { pub(crate) arr: [i16;8] }
   }
 }
 
@@ -444,6 +444,7 @@ impl i16x8 {
   pub fn new(array: [i16; 8]) -> Self {
     Self::from(array)
   }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -783,6 +784,28 @@ impl i16x8 {
           ((i32::from(self.arr[6]) * i32::from(rhs) + 0x4000) >> 15) as i16,
           ((i32::from(self.arr[7]) * i32::from(rhs) + 0x4000) >> 15) as i16,
         ]}
+      }
+    }
+  }
+
+  /// widens and sign extends to i32x8
+  pub fn convert_to_i32(self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i16x16 { avx2:convert_to_i32_m256i_from_i16_m128i(self.sse) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        i32x8 { a: i32x4 { sse:convert_to_i32_m128i_from_lower4_i16_m128i(self.sse) }, b: i32x4 { sse: convert_to_i32_m128i_from_lower4_i16_m128i(unpack_high_i64_m128i(self.sse,self.sse)) } }
+      } else {
+        i32x8::new([
+          self.as_array_ref()[0] as i32,
+          self.as_array_ref()[1] as i32,
+          self.as_array_ref()[2] as i32,
+          self.as_array_ref()[3] as i32,
+          self.as_array_ref()[4] as i32,
+          self.as_array_ref()[5] as i32,
+          self.as_array_ref()[6] as i32,
+          self.as_array_ref()[7] as i32,
+        ])
       }
     }
   }

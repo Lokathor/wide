@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i16x16 { avx2: m256i }
+    pub struct i16x16 { pub(crate) avx2: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i16x16 { a : i16x8, b : i16x8 }
+    pub struct i16x16 { pub(crate) a : i16x8, pub(crate) b : i16x8 }
   }
 }
 
@@ -415,6 +415,79 @@ impl i16x16 {
           a : self.a.mul_scale_round_n(rhs),
           b : self.b.mul_scale_round_n(rhs),
         }
+      }
+    }
+  }
+
+  /// returns low i16 of i32, saturating values that are too large
+  pub fn pack_to_i8_saturate(self) -> i8x16 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(self.avx2), extract_m128i_from_m256i::<1>(self.avx2))  }
+      } else if #[cfg(target_feature="sse2")] {
+        i8x16 { sse: pack_i16_to_i8_m128i( self.a.sse, self.b.sse ) }
+      } else {
+        fn clamp(a : i16) -> i8 {
+            if a < i8::MIN as i32 {
+              i8::MIN
+            }
+            else if a > i8::MAX as i32 {
+              i8::MAX
+            } else {
+                a as i8
+            }
+        }
+
+        i8x16::new([
+          clamp(self.as_array_ref()[0]),
+          clamp(self.as_array_ref()[1]),
+          clamp(self.as_array_ref()[2]),
+          clamp(self.as_array_ref()[3]),
+          clamp(self.as_array_ref()[4]),
+          clamp(self.as_array_ref()[5]),
+          clamp(self.as_array_ref()[6]),
+          clamp(self.as_array_ref()[7]),
+          clamp(self.as_array_ref()[8]),
+          clamp(self.as_array_ref()[9]),
+          clamp(self.as_array_ref()[10]),
+          clamp(self.as_array_ref()[11]),
+          clamp(self.as_array_ref()[12]),
+          clamp(self.as_array_ref()[13]),
+          clamp(self.as_array_ref()[14]),
+          clamp(self.as_array_ref()[15]),
+        ])
+      }
+    }
+  }
+
+  /// returns low i8 of i16, truncating the upper bits if they are set
+  pub fn pack_to_i8_truncate(self) -> i8x16 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a = self.avx2.bitand(set_splat_i16_m256i(0xff));
+        i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
+      } else if #[cfg(target_feature="sse2")] {
+        let mask = set_splat_i32_m128i(0xff);
+        i8x16 { sse: pack_i16_to_i8_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
+      } else {
+      i16x8::new([
+        self.as_array_ref()[0] as i16,
+        self.as_array_ref()[1] as i16,
+        self.as_array_ref()[2] as i16,
+        self.as_array_ref()[3] as i16,
+        self.as_array_ref()[4] as i16,
+        self.as_array_ref()[5] as i16,
+        self.as_array_ref()[6] as i16,
+        self.as_array_ref()[7] as i16,
+        self.as_array_ref()[8] as i16,
+        self.as_array_ref()[9] as i16,
+        self.as_array_ref()[10] as i16,
+        self.as_array_ref()[11] as i16,
+        self.as_array_ref()[12] as i16,
+        self.as_array_ref()[13] as i16,
+        self.as_array_ref()[14] as i16,
+        self.as_array_ref()[15] as i16,
+      ])
       }
     }
   }
