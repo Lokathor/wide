@@ -428,10 +428,10 @@ impl i16x16 {
         i8x16 { sse: pack_i16_to_i8_m128i( self.a.sse, self.b.sse ) }
       } else {
         fn clamp(a : i16) -> i8 {
-            if a < i8::MIN as i32 {
+            if a < i8::MIN as i16 {
               i8::MIN
             }
-            else if a > i8::MAX as i32 {
+            else if a > i8::MAX as i16 {
               i8::MAX
             } else {
                 a as i8
@@ -470,7 +470,7 @@ impl i16x16 {
         let mask = set_splat_i16_m128i(0xff);
         i8x16 { sse: pack_i16_to_i8_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
       } else {
-      i16x8::new([
+      i8x16::new([
         self.as_array_ref()[0] as i16,
         self.as_array_ref()[1] as i16,
         self.as_array_ref()[2] as i16,
