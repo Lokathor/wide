@@ -792,7 +792,7 @@ impl i16x8 {
   pub fn convert_to_i32(self) -> i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        i16x16 { avx2:convert_to_i32_m256i_from_i16_m128i(self.sse) }
+        i32x8 { avx2:convert_to_i32_m256i_from_i16_m128i(self.sse) }
       } else if #[cfg(target_feature="sse4.1")] {
         i32x8 { a: i32x4 { sse:convert_to_i32_m128i_from_lower4_i16_m128i(self.sse) }, b: i32x4 { sse: convert_to_i32_m128i_from_lower4_i16_m128i(unpack_high_i64_m128i(self.sse,self.sse)) } }
       } else {
