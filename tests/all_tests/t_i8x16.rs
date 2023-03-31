@@ -297,7 +297,7 @@ fn impl_i8x16_min() {
 }
 
 #[test]
-fn impl_i8x16_widen() {
+fn impl_i8x16_convert_to_i16() {
   let a = i8x16::from([
     10,
     2,

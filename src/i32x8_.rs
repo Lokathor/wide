@@ -520,23 +520,7 @@ impl i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = self.avx2.bitand(set_splat_i32_m256i(0xffff));
-        i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
-      } else if #[cfg(target_feature="sse2")] {
-        let mask = set_splat_i32_m128i(0xffff);
-        i16x8 { sse: pack_i32_to_i16_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
-      } else if #[cfg(target_feature="simd128")] {
-        use core::arch::wasm32::*;
-
-        let mask = i32x4_splat(0xffff);
-
-        i16x8 { simd: i16x8_narrow_i32x4(v128_and(self.a.simd,mask), v128_and(self.b.simd,mask)) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        use core::arch::aarch64::*;
-
-        unsafe {
-          let mask = vdupq_n_s32(0xffff);
-          i16x8 { neon: vcombine_s16(vqmovn_s32(vandq_s32(self.a.neon,mask)), vqmovn_s32(vandq_s32(self.b.neon, mask))) }
-        }
+        i16x8 { sse: pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
       } else {
       i16x8::new([
         self.as_array_ref()[0] as i16,

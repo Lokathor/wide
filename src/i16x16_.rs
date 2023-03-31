@@ -475,42 +475,30 @@ impl i16x16 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = self.avx2.bitand(set_splat_i16_m256i(0xff));
-        i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
+        i8x16 { sse: pack_i16_to_u8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
       } else if #[cfg(target_feature="sse2")] {
         let mask = set_splat_i16_m128i(0xff);
-        i8x16 { sse: pack_i16_to_i8_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
-      } else if #[cfg(target_feature="simd128")] {
-        use core::arch::wasm32::*;
-
-        let mask = i16x8_splat(0xff);
-
-        i8x16 { simd: i8x16_narrow_i16x8(v128_and(self.a.simd,mask), v128_and(self.b.simd,mask)) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        use core::arch::aarch64::*;
-
-        unsafe {
-          let mask = vdupq_n_s16(0xff);
-          i8x16 { neon: vcombine_s8(vqmovn_s16(vandq_s16(self.a.neon,mask)), vqmovn_s16(vandq_s16(self.b.neon, mask))) }
-        }
+        i8x16 { sse: pack_i16_to_u8_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
       } else {
-      i8x16::new([
-        self.as_array_ref()[0] as i8,
-        self.as_array_ref()[1] as i8,
-        self.as_array_ref()[2] as i8,
-        self.as_array_ref()[3] as i8,
-        self.as_array_ref()[4] as i8,
-        self.as_array_ref()[5] as i8,
-        self.as_array_ref()[6] as i8,
-        self.as_array_ref()[7] as i8,
-        self.as_array_ref()[8] as i8,
-        self.as_array_ref()[9] as i8,
-        self.as_array_ref()[10] as i8,
-        self.as_array_ref()[11] as i8,
-        self.as_array_ref()[12] as i8,
-        self.as_array_ref()[13] as i8,
-        self.as_array_ref()[14] as i8,
-        self.as_array_ref()[15] as i8,
-      ])
+        // no super good intrinsics on other platforms... plain old codegen does a reasonable job
+        i8x16::new([
+          self.as_array_ref()[0] as i8,
+          self.as_array_ref()[1] as i8,
+          self.as_array_ref()[2] as i8,
+          self.as_array_ref()[3] as i8,
+          self.as_array_ref()[4] as i8,
+          self.as_array_ref()[5] as i8,
+          self.as_array_ref()[6] as i8,
+          self.as_array_ref()[7] as i8,
+          self.as_array_ref()[8] as i8,
+          self.as_array_ref()[9] as i8,
+          self.as_array_ref()[10] as i8,
+          self.as_array_ref()[11] as i8,
+          self.as_array_ref()[12] as i8,
+          self.as_array_ref()[13] as i8,
+          self.as_array_ref()[14] as i8,
+          self.as_array_ref()[15] as i8,
+        ])
       }
     }
   }
