@@ -471,22 +471,22 @@ impl i16x16 {
         i8x16 { sse: pack_i16_to_i8_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
       } else {
       i8x16::new([
-        self.as_array_ref()[0] as i16,
-        self.as_array_ref()[1] as i16,
-        self.as_array_ref()[2] as i16,
-        self.as_array_ref()[3] as i16,
-        self.as_array_ref()[4] as i16,
-        self.as_array_ref()[5] as i16,
-        self.as_array_ref()[6] as i16,
-        self.as_array_ref()[7] as i16,
-        self.as_array_ref()[8] as i16,
-        self.as_array_ref()[9] as i16,
-        self.as_array_ref()[10] as i16,
-        self.as_array_ref()[11] as i16,
-        self.as_array_ref()[12] as i16,
-        self.as_array_ref()[13] as i16,
-        self.as_array_ref()[14] as i16,
-        self.as_array_ref()[15] as i16,
+        self.as_array_ref()[0] as i8,
+        self.as_array_ref()[1] as i8,
+        self.as_array_ref()[2] as i8,
+        self.as_array_ref()[3] as i8,
+        self.as_array_ref()[4] as i8,
+        self.as_array_ref()[5] as i8,
+        self.as_array_ref()[6] as i8,
+        self.as_array_ref()[7] as i8,
+        self.as_array_ref()[8] as i8,
+        self.as_array_ref()[9] as i8,
+        self.as_array_ref()[10] as i8,
+        self.as_array_ref()[11] as i8,
+        self.as_array_ref()[12] as i8,
+        self.as_array_ref()[13] as i8,
+        self.as_array_ref()[14] as i8,
+        self.as_array_ref()[15] as i8,
       ])
       }
     }
