@@ -479,6 +479,10 @@ impl i32x8 {
         i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(self.avx2), extract_m128i_from_m256i::<1>(self.avx2))  }
       } else if #[cfg(target_feature="sse2")] {
         i16x8 { sse: pack_i32_to_i16_m128i( self.a.sse, self.b.sse ) }
+      } else if #[cfg(target_feature="simd128")] {
+        use core::arch::wasm32::*;
+
+        i16x8 { simd: i16x8_narrow_i32x4(self.a.simd, self.b.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         use core::arch::aarch64::*;
 
@@ -520,15 +524,18 @@ impl i32x8 {
       } else if #[cfg(target_feature="sse2")] {
         let mask = set_splat_i32_m128i(0xffff);
         i16x8 { sse: pack_i32_to_i16_m128i( self.a.sse.bitand(mask), self.b.sse.bitand(mask) ) }
+      } else if #[cfg(target_feature="simd128")] {
+        use core::arch::wasm32::*;
+
+        let mask = i32x4_splat(0xffff);
+
+        i16x8 { simd: i16x8_narrow_i32x4(v128_and(self.a.simd,mask), v128_and(self.b.simd,mask)) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         use core::arch::aarch64::*;
 
         unsafe {
-          let a1 = vget_low_s16(vreinterpretq_s16_s32(self.a.neon));
-          let b1 = vget_low_s16(vreinterpretq_s16_s32(self.b.neon));
-          let result = vzip_s16(a1, b1);
-
-          i16x8 { neon: vcombine_s16(result.0, result.1) }
+          let mask = vdupq_n_s32(0xffff);
+          i16x8 { neon: vcombine_s16(vqmovn_s32(vandq_s32(self.a.neon,mask)), vqmovn_s32(vandq_s32(self.b.neon, mask))) }
         }
       } else {
       i16x8::new([

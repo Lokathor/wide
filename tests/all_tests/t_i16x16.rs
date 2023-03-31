@@ -538,3 +538,35 @@ fn impl_i16x16_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_pack_to_i8_truncate() {
+  let src = i16x16::new([
+    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
+    255,
+  ]);
+
+  let expected = i8x16::new([
+    16, 127, 2, 3, 4, 5, 6, 127, 16, 127, 2, 127, 127, 127, 127, 127,
+  ]);
+
+  let result = src.pack_to_i8_truncate();
+
+  assert_eq!(result, expected);
+}
+
+#[test]
+fn impl_pack_to_i8_saturate() {
+  let src = i16x16::new([
+    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
+    255,
+  ]);
+
+  let expected = i8x16::new([
+    127, 127, 2, 3, 4, 5, 6, 127, 127, 127, 2, 127, -128, -128, 127, 127,
+  ]);
+
+  let result = src.pack_to_i8_saturate();
+
+  assert_eq!(result, expected);
+}

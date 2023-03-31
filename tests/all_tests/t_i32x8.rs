@@ -214,7 +214,7 @@ fn impl_transpose_for_i32x8() {
 }
 
 #[test]
-fn impl_narrow_i16_truncate() {
+fn impl_pack_to_i16_truncate() {
   let src = i32x8::new([10000, 1001, 2, 3, 4, 5, 6, 65536]);
 
   let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, 6, 0]);
@@ -225,7 +225,7 @@ fn impl_narrow_i16_truncate() {
 }
 
 #[test]
-fn impl_narrow_i16_saturate() {
+fn impl_pack_to_i16_saturate() {
   let src = i32x8::new([10000, 1001, 2, 3, 4, 5, -65535, 65536]);
 
   let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, -32768, 32767]);
