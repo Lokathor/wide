@@ -483,7 +483,7 @@ impl i32x8 {
         use core::arch::aarch64::*;
 
         unsafe {
-          i16x8 { neon: vreinterpretq_m128i_s16(vcombine_s16(vqmovn_s32(vreinterpretq_s32_m128i(self.a.neon)), vqmovn_s32(vreinterpretq_s32_m128i(self.b.neon)))) }
+          i16x8 { neon: vcombine_s16(vqmovn_s32(self.a.neon), vqmovn_s32(self.b.neon)) }
         }
       } else {
         fn clamp(a : i32) -> i16 {
