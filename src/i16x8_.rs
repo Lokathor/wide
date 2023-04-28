@@ -445,6 +445,28 @@ impl i16x8 {
     Self::from(array)
   }
 
+  /// Unpack the lower half of the input and expand it to `i16` values.
+  #[inline]
+  pub fn from_u8x16_low(u: u8x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
+      } else {
+        let u_arr: [u8; 16] = cast(u);
+        cast([
+          u[0] as u16 as i16,
+          u[1] as u16 as i16,
+          u[2] as u16 as i16,
+          u[3] as u16 as i16,
+          u[4] as u16 as i16,
+          u[5] as u16 as i16,
+          u[6] as u16 as i16,
+          u[7] as u16 as i16,
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -462,6 +484,11 @@ impl i16x8 {
   }
   #[inline]
   #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.cmp_lt(Self::zeroed())
+  }
+  #[inline]
+  #[must_use]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="ssse3")] {
@@ -471,17 +498,7 @@ impl i16x8 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vabsq_s16(self.neon) }}
       } else {
-        let arr: [i16; 8] = cast(self);
-        cast([
-          arr[0].wrapping_abs(),
-          arr[1].wrapping_abs(),
-          arr[2].wrapping_abs(),
-          arr[3].wrapping_abs(),
-          arr[4].wrapping_abs(),
-          arr[5].wrapping_abs(),
-          arr[6].wrapping_abs(),
-          arr[7].wrapping_abs(),
-        ])
+        self.is_negative().blend(self.neg(), self)
       }
     }
   }
@@ -745,7 +762,7 @@ impl i16x8 {
 
   #[inline]
   #[must_use]
-  /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
+  /// Multiply and scale, equivalent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
   /// - vqrdmulhq_n_s16 instruction on neon

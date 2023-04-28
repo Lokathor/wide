@@ -1,3 +1,5 @@
+#![allow(clippy::excessive_precision)]
+
 use wide::*;
 
 use bytemuck::*;
@@ -126,29 +128,29 @@ fn test_dequantize_and_idct_i16() {
     ]
   }
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
-	    let coefficients: [i16; 8 * 8] = [
-          -14, -39, 58, -2, 3, 3, 0, 1,
-	        11, 27, 4, -3, 3, 0, 1, 0,
-	        -6, -13, -9, -1, -2, -1, 0, 0,
-	        -4, 0, -1, -2, 0, 0, 0, 0,
-	        3, 0, 0, 0, 0, 0, 0, 0,		
-	        -3, -2, 0, 0, 0, 0, 0, 0,		
-	        0, 0, 0, 0, 0, 0, 0, 0,
-	        0, 0, 0, 0, 0, 0, 0, 0
-	    ];
+  #[rustfmt::skip]
+  let coefficients: [i16; 8 * 8] = [
+      -14, -39, 58, -2, 3, 3, 0, 1,
+      11, 27, 4, -3, 3, 0, 1, 0,
+      -6, -13, -9, -1, -2, -1, 0, 0,
+      -4, 0, -1, -2, 0, 0, 0, 0,
+      3, 0, 0, 0, 0, 0, 0, 0,		
+      -3, -2, 0, 0, 0, 0, 0, 0,		
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0
+  ];
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
-	    let quantization_table: [i16; 8 * 8] = [
-	        8, 6, 5, 8, 12, 20, 26, 31,
-	        6, 6, 7, 10, 13, 29, 30, 28,
-	        7, 7, 8, 12, 20, 29, 35, 28,
-	        7, 9, 11, 15, 26, 44, 40, 31,
-	        9, 11, 19, 28, 34, 55, 52, 39,
-	        12, 18, 28, 32, 41, 52, 57, 46,
-	        25, 32, 39, 44, 52, 61, 60, 51,
-	        36, 46, 48, 49, 56, 50, 52, 50
-	    ];
+  #[rustfmt::skip]
+  let quantization_table: [i16; 8 * 8] = [
+      8, 6, 5, 8, 12, 20, 26, 31,
+      6, 6, 7, 10, 13, 29, 30, 28,
+      7, 7, 8, 12, 20, 29, 35, 28,
+      7, 9, 11, 15, 26, 44, 40, 31,
+      9, 11, 19, 28, 34, 55, 52, 39,
+      12, 18, 28, 32, 41, 52, 57, 46,
+      25, 32, 39, 44, 52, 61, 60, 51,
+      36, 46, 48, 49, 56, 50, 52, 50
+  ];
 
   let c: [i16x8; 8] = cast(coefficients);
   let q: [i16x8; 8] = cast(quantization_table);
@@ -157,14 +159,14 @@ fn test_dequantize_and_idct_i16() {
   const SHIFT: i16 = 3;
 
   let data = [
-    c[0] * q[0] << SHIFT,
-    c[1] * q[1] << SHIFT,
-    c[2] * q[2] << SHIFT,
-    c[3] * q[3] << SHIFT,
-    c[4] * q[4] << SHIFT,
-    c[5] * q[5] << SHIFT,
-    c[6] * q[6] << SHIFT,
-    c[7] * q[7] << SHIFT,
+    (c[0] * q[0]) << SHIFT,
+    (c[1] * q[1]) << SHIFT,
+    (c[2] * q[2]) << SHIFT,
+    (c[3] * q[3]) << SHIFT,
+    (c[4] * q[4]) << SHIFT,
+    (c[5] * q[5]) << SHIFT,
+    (c[6] * q[6]) << SHIFT,
+    (c[7] * q[7]) << SHIFT,
   ];
 
   let pass1 = kernel_i16(data);
@@ -189,17 +191,17 @@ fn test_dequantize_and_idct_i16() {
 
   let output: [i16; 64] = cast(result_adj);
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
-	    let expected_output = [
-	        118, 92, 110, 83, 77, 93, 144, 198,		
-	        172, 116, 114, 87, 78, 93, 146, 191,		
-	        194, 107, 91, 76, 71, 93, 160, 198,		
-	        196, 100, 80, 74, 67, 92, 174, 209,		
-	        182, 104, 88, 81, 68, 89, 178, 206,		
-	        105, 64, 59, 59, 63, 94, 183, 201,		
-	        35, 27, 28, 37, 72, 121, 203, 204,		
-	        38, 45, 41, 47, 99, 154, 223, 208		
-	    ];
+  #[rustfmt::skip]
+  let expected_output = [
+      118, 92, 110, 83, 77, 93, 144, 198,		
+      172, 116, 114, 87, 78, 93, 146, 191,		
+      194, 107, 91, 76, 71, 93, 160, 198,		
+      196, 100, 80, 74, 67, 92, 174, 209,		
+      182, 104, 88, 81, 68, 89, 178, 206,		
+      105, 64, 59, 59, 63, 94, 183, 201,		
+      35, 27, 28, 37, 72, 121, 203, 204,		
+      38, 45, 41, 47, 99, 154, 223, 208		
+  ];
 
   assert_eq!(expected_output, output);
 }
@@ -261,7 +263,7 @@ fn test_dequantize_and_idct_i32() {
     ]
   }
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
 	    let coefficients: [i32; 8 * 8] = [
           -14, -39, 58, -2, 3, 3, 0, 1,		
 	        11, 27, 4, -3, 3, 0, 1, 0,		
@@ -273,7 +275,7 @@ fn test_dequantize_and_idct_i32() {
 	        0, 0, 0, 0, 0, 0, 0, 0		
 	    ];
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
 	    let quantization_table: [i32; 8 * 8] = [
 	        8, 6, 5, 8, 12, 20, 26, 31,		
 	        6, 6, 7, 10, 13, 29, 30, 28,		
@@ -303,7 +305,7 @@ fn test_dequantize_and_idct_i32() {
   let pass1 = kernel_i32(scaled, 1 << 9, 10);
   let transpose1 = i32x8::transpose(pass1);
 
-  // add rounding factor befor shifting right (include rebasing from -128..128
+  // add rounding factor before shifting right (include rebasing from -128..128
   // to 0..256)
   let pass2 = kernel_i32(transpose1, 65536 + (128 << 17), 17);
   let result = i32x8::transpose(pass2);
@@ -311,7 +313,7 @@ fn test_dequantize_and_idct_i32() {
   let output: [i32; 64] = cast(result);
 
   // same as other DCT test with some minor rounding differences
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
 	    let expected_output = [
         118, 92, 110, 83, 77, 93, 144, 198, 
         172, 116, 114, 87, 78, 93, 146, 191, 

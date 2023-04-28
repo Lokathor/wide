@@ -236,5 +236,12 @@ fn impl_i16x8_convert_to_i32() {
   let actual = a.convert_to_i32();
   let expected =
     i32x8::from([1, 2, 3, 4, 5, 6, (i16::MIN + 1) as i32, i16::MIN as i32]);
+
+#[test]
+fn test_from_u8x16_low() {
+  let bytes =
+    u8x16::from([1, 2, 3, 4, 5, 6, 7, u8::MAX, 9, 10, 11, 12, 13, 14, 15, 16]);
+  let expected = i16x8::from([1, 2, 3, 4, 5, 6, 7, u8::MAX as i16]);
+  let actual = i16x8::from_u8x16_low(bytes);
   assert_eq!(expected, actual);
 }
