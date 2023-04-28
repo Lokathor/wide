@@ -293,12 +293,20 @@ impl i16x16 {
   /// widens and sign extends to i16x16
   #[inline]
   #[must_use]
-  pub fn from_i8x16(v: i8x16) -> i16x16 {
+  pub fn from_i8x16(v: i8x16) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(v.sse) }
       } else if #[cfg(target_feature="sse4.1")] {
-        i16x16 { a: i16x8 { sse: (v.sse) }, b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.sse,v.sse)) } }
+        i16x16 {
+          a: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(v.sse) },
+          b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.sse, v.sse)) }
+        }
+      } else if #[cfg(target_feature="sse2")] {
+        i16x16 {
+          a: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
+          b: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
+        }
       } else {
 
         i16x16::new([
