@@ -454,14 +454,14 @@ impl i16x8 {
       } else {
         let u_arr: [u8; 16] = cast(u);
         cast([
-          u[0] as u16 as i16,
-          u[1] as u16 as i16,
-          u[2] as u16 as i16,
-          u[3] as u16 as i16,
-          u[4] as u16 as i16,
-          u[5] as u16 as i16,
-          u[6] as u16 as i16,
-          u[7] as u16 as i16,
+          u_arr[0] as u16 as i16,
+          u_arr[1] as u16 as i16,
+          u_arr[2] as u16 as i16,
+          u_arr[3] as u16 as i16,
+          u_arr[4] as u16 as i16,
+          u_arr[5] as u16 as i16,
+          u_arr[6] as u16 as i16,
+          u_arr[7] as u16 as i16,
         ])
       }
     }
