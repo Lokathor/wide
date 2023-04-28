@@ -540,33 +540,46 @@ fn impl_i16x16_min() {
 }
 
 #[test]
-fn impl_pack_to_i8_truncate() {
-  let src = i16x16::new([
-    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
-    255,
+fn impl_from_i8x16() {
+  let a = i8x16::from([
+    10,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    7,
+    i8::MAX,
+    12,
+    13,
+    6,
+    55,
+    i8::MIN,
   ]);
 
-  let expected = i8x16::new([
-    16, -23, 2, 3, 4, 5, 6, -1, 16, -23, 2, -128, 127, -128, 127, -1,
+  let actual = i16x16::from_i8x16(a);
+
+  let expected = i16x16::from([
+    10,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    7,
+    i8::MAX as i16,
+    12,
+    13,
+    6,
+    55,
+    i8::MIN as i16,
   ]);
 
-  let result = src.pack_to_i8_truncate();
-
-  assert_eq!(result, expected);
-}
-
-#[test]
-fn impl_pack_to_i8_saturate() {
-  let src = i16x16::new([
-    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
-    255,
-  ]);
-
-  let expected = i8x16::new([
-    127, 127, 2, 3, 4, 5, 6, 127, 127, 127, 2, 127, -128, -128, 127, 127,
-  ]);
-
-  let result = src.pack_to_i8_saturate();
-
-  assert_eq!(result, expected);
+  assert_eq!(expected, actual);
 }

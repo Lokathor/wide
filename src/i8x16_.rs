@@ -390,6 +390,95 @@ impl i8x16 {
   pub fn new(array: [i8; 16]) -> Self {
     Self::from(array)
   }
+
+  /// converts i16 to i8, saturating values that are too large
+  #[inline]
+  #[must_use]
+  pub fn from_i16x16_saturate(v: i16x16) -> i8x16 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(v.avx2), extract_m128i_from_m256i::<1>(v.avx2))  }
+      } else if #[cfg(target_feature="sse2")] {
+        i8x16 { sse: pack_i16_to_i8_m128i( v.a.sse, v.b.sse ) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        use core::arch::aarch64::*;
+
+        unsafe {
+          i8x16 { neon: vcombine_s8(vqmovn_s16(v.a.neon), vqmovn_s16(v.b.neon)) }
+        }
+      } else if #[cfg(target_feature="simd128")] {
+        use core::arch::wasm32::*;
+
+        i8x16 { simd: i8x16_narrow_i16x8(v.a.simd, v.b.simd) }
+      } else {
+        fn clamp(a : i16) -> i8 {
+            if a < i8::MIN as i16 {
+              i8::MIN
+            }
+            else if a > i8::MAX as i16 {
+              i8::MAX
+            } else {
+                a as i8
+            }
+        }
+
+        i8x16::new([
+          clamp(v.as_array_ref()[0]),
+          clamp(v.as_array_ref()[1]),
+          clamp(v.as_array_ref()[2]),
+          clamp(v.as_array_ref()[3]),
+          clamp(v.as_array_ref()[4]),
+          clamp(v.as_array_ref()[5]),
+          clamp(v.as_array_ref()[6]),
+          clamp(v.as_array_ref()[7]),
+          clamp(v.as_array_ref()[8]),
+          clamp(v.as_array_ref()[9]),
+          clamp(v.as_array_ref()[10]),
+          clamp(v.as_array_ref()[11]),
+          clamp(v.as_array_ref()[12]),
+          clamp(v.as_array_ref()[13]),
+          clamp(v.as_array_ref()[14]),
+          clamp(v.as_array_ref()[15]),
+        ])
+      }
+    }
+  }
+
+  /// converts i16 to i8, truncating the upper bits if they are set
+  #[inline]
+  #[must_use]
+  pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a = v.avx2.bitand(set_splat_i16_m256i(0xff));
+        i8x16 { sse: pack_i16_to_u8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
+      } else if #[cfg(target_feature="sse2")] {
+        let mask = set_splat_i16_m128i(0xff);
+        i8x16 { sse: pack_i16_to_u8_m128i( v.a.sse.bitand(mask), v.b.sse.bitand(mask) ) }
+      } else {
+        // no super good intrinsics on other platforms... plain old codegen does a reasonable job
+        i8x16::new([
+          v.as_array_ref()[0] as i8,
+          v.as_array_ref()[1] as i8,
+          v.as_array_ref()[2] as i8,
+          v.as_array_ref()[3] as i8,
+          v.as_array_ref()[4] as i8,
+          v.as_array_ref()[5] as i8,
+          v.as_array_ref()[6] as i8,
+          v.as_array_ref()[7] as i8,
+          v.as_array_ref()[8] as i8,
+          v.as_array_ref()[9] as i8,
+          v.as_array_ref()[10] as i8,
+          v.as_array_ref()[11] as i8,
+          v.as_array_ref()[12] as i8,
+          v.as_array_ref()[13] as i8,
+          v.as_array_ref()[14] as i8,
+          v.as_array_ref()[15] as i8,
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -602,36 +691,6 @@ impl i8x16 {
           self.arr[14].saturating_sub(rhs.arr[14]),
           self.arr[15].saturating_sub(rhs.arr[15]),
         ]}
-      }
-    }
-  }
-
-  /// widens and sign extends to i16x16
-  pub fn convert_to_i16(self) -> i16x16 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(self.sse) }
-      } else if #[cfg(target_feature="sse4.1")] {
-        i16x16 { a: i16x8 { sse:convert_to_i16_m128i_from_lower8_i8_m128i(self.sse) }, b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(self.sse,self.sse)) } }
-      } else {
-        i16x16::new([
-          self.as_array_ref()[0] as i16,
-          self.as_array_ref()[1] as i16,
-          self.as_array_ref()[2] as i16,
-          self.as_array_ref()[3] as i16,
-          self.as_array_ref()[4] as i16,
-          self.as_array_ref()[5] as i16,
-          self.as_array_ref()[6] as i16,
-          self.as_array_ref()[7] as i16,
-          self.as_array_ref()[8] as i16,
-          self.as_array_ref()[9] as i16,
-          self.as_array_ref()[10] as i16,
-          self.as_array_ref()[11] as i16,
-          self.as_array_ref()[12] as i16,
-          self.as_array_ref()[13] as i16,
-          self.as_array_ref()[14] as i16,
-          self.as_array_ref()[15] as i16,
-          ])
       }
     }
   }

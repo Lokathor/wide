@@ -467,6 +467,74 @@ impl i16x8 {
     }
   }
 
+  /// returns low i16 of i32, saturating values that are too large
+  #[inline]
+  #[must_use]
+  pub fn from_i32x8_saturate(v: i32x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(v.avx2), extract_m128i_from_m256i::<1>(v.avx2))  }
+      } else if #[cfg(target_feature="sse2")] {
+        i16x8 { sse: pack_i32_to_i16_m128i( v.a.sse, v.b.sse ) }
+      } else if #[cfg(target_feature="simd128")] {
+        use core::arch::wasm32::*;
+
+        i16x8 { simd: i16x8_narrow_i32x4(v.a.simd, v.b.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        use core::arch::aarch64::*;
+
+        unsafe {
+          i16x8 { neon: vcombine_s16(vqmovn_s32(v.a.neon), vqmovn_s32(v.b.neon)) }
+        }
+      } else {
+        fn clamp(a : i32) -> i16 {
+            if a < i16::MIN as i32 {
+                i16::MIN
+            }
+            else if a > i16::MAX as i32 {
+                i16::MAX
+            } else {
+                a as i16
+            }
+        }
+
+        i16x8::new([
+          clamp(v.as_array_ref()[0]),
+          clamp(v.as_array_ref()[1]),
+          clamp(v.as_array_ref()[2]),
+          clamp(v.as_array_ref()[3]),
+          clamp(v.as_array_ref()[4]),
+          clamp(v.as_array_ref()[5]),
+          clamp(v.as_array_ref()[6]),
+          clamp(v.as_array_ref()[7]),
+        ])
+      }
+    }
+  }
+
+  /// returns low i16 of i32, truncating the upper bits if they are set
+  #[inline]
+  #[must_use]
+  pub fn from_i32x8_truncate(v: i32x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a = v.avx2.bitand(set_splat_i32_m256i(0xffff));
+        i16x8 { sse: pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
+      } else {
+      i16x8::new([
+        v.as_array_ref()[0] as i16,
+        v.as_array_ref()[1] as i16,
+        v.as_array_ref()[2] as i16,
+        v.as_array_ref()[3] as i16,
+        v.as_array_ref()[4] as i16,
+        v.as_array_ref()[5] as i16,
+        v.as_array_ref()[6] as i16,
+        v.as_array_ref()[7] as i16,
+      ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -801,26 +869,6 @@ impl i16x8 {
           ((i32::from(self.arr[6]) * i32::from(rhs) + 0x4000) >> 15) as i16,
           ((i32::from(self.arr[7]) * i32::from(rhs) + 0x4000) >> 15) as i16,
         ]}
-      }
-    }
-  }
-
-  /// widens and sign extends to i32x8
-  pub fn convert_to_i32(self) -> i32x8 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i32x8 { avx2:convert_to_i32_m256i_from_i16_m128i(self.sse) }
-      } else {
-        i32x8::new([
-          self.as_array_ref()[0] as i32,
-          self.as_array_ref()[1] as i32,
-          self.as_array_ref()[2] as i32,
-          self.as_array_ref()[3] as i32,
-          self.as_array_ref()[4] as i32,
-          self.as_array_ref()[5] as i32,
-          self.as_array_ref()[6] as i32,
-          self.as_array_ref()[7] as i32,
-        ])
       }
     }
   }

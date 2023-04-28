@@ -214,23 +214,11 @@ fn impl_transpose_for_i32x8() {
 }
 
 #[test]
-fn impl_pack_to_i16_truncate() {
-  let src = i32x8::new([10000, 1001, 2, 3, 4, 5, 6, 65536]);
+fn impl_from_i16x8() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+  let actual = i32x8::from_i16x8(a);
+  let expected =
+    i32x8::from([1, 2, 3, 4, 5, 6, (i16::MIN + 1) as i32, i16::MIN as i32]);
 
-  let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, 6, 0]);
-
-  let result = src.pack_to_i16_truncate();
-
-  assert_eq!(result, expected);
-}
-
-#[test]
-fn impl_pack_to_i16_saturate() {
-  let src = i32x8::new([10000, 1001, 2, 3, 4, 5, -65535, 65536]);
-
-  let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, -32768, 32767]);
-
-  let result = src.pack_to_i16_saturate();
-
-  assert_eq!(result, expected);
+  assert_eq!(actual, expected);
 }
