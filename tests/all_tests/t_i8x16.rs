@@ -295,3 +295,35 @@ fn impl_i8x16_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_from_i16x16_truncate() {
+  let src = i16x16::new([
+    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
+    255,
+  ]);
+
+  let expected = i8x16::new([
+    16, -23, 2, 3, 4, 5, 6, -1, 16, -23, 2, -128, 127, -128, 127, -1,
+  ]);
+
+  let result = i8x16::from_i16x16_truncate(src);
+
+  assert_eq!(result, expected);
+}
+
+#[test]
+fn impl_from_i16x16_saturate() {
+  let src = i16x16::new([
+    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
+    255,
+  ]);
+
+  let expected = i8x16::new([
+    127, 127, 2, 3, 4, 5, 6, 127, 127, 127, 2, 127, -128, -128, 127, 127,
+  ]);
+
+  let result = i8x16::from_i16x16_saturate(src);
+
+  assert_eq!(result, expected);
+}

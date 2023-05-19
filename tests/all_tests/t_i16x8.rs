@@ -238,3 +238,25 @@ fn test_from_u8x16_low() {
   let actual = i16x8::from_u8x16_low(bytes);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_from_i32x8_truncate() {
+  let src = i32x8::new([10000, 1001, 2, 3, 4, 5, 6, 65536]);
+
+  let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, 6, 0]);
+
+  let result = i16x8::from_i32x8_truncate(src);
+
+  assert_eq!(result, expected);
+}
+
+#[test]
+fn impl_from_i32x8_saturate() {
+  let src = i32x8::new([10000, 1001, 2, 3, 4, 5, -65535, 65536]);
+
+  let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, -32768, 32767]);
+
+  let result = i16x8::from_i32x8_saturate(src);
+
+  assert_eq!(result, expected);
+}

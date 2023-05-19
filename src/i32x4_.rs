@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct i32x4 { sse: m128i }
+    pub struct i32x4 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct i32x4 { simd: v128 }
+    pub struct i32x4 { pub(crate) simd: v128 }
 
     impl Default for i32x4 {
       fn default() -> Self {
@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct i32x4 { neon : int32x4_t }
+    pub struct i32x4 { pub(crate) neon : int32x4_t }
 
     impl Default for i32x4 {
       #[inline]
@@ -51,7 +51,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct i32x4 { arr: [i32;4] }
+    pub struct i32x4 { pub(crate) arr: [i32;4] }
   }
 }
 

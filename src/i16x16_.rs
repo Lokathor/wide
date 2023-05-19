@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i16x16 { avx2: m256i }
+    pub struct i16x16 { pub(crate) avx2: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i16x16 { a : i16x8, b : i16x8 }
+    pub struct i16x16 { pub(crate) a : i16x8, pub(crate) b : i16x8 }
   }
 }
 
@@ -289,6 +289,48 @@ impl i16x16 {
   pub fn new(array: [i16; 16]) -> Self {
     Self::from(array)
   }
+
+  /// widens and sign extends to i16x16
+  #[inline]
+  #[must_use]
+  pub fn from_i8x16(v: i8x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(v.sse) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        i16x16 {
+          a: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(v.sse) },
+          b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.sse, v.sse)) }
+        }
+      } else if #[cfg(target_feature="sse2")] {
+        i16x16 {
+          a: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
+          b: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
+        }
+      } else {
+
+        i16x16::new([
+          v.as_array_ref()[0] as i16,
+          v.as_array_ref()[1] as i16,
+          v.as_array_ref()[2] as i16,
+          v.as_array_ref()[3] as i16,
+          v.as_array_ref()[4] as i16,
+          v.as_array_ref()[5] as i16,
+          v.as_array_ref()[6] as i16,
+          v.as_array_ref()[7] as i16,
+          v.as_array_ref()[8] as i16,
+          v.as_array_ref()[9] as i16,
+          v.as_array_ref()[10] as i16,
+          v.as_array_ref()[11] as i16,
+          v.as_array_ref()[12] as i16,
+          v.as_array_ref()[13] as i16,
+          v.as_array_ref()[14] as i16,
+          v.as_array_ref()[15] as i16,
+          ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

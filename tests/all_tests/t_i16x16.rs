@@ -538,3 +538,48 @@ fn impl_i16x16_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_from_i8x16() {
+  let a = i8x16::from([
+    10,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    7,
+    i8::MAX,
+    12,
+    13,
+    6,
+    55,
+    i8::MIN,
+  ]);
+
+  let actual = i16x16::from_i8x16(a);
+
+  let expected = i16x16::from([
+    10,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    7,
+    i8::MAX as i16,
+    12,
+    13,
+    6,
+    55,
+    i8::MIN as i16,
+  ]);
+
+  assert_eq!(expected, actual);
+}

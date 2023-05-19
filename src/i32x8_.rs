@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i32x8 { avx2: m256i }
+    pub struct i32x8 { pub(crate) avx2: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i32x8 { a : i32x4, b : i32x4}
+    pub struct i32x8 { pub(crate) a : i32x4, pub(crate) b : i32x4}
   }
 }
 
@@ -288,6 +288,34 @@ impl i32x8 {
   pub fn new(array: [i32; 8]) -> Self {
     Self::from(array)
   }
+
+  /// widens and sign extends to i32x8
+  #[inline]
+  #[must_use]
+  pub fn from_i16x8(v: i16x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x8 { avx2:convert_to_i32_m256i_from_i16_m128i(v.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        i32x8 {
+          a: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
+          b: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+        }
+      } else {
+        i32x8::new([
+          v.as_array_ref()[0] as i32,
+          v.as_array_ref()[1] as i32,
+          v.as_array_ref()[2] as i32,
+          v.as_array_ref()[3] as i32,
+          v.as_array_ref()[4] as i32,
+          v.as_array_ref()[5] as i32,
+          v.as_array_ref()[6] as i32,
+          v.as_array_ref()[7] as i32,
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
