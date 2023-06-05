@@ -11,22 +11,22 @@ jobs:
       matrix:
         rust:
         # x86 without sse/sse2 on by default
-        - { target: i586-pc-windows-msvc, toolchain: 1.54.0, os: windows-latest }
+        - { target: i586-pc-windows-msvc, toolchain: 1.56.0, os: windows-latest }
         - { target: i586-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: i586-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: i586-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86
-        - { target: i686-pc-windows-msvc, toolchain: 1.54.0, os: windows-latest }
+        - { target: i686-pc-windows-msvc, toolchain: 1.56.0, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86_64
-        - { target: x86_64-pc-windows-msvc, toolchain: 1.54.0, os: windows-latest }
+        - { target: x86_64-pc-windows-msvc, toolchain: 1.56.0, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # wasm32
-        - { target: wasm32-wasi, toolchain: 1.54.0, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: 1.56.0, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
