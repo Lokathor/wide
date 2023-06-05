@@ -594,8 +594,8 @@ impl i8x16 {
           let masked = vandq_u8(as_u8, vdupq_n_u8(0x80));
 
           // shift by appropriate amount
-          let shiftby : int8x16_t = std::mem::transmute([-7i8, -6, -5, -4, -3, -2, -1, 0, -7, -6, -5, -4, -3, -2, -1, 0]);
-          let out = vshlq_u8(masked, shiftby);
+          let shiftby : i8x16 = cast([-7i8, -6, -5, -4, -3, -2, -1, 0, -7, -6, -5, -4, -3, -2, -1, 0]);
+          let out = vshlq_u8(masked, shiftby.neon);
 
           // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
           // this gets translated into a single tbl call by the optimizer
