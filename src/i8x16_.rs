@@ -594,13 +594,16 @@ impl i8x16 {
           let masked = vandq_u8(as_u8, vdupq_n_u8(0x80));
 
           // shift by appropriate amount
-          let shiftby : [i8;16] = [-7,-6,-5,-4,-3,-2,-1,0,-7,-6,-5,-4,-3,-2,-1,0];
-          let out = vshlq_u8(masked, vld1q_s8(shiftby.as_ptr()) );
+          let shiftby : int8x16_t = std::mem::transmute([-7i8, -6, -5, -4, -3, -2, -1, 0, -7, -6, -5, -4, -3, -2, -1, 0]);
+          let out = vshlq_u8(masked, shiftby);
 
+          // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
           // this gets translated into a single tbl call by the optimizer
           let c = vzip_u8(vget_low_u8(out), vget_high_u8(out));
+          let r = vreinterpretq_u16_u8(vcombine_u8(c.0, c.1));
 
-          vaddvq_u16(vreinterpretq_u16_u8(vcombine_u8(c.0, c.1))) as i32
+          // horizontally add the 16-bit lanes
+          vaddvq_u16(r) as i32
         }
        } else {
         ((self.arr[0] < 0) as i32) << 0 |
