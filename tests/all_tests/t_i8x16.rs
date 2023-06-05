@@ -327,3 +327,14 @@ fn impl_from_i16x16_saturate() {
 
   assert_eq!(result, expected);
 }
+
+#[test]
+fn impl_from_i8_slice() {
+  let src = [0, 1_i8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+
+  let result = i8x16::from_slice_unaligned(&src[1..17]);
+
+  let expected =
+    i8x16::new([1_i8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  assert_eq!(result, expected);
+}

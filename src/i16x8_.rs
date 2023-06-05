@@ -445,6 +445,71 @@ impl i16x8 {
     Self::from(array)
   }
 
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i( pack_i16_to_i8_m128i(self.sse,self.sse)) & 0xff
+      } else if #[cfg(target_feature="simd128")] {
+        i16x8_bitmask(self.simd) as i32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          let as_u16 = vreinterpretq_u16_s16(self.neon);
+
+          // mask the top bit
+          let masked = vandq_u16(as_u16, vdupq_n_u16(0x8000));
+
+          // shift by appropriate amount
+          let shiftby : [i16;8] = [-7,-6,-5,-4,-3,-2,-1,0];
+          let out = vshlq_u16(masked, vld1q_s16(shiftby.as_ptr()) );
+
+          // horizontal add everything and return it
+          vaddvq_u16(out) as i32
+         }
+       } else {
+        ((self.arr[0] < 0) as i32) << 0 |
+        ((self.arr[1] < 0) as i32) << 1 |
+        ((self.arr[2] < 0) as i32) << 2 |
+        ((self.arr[3] < 0) as i32) << 3 |
+        ((self.arr[4] < 0) as i32) << 4 |
+        ((self.arr[5] < 0) as i32) << 5 |
+        ((self.arr[6] < 0) as i32) << 6 |
+        ((self.arr[7] < 0) as i32) << 7 |
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        v128_any_true(self.simd)
+      } else {
+        self.move_mask() != 0
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        u8x16_all_true(self.simd)
+      } else {
+        // sixteen lanes
+        self.move_mask() == 0b1111_1111
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
   /// Unpack the lower half of the input and expand it to `i16` values.
   #[inline]
   pub fn from_u8x16_low(u: u8x16) -> Self {
@@ -520,6 +585,11 @@ impl i16x8 {
       if #[cfg(target_feature="avx2")] {
         let a = v.avx2.bitand(set_splat_i32_m256i(0xffff));
         i16x8 { sse: pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
+      } else if #[cfg(target_feature="sse2")] {
+        let a = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.a.sse));
+        let b = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.b.sse));
+
+        i16x8 { sse: pack_i32_to_i16_m128i( a, b)  }
       } else {
       i16x8::new([
         v.as_array_ref()[0] as i16,
@@ -531,6 +601,24 @@ impl i16x8 {
         v.as_array_ref()[6] as i16,
         v.as_array_ref()[7] as i16,
       ])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn from_slice_unaligned(input: &[i16]) -> Self {
+    assert!(input.len() >= 8);
+
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        unsafe { Self { sse: load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) ) } }
+      } else if #[cfg(target_feature="simd128")] {
+        unsafe { Self { simd: v128_load(input.as_ptr() as *const v128 ) } }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vld1q_s16( input.as_ptr() as *const i16 ) } }
+      } else {
+        Self::new( input[0..8].try_into().unwrap() )
       }
     }
   }
