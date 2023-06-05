@@ -462,7 +462,7 @@ impl i16x8 {
           let masked = vandq_u16(as_u16, vdupq_n_u16(0x8000));
 
           // shift by appropriate amount
-          let shiftby : [i16;8] = [-7,-6,-5,-4,-3,-2,-1,0];
+          let shiftby : [i16;8] = [-15, -14, -13, -12, -11, -10, -9, -8];
           let out = vshlq_u16(masked, vld1q_s16(shiftby.as_ptr()) );
 
           // horizontal add everything and return it
