@@ -577,8 +577,8 @@ impl i8x16 {
     }
   }
 
-  #[inline]
-  #[must_use]
+  //  #[inline]
+  //  #[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -597,9 +597,11 @@ impl i8x16 {
           let shiftby : [i8;16] = [-7,-6,-5,-4,-3,-2,-1,0,-7,-6,-5,-4,-3,-2,-1,0];
           let out = vshlq_u8(masked, vld1q_s8(shiftby.as_ptr()) );
 
-          // horizontal add everything and return it
-          i32::from(vaddv_u8(vget_low_u8(out))) + (i32::from(vaddv_u8(vget_high_u8(out))) << 8)
-         }
+          // this gets translated into a single tbl call by the optimizer
+          let c = vzip_u8(vget_low_u8(out), vget_high_u8(out));
+
+          vaddvq_u16(vreinterpretq_u16_u8(vcombine_u8(c.0, c.1))) as i32
+        }
        } else {
         ((self.arr[0] < 0) as i32) << 0 |
         ((self.arr[1] < 0) as i32) << 1 |

@@ -329,6 +329,15 @@ fn impl_from_i16x16_saturate() {
 }
 
 #[test]
+fn test_i16x8_move_mask() {
+  let a =
+    i8x16::from([-1, 0, -2, -3, -1, 0, -2, -3, -1, 0, -1, 0, -1, 0, -1, 0]);
+  let expected = 0b0101010111011101;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_from_i8_slice() {
   let src = [0, 1_i8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
