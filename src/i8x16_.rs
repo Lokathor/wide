@@ -560,6 +560,24 @@ impl i8x16 {
 
   #[inline]
   #[must_use]
+  pub fn from_slice_unaligned(input: &[i8]) -> Self {
+    assert!(input.len() >= 8);
+
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        unsafe { Self { sse: load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) ) } }
+      } else if #[cfg(target_feature="simd128")] {
+        unsafe { Self { simd: v128_load(input.as_ptr() as *const v128 ) } }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vld1q_s8( input.as_ptr() as *const i8 ) } }
+      } else {
+        Self::new( input[0..8].try_into().unwrap() )
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
