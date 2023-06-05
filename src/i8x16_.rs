@@ -577,8 +577,8 @@ impl i8x16 {
     }
   }
 
-  #[inline]
-  #[must_use]
+  //#[inline]
+  //#[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -588,22 +588,19 @@ impl i8x16 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
-          let as_u8 = vreinterpretq_u8_s8(self.neon);
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s8(self.neon, vdupq_n_s8(0));
 
-          // mask the top bit
-          let masked = vandq_u8(as_u8, vdupq_n_u8(0x80));
-
-          // shift by appropriate amount
-          let shiftby : i8x16 = cast([-7i8, -6, -5, -4, -3, -2, -1, 0, -7, -6, -5, -4, -3, -2, -1, 0]);
-          let out = vshlq_u8(masked, shiftby.neon);
+          // select the right bit out of each lane
+          let selectbit : uint8x16_t = core::intrinsics::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+          let out = vandq_u8(masked, selectbit);
 
           // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
-          // this gets translated into a single tbl call by the optimizer
-          let c = vzip_u8(vget_low_u8(out), vget_high_u8(out));
-          let r = vreinterpretq_u16_u8(vcombine_u8(c.0, c.1));
+          let table : uint8x16_t = core::intrinsics::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+          let r = vqtbl1q_u8(out, table);
 
           // horizontally add the 16-bit lanes
-          vaddvq_u16(r) as i32
+          vaddvq_u16(vreinterpretq_u16_u8(r)) as i32
         }
        } else {
         ((self.arr[0] < 0) as i32) << 0 |
