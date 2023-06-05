@@ -155,3 +155,43 @@ fn impl_i32x4_round_float() {
   let actual = a.round_float();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn test_i32x4_move_mask() {
+  let a = i32x4::from([-1, 0, -2, -3]);
+  let expected = 0b1101;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+  //
+  let a = i32x4::from([i32::MAX, 0, 2, -3]);
+  let expected = 0b1000;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn test_i32x4_any() {
+  let a = i32x4::from([0, 0, 0, -1]);
+  assert!(a.any());
+  //
+  let a = i32x4::from([0, 0, 0, 0]);
+  assert!(!a.any());
+}
+
+#[test]
+fn test_i32x4_all() {
+  let a = i32x4::from([0, 0, 0, -1]);
+  assert!(!a.all());
+  //
+  let a = i32x4::from([-1; 4]);
+  assert!(a.all());
+}
+
+#[test]
+fn test_i32x4_none() {
+  let a = i32x4::from([0, 0, 0, -1]);
+  assert!(!a.none());
+  //
+  let a = i32x4::from([0; 4]);
+  assert!(a.none());
+}

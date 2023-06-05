@@ -438,6 +438,7 @@ impl i32x4 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -492,33 +493,32 @@ impl i32x4 {
   #[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
-      if #[cfg(target_feature="sse2")] {
-        move_mask_i8_m128i(self.sse)
+      if #[cfg(target_feature="sse")] {
+        move_mask_m128(cast(self.sse))
       } else if #[cfg(target_feature="simd128")] {
-        i32x4_bitmask(self.simd) as i32
+        u32x4_bitmask(self.simd) as i32
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
-          let as_u32 = vreinterpretq_u32_s32(self.neon);
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s32(self.neon, vdupq_n_s32(0));
 
-          // mask the top bit
-          let masked = vandq_u32(as_u32, vdupq_n_u32(0x80000000));
+          // select the right bit out of each lane
+          let selectbit : uint32x4_t = core::intrinsics::transmute([1u32, 2, 4, 8]);
+          let r = vandq_u32(masked, selectbit);
 
-          // shift by appropriate amount
-          let shiftby : [i32;4] = [-31,-30,-29,-28];
-          let out = vshlq_u32(masked, vld1q_s32(shiftby.as_ptr()) );
-
-          // horizontal add everything and return it
-          vaddvq_u32(out) as i32
-        }
+          // horizontally add the 16-bit lanes
+          vaddvq_u32(r) as i32
+         }
       } else {
-        ((self.arr[0] < 0) as i32) << 0 |
-        ((self.arr[1] < 0) as i32) << 1 |
-        ((self.arr[2] < 0) as i32) << 2 |
-        ((self.arr[3] < 0) as i32) << 3
+        (((self.arr[0] as i32) < 0) as i32) << 0 |
+        (((self.arr[1] as i32) < 0) as i32) << 1 |
+        (((self.arr[2] as i32) < 0) as i32) << 2 |
+        (((self.arr[3] as i32) < 0) as i32) << 3
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {

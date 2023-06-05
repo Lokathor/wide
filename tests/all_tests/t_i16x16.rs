@@ -583,3 +583,47 @@ fn impl_from_i8x16() {
 
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn test_i16x16_move_mask() {
+  let a =
+    i16x16::from([-1, 0, -2, -3, -1, 0, -2, -3, -1, 0, -1, 0, -1, 0, -1, 0]);
+  let expected = 0b0101010111011101;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn test_i16x16_any() {
+  let a = i16x16::from([0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  assert!(a.any());
+
+  let a = i16x16::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0]);
+  assert!(a.any());
+
+  //
+  let a = i16x16::from([0; 16]);
+  assert!(!a.any());
+}
+
+#[test]
+fn test_i16x16_all() {
+  let a = i16x16::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0]);
+  assert!(!a.all());
+  //
+  let a = i16x16::from([-1; 16]);
+  assert!(a.all());
+}
+
+#[test]
+fn test_i16x16_none() {
+  let a = i16x16::from([0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  assert!(!a.none());
+
+  let a = i16x16::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0]);
+  assert!(!a.none());
+
+  //
+  let a = i16x16::from([0; 16]);
+  assert!(a.none());
+}
