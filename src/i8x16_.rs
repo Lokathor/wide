@@ -561,7 +561,7 @@ impl i8x16 {
   #[inline]
   #[must_use]
   pub fn from_slice_unaligned(input: &[i8]) -> Self {
-    assert!(input.len() >= 8);
+    assert!(input.len() >= 16);
 
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -571,7 +571,8 @@ impl i8x16 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vld1q_s8( input.as_ptr() as *const i8 ) } }
       } else {
-        Self::new( [input[0], input[1], input[2], input[3],input[4], input[5], input[6], input[7], input[8], input[9], input[10], input[11], input[12], input[13], input[14], input[15]])
+        // 2018 edition doesn't have try_into
+        unsafe { Self::new( *(input.as_ptr() as * const [i8;16]) ) }
       }
     }
   }
