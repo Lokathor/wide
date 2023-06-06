@@ -290,6 +290,48 @@ impl i8x32 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) as i32
+      } else {
+        self.a.move_mask() | (self.b.move_mask() << 16)
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) != 0
+      } else {
+        self.a.any() || self.b.any()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) == -1
+      } else {
+        self.a.all() || self.b.all()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [i8; 32] {
     cast(self)
   }
