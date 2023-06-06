@@ -290,6 +290,46 @@ impl i16x16 {
     Self::from(array)
   }
 
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        (move_mask_i8_m256i(pack_i16_to_i8_m256i(self.avx2,shuffle_ai_i64_all_m256i::<0b00_01_10_11>(self.avx2))) & 0xffff) as i32
+      } else {
+        self.a.move_mask() | (self.b.move_mask() << 8)
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
   /// widens and sign extends to i16x16
   #[inline]
   #[must_use]

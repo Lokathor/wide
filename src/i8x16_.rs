@@ -560,6 +560,25 @@ impl i8x16 {
 
   #[inline]
   #[must_use]
+  pub fn from_slice_unaligned(input: &[i8]) -> Self {
+    assert!(input.len() >= 16);
+
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        unsafe { Self { sse: load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) ) } }
+      } else if #[cfg(target_feature="simd128")] {
+        unsafe { Self { simd: v128_load(input.as_ptr() as *const v128 ) } }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vld1q_s8( input.as_ptr() as *const i8 ) } }
+      } else {
+        // 2018 edition doesn't have try_into
+        unsafe { Self::new( *(input.as_ptr() as * const [i8;16]) ) }
+      }
+    }
+  }
+
+  //#[inline]
+  //#[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -569,18 +588,20 @@ impl i8x16 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
-          let as_u8 = vreinterpretq_u8_s8(self.neon);
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s8(self.neon, vdupq_n_s8(0));
 
-          // mask the top bit
-          let masked = vandq_u8(as_u8, vdupq_n_u8(0x80));
+          // select the right bit out of each lane
+          let selectbit : uint8x16_t = core::intrinsics::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+          let out = vandq_u8(masked, selectbit);
 
-          // shift by appropriate amount
-          let shiftby : [i8;16] = [-7,-6,-5,-4,-3,-2,-1,0,-7,-6,-5,-4,-3,-2,-1,0];
-          let out = vshlq_u8(masked, vld1q_s8(shiftby.as_ptr()) );
+          // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
+          let table : uint8x16_t = core::intrinsics::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+          let r = vqtbl1q_u8(out, table);
 
-          // horizontal add everything and return it
-          i32::from(vaddv_u8(vget_low_u8(out))) + (i32::from(vaddv_u8(vget_high_u8(out))) << 8)
-         }
+          // horizontally add the 16-bit lanes
+          vaddvq_u16(vreinterpretq_u16_u8(r)) as i32
+        }
        } else {
         ((self.arr[0] < 0) as i32) << 0 |
         ((self.arr[1] < 0) as i32) << 1 |
@@ -601,14 +622,18 @@ impl i8x16 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
     pick! {
-      if #[cfg(target_feature="simd128")] {
-        v128_any_true(self.simd)
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) != 0
       } else {
-        self.move_mask() != 0
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x80808080808080) != 0
       }
     }
   }
@@ -616,14 +641,17 @@ impl i8x16 {
   #[must_use]
   pub fn all(self) -> bool {
     pick! {
-      if #[cfg(target_feature="simd128")] {
-        u8x16_all_true(self.simd)
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) == 0b1111_1111_1111_1111
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) == 0b1111_1111_1111_1111
       } else {
-        // sixteen lanes
-        self.move_mask() == 0b1111_1111_1111_1111
+        let v : [u64;2] = cast(self);
+        (v[0] & v[1] & 0x80808080808080) == 0x80808080808080
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn none(self) -> bool {
