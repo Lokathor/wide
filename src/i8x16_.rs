@@ -622,14 +622,18 @@ impl i8x16 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
     pick! {
-      if #[cfg(target_feature="simd128")] {
-        v128_any_true(self.simd)
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) != 0
       } else {
-        self.move_mask() != 0
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x80808080808080) != 0
       }
     }
   }
@@ -637,14 +641,17 @@ impl i8x16 {
   #[must_use]
   pub fn all(self) -> bool {
     pick! {
-      if #[cfg(target_feature="simd128")] {
-        u8x16_all_true(self.simd)
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) == 0b1111_1111_1111_1111
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) == 0b1111_1111_1111_1111
       } else {
-        // sixteen lanes
-        self.move_mask() == 0b1111_1111_1111_1111
+        let v : [u64;2] = cast(self);
+        (v[0] & v[1] & 0x80808080808080) == 0x80808080808080
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn none(self) -> bool {

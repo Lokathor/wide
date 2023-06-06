@@ -308,7 +308,7 @@ impl i8x32 {
       if #[cfg(target_feature="avx2")] {
         move_mask_i8_m256i(self.avx) != 0
       } else {
-        self.a.any() || self.b.any()
+        (self.a | self.b).any()
       }
     }
   }
@@ -320,7 +320,7 @@ impl i8x32 {
       if #[cfg(target_feature="avx2")] {
         move_mask_i8_m256i(self.avx) == -1
       } else {
-        self.a.all() || self.b.all()
+        (self.a & self.b).all()
       }
     }
   }

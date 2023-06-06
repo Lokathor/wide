@@ -307,9 +307,9 @@ impl i16x16 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(bitand_m256i(self.avx2, set_splat_i16_m256i(i16::MIN))) != 0
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) != 0
       } else {
-        self.a.any() || self.b.any()
+        (self.a | self.b).any()
       }
     }
   }
@@ -318,9 +318,9 @@ impl i16x16 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(bitand_m256i(self.avx2, set_splat_i16_m256i(i16::MIN))) as u32 == 0b10101010101010101010101010101010
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
       } else {
-        self.a.all() || self.b.all()
+        (self.a & self.b).all()
       }
     }
   }
