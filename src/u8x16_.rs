@@ -46,6 +46,8 @@ pick! {
         unsafe { vminvq_u8(vceqq_u8(self.neon, other.neon))==u8::MAX }
       }
     }
+
+    impl Eq for u8x16 { }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
