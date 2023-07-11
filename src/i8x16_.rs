@@ -577,8 +577,8 @@ impl i8x16 {
     }
   }
 
-  //#[inline]
-  //#[must_use]
+  #[inline]
+  #[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
