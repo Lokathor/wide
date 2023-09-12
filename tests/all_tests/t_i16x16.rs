@@ -627,3 +627,10 @@ fn test_i16x16_none() {
   let a = i16x16::from([0; 16]);
   assert!(a.none());
 }
+
+#[test]
+fn impl_i16x16_reduce_add() {
+  let p =
+    i16x16::from([1, 2, 3, 4, 5, 6, 7, 9, 10, 20, 30, 40, 50, 60, 70, 90]);
+  assert_eq!(p.reduce_add(), 407);
+}

@@ -330,6 +330,14 @@ impl i32x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> i32 {
+    let arr: [i32; 8] = cast(self);
+    arr.iter().sum()
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {

@@ -649,6 +649,14 @@ impl i16x8 {
   pub fn is_negative(self) -> Self {
     self.cmp_lt(Self::zeroed())
   }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> i16 {
+    let arr: [i16; 8] = cast(self);
+    arr.iter().sum()
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {

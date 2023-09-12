@@ -441,6 +441,13 @@ impl i32x4 {
 
   #[inline]
   #[must_use]
+  pub fn reduce_add(self) -> i32 {
+    let arr: [i32; 4] = cast(self);
+    arr.iter().sum()
+  }
+
+  #[inline]
+  #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {

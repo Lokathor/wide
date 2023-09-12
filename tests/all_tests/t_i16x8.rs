@@ -310,3 +310,9 @@ fn test_i16x8_none() {
   let a = i16x8::from([0; 8]);
   assert!(a.none());
 }
+
+#[test]
+fn impl_i16x8_reduce_add() {
+  let p = i16x8::from([1, 2, 3, 4, 5, 6, 7, 9]);
+  assert_eq!(p.reduce_add(), 37);
+}
