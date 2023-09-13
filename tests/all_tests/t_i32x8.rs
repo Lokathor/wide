@@ -262,3 +262,12 @@ fn test_i32x8_none() {
   let a = i32x8::from([0; 8]);
   assert!(a.none());
 }
+
+#[test]
+fn impl_i32x8_reduce_add() {
+  let p = i32x8::from([
+    10000000, 20000000, 30000000, 40000000, 50000000, 60000000, 70000000,
+    90000000,
+  ]);
+  assert_eq!(p.reduce_add(), 370000000);
+}

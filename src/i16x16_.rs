@@ -385,6 +385,15 @@ impl i16x16 {
       }
     }
   }
+
+  /// horizontal add of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> i16 {
+    let arr: [i16; 16] = cast(self);
+    arr.iter().sum()
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {

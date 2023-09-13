@@ -1253,6 +1253,8 @@ impl f64x4 {
     let t2 = t1 >> 63;
     !cast::<_, f64x4>(t2).cmp_eq(f64x4::ZERO)
   }
+
+  /// horizontal add of all the elements of the vector
   #[inline]
   pub fn reduce_add(self) -> f64 {
     pick! {

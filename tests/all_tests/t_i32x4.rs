@@ -195,3 +195,9 @@ fn test_i32x4_none() {
   let a = i32x4::from([0; 4]);
   assert!(a.none());
 }
+
+#[test]
+fn impl_i32x4_reduce_add() {
+  let p = i32x4::from([10000000, 20000000, 30000000, -40000000]);
+  assert_eq!(p.reduce_add(), 20000000);
+}
