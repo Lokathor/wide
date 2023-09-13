@@ -650,6 +650,7 @@ impl i16x8 {
     self.cmp_lt(Self::zeroed())
   }
 
+  /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> i16 {

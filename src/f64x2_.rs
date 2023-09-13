@@ -1389,7 +1389,9 @@ impl f64x2 {
     !cast::<_, f64x2>(t2).cmp_eq(f64x2::ZERO)
   }
 
+  /// horizontal add of all the elements of the vector
   #[inline]
+  #[must_use]
   pub fn reduce_add(self) -> f64 {
     pick! {
       if #[cfg(target_feature="ssse3")] {

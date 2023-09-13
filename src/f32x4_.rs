@@ -1379,7 +1379,10 @@ impl f32x4 {
     let t2 = t1 >> 31;
     !cast::<_, f32x4>(t2).cmp_eq(f32x4::ZERO)
   }
+
+  /// horizontal add of all the elements of the vector
   #[inline]
+  #[must_use]
   pub fn reduce_add(self) -> f32 {
     let arr: [f32; 4] = cast(self);
     arr.iter().sum()

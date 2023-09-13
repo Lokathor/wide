@@ -439,6 +439,7 @@ impl i32x4 {
     }
   }
 
+  /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> i32 {
