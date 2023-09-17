@@ -759,12 +759,12 @@ impl i16x8 {
       if #[cfg(target_feature="sse2")] {
         i32x4 { sse:  mul_i16_horizontal_add_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: dot_i16x8_s(self.simd, rhs.simd) }
+        i32x4 { simd: i32x4_dot_i16x8(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           let pl = vmull_s16(vget_low_s16(self.neon),  vget_low_s16(rhs.neon));
           let ph = vmull_high_s16(self.neon, rhs.neon);
-          Self { neon: vpaddq_s32(pl, ph) }
+          i32x4 { neon: vpaddq_s32(pl, ph) }
         }
       } else {
         i32x4 { arr: [
