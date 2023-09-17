@@ -634,3 +634,32 @@ fn impl_i16x16_reduce_add() {
     i16x16::from([1, 2, 3, 4, 5, 6, 7, 9, 10, 20, 30, 40, 50, 60, 70, 90]);
   assert_eq!(p.reduce_add(), 407);
 }
+
+#[test]
+fn impl_dot_for_i16x16() {
+  let a = i16x16::from([
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    i16::MIN + 1,
+    i16::MIN,
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    i16::MAX - 1,
+    i16::MAX,
+  ]);
+  let b = i16x16::from([
+    17, -18, 190, -20, 21, -22, 3, 2, 170, -180, 1900, -200, 210, -220, 30, 20,
+  ]);
+  let expected =
+    i32x8::from([-19, 490, -27, -163837, -1900, 49000, -2700, 1638320]);
+  let actual = a.dot(b);
+  assert_eq!(expected, actual);
+}

@@ -752,6 +752,32 @@ impl i16x8 {
     }
   }
 
+  /// Calculates the partial dot product of by multiplying corresponding elements and adding together
+  /// adjacent lanes for a 32 bit sum.
+  pub fn dot(self, rhs: Self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        i32x4 { sse:  mul_i16_horizontal_add_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: dot_i16x8_s(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          let pl = vmull_s16(vget_low_s16(self.neon),  vget_low_s16(rhs.neon));
+          let ph = vmull_high_s16(self.neon, rhs.neon);
+          Self { neon: vpaddq_s32(pl, ph) }
+        }
+      } else {
+        // compiler does a surprisingly good job of vectorizing this
+        i32x4 { arr: [
+          (i32::from(self.arr[0]) * i32::from(rhs.arr[0])) + (i32::from(self.arr[1]) * i32::from(rhs.arr[1])),
+          (i32::from(self.arr[2]) * i32::from(rhs.arr[2])) + (i32::from(self.arr[3]) * i32::from(rhs.arr[3])),
+          (i32::from(self.arr[4]) * i32::from(rhs.arr[4])) + (i32::from(self.arr[5]) * i32::from(rhs.arr[5])),
+          (i32::from(self.arr[6]) * i32::from(rhs.arr[6])) + (i32::from(self.arr[7]) * i32::from(rhs.arr[7])),
+        ] }
+      }
+    }
+  }
+
   /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
