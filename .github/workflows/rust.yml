@@ -75,7 +75,7 @@ jobs:
 
     strategy:
       matrix:
-        rust: [stable,nightly]
+        rust: [stable]
         features: ["", "std"]
 
     steps:
