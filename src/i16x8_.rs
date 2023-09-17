@@ -767,7 +767,6 @@ impl i16x8 {
           Self { neon: vpaddq_s32(pl, ph) }
         }
       } else {
-        // compiler does a surprisingly good job of vectorizing this
         i32x4 { arr: [
           (i32::from(self.arr[0]) * i32::from(rhs.arr[0])) + (i32::from(self.arr[1]) * i32::from(rhs.arr[1])),
           (i32::from(self.arr[2]) * i32::from(rhs.arr[2])) + (i32::from(self.arr[3]) * i32::from(rhs.arr[3])),
