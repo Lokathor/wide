@@ -470,7 +470,7 @@ impl i16x16 {
   /// Multiplies packed signed 16-bit integers, producing intermediate signed 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit integers.
   pub fn dot(self, rhs: Self) -> i32x8 {
     pick! {
-      if #[cfg(target_feature="sse2")] {
+      if #[cfg(target_feature="avx2")] {
         i32x8 { avx2:  mul_i16_horizontal_add_m256i(self.avx2, rhs.avx2) }
       } else {
         i32x8 {
