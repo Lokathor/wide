@@ -752,8 +752,8 @@ impl i16x8 {
     }
   }
 
-  /// Calculates the partial dot product of by multiplying corresponding elements and adding together
-  /// adjacent lanes for a 32 bit sum.
+  /// Calculates partial dot product.
+  /// Multiplies packed signed 16-bit integers, producing intermediate signed 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit integers.
   pub fn dot(self, rhs: Self) -> i32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
