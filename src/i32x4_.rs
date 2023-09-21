@@ -443,8 +443,35 @@ impl i32x4 {
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let hi64  = unpack_high_i64_m128i(self.sse, self.sse);
+        let sum64 = add_i32_m128i(hi64, self.sse);
+        let hi32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(sum64);    // Swap the low two elements
+        let sum32 = add_i32_m128i(sum64, hi32);
+        get_i32_from_m128i_s(sum32)
+      } else {
+        let arr: [i32; 4] = cast(self);
+        arr[0].wrapping_add(arr[1]).wrapping_add(
+        arr[2].wrapping_add(arr[3]))
+      }
+    }
+  }
+
+  /// horizontal max of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i32 {
     let arr: [i32; 4] = cast(self);
-    arr.iter().sum()
+    arr[0].max(arr[1]).max(arr[2].max(arr[3]))
+  }
+
+  /// horizontal min of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i32 {
+    let arr: [i32; 4] = cast(self);
+    arr[0].min(arr[1]).min(arr[2].min(arr[3]))
   }
 
   #[inline]
