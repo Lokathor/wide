@@ -326,6 +326,7 @@ fn impl_dot_for_i16x8() {
   assert_eq!(expected, actual);
 }
 
+#[test]
 fn impl_i16x8_reduce_min() {
   for i in 0..8 {
     let mut v = [i16::MAX; 8];
