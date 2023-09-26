@@ -271,3 +271,23 @@ fn impl_i32x8_reduce_add() {
   ]);
   assert_eq!(p.reduce_add(), 370000000);
 }
+
+#[test]
+fn impl_i32x8_reduce_min() {
+  for i in 0..8 {
+    let mut v = [i32::MAX; 8];
+    v[i] = i32::MIN;
+    let p = i32x8::from(v);
+    assert_eq!(p.reduce_min(), i32::MIN);
+  }
+}
+
+#[test]
+fn impl_i32x8_reduce_max() {
+  for i in 0..8 {
+    let mut v = [i32::MIN; 8];
+    v[i] = i32::MAX;
+    let p = i32x8::from(v);
+    assert_eq!(p.reduce_max(), i32::MAX);
+  }
+}

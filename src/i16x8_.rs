@@ -655,14 +655,41 @@ impl i16x8 {
   #[must_use]
   pub fn reduce_add(self) -> i16 {
     let arr: [i16; 8] = cast(self);
-    arr.iter().sum()
+
+    (arr[0].wrapping_add(arr[1]).wrapping_add(arr[2].wrapping_add(arr[3])))
+      .wrapping_add(
+        arr[4].wrapping_add(arr[5]).wrapping_add(arr[6].wrapping_add(arr[7])),
+      )
+  }
+
+  /// horizontal min of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i16 {
+    let arr: [i16; 8] = cast(self);
+
+    (arr[0].min(arr[1]).min(arr[2].min(arr[3])))
+      .min(arr[4].min(arr[5]).min(arr[6].min(arr[7])))
+  }
+
+  /// horizontal max of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i16 {
+    let arr: [i16; 8] = cast(self);
+
+    (arr[0].max(arr[1]).max(arr[2].max(arr[3])))
+      .max(arr[4].max(arr[5]).max(arr[6].max(arr[7])))
   }
 
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
     pick! {
-      if #[cfg(target_feature="ssse3")] {
+      if #[cfg(target_feature="sse2")] {
+        let mask = shr_imm_i16_m128i::<15>(self.sse);
+        Self { sse: bitxor_m128i(add_i16_m128i(self.sse, mask), mask) }
+      } else if #[cfg(target_feature="ssse3")] {
         Self { sse: abs_i16_m128i(self.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_abs(self.simd) }
@@ -692,7 +719,7 @@ impl i16x8 {
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse4.1")] {
+      if #[cfg(target_feature="sse2")] {
         Self { sse: min_i16_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i16x8_min(self.simd, rhs.simd) }
@@ -703,6 +730,7 @@ impl i16x8 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

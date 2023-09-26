@@ -586,8 +586,21 @@ fn impl_from_i8x16() {
 
 #[test]
 fn test_i16x16_move_mask() {
+  let indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+  for x in 0..256 {
+    // multiply by prime number to mix bits a bit
+    let i = x * 251;
+
+    let a =
+      i16x16::from(indexes.map(|x| if i & (1 << x) != 0 { -1 } else { 0 }));
+
+    assert_eq!(a.move_mask(), i);
+  }
+
   let a =
     i16x16::from([-1, 0, -2, -3, -1, 0, -2, -3, -1, 0, -1, 0, -1, 0, -1, 0]);
+
   let expected = 0b0101010111011101;
   let actual = a.move_mask();
   assert_eq!(expected, actual);
@@ -662,4 +675,23 @@ fn impl_dot_for_i16x16() {
     i32x8::from([-19, 490, -27, -163837, -1900, 49000, -2700, 1638320]);
   let actual = a.dot(b);
   assert_eq!(expected, actual);
+}
+
+fn impl_i16x16_reduce_min() {
+  for i in 0..8 {
+    let mut v = [i16::MAX; 16];
+    v[i] = i16::MIN;
+    let p = i16x16::from(v);
+    assert_eq!(p.reduce_min(), i16::MIN);
+  }
+}
+
+#[test]
+fn impl_i16x16_reduce_max() {
+  for i in 0..8 {
+    let mut v = [i16::MIN; 16];
+    v[i] = i16::MAX;
+    let p = i16x16::from(v);
+    assert_eq!(p.reduce_min(), i16::MIN);
+  }
 }

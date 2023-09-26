@@ -201,3 +201,23 @@ fn impl_i32x4_reduce_add() {
   let p = i32x4::from([10000000, 20000000, 30000000, -40000000]);
   assert_eq!(p.reduce_add(), 20000000);
 }
+
+#[test]
+fn impl_i32x4_reduce_min() {
+  for i in 0..4 {
+    let mut v = [i32::MAX; 4];
+    v[i] = i32::MIN;
+    let p = i32x4::from(v);
+    assert_eq!(p.reduce_min(), i32::MIN);
+  }
+}
+
+#[test]
+fn impl_i32x4_reduce_max() {
+  for i in 0..4 {
+    let mut v = [i32::MIN; 4];
+    v[i] = i32::MAX;
+    let p = i32x4::from(v);
+    assert_eq!(p.reduce_max(), i32::MAX);
+  }
+}

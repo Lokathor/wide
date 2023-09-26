@@ -295,7 +295,7 @@ impl i16x16 {
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        (move_mask_i8_m256i(pack_i16_to_i8_m256i(self.avx2,shuffle_ai_i64_all_m256i::<0b00_01_10_11>(self.avx2))) & 0xffff) as i32
+        (move_mask_i8_m256i(pack_i16_to_i8_m256i(self.avx2,shuffle_ai_i64_all_m256i::<0b01_00_11_10>(self.avx2))) & 0xffff) as i32
       } else {
         self.a.move_mask() | (self.b.move_mask() << 8)
       }
@@ -390,8 +390,27 @@ impl i16x16 {
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> i16 {
-    let arr: [i16; 16] = cast(self);
-    arr.iter().sum()
+    let arr: [i16x8; 2] = cast(self);
+
+    (arr[0] + arr[1]).reduce_add()
+  }
+
+  /// horizontal min of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i16 {
+    let arr: [i16x8; 2] = cast(self);
+
+    arr[0].min(arr[1]).reduce_min()
+  }
+
+  /// horizontal max of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i16 {
+    let arr: [i16x8; 2] = cast(self);
+
+    arr[0].max(arr[1]).reduce_max()
   }
 
   #[inline]

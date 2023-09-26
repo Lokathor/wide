@@ -335,8 +335,24 @@ impl i32x8 {
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> i32 {
-    let arr: [i32; 8] = cast(self);
-    arr.iter().sum()
+    let arr: [i32x4; 2] = cast(self);
+    (arr[0] + arr[1]).reduce_add()
+  }
+
+  /// horizontal max of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i32 {
+    let arr: [i32x4; 2] = cast(self);
+    arr[0].max(arr[1]).reduce_max()
+  }
+
+  /// horizontal min of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i32 {
+    let arr: [i32x4; 2] = cast(self);
+    arr[0].min(arr[1]).reduce_min()
   }
 
   #[inline]

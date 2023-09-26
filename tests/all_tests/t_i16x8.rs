@@ -325,3 +325,22 @@ fn impl_dot_for_i16x8() {
   let actual = a.dot(b);
   assert_eq!(expected, actual);
 }
+
+fn impl_i16x8_reduce_min() {
+  for i in 0..8 {
+    let mut v = [i16::MAX; 8];
+    v[i] = i16::MIN;
+    let p = i16x8::from(v);
+    assert_eq!(p.reduce_min(), i16::MIN);
+  }
+}
+
+#[test]
+fn impl_i16x8_reduce_max() {
+  for i in 0..8 {
+    let mut v = [i16::MIN; 8];
+    v[i] = i16::MAX;
+    let p = i16x8::from(v);
+    assert_eq!(p.reduce_min(), i16::MIN);
+  }
+}
