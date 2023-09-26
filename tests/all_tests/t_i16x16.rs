@@ -588,7 +588,10 @@ fn impl_from_i8x16() {
 fn test_i16x16_move_mask() {
   let indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
-  for i in 0..65535 {
+  for x in 0..256 {
+    // multiply by prime number to mix bits a bit
+    let i = x * 251;
+
     let a =
       i16x16::from(indexes.map(|x| if i & (1 << x) != 0 { -1 } else { 0 }));
 
