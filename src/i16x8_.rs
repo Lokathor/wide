@@ -610,6 +610,34 @@ impl i16x8 {
     }
   }
 
+  /// multiplies 16 bit lanes producing 32 bit result
+  #[inline]
+  #[must_use]
+  pub fn mul_widen(&self, rhs: i16x8) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+
+        let hi = mul_i16_keep_high_m128i(self.sse, rhs.sse);
+        let lo = mul_i16_keep_low_m128i(self.sse, rhs.sse);
+        let v1 = unpack_low_i16_m128i(lo, hi);
+        let v2 = unpack_high_i16_m128i(lo, hi);
+
+        cast([v1,v2])
+      } else {
+        i32x8 { arr: [
+          (self.arr[0] as i32).wrapping_mul(rhs.arr[0] as i32),
+          (self.arr[1] as i32).wrapping_mul(rhs.arr[1] as i32),
+          (self.arr[2] as i32).wrapping_mul(rhs.arr[2] as i32),
+          (self.arr[3] as i32).wrapping_mul(rhs.arr[3] as i32),
+          (self.arr[4] as i32).wrapping_mul(rhs.arr[4] as i32),
+          (self.arr[5] as i32).wrapping_mul(rhs.arr[5] as i32),
+          (self.arr[6] as i32).wrapping_mul(rhs.arr[6] as i32),
+          (self.arr[7] as i32).wrapping_mul(rhs.arr[7] as i32),
+        ]}
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn from_slice_unaligned(input: &[i16]) -> Self {
@@ -666,20 +694,49 @@ impl i16x8 {
   #[inline]
   #[must_use]
   pub fn reduce_min(self) -> i16 {
-    let arr: [i16; 8] = cast(self);
+    pick! {
+        if #[cfg(target_feature="sse2")] {
 
-    (arr[0].min(arr[1]).min(arr[2].min(arr[3])))
-      .min(arr[4].min(arr[5]).min(arr[6].min(arr[7])))
+          let hi64  = unpack_high_i64_m128i(self.sse, self.sse);
+          let min64 = min_i16_m128i(hi64, self.sse);
+          let hi32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(min64);    // Swap the low two elements
+          let min32 = min_i16_m128i(min64, hi32);
+
+          let arr: [i16; 8] = cast(min32);
+
+          arr[0].min(arr[1])
+
+      } else {
+        let arr: [i16; 8] = cast(self);
+
+        (arr[0].min(arr[1]).min(arr[2].min(arr[3])))
+          .min(arr[4].min(arr[5]).min(arr[6].min(arr[7])))
+      }
+    }
   }
 
   /// horizontal max of all the elements of the vector
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> i16 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+
+        let hi64  = unpack_high_i64_m128i(self.sse, self.sse);
+        let max64 = max_i16_m128i(hi64, self.sse);
+        let hi32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(max64);    // Swap the low two elements
+        let max32 = max_i16_m128i(max64, hi32);
+
+        let arr: [i16; 8] = cast(max32);
+
+        arr[0].max(arr[1])
+
+    } else {
     let arr: [i16; 8] = cast(self);
 
     (arr[0].max(arr[1]).max(arr[2].max(arr[3])))
       .max(arr[4].max(arr[5]).max(arr[6].max(arr[7])))
+    }}
   }
 
   #[inline]
