@@ -295,7 +295,7 @@ impl i16x16 {
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        (move_mask_i8_m256i(pack_i16_to_i8_m256i(self.avx2,shuffle_ai_i64_all_m256i::<0b00_01_10_11>(self.avx2))) & 0xffff) as i32
+        (move_mask_i8_m256i(pack_i16_to_i8_m256i(self.avx2,shuffle_ai_i64_all_m256i::<0b01_00_11_10>(self.avx2))) & 0xffff) as i32
       } else {
         self.a.move_mask() | (self.b.move_mask() << 8)
       }
