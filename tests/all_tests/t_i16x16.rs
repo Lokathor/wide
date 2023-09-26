@@ -647,3 +647,23 @@ fn impl_i16x16_reduce_add() {
     i16x16::from([1, 2, 3, 4, 5, 6, 7, 9, 10, 20, 30, 40, 50, 60, 70, 90]);
   assert_eq!(p.reduce_add(), 407);
 }
+
+#[test]
+fn impl_i16x16_reduce_min() {
+  for i in 0..8 {
+    let mut v = [i16::MAX; 16];
+    v[i] = i16::MIN;
+    let p = i16x16::from(v);
+    assert_eq!(p.reduce_min(), i16::MIN);
+  }
+}
+
+#[test]
+fn impl_i16x16_reduce_max() {
+  for i in 0..8 {
+    let mut v = [i16::MIN; 16];
+    v[i] = i16::MAX;
+    let p = i16x16::from(v);
+    assert_eq!(p.reduce_min(), i16::MIN);
+  }
+}

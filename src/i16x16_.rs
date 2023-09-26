@@ -390,8 +390,27 @@ impl i16x16 {
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> i16 {
-    let arr: [i16; 16] = cast(self);
-    arr.iter().sum()
+    let arr: [i16x8; 2] = cast(self);
+
+    (arr[0] + arr[1]).reduce_add()
+  }
+
+  /// horizontal min of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i16 {
+    let arr: [i16x8; 2] = cast(self);
+
+    arr[0].min(arr[1]).reduce_min()
+  }
+
+  /// horizontal max of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i16 {
+    let arr: [i16x8; 2] = cast(self);
+
+    arr[0].max(arr[1]).reduce_max()
   }
 
   #[inline]
