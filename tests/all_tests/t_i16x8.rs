@@ -318,6 +318,15 @@ fn impl_i16x8_reduce_add() {
 }
 
 #[test]
+fn impl_dot_for_i16x8() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+  let b = i16x8::from([17, -18, 190, -20, 21, -22, 3, 2]);
+  let expected = i32x4::from([-19, 490, -27, -163837]);
+  let actual = a.dot(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i16x8_reduce_min() {
   for i in 0..8 {
     let mut v = [i16::MAX; 8];
