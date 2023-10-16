@@ -553,4 +553,9 @@ impl i16x16 {
   pub fn as_array_ref(&self) -> &[i16; 16] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut[i16; 16] {
+    cast_mut(self)
+  }
 }

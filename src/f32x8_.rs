@@ -1413,6 +1413,11 @@ impl f32x8 {
   pub fn as_array_ref(&self) -> &[f32; 8] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [f32; 8] {
+    cast_mut(self)
+  }
 }
 
 impl Not for f32x8 {

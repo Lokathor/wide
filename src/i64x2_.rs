@@ -414,4 +414,9 @@ impl i64x2 {
   pub fn as_array_ref(&self) -> &[i64; 2] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut[i64; 2] {
+    cast_mut(self)
+  }
 }

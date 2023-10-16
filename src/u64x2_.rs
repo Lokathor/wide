@@ -378,4 +378,9 @@ impl u64x2 {
   pub fn as_array_ref(&self) -> &[u64; 2] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [u64; 2] {
+    cast_mut(self)
+  }
 }
