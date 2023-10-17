@@ -461,4 +461,9 @@ impl u32x4 {
   pub fn as_array_ref(&self) -> &[u32; 4] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut[u32; 4] {
+    cast_mut(self)
+  }
 }

@@ -277,6 +277,11 @@ impl u32x8 {
   pub fn as_array_ref(&self) -> &[u32; 8] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut[u32; 8] {
+    cast_mut(self)
+  }
 }
 
 impl Not for u32x8 {
