@@ -486,7 +486,11 @@ impl i16x16 {
   }
 
   /// Calculates partial dot product.
-  /// Multiplies packed signed 16-bit integers, producing intermediate signed 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit integers.
+  /// Multiplies packed signed 16-bit integers, producing intermediate signed
+  /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
+  /// integers.
+  #[inline]
+  #[must_use]
   pub fn dot(self, rhs: Self) -> i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -555,7 +559,7 @@ impl i16x16 {
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut[i16; 16] {
+  pub fn as_array_mut(&mut self) -> &mut [i16; 16] {
     cast_mut(self)
   }
 }
