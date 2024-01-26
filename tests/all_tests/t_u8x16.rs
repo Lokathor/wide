@@ -179,3 +179,11 @@ fn impl_unpack_high_u8() {
   let c: [u8; 16] = u8x16::unpack_high(a, b).into();
   assert_eq!(c, [8, 8, 9, 19, 10, 2, 11, 21, 12, 22, 13, 3, 14, 24, 15, 127]);
 }
+
+#[test]
+fn impl_narrow_i16x8() {
+  let a = i16x8::from([-1, 2, -3, 4, -5, 6, -7, 8]);
+  let b = i16x8::from([9, 10, 11, 12, 13, -14, 15, -16]);
+  let c: [u8; 16] = u8x16::narrow_i16x8(a, b).into();
+  assert_eq!(c, [0, 2, 0, 4, 0, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 0]);
+}
