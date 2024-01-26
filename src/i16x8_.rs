@@ -849,6 +849,39 @@ impl i16x8 {
     }
   }
 
+  /// Multiples two i16x8 and return the high part of intermediate i32x8
+  #[inline]
+  #[must_use]
+  pub fn mul_keep_high(lhs: Self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: mul_i16_keep_high_m128i(lhs.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        let lhs_low = unsafe { vget_low_s16(lhs.neon) };
+        let rhs_low = unsafe { vget_low_s16(rhs.neon) };
+
+        let lhs_high = unsafe { vget_high_s16(lhs.neon) };
+        let rhs_high = unsafe { vget_high_s16(rhs.neon) };
+
+        let low = unsafe { vmull_s16(lhs_low, rhs_low) };
+        let high = unsafe { vmull_s16(lhs_high, rhs_high) };
+
+        i16x8 { neon: unsafe { vreinterpretq_s16_u16(vuzpq_u16(vreinterpretq_u16_s32(low), vreinterpretq_u16_s32(high)).1) } }
+      } else {
+        i16x8::new([
+          ((i32::from(rhs.as_array_ref()[0]) * i32::from(lhs.as_array_ref()[0])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[1]) * i32::from(lhs.as_array_ref()[1])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[2]) * i32::from(lhs.as_array_ref()[2])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[3]) * i32::from(lhs.as_array_ref()[3])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[4]) * i32::from(lhs.as_array_ref()[4])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[5]) * i32::from(lhs.as_array_ref()[5])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[6]) * i32::from(lhs.as_array_ref()[6])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[7]) * i32::from(lhs.as_array_ref()[7])) >> 16) as i16,
+        ])
+      }
+    }
+  }
+
   /// transpose matrix of 8x8 i16 matrix
   #[must_use]
   #[inline]
