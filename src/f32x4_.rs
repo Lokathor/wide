@@ -1575,7 +1575,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut[f32; 4] {
+  pub fn as_array_mut(&mut self) -> &mut [f32; 4] {
     cast_mut(self)
   }
 }
