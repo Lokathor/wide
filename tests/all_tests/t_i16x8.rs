@@ -345,3 +345,11 @@ fn impl_i16x8_reduce_max() {
     assert_eq!(p.reduce_min(), i16::MIN);
   }
 }
+
+#[test]
+fn impl_mul_keep_high() {
+  let a = i16x8::from([1, 200, 300, 4568, -1, -2, -3, -4]);
+  let b = i16x8::from([5, 600, 700, 8910, -15, -26, -37, 48]);
+  let c: [i16; 8] = i16x8::mul_keep_high(a, b).into();
+  assert_eq!(c, [0, 1, 3, 621, 0, 0, 0, -1]);
+}
