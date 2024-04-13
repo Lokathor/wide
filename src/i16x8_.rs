@@ -867,6 +867,11 @@ impl i16x8 {
         let high = unsafe { vmull_s16(lhs_high, rhs_high) };
 
         i16x8 { neon: unsafe { vreinterpretq_s16_u16(vuzpq_u16(vreinterpretq_u16_s32(low), vreinterpretq_u16_s32(high)).1) } }
+      } else if #[cfg(target_feature="simd128")] {
+        let low =  i32x4_extmul_low_i16x8(lhs.simd, rhs.simd);
+        let high = i32x4_extmul_high_i16x8(lhs.simd, rhs.simd);
+
+        Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
       } else {
         i16x8::new([
           ((i32::from(rhs.as_array_ref()[0]) * i32::from(lhs.as_array_ref()[0])) >> 16) as i16,
