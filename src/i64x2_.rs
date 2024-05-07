@@ -422,7 +422,7 @@ impl i64x2 {
       if #[cfg(target_feature="ssse3")] {
         u64x2 { sse: abs_i64_m128i(self.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        u64x2 { simd: i64x4_abs(self.simd) }
+        u64x2 { simd: i64x2_abs(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {u64x2 { neon: vabsq_s64(self.neon) }}
       } else {
