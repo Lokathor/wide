@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct u8x16 { neon : uint8x16_t }
+    pub struct u8x16 { pub(crate) neon : uint8x16_t }
 
     impl Default for u8x16 {
       #[inline]
@@ -51,7 +51,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct u8x16 { arr: [u8;16] }
+    pub struct u8x16 { pub(crate) arr: [u8;16] }
   }
 }
 

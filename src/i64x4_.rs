@@ -311,29 +311,20 @@ impl i64x4 {
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: abs_i64_m256i(self.avx2) }
-      } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
+      // avx x86 doesn't have this builtin
+      Self {
+        a : self.a.abs(),
+        b : self.b.abs(),
       }
-    }
   }
 
   #[inline]
   #[must_use]
   pub fn unsigned_abs(self) -> u64x4 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        u64x4 { avx2: abs_i64_m256i(self.avx2) }
-      } else {
-        u64x4 {
-          a : self.a.unsigned_abs(),
-          b : self.b.unsigned_abs(),
-        }
+      // avx x86 doesn't have this builtin
+      u64x4 {
+        a : self.a.unsigned_abs(),
+        b : self.b.unsigned_abs(),
       }
     }
   }

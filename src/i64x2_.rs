@@ -402,9 +402,8 @@ impl i64x2 {
   #[must_use]
   pub fn abs(self) -> Self {
     pick! {
-      if #[cfg(target_feature="ssse3")] {
-        Self { sse: abs_i64_m128i(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
+      // x86 doesn't have this builtin
+      if #[cfg(target_feature="simd128")] {
         Self { simd: i64x2_abs(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vabsq_s64(self.neon) }}
@@ -419,9 +418,8 @@ impl i64x2 {
   #[must_use]
   pub fn unsigned_abs(self) -> u64x2 {
     pick! {
-      if #[cfg(target_feature="ssse3")] {
-        u64x2 { sse: abs_i64_m128i(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
+      // x86 doesn't have this builtin
+      if #[cfg(target_feature="simd128")] {
         u64x2 { simd: i64x2_abs(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {u64x2 { neon: vreinterpretq_u64_s64(vabsq_s64(self.neon)) }}
