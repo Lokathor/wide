@@ -328,7 +328,7 @@ impl i64x4 {
   pub fn unsigned_abs(self) -> u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        u64x4 { avx2: abs_i32_m256i(self.avx2) }
+        u64x4 { avx2: abs_i64_m256i(self.avx2) }
       } else {
         u64x4 {
           a : self.a.unsigned_abs(),
