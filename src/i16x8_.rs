@@ -710,7 +710,7 @@ impl i16x8 {
       } else if #[cfg(target_feature="simd128")] {
         u16x8 { simd: i16x8_abs(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {u16x8 { neon: vabsq_s16(self.neon) }}
+        unsafe {u16x8 { neon: vreinterpretq_u16_s16(vabsq_s16(self.neon)) }}
       } else {
         let arr: [i16; 8] = cast(self);
         cast(arr.map(|x| x.unsigned_abs()))

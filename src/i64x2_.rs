@@ -424,7 +424,7 @@ impl i64x2 {
       } else if #[cfg(target_feature="simd128")] {
         u64x2 { simd: i64x2_abs(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {u64x2 { neon: vabsq_s64(self.neon) }}
+        unsafe {u64x2 { neon: vreinterpretq_u64_s64(vabsq_s64(self.neon)) }}
       } else {
         let arr: [i64; 2] = cast(self);
         cast(arr.map(|x| x.unsigned_abs()))
