@@ -318,8 +318,8 @@ impl i64x4 {
         Self { avx2: cast(arr.map( |x| x.wrapping_abs())) }
       } else {
         Self {
-          a : self.a.wrapping_abs(),
-          b : self.b.wrapping_abs(),
+          a : self.a.abs(),
+          b : self.b.abs(),
         }
       }
     }
