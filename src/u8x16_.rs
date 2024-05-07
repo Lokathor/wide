@@ -10,7 +10,7 @@ pick! {
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct u8x16 { simd: v128 }
+    pub struct u8x16 { pub(crate) simd: v128 }
 
     impl Default for u8x16 {
       fn default() -> Self {
