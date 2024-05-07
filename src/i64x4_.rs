@@ -311,15 +311,35 @@ impl i64x4 {
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
-    // avx x86 doesn't have this builtin
-    Self { a: self.a.abs(), b: self.b.abs() }
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // avx x86 doesn't have this builtin
+        let arr: [i64; 4] = cast(self);
+        Self { avx2: cast(arr.map( |x| x.wrapping_abs())) }
+      } else {
+        Self {
+          a : self.a.wrapping_abs(),
+          b : self.b.wrapping_abs(),
+        }
+      }
+    }
   }
 
   #[inline]
   #[must_use]
   pub fn unsigned_abs(self) -> u64x4 {
-    // avx x86 doesn't have this builtin
-    u64x4 { a: self.a.unsigned_abs(), b: self.b.unsigned_abs() }
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // avx x86 doesn't have this builtin
+        let arr: [i64; 4] = cast(self);
+        u64x4 { avx2: cast(arr.map( |x| x.unsigned_abs())) }
+      } else {
+        u64x4 {
+          a : self.a.unsigned_abs(),
+          b : self.b.unsigned_abs(),
+        }
+      }
+    }
   }
 
   #[inline]
