@@ -225,6 +225,48 @@ fn impl_i8x16_abs() {
 }
 
 #[test]
+fn impl_i8x16_unsigned_abs() {
+  let a = i8x16::from([
+    -1,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    -10,
+    -11,
+    12,
+    13,
+    -14,
+    -126,
+    i8::MIN,
+  ]);
+  let expected = u8x16::from([
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    126,
+    i8::MIN as u8,
+  ]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i8x16_max() {
   let a =
     i8x16::from([10, 2, -3, 4, 5, -6, 7, 8, 9, 7, -11, 12, 13, 6, 55, i8::MIN]);
