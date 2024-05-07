@@ -311,22 +311,15 @@ impl i64x4 {
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
-      // avx x86 doesn't have this builtin
-      Self {
-        a : self.a.abs(),
-        b : self.b.abs(),
-      }
+    // avx x86 doesn't have this builtin
+    Self { a: self.a.abs(), b: self.b.abs() }
   }
 
   #[inline]
   #[must_use]
   pub fn unsigned_abs(self) -> u64x4 {
-      // avx x86 doesn't have this builtin
-      u64x4 {
-        a : self.a.unsigned_abs(),
-        b : self.b.unsigned_abs(),
-      }
-    }
+    // avx x86 doesn't have this builtin
+    u64x4 { a: self.a.unsigned_abs(), b: self.b.unsigned_abs() }
   }
 
   #[inline]
