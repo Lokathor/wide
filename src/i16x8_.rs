@@ -700,6 +700,23 @@ impl i16x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u16x8 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        u16x8 { sse: abs_i16_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        u16x8 { simd: i16x8_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {u16x8 { neon: vabsq_s16(self.neon) }}
+      } else {
+        let arr: [i16; 8] = cast(self);
+        cast(arr.map(|x| x.unsigned_abs()))
+      }
+    }
+  }
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

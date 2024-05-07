@@ -148,6 +148,14 @@ fn impl_i32x8_abs() {
 }
 
 #[test]
+fn impl_i32x8_unsigned_abs() {
+  let a = i32x8::from([-1, 2, -3, i32::MIN, 6, -15, -19, 9]);
+  let expected = u32x8::from([1, 2, 3, i32::MIN as u32, 6, 15, 19, 9]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i32x8_max() {
   let a = i32x8::from([1, 2, i32::MIN + 1, i32::MIN, 6, -8, 12, 9]);
   let b = i32x8::from([17, -18, 1, 1, 19, -5, -1, -9]);

@@ -8,7 +8,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u64x4 { a : u64x2, b : u64x2 }
+    pub struct u64x4 { pub(crate) a : u64x2, pub(crate) b : u64x2 }
   }
 }
 

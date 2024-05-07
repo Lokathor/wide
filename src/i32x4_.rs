@@ -476,6 +476,23 @@ impl i32x4 {
 
   #[inline]
   #[must_use]
+  pub fn unsigned_abs(self) -> u32x4 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        u32x4 { sse: abs_i32_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4 { simd: i32x4_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {u32x4 { neon: vabsq_s32(self.neon) }}
+      } else {
+        let arr: [i32; 4] = cast(self);
+        cast(arr.map(|x| x.unsigned_abs()))
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {

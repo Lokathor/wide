@@ -949,6 +949,17 @@ pub trait CmpLe<Rhs = Self> {
   fn cmp_le(self, rhs: Rhs) -> Self::Output;
 }
 
+pub trait MulScaleRound<Rhs = Self> {
+  /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
+  /// lane, effectively multiplying by a 16 bit fixed point number between -1
+  /// and 1. This corresponds to the following instructions:
+  /// - vqrdmulhq_n_s16 instruction on neon
+  /// - i16x8_q15mulr_sat on simd128
+  /// - _mm_mulhrs_epi16 on ssse3
+  /// - emulated via mul_i16_* on sse2
+  fn mul_scale_round(self, rhs: Rhs) -> Self;
+}
+
 macro_rules! bulk_impl_const_rhs_op {
   (($op:ident,$method:ident) => [$(($lhs:ty,$rhs:ty),)+]) => {
     $(

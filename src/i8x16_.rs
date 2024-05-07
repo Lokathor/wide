@@ -527,6 +527,25 @@ impl i8x16 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: abs_i8_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vabsq_s8(self.neon) }}
+      } else {
+        let arr: [i8; 16] = cast(self);
+        cast(
+          arr.map(|x| x.unsigned_abs()))
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

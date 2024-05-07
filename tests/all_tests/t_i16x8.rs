@@ -213,6 +213,14 @@ fn impl_i16x8_abs() {
 }
 
 #[test]
+fn impl_i16x8_unsigned_abs() {
+  let a = i16x8::from([1, -2, 3, -4, 5, -6, -7, i16::MIN]);
+  let expected = u16x8::from([1, 2, 3, 4, 5, 6, 7, i16::MIN as u16]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i16x8_max() {
   let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
   let b = i16x8::from([17, -18, 190, -20, 21, -22, 1, 1]);

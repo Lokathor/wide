@@ -400,6 +400,40 @@ impl i64x2 {
 
   #[inline]
   #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: abs_i64_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vabsq_s64(self.neon) }}
+      } else {
+        let arr: [i64; 2] = cast(self);
+        cast(arr.map(|x| x.wrapping_abs()))
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u64x2 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        u64x2 { sse: abs_i64_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        u64x2 { simd: i64x4_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {u64x2 { neon: vabsq_s64(self.neon) }}
+      } else {
+        let arr: [i64; 2] = cast(self);
+        cast(arr.map(|x| x.unsigned_abs()))
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_float(self) -> f64x2 {
     let arr: [i64; 2] = cast(self);
     cast([arr[0] as f64, arr[1] as f64])
