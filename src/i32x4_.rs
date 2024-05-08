@@ -451,7 +451,12 @@ impl i32x4 {
         unsafe {u32x4 { neon: vreinterpretq_u32_s32(vabsq_s32(self.neon)) }}
       } else {
         let arr: [i32; 4] = cast(self);
-        cast(arr.map(|x| x.unsigned_abs()))
+        cast([
+          arr[0].unsigned_abs(),
+          arr[1].unsigned_abs(),
+          arr[2].unsigned_abs(),
+          arr[3].unsigned_abs(),
+        ])
       }
     }
   }

@@ -409,7 +409,11 @@ impl i64x2 {
         unsafe {Self { neon: vabsq_s64(self.neon) }}
       } else {
         let arr: [i64; 2] = cast(self);
-        cast(arr.map(|x| x.wrapping_abs()))
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+          ])
       }
     }
   }
@@ -425,7 +429,11 @@ impl i64x2 {
         unsafe {u64x2 { neon: vreinterpretq_u64_s64(vabsq_s64(self.neon)) }}
       } else {
         let arr: [i64; 2] = cast(self);
-        cast(arr.map(|x| x.unsigned_abs()))
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+          ])
       }
     }
   }

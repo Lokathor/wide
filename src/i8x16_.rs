@@ -541,7 +541,24 @@ impl i8x16 {
       } else {
         let arr: [i8; 16] = cast(self);
         cast(
-          arr.map(|x| x.unsigned_abs()))
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+            arr[2].unsigned_abs(),
+            arr[3].unsigned_abs(),
+            arr[4].unsigned_abs(),
+            arr[5].unsigned_abs(),
+            arr[6].unsigned_abs(),
+            arr[7].unsigned_abs(),
+            arr[8].unsigned_abs(),
+            arr[9].unsigned_abs(),
+            arr[10].unsigned_abs(),
+            arr[11].unsigned_abs(),
+            arr[12].unsigned_abs(),
+            arr[13].unsigned_abs(),
+            arr[14].unsigned_abs(),
+            arr[15].unsigned_abs(),
+            ])
       }
     }
   }

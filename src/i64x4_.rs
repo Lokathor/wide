@@ -315,7 +315,13 @@ impl i64x4 {
       if #[cfg(target_feature="avx2")] {
         // avx x86 doesn't have this builtin
         let arr: [i64; 4] = cast(self);
-        Self { avx2: cast(arr.map( |x| x.wrapping_abs())) }
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+            arr[2].wrapping_abs(),
+            arr[3].wrapping_abs(),
+          ])
       } else {
         Self {
           a : self.a.abs(),
@@ -332,7 +338,13 @@ impl i64x4 {
       if #[cfg(target_feature="avx2")] {
         // avx x86 doesn't have this builtin
         let arr: [i64; 4] = cast(self);
-        u64x4 { avx2: cast(arr.map( |x| x.unsigned_abs())) }
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+            arr[2].unsigned_abs(),
+            arr[3].unsigned_abs(),
+          ])
       } else {
         u64x4 {
           a : self.a.unsigned_abs(),
