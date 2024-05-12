@@ -310,6 +310,52 @@ impl i64x4 {
 
   #[inline]
   #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // avx x86 doesn't have this builtin
+        let arr: [i64; 4] = cast(self);
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+            arr[2].wrapping_abs(),
+            arr[3].wrapping_abs(),
+          ])
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u64x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // avx x86 doesn't have this builtin
+        let arr: [i64; 4] = cast(self);
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+            arr[2].unsigned_abs(),
+            arr[3].unsigned_abs(),
+          ])
+      } else {
+        u64x4 {
+          a : self.a.unsigned_abs(),
+          b : self.b.unsigned_abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_float(self) -> f64x4 {
     let arr: [i64; 4] = cast(self);
     cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])

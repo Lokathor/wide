@@ -369,6 +369,22 @@ impl i32x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        u32x8 { avx2: abs_i32_m256i(self.avx2) }
+      } else {
+        u32x8 {
+          a : self.a.unsigned_abs(),
+          b : self.b.unsigned_abs(),
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

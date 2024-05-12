@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u64x4 { avx2: m256i }
+    pub struct u64x4 { pub(crate) avx2: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u64x4 { a : u64x2, b : u64x2 }
+    pub struct u64x4 { pub(crate) a : u64x2, pub(crate) b : u64x2 }
   }
 }
 

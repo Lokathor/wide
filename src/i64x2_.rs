@@ -400,6 +400,46 @@ impl i64x2 {
 
   #[inline]
   #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      // x86 doesn't have this builtin
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vabsq_s64(self.neon) }}
+      } else {
+        let arr: [i64; 2] = cast(self);
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+          ])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u64x2 {
+    pick! {
+      // x86 doesn't have this builtin
+      if #[cfg(target_feature="simd128")] {
+        u64x2 { simd: i64x2_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {u64x2 { neon: vreinterpretq_u64_s64(vabsq_s64(self.neon)) }}
+      } else {
+        let arr: [i64; 2] = cast(self);
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+          ])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_float(self) -> f64x2 {
     let arr: [i64; 2] = cast(self);
     cast([arr[0] as f64, arr[1] as f64])

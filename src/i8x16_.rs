@@ -527,6 +527,42 @@ impl i8x16 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u8x16 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        u8x16 { sse: abs_i8_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16 { simd: i8x16_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { u8x16 { neon: vreinterpretq_u8_s8(vabsq_s8(self.neon)) }}
+      } else {
+        let arr: [i8; 16] = cast(self);
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+            arr[2].unsigned_abs(),
+            arr[3].unsigned_abs(),
+            arr[4].unsigned_abs(),
+            arr[5].unsigned_abs(),
+            arr[6].unsigned_abs(),
+            arr[7].unsigned_abs(),
+            arr[8].unsigned_abs(),
+            arr[9].unsigned_abs(),
+            arr[10].unsigned_abs(),
+            arr[11].unsigned_abs(),
+            arr[12].unsigned_abs(),
+            arr[13].unsigned_abs(),
+            arr[14].unsigned_abs(),
+            arr[15].unsigned_abs(),
+            ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
