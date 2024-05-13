@@ -696,10 +696,52 @@ impl i16x8 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vabsq_s16(self.neon) }}
       } else {
-        self.is_negative().blend(self.neg(), self)
+        let arr: [i16; 8] = cast(self);
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+            arr[2].wrapping_abs(),
+            arr[3].wrapping_abs(),
+            arr[4].wrapping_abs(),
+            arr[5].wrapping_abs(),
+            arr[6].wrapping_abs(),
+            arr[7].wrapping_abs(),
+          ])
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u16x8 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let mask = shr_imm_i16_m128i::<15>(self.sse);
+        u16x8 { sse: bitxor_m128i(add_i16_m128i(self.sse, mask), mask) }
+      } else if #[cfg(target_feature="ssse3")] {
+        u16x8 { sse: abs_i16_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        u16x8 { simd: i16x8_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {u16x8 { neon: vreinterpretq_u16_s16(vabsq_s16(self.neon)) }}
+      } else {
+        let arr: [i16; 8] = cast(self);
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+            arr[2].unsigned_abs(),
+            arr[3].unsigned_abs(),
+            arr[4].unsigned_abs(),
+            arr[5].unsigned_abs(),
+            arr[6].unsigned_abs(),
+            arr[7].unsigned_abs(),
+          ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -894,16 +936,16 @@ impl i16x8 {
   /// multiplies two i16x8 and returns the result as a widened i32x8
   pub fn mul_widen(self, rhs: Self) -> i32x8 {
     pick! {
-      if #[cfg(target_feature="avx2")] {          
+      if #[cfg(target_feature="avx2")] {
         let a = convert_to_i32_m256i_from_i16_m128i(self.sse);
         let b = convert_to_i32_m256i_from_i16_m128i(rhs.sse);
         i32x8 { avx2: mul_i32_keep_low_m256i(a,b) }
       } else if #[cfg(target_feature="sse2")] {
          let a = mul_i16_keep_low_m128i(self.sse, rhs.sse);
          let b = mul_i16_keep_high_m128i(self.sse, rhs.sse);
-         i32x8 { 
+         i32x8 {
           a: i32x4 { sse:unpack_low_i16_m128i(a, b) },
-          b: i32x4 { sse:unpack_high_i16_m128i(a, b) } 
+          b: i32x4 { sse:unpack_high_i16_m128i(a, b) }
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
          let lhs_low = unsafe { vget_low_s16(self.neon) };
