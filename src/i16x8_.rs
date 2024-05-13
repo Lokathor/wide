@@ -934,6 +934,8 @@ impl i16x8 {
   }
 
   /// multiplies two i16x8 and returns the result as a widened i32x8
+  #[inline]
+  #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
