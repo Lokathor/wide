@@ -361,3 +361,21 @@ fn impl_mul_keep_high() {
   let c: [i16; 8] = i16x8::mul_keep_high(a, b).into();
   assert_eq!(c, [0, 1, 3, 621, 0, 0, 0, -1]);
 }
+
+#[test]
+fn impl_i16x8_mul_widen() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN, i16::MAX]);
+  let b = i16x8::from([17, -18, 190, -20, 21, -22, i16::MAX, i16::MAX]);
+  let expected = i32x8::from([
+    17,
+    -36,
+    570,
+    -80,
+    105,
+    -132,
+    (i16::MIN as i32) * (i16::MAX as i32),
+    (i16::MAX as i32) * (i16::MAX as i32),
+  ]);
+  let actual = a.mul_widen(b);
+  assert_eq!(expected, actual);
+}

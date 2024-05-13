@@ -933,6 +933,50 @@ impl i16x8 {
     }
   }
 
+  /// multiplies two i16x8 and returns the result as a widened i32x8
+  #[inline]
+  #[must_use]
+  pub fn mul_widen(self, rhs: Self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a = convert_to_i32_m256i_from_i16_m128i(self.sse);
+        let b = convert_to_i32_m256i_from_i16_m128i(rhs.sse);
+        i32x8 { avx2: mul_i32_keep_low_m256i(a,b) }
+      } else if #[cfg(target_feature="sse2")] {
+         let low = mul_i16_keep_low_m128i(self.sse, rhs.sse);
+         let high = mul_i16_keep_high_m128i(self.sse, rhs.sse);
+         i32x8 {
+          a: i32x4 { sse:unpack_low_i16_m128i(low, high) },
+          b: i32x4 { sse:unpack_high_i16_m128i(low, high) }
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+         let lhs_low = unsafe { vget_low_s16(self.neon) };
+         let rhs_low = unsafe { vget_low_s16(rhs.neon) };
+
+         let lhs_high = unsafe { vget_high_s16(self.neon) };
+         let rhs_high = unsafe { vget_high_s16(rhs.neon) };
+
+         let low = unsafe { vmull_s16(lhs_low, rhs_low) };
+         let high = unsafe { vmull_s16(lhs_high, rhs_high) };
+
+         i32x8 { a: i32x4 { neon: low }, b: i32x4 {neon: high } }
+       } else {
+        let a = self.as_array_ref();
+        let b = rhs.as_array_ref();
+         i32x8::new([
+           i32::from(a[0]) * i32::from(b[0]),
+           i32::from(a[1]) * i32::from(b[1]),
+           i32::from(a[2]) * i32::from(b[2]),
+           i32::from(a[3]) * i32::from(b[3]),
+           i32::from(a[4]) * i32::from(b[4]),
+           i32::from(a[5]) * i32::from(b[5]),
+           i32::from(a[6]) * i32::from(b[6]),
+           i32::from(a[7]) * i32::from(b[7]),
+         ])
+       }
+    }
+  }
+
   /// transpose matrix of 8x8 i16 matrix
   #[must_use]
   #[inline]
