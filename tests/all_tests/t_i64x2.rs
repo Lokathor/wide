@@ -81,6 +81,22 @@ fn impl_i64x2_blend() {
 }
 
 #[test]
+fn impl_i64x2_abs() {
+  let a = i64x2::from([-1, i64::MIN]);
+  let expected = i64x2::from([1, i64::MIN]);
+  let actual = a.abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x2_unsigned_abs() {
+  let a = i64x2::from([-1, i64::MIN]);
+  let expected = u64x2::from([1, i64::MIN as u64]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i64x2_cmp_eq() {
   let a = i64x2::from([1_i64, 4]);
   let b = i64x2::from([3_i64, 4]);

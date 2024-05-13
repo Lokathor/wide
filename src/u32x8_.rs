@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u32x8 { avx2: m256i }
+    pub struct u32x8 { pub(crate) avx2: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u32x8 { a : u32x4, b : u32x4 }
+    pub struct u32x8 { pub(crate) a : u32x4, pub(crate) b : u32x4 }
   }
 }
 
@@ -276,6 +276,11 @@ impl u32x8 {
   #[inline]
   pub fn as_array_ref(&self) -> &[u32; 8] {
     cast_ref(self)
+  }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [u32; 8] {
+    cast_mut(self)
   }
 }
 

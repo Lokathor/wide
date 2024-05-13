@@ -753,10 +753,52 @@ impl i16x8 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vabsq_s16(self.neon) }}
       } else {
-        self.is_negative().blend(self.neg(), self)
+        let arr: [i16; 8] = cast(self);
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+            arr[2].wrapping_abs(),
+            arr[3].wrapping_abs(),
+            arr[4].wrapping_abs(),
+            arr[5].wrapping_abs(),
+            arr[6].wrapping_abs(),
+            arr[7].wrapping_abs(),
+          ])
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u16x8 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let mask = shr_imm_i16_m128i::<15>(self.sse);
+        u16x8 { sse: bitxor_m128i(add_i16_m128i(self.sse, mask), mask) }
+      } else if #[cfg(target_feature="ssse3")] {
+        u16x8 { sse: abs_i16_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        u16x8 { simd: i16x8_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {u16x8 { neon: vreinterpretq_u16_s16(vabsq_s16(self.neon)) }}
+      } else {
+        let arr: [i16; 8] = cast(self);
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+            arr[2].unsigned_abs(),
+            arr[3].unsigned_abs(),
+            arr[4].unsigned_abs(),
+            arr[5].unsigned_abs(),
+            arr[6].unsigned_abs(),
+            arr[7].unsigned_abs(),
+          ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -837,6 +879,35 @@ impl i16x8 {
     }
   }
 
+  /// Calculates partial dot product.
+  /// Multiplies packed signed 16-bit integers, producing intermediate signed
+  /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
+  /// integers.
+  #[inline]
+  #[must_use]
+  pub fn dot(self, rhs: Self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        i32x4 { sse:  mul_i16_horizontal_add_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        i32x4 { simd: i32x4_dot_i16x8(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          let pl = vmull_s16(vget_low_s16(self.neon),  vget_low_s16(rhs.neon));
+          let ph = vmull_high_s16(self.neon, rhs.neon);
+          i32x4 { neon: vpaddq_s32(pl, ph) }
+        }
+      } else {
+        i32x4 { arr: [
+          (i32::from(self.arr[0]) * i32::from(rhs.arr[0])) + (i32::from(self.arr[1]) * i32::from(rhs.arr[1])),
+          (i32::from(self.arr[2]) * i32::from(rhs.arr[2])) + (i32::from(self.arr[3]) * i32::from(rhs.arr[3])),
+          (i32::from(self.arr[4]) * i32::from(rhs.arr[4])) + (i32::from(self.arr[5]) * i32::from(rhs.arr[5])),
+          (i32::from(self.arr[6]) * i32::from(rhs.arr[6])) + (i32::from(self.arr[7]) * i32::from(rhs.arr[7])),
+        ] }
+      }
+    }
+  }
+
   /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
@@ -877,6 +948,44 @@ impl i16x8 {
           ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
           ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,
         ]}
+      }
+    }
+  }
+
+  /// Multiples two i16x8 and return the high part of intermediate i32x8
+  #[inline]
+  #[must_use]
+  pub fn mul_keep_high(lhs: Self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: mul_i16_keep_high_m128i(lhs.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        let lhs_low = unsafe { vget_low_s16(lhs.neon) };
+        let rhs_low = unsafe { vget_low_s16(rhs.neon) };
+
+        let lhs_high = unsafe { vget_high_s16(lhs.neon) };
+        let rhs_high = unsafe { vget_high_s16(rhs.neon) };
+
+        let low = unsafe { vmull_s16(lhs_low, rhs_low) };
+        let high = unsafe { vmull_s16(lhs_high, rhs_high) };
+
+        i16x8 { neon: unsafe { vreinterpretq_s16_u16(vuzpq_u16(vreinterpretq_u16_s32(low), vreinterpretq_u16_s32(high)).1) } }
+      } else if #[cfg(target_feature="simd128")] {
+        let low =  i32x4_extmul_low_i16x8(lhs.simd, rhs.simd);
+        let high = i32x4_extmul_high_i16x8(lhs.simd, rhs.simd);
+
+        Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
+      } else {
+        i16x8::new([
+          ((i32::from(rhs.as_array_ref()[0]) * i32::from(lhs.as_array_ref()[0])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[1]) * i32::from(lhs.as_array_ref()[1])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[2]) * i32::from(lhs.as_array_ref()[2])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[3]) * i32::from(lhs.as_array_ref()[3])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[4]) * i32::from(lhs.as_array_ref()[4])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[5]) * i32::from(lhs.as_array_ref()[5])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[6]) * i32::from(lhs.as_array_ref()[6])) >> 16) as i16,
+          ((i32::from(rhs.as_array_ref()[7]) * i32::from(lhs.as_array_ref()[7])) >> 16) as i16,
+        ])
       }
     }
   }
@@ -1069,5 +1178,10 @@ impl i16x8 {
   #[inline]
   pub fn as_array_ref(&self) -> &[i16; 8] {
     cast_ref(self)
+  }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [i16; 8] {
+    cast_mut(self)
   }
 }

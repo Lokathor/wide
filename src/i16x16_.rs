@@ -294,9 +294,10 @@ impl i16x16 {
   #[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        (move_mask_i8_m256i(pack_i16_to_i8_m256i(self.avx2,shuffle_ai_i64_all_m256i::<0b01_00_11_10>(self.avx2))) & 0xffff) as i32
-      } else {
+      if #[cfg(target_feature="sse2")] {
+          let [a,b] = cast::<_,[m128i;2]>(self);
+          move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b))
+        } else {
         self.a.move_mask() | (self.b.move_mask() << 8)
       }
     }
@@ -485,6 +486,25 @@ impl i16x16 {
     }
   }
 
+  /// Calculates partial dot product.
+  /// Multiplies packed signed 16-bit integers, producing intermediate signed
+  /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
+  /// integers.
+  #[inline]
+  #[must_use]
+  pub fn dot(self, rhs: Self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x8 { avx2:  mul_i16_horizontal_add_m256i(self.avx2, rhs.avx2) }
+      } else {
+        i32x8 {
+          a : self.a.dot(rhs.a),
+          b : self.b.dot(rhs.b),
+        }
+      }
+    }
+  }
+
   /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
@@ -537,5 +557,10 @@ impl i16x16 {
   #[inline]
   pub fn as_array_ref(&self) -> &[i16; 16] {
     cast_ref(self)
+  }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [i16; 16] {
+    cast_mut(self)
   }
 }

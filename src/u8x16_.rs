@@ -10,7 +10,7 @@ pick! {
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct u8x16 { simd: v128 }
+    pub struct u8x16 { pub(crate) simd: v128 }
 
     impl Default for u8x16 {
       fn default() -> Self {
@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct u8x16 { neon : uint8x16_t }
+    pub struct u8x16 { pub(crate) neon : uint8x16_t }
 
     impl Default for u8x16 {
       #[inline]
@@ -51,7 +51,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct u8x16 { arr: [u8;16] }
+    pub struct u8x16 { pub(crate) arr: [u8;16] }
   }
 }
 
@@ -459,6 +459,112 @@ impl u8x16 {
     }
   }
 
+  /// Unpack and interleave low lanes of two u8x16
+  #[inline]
+  #[must_use]
+  pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
+    pick! {
+        if #[cfg(target_feature = "sse2")] {
+            u8x16 { sse: unpack_low_i8_m128i(lhs.sse, rhs.sse) }
+        } else if #[cfg(target_feature = "simd128")] {
+          u8x16 { simd: u8x16_shuffle::<0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23>(lhs.simd, rhs.simd) }
+        } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            let lhs = unsafe { vget_low_u8(lhs.neon) };
+            let rhs = unsafe { vget_low_u8(rhs.neon) };
+
+            let zipped = unsafe { vzip_u8(lhs, rhs) };
+            u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
+        } else {
+            u8x16::new([
+                lhs.as_array_ref()[0], rhs.as_array_ref()[0],
+                lhs.as_array_ref()[1], rhs.as_array_ref()[1],
+                lhs.as_array_ref()[2], rhs.as_array_ref()[2],
+                lhs.as_array_ref()[3], rhs.as_array_ref()[3],
+                lhs.as_array_ref()[4], rhs.as_array_ref()[4],
+                lhs.as_array_ref()[5], rhs.as_array_ref()[5],
+                lhs.as_array_ref()[6], rhs.as_array_ref()[6],
+                lhs.as_array_ref()[7], rhs.as_array_ref()[7],
+            ])
+        }
+    }
+  }
+
+  /// Unpack and interleave high lanes of two u8x16
+  #[inline]
+  #[must_use]
+  pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
+    pick! {
+        if #[cfg(target_feature = "sse2")] {
+            u8x16 { sse: unpack_high_i8_m128i(lhs.sse, rhs.sse) }
+        } else if #[cfg(target_feature = "simd128")] {
+            u8x16 { simd: u8x16_shuffle::<8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31>(lhs.simd, rhs.simd) }
+        } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            let lhs = unsafe { vget_high_u8(lhs.neon) };
+            let rhs = unsafe { vget_high_u8(rhs.neon) };
+
+            let zipped = unsafe { vzip_u8(lhs, rhs) };
+            u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
+        } else {
+            u8x16::new([
+                lhs.as_array_ref()[8], rhs.as_array_ref()[8],
+                lhs.as_array_ref()[9], rhs.as_array_ref()[9],
+                lhs.as_array_ref()[10], rhs.as_array_ref()[10],
+                lhs.as_array_ref()[11], rhs.as_array_ref()[11],
+                lhs.as_array_ref()[12], rhs.as_array_ref()[12],
+                lhs.as_array_ref()[13], rhs.as_array_ref()[13],
+                lhs.as_array_ref()[14], rhs.as_array_ref()[14],
+                lhs.as_array_ref()[15], rhs.as_array_ref()[15],
+            ])
+        }
+    }
+  }
+
+  /// Pack and saturate two i16x8 to u8x16
+  #[inline]
+  #[must_use]
+  pub fn narrow_i16x8(lhs: i16x8, rhs: i16x8) -> Self {
+    pick! {
+        if #[cfg(target_feature = "sse2")] {
+            u8x16 { sse: pack_i16_to_u8_m128i(lhs.sse, rhs.sse) }
+        } else if #[cfg(target_feature = "simd128")] {
+            u8x16 { simd: u8x16_narrow_i16x8(lhs.simd, rhs.simd) }
+        } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            let lhs = unsafe { vqmovun_s16(lhs.neon) };
+            let rhs = unsafe { vqmovun_s16(rhs.neon) };
+            u8x16 { neon: unsafe { vcombine_u8(lhs, rhs) } }
+        } else {
+            fn clamp(a: i16) -> u8 {
+                  if a < u8::MIN as i16 {
+                      u8::MIN
+                  } else if a > u8::MAX as i16 {
+                      u8::MAX
+                  } else {
+                      a as u8
+                  }
+            }
+
+            Self { arr: [
+                clamp(lhs.as_array_ref()[0]),
+                clamp(lhs.as_array_ref()[1]),
+                clamp(lhs.as_array_ref()[2]),
+                clamp(lhs.as_array_ref()[3]),
+                clamp(lhs.as_array_ref()[4]),
+                clamp(lhs.as_array_ref()[5]),
+                clamp(lhs.as_array_ref()[6]),
+                clamp(lhs.as_array_ref()[7]),
+                clamp(rhs.as_array_ref()[0]),
+                clamp(rhs.as_array_ref()[1]),
+                clamp(rhs.as_array_ref()[2]),
+                clamp(rhs.as_array_ref()[3]),
+                clamp(rhs.as_array_ref()[4]),
+                clamp(rhs.as_array_ref()[5]),
+                clamp(rhs.as_array_ref()[6]),
+                clamp(rhs.as_array_ref()[7]),
+            ]}
+        }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [u8; 16] {
     cast(self)
@@ -467,5 +573,10 @@ impl u8x16 {
   #[inline]
   pub fn as_array_ref(&self) -> &[u8; 16] {
     cast_ref(self)
+  }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [u8; 16] {
+    cast_mut(self)
   }
 }

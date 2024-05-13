@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
-    pub struct u32x4 { sse: m128i }
+    pub struct u32x4 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct u32x4 { simd: v128 }
+    pub struct u32x4 { pub(crate) simd: v128 }
 
     impl Default for u32x4 {
       fn default() -> Self {
@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct u32x4 { neon : uint32x4_t }
+    pub struct u32x4 { pub(crate) neon : uint32x4_t }
 
     impl Default for u32x4 {
       #[inline]
@@ -460,5 +460,10 @@ impl u32x4 {
   #[inline]
   pub fn as_array_ref(&self) -> &[u32; 4] {
     cast_ref(self)
+  }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [u32; 4] {
+    cast_mut(self)
   }
 }

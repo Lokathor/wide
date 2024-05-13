@@ -131,6 +131,14 @@ fn impl_i32x4_abs() {
 }
 
 #[test]
+fn impl_i32x4_unsigned_abs() {
+  let a = i32x4::from([-1, 2, -3, i32::MIN]);
+  let expected = u32x4::from([1, 2, 3, i32::MIN as u32]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i32x4_max() {
   let a = i32x4::from([1, 2, i32::MIN + 1, i32::MIN]);
   let b = i32x4::from([17, -18, 1, 1]);

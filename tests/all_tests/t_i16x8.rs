@@ -213,6 +213,14 @@ fn impl_i16x8_abs() {
 }
 
 #[test]
+fn impl_i16x8_unsigned_abs() {
+  let a = i16x8::from([1, -2, 3, -4, 5, -6, -7, i16::MIN]);
+  let expected = u16x8::from([1, 2, 3, 4, 5, 6, 7, i16::MIN as u16]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i16x8_max() {
   let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
   let b = i16x8::from([17, -18, 190, -20, 21, -22, 1, 1]);
@@ -318,6 +326,15 @@ fn impl_i16x8_reduce_add() {
 }
 
 #[test]
+fn impl_dot_for_i16x8() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+  let b = i16x8::from([17, -18, 190, -20, 21, -22, 3, 2]);
+  let expected = i32x4::from([-19, 490, -27, -163837]);
+  let actual = a.dot(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i16x8_reduce_min() {
   for i in 0..8 {
     let mut v = [i16::MAX; 8];
@@ -335,6 +352,14 @@ fn impl_i16x8_reduce_max() {
     let p = i16x8::from(v);
     assert_eq!(p.reduce_min(), i16::MIN);
   }
+}
+
+#[test]
+fn impl_mul_keep_high() {
+  let a = i16x8::from([1, 200, 300, 4568, -1, -2, -3, -4]);
+  let b = i16x8::from([5, 600, 700, 8910, -15, -26, -37, 48]);
+  let c: [i16; 8] = i16x8::mul_keep_high(a, b).into();
+  assert_eq!(c, [0, 1, 3, 621, 0, 0, 0, -1]);
 }
 
 #[test]

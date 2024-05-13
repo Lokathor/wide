@@ -340,4 +340,9 @@ impl i8x32 {
   pub fn as_array_ref(&self) -> &[i8; 32] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [i8; 32] {
+    cast_mut(self)
+  }
 }

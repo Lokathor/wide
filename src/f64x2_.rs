@@ -1603,6 +1603,11 @@ impl f64x2 {
   pub fn as_array_ref(&self) -> &[f64; 2] {
     cast_ref(self)
   }
+
+  #[inline]
+  pub fn as_array_mut(&mut self) -> &mut [f64; 2] {
+    cast_mut(self)
+  }
 }
 
 impl Not for f64x2 {
