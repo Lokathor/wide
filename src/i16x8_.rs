@@ -943,11 +943,11 @@ impl i16x8 {
         let b = convert_to_i32_m256i_from_i16_m128i(rhs.sse);
         i32x8 { avx2: mul_i32_keep_low_m256i(a,b) }
       } else if #[cfg(target_feature="sse2")] {
-         let a = mul_i16_keep_low_m128i(self.sse, rhs.sse);
-         let b = mul_i16_keep_high_m128i(self.sse, rhs.sse);
+         let low = mul_i16_keep_low_m128i(self.sse, rhs.sse);
+         let high = mul_i16_keep_high_m128i(self.sse, rhs.sse);
          i32x8 {
-          a: i32x4 { sse:unpack_low_i16_m128i(a, b) },
-          b: i32x4 { sse:unpack_high_i16_m128i(a, b) }
+          a: i32x4 { sse:unpack_low_i16_m128i(low, high) },
+          b: i32x4 { sse:unpack_high_i16_m128i(low, high) }
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
          let lhs_low = unsafe { vget_low_s16(self.neon) };
@@ -962,7 +962,7 @@ impl i16x8 {
          i32x8 { a: i32x4 { neon: low }, b: i32x4 {neon: high } }
        } else {
         let a = self.as_array_ref();
-        let b= rhs.as_array_ref();
+        let b = rhs.as_array_ref();
          i32x8::new([
            ((i32::from(a[0]) * i32::from(b[0]))),
            ((i32::from(a[1]) * i32::from(b[1]))),
