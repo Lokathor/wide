@@ -964,14 +964,14 @@ impl i16x8 {
         let a = self.as_array_ref();
         let b = rhs.as_array_ref();
          i32x8::new([
-           ((i32::from(a[0]) * i32::from(b[0]))),
-           ((i32::from(a[1]) * i32::from(b[1]))),
-           ((i32::from(a[2]) * i32::from(b[2]))),
-           ((i32::from(a[3]) * i32::from(b[3]))),
-           ((i32::from(a[4]) * i32::from(b[4]))),
-           ((i32::from(a[5]) * i32::from(b[5]))),
-           ((i32::from(a[6]) * i32::from(b[6]))),
-           ((i32::from(a[7]) * i32::from(b[7]))),
+           i32::from(a[0]) * i32::from(b[0]),
+           i32::from(a[1]) * i32::from(b[1]),
+           i32::from(a[2]) * i32::from(b[2]),
+           i32::from(a[3]) * i32::from(b[3]),
+           i32::from(a[4]) * i32::from(b[4]),
+           i32::from(a[5]) * i32::from(b[5]),
+           i32::from(a[6]) * i32::from(b[6]),
+           i32::from(a[7]) * i32::from(b[7]),
          ])
        }
     }
