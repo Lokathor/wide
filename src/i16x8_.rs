@@ -669,6 +669,7 @@ impl i16x8 {
       } else {
         let arr: [i16; 8] = cast(self);
 
+        // most boring implementation possible so optimizer doesn't overthink this
         let mut r = arr[0];
         r = r.wrapping_add(arr[1]);
         r = r.wrapping_add(arr[2]);
@@ -699,6 +700,7 @@ impl i16x8 {
         } else {
         let arr: [i16; 8] = cast(self);
 
+        // most boring implementation possible so optimizer doesn't overthink this
         let mut r = arr[0];
         r = r.min(arr[1]);
         r = r.min(arr[2]);
@@ -729,6 +731,7 @@ impl i16x8 {
         } else {
         let arr: [i16; 8] = cast(self);
 
+        // most boring implementation possible so optimizer doesn't overthink this
         let mut r = arr[0];
         r = r.max(arr[1]);
         r = r.max(arr[2]);
