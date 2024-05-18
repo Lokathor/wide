@@ -656,6 +656,7 @@ impl i16x8 {
   pub fn reduce_add(self) -> i16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
+        // there is a horizontal add instruction on ssse3, but apparently it is very slow on some AMD CPUs
         let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
         let sum64 = add_i16_m128i(self.sse, hi64);
         let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
