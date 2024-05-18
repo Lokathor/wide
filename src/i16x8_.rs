@@ -668,12 +668,14 @@ impl i16x8 {
       } else {
         let arr: [i16; 8] = cast(self);
 
-        let r = arr[0];
-        for i in 1..8 {
-          r = r.wrapping_add(arr[i]);
-        }
-
-        r
+        let mut r = arr[0];
+        r = r.wrapping_add(arr[1]);
+        r = r.wrapping_add(arr[2]);
+        r = r.wrapping_add(arr[3]);
+        r = r.wrapping_add(arr[4]);
+        r = r.wrapping_add(arr[5]);
+        r = r.wrapping_add(arr[6]);
+        r.wrapping_add(arr[7])
       }
     }
   }
@@ -696,12 +698,14 @@ impl i16x8 {
         } else {
         let arr: [i16; 8] = cast(self);
 
-        let r = arr[0];
-        for i in 1..8 {
-          r = r.min(arr[i]);
-        }
-        
-        r
+        let mut r = arr[0];
+        r = r.min(arr[1]);
+        r = r.min(arr[2]);
+        r = r.min(arr[3]);
+        r = r.min(arr[4]);
+        r = r.min(arr[5]);
+        r = r.min(arr[6]);
+        r.min(arr[7])
       }
     }
   }
@@ -724,12 +728,14 @@ impl i16x8 {
         } else {
         let arr: [i16; 8] = cast(self);
 
-        let r = arr[0];
-        for i in 1..8 {
-          r = r.max(arr[i]);
-        }
-        
-        r
+        let mut r = arr[0];
+        r = r.max(arr[1]);
+        r = r.max(arr[2]);
+        r = r.max(arr[3]);
+        r = r.max(arr[4]);
+        r = r.max(arr[5]);
+        r = r.max(arr[6]);
+        r.max(arr[7])
       }
     }
   }
