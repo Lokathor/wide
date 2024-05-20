@@ -303,14 +303,41 @@ impl i32x8 {
         }
       } else {
         i32x8::new([
-          v.as_array_ref()[0] as i32,
-          v.as_array_ref()[1] as i32,
-          v.as_array_ref()[2] as i32,
-          v.as_array_ref()[3] as i32,
-          v.as_array_ref()[4] as i32,
-          v.as_array_ref()[5] as i32,
-          v.as_array_ref()[6] as i32,
-          v.as_array_ref()[7] as i32,
+          i32::from(v.as_array_ref()[0]),
+          i32::from(v.as_array_ref()[1]),
+          i32::from(v.as_array_ref()[2]),
+          i32::from(v.as_array_ref()[3]),
+          i32::from(v.as_array_ref()[4]),
+          i32::from(v.as_array_ref()[5]),
+          i32::from(v.as_array_ref()[6]),
+          i32::from(v.as_array_ref()[7]),
+        ])
+      }
+    }
+  }
+
+  /// widens and zero extends to i32x8
+  #[inline]
+  #[must_use]
+  pub fn from_u16x8(v: u16x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x8 { avx2:convert_to_i32_m256i_from_u16_m128i(v.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        i32x8 {
+          a: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
+          b: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+        }
+      } else {
+        i32x8::new([
+          i32::from(v.as_array_ref()[0]),
+          i32::from(v.as_array_ref()[1]),
+          i32::from(v.as_array_ref()[2]),
+          i32::from(v.as_array_ref()[3]),
+          i32::from(v.as_array_ref()[4]),
+          i32::from(v.as_array_ref()[5]),
+          i32::from(v.as_array_ref()[6]),
+          i32::from(v.as_array_ref()[7]),
         ])
       }
     }

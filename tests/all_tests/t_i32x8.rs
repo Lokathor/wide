@@ -232,6 +232,24 @@ fn impl_from_i16x8() {
 }
 
 #[test]
+fn impl_from_u16x8() {
+  let a = u16x8::from([1, 2, 3, 4, 5, i16::MAX as u16, u16::MAX - 1, u16::MAX]);
+  let actual = i32x8::from_u16x8(a);
+  let expected = i32x8::from([
+    1,
+    2,
+    3,
+    4,
+    5,
+    i16::MAX as i32,
+    (u16::MAX - 1) as i32,
+    u16::MAX as i32,
+  ]);
+
+  assert_eq!(actual, expected);
+}
+
+#[test]
 fn test_i16x8_move_mask() {
   let a = i16x8::from([-1, 0, -2, -3, -1, 0, -2, -3]);
   let expected = 0b11011101;

@@ -654,32 +654,94 @@ impl i16x8 {
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> i16 {
-    let arr: [i16; 8] = cast(self);
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // there is a horizontal add instruction on ssse3, but apparently it is very slow on some AMD CPUs
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+        let sum64 = add_i16_m128i(self.sse, hi64);
+        let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+        let sum32 = add_i16_m128i(sum64, hi32);
+        let lo16 = shr_imm_u32_m128i::<16>(sum32);
+        let sum16 = add_i16_m128i(sum32, lo16);
+        extract_i16_as_i32_m128i::<0>(sum16) as i16
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vaddvq_s16(self.neon) }
+      } else {
+        let arr: [i16; 8] = cast(self);
 
-    (arr[0].wrapping_add(arr[1]).wrapping_add(arr[2].wrapping_add(arr[3])))
-      .wrapping_add(
-        arr[4].wrapping_add(arr[5]).wrapping_add(arr[6].wrapping_add(arr[7])),
-      )
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.wrapping_add(arr[1]);
+        r = r.wrapping_add(arr[2]);
+        r = r.wrapping_add(arr[3]);
+        r = r.wrapping_add(arr[4]);
+        r = r.wrapping_add(arr[5]);
+        r = r.wrapping_add(arr[6]);
+        r.wrapping_add(arr[7])
+      }
+    }
   }
 
   /// horizontal min of all the elements of the vector
   #[inline]
   #[must_use]
   pub fn reduce_min(self) -> i16 {
-    let arr: [i16; 8] = cast(self);
+    pick! {
+        if #[cfg(target_feature="sse2")] {
+          let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+          let sum64 = min_i16_m128i(self.sse, hi64);
+          let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+          let sum32 = min_i16_m128i(sum64, hi32);
+          let lo16 = shr_imm_u32_m128i::<16>(sum32);
+          let sum16 = min_i16_m128i(sum32, lo16);
+          extract_i16_as_i32_m128i::<0>(sum16) as i16
+        } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+          unsafe { vminvq_s16(self.neon) }
+        } else {
+        let arr: [i16; 8] = cast(self);
 
-    (arr[0].min(arr[1]).min(arr[2].min(arr[3])))
-      .min(arr[4].min(arr[5]).min(arr[6].min(arr[7])))
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.min(arr[1]);
+        r = r.min(arr[2]);
+        r = r.min(arr[3]);
+        r = r.min(arr[4]);
+        r = r.min(arr[5]);
+        r = r.min(arr[6]);
+        r.min(arr[7])
+      }
+    }
   }
 
   /// horizontal max of all the elements of the vector
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> i16 {
-    let arr: [i16; 8] = cast(self);
+    pick! {
+        if #[cfg(target_feature="sse2")] {
+          let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+          let sum64 = max_i16_m128i(self.sse, hi64);
+          let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+          let sum32 = max_i16_m128i(sum64, hi32);
+          let lo16 = shr_imm_u32_m128i::<16>(sum32);
+          let sum16 = max_i16_m128i(sum32, lo16);
+          extract_i16_as_i32_m128i::<0>(sum16) as i16
+        } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+          unsafe { vmaxvq_s16(self.neon) }
+        } else {
+        let arr: [i16; 8] = cast(self);
 
-    (arr[0].max(arr[1]).max(arr[2].max(arr[3])))
-      .max(arr[4].max(arr[5]).max(arr[6].max(arr[7])))
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.max(arr[1]);
+        r = r.max(arr[2]);
+        r = r.max(arr[3]);
+        r = r.max(arr[4]);
+        r = r.max(arr[5]);
+        r = r.max(arr[6]);
+        r.max(arr[7])
+      }
+    }
   }
 
   #[inline]
