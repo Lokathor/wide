@@ -301,10 +301,11 @@ fn impl_u16x16_blend() {
 
 #[test]
 fn impl_u16x16_max() {
-  let a = u16x16::from([1, 2, 1, 0, 6, 8, 12, 9, 1, 2, 1, 0, 6, 8, 12, 9]);
+  let a =
+    u16x16::from([u16::MAX, 2, 1, 0, 6, 8, 12, 9, 1, 2, 1, 0, 6, 8, 12, 9]);
   let b = u16x16::from([17, 0, 1, 1, 19, 0, 0, 0, 17, 0, 1, 1, 19, 0, 0, 0]);
   let expected =
-    u16x16::from([17, 2, 1, 1, 19, 8, 12, 9, 17, 2, 1, 1, 19, 8, 12, 9]);
+    u16x16::from([u16::MAX, 2, 1, 1, 19, 8, 12, 9, 17, 2, 1, 1, 19, 8, 12, 9]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
 }
@@ -312,7 +313,8 @@ fn impl_u16x16_max() {
 #[test]
 fn impl_u16x16_min() {
   let a = u16x16::from([1, 2, 1, 0, 6, 8, 12, 9, 1, 2, 1, 0, 6, 8, 12, 9]);
-  let b = u16x16::from([17, 0, 1, 1, 19, 0, 0, 0, 17, 0, 1, 1, 19, 0, 0, 0]);
+  let b =
+    u16x16::from([u16::MAX, 0, 1, 1, 19, 0, 0, 0, 17, 0, 1, 1, 19, 0, 0, 0]);
   let expected = u16x16::from([1, 0, 1, 0, 6, 0, 0, 0, 1, 0, 1, 0, 6, 0, 0, 0]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
@@ -331,7 +333,7 @@ fn impl_mul_for_u16x16() {
     u16::MIN,
     1,
     2,
-    u16::MAX,
+    i16::MAX as u16,
     4,
     5,
     6,
@@ -352,7 +354,7 @@ fn impl_mul_for_u16x16() {
     u16::MIN,
     17,
     36,
-    (Wrapping(u16::MAX) * Wrapping(190)).0,
+    (Wrapping(i16::MAX as u16) * Wrapping(190)).0,
     80,
     105,
     132,

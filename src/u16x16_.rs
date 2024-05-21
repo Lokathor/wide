@@ -218,7 +218,8 @@ impl Mul for u16x16 {
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: mul_u16_keep_low_m256i(self.avx2, rhs.avx2) }
+        // non-widening multiplication is the same for unsigned and signed
+        Self { avx2: mul_i16_keep_low_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
           a : self.a.mul(rhs.a),
@@ -256,7 +257,7 @@ impl u16x16 {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: max_u16_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
           a : self.a.max(rhs.a),
@@ -270,7 +271,7 @@ impl u16x16 {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: min_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: min_u16_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
           a : self.a.min(rhs.a),
@@ -299,7 +300,7 @@ impl u16x16 {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_saturating_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: sub_saturating_u16_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
           a : self.a.saturating_sub(rhs.a),
