@@ -179,7 +179,7 @@ macro_rules! impl_shr_t_for_u16x16 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             let shift = cast([rhs as u64, 0]);
-            Self { avx2: shr_all_i16_m256i(self.avx2, shift) }
+            Self { avx2: shr_all_u16_m256i(self.avx2, shift) }
           } else {
             Self {
               a : self.a.shr(rhs),
