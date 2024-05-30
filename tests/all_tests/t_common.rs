@@ -49,6 +49,6 @@ pub fn test_unary_op<
   // assert equality for manually calculated result
   assert_eq!(expected, actual);
 
-  // assert equality using the binary_op method as well
+  // assert equality using the unary_op method as well
   assert_eq!(expected, a.unary_op(fn_scalar))
 }
