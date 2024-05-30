@@ -143,7 +143,7 @@ fn impl_u32x4_min() {
 }
 
 #[test]
-fn impl_u32x4_shr_all() {
+fn impl_u32x4_shr_each() {
   let a = u32x4::from([15313, 52322, u32::MAX, 4]);
   let shift = u32x4::from([1, 30, 8, 33 /* test masking behavior */]);
 
@@ -155,7 +155,7 @@ fn impl_u32x4_shr_all() {
   );
 }
 #[test]
-fn impl_u32x4_shl_all() {
+fn impl_u32x4_shl_each() {
   let a = u32x4::from([15313, 52322, u32::MAX, 4]);
   let shift = u32x4::from([1, 30, 8, 33 /* test masking behavior */]);
 
