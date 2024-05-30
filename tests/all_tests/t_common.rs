@@ -5,7 +5,7 @@ use wide::SimdType;
 /// makes it easier to add new tests.
 pub fn test_binary_op<
   T: SimdType<V, N> + Default + PartialEq + std::fmt::Debug + Copy,
-  V: Copy,
+  V: Copy + PartialEq + std::fmt::Debug,
   FnVector: Fn(T, T) -> T,
   FnScalar: Fn(V, V) -> V,
   const N: usize,
@@ -16,6 +16,13 @@ pub fn test_binary_op<
   fn_vector: FnVector,
 ) {
   let expected = T::from_fn(|i| fn_scalar(a.as_array()[i], b.as_array()[i]));
+  // ensure that the elements got put in the right place
+  for i in 0..N {
+    assert_eq!(
+      expected.as_array()[i],
+      fn_scalar(a.as_array()[i], b.as_array()[i])
+    );
+  }
 
   let actual = fn_vector(a, b);
 
