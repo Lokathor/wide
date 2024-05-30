@@ -156,7 +156,7 @@ fn impl_u32x8_shl_all() {
 }
 
 #[test]
-fn impl_u32_not() {
+fn impl_u32x8_not() {
   let a = u32x8::from([15313, 52322, u32::MAX, 4, 1322, 5, 2552352, 2123]);
 
   crate::t_common::test_unary_op(a, |a| !a, |a| !a);

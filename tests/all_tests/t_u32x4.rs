@@ -156,3 +156,10 @@ fn impl_u32x4_shl_all() {
 
   crate::t_common::test_binary_op(a, shift, |a, b| a << b, |a, b| a << b);
 }
+
+#[test]
+fn impl_u32x4_not() {
+  let a = u32x4::from([15313, 52322, u32::MAX, 4]);
+
+  crate::t_common::test_unary_op(a, |a| !a, |a| !a);
+}
