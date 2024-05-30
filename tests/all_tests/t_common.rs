@@ -22,10 +22,16 @@ pub fn test_binary_op<
   let actual = fn_vector(a, b);
 
   // assert equality for manually calculated result
-  assert_eq!(expected, actual);
+  assert_eq!(expected, actual, "scalar={:?} vector={:?}", expected, actual);
 
   // assert equality using the binary_op method as well
-  assert_eq!(expected, a.binary_op(b, fn_scalar))
+  assert_eq!(
+    expected,
+    a.binary_op(b, fn_scalar),
+    "scalar={:?} binary_op={:?}",
+    expected,
+    actual
+  );
 }
 
 pub fn test_unary_op<
@@ -47,8 +53,14 @@ pub fn test_unary_op<
   let actual = fn_vector(a);
 
   // assert equality for manually calculated result
-  assert_eq!(expected, actual);
+  assert_eq!(expected, actual, "scalar={:?} vector={:?}", expected, actual);
 
   // assert equality using the unary_op method as well
-  assert_eq!(expected, a.unary_op(fn_scalar))
+  assert_eq!(
+    expected,
+    a.unary_op(fn_scalar),
+    "scalar={:?} unary_op={:?}",
+    expected,
+    actual
+  );
 }

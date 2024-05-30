@@ -181,7 +181,9 @@ impl Shr<u32x8> for u32x8 {
   fn shr(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: shr_each_u32_m256i(self.avx2, rhs.avx2) }
+        // ensure same behavior as scalar
+        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
+        Self { avx2: shr_each_u32_m256i(self.avx2, shift_by ) }
       } else {
         Self {
           a : self.a.shr(rhs.a),
@@ -197,7 +199,9 @@ impl Shl<u32x8> for u32x8 {
   fn shl(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: shl_each_u32_m256i(self.avx2, rhs.avx2) }
+        // ensure same behavior as scalar
+        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
+        Self { avx2: shl_each_u32_m256i(self.avx2, shift_by) }
       } else {
         Self {
           a : self.a.shl(rhs.a),
