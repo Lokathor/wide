@@ -264,6 +264,7 @@ macro_rules! impl_shl_t_for_u32x4 {
   ($($shift_type:ty),+ $(,)?) => {
     $(impl Shl<$shift_type> for u32x4 {
       type Output = Self;
+      /// Shifts all lanes by the value given.
       #[inline]
       #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
@@ -295,6 +296,7 @@ macro_rules! impl_shr_t_for_u32x4 {
   ($($shift_type:ty),+ $(,)?) => {
     $(impl Shr<$shift_type> for u32x4 {
       type Output = Self;
+      /// Shifts all lanes by the value given.
       #[inline]
       #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
