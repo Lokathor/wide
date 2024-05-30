@@ -359,7 +359,7 @@ impl SimdType<u32, 8> for u32x8 {
   }
 
   #[inline]
-  fn from_fn<F: Fn(usize) -> u32>(cb: F) -> Self {
+  fn from_fn<F: FnMut(usize) -> u32>(mut cb: F) -> Self {
     cast([cb(0), cb(1), cb(2), cb(3), cb(4), cb(5), cb(6), cb(7)])
   }
 }

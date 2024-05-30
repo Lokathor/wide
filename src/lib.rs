@@ -977,7 +977,7 @@ pub trait SimdType<T, const N: usize> {
   fn from_array(array: [T; N]) -> Self;
 
   /// provide same functionarlity as array from_fn
-  fn from_fn<F: Fn(usize) -> T>(cb: F) -> Self;
+  fn from_fn<F: FnMut(usize) -> T>(cb: F) -> Self;
 }
 
 macro_rules! bulk_impl_const_rhs_op {
