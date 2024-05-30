@@ -332,8 +332,8 @@ impl Shl<u32x4> for u32x4 {
         Self { sse: shl_each_u32_m128i(self.sse, shift_by) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-        // mask the shift count to 31 to have same behavior on all platforms
-        let shift_by = vnegq_s32(vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31))));
+          // mask the shift count to 31 to have same behavior on all platforms
+          let shift_by = vnegq_s32(vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31))));
           Self { neon: vshlq_u32(self.neon, shift_by) }
         }
       } else {
@@ -361,8 +361,8 @@ impl Shr<u32x4> for u32x4 {
         Self { sse: shr_each_u32_m128i(self.sse, shift_by) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-        // mask the shift count to 31 to have same behavior on all platforms
-        let shift_by = vnegq_s32(vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31))));
+          // mask the shift count to 31 to have same behavior on all platforms
+          let shift_by = vnegq_s32(vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31))));
           Self { neon: vshlq_u32(self.neon, shift_by) }
         }
       } else {
