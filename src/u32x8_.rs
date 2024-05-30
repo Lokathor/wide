@@ -276,7 +276,7 @@ impl u32x8 {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_i32_m256i(self.avx2, rhs.avx2 ) }
+        Self { avx2: max_u32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
           a : self.a.max(rhs.a),
@@ -290,7 +290,7 @@ impl u32x8 {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_i32_m256i(self.avx2, rhs.avx2 ) }
+        Self { avx2: min_u32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
           a : self.a.min(rhs.a),
