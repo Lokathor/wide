@@ -15,29 +15,17 @@ pub fn test_binary_op<
   fn_scalar: FnScalar,
   fn_vector: FnVector,
 ) {
-  let mut expected = T::default();
-  for i in 0..N {
-    expected.as_mut_array()[i] = fn_scalar(a.as_array()[i], b.as_array()[i]);
-  }
+  let expected = T::from_fn(|i| fn_scalar(a.as_array()[i], b.as_array()[i]));
 
   let actual = fn_vector(a, b);
 
   // assert equality for manually calculated result
   assert_eq!(expected, actual, "scalar={:?} vector={:?}", expected, actual);
-
-  // assert equality using the binary_op method as well
-  assert_eq!(
-    expected,
-    a.binary_op(b, fn_scalar),
-    "scalar={:?} binary_op={:?}",
-    expected,
-    actual
-  );
 }
 
 pub fn test_unary_op<
-  T: SimdType<V, N> + Default + PartialEq + std::fmt::Debug + Copy,
-  V: Copy,
+  T: SimdType<V, N> + PartialEq + std::fmt::Debug + Copy,
+  V: Copy + PartialEq + std::fmt::Debug,
   FnVector: Fn(T) -> T,
   FnScalar: Fn(V) -> V,
   const N: usize,
@@ -46,22 +34,14 @@ pub fn test_unary_op<
   fn_scalar: FnScalar,
   fn_vector: FnVector,
 ) {
-  let mut expected = T::default();
+  let expected = T::from_fn(|i| fn_scalar(a.as_array()[i]));
+  // ensure that the elements got put in the right place
   for i in 0..N {
-    expected.as_mut_array()[i] = fn_scalar(a.as_array()[i]);
+    assert_eq!(expected.as_array()[i], fn_scalar(a.as_array()[i]));
   }
 
   let actual = fn_vector(a);
 
   // assert equality for manually calculated result
   assert_eq!(expected, actual, "scalar={:?} vector={:?}", expected, actual);
-
-  // assert equality using the unary_op method as well
-  assert_eq!(
-    expected,
-    a.unary_op(fn_scalar),
-    "scalar={:?} unary_op={:?}",
-    expected,
-    actual
-  );
 }

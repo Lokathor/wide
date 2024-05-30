@@ -394,7 +394,8 @@ fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
   // Returns 32 high bits of the 64 bit result of multiplication of two u32s
   let mul_hi = |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32;
 
-  let q = numerator.binary_op(magic, mul_hi);
+  let q =
+    u32x8::from_fn(|i| mul_hi(numerator.as_array()[i], magic.as_array()[i]));
   let t = ((numerator - q) >> 1) + q;
   t >> shift
 }

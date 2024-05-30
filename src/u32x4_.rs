@@ -546,15 +546,7 @@ impl SimdType<u32, 4> for u32x4 {
   }
 
   #[inline]
-  fn binary_op<FN: Fn(u32, u32) -> u32>(self, rhs: Self, op: FN) -> Self {
-    let a: [u32; 4] = cast(self);
-    let b: [u32; 4] = cast(rhs);
-    cast([op(a[0], b[0]), op(a[1], b[1]), op(a[2], b[2]), op(a[3], b[3])])
-  }
-
-  #[inline]
-  fn unary_op<FN: Fn(u32) -> u32>(self, op: FN) -> Self {
-    let a: [u32; 4] = cast(self);
-    cast([op(a[0]), op(a[1]), op(a[2]), op(a[3])])
+  fn from_fn<F: Fn(usize) -> u32>(cb: F) -> Self {
+    cast([cb(0), cb(1), cb(2), cb(3)])
   }
 }

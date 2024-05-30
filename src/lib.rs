@@ -976,17 +976,8 @@ pub trait SimdType<T, const N: usize> {
   #[must_use]
   fn from_array(array: [T; N]) -> Self;
 
-  /// Performs a binary operation corresponding elements
-  /// on two SIMD types and returns the result.
-  ///
-  /// This is useful for implementing
-  /// operations that the compiler vectorizes but this library
-  /// don't provide explicit support  for.
-  fn binary_op<FN: Fn(T, T) -> T>(self, rhs: Self, op: FN) -> Self;
-
-  /// performs a unary operation on each element of the SIMD type
-  /// and returns the result.
-  fn unary_op<FN: Fn(T) -> T>(self, op: FN) -> Self;
+  /// provide same functionarlity as array from_fn
+  fn from_fn<F: Fn(usize) -> T>(cb: F) -> Self;
 }
 
 macro_rules! bulk_impl_const_rhs_op {
