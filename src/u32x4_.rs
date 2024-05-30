@@ -333,7 +333,7 @@ impl Shl<u32x4> for u32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // mask the shift count to 31 to have same behavior on all platforms
-          let shift_by = vnegq_s32(vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31))));
+          let shift_by = vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31)));
           Self { neon: vshlq_u32(self.neon, shift_by) }
         }
       } else {
@@ -362,6 +362,7 @@ impl Shr<u32x4> for u32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // mask the shift count to 31 to have same behavior on all platforms
+          // no right shift, have to pass negative value to left shift on neon
           let shift_by = vnegq_s32(vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31))));
           Self { neon: vshlq_u32(self.neon, shift_by) }
         }

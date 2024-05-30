@@ -329,7 +329,8 @@ fn test_dequantize_and_idct_i32() {
 
 // Example implementation of a branch-free division algorithm using u32x8.
 
-/// Ported from libdivide. Example to show how to use the branchfree division with this library.
+/// Ported from libdivide. Example to show how to use the branchfree division
+/// with this library.
 fn internal_gen_branch_free_u32(d: u32) -> (u32, u32) {
   fn div_rem(a: u64, b: u64) -> (u64, u64) {
     (a / b, a % b)

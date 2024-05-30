@@ -145,7 +145,7 @@ fn impl_u32x4_min() {
 #[test]
 fn impl_u32x4_shr_all() {
   let a = u32x4::from([15313, 52322, u32::MAX, 4]);
-  let shift = u32x4::from([1, 30, 8, 33 /*test masking behavior */]);
+  let shift = u32x4::from([1, 30, 8, 33 /* test masking behavior */]);
 
   crate::t_common::test_binary_op(
     a,
@@ -157,7 +157,7 @@ fn impl_u32x4_shr_all() {
 #[test]
 fn impl_u32x4_shl_all() {
   let a = u32x4::from([15313, 52322, u32::MAX, 4]);
-  let shift = u32x4::from([1, 30, 8, 33 /*test masking behavior */]);
+  let shift = u32x4::from([1, 30, 8, 33 /* test masking behavior */]);
 
   crate::t_common::test_binary_op(
     a,

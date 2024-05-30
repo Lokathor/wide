@@ -1,7 +1,8 @@
 use wide::SimdType;
 
-/// Performs a binary operation both in scalar and vector form and compares the results.
-/// This makes it less error prone to test the binary operations and makes it easier to add new tests.
+/// Performs a binary operation both in scalar and vector form and compares the
+/// results. This makes it less error prone to test the binary operations and
+/// makes it easier to add new tests.
 pub fn test_binary_op<
   T: SimdType<V, N> + Default + PartialEq + std::fmt::Debug + Copy,
   V: Copy,
