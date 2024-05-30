@@ -953,6 +953,42 @@ pub trait CmpLe<Rhs = Self> {
   fn cmp_le(self, rhs: Rhs) -> Self::Output;
 }
 
+/// Common trait similar to portable SIMD library to make it easier to
+/// write tests or other generic code that work with all defined SIMD types
+/// Also makes porting to eventual portable SIMD library easier for generic code
+pub trait SimdType<T, const N: usize> {
+  const LEN: usize = N;
+
+  #[must_use]
+  fn len(&self) -> usize {
+    N
+  }
+
+  #[must_use]
+  fn splat(value: T) -> Self;
+
+  #[must_use]
+  fn as_array(&self) -> &[T; N];
+
+  #[must_use]
+  fn as_mut_array(&mut self) -> &mut [T; N];
+
+  #[must_use]
+  fn from_array(array: [T; N]) -> Self;
+
+  /// Performs a binary operation corresponding elements
+  /// on two SIMD types and returns the result.
+  ///
+  /// This is useful for implementing
+  /// operations that the compiler vectorizes but this library
+  /// don't provide explicit support  for.
+  fn binary_op<FN: Fn(T, T) -> T>(self, rhs: Self, op: FN) -> Self;
+
+  /// performs a unary operation on each element of the SIMD type
+  /// and returns the result.
+  fn unary_op<FN: Fn(T) -> T>(self, op: FN) -> Self;
+}
+
 macro_rules! bulk_impl_const_rhs_op {
   (($op:ident,$method:ident) => [$(($lhs:ty,$rhs:ty),)+]) => {
     $(

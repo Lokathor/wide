@@ -324,6 +324,50 @@ macro_rules! impl_shr_t_for_u32x4 {
 }
 impl_shr_t_for_u32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+impl Shl<u32x4> for u32x4 {
+  type Output = Self;
+  fn shl(self, rhs: u32x4) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { sse: shl_each_u32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vshlq_u32(self.neon, vreinterpretq_s32_u32(rhs.neon)) }}
+      } else {
+        let arr: [u32; 4] = cast(self);
+        let rhs: [u32; 4] = cast(rhs);
+        cast([
+          arr[0] << rhs[0],
+          arr[1] << rhs[1],
+          arr[2] << rhs[2],
+          arr[3] << rhs[3],
+        ])
+      }
+    }
+  }
+}
+
+impl Shr<u32x4> for u32x4 {
+  type Output = Self;
+  fn shr(self, rhs: u32x4) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { sse: shr_each_u32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vshlq_u32(self.neon, vnegq_s32(vreinterpretq_s32_u32(rhs.neon))) }}
+      } else {
+        let arr: [u32; 4] = cast(self);
+        let rhs: [u32; 4] = cast(rhs);
+        cast([
+          arr[0] >> rhs[0],
+          arr[1] >> rhs[1],
+          arr[2] >> rhs[2],
+          arr[3] >> rhs[3],
+        ])
+      }
+    }
+  }
+}
+
 impl u32x4 {
   #[inline]
   #[must_use]
@@ -465,5 +509,40 @@ impl u32x4 {
   #[inline]
   pub fn as_array_mut(&mut self) -> &mut [u32; 4] {
     cast_mut(self)
+  }
+}
+
+impl SimdType<u32, 4> for u32x4 {
+  #[inline]
+  fn splat(value: u32) -> Self {
+    Self::splat(value)
+  }
+
+  #[inline]
+  fn as_array(&self) -> &[u32; 4] {
+    Self::as_array_ref(self)
+  }
+
+  #[inline]
+  fn as_mut_array(&mut self) -> &mut [u32; 4] {
+    Self::as_array_mut(self)
+  }
+
+  #[inline]
+  fn from_array(array: [u32; 4]) -> Self {
+    Self::new(array)
+  }
+
+  #[inline]
+  fn binary_op<FN: Fn(u32, u32) -> u32>(self, rhs: Self, op: FN) -> Self {
+    let a: [u32; 4] = cast(self);
+    let b: [u32; 4] = cast(rhs);
+    cast([op(a[0], b[0]), op(a[1], b[1]), op(a[2], b[2]), op(a[3], b[3])])
+  }
+
+  #[inline]
+  fn unary_op<FN: Fn(u32) -> u32>(self, op: FN) -> Self {
+    let a: [u32; 4] = cast(self);
+    cast([op(a[0]), op(a[1]), op(a[2]), op(a[3])])
   }
 }

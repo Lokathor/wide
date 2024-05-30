@@ -326,3 +326,99 @@ fn test_dequantize_and_idct_i32() {
 
   assert_eq!(expected_output, output);
 }
+
+// Example implementation of a branch-free division algorithm using u32x8.
+
+/// Ported from libdivide. Example to show how to use the branchfree division with this library.
+fn internal_gen_branch_free_u32(d: u32) -> (u32, u32) {
+  fn div_rem(a: u64, b: u64) -> (u64, u64) {
+    (a / b, a % b)
+  }
+
+  // branchfree cannot be one or zero
+  assert!(d > 1);
+
+  let floor_log_2_d = (32u32 - 1) - d.leading_zeros();
+
+  // Power of 2
+  if (d & (d - 1)) == 0 {
+    // We need to subtract 1 from the shift value in case of an unsigned
+    // branchfree divider because there is a hardcoded right shift by 1
+    // in its division algorithm. Because of this we also need to add back
+    // 1 in its recovery algorithm.
+    (0, floor_log_2_d - 1)
+  } else {
+    let (proposed_m, rem) = div_rem(1u64 << (floor_log_2_d + 32), d as u64);
+
+    let mut proposed_m = proposed_m as u32;
+    let rem = rem as u32;
+    assert!(rem > 0 && rem < d);
+
+    // This power works if e < 2**floor_log_2_d.
+    // We have to use the general 33-bit algorithm.  We need to compute
+    // (2**power) / d. However, we already have (2**(power-1))/d and
+    // its remainder.  By doubling both, and then correcting the
+    // remainder, we can compute the larger division.
+    // don't care about overflow here - in fact, we expect it
+    proposed_m = proposed_m.wrapping_add(proposed_m);
+    let twice_rem = rem.wrapping_add(rem);
+    if twice_rem >= d || twice_rem < rem {
+      proposed_m += 1;
+    }
+
+    (1 + proposed_m, floor_log_2_d)
+    // result.more's shift should in general be ceil_log_2_d. But if we
+    // used the smaller power, we subtract one from the shift because we're
+    // using the smaller power. If we're using the larger power, we
+    // subtract one from the shift because it's taken care of by the add
+    // indicator. So floor_log_2_d happens to be correct in both cases.
+  }
+}
+
+/// Generate magic and shift values for branch-free division.
+fn generate_branch_free_divide_magic_shift(denom: u32x8) -> (u32x8, u32x8) {
+  let mut magic = u32x8::ZERO;
+  let mut shift = u32x8::ZERO;
+  for i in 0..magic.as_array_ref().len() {
+    let (m, s) = internal_gen_branch_free_u32(denom.as_array_ref()[i]);
+    magic.as_array_mut()[i] = m;
+    shift.as_array_mut()[i] = s;
+  }
+
+  (magic, shift)
+}
+
+// using the previously generated magic and shift, calculate the division
+fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
+  // Returns 32 high bits of the 64 bit result of multiplication of two u32s
+  let mul_hi = |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32;
+
+  let q = numerator.binary_op(magic, mul_hi);
+  let t = ((numerator - q) >> 1) + q;
+  t >> shift
+}
+
+#[test]
+fn impl_u32x8_branch_free_divide() {
+  let numer = u32x8::from([
+    1 * 999,
+    2 * 999,
+    3 * 999,
+    u32::MAX,
+    421432145,
+    2321,
+    7654,
+    223,
+  ]);
+  let denom = u32x8::from([2, 3, u32::MAX, 50001, 12, 563412, 4534, 291]);
+
+  crate::t_common::test_binary_op(
+    numer,
+    denom,
+    |a, b| a / b,
+    |a, b| {
+      let (magic, shift) = generate_branch_free_divide_magic_shift(b);
+      branch_free_divide(a, magic, shift)
+    },
+  );
+}

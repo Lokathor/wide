@@ -48,108 +48,116 @@ fn impl_mul_for_u32x8() {
 fn impl_bitand_for_u32x8() {
   let a = u32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
   let b = u32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
-  let expected = u32x8::from([0, 0, 0, 1, 0, 0, 0, 1]);
-  let actual = a & b;
-  assert_eq!(expected, actual);
+
+  crate::t_common::test_binary_op(a, b, |a, b| a & b, |a, b| a & b);
 }
 
 #[test]
 fn impl_bitor_for_u32x8() {
-  let a = i32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
-  let b = i32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
-  let expected = i32x8::from([0, 1, 1, 1, 1, 1, 1, 1]);
-  let actual = a | b;
-  assert_eq!(expected, actual);
+  let a = u32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
+  let b = u32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
+
+  crate::t_common::test_binary_op(a, b, |a, b| a | b, |a, b| a | b);
 }
 
 #[test]
 fn impl_bitxor_for_u32x8() {
-  let a = i32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
-  let b = i32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
-  let expected = i32x8::from([0, 1, 1, 0, 1, 1, 1, 0]);
-  let actual = a ^ b;
-  assert_eq!(expected, actual);
+  let a = u32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
+  let b = u32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
+
+  crate::t_common::test_binary_op(a, b, |a, b| a ^ b, |a, b| a ^ b);
 }
 
 #[test]
 fn impl_shl_for_u32x8() {
-  let a = i32x8::from([1, 2, i32::MAX - 1, i32::MAX - 1, 128, 255, 590, 5667]);
+  let a =
+    u32x8::from([1, 2, u32::MAX - 1, i32::MAX as u32 - 1, 128, 255, 590, 5667]);
   let b = 2;
-  let expected = i32x8::from([
-    1 << 2,
-    2 << 2,
-    (i32::MAX - 1) << 2,
-    (i32::MAX - 1) << 2,
-    128 << 2,
-    255 << 2,
-    590 << 2,
-    5667 << 2,
-  ]);
-  let actual = a << b;
-  assert_eq!(expected, actual);
+
+  crate::t_common::test_unary_op(a, |a| a << b, |a| a << b);
 }
 
 #[test]
 fn impl_shr_for_u32x8() {
-  let a = i32x8::from([1, 2, i32::MAX - 1, i32::MAX - 1, 128, 255, 590, 5667]);
+  let a =
+    u32x8::from([1, 2, u32::MAX - 1, i32::MAX as u32 - 1, 128, 255, 590, 5667]);
   let b = 2;
-  let expected = i32x8::from([
-    1 >> 2,
-    2 >> 2,
-    (i32::MAX - 1) >> 2,
-    (i32::MAX - 1) >> 2,
-    128 >> 2,
-    255 >> 2,
-    590 >> 2,
-    5667 >> 2,
-  ]);
-  let actual = a >> b;
-  assert_eq!(expected, actual);
+
+  crate::t_common::test_unary_op(a, |a| a >> b, |a| a >> b);
 }
 
 #[test]
 fn impl_u32x8_cmp_eq() {
-  let a = i32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
-  let b = i32x8::from([2_i32; 8]);
-  let expected = i32x8::from([0, -1, 0, 0, -1, 0, 0, -1]);
-  let actual = a.cmp_eq(b);
-  assert_eq!(expected, actual);
+  let a = u32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
+  let b = u32x8::from([2_u32; 8]);
+
+  crate::t_common::test_binary_op(
+    a,
+    b,
+    |a, b| if a == b { u32::MAX } else { 0 },
+    |a, b| a.cmp_eq(b),
+  );
 }
 
 #[test]
 fn impl_u32x8_cmp_gt() {
-  let a = i32x8::from([1, 2, 9, 4, 1, 2, 8, 10]);
-  let b = i32x8::from([5_i32; 8]);
-  let expected = i32x8::from([0, 0, -1, 0, 0, 0, -1, -1]);
-  let actual = a.cmp_gt(b);
-  assert_eq!(expected, actual);
+  let a = u32x8::from([1, 2, 9, 4, 1, 2, 8, 10]);
+  let b = u32x8::from([5_u32; 8]);
+
+  crate::t_common::test_binary_op(
+    a,
+    b,
+    |a, b| if a > b { u32::MAX } else { 0 },
+    |a, b| a.cmp_gt(b),
+  );
 }
 
 #[test]
 fn impl_u32x8_blend() {
-  let use_t: i32 = -1;
-  let t = i32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  let f = i32x8::from([17, 18, 19, 20, 25, 30, 50, 90]);
-  let mask = i32x8::from([use_t, 0, use_t, 0, 0, 0, 0, use_t]);
-  let expected = i32x8::from([1, 18, 3, 20, 25, 30, 50, 8]);
+  let use_t: u32 = u32::MAX;
+  let t = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  let f = u32x8::from([17, 18, 19, 20, 25, 30, 50, 90]);
+  let mask = u32x8::from([use_t, 0, use_t, 0, 0, 0, 0, use_t]);
+  let expected = u32x8::from([1, 18, 3, 20, 25, 30, 50, 8]);
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
 }
 
 #[test]
 fn impl_u32x8_max() {
-  let a = i32x8::from([1, 2, i32::MIN + 1, i32::MIN, 6, -8, 12, 9]);
-  let b = i32x8::from([17, -18, 1, 1, 19, -5, -1, -9]);
-  let expected = i32x8::from([17, 2, 1, 1, 19, -5, 12, 9]);
-  let actual = a.max(b);
-  assert_eq!(expected, actual);
+  let a = u32x8::from([1, 2, u32::MAX, i32::MAX as u32, 6, 8, 12, 9]);
+  let b = u32x8::from([17, 18, 1, 1, 19, 0, 1, u32::MAX]);
+
+  crate::t_common::test_binary_op(a, b, |a, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
 fn impl_u32x8_min() {
-  let a = i32x8::from([1, 2, i32::MIN + 1, i32::MIN, 6, -8, 12, 9]);
-  let b = i32x8::from([17, -18, 1, 1, 19, -5, -1, -9]);
-  let expected = i32x8::from([1, -18, i32::MIN + 1, i32::MIN, 6, -8, -1, -9]);
-  let actual = a.min(b);
-  assert_eq!(expected, actual);
+  let a = u32x8::from([1, 2, u32::MAX, i32::MAX as u32, 6, 8, 12, 9]);
+  let b = u32x8::from([17, 18, 1, 1, 19, 0, 1, u32::MAX]);
+
+  crate::t_common::test_binary_op(a, b, |a, b| a.min(b), |a, b| a.min(b));
+}
+
+#[test]
+fn impl_u32x8_shr_all() {
+  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1322, 5, 2552352, 2123]);
+  let shift = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+
+  crate::t_common::test_binary_op(a, shift, |a, b| a >> b, |a, b| a >> b);
+}
+
+#[test]
+fn impl_u32x8_shl_all() {
+  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1322, 5, 2552352, 2123]);
+  let shift = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+
+  crate::t_common::test_binary_op(a, shift, |a, b| a << b, |a, b| a << b);
+}
+
+#[test]
+fn impl_u32_not() {
+  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1322, 5, 2552352, 2123]);
+
+  crate::t_common::test_unary_op(a, |a| !a, |a| !a);
 }

@@ -2,6 +2,7 @@
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::assertions_on_constants)]
 
+mod t_common;
 mod t_f32x4;
 mod t_f32x8;
 mod t_f64x2;

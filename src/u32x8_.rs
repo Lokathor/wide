@@ -176,6 +176,38 @@ macro_rules! impl_shr_t_for_u32x8 {
 
 impl_shr_t_for_u32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+impl Shr<u32x8> for u32x8 {
+  type Output = Self;
+  fn shr(self, rhs: u32x8) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: shr_each_u32_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.shr(rhs.a),
+          b : self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl Shl<u32x8> for u32x8 {
+  type Output = Self;
+  fn shl(self, rhs: u32x8) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: shl_each_u32_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.shl(rhs.a),
+          b : self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl u32x8 {
   #[inline]
   #[must_use]
@@ -298,5 +330,58 @@ impl Not for u32x8 {
         }
       }
     }
+  }
+}
+
+impl SimdType<u32, 8> for u32x8 {
+  #[inline]
+  fn splat(value: u32) -> Self {
+    Self::splat(value)
+  }
+
+  #[inline]
+  fn as_array(&self) -> &[u32; 8] {
+    Self::as_array_ref(self)
+  }
+
+  #[inline]
+  fn as_mut_array(&mut self) -> &mut [u32; 8] {
+    Self::as_array_mut(self)
+  }
+
+  #[inline]
+  fn from_array(array: [u32; 8]) -> Self {
+    Self::new(array)
+  }
+
+  #[inline]
+  fn binary_op<FN: Fn(u32, u32) -> u32>(self, rhs: Self, op: FN) -> Self {
+    let a: [u32; 8] = cast(self);
+    let b: [u32; 8] = cast(rhs);
+    cast([
+      op(a[0], b[0]),
+      op(a[1], b[1]),
+      op(a[2], b[2]),
+      op(a[3], b[3]),
+      op(a[4], b[4]),
+      op(a[5], b[5]),
+      op(a[6], b[6]),
+      op(a[7], b[7]),
+    ])
+  }
+
+  #[inline]
+  fn unary_op<FN: Fn(u32) -> u32>(self, op: FN) -> Self {
+    let a: [u32; 8] = cast(self);
+    cast([
+      op(a[0]),
+      op(a[1]),
+      op(a[2]),
+      op(a[3]),
+      op(a[4]),
+      op(a[5]),
+      op(a[6]),
+      op(a[7]),
+    ])
   }
 }
