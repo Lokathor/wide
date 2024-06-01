@@ -201,7 +201,9 @@ impl u32x8 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i32_m256i(self.avx2, rhs.avx2 ) }
+        // no unsigned less than so inverting the high bit will get the correct result
+        let highbit = u32x8::splat(0x80000000);
+        Self { avx2: cmp_gt_mask_i32_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2 ) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -215,7 +217,9 @@ impl u32x8 {
   pub fn cmp_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: !cmp_gt_mask_i32_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i32_m256i(self.avx2,rhs.avx2) }
+        // no unsigned less than so inverting the high bit will get the correct result
+        let highbit = u32x8::splat(0x80000000);
+        Self { avx2: cmp_gt_mask_i32_m256i((rhs ^ highbit).avx2, (self ^ highbit).avx2) }
       } else {
         Self {
           a : self.a.cmp_lt(rhs.a),
@@ -244,7 +248,7 @@ impl u32x8 {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_i32_m256i(self.avx2, rhs.avx2 ) }
+        Self { avx2: max_u32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
           a : self.a.max(rhs.a),
@@ -258,7 +262,7 @@ impl u32x8 {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_i32_m256i(self.avx2, rhs.avx2 ) }
+        Self { avx2: min_u32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
           a : self.a.min(rhs.a),

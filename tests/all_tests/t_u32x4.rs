@@ -93,8 +93,8 @@ fn impl_u32x4_cmp_eq() {
 
 #[test]
 fn impl_u32x4_cmp_gt() {
-  let a = u32x4::from([1, 2, 3, 4]);
-  let b = u32x4::from([2_u32; 4]);
+  let a = u32x4::from([1, 2, 3, u32::MAX]);
+  let b = u32x4::from([u32::MAX, 2, 2, 2]);
   let expected = u32x4::from([0, 0, u32::MAX, u32::MAX]);
   let actual = a.cmp_gt(b);
   assert_eq!(expected, actual);
@@ -102,9 +102,9 @@ fn impl_u32x4_cmp_gt() {
 
 #[test]
 fn impl_u32x4_cmp_lt() {
-  let a = u32x4::from([1, 2, 3, 4]);
-  let b = u32x4::from([2_u32; 4]);
-  let expected = u32x4::from([u32::MAX, 0, 0, 0]);
+  let a = u32x4::from([1, 2, 3, u32::MAX]);
+  let b = u32x4::from([u32::MAX, 3, 3, 3]);
+  let expected = u32x4::from([u32::MAX, u32::MAX, 0, 0]);
   let actual = a.cmp_lt(b);
   assert_eq!(expected, actual);
 
