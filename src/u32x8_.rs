@@ -201,8 +201,8 @@ impl u32x8 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        // no unsigned less than so inverting the high bit will get the correct result
-        let highbit = u32x8::splat(0x80000000);
+        // no unsigned gt than so inverting the high bit will get the correct result
+        let highbit = u32x8::splat(1 << 31);
         Self { avx2: cmp_gt_mask_i32_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2 ) }
       } else {
         Self {
@@ -212,22 +212,14 @@ impl u32x8 {
       }
     }
   }
+
   #[inline]
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // no unsigned less than so inverting the high bit will get the correct result
-        let highbit = u32x8::splat(0x80000000);
-        Self { avx2: cmp_gt_mask_i32_m256i((rhs ^ highbit).avx2, (self ^ highbit).avx2) }
-      } else {
-        Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
-        }
-      }
-    }
+    // lt is just gt the other way around
+    rhs.cmp_gt(self)
   }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

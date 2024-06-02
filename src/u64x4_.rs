@@ -258,7 +258,9 @@ impl u64x4 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
+        // no unsigned gt than so inverting the high bit will get the correct result
+        let highbit = u64x4::splat(1 << 63);
+        Self { avx2: cmp_gt_mask_i64_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -266,6 +268,13 @@ impl u64x4 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn cmp_lt(self, rhs: Self) -> Self {
+    // lt is just gt the other way around
+    rhs.cmp_gt(self)
   }
 
   #[inline]

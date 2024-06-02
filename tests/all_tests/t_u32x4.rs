@@ -33,6 +33,11 @@ fn impl_mul_for_u32x4() {
     u32x4::from([17, 36, 1, (Wrapping(u32::MAX) * Wrapping(32)).0]);
   let actual = a * b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x4, b| a * b,
+    |a, b| a.wrapping_mul(b),
+  );
 }
 
 #[test]
@@ -98,6 +103,11 @@ fn impl_u32x4_cmp_gt() {
   let expected = u32x4::from([0, 0, u32::MAX, u32::MAX]);
   let actual = a.cmp_gt(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x4, b| a.cmp_gt(b),
+    |a, b| if a > b { u32::MAX } else { 0 },
+  );
 }
 
 #[test]
@@ -111,6 +121,11 @@ fn impl_u32x4_cmp_lt() {
   let expected = u32x4::from([0, 0, 0, 0]);
   let actual = a.cmp_lt(a);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x4, b| a.cmp_lt(b),
+    |a, b| if a < b { u32::MAX } else { 0 },
+  );
 }
 
 #[test]
@@ -131,6 +146,8 @@ fn impl_u32x4_max() {
   let expected = u32x4::from([17, 2, 3, 20]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x4, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -140,4 +157,6 @@ fn impl_u32x4_min() {
   let expected = u32x4::from([0, 1, 0, 4]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x4, b| a.min(b), |a, b| a.min(b));
 }

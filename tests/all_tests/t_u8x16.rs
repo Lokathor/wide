@@ -137,6 +137,8 @@ fn impl_u8x16_blend() {
     u8x16::from([1, 18, 3, 20, 5, 22, 7, 24, 9, 26, 11, 28, 13, 30, 126, 1]);
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u8x16, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]
@@ -150,6 +152,8 @@ fn impl_u8x16_max() {
   ]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u8x16, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -162,6 +166,8 @@ fn impl_u8x16_min() {
     u8x16::from([1, 2, 3, 4, 2, 2, 2, 8, 9, 10, 11, 12, 13, 14, 5, 6]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u8x16, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]
