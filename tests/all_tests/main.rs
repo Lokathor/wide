@@ -96,3 +96,27 @@ impl GenSample for u8 {
     v as u8
   }
 }
+
+impl GenSample for i64 {
+  fn get_sample(v: u64) -> Self {
+    v as i64
+  }
+}
+
+impl GenSample for i32 {
+  fn get_sample(v: u64) -> Self {
+    v as i32
+  }
+}
+
+impl GenSample for i16 {
+  fn get_sample(v: u64) -> Self {
+    v as i16
+  }
+}
+
+impl GenSample for i8 {
+  fn get_sample(v: u64) -> Self {
+    v as i8
+  }
+}

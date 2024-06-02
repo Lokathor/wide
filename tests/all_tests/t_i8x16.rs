@@ -336,6 +336,8 @@ fn impl_i8x16_min() {
   ]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: i8x16, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]

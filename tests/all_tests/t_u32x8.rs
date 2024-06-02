@@ -183,5 +183,5 @@ fn impl_u32x8_min() {
   let actual = a.min(b);
   assert_eq!(expected, actual);
 
-  crate::test_random_vector_vs_scalar(|a: u32x8, b| a.max(b), |a, b| a.max(b));
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a.min(b), |a, b| a.min(b));
 }
