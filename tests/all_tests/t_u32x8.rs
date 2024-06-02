@@ -14,6 +14,11 @@ fn impl_add_for_u32x8() {
   let expected = u32x8::from([18, 20, u32::MAX, u32::MIN, 43, 84, 647, 68]);
   let actual = a + b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a + b,
+    |a, b| a.wrapping_add(b),
+  );
 }
 
 #[test]
@@ -24,6 +29,11 @@ fn impl_sub_for_u32x8() {
     u32x8::from([8984, 4294967280, 0, u32::MAX, 4294967293, 0, 7, 5]);
   let actual = a - b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a - b,
+    |a, b| a.wrapping_sub(b),
+  );
 }
 
 #[test]
@@ -67,6 +77,8 @@ fn impl_bitor_for_u32x8() {
   let expected = u32x8::from([0, 1, 1, 1, 1, 1, 1, 1]);
   let actual = a | b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a & b, |a, b| a & b);
 }
 
 #[test]
@@ -76,6 +88,8 @@ fn impl_bitxor_for_u32x8() {
   let expected = u32x8::from([0, 1, 1, 0, 1, 1, 1, 0]);
   let actual = a ^ b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a ^ b, |a, b| a ^ b);
 }
 
 #[test]
@@ -95,6 +109,8 @@ fn impl_shl_for_u32x8() {
   ]);
   let actual = a << b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x8, _b| a << 3, |a, _b| a << 3);
 }
 
 #[test]
@@ -114,6 +130,8 @@ fn impl_shr_for_u32x8() {
   ]);
   let actual = a >> b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x8, _b| a >> 3, |a, _b| a >> 3);
 }
 
 #[test]
