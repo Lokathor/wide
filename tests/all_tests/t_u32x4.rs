@@ -47,6 +47,8 @@ fn impl_bitand_for_u32x4() {
   let expected = u32x4::from([0, 0, 0, 1]);
   let actual = a & b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x4, b| a & b, |a, b| a & b);
 }
 
 #[test]
@@ -56,6 +58,8 @@ fn impl_bitor_for_u32x4() {
   let expected = u32x4::from([0, 1, 1, 1]);
   let actual = a | b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x4, b| a | b, |a, b| a | b);
 }
 
 #[test]
@@ -65,6 +69,8 @@ fn impl_bitxor_for_u32x4() {
   let expected = u32x4::from([0, 1, 1, 0]);
   let actual = a ^ b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x4, b| a ^ b, |a, b| a ^ b);
 }
 
 #[test]
@@ -75,6 +81,8 @@ fn impl_shl_for_u32x4() {
     u32x4::from([1 << 2, 2 << 2, (u32::MAX - 1) << 2, (u32::MAX - 1) << 2]);
   let actual = a << b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x4, _b| a << 3, |a, _b| a << 3);
 }
 
 #[test]
@@ -85,6 +93,8 @@ fn impl_shr_for_u32x4() {
     u32x4::from([1 >> 2, 2 >> 2, (u32::MAX - 1) >> 2, (u32::MAX - 1) >> 2]);
   let actual = a >> b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x4, _b| a >> 3, |a, _b| a >> 3);
 }
 
 #[test]

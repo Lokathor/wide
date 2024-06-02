@@ -51,6 +51,11 @@ fn impl_add_for_u16x16() {
   ]);
   let actual = a + b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x16, b| a + b,
+    |a, b| a.wrapping_add(b),
+  );
 }
 
 #[test]
@@ -82,6 +87,11 @@ fn impl_sub_for_u16x16() {
   ]);
   let actual = a - b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x16, b| a - b,
+    |a, b| a.wrapping_sub(b),
+  );
 }
 
 #[test]
@@ -228,6 +238,8 @@ fn impl_shl_for_u16x16() {
   ]);
   let actual = a << b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u16x16, _b| a << 3, |a, _b| a << 3);
 }
 
 #[test]
@@ -271,6 +283,8 @@ fn impl_shr_for_u16x16() {
   ]);
   let actual = a >> b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u16x16, _b| a >> 3, |a, _b| a >> 3);
 }
 
 #[test]

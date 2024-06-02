@@ -23,9 +23,11 @@ mod t_u64x4;
 mod t_u8x16;
 mod t_usefulness;
 
-/// Test a vector operation against a scalar operation for random values to make sure that the behavior is the same.
-/// This allows for easier for correctness for various values of the vector.
-/// Uses a simple linear congruential generator to generate random values to avoid pulling in a pile of dependencies.
+/// Test a vector operation against a scalar operation for random values to make
+/// sure that the behavior is the same. This allows for easier for correctness
+/// for various values of the vector. Uses a simple linear congruential
+/// generator to generate random values to avoid pulling in a pile of
+/// dependencies.
 fn test_random_vector_vs_scalar<
   V,
   T,

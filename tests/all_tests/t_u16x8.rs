@@ -14,6 +14,11 @@ fn impl_add_for_u16x8() {
   let expected = u16x8::from([18, 20, 22, 24, 26, 28, u16::MAX, 0]);
   let actual = a + b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x8, b| a + b,
+    |a, b| a.wrapping_add(b),
+  );
 }
 
 #[test]
@@ -23,6 +28,11 @@ fn impl_sub_for_u16x8() {
   let expected = u16x8::from([1451, 40, 65347, 4256, 65420, 6875, 0, u16::MAX]);
   let actual = a - b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x8, b| a - b,
+    |a, b| a.wrapping_sub(b),
+  );
 }
 
 #[test]
@@ -125,6 +135,8 @@ fn impl_shl_for_u16x8() {
   ]);
   let actual = a << b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u16x8, _b| a << 3, |a, _b| a << 3);
 }
 
 #[test]
@@ -143,6 +155,8 @@ fn impl_shr_for_u16x8() {
   ]);
   let actual = a >> b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u16x8, _b| a >> 3, |a, _b| a >> 3);
 }
 
 #[test]

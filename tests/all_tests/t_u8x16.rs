@@ -17,6 +17,11 @@ fn impl_add_for_u8x16() {
   ]);
   let actual = a + b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u8x16, b| a + b,
+    |a, b| a.wrapping_add(b),
+  );
 }
 
 #[test]
@@ -44,6 +49,11 @@ fn impl_sub_for_u8x16() {
   ]);
   let actual = a - b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u8x16, b| a - b,
+    |a, b| a.wrapping_sub(b),
+  );
 }
 
 #[test]
@@ -57,6 +67,11 @@ fn impl_saturating_add_for_u8x16() {
   ]);
   let actual = a.saturating_add(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u8x16, b| a.saturating_add(b),
+    |a, b| a.saturating_add(b),
+  );
 }
 
 #[test]
@@ -67,6 +82,11 @@ fn impl_saturating_sub_for_u8x16() {
   let expected = u8x16::from([0, 0, 0, 0, 0, 4, 0, 4, 0, 2, 0, 0, 0, 0, 0, 0]);
   let actual = a.saturating_sub(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u8x16, b| a.saturating_sub(b),
+    |a, b| a.saturating_sub(b),
+  );
 }
 
 #[test]
@@ -76,6 +96,8 @@ fn impl_bitand_for_u8x16() {
   let expected = u8x16::from([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]);
   let actual = a & b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u8x16, b| a & b, |a, b| a & b);
 }
 
 #[test]
@@ -85,6 +107,8 @@ fn impl_bitor_for_u8x16() {
   let expected = u8x16::from([0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1]);
   let actual = a | b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u8x16, b| a | b, |a, b| a | b);
 }
 
 #[test]
@@ -94,6 +118,8 @@ fn impl_bitxor_for_u8x16() {
   let expected = u8x16::from([0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0]);
   let actual = a ^ b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u8x16, b| a ^ b, |a, b| a ^ b);
 }
 
 #[test]
@@ -137,8 +163,6 @@ fn impl_u8x16_blend() {
     u8x16::from([1, 18, 3, 20, 5, 22, 7, 24, 9, 26, 11, 28, 13, 30, 126, 1]);
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
-
-  crate::test_random_vector_vs_scalar(|a: u8x16, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]
