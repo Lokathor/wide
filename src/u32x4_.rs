@@ -355,7 +355,9 @@ impl u32x4 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_gt_mask_i32_m128i(self.sse,rhs.sse) }
+        // no unsigned less than so inverting the high bit will get the correct result
+        let h = u32x4::splat(1 << 31);
+        Self { sse: cmp_gt_mask_i32_m128i((self ^ h).sse, (rhs ^ h).sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u32x4_gt(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -373,23 +375,10 @@ impl u32x4 {
   #[inline]
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_lt_mask_i32_m128i(self.sse,rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_lt(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vcltq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { u32::MAX } else { 0 },
-          if self.arr[1] < rhs.arr[1] { u32::MAX } else { 0 },
-          if self.arr[2] < rhs.arr[2] { u32::MAX } else { 0 },
-          if self.arr[3] < rhs.arr[3] { u32::MAX } else { 0 },
-        ]}
-      }
-    }
+    // lt is just gt the other way around
+    rhs.cmp_gt(self)
   }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

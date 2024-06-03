@@ -227,6 +227,8 @@ fn impl_i16x8_max() {
   let expected = i16x8::from([17, 2, 190, 4, 21, 6, 1, 1]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: i16x8, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -236,6 +238,8 @@ fn impl_i16x8_min() {
   let expected = i16x8::from([1, -18, 3, -20, 5, -22, i16::MIN + 1, i16::MIN]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: i16x8, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]
