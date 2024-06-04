@@ -372,10 +372,10 @@ impl Shr<i32x4> for i32x4 {
         let arr: [i32; 4] = cast(self);
         let rhs: [i32; 4] = cast(rhs);
         cast([
-          arr[0].wrapping_shr(rhs[0]),
-          arr[1].wrapping_shr(rhs[1]),
-          arr[2].wrapping_shr(rhs[2]),
-          arr[3].wrapping_shr(rhs[3]),
+          arr[0].wrapping_shr(rhs[0] as u32),
+          arr[1].wrapping_shr(rhs[1] as u32),
+          arr[2].wrapping_shr(rhs[2] as u32),
+          arr[3].wrapping_shr(rhs[3] as u32),
         ])
       }
     }
