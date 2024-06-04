@@ -321,3 +321,32 @@ fn impl_i32x8_reduce_max() {
     assert_eq!(p.reduce_max(), i32::MAX);
   }
 }
+
+#[test]
+fn impl_i32x4_shr_each() {
+  let a = u32x8::from([15313, 52322, u32::MAX, 4, 10, 20, 30, 40]);
+  let shift =
+    u32x8::from([1, 30, 8, 33 /* test masking behavior */, 1, 2, 3, 4]);
+  let expected = u32x8::from([7656, 0, 16777215, 2, 5, 5, 3, 2]);
+  let actual = a >> shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i32x8, b| a >> b,
+    |a, b| a.wrapping_shr(b as u32),
+  );
+}
+#[test]
+fn impl_i32x8_shl_each() {
+  let a = i32x8::from([15313, 52322, -1, 4, 1, 2, 3, 4]);
+  let shift =
+    i32x8::from([1, 30, 8, 33 /* test masking behavior */, 1, 2, 3, 4]);
+  let expected = i32x8::from([30626, -2147483648, -256, 8, 2, 8, 24, 64]);
+  let actual = a << shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i32x8, b| a << b,
+    |a, b| a.wrapping_shl(b as u32),
+  );
+}

@@ -324,6 +324,64 @@ macro_rules! impl_shr_t_for_i32x4 {
 }
 impl_shr_t_for_i32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+impl Shl<i32x4> for i32x4 {
+  type Output = Self;
+  fn shl(self, rhs: i32x4) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // mask the shift count to 31 to have same behavior on all platforms
+        let shift_by = bitand_m128i(rhs.sse, set_splat_i32_m128i(31));
+        Self { sse: shl_each_u32_m128i(self.sse, shift_by) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // mask the shift count to 31 to have same behavior on all platforms
+          let shift_by = vandq_s32(rhs.neon, vmovq_n_s32(31));
+          Self { neon: vshlq_s32(self.neon, shift_by) }
+        }
+      } else {
+        let arr: [i32; 4] = cast(self);
+        let rhs: [i32; 4] = cast(rhs);
+        cast([
+          arr[0].wrapping_shl(rhs[0]),
+          arr[1].wrapping_shl(rhs[1]),
+          arr[2].wrapping_shl(rhs[2]),
+          arr[3].wrapping_shl(rhs[3]),
+        ])
+      }
+    }
+  }
+}
+
+/// Shifts lanes by the corresponding lane.
+impl Shr<i32x4> for i32x4 {
+  type Output = Self;
+  fn shr(self, rhs: i32x4) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // mask the shift count to 31 to have same behavior on all platforms
+        let shift_by = bitand_m128i(rhs.sse, set_splat_i32_m128i(31));
+        Self { sse: shr_each_i32_m128i(self.sse, shift_by) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // mask the shift count to 31 to have same behavior on all platforms
+          // no right shift, have to pass negative value to left shift on neon
+          let shift_by = vnegq_s32(vandq_s32(rhs.neon, vmovq_n_s32(31)));
+          Self { neon: vshlq_s32(self.neon, shift_by) }
+        }
+      } else {
+        let arr: [i32; 4] = cast(self);
+        let rhs: [i32; 4] = cast(rhs);
+        cast([
+          arr[0].wrapping_shr(rhs[0]),
+          arr[1].wrapping_shr(rhs[1]),
+          arr[2].wrapping_shr(rhs[2]),
+          arr[3].wrapping_shr(rhs[3]),
+        ])
+      }
+    }
+  }
+}
+
 impl CmpEq for i32x4 {
   type Output = Self;
   #[inline]
