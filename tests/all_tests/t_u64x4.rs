@@ -101,3 +101,31 @@ fn impl_u64x4_cmp_eq() {
   let actual = a.cmp_eq(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u64x4_cmp_gt() {
+  let a = u64x4::from([1_u64, 4, u64::MAX, 5]);
+  let b = u64x4::from([3_u64, 4, 1, u64::MAX]);
+  let expected = u64x4::from([0, 0, u64::MAX, 0]);
+  let actual = a.cmp_gt(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u64x4, b| a.cmp_gt(b),
+    |a, b| if a > b { u64::MAX } else { 0 },
+  );
+}
+
+#[test]
+fn impl_u64x4_cmp_lt() {
+  let a = u64x4::from([3_u64, 4, 1, u64::MAX]);
+  let b = u64x4::from([1_u64, 4, u64::MAX, 5]);
+  let expected = u64x4::from([0, 0, u64::MAX, 0]);
+  let actual = a.cmp_lt(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u64x4, b| a.cmp_lt(b),
+    |a, b| if a < b { u64::MAX } else { 0 },
+  );
+}

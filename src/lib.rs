@@ -953,51 +953,6 @@ pub trait CmpLe<Rhs = Self> {
   fn cmp_le(self, rhs: Rhs) -> Self::Output;
 }
 
-/// Common trait similar to portable SIMD library to make it easier to
-/// write tests or other generic code that work with all defined SIMD types
-/// Also makes porting to eventual portable SIMD library easier for generic code
-pub trait SimdType<T: Copy, const N: usize>
-where
-  Self: Sized,
-{
-  const LEN: usize = N;
-
-  #[must_use]
-  fn len(&self) -> usize {
-    N
-  }
-
-  #[must_use]
-  fn splat(value: T) -> Self;
-
-  #[must_use]
-  fn as_array(&self) -> &[T; N];
-
-  #[must_use]
-  fn as_mut_array(&mut self) -> &mut [T; N];
-
-  #[must_use]
-  fn from_array(array: [T; N]) -> Self;
-
-  /// provide same functionarlity as array from_fn
-  fn from_fn<F: FnMut(usize) -> T>(cb: F) -> Self;
-
-  /// Shortcut for a two parameter operation that applies the same op on corresponding lanes
-  #[inline]
-  fn binary_op<F: Fn(T, T) -> T>(self, b: Self, f: F) -> Self {
-    let a_array = self.as_array();
-    let b_array = b.as_array();
-    Self::from_fn(|i| f(a_array[i], b_array[i]))
-  }
-
-  /// Shortcut for a unary operation that applies the same op on corresponding lanes
-  #[inline]
-  fn unary_op<F: Fn(T) -> T>(self, f: F) -> Self {
-    let a_array = self.as_array();
-    Self::from_fn(|i| f(a_array[i]))
-  }
-}
-
 macro_rules! bulk_impl_const_rhs_op {
   (($op:ident,$method:ident) => [$(($lhs:ty,$rhs:ty),)+]) => {
     $(

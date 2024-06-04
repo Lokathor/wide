@@ -418,6 +418,8 @@ fn impl_i8x32_max() {
   ]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: i8x32, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -526,6 +528,8 @@ fn impl_i8x32_min() {
   ]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: i8x32, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]

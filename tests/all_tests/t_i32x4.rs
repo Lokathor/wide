@@ -145,6 +145,8 @@ fn impl_i32x4_max() {
   let expected = i32x4::from([17, 2, 1, 1]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: i32x4, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -154,6 +156,8 @@ fn impl_i32x4_min() {
   let expected = i32x4::from([1, -18, i32::MIN + 1, i32::MIN]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: i32x4, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]

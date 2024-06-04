@@ -32,6 +32,11 @@ fn impl_mul_for_u64x2() {
   let expected = u64x2::from([2, (Wrapping(u64::MAX) * Wrapping(2)).0]);
   let actual = a * b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u64x2, b| a * b,
+    |a, b| a.wrapping_mul(b),
+  );
 }
 
 #[test]
@@ -106,4 +111,23 @@ fn impl_u64x2_cmp_gt() {
   let expected = u64x2::from([0, 0]);
   let actual = a.cmp_gt(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u64x2, b| a.cmp_gt(b),
+    |a, b| if a > b { u64::MAX } else { 0 },
+  );
+}
+
+#[test]
+fn impl_u64x2_cmp_lt() {
+  let a = u64x2::from([3_u64, 4]);
+  let b = u64x2::from([1_u64, 4]);
+  let expected = u64x2::from([0, 0]);
+  let actual = a.cmp_lt(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u64x2, b| a.cmp_lt(b),
+    |a, b| if a < b { u64::MAX } else { 0 },
+  );
 }

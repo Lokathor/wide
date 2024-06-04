@@ -338,7 +338,9 @@ impl u64x2 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
-        Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
+        // no unsigned gt so inverting the high bit will get the correct result
+        let highbit = u64x2::splat(1 << 63);
+        Self { sse: cmp_gt_mask_i64_m128i((self ^ highbit).sse, (rhs ^ highbit).sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vcgtq_u64(self.neon, rhs.neon) }}
       } else {
@@ -346,11 +348,18 @@ impl u64x2 {
         let s: [u64;2] = cast(self);
         let r: [u64;2] = cast(rhs);
         cast([
-          if s[0] > r[0] { -1_i64 } else { 0 },
-          if s[1] > r[1] { -1_i64 } else { 0 },
+          if s[0] > r[0] { u64::MAX } else { 0 },
+          if s[1] > r[1] { u64::MAX } else { 0 },
         ])
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn cmp_lt(self, rhs: Self) -> Self {
+    // lt is just gt the other way around
+    rhs.cmp_gt(self)
   }
 
   #[inline]

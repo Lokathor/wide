@@ -14,6 +14,11 @@ fn impl_add_for_u32x8() {
   let expected = u32x8::from([18, 20, u32::MAX, u32::MIN, 43, 84, 647, 68]);
   let actual = a + b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a + b,
+    |a, b| a.wrapping_add(b),
+  );
 }
 
 #[test]
@@ -24,6 +29,11 @@ fn impl_sub_for_u32x8() {
     u32x8::from([8984, 4294967280, 0, u32::MAX, 4294967293, 0, 7, 5]);
   let actual = a - b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a - b,
+    |a, b| a.wrapping_sub(b),
+  );
 }
 
 #[test]
@@ -42,30 +52,44 @@ fn impl_mul_for_u32x8() {
   ]);
   let actual = a * b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a * b,
+    |a, b| a.wrapping_mul(b),
+  );
 }
 
 #[test]
 fn impl_bitand_for_u32x8() {
   let a = u32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
   let b = u32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
+  let expected = u32x8::from([0, 0, 0, 1, 0, 0, 0, 1]);
+  let actual = a & b;
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_binary_op(a, b, |a, b| a & b, |a, b| a & b);
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a | b, |a, b| a | b);
 }
 
 #[test]
 fn impl_bitor_for_u32x8() {
   let a = u32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
   let b = u32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
+  let expected = u32x8::from([0, 1, 1, 1, 1, 1, 1, 1]);
+  let actual = a | b;
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_binary_op(a, b, |a, b| a | b, |a, b| a | b);
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a & b, |a, b| a & b);
 }
 
 #[test]
 fn impl_bitxor_for_u32x8() {
   let a = u32x8::from([0, 0, 1, 1, 1, 0, 0, 1]);
   let b = u32x8::from([0, 1, 0, 1, 0, 1, 1, 1]);
+  let expected = u32x8::from([0, 1, 1, 0, 1, 1, 1, 0]);
+  let actual = a ^ b;
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_binary_op(a, b, |a, b| a ^ b, |a, b| a ^ b);
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a ^ b, |a, b| a ^ b);
 }
 
 #[test]
@@ -73,8 +97,20 @@ fn impl_shl_for_u32x8() {
   let a =
     u32x8::from([1, 2, u32::MAX - 1, i32::MAX as u32 - 1, 128, 255, 590, 5667]);
   let b = 2;
+  let expected = u32x8::from([
+    1 << 2,
+    2 << 2,
+    (u32::MAX - 1) << 2,
+    (i32::MAX as u32 - 1) << 2,
+    128 << 2,
+    255 << 2,
+    590 << 2,
+    5667 << 2,
+  ]);
+  let actual = a << b;
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_unary_op(a, |a| a << b, |a| a << b);
+  crate::test_random_vector_vs_scalar(|a: u32x8, _b| a << 3, |a, _b| a << 3);
 }
 
 #[test]
@@ -82,33 +118,56 @@ fn impl_shr_for_u32x8() {
   let a =
     u32x8::from([1, 2, u32::MAX - 1, i32::MAX as u32 - 1, 128, 255, 590, 5667]);
   let b = 2;
+  let expected = u32x8::from([
+    1 >> 2,
+    2 >> 2,
+    (u32::MAX - 1) >> 2,
+    (i32::MAX as u32 - 1) >> 2,
+    128 >> 2,
+    255 >> 2,
+    590 >> 2,
+    5667 >> 2,
+  ]);
+  let actual = a >> b;
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_unary_op(a, |a| a >> b, |a| a >> b);
+  crate::test_random_vector_vs_scalar(|a: u32x8, _b| a >> 3, |a, _b| a >> 3);
 }
 
 #[test]
 fn impl_u32x8_cmp_eq() {
   let a = u32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
   let b = u32x8::from([2_u32; 8]);
-
-  crate::t_common::test_binary_op(
-    a,
-    b,
-    |a, b| if a == b { u32::MAX } else { 0 },
-    |a, b| a.cmp_eq(b),
-  );
+  let expected = u32x8::from([0, u32::MAX, 0, 0, u32::MAX, 0, 0, u32::MAX]);
+  let actual = a.cmp_eq(b);
+  assert_eq!(expected, actual);
 }
 
 #[test]
 fn impl_u32x8_cmp_gt() {
-  let a = u32x8::from([1, 2, 9, 4, 1, 2, 8, 10]);
-  let b = u32x8::from([5_u32; 8]);
+  let a = u32x8::from([1, 2, u32::MAX, 4, 1, 2, 8, 10]);
+  let b = u32x8::from([5, 5, 5, 5, 5, 5, 5, 5]);
+  let expected = u32x8::from([0, 0, u32::MAX, 0, 0, 0, u32::MAX, u32::MAX]);
+  let actual = a.cmp_gt(b);
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_binary_op(
-    a,
-    b,
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a.cmp_gt(b),
     |a, b| if a > b { u32::MAX } else { 0 },
-    |a, b| a.cmp_gt(b),
+  );
+}
+
+#[test]
+fn impl_u32x8_cmp_lt() {
+  let a = u32x8::from([5, 5, 5, 5, 5, 5, 5, 5]);
+  let b = u32x8::from([1, 2, u32::MAX, 4, 1, 2, 8, 10]);
+  let expected = u32x8::from([0, 0, u32::MAX, 0, 0, 0, u32::MAX, u32::MAX]);
+  let actual = a.cmp_lt(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a.cmp_lt(b),
+    |a, b| if a < b { u32::MAX } else { 0 },
   );
 }
 
@@ -125,51 +184,22 @@ fn impl_u32x8_blend() {
 
 #[test]
 fn impl_u32x8_max() {
-  let a = u32x8::from([1, 2, u32::MAX, i32::MAX as u32, 6, 8, 12, 9]);
-  let b = u32x8::from([17, 18, 1, 1, 19, 0, 1, u32::MAX]);
+  let a = u32x8::from([1, 2, 1, 0, 6, 0, 12, u32::MAX]);
+  let b = u32x8::from([17, 0, 1, 1, 19, 0, 0, 1000]);
+  let expected = u32x8::from([17, 2, 1, 1, 19, 0, 12, u32::MAX]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_binary_op(a, b, |a, b| a.max(b), |a, b| a.max(b));
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
 fn impl_u32x8_min() {
-  let a = u32x8::from([1, 2, u32::MAX, i32::MAX as u32, 6, 8, 12, 9]);
-  let b = u32x8::from([17, 18, 1, 1, 19, 0, 1, u32::MAX]);
+  let a = u32x8::from([1, 2, 1, 0, 6, 0, 12, u32::MAX]);
+  let b = u32x8::from([17, 0, 1, 1, 19, 0, 0, 1000]);
+  let expected = u32x8::from([1, 0, 1, 0, 6, 0, 0, 1000]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
 
-  crate::t_common::test_binary_op(a, b, |a, b| a.min(b), |a, b| a.min(b));
-}
-
-#[test]
-fn impl_u32x8_shr_each() {
-  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1322, 5, 2552352, 2123]);
-  let shift =
-    u32x8::from([1, 2, 3, 4, 5, 6, 33 /* test masking behavior */, 31]);
-
-  crate::t_common::test_binary_op(
-    a,
-    shift,
-    |a, b| a.wrapping_shr(b),
-    |a, b| a >> b,
-  );
-}
-
-#[test]
-fn impl_u32x8_shl_each() {
-  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1322, 5, 2552352, 2123]);
-  let shift =
-    u32x8::from([1, 2, 3, 4, 5, 6, 33 /* test masking behavior */, 31]);
-
-  crate::t_common::test_binary_op(
-    a,
-    shift,
-    |a, b| a.wrapping_shl(b),
-    |a, b| a << b,
-  );
-}
-
-#[test]
-fn impl_u32x8_not() {
-  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1322, 5, 2552352, 2123]);
-
-  crate::t_common::test_unary_op(a, |a| !a, |a| !a);
+  crate::test_random_vector_vs_scalar(|a: u32x8, b| a.min(b), |a, b| a.min(b));
 }

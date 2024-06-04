@@ -394,32 +394,31 @@ fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
   // Returns 32 high bits of the 64 bit result of multiplication of two u32s
   let mul_hi = |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32;
 
-  let q = numerator.binary_op(magic, mul_hi);
+  let a = numerator.as_array_ref();
+  let b = magic.as_array_ref();
+
+  let q = u32x8::from([
+    mul_hi(a[0], b[0]),
+    mul_hi(a[1], b[1]),
+    mul_hi(a[2], b[2]),
+    mul_hi(a[3], b[3]),
+    mul_hi(a[4], b[4]),
+    mul_hi(a[5], b[5]),
+    mul_hi(a[6], b[6]),
+    mul_hi(a[7], b[7]),
+  ]);
+
   let t = ((numerator - q) >> 1) + q;
   t >> shift
 }
 
 #[test]
 fn impl_u32x8_branch_free_divide() {
-  let numer = u32x8::from([
-    1 * 999,
-    2 * 999,
-    3 * 999,
-    u32::MAX,
-    421432145,
-    2321,
-    7654,
-    223,
-  ]);
-  let denom = u32x8::from([2, 3, u32::MAX, 50001, 12, 563412, 4534, 291]);
-
-  crate::t_common::test_binary_op(
-    numer,
-    denom,
-    |a, b| a / b,
-    |a, b| {
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| {
       let (magic, shift) = generate_branch_free_divide_magic_shift(b);
       branch_free_divide(a, magic, shift)
     },
+    |a, b| a / b,
   );
 }
