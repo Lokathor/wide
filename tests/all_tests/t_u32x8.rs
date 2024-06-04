@@ -203,3 +203,45 @@ fn impl_u32x8_min() {
 
   crate::test_random_vector_vs_scalar(|a: u32x8, b| a.min(b), |a, b| a.min(b));
 }
+
+#[test]
+fn impl_u32x4_shr_each() {
+  let a = u32x8::from([15313, 52322, u32::MAX, 4, 10, 20, 30, 40]);
+  let shift =
+    u32x8::from([1, 30, 8, 33 /* test masking behavior */, 1, 2, 3, 4]);
+  let expected = u32x8::from([7656, 0, 16777215, 2, 5, 5, 3, 2]);
+  let actual = a >> shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a >> b,
+    |a, b| a.wrapping_shr(b),
+  );
+}
+#[test]
+fn impl_u32x8_shl_each() {
+  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1, 2, 3, 4]);
+  let shift =
+    u32x8::from([1, 30, 8, 33 /* test masking behavior */, 1, 2, 3, 4]);
+  let expected = u32x8::from([30626, 2147483648, 4294967040, 8, 2, 8, 24, 64]);
+  let actual = a << shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a << b,
+    |a, b| a.wrapping_shl(b),
+  );
+}
+
+#[test]
+fn impl_u32x8_not() {
+  let a = u32x8::from([15313, 52322, u32::MAX, 4, 1, 2, 3, 4]);
+  let expected = u32x8::from([
+    4294951982, 4294914973, 0, 4294967291, 4294967294, 4294967293, 4294967292,
+    4294967291,
+  ]);
+  let actual = !a;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u32x8, _b| !a, |a, _b| !a);
+}
