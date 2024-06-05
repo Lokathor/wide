@@ -509,6 +509,42 @@ impl u32x4 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) != 0
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x8000000080000000) != 0
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) == 0b1000100010001000
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) == 0b1111
+      } else {
+        let v : [u64;2] = cast(self);
+        (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [u32; 4] {
     cast(self)
   }
