@@ -176,6 +176,11 @@ macro_rules! impl_shr_t_for_u32x8 {
 
 impl_shr_t_for_u32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+/// Shifts lanes by the corresponding lane.
+///
+/// Bitwise shift-right; yields self >> mask(rhs), where mask removes any
+/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
+/// the type. (same as wrapping_shr)
 impl Shr<u32x8> for u32x8 {
   type Output = Self;
   fn shr(self, rhs: u32x8) -> Self::Output {
@@ -194,6 +199,11 @@ impl Shr<u32x8> for u32x8 {
   }
 }
 
+/// Shifts lanes by the corresponding lane.
+///
+/// Bitwise shift-left; yields self << mask(rhs), where mask removes any
+/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
+/// the type. (same as wrapping_shl)
 impl Shl<u32x8> for u32x8 {
   type Output = Self;
   fn shl(self, rhs: u32x8) -> Self::Output {
