@@ -64,7 +64,13 @@ fn test_random_vector_vs_scalar<
     }
 
     let expected_vec = vector_fn(V::from(a_arr), V::from(b_arr));
-    assert_eq!(expected_arr, expected_vec.into());
+    assert_eq!(
+      expected_arr,
+      expected_vec.into(),
+      "scalar = {:?} vec = {:?}",
+      expected_arr,
+      expected_vec.into()
+    );
   }
 }
 
