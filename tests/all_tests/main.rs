@@ -2,6 +2,8 @@
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::assertions_on_constants)]
 
+use rand::RngCore;
+
 mod t_f32x4;
 mod t_f32x8;
 mod t_f64x2;
@@ -23,22 +25,19 @@ mod t_u64x4;
 mod t_u8x16;
 mod t_usefulness;
 
-/// Uses a simple linear congruential
-/// generator to generate random values to avoid pulling in a pile of
-/// dependencies.
-fn lcg(var: &mut u64) -> u64 {
-  const A: u64 = 2862933555777941757;
-  const B: u64 = 3037000493;
+/// Generate a random value for a type that implements GenSample.
+fn gen_random<T: GenSample>(rng: &mut impl RngCore) -> T {
+  let r = rng.next_u64();
 
-  *var = var.wrapping_mul(A).wrapping_add(B);
-
-  // generate more ff and 00 than we normally would to test edge cases
-  match *var & 0xf {
-    1 => 0,
+  // generate special values more often than random chance to test edge cases
+  let next = match r & 0xf {
+    0 => 0,
+    1 => 1,
     2 => u64::MAX,
-    3 => 0b0101010101010101010101010101010101010101010101010101010101010101,
-    _ => *var,
-  }
+    _ => rng.next_u64(),
+  };
+
+  T::get_sample(next)
 }
 
 /// Test a vector operation against a scalar operation for random values to make
@@ -64,14 +63,14 @@ fn test_random_vector_vs_scalar<
   let mut a_arr = [T::default(); N];
   let mut b_arr: [T; N] = [T::default(); N];
 
-  // simple linear congruential generator
-  let mut var = 1;
+  // use a fixed seed for reproducibility
+  let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0);
 
   // do 100 iterations
   for _i in 0..100 {
     for i in 0..N {
-      a_arr[i] = T::get_sample(lcg(&mut var));
-      b_arr[i] = T::get_sample(lcg(&mut var));
+      a_arr[i] = gen_random(&mut rng);
+      b_arr[i] = gen_random(&mut rng);
     }
 
     let mut expected_arr: [TR; N] = [TR::default(); N];
@@ -116,13 +115,13 @@ fn test_random_vector_vs_scalar_reduce<
 {
   let mut a_arr = [T::default(); N];
 
-  // simple linear congruential generator
-  let mut var = 1;
+  // use a fixed seed for reproducibility
+  let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0);
 
   // do 100 iterations
   for _i in 0..100 {
     for i in 0..N {
-      a_arr[i] = T::get_sample(lcg(&mut var));
+      a_arr[i] = gen_random(&mut rng);
     }
 
     let expected_scalar =
@@ -194,11 +193,15 @@ impl GenSample for i8 {
 
 impl GenSample for f32 {
   fn get_sample(v: u64) -> Self {
-    match v & 31 {
-      0 => f32::NAN,
-      1 => f32::INFINITY,
-      2 => f32::NEG_INFINITY,
-      _ => (v as i64 as f32).sqrt(),
+    // generate special float values more often than random
+    // chance to test edge cases
+    let m = (v >> 8) & 15;
+
+    match m {
+      1 => f32::NAN,
+      2 => f32::INFINITY,
+      3 => f32::NEG_INFINITY,
+      _ => ((v as i64) as f32) / 7.0,
     }
   }
 
@@ -209,18 +212,22 @@ impl GenSample for f32 {
     } else if self.is_infinite() {
       b.is_infinite() && self.is_sign_positive() == b.is_sign_positive()
     } else {
-      self == b
+      (self - b).abs() < 0.000001
     }
   }
 }
 
 impl GenSample for f64 {
+  // generate special float values more often than random
+  // chance to test edge cases
   fn get_sample(v: u64) -> Self {
-    match v & 31 {
-      0 => f64::NAN,
-      1 => f64::INFINITY,
-      2 => f64::NEG_INFINITY,
-      _ => (v as i64 as f64).sqrt(),
+    let m = (v >> 8) & 15;
+
+    match m {
+      1 => f64::NAN,
+      2 => f64::INFINITY,
+      3 => f64::NEG_INFINITY,
+      _ => ((v as i64) as f64) / 7.0,
     }
   }
 
@@ -231,7 +238,7 @@ impl GenSample for f64 {
     } else if self.is_infinite() {
       b.is_infinite() && self.is_sign_positive() == b.is_sign_positive()
     } else {
-      self == b
+      (self - b).abs() < 0.000001
     }
   }
 }

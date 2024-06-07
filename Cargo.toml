@@ -23,3 +23,6 @@ std = []
 [dependencies]
 safe_arch = { version = "0.7", features = ["bytemuck"] }
 bytemuck = "1"
+
+[dev-dependencies]
+rand = "0.8"

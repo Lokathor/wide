@@ -340,6 +340,11 @@ fn impl_f32x4_round() {
   let expected = a;
   let actual = a.round();
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, _b| a.round(),
+    |a, _b| a.round(),
+  );
 }
 
 #[test]
