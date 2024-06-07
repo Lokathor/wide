@@ -203,6 +203,11 @@ fn impl_f32x8_fast_max() {
     f32x8::from([2.0, 5.0, f32::INFINITY, 10.0, 19.0, -5.0, 12.0, 9.0]);
   let actual = a.fast_max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x8, b| a.fast_max(b),
+    |a, b| if a > b { a } else { b },
+  );
 }
 
 #[test]
@@ -214,6 +219,8 @@ fn impl_f32x8_max() {
     f32x8::from([2.0, 5.0, f32::INFINITY, 10.0, 19.0, -8.0, 12.0, -9.0]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x8, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -224,6 +231,11 @@ fn impl_f32x8_fast_min() {
     f32x8::from([1.0, -3.0, 3.0, f32::NEG_INFINITY, 6.0, -8.0, -1.0, -9.0]);
   let actual = a.fast_min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x8, b| a.fast_min(b),
+    |a, b| if a < b { a } else { b },
+  );
 }
 
 #[test]
@@ -236,6 +248,8 @@ fn impl_f32x8_min() {
     f32x8::from([1.0, -3.0, 3.0, f32::NEG_INFINITY, 6.0, -8.0, -1.0, -9.0]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x8, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]
@@ -808,6 +822,12 @@ fn test_f32x8_move_mask() {
   let expected = 0b10001000;
   let actual = a.move_mask();
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: f32x8| a.move_mask(),
+    0i32,
+    |acc, a, idx| acc | if (a.to_bits() as i32) < 0 { 1 << idx } else { 0 },
+  );
 }
 
 #[test]

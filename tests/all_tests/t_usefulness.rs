@@ -416,9 +416,11 @@ fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
 fn impl_u32x8_branch_free_divide() {
   crate::test_random_vector_vs_scalar(
     |a: u32x8, b| {
+      // never divide by 0 or 1 (since the branch free division doesn't support division by 1)
+      let b = b.max(u32x8::splat(2));
       let (magic, shift) = generate_branch_free_divide_magic_shift(b);
       branch_free_divide(a, magic, shift)
     },
-    |a, b| a / b,
+    |a, b| a / b.max(2),
   );
 }

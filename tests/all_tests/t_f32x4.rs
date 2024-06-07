@@ -26,6 +26,8 @@ fn impl_add_for_f32x4() {
   let expected = f32x4::from([6.0, 8.0, 10.0, 12.0]);
   let actual = a + b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x4, b| a + b, |a, b| a + b);
 }
 
 #[test]
@@ -67,6 +69,8 @@ fn impl_sub_for_f32x4() {
   let expected = f32x4::from([-4.0, -5.0, -14.0, 3.0]);
   let actual = a - b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x4, b| a - b, |a, b| a - b);
 }
 
 #[test]
@@ -76,6 +80,8 @@ fn impl_mul_for_f32x4() {
   let expected = f32x4::from([5.0, 14.0, 51.0, 4.0]);
   let actual = a * b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x4, b| a * b, |a, b| a * b);
 }
 
 #[test]
@@ -94,6 +100,11 @@ fn impl_bitand_for_f32x4() {
   let expected = f32x4::from([0.0, 0.0, 0.0, 1.0]);
   let actual = a & b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| a & b,
+    |a, b| f32::from_bits(a.to_bits() & b.to_bits()),
+  );
 }
 
 #[test]
@@ -103,6 +114,11 @@ fn impl_bitor_for_f32x4() {
   let expected = f32x4::from([0.0, 1.0, 1.0, 1.0]);
   let actual = a | b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| a | b,
+    |a, b| f32::from_bits(a.to_bits() | b.to_bits()),
+  );
 }
 
 #[test]
@@ -112,6 +128,11 @@ fn impl_bitxor_for_f32x4() {
   let expected = f32x4::from([0.0, 1.0, 1.0, 0.0]);
   let actual = a ^ b;
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| a ^ b,
+    |a, b| f32::from_bits(a.to_bits() ^ b.to_bits()),
+  );
 }
 
 #[test]
@@ -139,6 +160,11 @@ fn impl_f32x4_cmp_ge() {
   let expected: [i32; 4] = [0, -1, -1, -1];
   let actual: [i32; 4] = cast(a.cmp_ge(b));
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| cast::<f32x4, i32x4>(a.cmp_ge(b)),
+    |a, b| if a >= b { -1i32 } else { 0 },
+  );
 }
 
 #[test]
@@ -148,6 +174,11 @@ fn impl_f32x4_cmp_gt() {
   let expected: [i32; 4] = [0, 0, -1, -1];
   let actual: [i32; 4] = cast(a.cmp_gt(b));
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| cast::<f32x4, i32x4>(a.cmp_gt(b)),
+    |a, b| if a > b { -1i32 } else { 0 },
+  );
 }
 
 #[test]
@@ -157,6 +188,11 @@ fn impl_f32x4_cmp_le() {
   let expected: [i32; 4] = [-1, -1, 0, 0];
   let actual: [i32; 4] = cast(a.cmp_le(b));
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| cast::<f32x4, i32x4>(a.cmp_le(b)),
+    |a, b| if a <= b { -1i32 } else { 0 },
+  );
 }
 
 #[test]
@@ -189,6 +225,8 @@ fn impl_f32x4_abs() {
   let expected = f32x4::from([1.0, 2.0, 3.5, f32::INFINITY]);
   let actual = a.abs();
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x4, _b| a.abs(), |a, _b| a.abs());
 }
 
 #[test]
@@ -198,6 +236,11 @@ fn impl_f32x4_fast_max() {
   let expected = f32x4::from([2.0, 5.0, 3.0, -4.0]);
   let actual = a.fast_max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| a.fast_max(b),
+    |a, b| if a > b { a } else { b },
+  );
 }
 
 #[test]
@@ -213,6 +256,8 @@ fn impl_f32x4_max() {
   let expected = f32x4::from([1.0, 5.0, f32::INFINITY, 10.0]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x4, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -222,6 +267,11 @@ fn impl_f32x4_fast_min() {
   let expected = f32x4::from([1.0, 3.0, -5.0, -10.0]);
   let actual = a.fast_min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: f32x4, b| a.fast_min(b),
+    |a, b| if a < b { a } else { b },
+  );
 }
 
 #[test]
@@ -237,6 +287,8 @@ fn impl_f32x4_min() {
   let expected = f32x4::from([1.0, f32::NEG_INFINITY, 3.0, 10.0]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: f32x4, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]
@@ -713,6 +765,12 @@ fn test_f32x4_move_mask() {
   let expected = 0b1000;
   let actual = a.move_mask();
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: f32x4| a.move_mask(),
+    0i32,
+    |acc, a, idx| acc | if (a.to_bits() as i32) < 0 { 1 << idx } else { 0 },
+  );
 }
 
 #[test]
@@ -722,6 +780,12 @@ fn test_f32x4_any() {
   //
   let a = f32x4::from([1.0, 0.0, 2.0, 3.0]).is_nan();
   assert!(!a.any());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: f32x4| a.any(),
+    false,
+    |acc, a, _idx| acc | ((a.to_bits() as i32) < 0),
+  );
 }
 
 #[test]
@@ -731,6 +795,12 @@ fn test_f32x4_all() {
   //
   let a = f32x4::from([1.0, -0.0, 2.0, f32::NAN]).is_nan();
   assert!(!a.all());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: f32x4| a.all(),
+    true,
+    |acc, a, _idx| acc & ((a.to_bits() as i32) < 0),
+  );
 }
 
 #[test]
