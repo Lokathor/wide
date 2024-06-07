@@ -586,7 +586,8 @@ impl f32x4 {
         Self { sse: min_m128(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
-          simd: f32x4_min(self.simd, rhs.simd),
+          // vmaxq has inconsistent behavior with NaNs, so we need to use vbslq
+          simd: vbslq_f32(vcltq_f32(rhs.simd,self.simd), self.simd, rhs.simd)
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_f32(self.neon, rhs.neon) }}
