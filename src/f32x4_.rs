@@ -521,7 +521,7 @@ impl f32x4 {
           simd: f32x4_pmax(rhs.simd, self.simd),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_f32(rhs.neon, self.neon) }}
+        unsafe {Self { neon: vmaxnmq_f32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
