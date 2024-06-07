@@ -495,7 +495,7 @@ impl f64x2 {
         Self { sse: max_m128d(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
-          simd: f64x2_pmax(self.simd, rhs.simd),
+          simd: f64x2_pmax(rhs.simd, self.simd),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmaxq_f64(self.neon, rhs.neon) }}
@@ -556,7 +556,7 @@ impl f64x2 {
         Self { sse: min_m128d(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
-          simd: f64x2_pmin(self.simd, rhs.simd),
+          simd: f64x2_pmin(rhs.simd, self.simd),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_f64(self.neon, rhs.neon) }}

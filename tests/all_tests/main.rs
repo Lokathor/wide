@@ -128,7 +128,11 @@ fn test_random_vector_vs_scalar_reduce<
       a_arr.iter().enumerate().fold(acc, |acc, (i, &v)| scalar_fn(acc, v, i));
 
     let expected_vec = vector_fn(V::from(a_arr));
-    assert_eq!(expected_scalar, expected_vec);
+    assert_eq!(
+      expected_scalar, expected_vec,
+      "scalar = {:?} vec = {:?} source = {:?}",
+      expected_scalar, expected_vec, a_arr
+    );
   }
 }
 
