@@ -521,7 +521,8 @@ impl f32x4 {
           simd: f32x4_max(rhs.simd, self.simd),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_f32(self.neon, rhs.neon) }}
+        // vmaxq has a different NaN behavior than Intel
+        unsafe {Self { neon: vbslq_f32(vcltq_f32(rhs.neon,self.neon), self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           if self.arr[0] > rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
@@ -586,8 +587,7 @@ impl f32x4 {
         Self { sse: min_m128(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
-          // vmaxq has inconsistent behavior with NaNs, so we need to use vbslq
-          simd: vbslq_f32(vcltq_f32(rhs.simd,self.simd), self.simd, rhs.simd)
+          simd: f32x4_pmin(self.simd, rhs.simd),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_f32(self.neon, rhs.neon) }}
