@@ -1016,35 +1016,17 @@ impl f32x8 {
   #[inline]
   #[must_use]
   pub fn move_mask(self) -> i32 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256(self.avx)
-      } else {
-        (self.b.move_mask() << 4) | self.a.move_mask()
-      }
-    }
+    i32x8::move_mask(cast(self))
   }
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256(self.avx) != 0
-      } else {
-        self.a.any() || self.b.any()
-      }
-    }
+    i32x8::any(cast(self))
   }
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256(self.avx) == 0b11111111
-      } else {
-        self.a.all() && self.b.all()
-      }
-    }
+    i32x8::all(cast(self))
   }
   #[inline]
   #[must_use]

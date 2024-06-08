@@ -1128,35 +1128,17 @@ impl f64x4 {
   #[inline]
   #[must_use]
   pub fn move_mask(self) -> i32 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx)
-      } else {
-        (self.b.move_mask() << 2) | self.a.move_mask()
-      }
-    }
+    i64x4::move_mask(cast(self))
   }
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) != 0
-      } else {
-        self.a.any() || self.b.any()
-      }
-    }
+    i64x4::any(cast(self))
   }
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) == 0b1111
-      } else {
-        self.a.all() && self.b.all()
-      }
-    }
+    i64x4::all(cast(self))
   }
   #[inline]
   #[must_use]
