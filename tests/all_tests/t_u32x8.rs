@@ -245,3 +245,30 @@ fn impl_u32x8_not() {
 
   crate::test_random_vector_vs_scalar(|a: u32x8, _b| !a, |a, _b| !a);
 }
+
+#[test]
+fn test_u32x8_any() {
+  let a = u32x8::from([0, 0, 0, u32::MAX, 0, 0, 0, 0]);
+  assert!(a.any());
+  //
+  let a = u32x8::from([0, 0, 0, 0, 0, 0, 0, 0]);
+  assert!(!a.any());
+}
+
+#[test]
+fn test_u32x8_all() {
+  let a = u32x8::from([0, 0, 0, u32::MAX, 0, 0, 0, 0]);
+  assert!(!a.all());
+  //
+  let a = u32x8::from([u32::MAX; 8]);
+  assert!(a.all());
+}
+
+#[test]
+fn test_u32x8_none() {
+  let a = u32x8::from([0, 0, 0, u32::MAX, 0, 0, 0, 0]);
+  assert!(!a.none());
+  //
+  let a = u32x8::from([0; 8]);
+  assert!(a.none());
+}

@@ -207,3 +207,30 @@ fn impl_u32x4_shl_each() {
     |a, b| a.wrapping_shl(b),
   );
 }
+
+#[test]
+fn test_u32x4_any() {
+  let a = u32x4::from([0, 0, 0, u32::MAX]);
+  assert!(a.any());
+  //
+  let a = u32x4::from([0, 0, 0, 0]);
+  assert!(!a.any());
+}
+
+#[test]
+fn test_u32x4_all() {
+  let a = u32x4::from([0, 0, 0, u32::MAX]);
+  assert!(!a.all());
+  //
+  let a = u32x4::from([u32::MAX; 4]);
+  assert!(a.all());
+}
+
+#[test]
+fn test_u32x4_none() {
+  let a = u32x4::from([0, 0, 0, u32::MAX]);
+  assert!(!a.none());
+  //
+  let a = u32x4::from([0; 4]);
+  assert!(a.none());
+}
