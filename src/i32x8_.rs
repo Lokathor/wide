@@ -236,6 +236,9 @@ impl_shr_t_for_i32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 /// the type. (same as wrapping_shr)
 impl Shr<i32x8> for i32x8 {
   type Output = Self;
+
+  #[inline]
+  #[must_use]
   fn shr(self, rhs: i32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -259,6 +262,9 @@ impl Shr<i32x8> for i32x8 {
 /// the type. (same as wrapping_shl)
 impl Shl<i32x8> for i32x8 {
   type Output = Self;
+
+  #[inline]
+  #[must_use]
   fn shl(self, rhs: i32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -507,7 +513,8 @@ impl i32x8 {
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_m256(cast(self.avx2)) as i32
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m256(cast(self.avx2))
       } else {
         self.a.move_mask() | (self.b.move_mask() << 4)
       }
@@ -519,7 +526,7 @@ impl i32x8 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) != 0
+        move_mask_m256(cast(self.avx2)) != 0
       } else {
         (self.a | self.b).any()
       }
@@ -530,7 +537,7 @@ impl i32x8 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) == 0b10001000100010001000100010001000
+        move_mask_m256(cast(self.avx2)) == 0b11111111
       } else {
         (self.a & self.b).all()
       }

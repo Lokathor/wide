@@ -179,6 +179,12 @@ fn test_i32x4_move_mask() {
   let expected = 0b1000;
   let actual = a.move_mask();
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i32x4| a.move_mask(),
+    0i32,
+    |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
+  );
 }
 
 #[test]

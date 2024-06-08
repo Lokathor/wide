@@ -121,3 +121,67 @@ fn impl_i64x4_cmp_eq() {
   let actual = a.cmp_eq(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn test_i64x4_move_mask() {
+  let a = i64x4::from([-1, 0, -2, -3]);
+  let expected = 0b1101;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+  //
+  let a = i64x4::from([i64::MAX, 0, 2, -3]);
+  let expected = 0b1000;
+  let actual = a.move_mask();
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i64x4| a.move_mask(),
+    0i32,
+    |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
+  );
+}
+
+#[test]
+fn test_i64x4_any() {
+  let a = i64x4::from([0, 0, 0, -1]);
+  assert!(a.any());
+  //
+  let a = i64x4::from([0, 0, 0, 0]);
+  assert!(!a.any());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i64x4| a.any(),
+    false,
+    |acc, a, _idx| acc | acc | (a < 0),
+  );
+}
+
+#[test]
+fn test_i32x4_all() {
+  let a = i64x4::from([0, 0, 0, -1]);
+  assert!(!a.all());
+  //
+  let a = i64x4::from([-1; 4]);
+  assert!(a.all());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i64x4| a.all(),
+    true,
+    |acc, a, _idx| acc & (a < 0),
+  );
+}
+
+#[test]
+fn test_i32x4_none() {
+  let a = i64x4::from([0, 0, 0, -1]);
+  assert!(!a.none());
+  //
+  let a = i64x4::from([0; 4]);
+  assert!(a.none());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i64x4| a.none(),
+    true,
+    |acc, a, _idx| acc & !(a < 0),
+  );
+}

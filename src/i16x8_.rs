@@ -487,6 +487,10 @@ impl i16x8 {
         (move_mask_i8_m128i(self.sse) & 0b1010101010101010) != 0
       } else if #[cfg(target_feature="simd128")] {
         u16x8_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vminvq_s16(self.neon) < 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000800080008000) != 0
@@ -502,6 +506,10 @@ impl i16x8 {
         (move_mask_i8_m128i(self.sse) & 0b1010101010101010) == 0b1010101010101010
       } else if #[cfg(target_feature="simd128")] {
         u16x8_bitmask(self.simd) == 0b11111111
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vmaxvq_s16(self.neon) < 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         (v[0] & v[1] & 0x8000800080008000) == 0x8000800080008000
