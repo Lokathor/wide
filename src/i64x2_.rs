@@ -458,7 +458,7 @@ impl i64x2 {
       } else {
         let arr: [i64; 2] = cast(self);
         ((arr[0] < 0) as i32) << 0 |
-        ((arr[1] < 0) as i32) << 1 |
+        ((arr[1] < 0) as i32) << 1
       }
     }
   }
