@@ -1,6 +1,8 @@
 #![allow(clippy::approx_constant)]
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::assertions_on_constants)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::nonminimal_bool)]
 
 use rand::RngCore;
 
