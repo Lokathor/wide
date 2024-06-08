@@ -662,9 +662,9 @@ impl i32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // mask top bit of each lane
-          let r = vandq_u32(self.neon, vdupq_n_s32(i32::MIN));
+          let r = vandq_s32(self.neon, vdupq_n_s32(i32::MIN));
           // see if there was something in any lane
-          vaddvq_u32(r) != 0
+          vaddvq_s32(r) != 0
         }
       } else {
         let v : [u64;2] = cast(self);
@@ -685,9 +685,9 @@ impl i32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // mask top bit of each lane
-          let r = vandq_u32(self.neon, vdupq_n_s32(i32::MIN));
+          let r = vandq_s32(self.neon, vdupq_n_s32(i32::MIN));
           // see if everythig was set in all lanes
-          vaddvq_u32(r) == 4
+          vaddvq_s32(r) == 4
         }
       } else {
         let v : [u64;2] = cast(self);
