@@ -660,11 +660,9 @@ impl i32x4 {
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) != 0
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        // some lanes are negative
         unsafe {
-          // get top bit from each lane
-          let r = vshrq_n_u32::<31>(vreinterpretq_u32_s32(self.neon));
-          // see if there was something in any lane
-          vaddvq_u32(r) != 0
+          vminvq_s32(self.neon) < 0
         }
       } else {
         let v : [u64;2] = cast(self);
@@ -683,11 +681,9 @@ impl i32x4 {
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) == 0b1111
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        // all lanes are negative
         unsafe {
-          // get top bit from each lane
-          let r = vshrq_n_u32::<31>(vreinterpretq_u32_s32(self.neon));
-          // see if everything was set in all lanes
-          vaddvq_u32(r) == 4
+          vmaxvq_s32(self.neon) < 0
         }
       } else {
         let v : [u64;2] = cast(self);

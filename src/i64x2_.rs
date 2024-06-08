@@ -486,13 +486,6 @@ impl i64x2 {
         move_mask_m128d(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         i64x2_bitmask(self.simd) != 0
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          // get top bit from each lane
-          let r = vshrq_n_u64::<63>(vreinterpretq_u64_s64(self.neon));
-          // see if anything was set in all lanes
-          vaddvq_u64(r) != 0
-        }
       } else {
         let v : [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000000000000) != 0
@@ -510,13 +503,6 @@ impl i64x2 {
         move_mask_m128d(cast(self.sse)) == 0b11
       }  else if #[cfg(target_feature="simd128")] {
         i64x2_bitmask(self.simd) == 0b11
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          // get top bit from each lane
-          let r = vshrq_n_u64::<63>(vreinterpretq_u64_s64(self.neon));
-          // see if everything was set in all lanes
-          vaddvq_u64(r) == 2
-        }
       } else {
         let v : [u64;2] = cast(self);
         ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
