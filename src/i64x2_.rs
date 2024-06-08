@@ -456,6 +456,18 @@ impl i64x2 {
         move_mask_m128d(cast(self.sse))
       } else if #[cfg(target_feature="simd128")] {
         u64x2_bitmask(self.simd) as i32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s64(self.neon, vdupq_n_s64(0));
+
+          // select the right bit out of each lane
+          let selectbit : uint64x2_t = core::intrinsics::transmute([1u64, 2]);
+          let r = vandq_u64(masked, selectbit);
+
+          // horizontally add the 64-bit lanes
+          vaddvq_u64(r) as i32
+         }
       } else {
         let arr: [i64; 2] = cast(self);
         ((arr[0] < 0) as i32) << 0 |
@@ -470,9 +482,17 @@ impl i64x2 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse")] {
+        // use f64 move_mask since it is the same size as i64
         move_mask_m128d(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         u64x2_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // get top bit from each lane
+          let r = vshrq_n_u64::<63>(vreinterpretq_u64_s64(self.neon));
+          // see if anything was set in all lanes
+          vaddvq_u64(r) != 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000000000000) != 0
@@ -486,9 +506,17 @@ impl i64x2 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
+        // use f64 move_mask since it is the same size as i64
         move_mask_m128d(cast(self.sse)) == 0b11
       }  else if #[cfg(target_feature="simd128")] {
         u64x2_bitmask(self.simd) == 0b11
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // get top bit from each lane
+          let r = vshrq_n_u64::<63>(vreinterpretq_u64_s64(self.neon));
+          // see if everything was set in all lanes
+          vaddvq_u64(r) == 2
+        }
       } else {
         let v : [u64;2] = cast(self);
         (v[0] | v[1] & 0x8000000000000000) == 0x8000000000000000
