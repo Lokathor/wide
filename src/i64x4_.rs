@@ -362,6 +362,47 @@ impl i64x4 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256d(cast(self.avx2)) as i32
+      } else {
+        self.a.move_mask() | (self.b.move_mask() << 2)
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10000000100000001000000010000000) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10000000100000001000000010000000) == 0b10000000100000001000000010000000
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
+  
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+  
+  #[inline]
   pub fn to_array(self) -> [i64; 4] {
     cast(self)
   }
@@ -393,3 +434,5 @@ impl Not for i64x4 {
     }
   }
 }
+
+

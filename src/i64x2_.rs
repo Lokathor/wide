@@ -445,6 +445,62 @@ impl i64x2 {
     cast([arr[0] as f64, arr[1] as f64])
   }
 
+  /// returns the bit mask for each high bit set in the vector with the lowest lane being the lowest bit
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        move_mask_m128d(cast(self.sse))
+      } else if #[cfg(target_feature="simd128")] {
+        u64x2_bitmask(self.simd) as i32
+      } else {
+        let arr: [i64; 2] = cast(self);
+        ((arr[0] < 0) as i32) << 0 |
+        ((arr[1] < 0) as i32) << 1 |
+      }
+    }
+  }
+
+  /// true if any high bits are set for any value in the vector
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1000000010000000) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u64x2_bitmask(self.simd) != 0
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x8000000000000000) != 0
+      }
+    }
+  }
+
+  /// true if all high bits are set for every value in the vector
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1000000010000000) == 0b1000000010000000
+      } else if #[cfg(target_feature="simd128")] {
+        u64x2_bitmask(self.simd) == 0b11
+      } else {
+        let v : [u64;2] = cast(self);
+        (v[0] | v[1] & 0x8000000000000000) == 0x8000000000000000
+      }
+    }
+  }
+
+  /// true if no high bits are set for any values of the vector
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
   #[inline]
   pub fn to_array(self) -> [i64; 2] {
     cast(self)

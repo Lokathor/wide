@@ -264,6 +264,12 @@ fn test_i16x8_move_mask() {
   let expected = 0b10001000;
   let actual = a.move_mask();
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i32x8| a.move_mask(),
+    0i32,
+    |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
+  );
 }
 
 #[test]
@@ -273,6 +279,12 @@ fn test_i32x8_any() {
   //
   let a = i32x8::from([0, 0, 0, 0, 0, 0, 0, 0]);
   assert!(!a.any());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i32x8| a.any(),
+    false,
+    |acc, a, _idx| acc | (a < 0),
+  );
 }
 
 #[test]
@@ -282,6 +294,12 @@ fn test_i32x8_all() {
   //
   let a = i32x8::from([-1; 8]);
   assert!(a.all());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i32x8| a.all(),
+    true,
+    |acc, a, _idx| acc & (a < 0),
+  );
 }
 
 #[test]
@@ -291,6 +309,12 @@ fn test_i32x8_none() {
   //
   let a = i32x8::from([0; 8]);
   assert!(a.none());
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i32x8| a.none(),
+    true,
+    |acc, a, _idx| acc & !(a < 0),
+  );
 }
 
 #[test]
