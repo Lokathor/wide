@@ -659,10 +659,10 @@ impl i32x4 {
         move_mask_m128(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) != 0
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
-          // mask top bit of each lane
-          let r = vandq_s32(self.neon, vdupq_n_s32(i32::MIN));
+          // get top bit from each lane
+          let r = vshrq_n_u32::<31>(vreinterpretq_u32_s32(self.neon));
           // see if there was something in any lane
           vaddvq_s32(r) != 0
         }
@@ -684,9 +684,9 @@ impl i32x4 {
         u32x4_bitmask(self.simd) == 0b1111
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-          // mask top bit of each lane
-          let r = vandq_s32(self.neon, vdupq_n_s32(i32::MIN));
-          // see if everythig was set in all lanes
+          // get top bit from each lane
+          let r = vshrq_n_u32::<31>(vreinterpretq_u32_s32(self.neon));
+          // see if everything was set in all lanes
           vaddvq_s32(r) == 4
         }
       } else {
