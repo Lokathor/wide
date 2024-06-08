@@ -664,7 +664,7 @@ impl i32x4 {
           // get top bit from each lane
           let r = vshrq_n_u32::<31>(vreinterpretq_u32_s32(self.neon));
           // see if there was something in any lane
-          vaddvq_s32(r) != 0
+          vaddvq_u32(r) != 0
         }
       } else {
         let v : [u64;2] = cast(self);
@@ -687,7 +687,7 @@ impl i32x4 {
           // get top bit from each lane
           let r = vshrq_n_u32::<31>(vreinterpretq_u32_s32(self.neon));
           // see if everything was set in all lanes
-          vaddvq_s32(r) == 4
+          vaddvq_u32(r) == 4
         }
       } else {
         let v : [u64;2] = cast(self);
