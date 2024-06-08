@@ -1240,17 +1240,54 @@ impl f32x4 {
   #[inline]
   #[must_use]
   pub fn move_mask(self) -> i32 {
-    i32x4::move_mask(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        move_mask_m128(self.sse)
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) as i32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s32( vreinterpretq_s32_f32(self.neon), vdupq_n_s32(0));
+
+          // select the right bit out of each lane
+          let selectbit : uint32x4_t = core::intrinsics::transmute([1u32, 2, 4, 8]);
+          let r = vandq_u32(masked, selectbit);
+
+          // horizontally add the 16-bit lanes
+          vaddvq_u32(r) as i32
+        }
+      } else {
+        (((self.arr[0].to_bits() as i32) < 0) as i32) << 0 |
+        (((self.arr[1].to_bits() as i32) < 0) as i32) << 1 |
+        (((self.arr[2].to_bits() as i32) < 0) as i32) << 2 |
+        (((self.arr[3].to_bits() as i32) < 0) as i32) << 3
+      }
+    }
   }
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    i32x4::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        v128_any_true(self.simd)
+      } else {
+        self.move_mask() != 0
+      }
+    }
   }
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    i32x4::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        u32x4_all_true(self.simd)
+      } else {
+        // four lanes
+        self.move_mask() == 0b1111
+      }
+    }
   }
   #[inline]
   #[must_use]
