@@ -485,7 +485,8 @@ impl f64x2 {
   }
 
   /// Calculates the lanewise maximum of both vectors. This is a faster
-  /// implementation than `max`, but always choses rhs if any value is NaN.
+  /// implementation than `max`, but it doesn't specify any behavior if NaNs are
+  /// involved.
   #[inline]
   #[must_use]
   pub fn fast_max(self, rhs: Self) -> Self {
@@ -493,15 +494,16 @@ impl f64x2 {
       if #[cfg(target_feature="sse2")] {
         Self { sse: max_m128d(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_pmax(rhs.simd, self.simd) }
+        Self {
+          simd: f64x2_pmax(self.simd, rhs.simd),
+        }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // vmaxq has a different NaN behavior than Intel
-        unsafe {Self { neon: vbslq_f64(vcltq_f64(rhs.neon,self.neon), self.neon, rhs.neon) }}
+        unsafe {Self { neon: vmaxq_f64(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
-          if self.arr[0] > rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
-          if self.arr[1] > rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
-      ]}
+          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
+          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
+        ]}
       }
     }
   }
@@ -544,7 +546,8 @@ impl f64x2 {
   }
 
   /// Calculates the lanewise minimum of both vectors. This is a faster
-  /// implementation than `min`, but always choses rhs if any value is NaN.
+  /// implementation than `min`, but it doesn't specify any behavior if NaNs are
+  /// involved.
   #[inline]
   #[must_use]
   pub fn fast_min(self, rhs: Self) -> Self {
@@ -552,10 +555,11 @@ impl f64x2 {
       if #[cfg(target_feature="sse2")] {
         Self { sse: min_m128d(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_pmin(rhs.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        // vminq has a different NaN behavior than Intel
-        unsafe {Self { neon: vbslq_f64(vcltq_f64(self.neon, rhs.neon), self.neon, rhs.neon) }}
+        Self {
+          simd: f64x2_pmin(self.simd, rhs.simd),
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vminq_f64(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },

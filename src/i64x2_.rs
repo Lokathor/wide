@@ -445,7 +445,8 @@ impl i64x2 {
     cast([arr[0] as f64, arr[1] as f64])
   }
 
-  /// returns the bit mask for each high bit set in the vector with the lowest lane being the lowest bit
+  /// returns the bit mask for each high bit set in the vector with the lowest
+  /// lane being the lowest bit
   #[inline]
   #[must_use]
   pub fn move_mask(self) -> i32 {

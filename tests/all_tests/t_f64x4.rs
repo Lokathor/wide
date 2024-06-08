@@ -190,11 +190,6 @@ fn impl_f64x4_fast_max() {
   let expected = f64x4::from([2.0, 5.0, f64::INFINITY, 0.0]);
   let actual = a.fast_max(b);
   assert_eq!(expected, actual);
-
-  crate::test_random_vector_vs_scalar(
-    |a: f64x4, b| a.fast_max(b),
-    |a, b| if a > b { a } else { b },
-  );
 }
 
 #[test]
@@ -210,8 +205,6 @@ fn impl_f64x4_max() {
   let expected = f64x4::from([2.0, 5.0, f64::INFINITY, f64::INFINITY]);
   let actual = a.max(b);
   assert_eq!(expected, actual);
-
-  crate::test_random_vector_vs_scalar(|a: f64x4, b| a.max(b), |a, b| a.max(b));
 }
 
 #[test]
@@ -221,11 +214,6 @@ fn impl_f64x4_fast_min() {
   let expected = f64x4::from([1.0, f64::NEG_INFINITY, 3.0, -0.0]);
   let actual = a.fast_min(b);
   assert_eq!(expected, actual);
-
-  crate::test_random_vector_vs_scalar(
-    |a: f64x4, b| a.fast_min(b),
-    |a, b| if a < b { a } else { b },
-  );
 }
 
 #[test]
@@ -241,8 +229,6 @@ fn impl_f64x4_min() {
   let expected = f64x4::from([2.0, 5.0, f64::INFINITY, f64::INFINITY]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
-
-  crate::test_random_vector_vs_scalar(|a: f64x4, b| a.min(b), |a, b| a.min(b));
 }
 
 #[test]

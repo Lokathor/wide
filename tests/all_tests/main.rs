@@ -40,9 +40,9 @@ fn gen_random<T: GenSample>(rng: &mut impl RngCore) -> T {
   T::get_sample(next)
 }
 
-/// Test a vector operation against a scalar operation for random values to make
-/// sure that the behavior is the same. This allows for easier for correctness
-/// for various values of the vector.
+/// Test a vector operation against a pure scalar implementation for random
+/// values to make sure that the behavior is the same. This allows for easier
+/// for correctness for various values of the vector.
 fn test_random_vector_vs_scalar<
   V,
   VR,
@@ -94,9 +94,14 @@ fn test_random_vector_vs_scalar<
   }
 }
 
-/// Test a vector operation against a scalar operation for random values to make
+/// Test a vector reduce operations that generate a scalar from a vector
+/// against a pure scalar implementation for random values to make
 /// sure that the behavior is the same. This allows for easier for correctness
 /// for various values of the vector.
+///
+/// The scalar operation uses the same construction as the Rust fold function
+/// which takes an accumulator and returns the accumulator after applying the
+/// operation.
 fn test_random_vector_vs_scalar_reduce<
   V,
   T,

@@ -506,10 +506,9 @@ impl f32x4 {
     }
   }
 
-  /// Calculates the lanewise maximum of both vectors.
-  ///
-  /// This is a faster implementation than `max`, but always choose the rhs in case of Nan
-  /// (which is different that the Rust f32::max function behavior).
+  /// Calculates the lanewise maximum of both vectors. This is a faster
+  /// implementation than `max`, but it doesn't specify any behavior if NaNs are
+  /// involved.
   #[inline]
   #[must_use]
   pub fn fast_max(self, rhs: Self) -> Self {
@@ -518,17 +517,16 @@ impl f32x4 {
         Self { sse: max_m128(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
-          simd: f32x4_pmax(rhs.simd, self.simd),
+          simd: f32x4_pmax(self.simd, rhs.simd),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // vmaxq has a different NaN behavior than Intel
-        unsafe {Self { neon: vbslq_f32(vcltq_f32(rhs.neon,self.neon), self.neon, rhs.neon) }}
+        unsafe {Self { neon: vmaxq_f32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
-            if self.arr[0] > rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
-            if self.arr[1] > rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
-            if self.arr[2] > rhs.arr[2] { self.arr[2] } else { rhs.arr[2] },
-            if self.arr[3] > rhs.arr[3] { self.arr[3] } else { rhs.arr[3] },
+          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
+          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
+          if self.arr[2] < rhs.arr[2] { rhs.arr[2] } else { self.arr[2] },
+          if self.arr[3] < rhs.arr[3] { rhs.arr[3] } else { self.arr[3] },
         ]}
       }
     }
@@ -537,8 +535,6 @@ impl f32x4 {
   /// Calculates the lanewise maximum of both vectors. If either lane is NaN,
   /// the other lane gets chosen. Use `fast_max` for a faster implementation
   /// that doesn't handle NaNs.
-  ///
-  /// This implementation matches the Rust f32::max function behavior.
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -575,10 +571,9 @@ impl f32x4 {
     }
   }
 
-  /// Calculates the lanewise minimum of both vectors.
-  ///
-  /// This is a faster implementation than `min`, but always choose the rhs in case of Nan
-  /// (which is different that the Rust f32::min function behavior).
+  /// Calculates the lanewise minimum of both vectors. This is a faster
+  /// implementation than `min`, but it doesn't specify any behavior if NaNs are
+  /// involved.
   #[inline]
   #[must_use]
   pub fn fast_min(self, rhs: Self) -> Self {
@@ -587,11 +582,10 @@ impl f32x4 {
         Self { sse: min_m128(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
-          simd: f32x4_pmin(rhs.simd, self.simd),
+          simd: f32x4_pmin(self.simd, rhs.simd),
         }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        // vminq has a different NaN behavior than Intel
-        unsafe {Self { neon: vbslq_f32(vcltq_f32(self.neon, rhs.neon),self.neon, rhs.neon) }}
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vminq_f32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
           if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
@@ -606,8 +600,6 @@ impl f32x4 {
   /// Calculates the lanewise minimum of both vectors. If either lane is NaN,
   /// the other lane gets chosen. Use `fast_min` for a faster implementation
   /// that doesn't handle NaNs.
-  ///
-  /// This implementation matches the Rust f32::max function behavior.
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
@@ -1248,26 +1240,59 @@ impl f32x4 {
   #[inline]
   #[must_use]
   pub fn move_mask(self) -> i32 {
-    // no need to reinvent the wheel
-    i32x4::move_mask(cast(self))
-  }
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        move_mask_m128(self.sse)
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) as i32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s32( vreinterpretq_s32_f32(self.neon), vdupq_n_s32(0));
 
+          // select the right bit out of each lane
+          let selectbit : uint32x4_t = core::intrinsics::transmute([1u32, 2, 4, 8]);
+          let r = vandq_u32(masked, selectbit);
+
+          // horizontally add the 16-bit lanes
+          vaddvq_u32(r) as i32
+        }
+      } else {
+        (((self.arr[0].to_bits() as i32) < 0) as i32) << 0 |
+        (((self.arr[1].to_bits() as i32) < 0) as i32) << 1 |
+        (((self.arr[2].to_bits() as i32) < 0) as i32) << 2 |
+        (((self.arr[3].to_bits() as i32) < 0) as i32) << 3
+      }
+    }
+  }
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    i32x4::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        v128_any_true(self.simd)
+      } else {
+        self.move_mask() != 0
+      }
+    }
   }
-
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    i32x4::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        u32x4_all_true(self.simd)
+      } else {
+        // four lanes
+        self.move_mask() == 0b1111
+      }
+    }
   }
-
   #[inline]
   #[must_use]
   pub fn none(self) -> bool {
-    i32x4::none(cast(self))
+    !self.any()
   }
 
   #[inline]
