@@ -507,7 +507,8 @@ impl i32x8 {
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_m256(cast(self.avx2)) as i32
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m256(cast(self.avx2))
       } else {
         self.a.move_mask() | (self.b.move_mask() << 4)
       }
@@ -519,7 +520,7 @@ impl i32x8 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) != 0
+        move_mask_m256(cast(self.avx2)) != 0
       } else {
         (self.a | self.b).any()
       }
@@ -530,7 +531,7 @@ impl i32x8 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) == 0b10001000100010001000100010001000
+        move_mask_m256(cast(self.avx2)) == 0b11111111
       } else {
         (self.a & self.b).all()
       }

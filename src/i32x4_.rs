@@ -618,6 +618,7 @@ impl i32x4 {
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="sse")] {
+        // use f32 move_mask since it is the same size as i32
         move_mask_m128(cast(self.sse))
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) as i32
@@ -648,7 +649,7 @@ impl i32x4 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) != 0
+        move_mask_m128(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) != 0
       } else {
@@ -662,8 +663,8 @@ impl i32x4 {
   #[must_use]
   pub fn all(self) -> bool {
     pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) == 0b1000100010001000
+      if #[cfg(target_feature="sse")] {
+        move_mask_m128(cast(self.sse)) == 0b1111
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) == 0b1111
       } else {

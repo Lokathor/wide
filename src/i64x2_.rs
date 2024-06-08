@@ -451,6 +451,7 @@ impl i64x2 {
   pub fn move_mask(self) -> i32 {
     pick! {
       if #[cfg(target_feature="sse")] {
+        // use f64 move_mask since it is the same size as i64
         move_mask_m128d(cast(self.sse))
       } else if #[cfg(target_feature="simd128")] {
         u64x2_bitmask(self.simd) as i32
@@ -467,8 +468,8 @@ impl i64x2 {
   #[must_use]
   pub fn any(self) -> bool {
     pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000000010000000) != 0
+      if #[cfg(target_feature="sse")] {
+        move_mask_m128d(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         u64x2_bitmask(self.simd) != 0
       } else {
@@ -483,9 +484,9 @@ impl i64x2 {
   #[must_use]
   pub fn all(self) -> bool {
     pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000000010000000) == 0b1000000010000000
-      } else if #[cfg(target_feature="simd128")] {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m128d(cast(self.sse)) == 0b11
+      }  else if #[cfg(target_feature="simd128")] {
         u64x2_bitmask(self.simd) == 0b11
       } else {
         let v : [u64;2] = cast(self);
