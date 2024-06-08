@@ -129,8 +129,10 @@ fn test_random_vector_vs_scalar_reduce<
       a_arr[i] = gen_random(&mut rng);
     }
 
-    let expected_scalar =
-      a_arr.iter().enumerate().fold(acc, |acc, (i, &v)| scalar_fn(acc, v, i));
+    let mut expected_scalar = acc;
+    for i in 0..N {
+      expected_scalar = scalar_fn(expected_scalar, a_arr[i], i);
+    }
 
     let expected_vec = vector_fn(V::from(a_arr));
     assert_eq!(

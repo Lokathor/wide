@@ -455,7 +455,7 @@ impl i64x2 {
         // use f64 move_mask since it is the same size as i64
         move_mask_m128d(cast(self.sse))
       } else if #[cfg(target_feature="simd128")] {
-        u64x2_bitmask(self.simd) as i32
+        i64x2_bitmask(self.simd) as i32
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // set all to 1 if top bit is set, else 0
@@ -485,7 +485,7 @@ impl i64x2 {
         // use f64 move_mask since it is the same size as i64
         move_mask_m128d(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
-        u64x2_bitmask(self.simd) != 0
+        i64x2_bitmask(self.simd) != 0
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // get top bit from each lane
@@ -509,7 +509,7 @@ impl i64x2 {
         // use f64 move_mask since it is the same size as i64
         move_mask_m128d(cast(self.sse)) == 0b11
       }  else if #[cfg(target_feature="simd128")] {
-        u64x2_bitmask(self.simd) == 0b11
+        i64x2_bitmask(self.simd) == 0b11
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // get top bit from each lane
