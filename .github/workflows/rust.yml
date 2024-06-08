@@ -26,10 +26,10 @@ jobs:
         - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # wasm32
-        - { target: wasm32-wasi, toolchain: 1.56.0, os: ubuntu-latest, wasmtime: v23.0.0 }
-        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v23.0.0 }
-        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v23.0.0 }
-        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v23.0.0 }
+        - { target: wasm32-wasi, toolchain: 1.56.0, os: ubuntu-latest, wasmtime: v21.0.0 }
+        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v21.0.0 }
+        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v21.0.0 }
+        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v21.0.0 }
     steps:
     - uses: actions/checkout@v1
     - uses: actions-rs/toolchain@v1
