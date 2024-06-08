@@ -589,7 +589,8 @@ impl f32x4 {
         Self {
           simd: f32x4_pmin(rhs.simd, self.simd),
         }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        // vminq has a different NaN behavior than Intel
         unsafe {Self { neon: vbslq_f32(vcltq_f32(self.neon, rhs.neon),self.neon, rhs.neon) }}
       } else {
         Self { arr: [

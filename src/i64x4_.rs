@@ -368,7 +368,7 @@ impl i64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // use f64 move_mask since it is the same size as i64
-        move_mask_m256d(cast(self.avx2)) as i32
+        move_mask_m256d(cast(self.avx2))
       } else {
         self.a.move_mask() | (self.b.move_mask() << 2)
       }
