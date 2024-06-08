@@ -26,10 +26,10 @@ jobs:
         - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # wasm32
-        - { target: wasm32-wasi, toolchain: 1.56.0, os: ubuntu-latest, wasmtime: v21.0.0 }
-        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v21.0.0 }
-        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v21.0.0 }
-        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v21.0.0 }
+        - { target: wasm32-wasi, toolchain: 1.56.0, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
     steps:
     - uses: actions/checkout@v1
     - uses: actions-rs/toolchain@v1
@@ -52,13 +52,11 @@ jobs:
       if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
-        WASMTIME_BACKTRACE_DETAILS: 1
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
     - name: Test with default CPU features + All Cargo Features
       if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
-        WASMTIME_BACKTRACE_DETAILS: 1
       run: cargo test --target ${{ matrix.rust.target }} --all-features
 
     - name: switch over to native cpu features
