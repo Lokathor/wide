@@ -697,7 +697,7 @@ fn test_f64x2_any() {
 #[test]
 fn test_f64x2_all() {
   let a = f64x2::from([f64::NAN, f64::NAN]).is_nan();
-  assert!(a.all(), "{:?}", a);
+  assert!(a.all(), "{:?}, {:?}", a, cast::<f64x2, i64x2>(a));
   //
   let a = f64x2::from([1.0, f64::NAN]).is_nan();
   assert!(!a.all());
