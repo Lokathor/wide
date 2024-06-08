@@ -456,22 +456,10 @@ impl i64x2 {
         move_mask_m128d(cast(self.sse))
       } else if #[cfg(target_feature="simd128")] {
         i64x2_bitmask(self.simd) as i32
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          // set all to 1 if top bit is set, else 0
-          let masked = vcltq_s64(self.neon, vdupq_n_s64(0));
-
-          // select the right bit out of each lane
-          let selectbit : uint64x2_t = core::intrinsics::transmute([1u64, 2]);
-          let r = vandq_u64(masked, selectbit);
-
-          // horizontally add the 64-bit lanes
-          vaddvq_u64(r) as i32
-         }
       } else {
-        let arr: [i64; 2] = cast(self);
-        ((arr[0] < 0) as i32) << 0 |
-        ((arr[1] < 0) as i32) << 1
+        // nothing amazingly efficient for neon
+        let arr: [u64; 2] = cast(self);
+        (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as i32
       }
     }
   }
