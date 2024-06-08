@@ -236,6 +236,9 @@ impl_shr_t_for_i32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 /// the type. (same as wrapping_shr)
 impl Shr<i32x8> for i32x8 {
   type Output = Self;
+
+  #[inline]
+  #[must_use]
   fn shr(self, rhs: i32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -259,6 +262,9 @@ impl Shr<i32x8> for i32x8 {
 /// the type. (same as wrapping_shl)
 impl Shl<i32x8> for i32x8 {
   type Output = Self;
+
+  #[inline]
+  #[must_use]
   fn shl(self, rhs: i32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {

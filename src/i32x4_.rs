@@ -331,6 +331,9 @@ impl_shr_t_for_i32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 /// the type. (same as wrapping_shr)
 impl Shr<i32x4> for i32x4 {
   type Output = Self;
+
+  #[inline]
+  #[must_use]
   fn shr(self, rhs: i32x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -365,6 +368,9 @@ impl Shr<i32x4> for i32x4 {
 /// the type. (same as wrapping_shl)
 impl Shl<i32x4> for i32x4 {
   type Output = Self;
+
+  #[inline]
+  #[must_use]
   fn shl(self, rhs: i32x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -632,7 +638,7 @@ impl i32x4 {
           let selectbit : uint32x4_t = core::intrinsics::transmute([1u32, 2, 4, 8]);
           let r = vandq_u32(masked, selectbit);
 
-          // horizontally add the 16-bit lanes
+          // horizontally add the 32-bit lanes
           vaddvq_u32(r) as i32
          }
       } else {
@@ -648,10 +654,18 @@ impl i32x4 {
   #[must_use]
   pub fn any(self) -> bool {
     pick! {
-      if #[cfg(target_feature="sse2")] {
+      if #[cfg(target_feature="sse")] {
+        // use f32 move_mask since it is the same size as i32
         move_mask_m128(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // mask top bit of each lane
+          let r = vandq_u32(self.neon, vdupq_n_s32(i32::MIN));
+          // see if there was something in any lane
+          vaddvq_u32(r) != 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000080000000) != 0
@@ -664,9 +678,17 @@ impl i32x4 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse")] {
+        // use f32 move_mask since it is the same size as i32
         move_mask_m128(cast(self.sse)) == 0b1111
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) == 0b1111
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // mask top bit of each lane
+          let r = vandq_u32(self.neon, vdupq_n_s32(i32::MIN));
+          // see if everythig was set in all lanes
+          vaddvq_u32(r) == 4
+        }
       } else {
         let v : [u64;2] = cast(self);
         (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
