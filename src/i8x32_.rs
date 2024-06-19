@@ -352,13 +352,13 @@ impl i8x32 {
     }
   }
 
-  /// Indices in the range [0,31] will select the i-th element of `self`. If the high bit
-  /// of any element of `rhs` is set (meaning 128 or greater) then the corresponding output
-  /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range [32,128)
-  /// then the output lane is either 0 or self[rhs[i] % 32] depending on the implementation.
+  /// Indices in the range [0, 15] will select the i-th element of `self`. If the high bit
+  /// of any element of `rhs` is set (negative) then the corresponding output
+  /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range [32,127]
+  /// then the output lane is either 0 or self[rhs[i] % 16] depending on the implementation.
   ///
-  /// This note that is the equivlent of two parallel swizzle operations on the two halves of the vector,
-  /// and the indexes each refer to the corresponding half.
+  /// This is the equivalent to two parallel swizzle operations on the two halves of the vector,
+  /// and the indexes each refer to their corresponding half.
   #[inline]
   pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
     pick! {

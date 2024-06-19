@@ -727,8 +727,8 @@ impl i8x16 {
   }
 
   /// Indices in the range [0,15] will select the i-th element of `self`. If the high bit
-  /// of any element of `rhs` is set (meaning 128 or greater) then the corresponding output
-  /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range [16,128)
+  /// of any element of `rhs` is set (negative) then the corresponding output
+  /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range [16,127]
   /// then the output lane is either 0 or self[rhs[i] % 16] depending on the implementation.
   #[inline]
   pub fn swizzle_relaxed(self, rhs: i8x16) -> i8x16 {
@@ -745,7 +745,7 @@ impl i8x16 {
         let mut out = [0i8;16];
         for i in 0..16 {
           let idx = idxs[i] as usize;
-          if idx > 15 {
+          if idx >= 16 {
             out[i] = 0;
           } else {
             out[i] = arr[idx];
