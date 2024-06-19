@@ -333,41 +333,21 @@ impl i8x32 {
 
   /// Returns a new vector with lanes selected from the lanes of the first input vector
   /// a specified in the second input vector `rhs`.
-  /// The indices i in range [0, 31] select the i-th element of `self`. For indices
+  /// The indices i in range [0, 15] select the i-th element of `self`. For indices
   /// outside of the range the resulting lane is 0.
+  ///
+  /// This note that is the equivlent of two parallel swizzle operations on the two halves of the vector,
+  /// and the indexes each refer to the corresponding half.
   #[inline]
-  pub fn swizzle(self, rhs: i8x32) -> i8x32 {
+  pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { sse: shuffle_av_i8z_all_m256i(self.avx2, rhs.saturating_add(i8x32::splat(0x60)).avx2) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          use core::arch::aarch64::*;
-          Self {
-            a : i8x16 { neon: vqtbx1q_s8(vqtbl1q_s8(self.a.neon, vreinterpretq_u8_s8(rhs.a.neon)), self.a.neon, vreinterpretq_u8_s8(vqsubq_s8(rhs.a.neon, vdupq_n_s8(16)))) },
-            b : i8x16 { neon: vqtbx1q_s8(vqtbl1q_s8(self.a.neon, vreinterpretq_u8_s8(rhs.b.neon)), self.b.neon, vreinterpretq_u8_s8(vqsubq_s8(rhs.b.neon, vdupq_n_s8(16)))) },
-          }
-        }
-      } else if #[cfg(any(target_feature="simd128",target_feature="ssse3"))] {
-        // acceleration available
-        Self {
-          a : self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a.saturating_sub(i8x16::splat(16))),
-          b : self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b.saturating_sub(i8x16::splat(16))),
-        }
+        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.saturating_add(i8x32::splat(0x60)).avx) }
       } else {
-        // no acceleration available
-        let idxs = rhs.to_array();
-        let arr = self.to_array();
-        let mut out = [0i8;32];
-        for i in 0..32 {
-          let idx = idxs[i] as usize;
-          if idx >= 32 {
-            out[i] = 0;
-          } else {
-            out[i] = arr[idx];
+          Self {
+            a : self.a.swizzle(rhs.a),
+            b : self.b.swizzle(rhs.b),
           }
-        }
-        Self::new(out)
       }
     }
   }
@@ -376,39 +356,19 @@ impl i8x32 {
   /// of any element of `rhs` is set (meaning 128 or greater) then the corresponding output
   /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range [32,128)
   /// then the output lane is either 0 or self[rhs[i] % 32] depending on the implementation.
+  ///
+  /// This note that is the equivlent of two parallel swizzle operations on the two halves of the vector,
+  /// and the indexes each refer to the corresponding half.
   #[inline]
-  pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
+  pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { sse: shuffle_av_i8z_all_m256i(self.avx2, rhs.avx2) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          use core::arch::aarch64::*;
-          Self {
-            a : i8x16 { neon: vqtbx1q_s8(vqtbl1q_s8(self.a.neon, vreinterpretq_u8_s8(rhs.a.neon)), self.a.neon, vreinterpretq_u8_s8(vqsubq_s8(rhs.a.neon, vdupq_n_s8(16)))) },
-            b : i8x16 { neon: vqtbx1q_s8(vqtbl1q_s8(self.a.neon, vreinterpretq_u8_s8(rhs.b.neon)), self.b.neon, vreinterpretq_u8_s8(vqsubq_s8(rhs.b.neon, vdupq_n_s8(16)))) },
-          }
-        }
-      } else if #[cfg(any(target_feature="simd128",target_feature="ssse3"))] {
-        // acceleration available
-        Self {
-          a : self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a.saturating_sub(i8x16::splat(16))),
-          b : self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b.saturating_sub(i8x16::splat(16))),
-        }
+        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
       } else {
-        // no acceleration available
-        let idxs = rhs.to_array();
-        let arr = self.to_array();
-        let mut out = [0i8;32];
-        for i in 0..32 {
-          let idx = idxs[i] as usize;
-          if idx >= 32 {
-            out[i] = 0;
-          } else {
-            out[i] = arr[idx];
-          }
+        Self {
+          a : self.a.swizzle_relaxed(rhs.a),
+          b : self.b.swizzle_relaxed(rhs.b),
         }
-        Self::new(out)
       }
     }
   }

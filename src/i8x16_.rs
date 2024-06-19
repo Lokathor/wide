@@ -704,7 +704,7 @@ impl i8x16 {
   pub fn swizzle(self, rhs: i8x16) -> i8x16 {
     pick! {
       if #[cfg(target_feature="ssse3")] {
-        Self { sse: shuffle_av_i8z_all_m128i(self.sse, rhs.saturating_add(i8x16::splat(0x70)).sse) }
+        Self { sse: shuffle_av_i8z_all_m128i(self.sse, add_saturating_u8_m128i(rhs.sse, set_splat_i8_m128i(0x70))) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i8x16_swizzle(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
