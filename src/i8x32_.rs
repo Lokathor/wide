@@ -332,6 +332,20 @@ impl i8x32 {
   }
 
   #[inline]
+  pub fn swizzle(self, rhs: i8x32) -> i8x32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { sse: shuffle_i8_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a - 16),
+          b : self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b - 16),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn to_array(self) -> [i8; 32] {
     cast(self)
   }

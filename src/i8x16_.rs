@@ -697,6 +697,30 @@ impl i8x16 {
   }
 
   #[inline]
+  pub fn swizzle(self, rhs: i8x16) -> i8x16 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: shuffle_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_swizzle(self.simd, rhs.simd) }
+      } else {
+        let idxs = rhs.to_array();
+        let arr = self.to_array();
+        let mut out = [0i8;16];
+        for i in 0..16 {
+          let idx = idxs[i] as usize;
+          if idx > 15 {
+            out[i] = 0;
+          } else {
+            out[i] = arr[idx];
+          }
+        }
+        Self::new(out)
+      }
+    }
+  }
+
+  #[inline]
   #[must_use]
   pub fn none(self) -> bool {
     !self.any()
