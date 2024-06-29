@@ -1608,6 +1608,21 @@ impl f64x2 {
   pub fn as_array_mut(&mut self) -> &mut [f64; 2] {
     cast_mut(self)
   }
+
+  /// Converts the lower two i32 lanes to two f64 lanes
+  #[inline]
+  pub fn from_i32x4(v: i32x4) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: convert_to_m128d_from_lower2_i32_m128i(v.sse) }
+      } else {
+        Self { arr: [
+            v.as_array_ref()[0] as f64,
+            v.as_array_ref()[1] as f64,
+        ]}
+      }
+    }
+  }
 }
 
 impl Not for f64x2 {

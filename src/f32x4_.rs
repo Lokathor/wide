@@ -1578,4 +1578,24 @@ impl f32x4 {
   pub fn as_array_mut(&mut self) -> &mut [f32; 4] {
     cast_mut(self)
   }
+
+  #[inline]
+  pub fn from_i32x4(v: i32x4) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: convert_to_m128_from_i32_m128i(v.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: core::arch::wasm::f32x4_convert_i32x4(v.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { core::arch::aarch64::vcvtq_f32_s32(v.neon) }}
+      } else {
+        Self { arr: [
+            v.as_array_ref()[0] as f32,
+            v.as_array_ref()[1] as f32,
+            v.as_array_ref()[2] as f32,
+            v.as_array_ref()[3] as f32,
+          ] }
+      }
+    }
+  }
 }
