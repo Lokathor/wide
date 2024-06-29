@@ -709,3 +709,10 @@ fn impl_f64x4_sum() {
   let duration = now.elapsed().as_micros();
   println!("Time take {} {}us", sum2, duration);
 }
+
+#[test]
+fn impl_f64x4_from_i32x4() {
+  let i = i32x4::from([1, 2, 3, 4]);
+  let f = f64x4::from([1.0, 2.0, 3.0, 4.0]);
+  assert_eq!(f64x4::from_i32x4(i), f)
+}
