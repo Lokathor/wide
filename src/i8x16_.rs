@@ -696,6 +696,66 @@ impl i8x16 {
     }
   }
 
+  /// Returns a new vector with lanes selected from the lanes of the first input vector
+  /// a specified in the second input vector `rhs`.
+  /// The indices i in range [0, 15] select the i-th element of `self`. For indices
+  /// outside of the range the resulting lane is 0.
+  #[inline]
+  pub fn swizzle(self, rhs: i8x16) -> i8x16 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: shuffle_av_i8z_all_m128i(self.sse, add_saturating_u8_m128i(rhs.sse, set_splat_i8_m128i(0x70))) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_swizzle(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vqtbl1q_s8(self.neon, vreinterpretq_u8_s8(rhs.neon)) } }
+      } else {
+        let idxs = rhs.to_array();
+        let arr = self.to_array();
+        let mut out = [0i8;16];
+        for i in 0..16 {
+          let idx = idxs[i] as usize;
+          if idx >= 16 {
+            out[i] = 0;
+          } else {
+            out[i] = arr[idx];
+          }
+        }
+        Self::new(out)
+      }
+    }
+  }
+
+  /// Indices in the range [0,15] will select the i-th element of `self`. If the high bit
+  /// of any element of `rhs` is set (negative) then the corresponding output
+  /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range [16,127]
+  /// then the output lane is either 0 or self[rhs[i] % 16] depending on the implementation.
+  #[inline]
+  pub fn swizzle_relaxed(self, rhs: i8x16) -> i8x16 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: shuffle_av_i8z_all_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_swizzle(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vqtbl1q_s8(self.neon, vreinterpretq_u8_s8(rhs.neon)) } }
+      } else {
+        let idxs = rhs.to_array();
+        let arr = self.to_array();
+        let mut out = [0i8;16];
+        for i in 0..16 {
+          let idx = idxs[i] as usize;
+          if idx >= 16 {
+            out[i] = 0;
+          } else {
+            out[i] = arr[idx];
+          }
+        }
+        Self::new(out)
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn none(self) -> bool {

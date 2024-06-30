@@ -428,3 +428,36 @@ fn impl_from_i8_slice() {
     i8x16::new([1_i8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
   assert_eq!(result, expected);
 }
+
+#[test]
+fn test_i8x16_swizzle() {
+  let a = i8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  let b = i8x16::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
+  let expected =
+    i8x16::from([16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+  let actual = a.swizzle(b);
+  assert_eq!(expected, actual);
+
+  let b = i8x16::from([15, 17, -13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, -1, 0]);
+  let expected =
+    i8x16::from([16, 0, 0, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 1]);
+  let actual = a.swizzle(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn test_i8x16_swizzle_relaxed() {
+  let a = i8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  let b = i8x16::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
+  let expected =
+    i8x16::from([16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+  let actual = a.swizzle_relaxed(b);
+  assert_eq!(expected, actual);
+
+  let b =
+    i8x16::from([15, -17, -13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, -1, 0]);
+  let expected =
+    i8x16::from([16, 0, 0, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 1]);
+  let actual = a.swizzle_relaxed(b);
+  assert_eq!(expected, actual);
+}
