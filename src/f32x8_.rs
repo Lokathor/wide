@@ -1420,6 +1420,28 @@ impl f32x8 {
   }
 }
 
+impl From<i32x8> for f32x8 {
+  #[inline]
+  fn from(v: i32x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: convert_to_m256_from_i32_m256i(v.avx2) }
+      } else {
+        Self::new([
+            v.as_array_ref()[0] as f32,
+            v.as_array_ref()[1] as f32,
+            v.as_array_ref()[2] as f32,
+            v.as_array_ref()[3] as f32,
+            v.as_array_ref()[4] as f32,
+            v.as_array_ref()[5] as f32,
+            v.as_array_ref()[6] as f32,
+            v.as_array_ref()[7] as f32,
+          ])
+      }
+    }
+  }
+}
+
 impl Not for f32x8 {
   type Output = Self;
   #[inline]
