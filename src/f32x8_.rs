@@ -1418,12 +1418,14 @@ impl f32x8 {
   pub fn as_array_mut(&mut self) -> &mut [f32; 8] {
     cast_mut(self)
   }
+}
 
+impl From<i32x8> for f32x8 {
   #[inline]
-  pub fn from_i32x8(v: i32x8) -> Self {
+  fn from(v: i32x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: safe_arch::convert_to_m256_from_i32_m256i(v.avx2) }
+        Self { avx: convert_to_m256_from_i32_m256i(v.avx2) }
       } else {
         Self::new([
             v.as_array_ref()[0] as f32,

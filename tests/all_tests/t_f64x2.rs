@@ -820,5 +820,5 @@ fn impl_f64x2_sum() {
 fn impl_f64x2_from_i32x4() {
   let i = i32x4::from([1, 2, 3, 4]);
   let f = f64x2::from([1.0, 2.0]);
-  assert_eq!(f64x2::from_i32x4(i), f)
+  assert_eq!(f64x2::from(i), f)
 }

@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f64x4 { avx: m256d }
+    pub struct f64x4 { pub(crate) avx: m256d }
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
-    pub struct f64x4 { a : f64x2, b : f64x2 }
+    pub struct f64x4 { pub(crate) a: f64x2, pub(crate) b: f64x2 }
   }
 }
 
@@ -1473,9 +1473,11 @@ impl f64x4 {
   pub fn as_array_mut(&mut self) -> &mut [f64; 4] {
     cast_mut(self)
   }
+}
 
+impl From<i32x4> for f64x4 {
   #[inline]
-  pub fn from_i32x4(v: i32x4) -> Self {
+  fn from(v: i32x4) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: convert_to_m256d_from_i32_m128i(v.sse) }
