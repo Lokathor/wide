@@ -1608,12 +1608,10 @@ impl f64x2 {
   pub fn as_array_mut(&mut self) -> &mut [f64; 2] {
     cast_mut(self)
   }
-}
 
-impl From<i32x4> for f64x2 {
   /// Converts the lower two i32 lanes to two f64 lanes (and dropping ther higher two i32 lanes)
   #[inline]
-  fn from(v: i32x4) -> Self {
+  pub fn from_i32x4(v: i32x4) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: convert_to_m128d_from_lower2_i32_m128i(v.sse) }
@@ -1628,6 +1626,14 @@ impl From<i32x4> for f64x2 {
         ]}
       }
     }
+  }
+}
+
+impl From<i32x4> for f64x2 {
+  /// Converts the lower two i32 lanes to two f64 lanes (and dropping ther higher two i32 lanes)
+  #[inline]
+  fn from(v: i32x4) -> Self {
+    Self::from_i32x4(v)
   }
 }
 

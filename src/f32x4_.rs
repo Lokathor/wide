@@ -1578,11 +1578,9 @@ impl f32x4 {
   pub fn as_array_mut(&mut self) -> &mut [f32; 4] {
     cast_mut(self)
   }
-}
 
-impl From<i32x4> for f32x4 {
   #[inline]
-  fn from(v: i32x4) -> Self {
+  pub fn from_i32x4(v: i32x4) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: convert_to_m128_from_i32_m128i(v.sse) }
