@@ -547,7 +547,7 @@ impl u16x8 {
     }
   }
 
-  /// multiplies two i16x8 and returns the result as a widened i32x8
+  /// multiplies two u16x8 and returns the result as a widened u32x8
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> u32x8 {
