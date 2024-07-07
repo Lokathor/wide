@@ -200,3 +200,20 @@ fn impl_u16x8_min() {
 
   crate::test_random_vector_vs_scalar(|a: u16x8, b| a.min(b), |a, b| a.min(b));
 }
+
+#[test]
+fn impl_u16x8_from_u8x16_low() {
+  let a =
+    u8x16::from([255, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
+  let expected = u16x8::from([255, 2, 3, 4, 5, 6, 7, 8]);
+  let actual = u16x8::from_u8x16_low(a);
+  assert_eq!(expected, actual);
+}
+#[test]
+fn impl_u16x8_from_u8x16_high() {
+  let a =
+    u8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
+  let expected = u16x8::from([9, 10, 11, 12, 13, 14, 255, 128]);
+  let actual = u16x8::from_u8x16_high(a);
+  assert_eq!(expected, actual);
+}

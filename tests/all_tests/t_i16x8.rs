@@ -252,6 +252,15 @@ fn test_from_u8x16_low() {
 }
 
 #[test]
+fn test_from_u8x16_high() {
+  let a =
+    u8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
+  let expected = i16x8::from([9, 10, 11, 12, 13, 14, 255, 128]);
+  let actual = i16x8::from_u8x16_high(a);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_from_i32x8_truncate() {
   let src = i32x8::new([10000, 1001, 2, 3, 4, 5, -65536, 65536]);
 

@@ -501,6 +501,52 @@ impl u16x8 {
     }
   }
 
+  /// Unpack the lower half of the input and zero expand it to `u16` values.
+  #[inline]
+  #[must_use]
+  pub fn from_u8x16_low(u: u8x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
+      } else {
+        let u_arr: [u8; 16] = cast(u);
+        cast([
+          u_arr[0] as u16,
+          u_arr[1] as u16,
+          u_arr[2] as u16,
+          u_arr[3] as u16,
+          u_arr[4] as u16,
+          u_arr[5] as u16,
+          u_arr[6] as u16,
+          u_arr[7] as u16,
+        ])
+      }
+    }
+  }
+
+  /// Unpack the upper half of the input and zero expand it to `u16` values.
+  #[inline]
+  #[must_use]
+  pub fn from_u8x16_high(u: u8x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self{ sse: unpack_high_i8_m128i(u.sse, m128i::zeroed()) }
+      } else {
+        let u_arr: [u8; 16] = cast(u);
+        cast([
+          u_arr[8] as u16,
+          u_arr[9] as u16,
+          u_arr[10] as u16,
+          u_arr[11] as u16,
+          u_arr[12] as u16,
+          u_arr[13] as u16,
+          u_arr[14] as u16,
+          u_arr[15] as u16,
+        ])
+      }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [u16; 8] {
     cast(self)
