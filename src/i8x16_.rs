@@ -696,10 +696,11 @@ impl i8x16 {
     }
   }
 
-  /// Returns a new vector with lanes selected from the lanes of the first input vector
-  /// a specified in the second input vector `rhs`.
-  /// The indices i in range [0, 15] select the i-th element of `self`. For indices
-  /// outside of the range the resulting lane is 0.
+  /// Returns a new vector where each element is based on the index values in
+  /// `rhs`.
+  ///
+  /// * Index values in the range [0, 15] select the i-th element of `self`.
+  /// * Index values that are out of range will cause that output lane to be 0.
   #[inline]
   pub fn swizzle(self, rhs: i8x16) -> i8x16 {
     pick! {
@@ -726,10 +727,13 @@ impl i8x16 {
     }
   }
 
-  /// Indices in the range [0,15] will select the i-th element of `self`. If the high bit
-  /// of any element of `rhs` is set (negative) then the corresponding output
-  /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range [16,127]
-  /// then the output lane is either 0 or self[rhs[i] % 16] depending on the implementation.
+  /// Works like [swizzle](Self::swizzle) with the following additional details
+  ///
+  /// * Indices in the range [0,15] will select the i-th element of `self`.
+  /// * If the high bit of any index is set (meaning that the index is
+  ///   negative), then the corresponding output lane is guaranteed to be zero.
+  /// * Otherwise the output lane is either `0` or `self[rhs[i] % 16]`,
+  ///   depending on the implementation.
   #[inline]
   pub fn swizzle_relaxed(self, rhs: i8x16) -> i8x16 {
     pick! {
