@@ -316,6 +316,33 @@ impl u32x8 {
     }
   }
 
+  /// widens and zero extends to u32x8
+  #[inline]
+  #[must_use]
+  pub fn from_u16x8(v: u16x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2:convert_to_i32_m256i_from_u16_m128i(v.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        Self {
+          a: u32x4 { sse: shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
+          b: u32x4 { sse: shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+        }
+      } else {
+        u32x8::new([
+          u32::from(v.as_array_ref()[0]),
+          u32::from(v.as_array_ref()[1]),
+          u32::from(v.as_array_ref()[2]),
+          u32::from(v.as_array_ref()[3]),
+          u32::from(v.as_array_ref()[4]),
+          u32::from(v.as_array_ref()[5]),
+          u32::from(v.as_array_ref()[6]),
+          u32::from(v.as_array_ref()[7]),
+        ])
+      }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [u32; 8] {
     cast(self)
