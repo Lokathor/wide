@@ -335,6 +335,15 @@ impl CmpLt for i32x8 {
     }
   }
 }
+
+impl From<i16x8> for i32x8 {
+  #[inline]
+  #[must_use]
+  fn from(value: i16x8) -> Self {
+    i32x8::from_i16x8(value)
+  }
+}
+
 impl i32x8 {
   #[inline]
   #[must_use]
