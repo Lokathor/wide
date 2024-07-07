@@ -217,3 +217,26 @@ fn impl_u16x8_from_u8x16_high() {
   let actual = u16x8::from_u8x16_high(a);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u16x8_mul_widen() {
+  let a = u16x8::from([1, 2, 3, 4, 5, 6, i16::MAX as u16, u16::MAX]);
+  let b = u16x8::from([17, 18, 190, 20, 21, 22, i16::MAX as u16, u16::MAX]);
+  let expected = u32x8::from([
+    17,
+    36,
+    570,
+    80,
+    105,
+    132,
+    (i16::MAX as u32) * (i16::MAX as u32),
+    (u16::MAX as u32) * (u16::MAX as u32),
+  ]);
+  let actual = a.mul_widen(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x8, b| a.mul_widen(b),
+    |a, b| u32::from(a) * u32::from(b),
+  );
+}

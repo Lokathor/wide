@@ -251,6 +251,11 @@ fn impl_from_u16x8() {
   ]);
 
   assert_eq!(actual, expected);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x8, _b| i32x8::from_u16x8(a),
+    |a, _b| a as u32 as i32,
+  );
 }
 
 #[test]

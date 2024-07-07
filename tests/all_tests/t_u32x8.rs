@@ -245,3 +245,26 @@ fn impl_u32x8_not() {
 
   crate::test_random_vector_vs_scalar(|a: u32x8, _b| !a, |a, _b| !a);
 }
+
+#[test]
+fn impl_u32x8_from_u16x8() {
+  let a = u16x8::from([1, 2, 3, 4, 5, i16::MAX as u16, u16::MAX - 1, u16::MAX]);
+  let actual = u32x8::from(a);
+  let expected = u32x8::from([
+    1,
+    2,
+    3,
+    4,
+    5,
+    i16::MAX as u32,
+    (u16::MAX - 1) as u32,
+    u16::MAX as u32,
+  ]);
+
+  assert_eq!(actual, expected);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x8, _b| u32x8::from(a),
+    |a, _b| a as u32,
+  );
+}

@@ -391,4 +391,9 @@ fn impl_i16x8_mul_widen() {
   ]);
   let actual = a.mul_widen(b);
   assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i16x8, b| a.mul_widen(b),
+    |a, b| i32::from(a) * i32::from(b),
+  );
 }
