@@ -1616,7 +1616,7 @@ impl f64x2 {
       if #[cfg(target_feature="sse2")] {
         Self { sse: convert_to_m128d_from_lower2_i32_m128i(v.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd128: f64x2_convert_low_i32x4(v.simd128)}
+        Self { simd: f64x2_convert_low_i32x4(v.simd)}
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.neon))) }}
       } else {
