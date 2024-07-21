@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse2")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
-    pub struct f64x2 { sse: m128d }
+    pub struct f64x2 { pub(crate) sse: m128d }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct f64x2 { simd: v128 }
+    pub struct f64x2 { pub(crate) simd: v128 }
 
     impl Default for f64x2 {
       fn default() -> Self {
@@ -27,7 +27,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct f64x2 { neon : float64x2_t }
+    pub struct f64x2 { pub(crate) neon: float64x2_t }
 
     impl Default for f64x2 {
       #[inline]
@@ -51,7 +51,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
-    pub struct f64x2 { arr: [f64;2] }
+    pub struct f64x2 { pub(crate) arr: [f64;2] }
   }
 }
 
@@ -1607,6 +1607,33 @@ impl f64x2 {
   #[inline]
   pub fn as_array_mut(&mut self) -> &mut [f64; 2] {
     cast_mut(self)
+  }
+
+  /// Converts the lower two i32 lanes to two f64 lanes (and dropping ther higher two i32 lanes)
+  #[inline]
+  pub fn from_i32x4_lower2(v: i32x4) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: convert_to_m128d_from_lower2_i32_m128i(v.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_convert_low_i32x4(v.simd)}
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.neon))) }}
+      } else {
+        Self { arr: [
+            v.as_array_ref()[0] as f64,
+            v.as_array_ref()[1] as f64,
+        ]}
+      }
+    }
+  }
+}
+
+impl From<i32x4> for f64x2 {
+  /// Converts the lower two i32 lanes to two f64 lanes (and dropping ther higher two i32 lanes)
+  #[inline]
+  fn from(v: i32x4) -> Self {
+    Self::from_i32x4_lower2(v)
   }
 }
 
