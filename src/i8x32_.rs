@@ -336,7 +336,7 @@ impl i8x32 {
   /// The indices i in range [0, 15] select the i-th element of `self`. For indices
   /// outside of the range the resulting lane is 0.
   ///
-  /// This note that is the equivlent of two parallel swizzle operations on the two halves of the vector,
+  /// This note that is the equivalent of two parallel swizzle operations on the two halves of the vector,
   /// and the indexes each refer to the corresponding half.
   #[inline]
   pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {

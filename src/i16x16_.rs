@@ -505,7 +505,7 @@ impl i16x16 {
     }
   }
 
-  /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
+  /// Multiply and scale equivalent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
   /// - vqrdmulhq_n_s16 instruction on neon
@@ -527,7 +527,7 @@ impl i16x16 {
     }
   }
 
-  /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
+  /// Multiply and scale equivalent to ((self * rhs) + 0x4000) >> 15 on each
   /// lane, effectively multiplying by a 16 bit fixed point number between -1
   /// and 1. This corresponds to the following instructions:
   /// - vqrdmulhq_n_s16 instruction on neon

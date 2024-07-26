@@ -209,7 +209,7 @@ fn test_dequantize_and_idct_i16() {
 /// Implement JPEG IDCT using i32x8. This is most similar to the scalar
 /// libjpeg version which has slightly different rounding propertis than the 16
 /// bit version. Some decoders are forced to use this if they want bit-by-bit
-/// compability across all architectures.
+/// compatibility across all architectures.
 #[test]
 fn test_dequantize_and_idct_i32() {
   fn to_fixed(x: f32) -> i32 {
