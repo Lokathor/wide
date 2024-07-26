@@ -31,13 +31,11 @@ jobs:
         - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
     steps:
-    - uses: actions/checkout@v1
-    - uses: actions-rs/toolchain@v1
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust.toolchain }}
         target:  ${{ matrix.rust.target }}
-        profile: minimal
-        default: true
 
     - name: Install wasmtime
       if: matrix.rust.target == 'wasm32-wasi'
@@ -85,12 +83,11 @@ jobs:
           sudo apt-get install qemu binfmt-support qemu-user-static gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
 
       - name: Installing Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          override: true
           toolchain: ${{ matrix.rust }}
           target: aarch64-unknown-linux-musl
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: build
         run: >
           cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
