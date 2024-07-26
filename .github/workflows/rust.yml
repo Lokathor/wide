@@ -47,12 +47,10 @@ jobs:
       run: cargo build --target ${{ matrix.rust.target }}
 
     - name: Test with default CPU features + No Default Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
     - name: Test with default CPU features + All Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --all-features
@@ -61,11 +59,9 @@ jobs:
       run: mv .cargo-ci .cargo
 
     - name: Test with 'native' CPU features + No Default Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
     - name: Test with 'native' CPU features + All Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --all-features
   
   cross_compile_aarch64:
