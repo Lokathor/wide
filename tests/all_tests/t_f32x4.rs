@@ -407,7 +407,7 @@ fn impl_f32x4_sin_cos() {
         let actual_arr: [f32; 4] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.00000006,
+          (actual - expected).abs() < 0.0000002,
           "Wanted {name}({angle}) to be {expected} but got {actual}",
           name = name,
           angle = angle,

@@ -25,6 +25,11 @@ jobs:
         - { target: x86_64-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
+        # aarch64
+        - { target: aarch64-apple-darwin, toolchain: "1.60", os: macos-latest }
+        - { target: aarch64-apple-darwin, toolchain: stable, os: macos-latest }
+        - { target: aarch64-apple-darwin, toolchain: beta, os: macos-latest }
+        - { target: aarch64-apple-darwin, toolchain: nightly, os: macos-latest }
         # wasm32
         - { target: wasm32-wasi, toolchain: "1.60", os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
