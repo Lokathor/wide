@@ -1305,7 +1305,7 @@ impl f32x4 {
     cast::<_, f32x4>(c)
   }
 
-  /// Calculate the exponent of a packed f32x4
+  /// Calculate the exponent of a packed `f32x4`
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]

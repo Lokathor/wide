@@ -1174,7 +1174,7 @@ impl f64x4 {
     cast::<_, f64x4>(c)
   }
 
-  /// Calculate the exponent of a packed f64x4
+  /// Calculate the exponent of a packed `f64x4`
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
