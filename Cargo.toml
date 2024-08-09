@@ -12,7 +12,7 @@ license = "Zlib OR Apache-2.0 OR MIT"
 
 # Aarch64 needs 1.59 while others need 1.56
 # When updating, also update CI workflows and the badge in the README.
-rust-version = "1.60"
+rust-version = "1.61"
 
 [features]
 default = ["std"]
