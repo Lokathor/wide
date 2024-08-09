@@ -326,9 +326,9 @@ impl_shr_t_for_i32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 /// Shifts lanes by the corresponding lane.
 ///
-/// Bitwise shift-right; yields self >> mask(rhs), where mask removes any
-/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
-/// the type. (same as wrapping_shr)
+/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
+/// the type. (same as `wrapping_shr`)
 impl Shr<i32x4> for i32x4 {
   type Output = Self;
 
@@ -363,9 +363,9 @@ impl Shr<i32x4> for i32x4 {
 
 /// Shifts lanes by the corresponding lane.
 ///
-/// Bitwise shift-left; yields self << mask(rhs), where mask removes any
-/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
-/// the type. (same as wrapping_shl)
+/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
+/// the type. (same as `wrapping_shl`)
 impl Shl<i32x4> for i32x4 {
   type Output = Self;
 

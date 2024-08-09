@@ -391,7 +391,7 @@ impl i8x16 {
     Self::from(array)
   }
 
-  /// converts i16 to i8, saturating values that are too large
+  /// converts `i16` to `i8`, saturating values that are too large
   #[inline]
   #[must_use]
   pub fn from_i16x16_saturate(v: i16x16) -> i8x16 {
@@ -444,7 +444,7 @@ impl i8x16 {
     }
   }
 
-  /// converts i16 to i8, truncating the upper bits if they are set
+  /// converts `i16` to `i8`, truncating the upper bits if they are set
   #[inline]
   #[must_use]
   pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
@@ -699,8 +699,8 @@ impl i8x16 {
   /// Returns a new vector where each element is based on the index values in
   /// `rhs`.
   ///
-  /// * Index values in the range [0, 15] select the i-th element of `self`.
-  /// * Index values that are out of range will cause that output lane to be 0.
+  /// * Index values in the range `[0, 15]` select the i-th element of `self`.
+  /// * Index values that are out of range will cause that output lane to be `0`.
   #[inline]
   pub fn swizzle(self, rhs: i8x16) -> i8x16 {
     pick! {
@@ -727,9 +727,9 @@ impl i8x16 {
     }
   }
 
-  /// Works like [swizzle](Self::swizzle) with the following additional details
+  /// Works like [`swizzle`](Self::swizzle) with the following additional details
   ///
-  /// * Indices in the range [0,15] will select the i-th element of `self`.
+  /// * Indices in the range `[0, 15]` will select the i-th element of `self`.
   /// * If the high bit of any index is set (meaning that the index is
   ///   negative), then the corresponding output lane is guaranteed to be zero.
   /// * Otherwise the output lane is either `0` or `self[rhs[i] % 16]`,

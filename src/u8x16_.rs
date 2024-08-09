@@ -459,7 +459,7 @@ impl u8x16 {
     }
   }
 
-  /// Unpack and interleave low lanes of two u8x16
+  /// Unpack and interleave low lanes of two `u8x16`
   #[inline]
   #[must_use]
   pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
@@ -489,7 +489,7 @@ impl u8x16 {
     }
   }
 
-  /// Unpack and interleave high lanes of two u8x16
+  /// Unpack and interleave high lanes of two `u8x16`
   #[inline]
   #[must_use]
   pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
@@ -519,7 +519,7 @@ impl u8x16 {
     }
   }
 
-  /// Pack and saturate two i16x8 to u8x16
+  /// Pack and saturate two `i16x8` to `u8x16`
   #[inline]
   #[must_use]
   pub fn narrow_i16x8(lhs: i16x8, rhs: i16x8) -> Self {

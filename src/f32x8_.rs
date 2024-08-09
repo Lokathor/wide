@@ -1062,7 +1062,7 @@ impl f32x8 {
     cast::<_, f32x8>(c)
   }
 
-  /// Calculate the exponent of a packed f32x8
+  /// Calculate the exponent of a packed `f32x8`
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
@@ -1330,7 +1330,7 @@ impl f32x8 {
     Self::pow_f32x8(self, f32x8::splat(y))
   }
 
-  /// Transpose matrix of 8x8 f32 matrix. Currently only accelerated on AVX.
+  /// Transpose matrix of 8x8 `f32` matrix. Currently only accelerated on AVX.
   #[must_use]
   #[inline]
   pub fn transpose(data: [f32x8; 8]) -> [f32x8; 8] {

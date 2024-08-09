@@ -1,5 +1,6 @@
 #![no_std]
 #![allow(non_camel_case_types)]
+#![warn(clippy::doc_markdown)]
 #![warn(clippy::missing_inline_in_public_items)]
 #![allow(clippy::eq_op)]
 #![allow(clippy::excessive_precision)]
@@ -329,7 +330,7 @@ where
   n ^ ((n ^ y) & mask)
 }
 
-/// given `type.op(type)` and type is Copy, impls `type.op(&type)`
+/// given `type.op(type)` and type is `Copy`, impls `type.op(&type)`
 macro_rules! bulk_impl_op_ref_self_for {
   ($(($op:ident, $method:ident) => [$($t:ty),+]),+ $(,)?) => {
     $( // do each trait/list matching given
