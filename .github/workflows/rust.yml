@@ -59,6 +59,9 @@ jobs:
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --all-features
+    
+    - name: Build the crate with SSE4.1 (the "native" of CI will be above this)
+      run: RUSTFLAGS="-Ctarget-feature=+sse4.1" cargo build --target ${{ matrix.rust.target }}
 
     - name: switch over to native cpu features
       run: mv .cargo-ci .cargo
