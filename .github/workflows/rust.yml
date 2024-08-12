@@ -21,10 +21,10 @@ jobs:
         - { target: i686-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86_64
-        - { target: x86_64-pc-windows-msvc, toolchain: "1.61", os: windows-latest }
-        - { target: x86_64-pc-windows-msvc, toolchain: stable, os: windows-latest }
-        - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
-        - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
+        - { target: x86_64-unknown-linux-gnu, toolchain: "1.61", os: ubuntu-latest }
+        - { target: x86_64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
+        - { target: x86_64-unknown-linux-gnu, toolchain: beta, os: ubuntu-latest }
+        - { target: x86_64-unknown-linux-gnu, toolchain: nightly, os: ubuntu-latest }
         # aarch64
         - { target: aarch64-apple-darwin, toolchain: "1.61", os: macos-latest }
         - { target: aarch64-apple-darwin, toolchain: stable, os: macos-latest }
@@ -61,6 +61,7 @@ jobs:
       run: cargo test --target ${{ matrix.rust.target }} --all-features
     
     - name: Build the crate with SSE4.1 (the "native" of CI will be above this)
+      if: matrix.rust.os == 'ubuntu-latest' && matrix.rust.target == 'x86_64-unknown-linux-gnu'
       run: RUSTFLAGS="-Ctarget-feature=+sse4.1" cargo build --target ${{ matrix.rust.target }}
 
     - name: switch over to native cpu features
