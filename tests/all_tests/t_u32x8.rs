@@ -268,7 +268,8 @@ fn impl_u32x8_from_u16x8() {
     |a, _b| a as u32,
   );
 }
-  
+
+#[test]
 fn test_u32x8_any() {
   let a = u32x8::from([0, 0, 0, u32::MAX, 0, 0, 0, 0]);
   assert!(a.any());
