@@ -501,6 +501,96 @@ impl u16x8 {
     }
   }
 
+  /// Unpack the lower half of the input and zero expand it to `u16` values.
+  #[inline]
+  #[must_use]
+  pub fn from_u8x16_low(u: u8x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
+      } else {
+        let u_arr: [u8; 16] = cast(u);
+        cast([
+          u_arr[0] as u16,
+          u_arr[1] as u16,
+          u_arr[2] as u16,
+          u_arr[3] as u16,
+          u_arr[4] as u16,
+          u_arr[5] as u16,
+          u_arr[6] as u16,
+          u_arr[7] as u16,
+        ])
+      }
+    }
+  }
+
+  /// Unpack the upper half of the input and zero expand it to `u16` values.
+  #[inline]
+  #[must_use]
+  pub fn from_u8x16_high(u: u8x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self{ sse: unpack_high_i8_m128i(u.sse, m128i::zeroed()) }
+      } else {
+        let u_arr: [u8; 16] = cast(u);
+        cast([
+          u_arr[8] as u16,
+          u_arr[9] as u16,
+          u_arr[10] as u16,
+          u_arr[11] as u16,
+          u_arr[12] as u16,
+          u_arr[13] as u16,
+          u_arr[14] as u16,
+          u_arr[15] as u16,
+        ])
+      }
+    }
+  }
+
+  /// multiplies two u16x8 and returns the result as a widened u32x8
+  #[inline]
+  #[must_use]
+  pub fn mul_widen(self, rhs: Self) -> u32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a = convert_to_i32_m256i_from_u16_m128i(self.sse);
+        let b = convert_to_i32_m256i_from_u16_m128i(rhs.sse);
+        u32x8 { avx2: mul_i32_keep_low_m256i(a,b) }
+      } else if #[cfg(target_feature="sse2")] {
+         let low = mul_i16_keep_low_m128i(self.sse, rhs.sse);
+         let high = mul_u16_keep_high_m128i(self.sse, rhs.sse);
+         u32x8 {
+          a: u32x4 { sse:unpack_low_i16_m128i(low, high) },
+          b: u32x4 { sse:unpack_high_i16_m128i(low, high) }
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+         let lhs_low = unsafe { vget_low_u16(self.neon) };
+         let rhs_low = unsafe { vget_low_u16(rhs.neon) };
+
+         let lhs_high = unsafe { vget_high_u16(self.neon) };
+         let rhs_high = unsafe { vget_high_u16(rhs.neon) };
+
+         let low = unsafe { vmull_u16(lhs_low, rhs_low) };
+         let high = unsafe { vmull_u16(lhs_high, rhs_high) };
+
+         u32x8 { a: u32x4 { neon: low }, b: u32x4 {neon: high } }
+       } else {
+        let a = self.as_array_ref();
+        let b = rhs.as_array_ref();
+         u32x8::new([
+           u32::from(a[0]) * u32::from(b[0]),
+           u32::from(a[1]) * u32::from(b[1]),
+           u32::from(a[2]) * u32::from(b[2]),
+           u32::from(a[3]) * u32::from(b[3]),
+           u32::from(a[4]) * u32::from(b[4]),
+           u32::from(a[5]) * u32::from(b[5]),
+           u32::from(a[6]) * u32::from(b[6]),
+           u32::from(a[7]) * u32::from(b[7]),
+         ])
+       }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [u16; 8] {
     cast(self)

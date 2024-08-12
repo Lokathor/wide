@@ -343,6 +343,21 @@ fn impl_u16x16_max() {
 }
 
 #[test]
+fn impl_u16x16_from_u8x16() {
+  let v = [10u8, 2, 3, 4, 5, 6, 7, 8, 9, 7, 127, 12, 13, 6, 55, 255];
+
+  assert_eq!(
+    u16x16::from(v.map(|a| u16::from(a))),
+    u16x16::from(u8x16::from(v))
+  );
+
+  crate::test_random_vector_vs_scalar(
+    |a: u8x16, _b| u16x16::from(a),
+    |a, _b| u16::from(a),
+  );
+}
+
+#[test]
 fn impl_u16x16_min() {
   let a = u16x16::from([1, 2, 1, 0, 6, 8, 12, 9, 1, 2, 1, 0, 6, 8, 12, 9]);
   let b =

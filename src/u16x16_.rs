@@ -230,6 +230,49 @@ impl Mul for u16x16 {
   }
 }
 
+impl From<u8x16> for u16x16 {
+  /// widens and sign extends to i16x16
+  #[inline]
+  #[must_use]
+  fn from(v: u8x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        u16x16 { avx2:convert_to_i16_m256i_from_u8_m128i(v.sse) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        u16x16 {
+          a: u16x8 { sse: convert_to_i16_m128i_from_lower8_u8_m128i(v.sse) },
+          b: u16x8 { sse: convert_to_i16_m128i_from_lower8_u8_m128i(unpack_high_i64_m128i(v.sse, v.sse)) }
+        }
+      } else if #[cfg(target_feature="sse2")] {
+        u16x16 {
+          a: u16x8 { sse: shr_imm_u16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
+          b: u16x8 { sse: shr_imm_u16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
+        }
+      } else {
+
+        u16x16::new([
+          v.as_array_ref()[0] as u16,
+          v.as_array_ref()[1] as u16,
+          v.as_array_ref()[2] as u16,
+          v.as_array_ref()[3] as u16,
+          v.as_array_ref()[4] as u16,
+          v.as_array_ref()[5] as u16,
+          v.as_array_ref()[6] as u16,
+          v.as_array_ref()[7] as u16,
+          v.as_array_ref()[8] as u16,
+          v.as_array_ref()[9] as u16,
+          v.as_array_ref()[10] as u16,
+          v.as_array_ref()[11] as u16,
+          v.as_array_ref()[12] as u16,
+          v.as_array_ref()[13] as u16,
+          v.as_array_ref()[14] as u16,
+          v.as_array_ref()[15] as u16,
+          ])
+      }
+    }
+  }
+}
+
 impl u16x16 {
   #[inline]
   #[must_use]

@@ -283,6 +283,24 @@ impl CmpLt for i16x16 {
   }
 }
 
+impl From<i8x16> for i16x16 {
+  /// widen with sign extend from i8 to i16
+  #[inline]
+  #[must_use]
+  fn from(i: i8x16) -> Self {
+    i16x16::from_i8x16(i)
+  }
+}
+
+impl From<u8x16> for i16x16 {
+  /// widen with zero extend from u8 to i16
+  #[inline]
+  #[must_use]
+  fn from(i: u8x16) -> Self {
+    cast(u16x16::from(i))
+  }
+}
+
 impl i16x16 {
   #[inline]
   #[must_use]
