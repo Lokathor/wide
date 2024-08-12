@@ -231,18 +231,13 @@ impl Mul for u16x16 {
 }
 
 impl From<u8x16> for u16x16 {
-  /// widens and sign extends to i16x16
+  /// widens and sign extends to u16x16
   #[inline]
   #[must_use]
   fn from(v: u8x16) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         u16x16 { avx2:convert_to_i16_m256i_from_u8_m128i(v.sse) }
-      } else if #[cfg(target_feature="sse4.1")] {
-        u16x16 {
-          a: u16x8 { sse: convert_to_i16_m128i_from_lower8_u8_m128i(v.sse) },
-          b: u16x8 { sse: convert_to_i16_m128i_from_lower8_u8_m128i(unpack_high_i64_m128i(v.sse, v.sse)) }
-        }
       } else if #[cfg(target_feature="sse2")] {
         u16x16 {
           a: u16x8 { sse: shr_imm_u16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
