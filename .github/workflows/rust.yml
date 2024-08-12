@@ -11,33 +11,36 @@ jobs:
       matrix:
         rust:
         # x86 without sse/sse2 on by default
-        - { target: i586-pc-windows-msvc, toolchain: 1.56.0, os: windows-latest }
+        - { target: i586-pc-windows-msvc, toolchain: "1.61", os: windows-latest }
         - { target: i586-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: i586-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: i586-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86
-        - { target: i686-pc-windows-msvc, toolchain: 1.56.0, os: windows-latest }
+        - { target: i686-pc-windows-msvc, toolchain: "1.61", os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86_64
-        - { target: x86_64-pc-windows-msvc, toolchain: 1.56.0, os: windows-latest }
+        - { target: x86_64-pc-windows-msvc, toolchain: "1.61", os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: x86_64-pc-windows-msvc, toolchain: nightly, os: windows-latest }
+        # aarch64
+        - { target: aarch64-apple-darwin, toolchain: "1.61", os: macos-latest }
+        - { target: aarch64-apple-darwin, toolchain: stable, os: macos-latest }
+        - { target: aarch64-apple-darwin, toolchain: beta, os: macos-latest }
+        - { target: aarch64-apple-darwin, toolchain: nightly, os: macos-latest }
         # wasm32
-        - { target: wasm32-wasi, toolchain: 1.56.0, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasi, toolchain: "1.61", os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
     steps:
-    - uses: actions/checkout@v1
-    - uses: actions-rs/toolchain@v1
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust.toolchain }}
         target:  ${{ matrix.rust.target }}
-        profile: minimal
-        default: true
 
     - name: Install wasmtime
       if: matrix.rust.target == 'wasm32-wasi'
@@ -49,12 +52,10 @@ jobs:
       run: cargo build --target ${{ matrix.rust.target }}
 
     - name: Test with default CPU features + No Default Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
     - name: Test with default CPU features + All Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --all-features
@@ -63,11 +64,9 @@ jobs:
       run: mv .cargo-ci .cargo
 
     - name: Test with 'native' CPU features + No Default Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
     - name: Test with 'native' CPU features + All Cargo Features
-      if: matrix.rust.target == 'i586-pc-windows-msvc' || matrix.rust.target == 'i686-pc-windows-msvc' || matrix.rust.target == 'x86_64-pc-windows-msvc' || matrix.rust.target == 'wasm32-wasi'
       run: cargo test --target ${{ matrix.rust.target }} --all-features
   
   cross_compile_aarch64:
@@ -75,7 +74,7 @@ jobs:
 
     strategy:
       matrix:
-        rust: [1.59,stable,nightly]
+        rust: ["1.60", stable, nightly]
         features: ["", "std"]
 
     steps:
@@ -85,12 +84,11 @@ jobs:
           sudo apt-get install qemu binfmt-support qemu-user-static gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
 
       - name: Installing Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          override: true
           toolchain: ${{ matrix.rust }}
           target: aarch64-unknown-linux-musl
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: build
         run: >
           cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"

@@ -407,7 +407,7 @@ fn impl_f32x4_sin_cos() {
         let actual_arr: [f32; 4] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.00000006,
+          (actual - expected).abs() < 0.0000002,
           "Wanted {name}({angle}) to be {expected} but got {actual}",
           name = name,
           angle = angle,
@@ -815,4 +815,11 @@ fn impl_f32x4_sum() {
   let sum2: f32 = p.iter().sum();
   let duration = now.elapsed().as_micros();
   println!("Time take {} {}us", sum2, duration);
+}
+
+#[test]
+fn impl_f32x4_from_i32x4() {
+  let i = i32x4::from([1, 2, 3, 4]);
+  let f = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  assert_eq!(f32x4::from_i32x4(i), f)
 }

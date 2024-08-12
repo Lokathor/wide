@@ -1062,7 +1062,7 @@ impl f32x8 {
     cast::<_, f32x8>(c)
   }
 
-  /// Calculate the exponent of a packed f32x8
+  /// Calculate the exponent of a packed `f32x8`
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
@@ -1330,7 +1330,7 @@ impl f32x8 {
     Self::pow_f32x8(self, f32x8::splat(y))
   }
 
-  /// Transpose matrix of 8x8 f32 matrix. Currently only accelerated on AVX.
+  /// Transpose matrix of 8x8 `f32` matrix. Currently only accelerated on AVX.
   #[must_use]
   #[inline]
   pub fn transpose(data: [f32x8; 8]) -> [f32x8; 8] {
@@ -1417,6 +1417,26 @@ impl f32x8 {
   #[inline]
   pub fn as_array_mut(&mut self) -> &mut [f32; 8] {
     cast_mut(self)
+  }
+
+  #[inline]
+  pub fn from_i32x8(v: i32x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: convert_to_m256_from_i32_m256i(v.avx2) }
+      } else {
+        Self::new([
+            v.as_array_ref()[0] as f32,
+            v.as_array_ref()[1] as f32,
+            v.as_array_ref()[2] as f32,
+            v.as_array_ref()[3] as f32,
+            v.as_array_ref()[4] as f32,
+            v.as_array_ref()[5] as f32,
+            v.as_array_ref()[6] as f32,
+            v.as_array_ref()[7] as f32,
+          ])
+      }
+    }
   }
 }
 

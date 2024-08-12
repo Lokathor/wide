@@ -268,3 +268,29 @@ fn impl_u32x8_from_u16x8() {
     |a, _b| a as u32,
   );
 }
+  
+fn test_u32x8_any() {
+  let a = u32x8::from([0, 0, 0, u32::MAX, 0, 0, 0, 0]);
+  assert!(a.any());
+  //
+  let a = u32x8::from([0, 0, 0, 0, 0, 0, 0, 0]);
+  assert!(!a.any());
+}
+
+#[test]
+fn test_u32x8_all() {
+  let a = u32x8::from([0, 0, 0, u32::MAX, 0, 0, 0, 0]);
+  assert!(!a.all());
+  //
+  let a = u32x8::from([u32::MAX; 8]);
+  assert!(a.all());
+}
+
+#[test]
+fn test_u32x8_none() {
+  let a = u32x8::from([0, 0, 0, u32::MAX, 0, 0, 0, 0]);
+  assert!(!a.none());
+  //
+  let a = u32x8::from([0; 8]);
+  assert!(a.none());
+}

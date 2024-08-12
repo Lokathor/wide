@@ -4,13 +4,13 @@ pick! {
   if #[cfg(target_feature="sse")] {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
-    pub struct f32x4 { sse: m128 }
+    pub struct f32x4 { pub(crate) sse: m128 }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
-    pub struct f32x4 { simd: v128 }
+    pub struct f32x4 { pub(crate) simd: v128 }
 
     impl Default for f32x4 {
       fn default() -> Self {
@@ -27,7 +27,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct f32x4 { neon : float32x4_t }
+    pub struct f32x4 { pub(crate) neon : float32x4_t }
 
     impl Default for f32x4 {
       #[inline]
@@ -48,7 +48,7 @@ pick! {
     } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
-    pub struct f32x4 { arr: [f32;4] }
+    pub struct f32x4 { pub(crate) arr: [f32;4] }
   }
 }
 
@@ -1305,7 +1305,7 @@ impl f32x4 {
     cast::<_, f32x4>(c)
   }
 
-  /// Calculate the exponent of a packed f32x4
+  /// Calculate the exponent of a packed `f32x4`
   #[inline]
   #[must_use]
   #[allow(non_upper_case_globals)]
@@ -1577,5 +1577,25 @@ impl f32x4 {
   #[inline]
   pub fn as_array_mut(&mut self) -> &mut [f32; 4] {
     cast_mut(self)
+  }
+
+  #[inline]
+  pub fn from_i32x4(v: i32x4) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: convert_to_m128_from_i32_m128i(v.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_convert_i32x4(v.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vcvtq_f32_s32(v.neon) }}
+      } else {
+        Self { arr: [
+            v.as_array_ref()[0] as f32,
+            v.as_array_ref()[1] as f32,
+            v.as_array_ref()[2] as f32,
+            v.as_array_ref()[3] as f32,
+          ] }
+      }
+    }
   }
 }

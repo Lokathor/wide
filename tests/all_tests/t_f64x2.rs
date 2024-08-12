@@ -815,3 +815,10 @@ fn impl_f64x2_sum() {
   let duration = now.elapsed().as_micros();
   println!("Time take {} {}us", sum2, duration);
 }
+
+#[test]
+fn impl_f64x2_from_i32x4() {
+  let i = i32x4::from([1, 2, 3, 4]);
+  let f = f64x2::from([1.0, 2.0]);
+  assert_eq!(f64x2::from_i32x4_lower2(i), f)
+}

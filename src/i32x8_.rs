@@ -231,9 +231,9 @@ impl_shr_t_for_i32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 /// Shifts lanes by the corresponding lane.
 ///
-/// Bitwise shift-right; yields self >> mask(rhs), where mask removes any
-/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
-/// the type. (same as wrapping_shr)
+/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
+/// the type. (same as `wrapping_shr`)
 impl Shr<i32x8> for i32x8 {
   type Output = Self;
 
@@ -257,9 +257,9 @@ impl Shr<i32x8> for i32x8 {
 
 /// Shifts lanes by the corresponding lane.
 ///
-/// Bitwise shift-left; yields self << mask(rhs), where mask removes any
-/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
-/// the type. (same as wrapping_shl)
+/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
+/// the type. (same as `wrapping_shl`)
 impl Shl<i32x8> for i32x8 {
   type Output = Self;
 
@@ -351,7 +351,7 @@ impl i32x8 {
     Self::from(array)
   }
 
-  /// widens and sign extends to i32x8
+  /// widens and sign extends to `i32x8`
   #[inline]
   #[must_use]
   pub fn from_i16x8(v: i16x8) -> Self {
@@ -378,7 +378,7 @@ impl i32x8 {
     }
   }
 
-  /// widens and zero extends to i32x8
+  /// widens and zero extends to `i32x8`
   #[inline]
   #[must_use]
   pub fn from_u16x8(v: u16x8) -> Self {
@@ -558,7 +558,7 @@ impl i32x8 {
     !self.any()
   }
 
-  /// Transpose matrix of 8x8 i32 matrix. Currently only accelerated on AVX2.
+  /// Transpose matrix of 8x8 `i32` matrix. Currently only accelerated on AVX2.
   #[must_use]
   #[inline]
   pub fn transpose(data: [i32x8; 8]) -> [i32x8; 8] {

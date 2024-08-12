@@ -207,9 +207,9 @@ impl_shr_t_for_u32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 /// Shifts lanes by the corresponding lane.
 ///
-/// Bitwise shift-right; yields self >> mask(rhs), where mask removes any
-/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
-/// the type. (same as wrapping_shr)
+/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
+/// the type. (same as `wrapping_shr`)
 impl Shr<u32x8> for u32x8 {
   type Output = Self;
 
@@ -233,9 +233,9 @@ impl Shr<u32x8> for u32x8 {
 
 /// Shifts lanes by the corresponding lane.
 ///
-/// Bitwise shift-left; yields self << mask(rhs), where mask removes any
-/// high-order bits of rhs that would cause the shift to exceed the bitwidth of
-/// the type. (same as wrapping_shl)
+/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
+/// the type. (same as `wrapping_shl`)
 impl Shl<u32x8> for u32x8 {
   type Output = Self;
 
@@ -343,6 +343,36 @@ impl u32x8 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) == 0b10001000100010001000100010001000
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
   }
 
   #[inline]

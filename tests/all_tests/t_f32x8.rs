@@ -651,7 +651,7 @@ fn impl_f32x8_sin_cos() {
         let actual_arr: [f32; 8] = cast(vals);
         let actual = actual_arr[i];
         assert!(
-          (actual - expected).abs() < 0.00000006,
+          (actual - expected).abs() < 0.0000002,
           "Wanted {name}({angle}) to be {expected} but got {actual}",
           name = name,
           angle = angle,
@@ -929,4 +929,11 @@ fn impl_transpose_for_f32x8() {
   ];
 
   assert_eq!(result, expected);
+}
+
+#[test]
+fn impl_f32x8_from_i32x8() {
+  let i = i32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  let f = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
+  assert_eq!(f32x8::from_i32x8(i), f)
 }

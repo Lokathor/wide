@@ -569,7 +569,7 @@ impl i16x8 {
     }
   }
 
-  /// returns low i16 of i32, saturating values that are too large
+  /// returns low `i16` of `i32`, saturating values that are too large
   #[inline]
   #[must_use]
   pub fn from_i32x8_saturate(v: i32x8) -> Self {
@@ -614,7 +614,7 @@ impl i16x8 {
     }
   }
 
-  /// returns low i16 of i32, truncating the upper bits if they are set
+  /// returns low `i16` of `i32`, truncating the upper bits if they are set
   #[inline]
   #[must_use]
   pub fn from_i32x8_truncate(v: i32x8) -> Self {
@@ -945,13 +945,13 @@ impl i16x8 {
     }
   }
 
-  /// Multiply and scale equivilent to ((self * rhs) + 0x4000) >> 15 on each
-  /// lane, effectively multiplying by a 16 bit fixed point number between -1
-  /// and 1. This corresponds to the following instructions:
-  /// - vqrdmulhq_s16 instruction on neon
-  /// - i16x8_q15mulr_sat on simd128
-  /// - _mm_mulhrs_epi16 on ssse3
-  /// - emulated via mul_i16_* on sse2
+  /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
+  /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
+  /// and `1`. This corresponds to the following instructions:
+  /// - `vqrdmulhq_s16` instruction on neon
+  /// - `i16x8_q15mulr_sat` on simd128
+  /// - `_mm_mulhrs_epi16` on ssse3
+  /// - emulated via `mul_i16_*` on sse2
   #[inline]
   #[must_use]
   pub fn mul_scale_round(self, rhs: Self) -> Self {
@@ -989,7 +989,7 @@ impl i16x8 {
     }
   }
 
-  /// Multiples two i16x8 and return the high part of intermediate i32x8
+  /// Multiples two `i16x8` and return the high part of intermediate `i32x8`
   #[inline]
   #[must_use]
   pub fn mul_keep_high(lhs: Self, rhs: Self) -> Self {
@@ -1027,7 +1027,7 @@ impl i16x8 {
     }
   }
 
-  /// multiplies two i16x8 and returns the result as a widened i32x8
+  /// multiplies two `i16x8` and returns the result as a widened `i32x8`
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i32x8 {
@@ -1208,13 +1208,13 @@ impl i16x8 {
 
   #[inline]
   #[must_use]
-  /// Multiply and scale, equivalent to ((self * rhs) + 0x4000) >> 15 on each
-  /// lane, effectively multiplying by a 16 bit fixed point number between -1
-  /// and 1. This corresponds to the following instructions:
-  /// - vqrdmulhq_n_s16 instruction on neon
-  /// - i16x8_q15mulr_sat on simd128
-  /// - _mm_mulhrs_epi16 on ssse3
-  /// - emulated via mul_i16_* on sse2
+  /// Multiply and scale, equivalent to `((self * rhs) + 0x4000) >> 15` on each
+  /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
+  /// and `1`. This corresponds to the following instructions:
+  /// - `vqrdmulhq_n_s16` instruction on neon
+  /// - `i16x8_q15mulr_sat` on simd128
+  /// - `_mm_mulhrs_epi16` on ssse3
+  /// - emulated via `mul_i16_*` on sse2
   pub fn mul_scale_round_n(self, rhs: i16) -> Self {
     pick! {
       if #[cfg(target_feature="ssse3")] {
