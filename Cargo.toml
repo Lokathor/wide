@@ -20,9 +20,11 @@ default = ["std"]
 # Activate `std` within the crate. Currently this gives a much faster `sqrt`
 # impl when an explicit hardware sqrt isn't available.
 std = []
+serde = ["dep:serde"]
 
 [dependencies]
 safe_arch = { version = "0.7", features = ["bytemuck"] }
+serde = { version = "1", default-features = false, optional = true }
 bytemuck = "1"
 
 [dev-dependencies]
