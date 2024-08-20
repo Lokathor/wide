@@ -25,20 +25,22 @@ mod t_u64x4;
 mod t_u8x16;
 mod t_usefulness;
 
-// Generates the next random number
+/// Generates the next pseudo-random number.
+/// Definitely non-cryptographic, just used for generating random test values.
 fn next_rand_u64(state: &mut u64) -> u64 {
-  // Constants for the LCG (values used in glibc's rand())
+  // Constants for the LCG
   const A: u64 = 6364136223846793005;
-  const C: u64 = 1;
+  const C: u64 = 1442695040888963407;
 
-  // Update the state and calculate the next number
-  *state = state.wrapping_mul(A).wrapping_add(C);
+  // Update the state and calculate the next number (rotate to avoid lack of randomness in low bits)
+  *state = state.wrapping_mul(A).wrapping_add(C).rotate_left(31);
+
   *state
 }
 
 const RNG_SEED: u64 = 0x123456789abcdef0;
 
-/// Generate a random value for a type that implements GenSample.
+/// Generate a pseudo-random value for a type that implements GenSample.
 fn gen_random<T: GenSample>(rng: &mut u64) -> T {
   let r = next_rand_u64(rng);
 
