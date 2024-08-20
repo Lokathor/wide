@@ -4,8 +4,6 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::nonminimal_bool)]
 
-use rand::RngCore;
-
 mod t_f32x4;
 mod t_f32x8;
 mod t_f64x2;
@@ -27,16 +25,29 @@ mod t_u64x4;
 mod t_u8x16;
 mod t_usefulness;
 
+// Generates the next random number
+fn next_rand_u64(state: &mut u64) -> u64 {
+  // Constants for the LCG (values used in glibc's rand())
+  const A: u64 = 6364136223846793005;
+  const C: u64 = 1;
+
+  // Update the state and calculate the next number
+  *state = state.wrapping_mul(A).wrapping_add(C);
+  *state
+}
+
+const RNG_SEED: u64 = 0x123456789abcdef0;
+
 /// Generate a random value for a type that implements GenSample.
-fn gen_random<T: GenSample>(rng: &mut impl RngCore) -> T {
-  let r = rng.next_u64();
+fn gen_random<T: GenSample>(rng: &mut u64) -> T {
+  let r = next_rand_u64(rng);
 
   // generate special values more often than random chance to test edge cases
   let next = match r & 0xf {
     0 => 0,
     1 => 1,
     2 => u64::MAX,
-    _ => rng.next_u64(),
+    _ => next_rand_u64(rng),
   };
 
   T::get_sample(next)
@@ -66,7 +77,7 @@ fn test_random_vector_vs_scalar<
   let mut b_arr: [T; N] = [T::default(); N];
 
   // use a fixed seed for reproducibility
-  let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0);
+  let mut rng = RNG_SEED;
 
   // do 100 iterations
   for _i in 0..100 {
@@ -123,7 +134,7 @@ fn test_random_vector_vs_scalar_reduce<
   let mut a_arr = [T::default(); N];
 
   // use a fixed seed for reproducibility
-  let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0);
+  let mut rng = RNG_SEED;
 
   // do 100 iterations
   for _i in 0..100 {
