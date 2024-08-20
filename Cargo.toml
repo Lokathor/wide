@@ -26,6 +26,3 @@ serde = ["dep:serde"]
 safe_arch = { version = "0.7", features = ["bytemuck"] }
 serde = { version = "1", default-features = false, optional = true }
 bytemuck = "1"
-
-[dev-dependencies]
-rand = "0.8"
