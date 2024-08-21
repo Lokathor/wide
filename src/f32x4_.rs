@@ -55,8 +55,7 @@ pick! {
 macro_rules! const_f32_as_f32x4 {
   ($i:ident, $f:expr) => {
     #[allow(non_upper_case_globals)]
-    pub const $i: f32x4 =
-      unsafe { ConstUnionHack128bit { f32a4: [$f; 4] }.f32x4 };
+    pub const $i: f32x4 = f32x4::new([$f; 4]);
   };
 }
 
@@ -475,8 +474,11 @@ impl CmpLt for f32x4 {
 impl f32x4 {
   #[inline]
   #[must_use]
-  pub fn new(array: [f32; 4]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [f32; 4]) -> Self {
+    #[allow(non_upper_case_globals)]
+    unsafe {
+      core::intrinsics::transmute(array)
+    }
   }
 
   #[inline]

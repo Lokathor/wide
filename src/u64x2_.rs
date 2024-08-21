@@ -57,7 +57,7 @@ pick! {
   }
 }
 
-int_uint_consts!(u64, 2, u64x2, u64x2, u64a2, const_u64_as_u64x2, 128);
+int_uint_consts!(u64, 2, u64x2, 128);
 
 unsafe impl Zeroable for u64x2 {}
 unsafe impl Pod for u64x2 {}
@@ -310,8 +310,8 @@ impl_shr_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl u64x2 {
   #[inline]
   #[must_use]
-  pub fn new(array: [u64; 2]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [u64; 2]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]
