@@ -280,7 +280,7 @@ impl u8x16 {
   #[inline]
   #[must_use]
   pub const fn new(array: [u8; 16]) -> Self {
-    unsafe { std::mem::transmute(array) }
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]

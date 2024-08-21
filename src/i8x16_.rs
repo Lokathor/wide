@@ -388,7 +388,7 @@ impl i8x16 {
   #[inline]
   #[must_use]
   pub const fn new(array: [i8; 16]) -> Self {
-    unsafe { std::mem::transmute(array) }
+    unsafe { core::intrinsics::transmute(array) }
   }
 
   /// converts `i16` to `i8`, saturating values that are too large

@@ -477,7 +477,7 @@ impl f32x4 {
   pub const fn new(array: [f32; 4]) -> Self {
     #[allow(non_upper_case_globals)]
     unsafe {
-      std::mem::transmute(array)
+      core::intrinsics::transmute(array)
     }
   }
 

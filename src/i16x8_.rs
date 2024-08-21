@@ -442,7 +442,7 @@ impl i16x8 {
   #[inline]
   #[must_use]
   pub const fn new(array: [i16; 8]) -> Self {
-    unsafe { std::mem::transmute(array) }
+    unsafe { core::intrinsics::transmute(array) }
   }
 
   #[inline]

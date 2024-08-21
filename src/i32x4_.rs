@@ -473,7 +473,7 @@ impl i32x4 {
   #[inline]
   #[must_use]
   pub const fn new(array: [i32; 4]) -> Self {
-    unsafe { std::mem::transmute(array) }
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]
