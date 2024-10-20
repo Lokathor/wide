@@ -513,16 +513,16 @@ impl u32x4 {
         unsafe {
           let l = vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon));
           let h = vmull_u32(vget_high_u32(self.neon), vget_high_u32(rhs.neon));
-          u32x4 { neon: vcombine_u32(vshrn_n_u64(l,32), vshrn_n_u64(l,32)) }
+          u32x4 { neon: vcombine_u32(vshrn_n_u64(l,32), vshrn_n_u64(h,32)) }
         }
       } else {
         let a: [u32; 4] = cast(self);
         let b: [u32; 4] = cast(rhs);
         cast([
           ((u64::from(a[0]) * u64::from(b[0])) >> 32) as u32,
-          ((u64::from(a[1]) * u64::from(b[1])) >> 32) as u32
-          ((u64::from(a[2]) * u64::from(b[2])) >> 32) as u32
-          ((u64::from(a[3]) * u64::from(b[3])) >> 32) as u32
+          ((u64::from(a[1]) * u64::from(b[1])) >> 32) as u32,
+          ((u64::from(a[2]) * u64::from(b[2])) >> 32) as u32,
+          ((u64::from(a[3]) * u64::from(b[3])) >> 32) as u32,
         ])
       }
     }
