@@ -391,22 +391,12 @@ fn generate_branch_free_divide_magic_shift(denom: u32x8) -> (u32x8, u32x8) {
 
 // using the previously generated magic and shift, calculate the division
 fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
-  // Returns 32 high bits of the 64 bit result of multiplication of two u32s
-  let mul_hi = |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32;
+  let a: [u32x4; 2] = cast(numerator);
+  let b: [u32x4; 2] = cast(magic);
 
-  let a = numerator.as_array_ref();
-  let b = magic.as_array_ref();
+  let q = [a[0].mul_keep_high(b[0]), a[1].mul_keep_high(b[1])];
 
-  let q = u32x8::from([
-    mul_hi(a[0], b[0]),
-    mul_hi(a[1], b[1]),
-    mul_hi(a[2], b[2]),
-    mul_hi(a[3], b[3]),
-    mul_hi(a[4], b[4]),
-    mul_hi(a[5], b[5]),
-    mul_hi(a[6], b[6]),
-    mul_hi(a[7], b[7]),
-  ]);
+  let q: u32x8 = cast(q);
 
   let t = ((numerator - q) >> 1) + q;
   t >> shift

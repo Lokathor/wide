@@ -494,11 +494,28 @@ impl i32x4 {
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i64x4 {
+    // todo: WASM simd128, but not sure it would really be faster
+    // than what the compiler comes up with.
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = convert_to_i64_m256i_from_i32_m128i(self.sse);
         let b = convert_to_i64_m256i_from_i32_m128i(rhs.sse);
-        cast(mul_i64_low_bits_m256i(a,b))
+        cast(mul_i64_low_bits_m256i(a, b))
+      } else if #[cfg(target_feature="sse4.1")] {
+          let evenp = mul_widen_i32_odd_m128i(self.sse, rhs.sse);
+
+          let oddp = mul_widen_i32_odd_m128i(
+            shr_imm_u64_m128i::<32>(self.sse),
+            shr_imm_u64_m128i::<32>(rhs.sse));
+
+          i64x4 {
+            a: i64x2 { sse: unpack_low_i64_m128i(evenp, oddp)},
+            b: i64x2 { sse: unpack_high_i64_m128i(evenp, oddp)}}
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          i64x4 { a: i64x2 { neon: vmull_s32(vget_low_s32(self.neon), vget_low_s32(rhs.neon)) },
+                  b: i64x2 { neon: vmull_s32(vget_high_s32(self.neon), vget_high_s32(rhs.neon)) } }
+        }
       } else {
         let a: [i32; 4] = cast(self);
         let b: [i32; 4] = cast(rhs);
