@@ -431,7 +431,7 @@ impl u32x4 {
         Self { sse: cmp_gt_mask_i32_m128i((self ^ h).sse, (rhs ^ h).sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u32x4_gt(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {Self { neon: vcgtq_u32(self.neon, rhs.neon) }}
       } else {
         Self { arr: [
@@ -448,6 +448,25 @@ impl u32x4 {
   pub fn cmp_lt(self, rhs: Self) -> Self {
     // lt is just gt the other way around
     rhs.cmp_gt(self)
+  }
+
+  pub fn mul_widen_odd(self: u32x4, rhs: u32x4) -> u64x2 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        cast(mul_widen_u32_odd_m128i(self.sse, rhs.sse))
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          u64x2 { neon: vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon)) }
+        }
+      } else {
+        let a: [u32; 4] = cast(self);
+        let b: [u32; 4] = cast(rhs);
+        cast([
+          (a[0] as u64) * (b[0] as u64),
+          (a[2] as u64) * (b[2] as u64),
+        ])
+      }
+    }
   }
 
   #[inline]

@@ -301,6 +301,19 @@ impl u32x8 {
     rhs.cmp_gt(self)
   }
 
+  pub fn mul_widen_odd(self: u32x8, rhs: u32x8) -> u64x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        cast(mul_widen_u32_odd_m256i(self.avx2, rhs.avx2))
+      } else {
+        u64x4 {
+          a : self.a.mul_widen_odd(rhs.a),
+          b : self.b.mul_widen_odd(rhs.b),
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
