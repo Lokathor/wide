@@ -481,6 +481,8 @@ impl u32x4 {
     }
   }
 
+  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the result.
+  /// Useful for implementing divide constant value (see t_usefulness example)
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

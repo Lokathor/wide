@@ -318,6 +318,16 @@ impl u32x8 {
     }
   }
 
+  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the result.
+  /// Useful for implementing divide constant value (see t_usefulness example)
+  #[inline]
+  #[must_use]
+  pub fn mul_keep_high(self: u32x8, rhs: u32x8) -> u32x8 {
+    // avx2 doesn't benefit here sice the u32x4 is already using it,
+    // maybe it might help with the shuffling afterwards
+    u32x8 { a: self.a.mul_keep_high(rhs.a), b: self.b.mul_keep_high(rhs.b) }
+  }
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

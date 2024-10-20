@@ -315,3 +315,11 @@ fn test_u32x8_mul_widen_even() {
   let actual = a.mul_widen_even(b);
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u32x8_mul_keep_high() {
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| a.mul_keep_high(b),
+    |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32,
+  );
+}
