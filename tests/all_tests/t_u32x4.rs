@@ -236,11 +236,30 @@ fn test_u32x4_none() {
 }
 
 #[test]
-fn test_u32x4_mul_widen_odd() {
-  let a = u32x4::from([10, 2, 0xffffffff, 4]);
-  let b = u32x4::from([50, 6, 0xffffffff, 8]);
+fn test_u32x4_mul_widen_even() {
+  let a = u32x4::from([10, 2 /*ignored*/, 0xffffffff, 4 /*ignored*/]);
+  let b = u32x4::from([50, 6 /*ignored*/, 0xffffffff, 8 /*ignored*/]);
 
   let expected = u64x2::from([10 * 50, 0xffffffff * 0xffffffff]);
-  let actual = a.mul_widen_odd(b);
+  let actual = a.mul_widen_even(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u32x4_mul_widen() {
+  let a = u32x4::from([1, 2, 3 * 1000000, u32::MAX]);
+  let b = u32x4::from([5, 6, 7 * 1000000, u32::MAX]);
+  let expected = u64x4::from([
+    1 * 5,
+    2 * 6,
+    3 * 7 * 1000000 * 1000000,
+    u32::MAX as u64 * u32::MAX as u64,
+  ]);
+  let actual = a.mul_widen(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x4, b| a.mul_widen(b),
+    |a, b| u64::from(a) * u64::from(b),
+  );
 }

@@ -490,6 +490,28 @@ impl i32x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_widen(self, rhs: Self) -> i64x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a = convert_to_i64_m256i_from_i32_m128i(self.sse);
+        let b = convert_to_i64_m256i_from_i32_m128i(rhs.sse);
+        cast(mul_i64_low_bits_m256i(a,b))
+      } else {
+        let a: [i32; 4] = cast(self);
+        let b: [i32; 4] = cast(rhs);
+        cast([
+          i64::from(a[0]) * i64::from(b[0]),
+          i64::from(a[1]) * i64::from(b[1]),
+          i64::from(a[2]) * i64::from(b[2]),
+          i64::from(a[3]) * i64::from(b[3]),
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {

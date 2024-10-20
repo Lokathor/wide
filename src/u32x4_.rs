@@ -450,13 +450,18 @@ impl u32x4 {
     rhs.cmp_gt(self)
   }
 
-  pub fn mul_widen_odd(self: u32x4, rhs: u32x4) -> u64x2 {
+  /// Multiplies the 32 bit values lane 0 and 2 and
+  /// returns the corresponding 64 bit result in lanes 0 and 1.
+  #[inline]
+  #[must_use]
+  pub fn mul_widen_even(self: u32x4, rhs: u32x4) -> u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
+        // safe_arch calls this odd, but lane# are 0 based, right?
         cast(mul_widen_u32_odd_m128i(self.sse, rhs.sse))
       } else if #[cfg(target_feature="simd128")] {
         u64x2 { simd: i64x2_mul(
-          v128_and(self.simd, u64x2_splat(0xffffffff)), 
+          v128_and(self.simd, u64x2_splat(0xffffffff)),
           v128_and(rhs.simd, u64x2_splat(0xffffffff)) ) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
@@ -471,6 +476,45 @@ impl u32x4 {
         cast([
           (a[0] as u64) * (b[0] as u64),
           (a[2] as u64) * (b[2] as u64),
+        ])
+      }
+    }
+  }
+
+  /// multiplies corresponding 32 bit lanes and returns the 64 bit result
+  /// effectively does two multiplies on 128 bit platforms
+  #[inline]
+  #[must_use]
+  pub fn mul_widen(self, rhs: Self) -> u64x4 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // ok to sign extend since we are throwing away the high half of the result anyway
+        let a = convert_to_i64_m256i_from_i32_m128i(self.sse);
+        let b = convert_to_i64_m256i_from_i32_m128i(rhs.sse);
+        cast(mul_u64_low_bits_m256i(a,b))
+      } else if #[cfg(target_feature="sse2")] {
+        let evenp = mul_widen_u32_odd_m128i(self.sse, rhs.sse);
+
+        let oddp = mul_widen_u32_odd_m128i(
+          shr_imm_u64_m128i::<32>(self.sse),
+          shr_imm_u64_m128i::<32>(rhs.sse));
+
+        u64x4 {
+          a: u64x2 { sse: unpack_low_i64_m128i(evenp, oddp)},
+          b: u64x2 { sse: unpack_high_i64_m128i(evenp, oddp)}}
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          u64x4 { a: u64x2 { neon: vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon)) },
+                  b: u64x2 { neon: vmull_u32(vget_high_u32(self.neon), vget_high_u32(rhs.neon)) } }
+        }
+      } else {
+        let a: [u32; 4] = cast(self);
+        let b: [u32; 4] = cast(rhs);
+        cast([
+          u64::from(a[0]) * u64::from(b[0]),
+          u64::from(a[1]) * u64::from(b[1]),
+          u64::from(a[2]) * u64::from(b[2]),
+          u64::from(a[3]) * u64::from(b[3]),
         ])
       }
     }
