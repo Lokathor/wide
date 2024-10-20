@@ -304,7 +304,7 @@ impl u32x8 {
   pub fn mul_widen_odd(self: u32x8, rhs: u32x8) -> u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        cast(mul_widen_u32_odd_m256i(self.avx2, rhs.avx2))
+        cast(mul_u64_low_bits_m256i(self.avx2, rhs.avx2))
       } else {
         u64x4 {
           a : self.a.mul_widen_odd(rhs.a),
