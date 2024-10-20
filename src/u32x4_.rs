@@ -458,10 +458,10 @@ impl u32x4 {
         u64x2 { simd: i64x2_mul((self & i64x2::splat(0xffffffff)).simd, (rhs.simd & i64x2::splat(0xffffffff))).simd }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
-          let a = vuzpq_u32(self.neon, self.neon);
-          let b = vuzpq_u32(rhs.neon, rhs.neon);
+          let a = vget_low_u32(vuzpq_u32(self.neon, self.neon).0);
+          let b = vget_low_u32(vuzpq_u32(rhs.neon, rhs.neon).0);
 
-          u64x2 { neon: vmull_u32(vget_low_u32(a), vget_low_u32(b)) }
+          u64x2 { neon: vmull_u32(a, b) }
         }
       } else {
         let a: [u32; 4] = cast(self);
