@@ -298,11 +298,11 @@ fn test_u32x8_none() {
 
 #[test]
 fn test_u32x8_mul_widen_odd() {
-  let a = u32x8::from([1, 2, 3, 4, 5, 6, 7 * 1000000, 8]);
-  let b = u32x8::from([9, 10, 11, 12, 13, 14, 15 * 1000000, 16]);
+  let a = u32x8::from([1, 2, 3, 4, 5, 6, 0xffffffff, 8]);
+  let b = u32x8::from([9, 10, 11, 12, 13, 14, 0xffffffff, 16]);
 
   let expected =
-    u64x4::from([1 * 9, 3 * 11, 5 * 13, 7 * 15 * 1000000 * 1000000]);
+    u64x4::from([1 * 9, 3 * 11, 5 * 13, 0xffffffff * 0xffffffff]);
   let actual = a.mul_widen_odd(b);
   assert_eq!(expected, actual);
 }

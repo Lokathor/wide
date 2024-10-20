@@ -237,10 +237,10 @@ fn test_u32x4_none() {
 
 #[test]
 fn test_u32x4_mul_widen_odd() {
-  let a = u32x4::from([1, 2, 3 * 1000000, 4]);
-  let b = u32x4::from([5, 6, 7 * 1000000, 8]);
+  let a = u32x4::from([10, 2, 0xffffffff, 4]);
+  let b = u32x4::from([50, 6, 0xffffffff, 8]);
 
-  let expected = u64x2::from([5 * 1, 3 * 7 * 1000000 * 1000000]);
+  let expected = u64x2::from([10 * 50, 0xffffffff * 0xffffffff]);
   let actual = a.mul_widen_odd(b);
   assert_eq!(expected, actual);
 }

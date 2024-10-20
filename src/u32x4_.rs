@@ -455,7 +455,9 @@ impl u32x4 {
       if #[cfg(target_feature="sse2")] {
         cast(mul_widen_u32_odd_m128i(self.sse, rhs.sse))
       } else if #[cfg(target_feature="simd128")] {
-        u64x2 { simd: i64x2_mul((self & i64x2::splat(0xffffffff)).simd, (rhs & i64x2::splat(0xffffffff)).simd) }
+        u64x2 { simd: i64x2_mul(
+          v128_and(self.simd, u64x2_splat(0xffffffff)), 
+          v128_and(rhs.simd, u64x2_splat(0xffffffff)) ) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           let a = vget_low_u32(vuzpq_u32(self.neon, self.neon).0);
