@@ -323,12 +323,23 @@ impl u32x8 {
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self: u32x8, rhs: u32x8) -> u32x8 {
-    // avx2 doesn't benefit here sice the u32x4 is already using it,
-    // maybe it might help with the shuffling afterwards
-    let a: [u32x4; 2] = cast(self);
-    let b: [u32x4; 2] = cast(rhs);
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a : [u32;8]= cast(self);
+        let b : [u32;8]= cast(rhs);
 
-    cast([a[0].mul_keep_high(b[0]), a[1].mul_keep_high(b[1])])
+        // let the compiler shuffle the values around, it does the right thing
+        let r1 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
+        let r2 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
+
+        cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
+      } else {
+        let a: [u32x4; 2] = cast(self);
+        let b: [u32x4; 2] = cast(rhs);
+
+        cast([a[0].mul_keep_high(b[0]), a[1].mul_keep_high(b[1])])
+      }
+    }
   }
 
   #[inline]

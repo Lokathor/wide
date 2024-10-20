@@ -491,9 +491,8 @@ impl u32x4 {
 
     pick! {
       if #[cfg(target_feature="avx2")] {
-        // ok to sign extend since we are throwing away the high half of the result anyway
-        let a = convert_to_i64_m256i_from_i32_m128i(self.sse);
-        let b = convert_to_i64_m256i_from_i32_m128i(rhs.sse);
+        let a = convert_to_i64_m256i_from_u32_m128i(self.sse);
+        let b = convert_to_i64_m256i_from_u32_m128i(rhs.sse);
         let r = mul_u64_low_bits_m256i(a, b);
 
         // the compiler does a good job shuffling the lanes around
