@@ -325,7 +325,10 @@ impl u32x8 {
   pub fn mul_keep_high(self: u32x8, rhs: u32x8) -> u32x8 {
     // avx2 doesn't benefit here sice the u32x4 is already using it,
     // maybe it might help with the shuffling afterwards
-    u32x8 { a: self.a.mul_keep_high(rhs.a), b: self.b.mul_keep_high(rhs.b) }
+    let a: [u32x4; 2] = cast(self);
+    let b: [u32x4; 2] = cast(rhs);
+
+    cast([a[0].mul_keep_high(b[0]), a[1].mul_keep_high(b[1])])
   }
 
   #[inline]
