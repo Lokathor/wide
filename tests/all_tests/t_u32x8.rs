@@ -297,29 +297,9 @@ fn test_u32x8_none() {
 }
 
 #[test]
-fn test_u32x8_mul_widen_even() {
-  let a = u32x8::from([
-    1, 2, /*odd ignored*/
-    3, 4, /*odd ignored*/
-    5, 6, /*odd ignored*/
-    0xffffffff, 8, /*odd ignored*/
-  ]);
-  let b = u32x8::from([
-    9, 10, /*odd ignored*/
-    11, 12, /*odd ignored*/
-    13, 14, /*odd ignored*/
-    0xffffffff, 16, /*odd ignored*/
-  ]);
-
-  let expected = u64x4::from([1 * 9, 3 * 11, 5 * 13, 0xffffffff * 0xffffffff]);
-  let actual = a.mul_widen_even(b);
-  assert_eq!(expected, actual);
-}
-
-#[test]
 fn impl_u32x8_mul_keep_high() {
   crate::test_random_vector_vs_scalar(
-    |a: u32x8, b| a.mul_keep_high(b),
+    |a: u32x8, b| u32x8::mul_keep_high(a, b),
     |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32,
   );
 }

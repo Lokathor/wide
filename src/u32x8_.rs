@@ -301,28 +301,11 @@ impl u32x8 {
     rhs.cmp_gt(self)
   }
 
-  /// Multiplies the 32 bit values lane 0, 2, 4, 6
-  /// returns the corresponding 64 bit result in lanes 0,1,2,3.
-  #[inline]
-  #[must_use]
-  pub fn mul_widen_even(self: u32x8, rhs: u32x8) -> u64x4 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        cast(mul_u64_low_bits_m256i(self.avx2, rhs.avx2))
-      } else {
-        u64x4 {
-          a : self.a.mul_widen_even(rhs.a),
-          b : self.b.mul_widen_even(rhs.b),
-        }
-      }
-    }
-  }
-
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the result.
   /// Useful for implementing divide constant value (see t_usefulness example)
   #[inline]
   #[must_use]
-  pub fn mul_keep_high(self: u32x8, rhs: u32x8) -> u32x8 {
+  pub fn mul_keep_high(self, rhs: u32x8) -> u32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a : [u32;8]= cast(self);
@@ -334,10 +317,10 @@ impl u32x8 {
 
         cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
       } else {
-        let a: [u32x4; 2] = cast(self);
-        let b: [u32x4; 2] = cast(rhs);
-
-        cast([a[0].mul_keep_high(b[0]), a[1].mul_keep_high(b[1])])
+        Self {
+          a : self.a.mul_keep_high(rhs.a),
+          b : self.b.mul_keep_high(rhs.b),
+        }
       }
     }
   }

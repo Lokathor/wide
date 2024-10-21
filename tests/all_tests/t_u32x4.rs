@@ -237,16 +237,6 @@ fn test_u32x4_none() {
 }
 
 #[test]
-fn test_u32x4_mul_widen_even() {
-  let a = u32x4::from([10, 2 /*ignored*/, 0xffffffff, 4 /*ignored*/]);
-  let b = u32x4::from([50, 6 /*ignored*/, 0xffffffff, 8 /*ignored*/]);
-
-  let expected = u64x2::from([10 * 50, 0xffffffff * 0xffffffff]);
-  let actual = a.mul_widen_even(b);
-  assert_eq!(expected, actual);
-}
-
-#[test]
 fn impl_u32x4_mul_widen() {
   let a = u32x4::from([1, 2, 3 * 1000000, u32::MAX]);
   let b = u32x4::from([5, 6, 7 * 1000000, u32::MAX]);

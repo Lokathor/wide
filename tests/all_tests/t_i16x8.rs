@@ -369,10 +369,27 @@ fn impl_i16x8_reduce_max() {
 
 #[test]
 fn impl_mul_keep_high() {
-  let a = i16x8::from([1, 200, 300, 4568, -1, -2, -3, -4]);
-  let b = i16x8::from([5, 600, 700, 8910, -15, -26, -37, 48]);
+  let a = i16x8::from([i16::MAX, 200, 300, 4568, -1, -2, -3, -4]);
+  let b = i16x8::from([i16::MIN, 600, 700, 8910, -15, -26, -37, 48]);
   let c: [i16; 8] = i16x8::mul_keep_high(a, b).into();
-  assert_eq!(c, [0, 1, 3, 621, 0, 0, 0, -1]);
+  assert_eq!(
+    c,
+    [
+      (i32::from(i16::MAX) * i32::from(i16::MIN) >> 16) as i16,
+      1,
+      3,
+      621,
+      0,
+      0,
+      0,
+      -1
+    ]
+  );
+
+  crate::test_random_vector_vs_scalar(
+    |a: i16x8, b| i16x8::mul_keep_high(a, b),
+    |a, b| ((i32::from(a) * i32::from(b)) >> 16) as i16,
+  );
 }
 
 #[test]

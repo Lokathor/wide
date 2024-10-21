@@ -591,6 +591,44 @@ impl u16x8 {
     }
   }
 
+  /// Multiples two `u16x8` and return the high part of intermediate `u32x8`
+  #[inline]
+  #[must_use]
+  pub fn mul_keep_high(lhs: Self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: mul_u16_keep_high_m128i(lhs.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        let lhs_low = unsafe { vget_low_u16(lhs.neon) };
+        let rhs_low = unsafe { vget_low_u16(rhs.neon) };
+
+        let lhs_high = unsafe { vget_high_u16(lhs.neon) };
+        let rhs_high = unsafe { vget_high_u16(rhs.neon) };
+
+        let low = unsafe { vmull_u16(lhs_low, rhs_low) };
+        let high = unsafe { vmull_u16(lhs_high, rhs_high) };
+
+        i16x8 { neon: unsafe { vuzpq_u16(vreinterpretq_u16_u32(low), vreinterpretq_u16_u32(high)).1 } }
+      } else if #[cfg(target_feature="simd128")] {
+        let low =  u32x4_extmul_low_u16x8(lhs.simd, rhs.simd);
+        let high = u32x4_extmul_high_u16x8(lhs.simd, rhs.simd);
+
+        Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
+      } else {
+        u16x8::new([
+          ((u32::from(rhs.as_array_ref()[0]) * u32::from(lhs.as_array_ref()[0])) >> 16) as u16,
+          ((u32::from(rhs.as_array_ref()[1]) * u32::from(lhs.as_array_ref()[1])) >> 16) as u16,
+          ((u32::from(rhs.as_array_ref()[2]) * u32::from(lhs.as_array_ref()[2])) >> 16) as u16,
+          ((u32::from(rhs.as_array_ref()[3]) * u32::from(lhs.as_array_ref()[3])) >> 16) as u16,
+          ((u32::from(rhs.as_array_ref()[4]) * u32::from(lhs.as_array_ref()[4])) >> 16) as u16,
+          ((u32::from(rhs.as_array_ref()[5]) * u32::from(lhs.as_array_ref()[5])) >> 16) as u16,
+          ((u32::from(rhs.as_array_ref()[6]) * u32::from(lhs.as_array_ref()[6])) >> 16) as u16,
+          ((u32::from(rhs.as_array_ref()[7]) * u32::from(lhs.as_array_ref()[7])) >> 16) as u16,
+        ])
+      }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [u16; 8] {
     cast(self)

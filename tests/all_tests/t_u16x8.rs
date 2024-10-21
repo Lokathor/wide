@@ -219,6 +219,31 @@ fn impl_u16x8_from_u8x16_high() {
 }
 
 #[test]
+fn impl_u16x8_mul_keep_high() {
+  let a = u16x8::from([u16::MAX, 200, 300, 4568, 1, 2, 3, 200]);
+  let b = u16x8::from([u16::MAX, 600, 700, 8910, 15, 26, 37, 600]);
+  let c: [u16; 8] = u16x8::mul_keep_high(a, b).into();
+  assert_eq!(
+    c,
+    [
+      (u32::from(u16::MAX) * u32::from(u16::MAX) >> 16) as u16,
+      1,
+      3,
+      621,
+      0,
+      0,
+      0,
+      1
+    ]
+  );
+
+  crate::test_random_vector_vs_scalar(
+    |a: u16x8, b| u16x8::mul_keep_high(a, b),
+    |a, b| ((u32::from(a) * u32::from(b)) >> 16) as u16,
+  );
+}
+
+#[test]
 fn impl_u16x8_mul_widen() {
   let a = u16x8::from([1, 2, 3, 4, 5, 6, i16::MAX as u16, u16::MAX]);
   let b = u16x8::from([17, 18, 190, 20, 21, 22, i16::MAX as u16, u16::MAX]);

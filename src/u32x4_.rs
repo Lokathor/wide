@@ -450,37 +450,6 @@ impl u32x4 {
     rhs.cmp_gt(self)
   }
 
-  /// Multiplies the 32 bit values lane 0 and 2 and
-  /// returns the corresponding 64 bit result in lanes 0 and 1.
-  #[inline]
-  #[must_use]
-  pub fn mul_widen_even(self: u32x4, rhs: u32x4) -> u64x2 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // safe_arch calls this odd, but lane# are 0 based, right?
-        cast(mul_widen_u32_odd_m128i(self.sse, rhs.sse))
-      } else if #[cfg(target_feature="simd128")] {
-        u64x2 { simd: i64x2_mul(
-          v128_and(self.simd, u64x2_splat(0xffffffff)),
-          v128_and(rhs.simd, u64x2_splat(0xffffffff)) ) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          let a = vget_low_u32(vuzpq_u32(self.neon, self.neon).0);
-          let b = vget_low_u32(vuzpq_u32(rhs.neon, rhs.neon).0);
-
-          u64x2 { neon: vmull_u32(a, b) }
-        }
-      } else {
-        let a: [u32; 4] = cast(self);
-        let b: [u32; 4] = cast(rhs);
-        cast([
-          (a[0] as u64) * (b[0] as u64),
-          (a[2] as u64) * (b[2] as u64),
-        ])
-      }
-    }
-  }
-
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the result.
   /// Useful for implementing divide constant value (see t_usefulness example)
   #[inline]

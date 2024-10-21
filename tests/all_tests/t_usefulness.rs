@@ -391,7 +391,7 @@ fn generate_branch_free_divide_magic_shift(denom: u32x8) -> (u32x8, u32x8) {
 
 // using the previously generated magic and shift, calculate the division
 fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
-  let q = numerator.mul_keep_high(magic);
+  let q = u32x8::mul_keep_high(numerator, magic);
 
   let t = ((numerator - q) >> 1) + q;
   t >> shift
