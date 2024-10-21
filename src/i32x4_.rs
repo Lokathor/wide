@@ -491,11 +491,16 @@ impl i32x4 {
     }
   }
 
+  /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
+  /// on the corresponding lanes.
+  ///
+  /// Effectively does two multiplies on 128 bit platforms, but is easier
+  /// to use than wrapping mul_widen_i32_odd_m128i individually.
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i64x4 {
     // todo: WASM simd128, but not sure it would really be faster
-    // than what the compiler comes up with.
+    // since simd128 only has full 64 bit i64x2 multiplies.
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = convert_to_i64_m256i_from_i32_m128i(self.sse);

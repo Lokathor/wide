@@ -502,12 +502,12 @@ impl u32x4 {
   /// on the corresponding lanes.
   ///
   /// Effectively does two multiplies on 128 bit platforms, but is easier
-  /// to use than the even version, and runs fast on AVX2.
+  /// to use than wrapping mul_widen_u32_odd_m128i individually.
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> u64x4 {
     // todo: WASM simd128, but not sure it would really be faster
-    // than what the compiler comes up with.
+    // since simd128 only has full 64 bit i64x2 multiplies.
 
     pick! {
       if #[cfg(target_feature="avx2")] {
