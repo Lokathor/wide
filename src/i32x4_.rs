@@ -327,8 +327,8 @@ impl_shr_t_for_i32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 /// Shifts lanes by the corresponding lane.
 ///
 /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
-/// the type. (same as `wrapping_shr`)
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shr`)
 impl Shr<i32x4> for i32x4 {
   type Output = Self;
 
@@ -364,8 +364,8 @@ impl Shr<i32x4> for i32x4 {
 /// Shifts lanes by the corresponding lane.
 ///
 /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
-/// the type. (same as `wrapping_shl`)
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shl`)
 impl Shl<i32x4> for i32x4 {
   type Output = Self;
 
@@ -499,8 +499,6 @@ impl i32x4 {
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i64x4 {
-    // todo: WASM simd128, but not sure it would really be faster
-    // since simd128 only has full 64 bit i64x2 multiplies.
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = convert_to_i64_m256i_from_i32_m128i(self.sse);
@@ -515,7 +513,13 @@ impl i32x4 {
 
           i64x4 {
             a: i64x2 { sse: unpack_low_i64_m128i(evenp, oddp)},
-            b: i64x2 { sse: unpack_high_i64_m128i(evenp, oddp)}}
+            b: i64x2 { sse: unpack_high_i64_m128i(evenp, oddp)}
+          }
+      } else if #[cfg(target_feature="simd128")] {
+          i64x4 {
+            a: i64x2 { simd: i64x2_extmul_low_i32x4(self.simd, rhs.simd) },
+            b: i64x2 { simd: i64x2_extmul_high_i32x4(self.simd, rhs.simd) },
+          }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           i64x4 { a: i64x2 { neon: vmull_s32(vget_low_s32(self.neon), vget_low_s32(rhs.neon)) },

@@ -327,8 +327,8 @@ impl_shr_t_for_u32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 /// Shifts lanes by the corresponding lane.
 ///
 /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
-/// the type. (same as `wrapping_shr`)
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shr`)
 impl Shr<u32x4> for u32x4 {
   type Output = Self;
   #[inline]
@@ -363,8 +363,8 @@ impl Shr<u32x4> for u32x4 {
 /// Shifts lanes by the corresponding lane.
 ///
 /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
-/// the type. (same as `wrapping_shl`)
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shl`)
 impl Shl<u32x4> for u32x4 {
   type Output = Self;
   #[inline]
@@ -450,14 +450,12 @@ impl u32x4 {
     rhs.cmp_gt(self)
   }
 
-  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the result.
-  /// Useful for implementing divide constant value (see t_usefulness example)
+  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
+  /// result. Useful for implementing divide constant value (see t_usefulness
+  /// example)
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
-    // todo: WASM simd128, but not sure it would really be faster
-    // than what the compiler comes up with.
-
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = convert_to_i64_m256i_from_u32_m128i(self.sse);
@@ -479,6 +477,11 @@ impl u32x4 {
         let b : [u32;4]= cast(oddp);
         cast([a[1],b[1],a[3],b[3]])
 
+      } else if #[cfg(target_feature="simd128")] {
+        let low =  u64x2_extmul_low_u32x4(self.simd, rhs.simd);
+        let high = u64x2_extmul_high_u32x4(self.simd, rhs.simd);
+
+        Self { simd: u32x4_shuffle::<1, 3, 5, 7>(low, high) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           let l = vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon));
@@ -506,9 +509,6 @@ impl u32x4 {
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> u64x4 {
-    // todo: WASM simd128, but not sure it would really be faster
-    // since simd128 only has full 64 bit i64x2 multiplies.
-
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ok to sign extend since we are throwing away the high half of the result anyway
@@ -524,11 +524,17 @@ impl u32x4 {
 
         u64x4 {
           a: u64x2 { sse: unpack_low_i64_m128i(evenp, oddp)},
-          b: u64x2 { sse: unpack_high_i64_m128i(evenp, oddp)}}
+          b: u64x2 { sse: unpack_high_i64_m128i(evenp, oddp)}
+        }
+      } else if #[cfg(target_feature="simd128")] {
+        u64x4 {
+          a: u64x2 { simd: u64x2_extmul_low_u32x4(self.simd, rhs.simd) },
+          b: u64x2 { simd: u64x2_extmul_high_u32x4(self.simd, rhs.simd) },
+        }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          u64x4 { a: u64x2 { neon: vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon)) },
-                  b: u64x2 { neon: vmull_u32(vget_high_u32(self.neon), vget_high_u32(rhs.neon)) } }
+      unsafe {
+        u64x4 { a: u64x2 { neon: vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon)) },
+                b: u64x2 { neon: vmull_u32(vget_high_u32(self.neon), vget_high_u32(rhs.neon)) } }
         }
       } else {
         let a: [u32; 4] = cast(self);
