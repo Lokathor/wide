@@ -32,7 +32,8 @@ fn next_rand_u64(state: &mut u64) -> u64 {
   const A: u64 = 6364136223846793005;
   const C: u64 = 1442695040888963407;
 
-  // Update the state and calculate the next number (rotate to avoid lack of randomness in low bits)
+  // Update the state and calculate the next number (rotate to avoid lack of
+  // randomness in low bits)
   *state = state.wrapping_mul(A).wrapping_add(C).rotate_left(31);
 
   *state

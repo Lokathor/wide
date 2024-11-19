@@ -208,8 +208,8 @@ impl_shr_t_for_u32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 /// Shifts lanes by the corresponding lane.
 ///
 /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
-/// the type. (same as `wrapping_shr`)
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shr`)
 impl Shr<u32x8> for u32x8 {
   type Output = Self;
 
@@ -234,8 +234,8 @@ impl Shr<u32x8> for u32x8 {
 /// Shifts lanes by the corresponding lane.
 ///
 /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth of
-/// the type. (same as `wrapping_shl`)
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shl`)
 impl Shl<u32x8> for u32x8 {
   type Output = Self;
 
@@ -299,6 +299,31 @@ impl u32x8 {
   pub fn cmp_lt(self, rhs: Self) -> Self {
     // lt is just gt the other way around
     rhs.cmp_gt(self)
+  }
+
+  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
+  /// result. Useful for implementing divide constant value (see t_usefulness
+  /// example)
+  #[inline]
+  #[must_use]
+  pub fn mul_keep_high(self, rhs: u32x8) -> u32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a : [u32;8]= cast(self);
+        let b : [u32;8]= cast(rhs);
+
+        // let the compiler shuffle the values around, it does the right thing
+        let r1 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
+        let r2 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
+
+        cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
+      } else {
+        Self {
+          a : self.a.mul_keep_high(rhs.a),
+          b : self.b.mul_keep_high(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]

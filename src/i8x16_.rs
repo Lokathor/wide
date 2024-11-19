@@ -700,7 +700,8 @@ impl i8x16 {
   /// `rhs`.
   ///
   /// * Index values in the range `[0, 15]` select the i-th element of `self`.
-  /// * Index values that are out of range will cause that output lane to be `0`.
+  /// * Index values that are out of range will cause that output lane to be
+  ///   `0`.
   #[inline]
   pub fn swizzle(self, rhs: i8x16) -> i8x16 {
     pick! {
@@ -727,7 +728,8 @@ impl i8x16 {
     }
   }
 
-  /// Works like [`swizzle`](Self::swizzle) with the following additional details
+  /// Works like [`swizzle`](Self::swizzle) with the following additional
+  /// details
   ///
   /// * Indices in the range `[0, 15]` will select the i-th element of `self`.
   /// * If the high bit of any index is set (meaning that the index is

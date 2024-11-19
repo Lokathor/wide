@@ -331,13 +331,14 @@ impl i8x32 {
     !self.any()
   }
 
-  /// Returns a new vector with lanes selected from the lanes of the first input vector
-  /// a specified in the second input vector `rhs`.
-  /// The indices i in range `[0, 15]` select the i-th element of `self`. For indices
-  /// outside of the range the resulting lane is `0`.
+  /// Returns a new vector with lanes selected from the lanes of the first input
+  /// vector a specified in the second input vector `rhs`.
+  /// The indices i in range `[0, 15]` select the i-th element of `self`. For
+  /// indices outside of the range the resulting lane is `0`.
   ///
-  /// This note that is the equivalent of two parallel swizzle operations on the two halves of the vector,
-  /// and the indexes each refer to the corresponding half.
+  /// This note that is the equivalent of two parallel swizzle operations on the
+  /// two halves of the vector, and the indexes each refer to the
+  /// corresponding half.
   #[inline]
   pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
     pick! {
@@ -352,13 +353,15 @@ impl i8x32 {
     }
   }
 
-  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If the high bit
-  /// of any element of `rhs` is set (negative) then the corresponding output
-  /// lane is guaranteed to be zero. Otherwise if the element of `rhs` is within the range `[32, 127]`
-  /// then the output lane is either `0` or `self[rhs[i] % 16]` depending on the implementation.
+  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
+  /// the high bit of any element of `rhs` is set (negative) then the
+  /// corresponding output lane is guaranteed to be zero. Otherwise if the
+  /// element of `rhs` is within the range `[32, 127]` then the output lane is
+  /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
   ///
-  /// This is the equivalent to two parallel swizzle operations on the two halves of the vector,
-  /// and the indexes each refer to their corresponding half.
+  /// This is the equivalent to two parallel swizzle operations on the two
+  /// halves of the vector, and the indexes each refer to their corresponding
+  /// half.
   #[inline]
   pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
     pick! {

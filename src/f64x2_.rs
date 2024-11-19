@@ -1598,7 +1598,8 @@ impl f64x2 {
     cast_mut(self)
   }
 
-  /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the higher two `i32` lanes)
+  /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the
+  /// higher two `i32` lanes)
   #[inline]
   pub fn from_i32x4_lower2(v: i32x4) -> Self {
     pick! {
@@ -1619,7 +1620,8 @@ impl f64x2 {
 }
 
 impl From<i32x4> for f64x2 {
-  /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the higher two `i32` lanes)
+  /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the
+  /// higher two `i32` lanes)
   #[inline]
   fn from(v: i32x4) -> Self {
     Self::from_i32x4_lower2(v)

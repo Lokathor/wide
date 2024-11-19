@@ -295,3 +295,11 @@ fn test_u32x8_none() {
   let a = u32x8::from([0; 8]);
   assert!(a.none());
 }
+
+#[test]
+fn impl_u32x8_mul_keep_high() {
+  crate::test_random_vector_vs_scalar(
+    |a: u32x8, b| u32x8::mul_keep_high(a, b),
+    |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32,
+  );
+}

@@ -1,4 +1,5 @@
 use std::num::Wrapping;
+
 use wide::*;
 
 #[test]
@@ -233,4 +234,43 @@ fn test_u32x4_none() {
   //
   let a = u32x4::from([0; 4]);
   assert!(a.none());
+}
+
+#[test]
+fn impl_u32x4_mul_widen() {
+  let a = u32x4::from([1, 2, 3 * 1000000, u32::MAX]);
+  let b = u32x4::from([5, 6, 7 * 1000000, u32::MAX]);
+  let expected = u64x4::from([
+    1 * 5,
+    2 * 6,
+    3 * 7 * 1000000 * 1000000,
+    u32::MAX as u64 * u32::MAX as u64,
+  ]);
+  let actual = a.mul_widen(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x4, b| a.mul_widen(b),
+    |a, b| u64::from(a) * u64::from(b),
+  );
+}
+
+#[test]
+fn impl_u32x4_mul_keep_high() {
+  let mul_high = |a: u32, b: u32| ((u64::from(a) * u64::from(b)) >> 32) as u32;
+  let a = u32x4::from([1, 2 * 10000000, 3 * 1000000, u32::MAX]);
+  let b = u32x4::from([5, 6 * 100, 7 * 1000000, u32::MAX]);
+  let expected = u32x4::from([
+    mul_high(1, 5),
+    mul_high(2 * 10000000, 6 * 100),
+    mul_high(3 * 1000000, 7 * 1000000),
+    mul_high(u32::MAX, u32::MAX),
+  ]);
+  let actual = a.mul_keep_high(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u32x4, b| a.mul_keep_high(b),
+    |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32,
+  );
 }

@@ -266,3 +266,22 @@ fn impl_i32x4_shl_each() {
     |a, b| a.wrapping_shl(b as u32),
   );
 }
+
+#[test]
+fn impl_i32x4_mul_widen() {
+  let a = i32x4::from([1, 2, 3 * -1000000, i32::MAX]);
+  let b = i32x4::from([5, 6, 7 * -1000000, i32::MIN]);
+  let expected = i64x4::from([
+    1 * 5,
+    2 * 6,
+    3 * 7 * 1000000 * 1000000,
+    i32::MIN as i64 * i32::MAX as i64,
+  ]);
+  let actual = a.mul_widen(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i32x4, b| a.mul_widen(b),
+    |a, b| a as i64 * b as i64,
+  );
+}
