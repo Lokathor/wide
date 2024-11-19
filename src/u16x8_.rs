@@ -55,7 +55,7 @@ pick! {
   }
 }
 
-int_uint_consts!(u16, 8, u16x8, u16x8, u16a8, const_u16_as_u16x8, 128);
+int_uint_consts!(u16, 8, u16x8, 128);
 
 unsafe impl Zeroable for u16x8 {}
 unsafe impl Pod for u16x8 {}
@@ -357,8 +357,8 @@ impl_shr_t_for_u16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl u16x8 {
   #[inline]
   #[must_use]
-  pub fn new(array: [u16; 8]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [u16; 8]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]

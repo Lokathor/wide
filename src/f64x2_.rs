@@ -58,8 +58,7 @@ pick! {
 macro_rules! const_f64_as_f64x2 {
   ($i:ident, $f:expr) => {
     #[allow(non_upper_case_globals)]
-    pub const $i: f64x2 =
-      unsafe { ConstUnionHack128bit { f64a2: [$f; 2] }.f64x2 };
+    pub const $i: f64x2 = f64x2::new([$f; 2]);
   };
 }
 
@@ -454,8 +453,8 @@ impl CmpLt for f64x2 {
 impl f64x2 {
   #[inline]
   #[must_use]
-  pub fn new(array: [f64; 2]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [f64; 2]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]

@@ -271,60 +271,6 @@ pub use u64x2_::*;
 mod u64x4_;
 pub use u64x4_::*;
 
-#[allow(non_camel_case_types)]
-#[repr(C, align(16))]
-#[rustfmt::skip]
-union ConstUnionHack128bit {
-  f32a4: [f32; 4],
-  f64a2: [f64; 2],
-  i8a16: [i8; 16],
-  i16a8: [i16; 8],
-  i32a4: [i32; 4],
-  i64a2: [i64; 2],
-  u8a16: [u8; 16],
-  u16a8: [u16; 8],
-  u32a4: [u32; 4],
-  u64a2: [u64; 2],
-  f32x4: f32x4,
-  f64x2: f64x2,
-  i8x16: i8x16,
-  i16x8: i16x8,
-  i32x4: i32x4,
-  i64x2: i64x2,
-  u8x16: u8x16,
-  u16x8: u16x8,
-  u32x4: u32x4,
-  u64x2: u64x2,
-  u128:  u128,
-}
-
-#[allow(non_camel_case_types)]
-#[repr(C, align(16))]
-#[rustfmt::skip]
-union ConstUnionHack256bit {
-  f32a8:  [f32; 8],
-  f64a4:  [f64; 4],
-  i8a32:  [i8; 32],
-  i16a16: [i16; 16],
-  i32a8:  [i32; 8],
-  i64a4:  [i64; 4],
-  u8a32:  [u8; 32],
-  u16a16: [u16; 16],
-  u32a8:  [u32; 8],
-  u64a4:  [u64; 4],
-  u128x2: [u128; 2],
-  f32x8:  f32x8,
-  f64x4:  f64x4,
-  i8x32:  i8x32,
-  i16x16: i16x16,
-  i32x8:  i32x8,
-  i64x4:  i64x4,
-  // u8x32:  u8x32,
-  u16x16: u16x16,
-  u32x8:  u32x8,
-  u64x4:  u64x4,
-}
-
 #[allow(dead_code)]
 fn generic_bit_blend<T>(mask: T, y: T, n: T) -> T
 where
