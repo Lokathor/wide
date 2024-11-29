@@ -390,6 +390,35 @@ impl f64x4 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: floor_m256d(self.avx) }
+      } else {
+        Self {
+          a : self.a.floor(),
+          b : self.b.floor(),
+        }
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn ceil(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: ceil_m256d(self.avx) }
+      } else {
+        Self {
+          a : self.a.ceil(),
+          b : self.b.ceil(),
+        }
+      }
+    }
+  }
+
   /// Calculates the lanewise maximum of both vectors. This is a faster
   /// implementation than `max`, but it doesn't specify any behavior if NaNs are
   /// involved.

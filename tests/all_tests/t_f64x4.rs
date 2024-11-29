@@ -1,3 +1,5 @@
+use core::f64;
+
 use wide::*;
 
 use bytemuck::*;
@@ -180,6 +182,22 @@ fn impl_f64x4_abs() {
   let a = f64x4::from([-1.0, 2.0, -3.5, f64::NEG_INFINITY]);
   let expected = f64x4::from([1.0, 2.0, 3.5, f64::INFINITY]);
   let actual = a.abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x4_floor() {
+  let a = f64x4::from([-1.1, 60.9, 1.1, f64::INFINITY]);
+  let expected = f64x4::from([-2.0, 60.0, 1.0, f64::INFINITY]);
+  let actual = a.floor();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x4_ceil() {
+  let a = f64x4::from([-1.1, 60.9, 1.1, f64::NEG_INFINITY]);
+  let expected = f64x4::from([-1.0, 61.0, 2.0, f64::NEG_INFINITY]);
+  let actual = a.ceil();
   assert_eq!(expected, actual);
 }
 
