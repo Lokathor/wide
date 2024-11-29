@@ -516,6 +516,9 @@ impl f32x4 {
         Self { sse: floor_m128(self.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndmq_f32(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f32; 4] = cast(self);
+        cast(base.map(|val| val.floor()))
       } else {
         let base: [f32; 4] = cast(self);
         let rounded: [f32; 4] = cast(self.round());
@@ -538,6 +541,9 @@ impl f32x4 {
         Self { sse: ceil_m128(self.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndpq_f32(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f32; 4] = cast(self);
+        cast(base.map(|val| val.ceil()))
       } else {
         let base: [f32; 4] = cast(self);
         let rounded: [f32; 4] = cast(self.round());
