@@ -517,9 +517,14 @@ impl f32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndmq_f32(self.neon) }}
       } else {
-        Self::from(
-          self.to_array().map(|val| val.floor())
-        )
+        let base: [f32; 4] = cast(self);
+        let rounded: [f32; 4] = cast(self.round());
+        cast([
+          if base[0] < rounded[0] { rounded[0] - 1.0 } else { rounded[0] },
+          if base[1] < rounded[1] { rounded[1] - 1.0 } else { rounded[1] },
+          if base[2] < rounded[2] { rounded[2] - 1.0 } else { rounded[2] },
+          if base[3] < rounded[3] { rounded[3] - 1.0 } else { rounded[3] },
+        ])
       }
     }
   }
@@ -534,9 +539,14 @@ impl f32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndpq_f32(self.neon) }}
       } else {
-        Self::from(
-          self.to_array().map(|val| val.ceil())
-        )
+        let base: [f32; 4] = cast(self);
+        let rounded: [f32; 4] = cast(self.round());
+        cast([
+          if base[0] > rounded[0] { rounded[0] + 1.0 } else { rounded[0] },
+          if base[1] > rounded[1] { rounded[1] + 1.0 } else { rounded[1] },
+          if base[2] > rounded[2] { rounded[2] + 1.0 } else { rounded[2] },
+          if base[3] > rounded[3] { rounded[3] + 1.0 } else { rounded[3] },
+        ])
       }
     }
   }
