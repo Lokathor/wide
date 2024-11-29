@@ -484,6 +484,36 @@ impl f64x2 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_floor(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: floor_m128d(self.simd) }
+      } else {
+        Self::from(
+          self.to_array().map(|val| val.floor())
+        )
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn ceil(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_ceil(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: ceil_m128d(self.simd) }
+      } else {
+        Self::from(
+          self.to_array().map(|val| val.ceil())
+        )
+      }
+    }
+  }
 
   /// Calculates the lanewise maximum of both vectors. This is a faster
   /// implementation than `max`, but it doesn't specify any behavior if NaNs are
