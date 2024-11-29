@@ -491,7 +491,7 @@ impl f64x2 {
       if #[cfg(target_feature="simd128")] {
         Self { simd: f64x2_floor(self.simd) }
       } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: floor_m128d(self.simd) }
+        Self { sse: floor_m128d(self.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndmq_f64(self.neon) }}
       } else {
@@ -511,7 +511,7 @@ impl f64x2 {
       if #[cfg(target_feature="simd128")] {
         Self { simd: f64x2_ceil(self.simd) }
       } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: ceil_m128d(self.simd) }
+        Self { sse: ceil_m128d(self.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndpq_f64(self.neon) }}
       } else {
