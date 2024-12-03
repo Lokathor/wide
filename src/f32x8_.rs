@@ -15,8 +15,7 @@ pick! {
 macro_rules! const_f32_as_f32x8 {
   ($i:ident, $f:expr) => {
     #[allow(non_upper_case_globals)]
-    pub const $i: f32x8 =
-      unsafe { ConstUnionHack256bit { f32a8: [$f; 8] }.f32x8 };
+    pub const $i: f32x8 = f32x8::new([$f; 8]);
   };
 }
 
@@ -357,8 +356,8 @@ impl CmpLt for f32x8 {
 impl f32x8 {
   #[inline]
   #[must_use]
-  pub fn new(array: [f32; 8]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [f32; 8]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]

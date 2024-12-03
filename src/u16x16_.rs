@@ -12,7 +12,7 @@ pick! {
   }
 }
 
-int_uint_consts!(u16, 16, u16x16, u16x16, u16a16, const_u16_as_u16x16, 256);
+int_uint_consts!(u16, 16, u16x16, 256);
 
 unsafe impl Zeroable for u16x16 {}
 unsafe impl Pod for u16x16 {}
@@ -271,8 +271,8 @@ impl From<u8x16> for u16x16 {
 impl u16x16 {
   #[inline]
   #[must_use]
-  pub fn new(array: [u16; 16]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [u16; 16]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
 
   #[inline]

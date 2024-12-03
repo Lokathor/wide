@@ -57,7 +57,7 @@ pick! {
   }
 }
 
-int_uint_consts!(i64, 2, i64x2, i64x2, i64a2, const_i64_as_i64x2, 128);
+int_uint_consts!(i64, 2, i64x2, 128);
 
 unsafe impl Zeroable for i64x2 {}
 unsafe impl Pod for i64x2 {}
@@ -379,8 +379,8 @@ impl CmpLt for i64x2 {
 impl i64x2 {
   #[inline]
   #[must_use]
-  pub fn new(array: [i64; 2]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [i64; 2]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]

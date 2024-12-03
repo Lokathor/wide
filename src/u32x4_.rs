@@ -55,7 +55,7 @@ pick! {
   }
 }
 
-int_uint_consts!(u32, 4, u32x4, u32x4, u32a4, const_u32_as_u32x4, 128);
+int_uint_consts!(u32, 4, u32x4, 128);
 
 unsafe impl Zeroable for u32x4 {}
 unsafe impl Pod for u32x4 {}
@@ -398,8 +398,8 @@ impl Shl<u32x4> for u32x4 {
 impl u32x4 {
   #[inline]
   #[must_use]
-  pub fn new(array: [u32; 4]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [u32; 4]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]

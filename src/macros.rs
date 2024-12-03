@@ -1,10 +1,16 @@
-macro_rules! int_uint_consts_inner {
-  ($type:ty, $lanes:expr, $simd:ty, $macro_name:ident, $bits:expr) => {
+macro_rules! int_uint_consts {
+  ($type:ty, $lanes:expr, $simd:ty, $bits:expr) => {
+    // ensure the size of the SIMD type is the same as the size of the array and number of bits is OK
+    const _: () = assert!(
+      core::mem::size_of::<$simd>() == core::mem::size_of::<[$type; $lanes]>()
+        && core::mem::size_of::<$simd>() * 8 == $bits as usize
+    );
+
     impl $simd {
-      $macro_name!(ONE, 1);
-      $macro_name!(ZERO, 0);
-      $macro_name!(MAX, <$type>::MAX);
-      $macro_name!(MIN, <$type>::MIN);
+      pub const ONE: $simd = <$simd>::new([1; $lanes]);
+      pub const ZERO: $simd = <$simd>::new([0; $lanes]);
+      pub const MAX: $simd = <$simd>::new([<$type>::MAX; $lanes]);
+      pub const MIN: $simd = <$simd>::new([<$type>::MIN; $lanes]);
 
       /// The number of lanes in this SIMD vector.
       pub const LANES: u16 = $lanes;
@@ -12,30 +18,5 @@ macro_rules! int_uint_consts_inner {
       /// The size of this SIMD vector in bits.
       pub const BITS: u16 = $bits;
     }
-  };
-}
-
-macro_rules! int_uint_consts {
-  ($type:ty, $lanes:expr, $simd_type:ty, $simd_ident:ident, $aligned:ident, $macro_name:ident, 128) => {
-    macro_rules! $macro_name {
-      ($i: ident, $f: expr) => {
-        pub const $i: $simd_type = unsafe {
-          ConstUnionHack128bit { $aligned: [$f; $lanes] }.$simd_ident
-        };
-      };
-    }
-
-    int_uint_consts_inner!($type, $lanes, $simd_type, $macro_name, 128);
-  };
-  ($type:ty, $lanes:expr, $simd_type:ty, $simd_ident:ident, $aligned:ident, $macro_name:ident, 256) => {
-    macro_rules! $macro_name {
-      ($i: ident, $f: expr) => {
-        pub const $i: $simd_type = unsafe {
-          ConstUnionHack256bit { $aligned: [$f; $lanes] }.$simd_ident
-        };
-      };
-    }
-
-    int_uint_consts_inner!($type, $lanes, $simd_type, $macro_name, 256);
   };
 }

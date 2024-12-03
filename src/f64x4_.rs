@@ -14,8 +14,8 @@ pick! {
 
 macro_rules! const_f64_as_f64x4 {
   ($i:ident, $f:expr) => {
-    pub const $i: f64x4 =
-      unsafe { ConstUnionHack256bit { f64a4: [$f; 4] }.f64x4 };
+    #[allow(non_upper_case_globals)]
+    pub const $i: f64x4 = f64x4::new([$f; 4]);
   };
 }
 
@@ -356,8 +356,8 @@ impl CmpLt for f64x4 {
 impl f64x4 {
   #[inline]
   #[must_use]
-  pub fn new(array: [f64; 4]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [f64; 4]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
   #[inline]
   #[must_use]
@@ -645,7 +645,6 @@ impl f64x4 {
     (self & magnitude_mask) | (sign & Self::from(-0.0))
   }
 
-  #[allow(non_upper_case_globals)]
   #[inline]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
@@ -738,7 +737,6 @@ impl f64x4 {
     (asin, acos)
   }
 
-  #[allow(non_upper_case_globals)]
   #[inline]
   pub fn acos(self) -> Self {
     // Based on the Agner Fog "vector class library":
@@ -826,7 +824,6 @@ impl f64x4 {
   }
   #[inline]
   #[must_use]
-  #[allow(non_upper_case_globals)]
   pub fn asin(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -912,7 +909,6 @@ impl f64x4 {
     asin
   }
 
-  #[allow(non_upper_case_globals)]
   #[inline]
   pub fn atan(self) -> Self {
     // Based on the Agner Fog "vector class library":
@@ -969,7 +965,6 @@ impl f64x4 {
     re
   }
 
-  #[allow(non_upper_case_globals)]
   #[inline]
   pub fn atan2(self, x: Self) -> Self {
     // Based on the Agner Fog "vector class library":
@@ -1052,7 +1047,6 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
-  #[allow(non_upper_case_globals)]
   pub fn sin_cos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
@@ -1194,7 +1188,6 @@ impl f64x4 {
   }
 
   #[inline]
-  #[allow(non_upper_case_globals)]
   fn vm_pow2n(self) -> Self {
     const_f64_as_f64x4!(pow2_52, 4503599627370496.0);
     const_f64_as_f64x4!(bias, 1023.0);
@@ -1206,7 +1199,6 @@ impl f64x4 {
   /// Calculate the exponent of a packed `f64x4`
   #[inline]
   #[must_use]
-  #[allow(non_upper_case_globals)]
   pub fn exp(self) -> Self {
     const_f64_as_f64x4!(P2, 1.0 / 2.0);
     const_f64_as_f64x4!(P3, 1.0 / 6.0);
@@ -1237,7 +1229,6 @@ impl f64x4 {
   }
 
   #[inline]
-  #[allow(non_upper_case_globals)]
   fn exponent(self) -> f64x4 {
     const_f64_as_f64x4!(pow2_52, 4503599627370496.0);
     const_f64_as_f64x4!(bias, 1023.0);
@@ -1250,7 +1241,6 @@ impl f64x4 {
   }
 
   #[inline]
-  #[allow(non_upper_case_globals)]
   fn fraction_2(self) -> Self {
     let t1 = cast::<_, u64x4>(self);
     let t2 = cast::<_, u64x4>(
@@ -1304,7 +1294,6 @@ impl f64x4 {
   /// Natural log (ln(x))
   #[inline]
   #[must_use]
-  #[allow(non_upper_case_globals)]
   pub fn ln(self) -> Self {
     const_f64_as_f64x4!(HALF, 0.5);
     const_f64_as_f64x4!(P0, 7.70838733755885391666E0);
@@ -1366,7 +1355,6 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
-  #[allow(non_upper_case_globals)]
   pub fn pow_f64x4(self, y: Self) -> Self {
     const_f64_as_f64x4!(ln2d_hi, 0.693145751953125);
     const_f64_as_f64x4!(ln2d_lo, 1.42860682030941723212E-6);

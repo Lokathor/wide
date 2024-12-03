@@ -12,7 +12,7 @@ pick! {
   }
 }
 
-int_uint_consts!(i32, 8, i32x8, i32x8, i32a8, const_i32_as_i32x8, 256);
+int_uint_consts!(i32, 8, i32x8, 256);
 
 unsafe impl Zeroable for i32x8 {}
 unsafe impl Pod for i32x8 {}
@@ -347,8 +347,8 @@ impl From<i16x8> for i32x8 {
 impl i32x8 {
   #[inline]
   #[must_use]
-  pub fn new(array: [i32; 8]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [i32; 8]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
 
   /// widens and sign extends to `i32x8`

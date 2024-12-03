@@ -55,7 +55,7 @@ pick! {
   }
 }
 
-int_uint_consts!(i16, 8, i16x8, i16x8, i16a8, const_i16_as_i16x8, 128);
+int_uint_consts!(i16, 8, i16x8, 128);
 
 unsafe impl Zeroable for i16x8 {}
 unsafe impl Pod for i16x8 {}
@@ -441,8 +441,8 @@ impl CmpLt for i16x8 {
 impl i16x8 {
   #[inline]
   #[must_use]
-  pub fn new(array: [i16; 8]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [i16; 8]) -> Self {
+    unsafe { core::intrinsics::transmute(array) }
   }
 
   #[inline]
