@@ -8,6 +8,12 @@
 rustflags = ["-Ctarget-cpu=native"]
 rustdocflags = ["-Ctarget-cpu=native"]
 
+# in case of running on an older version
+[target.wasm32-wasi]
+runner = "wasmtime run --wasm-features all --dir ."
+rustflags = ["-Ctarget-feature=+simd128,+bulk-memory,+nontrapping-fptoint,+sign-ext"]
+
+# this is the new name
 [target.wasm32-wasip1]
 runner = "wasmtime run --wasm-features all --dir ."
 rustflags = ["-Ctarget-feature=+simd128,+bulk-memory,+nontrapping-fptoint,+sign-ext"]
