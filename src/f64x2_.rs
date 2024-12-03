@@ -484,6 +484,52 @@ impl f64x2 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_floor(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: floor_m128d(self.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndmq_f64(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f64; 2] = cast(self);
+        cast(base.map(|val| val.floor()))
+      } else {
+        let base: [f64; 2] = cast(self);
+        let rounded: [f64; 2] = cast(self.round());
+        cast([
+          if base[0] < rounded[0] { rounded[0] - 1.0 } else { rounded[0] },
+          if base[1] < rounded[1] { rounded[1] - 1.0 } else { rounded[1] },
+        ])
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn ceil(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_ceil(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: ceil_m128d(self.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndpq_f64(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f64; 2] = cast(self);
+        cast(base.map(|val| val.ceil()))
+      } else {
+        let base: [f64; 2] = cast(self);
+        let rounded: [f64; 2] = cast(self.round());
+        cast([
+          if base[0] > rounded[0] { rounded[0] + 1.0 } else { rounded[0] },
+          if base[1] > rounded[1] { rounded[1] + 1.0 } else { rounded[1] },
+        ])
+      }
+    }
+  }
 
   /// Calculates the lanewise maximum of both vectors. This is a faster
   /// implementation than `max`, but it doesn't specify any behavior if NaNs are

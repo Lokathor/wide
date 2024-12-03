@@ -192,6 +192,22 @@ fn impl_f32x4_abs() {
 }
 
 #[test]
+fn impl_f32x4_floor() {
+  let a = f32x4::from([-1.1, 60.9, 1.1, f32::INFINITY]);
+  let expected = f32x4::from([-2.0, 60.0, 1.0, f32::INFINITY]);
+  let actual = a.floor();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_ceil() {
+  let a = f32x4::from([-1.1, 60.9, 1.1, f32::NEG_INFINITY]);
+  let expected = f32x4::from([-1.0, 61.0, 2.0, f32::NEG_INFINITY]);
+  let actual = a.ceil();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f32x4_fast_max() {
   let a = f32x4::from([1.0, 5.0, 3.0, -4.0]);
   let b = f32x4::from([2.0, 3.0, -5.0, -10.0]);

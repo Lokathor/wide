@@ -506,6 +506,56 @@ impl f32x4 {
       }
     }
   }
+  #[inline]
+  #[must_use]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_floor(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: floor_m128(self.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndmq_f32(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f32; 4] = cast(self);
+        cast(base.map(|val| val.floor()))
+      } else {
+        let base: [f32; 4] = cast(self);
+        let rounded: [f32; 4] = cast(self.round());
+        cast([
+          if base[0] < rounded[0] { rounded[0] - 1.0 } else { rounded[0] },
+          if base[1] < rounded[1] { rounded[1] - 1.0 } else { rounded[1] },
+          if base[2] < rounded[2] { rounded[2] - 1.0 } else { rounded[2] },
+          if base[3] < rounded[3] { rounded[3] - 1.0 } else { rounded[3] },
+        ])
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub fn ceil(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_ceil(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: ceil_m128(self.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndpq_f32(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f32; 4] = cast(self);
+        cast(base.map(|val| val.ceil()))
+      } else {
+        let base: [f32; 4] = cast(self);
+        let rounded: [f32; 4] = cast(self.round());
+        cast([
+          if base[0] > rounded[0] { rounded[0] + 1.0 } else { rounded[0] },
+          if base[1] > rounded[1] { rounded[1] + 1.0 } else { rounded[1] },
+          if base[2] > rounded[2] { rounded[2] + 1.0 } else { rounded[2] },
+          if base[3] > rounded[3] { rounded[3] + 1.0 } else { rounded[3] },
+        ])
+      }
+    }
+  }
 
   /// Calculates the lanewise maximum of both vectors. This is a faster
   /// implementation than `max`, but it doesn't specify any behavior if NaNs are

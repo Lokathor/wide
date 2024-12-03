@@ -33,8 +33,8 @@ jobs:
         # wasm32
         - { target: wasm32-wasi, toolchain: "1.61", os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
-        - { target: wasm32-wasi, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
-        - { target: wasm32-wasi, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasip1, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasip1, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@master
@@ -43,7 +43,7 @@ jobs:
         target:  ${{ matrix.rust.target }}
 
     - name: Install wasmtime
-      if: matrix.rust.target == 'wasm32-wasi'
+      if: matrix.rust.target == 'wasm32-wasi' || matrix.rust.target == 'wasm32-wasip1'
       run: |
         curl https://wasmtime.dev/install.sh -sSf | bash -s -- --version ${{ matrix.rust.wasmtime }}
         echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
