@@ -43,7 +43,7 @@ jobs:
         target:  ${{ matrix.rust.target }}
 
     - name: Install wasmtime
-      if: matrix.rust.target == 'wasm32-wasi'
+      if: matrix.rust.target == 'wasm32-wasi' || matrix.rust.target == 'wasm32-wasip1'
       run: |
         curl https://wasmtime.dev/install.sh -sSf | bash -s -- --version ${{ matrix.rust.wasmtime }}
         echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
