@@ -14,3 +14,4 @@ intrinsic usage (via [safe_arch](https://docs.rs/safe_arch)), and on other
 architectures this is done by carefully writing functions so that LLVM hopefully
 does the right thing. When Rust stabilizes more explicit intrinsics then they
 can go into `safe_arch` and then they can get used here.
+
