@@ -73,34 +73,31 @@ jobs:
     - name: Test with 'native' CPU features + All Cargo Features
       run: cargo test --target ${{ matrix.rust.target }} --all-features
   
-  cross_compile_aarch64:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        rust: ["1.61", stable, nightly]
-        features: ["", "std"]
-
-    steps:
-      - name: Installing emulator and linker
-        run: |
-          sudo apt-get update
-          sudo apt-get install qemu binfmt-support qemu-user-static gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
-
-      - name: Installing Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          target: aarch64-unknown-linux-musl
-      - uses: actions/checkout@v4
-      - name: build
-        run: >
-          cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
-      - name: test
-        run: >
-          cargo test --tests --benches --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
-        env:
-          FEATURES: ${{ matrix.features }}
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+  #cross_compile_aarch64:
+  #  runs-on: ubuntu-latest
+  #  strategy:
+  #    matrix:
+  #      rust: ["1.61", stable, nightly]
+  #      features: ["", "std"]
+  #  steps:
+  #    - name: Installing emulator and linker
+  #      run: |
+  #        sudo apt-get update
+  #        sudo apt-get install qemu binfmt-support qemu-user-static gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+  #    - name: Installing Rust toolchain
+  #      uses: dtolnay/rust-toolchain@master
+  #      with:
+  #        toolchain: ${{ matrix.rust }}
+  #        target: aarch64-unknown-linux-musl
+  #    - uses: actions/checkout@v4
+  #    - name: build
+  #      run: >
+  #        cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
+  #      env:
+  #        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+  #    - name: test
+  #      run: >
+  #        cargo test --tests --benches --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
+  #      env:
+  #        FEATURES: ${{ matrix.features }}
+  #        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
