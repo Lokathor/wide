@@ -671,7 +671,7 @@ impl i32x4 {
   #[must_use]
   pub fn move_mask(self) -> i32 {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
         move_mask_m128(cast(self.sse))
       } else if #[cfg(target_feature="simd128")] {
@@ -702,7 +702,7 @@ impl i32x4 {
   #[must_use]
   pub fn any(self) -> bool {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
         move_mask_m128(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
@@ -723,7 +723,7 @@ impl i32x4 {
   #[must_use]
   pub fn all(self) -> bool {
     pick! {
-      if #[cfg(target_feature="sse")] {
+      if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
         move_mask_m128(cast(self.sse)) == 0b1111
       } else if #[cfg(target_feature="simd128")] {
