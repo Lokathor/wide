@@ -735,3 +735,13 @@ fn impl_f64x4_from_i32x4() {
   assert_eq!(f64x4::from(i), f);
   assert_eq!(f64x4::from_i32x4(i), f);
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_f64x4_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&f64x4::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(f64x4::ZERO, deserialized);
+}

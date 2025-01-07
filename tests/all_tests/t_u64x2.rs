@@ -131,3 +131,13 @@ fn impl_u64x2_cmp_lt() {
     |a, b| if a < b { u64::MAX } else { 0 },
   );
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_u64x2_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&u64x2::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(u64x2::ZERO, deserialized);
+}

@@ -418,3 +418,13 @@ fn impl_mul_for_u16x16() {
     |a, b| a.wrapping_mul(b),
   );
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_u16x16_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&u16x16::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(u16x16::ZERO, deserialized);
+}

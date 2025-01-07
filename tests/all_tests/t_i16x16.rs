@@ -700,3 +700,13 @@ fn impl_i16x16_reduce_max() {
     assert_eq!(p.reduce_min(), i16::MIN);
   }
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_i16x16_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&i16x16::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(i16x16::ZERO, deserialized);
+}

@@ -956,3 +956,13 @@ fn impl_f32x8_from_i32x8() {
   let f = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
   assert_eq!(f32x8::from_i32x8(i), f)
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_f32x8_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&f32x8::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(f32x8::ZERO, deserialized);
+}

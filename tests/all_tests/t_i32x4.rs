@@ -285,3 +285,13 @@ fn impl_i32x4_mul_widen() {
     |a, b| a as i64 * b as i64,
   );
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_i32x4_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&i32x4::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(i32x4::ZERO, deserialized);
+}
