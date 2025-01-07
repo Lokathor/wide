@@ -47,7 +47,7 @@ use safe_arch::*;
 use bytemuck::*;
 
 #[cfg(feature = "serde")]
-use serde::{ser::SerializeSeq, Deserialize, Serialize};
+use serde::{ser::SerializeTuple, Deserialize, Serialize};
 
 #[macro_use]
 mod macros;
@@ -926,7 +926,7 @@ bulk_impl_const_rhs_op!((CmpLe, cmp_le) => [(f64x4, f64), (f64x2, f64), (f32x4,f
 bulk_impl_const_rhs_op!((CmpGe, cmp_ge) => [(f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32),]);
 
 macro_rules! impl_serde {
-  ($i:ident, $t:ty) => {
+  ($i:ident, [$t:ty; $len:expr]) => {
     #[cfg(feature = "serde")]
     impl Serialize for $i {
       #[inline]
@@ -935,7 +935,7 @@ macro_rules! impl_serde {
         S: serde::Serializer,
       {
         let array = self.as_array_ref();
-        let mut seq = serializer.serialize_seq(Some(array.len()))?;
+        let mut seq = serializer.serialize_tuple($len)?;
         for e in array {
           seq.serialize_element(e)?;
         }
@@ -950,7 +950,7 @@ macro_rules! impl_serde {
       where
         D: serde::Deserializer<'de>,
       {
-        Ok(<$t>::deserialize(deserializer)?.into())
+        Ok(<[$t; $len]>::deserialize(deserializer)?.into())
       }
     }
   };
