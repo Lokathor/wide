@@ -461,3 +461,13 @@ fn test_i8x16_swizzle_relaxed() {
   let actual = a.swizzle_relaxed(b);
   assert_eq!(expected, actual);
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_i8x16_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&i8x16::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(i8x16::ZERO, deserialized);
+}

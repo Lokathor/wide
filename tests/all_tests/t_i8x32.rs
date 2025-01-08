@@ -610,3 +610,13 @@ fn test_i8x32_swizzle_half() {
   let actual = a.swizzle_half(b);
   assert_eq!(expected, actual);
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_i8x32_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&i8x32::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(i8x32::ZERO, deserialized);
+}

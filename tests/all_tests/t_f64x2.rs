@@ -850,3 +850,13 @@ fn impl_f64x2_from_i32x4() {
   let f = f64x2::from([1.0, 2.0]);
   assert_eq!(f64x2::from_i32x4_lower2(i), f)
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_f64x2_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&f64x2::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(f64x2::ZERO, deserialized);
+}

@@ -185,3 +185,13 @@ fn test_i32x4_none() {
     |acc, a, _idx| acc & !(a < 0),
   );
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_i64x4_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&i64x4::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(i64x4::ZERO, deserialized);
+}

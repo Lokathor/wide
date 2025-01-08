@@ -219,3 +219,13 @@ fn impl_narrow_i16x8() {
   let c: [u8; 16] = u8x16::narrow_i16x8(a, b).into();
   assert_eq!(c, [0, 2, 0, 4, 0, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 0]);
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_u8x16_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&u8x16::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(u8x16::ZERO, deserialized);
+}

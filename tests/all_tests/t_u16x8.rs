@@ -265,3 +265,13 @@ fn impl_u16x8_mul_widen() {
     |a, b| u32::from(a) * u32::from(b),
   );
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_u16x8_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&u16x8::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(u16x8::ZERO, deserialized);
+}

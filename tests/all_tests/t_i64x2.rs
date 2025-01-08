@@ -159,3 +159,13 @@ fn test_i64x2_move_mask() {
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_i64x2_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&i64x2::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(i64x2::ZERO, deserialized);
+}

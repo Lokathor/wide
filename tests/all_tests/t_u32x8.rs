@@ -303,3 +303,13 @@ fn impl_u32x8_mul_keep_high() {
     |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32,
   );
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn impl_u32x8_ser_de_roundtrip() {
+  let serialized =
+    bincode::serialize(&u32x8::ZERO).expect("serialization failed");
+  let deserialized =
+    bincode::deserialize(&serialized).expect("deserializaion failed");
+  assert_eq!(u32x8::ZERO, deserialized);
+}
