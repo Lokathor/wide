@@ -266,8 +266,8 @@ macro_rules! impl_shl_t_for_i64x2 {
           } else {
             let u = rhs as u64;
             Self { arr: [
-              self.arr[0] << u,
-              self.arr[1] << u,
+              self.arr[0].wrapping_shl(u),
+              self.arr[1].wrapping_shl(u),
             ]}
           }
         }
@@ -289,11 +289,11 @@ macro_rules! impl_shr_t_for_i64x2 {
           if #[cfg(target_feature="simd128")] {
             Self { simd: i64x2_shr(self.simd, rhs as u32) }
           } else {
-            let u = rhs as u64;
+            let u = rhs as u32;
             let arr: [i64; 2] = cast(self);
             cast([
-              arr[0] >> u,
-              arr[1] >> u,
+              arr[0].wrapping_shr(u),
+              arr[1].wrapping_shr(u),
             ])
           }
         }

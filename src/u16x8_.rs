@@ -301,14 +301,14 @@ macro_rules! impl_shl_t_for_u16x8 {
           } else {
             let u = rhs as u64;
             Self { arr: [
-              self.arr[0] << u,
-              self.arr[1] << u,
-              self.arr[2] << u,
-              self.arr[3] << u,
-              self.arr[4] << u,
-              self.arr[5] << u,
-              self.arr[6] << u,
-              self.arr[7] << u,
+              self.arr[0].wrapping_shl(u),
+              self.arr[1].wrapping_shl(u),
+              self.arr[2].wrapping_shl(u),
+              self.arr[3].wrapping_shl(u),
+              self.arr[4].wrapping_shl(u),
+              self.arr[5].wrapping_shl(u),
+              self.arr[6].wrapping_shl(u),
+              self.arr[7].wrapping_shl(u),
             ]}
           }
         }
@@ -337,14 +337,14 @@ macro_rules! impl_shr_t_for_u16x8 {
           } else {
             let u = rhs as u64;
             Self { arr: [
-              self.arr[0] >> u,
-              self.arr[1] >> u,
-              self.arr[2] >> u,
-              self.arr[3] >> u,
-              self.arr[4] >> u,
-              self.arr[5] >> u,
-              self.arr[6] >> u,
-              self.arr[7] >> u,
+              self.arr[0].wrapping_shr(u),
+              self.arr[1].wrapping_shr(u),
+              self.arr[2].wrapping_shr(u),
+              self.arr[3].wrapping_shr(u),
+              self.arr[4].wrapping_shr(u),
+              self.arr[5].wrapping_shr(u),
+              self.arr[6].wrapping_shr(u),
+              self.arr[7].wrapping_shr(u),
             ]}
           }
         }
