@@ -230,9 +230,9 @@ impl i8x32 {
       if #[cfg(target_feature="avx2")] {
         u8x32 { avx: abs_i8_m256i(self.avx) }
       } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
+        u8x32 {
+          a : self.a.unsigned_abs(),
+          b : self.b.unsigned_abs(),
         }
       }
     }
