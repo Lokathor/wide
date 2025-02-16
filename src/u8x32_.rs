@@ -242,37 +242,32 @@ impl u8x32 {
   #[inline]
   #[must_use]
   pub fn move_mask(self) -> i32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx)
-      } else {
-        self.a.move_mask() | (self.b.move_mask() << 16)
-      }
-    }
+    i8x32::move_mask(cast(self))
   }
 
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
+    i8x32::any(cast(self))
   }
 
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) == -1
-      } else {
-        (self.a & self.b).all()
-      }
-    }
+    i8x32::all(cast(self))
+  }
+
+  /// Returns a new vector with lanes selected from the lanes of the first input
+  /// vector a specified in the second input vector `rhs`.
+  /// The indices i in range `[0, 15]` select the i-th element of `self`. For
+  /// indices outside of the range the resulting lane is `0`.
+  ///
+  /// This note that is the equivalent of two parallel swizzle operations on the
+  /// two halves of the vector, and the indexes each refer to the
+  /// corresponding half.
+  #[inline]
+  pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
+    cast(i8x32::swizzle_half(cast(self), cast(rhs)))
   }
 
   /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
@@ -286,16 +281,7 @@ impl u8x32 {
   /// half.
   #[inline]
   pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.swizzle_relaxed(rhs.a),
-          b : self.b.swizzle_relaxed(rhs.b),
-        }
-      }
-    }
+    cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
   }
 
   #[inline]
