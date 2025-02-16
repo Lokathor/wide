@@ -184,16 +184,7 @@ impl CmpLt for i8x32 {
   #[inline]
   #[must_use]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : !(cmp_gt_mask_i8_m256i(self.avx,rhs.avx) ^ cmp_eq_mask_i8_m256i(self.avx,rhs.avx)) }
-      } else {
-        Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
-        }
-      }
-    }
+    rhs.cmp_gt(self)
   }
 }
 
@@ -231,6 +222,22 @@ impl i8x32 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u8x32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        u8x32 { avx: abs_i8_m256i(self.avx) }
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

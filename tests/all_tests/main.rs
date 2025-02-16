@@ -23,6 +23,7 @@ mod t_u32x8;
 mod t_u64x2;
 mod t_u64x4;
 mod t_u8x16;
+mod t_u8x32;
 mod t_usefulness;
 
 /// Generates the next pseudo-random number.

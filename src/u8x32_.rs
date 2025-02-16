@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u8x32 { avx: m256i }
+    pub struct u8x32 { pub(crate) avx: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u8x32 { a : u8x16, b : u8x16 }
+    pub struct u8x32 { pub(crate) a : u8x16, pub(crate) b : u8x16 }
   }
 }
 
@@ -237,6 +237,71 @@ impl u8x32 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx)
+      } else {
+        self.a.move_mask() | (self.b.move_mask() << 16)
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) == -1
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
+
+  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
+  /// the high bit of any element of `rhs` is set (negative) then the
+  /// corresponding output lane is guaranteed to be zero. Otherwise if the
+  /// element of `rhs` is within the range `[32, 127]` then the output lane is
+  /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
+  ///
+  /// This is the equivalent to two parallel swizzle operations on the two
+  /// halves of the vector, and the indexes each refer to their corresponding
+  /// half.
+  #[inline]
+  pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.swizzle_relaxed(rhs.a),
+          b : self.b.swizzle_relaxed(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
   }
 
   #[inline]
