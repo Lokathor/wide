@@ -4,11 +4,11 @@ pick! {
   if #[cfg(target_feature="avx2")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u8x32 { avx: m256i }
+    pub struct u8x32 { pub(crate) avx: m256i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u8x32 { a : u8x16, b : u8x16 }
+    pub struct u8x32 { pub(crate) a : u8x16, pub(crate) b : u8x16 }
   }
 }
 
@@ -237,6 +237,57 @@ impl u8x32 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    i8x32::move_mask(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    i8x32::any(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    i8x32::all(cast(self))
+  }
+
+  /// Returns a new vector with lanes selected from the lanes of the first input
+  /// vector a specified in the second input vector `rhs`.
+  /// The indices i in range `[0, 15]` select the i-th element of `self`. For
+  /// indices outside of the range the resulting lane is `0`.
+  ///
+  /// This note that is the equivalent of two parallel swizzle operations on the
+  /// two halves of the vector, and the indexes each refer to the
+  /// corresponding half.
+  #[inline]
+  pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
+    cast(i8x32::swizzle_half(cast(self), cast(rhs)))
+  }
+
+  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
+  /// the high bit of any element of `rhs` is set (negative) then the
+  /// corresponding output lane is guaranteed to be zero. Otherwise if the
+  /// element of `rhs` is within the range `[32, 127]` then the output lane is
+  /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
+  ///
+  /// This is the equivalent to two parallel swizzle operations on the two
+  /// halves of the vector, and the indexes each refer to their corresponding
+  /// half.
+  #[inline]
+  pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
+    cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
   }
 
   #[inline]

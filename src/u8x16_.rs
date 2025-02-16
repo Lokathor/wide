@@ -565,6 +565,54 @@ impl u8x16 {
     }
   }
 
+  /// Returns a new vector where each element is based on the index values in
+  /// `rhs`.
+  ///
+  /// * Index values in the range `[0, 15]` select the i-th element of `self`.
+  /// * Index values that are out of range will cause that output lane to be
+  ///   `0`.
+  #[inline]
+  pub fn swizzle(self, rhs: i8x16) -> i8x16 {
+    cast(i8x16::swizzle(cast(self), rhs))
+  }
+
+  /// Works like [`swizzle`](Self::swizzle) with the following additional
+  /// details
+  ///
+  /// * Indices in the range `[0, 15]` will select the i-th element of `self`.
+  /// * If the high bit of any index is set (meaning that the index is
+  ///   negative), then the corresponding output lane is guaranteed to be zero.
+  /// * Otherwise the output lane is either `0` or `self[rhs[i] % 16]`,
+  ///   depending on the implementation.
+  #[inline]
+  pub fn swizzle_relaxed(self, rhs: u8x16) -> u8x16 {
+    cast(i8x16::swizzle_relaxed(cast(self), cast(rhs)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    i8x16::move_mask(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    i8x16::any(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    i8x16::all(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    i8x16::none(cast(self))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u8; 16] {
     cast(self)

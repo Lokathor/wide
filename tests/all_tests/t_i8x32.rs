@@ -343,6 +343,50 @@ fn impl_i8x32_abs() {
 }
 
 #[test]
+fn impl_i8x32_unsigned_abs() {
+  let a = i8x32::from([
+    -1,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    -10,
+    -11,
+    12,
+    13,
+    -14,
+    -126,
+    i8::MIN,
+    -1,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    -10,
+    -11,
+    12,
+    13,
+    -14,
+    -126,
+    i8::MIN,
+  ]);
+  let expected = u8x32::from([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 126, 128, 1, 2, 3, 4, 5, 6,
+    7, 8, 9, 10, 11, 12, 13, 14, 126, 128,
+  ]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i8x32_max() {
   let a = i8x32::from([
     10,
