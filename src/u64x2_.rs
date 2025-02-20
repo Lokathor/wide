@@ -311,7 +311,7 @@ impl u64x2 {
   #[inline]
   #[must_use]
   pub const fn new(array: [u64; 2]) -> Self {
-    unsafe { core::intrinsics::transmute(array) }
+    unsafe { core::mem::transmute(array) }
   }
   #[inline]
   #[must_use]

@@ -877,6 +877,32 @@ fn test_software_sqrt() {
   assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }
 
+pub trait SimdType : Sized + Not<Output = Self> + Add<Self, Output=Self>
+{
+  fn cmp_eq(self, rhs: Self) -> Self;
+  fn cmp_gt(self, rhs: Self) -> Self;
+  
+  fn cmp_ne(self, rhs: Self) -> Self
+  {
+    self.cmp_eq(rhs).not()
+  }
+  
+  fn cmp_ge(self, rhs: Self) -> Self
+  {
+    rhs.cmp_lt(self).not()
+  }
+
+  fn cmp_lt(self, rhs: Self) -> Self
+  {
+    rhs.cmp_gt(self)
+  }
+
+  fn cmp_le(self, rhs: Self) -> Self
+  {
+    rhs.cmp_gt(self).not()
+  }
+}
+
 pub trait CmpEq<Rhs = Self> {
   type Output;
   fn cmp_eq(self, rhs: Rhs) -> Self::Output;
@@ -896,7 +922,6 @@ pub trait CmpNe<Rhs = Self> {
   type Output;
   fn cmp_ne(self, rhs: Rhs) -> Self::Output;
 }
-
 pub trait CmpLt<Rhs = Self> {
   type Output;
   fn cmp_lt(self, rhs: Rhs) -> Self::Output;

@@ -305,7 +305,7 @@ impl i16x16 {
   #[inline]
   #[must_use]
   pub const fn new(array: [i16; 16]) -> Self {
-    unsafe { core::intrinsics::transmute(array) }
+    unsafe { core::mem::transmute(array) }
   }
 
   #[inline]
