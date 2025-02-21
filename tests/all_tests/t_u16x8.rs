@@ -8,6 +8,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<u16x16, _, 16>();
+}
+
+#[test]
 fn impl_add_for_u16x8() {
   let a = u16x8::from([1, 2, 3, 4, 5, 6, u16::MAX - 1, u16::MAX - 1]);
   let b = u16x8::from([17, 18, 19, 20, 21, 22, 1, 2]);

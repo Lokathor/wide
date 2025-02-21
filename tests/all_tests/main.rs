@@ -4,6 +4,9 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::nonminimal_bool)]
 
+use core::fmt;
+use std::{num::Wrapping, ops::ShlAssign};
+
 mod t_f32x4;
 mod t_f32x8;
 mod t_f64x2;
@@ -158,6 +161,72 @@ fn test_random_vector_vs_scalar_reduce<
       expected_scalar, expected_vec, a_arr
     );
   }
+}
+
+fn test_basic_traits<V, T, const N: usize>()
+where
+  V: Copy
+    + From<[T; N]>
+    + Into<[T; N]>
+    + std::ops::Add<Output = V>
+    + std::ops::Sub<Output = V>
+    + std::ops::BitXor<Output = V>
+    + std::ops::BitOr<Output = V>
+    + std::ops::BitAnd<Output = V>
+    + std::ops::Not<Output = V>
+    + std::ops::Neg<Output = V>
+    + wide::CmpEq<Output = V>
+    + PartialEq
+    + Eq
+    + fmt::Debug,
+  T: Copy
+    + Default
+    + std::fmt::Debug
+    + GenSample
+    + PartialEq
+    + Eq
+    + std::ops::BitXor<Output = T>
+    + std::ops::BitOr<Output = T>
+    + std::ops::BitAnd<Output = T>
+    + std::ops::Not<Output = T>,
+  Wrapping<T>:
+    std::ops::Add<Output = Wrapping<T>> + std::ops::Sub<Output = Wrapping<T>>,
+{
+  // test add
+  test_random_vector_vs_scalar(
+    |a: V, b| a + b,
+    |a, b| (Wrapping::<T>(a) + Wrapping::<T>(b)).0,
+  );
+
+  // test sub
+  test_random_vector_vs_scalar(
+    |a: V, b| a - b,
+    |a, b| (Wrapping::<T>(a) - Wrapping::<T>(b)).0,
+  );
+
+  // test neg
+  test_random_vector_vs_scalar(
+    |a: V, b| a - (-b),
+    |a, b| (Wrapping::<T>(a) + Wrapping::<T>(b)).0,
+  );
+
+  test_random_vector_vs_scalar(|a: V, b| a ^ b, |a, b| a ^ b);
+
+  test_random_vector_vs_scalar(|a: V, b| a & b, |a, b| a & b);
+
+  test_random_vector_vs_scalar(|a: V, b| a | b, |a, b| a | b);
+
+  test_random_vector_vs_scalar(
+    |a: V, b| a.cmp_eq(b),
+    |a, b| if a == b { !T::default() } else { T::default() },
+  );
+
+  let a = V::from([T::default(); N]);
+  let b = V::from([!T::default(); N]);
+
+  assert!(a != b);
+  assert!(a == a);
+  assert!(b == a.not());
 }
 
 /// trait to reduce a 64 bit pseudo-random number to a random sample value

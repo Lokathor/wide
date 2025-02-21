@@ -257,6 +257,15 @@ impl Shl<u32x8> for u32x8 {
   }
 }
 
+impl CmpEq for u32x8 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
+    Self::cmp_eq(self, rhs)
+  }
+}
+
 impl u32x8 {
   #[inline]
   #[must_use]

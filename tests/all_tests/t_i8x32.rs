@@ -7,6 +7,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<i8x32, _, 32>();
+}
+
+#[test]
 fn impl_add_for_i8x32() {
   let a = i8x32::from([
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 126, 127, 1, 2, 3, 4, 5, 6,

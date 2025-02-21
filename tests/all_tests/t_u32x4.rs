@@ -9,6 +9,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<u32x4, _, 4>();
+}
+
+#[test]
 fn impl_add_for_u32x4() {
   let a = u32x4::from([1, 2, u32::MAX - 1, u32::MAX - 1]);
   let b = u32x4::from([17, 18, 1, 2]);

@@ -8,6 +8,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<u64x4, _, 4>();
+}
+
+#[test]
 fn impl_add_for_u64x4() {
   let a = u64x4::from([u64::MAX - 1, u64::MAX - 1, 6, 9]);
   let b = u64x4::from([1, 2, 3, 4]);
