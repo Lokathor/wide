@@ -203,7 +203,7 @@ impl Not for i8x32 {
   fn not(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
+        Self { avx: self.avx.not()  }
       } else {
         Self {
           a : self.a.not(),
