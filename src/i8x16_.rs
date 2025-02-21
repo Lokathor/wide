@@ -388,7 +388,7 @@ impl i8x16 {
   #[inline]
   #[must_use]
   pub const fn new(array: [i8; 16]) -> Self {
-    unsafe { core::intrinsics::transmute(array) }
+    unsafe { core::mem::transmute(array) }
   }
 
   /// converts `i16` to `i8`, saturating values that are too large
@@ -628,11 +628,11 @@ impl i8x16 {
           let masked = vcltq_s8(self.neon, vdupq_n_s8(0));
 
           // select the right bit out of each lane
-          let selectbit : uint8x16_t = core::intrinsics::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+          let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
           let out = vandq_u8(masked, selectbit);
 
           // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
-          let table : uint8x16_t = core::intrinsics::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+          let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
           let r = vqtbl1q_u8(out, table);
 
           // horizontally add the 16-bit lanes

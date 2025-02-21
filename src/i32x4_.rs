@@ -473,7 +473,7 @@ impl i32x4 {
   #[inline]
   #[must_use]
   pub const fn new(array: [i32; 4]) -> Self {
-    unsafe { core::intrinsics::transmute(array) }
+    unsafe { core::mem::transmute(array) }
   }
   #[inline]
   #[must_use]
@@ -683,7 +683,7 @@ impl i32x4 {
           let masked = vcltq_s32(self.neon, vdupq_n_s32(0));
 
           // select the right bit out of each lane
-          let selectbit : uint32x4_t = core::intrinsics::transmute([1u32, 2, 4, 8]);
+          let selectbit : uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
           let r = vandq_u32(masked, selectbit);
 
           // horizontally add the 32-bit lanes

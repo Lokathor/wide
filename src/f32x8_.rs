@@ -357,7 +357,7 @@ impl f32x8 {
   #[inline]
   #[must_use]
   pub const fn new(array: [f32; 8]) -> Self {
-    unsafe { core::intrinsics::transmute(array) }
+    unsafe { core::mem::transmute(array) }
   }
   #[inline]
   #[must_use]
