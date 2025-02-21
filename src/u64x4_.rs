@@ -233,6 +233,15 @@ macro_rules! impl_shr_t_for_u64x4 {
 }
 impl_shr_t_for_u64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+impl CmpEq for u64x4 {
+  type Output = Self;
+  #[inline]
+  #[must_use]
+  fn cmp_eq(self, rhs: Self) -> Self::Output {
+    Self::cmp_eq(self, rhs)
+  }
+}
+
 impl u64x4 {
   #[inline]
   #[must_use]

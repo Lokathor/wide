@@ -369,9 +369,10 @@ macro_rules! impl_simple_neg {
 }
 
 impl_simple_neg! {
-  f32x8, f32x4, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i32x8, i32x4, i64x4, i64x2, u8x32, u8x16, u16x8, u32x8, u32x4, u64x2, u64x4
+  f32x8, f32x4, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i32x8, i32x4, i64x4, i64x2, u8x32, u8x16, u16x8, u16x16, u32x8, u32x4, u64x2, u64x4
 }
 
+// only works for 128 bit values
 macro_rules! impl_simple_not {
   ($($t:ty),+ $(,)?) => {
     $(
@@ -396,7 +397,7 @@ macro_rules! impl_simple_not {
 }
 
 impl_simple_not! {
-  f32x4, i8x32, i8x16, i16x8, i16x16, i32x4, i64x2, u8x32, u8x16, u16x8, u16x16, u32x4, u64x2,
+  f32x4, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
 }
 
 macro_rules! impl_simple_sum {

@@ -301,6 +301,23 @@ impl From<u8x16> for i16x16 {
   }
 }
 
+impl Not for i16x16 {
+  type Output = Self;
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: self.avx2.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+}
+
 impl i16x16 {
   #[inline]
   #[must_use]

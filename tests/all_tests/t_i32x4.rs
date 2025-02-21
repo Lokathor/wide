@@ -7,6 +7,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<i32x4, _, 4>();
+}
+
+#[test]
 fn impl_add_for_i32x4() {
   let a = i32x4::from([1, 2, i32::MAX - 1, i32::MAX - 1]);
   let b = i32x4::from([17, 18, 1, 2]);

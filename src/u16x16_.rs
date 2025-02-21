@@ -143,6 +143,23 @@ impl BitXor for u16x16 {
   }
 }
 
+impl Not for u16x16 {
+  type Output = Self;
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: self.avx2.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+}
+
 macro_rules! impl_shl_t_for_u16x16 {
   ($($shift_type:ty),+ $(,)?) => {
     $(impl Shl<$shift_type> for u16x16 {

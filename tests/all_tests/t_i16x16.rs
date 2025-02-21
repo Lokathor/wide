@@ -7,6 +7,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<i16x16, _, 16>();
+}
+
+#[test]
 fn impl_add_for_i16x16() {
   let a = i16x16::from([
     1,

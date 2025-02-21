@@ -8,6 +8,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<u32x8, _, 8>();
+}
+
+#[test]
 fn impl_add_for_u32x8() {
   let a = u32x8::from([1, 2, u32::MAX - 1, u32::MAX - 1, 31, 72, 13, 53]);
   let b = u32x8::from([17, 18, 1, 2, 12, 12, 634, 15]);

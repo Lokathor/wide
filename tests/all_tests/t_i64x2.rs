@@ -7,6 +7,11 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  crate::test_basic_traits::<i64x2, _, 2>();
+}
+
+#[test]
 fn impl_add_for_i64x2() {
   let a = i64x2::from([i64::MAX - 1, i64::MAX - 1]);
   let b = i64x2::from([1, 2]);
