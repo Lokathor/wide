@@ -408,7 +408,7 @@ impl u32x4 {
   #[inline]
   #[must_use]
   pub const fn new(array: [u32; 4]) -> Self {
-    unsafe { core::intrinsics::transmute(array) }
+    unsafe { core::mem::transmute(array) }
   }
   #[inline]
   #[must_use]

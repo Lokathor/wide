@@ -442,7 +442,7 @@ impl i16x8 {
   #[inline]
   #[must_use]
   pub const fn new(array: [i16; 8]) -> Self {
-    unsafe { core::intrinsics::transmute(array) }
+    unsafe { core::mem::transmute(array) }
   }
 
   #[inline]
@@ -460,7 +460,7 @@ impl i16x8 {
           let masked = vcltq_s16(self.neon, vdupq_n_s16(0));
 
           // select the right bit out of each lane
-          let selectbit : uint16x8_t = core::intrinsics::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
+          let selectbit : uint16x8_t = core::mem::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
           let r = vandq_u16(masked, selectbit);
 
           // horizontally add the 16-bit lanes
