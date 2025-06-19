@@ -291,6 +291,23 @@ fn impl_i32x4_mul_widen() {
   );
 }
 
+#[test]
+fn impl_i32x4_transpose() {
+  let a = [
+    i32x4::from([1, 2, 3, 4]),
+    i32x4::from([5, 6, 7, 8]),
+    i32x4::from([9, 10, 11, 12]),
+    i32x4::from([13, 14, 15, 16]),
+  ];
+  let a_t = [
+    i32x4::from([1, 5, 9, 13]),
+    i32x4::from([2, 6, 10, 14]),
+    i32x4::from([3, 7, 11, 15]),
+    i32x4::from([4, 8, 12, 16]),
+  ];
+  assert_eq!(i32x4::transpose(a), a_t);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i32x4_ser_de_roundtrip() {

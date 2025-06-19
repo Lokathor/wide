@@ -746,6 +746,46 @@ impl i32x4 {
     !self.any()
   }
 
+  /// Transpose matrix of 4x4 `i32` matrix. Currently only accelerated on SSE.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i32x4; 4]) -> [i32x4; 4] {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        let mut e0 = data[0];
+        let mut e1 = data[1];
+        let mut e2 = data[2];
+        let mut e3 = data[3];
+
+        transpose_four_m128(
+          cast_mut(&mut e0.sse),
+          cast_mut(&mut e1.sse),
+          cast_mut(&mut e2.sse),
+          cast_mut(&mut e3.sse),
+        );
+
+        [e0, e1, e2, e3]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[i32x4; 4], index: usize) -> i32x4 {
+          i32x4::new([
+            data[0].as_array_ref()[index],
+            data[1].as_array_ref()[index],
+            data[2].as_array_ref()[index],
+            data[3].as_array_ref()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
+      }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [i32; 4] {
     cast(self)
