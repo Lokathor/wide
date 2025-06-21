@@ -3,6 +3,10 @@
 #![allow(clippy::assertions_on_constants)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::nonminimal_bool)]
+#![allow(unused_imports)]
+#![allow(clippy::precedence)]
+#![allow(clippy::eq_op)]
+#![allow(clippy::identity_op)]
 
 use core::fmt;
 use std::{num::Wrapping, ops::ShlAssign};
