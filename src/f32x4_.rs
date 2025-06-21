@@ -1605,6 +1605,41 @@ impl f32x4 {
     Self::pow_f32x4(self, f32x4::splat(y))
   }
 
+  /// Transpose matrix of 4x4 `f32` matrix. Currently only accelerated on SSE.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [f32x4; 4]) -> [f32x4; 4] {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        let mut e0 = data[0];
+        let mut e1 = data[1];
+        let mut e2 = data[2];
+        let mut e3 = data[3];
+
+        transpose_four_m128(&mut e0.sse, &mut e1.sse, &mut e2.sse, &mut e3.sse);
+
+        [e0, e1, e2, e3]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[f32x4; 4], index: usize) -> f32x4 {
+          f32x4::new([
+            data[0].as_array_ref()[index],
+            data[1].as_array_ref()[index],
+            data[2].as_array_ref()[index],
+            data[3].as_array_ref()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
+      }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [f32; 4] {
     cast(self)
