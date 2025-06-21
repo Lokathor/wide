@@ -677,7 +677,7 @@ impl u32x4 {
         [e0, e1, e2, e3]
       } else {
         #[inline(always)]
-        fn transpose_column(data: &[u32x4; 4], index: usize) -> i32x4 {
+        fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
           u32x4::new([
             data[0].as_array_ref()[index],
             data[1].as_array_ref()[index],
