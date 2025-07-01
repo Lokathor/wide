@@ -266,8 +266,8 @@ macro_rules! impl_shl_t_for_u64x2 {
           } else {
             let u = rhs as u64;
             Self { arr: [
-              self.arr[0] << u,
-              self.arr[1] << u,
+              self.arr[0].wrapping_shl(u),
+              self.arr[1].wrapping_shl(u),
             ]}
           }
         }
@@ -296,8 +296,8 @@ macro_rules! impl_shr_t_for_u64x2 {
           } else {
             let u = rhs as u64;
             Self { arr: [
-              self.arr[0] >> u,
-              self.arr[1] >> u,
+              self.arr[0].wrapping_shr(u),
+              self.arr[1].wrapping_shr(u),
             ]}
           }
         }
