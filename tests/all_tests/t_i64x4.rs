@@ -72,6 +72,20 @@ fn impl_bitxor_for_i64x4() {
 }
 
 #[test]
+fn impl_shl_each_for_i64x4() {
+  let a = i64x4::from([i64::MAX - 1, -1, 0, -1]);
+  let shift = i64x4::from([2, 3, 4, 65 /* test masking behavior */]);
+  let expected = i64x4::from([(i64::MAX - 1) << 2, -1 << 3, 0 << 4, -1 << 1]);
+  let actual = a << shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i64x4, b| a << b,
+    |a, b| a.wrapping_shl(b as u32),
+  );
+}
+
+#[test]
 fn impl_shl_for_i64x4() {
   let a = i64x4::from([i64::MAX - 1, i64::MAX - 1, 65535, 0]);
   let b = 2;
@@ -79,6 +93,20 @@ fn impl_shl_for_i64x4() {
     i64x4::from([(i64::MAX - 1) << 2, (i64::MAX - 1) << 2, 65535 << 2, 0 << 2]);
   let actual = a << b;
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_shr_each_for_i64x4() {
+  let a = i64x4::from([i64::MAX - 1, -1, 0, -1]);
+  let shift = i64x4::from([2, 3, 4, 65 /* test masking behavior */]);
+  let expected = i64x4::from([(i64::MAX - 1) >> 2, -1 >> 3, 0 >> 4, -1 >> 1]);
+  let actual = a >> shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i64x4, b| a >> b,
+    |a, b| a.wrapping_shr(b as u32),
+  );
 }
 
 #[test]
