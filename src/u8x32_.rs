@@ -20,7 +20,6 @@ unsafe impl Pod for u8x32 {}
 impl Add for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -38,7 +37,6 @@ impl Add for u8x32 {
 impl Sub for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -56,7 +54,6 @@ impl Sub for u8x32 {
 impl Add<u8> for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u8) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -65,7 +62,6 @@ impl Add<u8> for u8x32 {
 impl Sub<u8> for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u8) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -74,7 +70,6 @@ impl Sub<u8> for u8x32 {
 impl Add<u8x32> for u8 {
   type Output = u8x32;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u8x32) -> Self::Output {
     u8x32::splat(self).add(rhs)
   }
@@ -83,7 +78,6 @@ impl Add<u8x32> for u8 {
 impl Sub<u8x32> for u8 {
   type Output = u8x32;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u8x32) -> Self::Output {
     u8x32::splat(self).sub(rhs)
   }
@@ -92,7 +86,6 @@ impl Sub<u8x32> for u8 {
 impl BitAnd for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -110,7 +103,6 @@ impl BitAnd for u8x32 {
 impl BitOr for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -128,7 +120,6 @@ impl BitOr for u8x32 {
 impl BitXor for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -146,7 +137,6 @@ impl BitXor for u8x32 {
 impl CmpEq for u8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {

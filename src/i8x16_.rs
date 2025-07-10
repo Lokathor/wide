@@ -33,7 +33,6 @@ pick! {
 
     impl Default for i8x16 {
       #[inline]
-      #[must_use]
       fn default() -> Self {
         Self::splat(0)
       }
@@ -41,7 +40,6 @@ pick! {
 
     impl PartialEq for i8x16 {
       #[inline]
-      #[must_use]
       fn eq(&self, other: &Self) -> bool {
         unsafe { vminvq_u8(vceqq_s8(self.neon, other.neon))==u8::MAX }
       }
@@ -63,7 +61,6 @@ unsafe impl Pod for i8x16 {}
 impl Add for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -99,7 +96,6 @@ impl Add for i8x16 {
 impl Sub for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -135,7 +131,6 @@ impl Sub for i8x16 {
 impl Add<i8> for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i8) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -144,7 +139,6 @@ impl Add<i8> for i8x16 {
 impl Sub<i8> for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i8) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -153,7 +147,6 @@ impl Sub<i8> for i8x16 {
 impl Add<i8x16> for i8 {
   type Output = i8x16;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i8x16) -> Self::Output {
     i8x16::splat(self).add(rhs)
   }
@@ -162,7 +155,6 @@ impl Add<i8x16> for i8 {
 impl Sub<i8x16> for i8 {
   type Output = i8x16;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i8x16) -> Self::Output {
     i8x16::splat(self).sub(rhs)
   }
@@ -171,7 +163,6 @@ impl Sub<i8x16> for i8 {
 impl BitAnd for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -207,7 +198,6 @@ impl BitAnd for i8x16 {
 impl BitOr for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -243,7 +233,6 @@ impl BitOr for i8x16 {
 impl BitXor for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -279,7 +268,6 @@ impl BitXor for i8x16 {
 impl CmpEq for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -315,7 +303,6 @@ impl CmpEq for i8x16 {
 impl CmpGt for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -351,7 +338,6 @@ impl CmpGt for i8x16 {
 impl CmpLt for i8x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {

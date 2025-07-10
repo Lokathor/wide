@@ -31,7 +31,6 @@ pick! {
 
     impl Default for f32x4 {
       #[inline]
-      #[must_use]
       fn default() -> Self {
         unsafe { Self { neon: vdupq_n_f32(0.0)} }
       }
@@ -39,7 +38,6 @@ pick! {
 
     impl PartialEq for f32x4 {
       #[inline]
-      #[must_use]
       fn eq(&self, other: &Self) -> bool {
         unsafe { vminvq_u32(vceqq_f32(self.neon, other.neon))==u32::MAX }
       }
@@ -90,7 +88,6 @@ unsafe impl Pod for f32x4 {}
 impl Add for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -114,7 +111,6 @@ impl Add for f32x4 {
 impl Sub for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -138,7 +134,6 @@ impl Sub for f32x4 {
 impl Mul for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -162,7 +157,6 @@ impl Mul for f32x4 {
 impl Div for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn div(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -186,7 +180,6 @@ impl Div for f32x4 {
 impl Add<f32> for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: f32) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -195,7 +188,6 @@ impl Add<f32> for f32x4 {
 impl Sub<f32> for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: f32) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -204,7 +196,6 @@ impl Sub<f32> for f32x4 {
 impl Mul<f32> for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: f32) -> Self::Output {
     self.mul(Self::splat(rhs))
   }
@@ -213,7 +204,6 @@ impl Mul<f32> for f32x4 {
 impl Div<f32> for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn div(self, rhs: f32) -> Self::Output {
     self.div(Self::splat(rhs))
   }
@@ -222,7 +212,6 @@ impl Div<f32> for f32x4 {
 impl Add<f32x4> for f32 {
   type Output = f32x4;
   #[inline]
-  #[must_use]
   fn add(self, rhs: f32x4) -> Self::Output {
     f32x4::splat(self).add(rhs)
   }
@@ -231,7 +220,6 @@ impl Add<f32x4> for f32 {
 impl Sub<f32x4> for f32 {
   type Output = f32x4;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: f32x4) -> Self::Output {
     f32x4::splat(self).sub(rhs)
   }
@@ -240,7 +228,6 @@ impl Sub<f32x4> for f32 {
 impl Mul<f32x4> for f32 {
   type Output = f32x4;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: f32x4) -> Self::Output {
     f32x4::splat(self).mul(rhs)
   }
@@ -249,7 +236,6 @@ impl Mul<f32x4> for f32 {
 impl Div<f32x4> for f32 {
   type Output = f32x4;
   #[inline]
-  #[must_use]
   fn div(self, rhs: f32x4) -> Self::Output {
     f32x4::splat(self).div(rhs)
   }
@@ -258,7 +244,6 @@ impl Div<f32x4> for f32 {
 impl BitAnd for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -282,7 +267,6 @@ impl BitAnd for f32x4 {
 impl BitOr for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -306,7 +290,6 @@ impl BitOr for f32x4 {
 impl BitXor for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -330,7 +313,6 @@ impl BitXor for f32x4 {
 impl CmpEq for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -354,7 +336,6 @@ impl CmpEq for f32x4 {
 impl CmpGe for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -378,7 +359,6 @@ impl CmpGe for f32x4 {
 impl CmpGt for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -402,7 +382,6 @@ impl CmpGt for f32x4 {
 impl CmpNe for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -426,7 +405,6 @@ impl CmpNe for f32x4 {
 impl CmpLe for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -450,7 +428,6 @@ impl CmpLe for f32x4 {
 impl CmpLt for f32x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {

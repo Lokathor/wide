@@ -33,7 +33,6 @@ pick! {
 
     impl Default for i16x8 {
       #[inline]
-      #[must_use]
       fn default() -> Self {
         Self::splat(0)
       }
@@ -41,7 +40,6 @@ pick! {
 
     impl PartialEq for i16x8 {
       #[inline]
-      #[must_use]
       fn eq(&self, other: &Self) -> bool {
         unsafe { vminvq_u16(vceqq_s16(self.neon, other.neon))==u16::MAX }
       }
@@ -63,7 +61,6 @@ unsafe impl Pod for i16x8 {}
 impl Add for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -91,7 +88,6 @@ impl Add for i16x8 {
 impl Sub for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -119,7 +115,6 @@ impl Sub for i16x8 {
 impl Mul for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -147,7 +142,6 @@ impl Mul for i16x8 {
 impl Add<i16> for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i16) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -156,7 +150,6 @@ impl Add<i16> for i16x8 {
 impl Sub<i16> for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i16) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -165,7 +158,6 @@ impl Sub<i16> for i16x8 {
 impl Mul<i16> for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: i16) -> Self::Output {
     self.mul(Self::splat(rhs))
   }
@@ -174,7 +166,6 @@ impl Mul<i16> for i16x8 {
 impl Add<i16x8> for i16 {
   type Output = i16x8;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i16x8) -> Self::Output {
     i16x8::splat(self).add(rhs)
   }
@@ -183,7 +174,6 @@ impl Add<i16x8> for i16 {
 impl Sub<i16x8> for i16 {
   type Output = i16x8;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i16x8) -> Self::Output {
     i16x8::splat(self).sub(rhs)
   }
@@ -192,7 +182,6 @@ impl Sub<i16x8> for i16 {
 impl Mul<i16x8> for i16 {
   type Output = i16x8;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: i16x8) -> Self::Output {
     i16x8::splat(self).mul(rhs)
   }
@@ -201,7 +190,6 @@ impl Mul<i16x8> for i16 {
 impl BitAnd for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -229,7 +217,6 @@ impl BitAnd for i16x8 {
 impl BitOr for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -257,7 +244,6 @@ impl BitOr for i16x8 {
 impl BitXor for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -288,7 +274,6 @@ macro_rules! impl_shl_t_for_i16x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
@@ -324,7 +309,6 @@ macro_rules! impl_shr_t_for_i16x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
@@ -357,7 +341,6 @@ impl_shr_t_for_i16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -385,7 +368,6 @@ impl CmpEq for i16x8 {
 impl CmpGt for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -413,7 +395,6 @@ impl CmpGt for i16x8 {
 impl CmpLt for i16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {

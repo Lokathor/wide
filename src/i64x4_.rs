@@ -20,7 +20,6 @@ unsafe impl Pod for i64x4 {}
 impl Add for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -38,7 +37,6 @@ impl Add for i64x4 {
 impl Sub for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -56,7 +54,6 @@ impl Sub for i64x4 {
 impl Mul for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -78,7 +75,6 @@ impl Mul for i64x4 {
 impl Add<i64> for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i64) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -87,7 +83,6 @@ impl Add<i64> for i64x4 {
 impl Sub<i64> for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i64) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -96,7 +91,6 @@ impl Sub<i64> for i64x4 {
 impl Mul<i64> for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: i64) -> Self::Output {
     self.mul(Self::splat(rhs))
   }
@@ -105,7 +99,6 @@ impl Mul<i64> for i64x4 {
 impl Add<i64x4> for i64 {
   type Output = i64x4;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i64x4) -> Self::Output {
     i64x4::splat(self).add(rhs)
   }
@@ -114,7 +107,6 @@ impl Add<i64x4> for i64 {
 impl Sub<i64x4> for i64 {
   type Output = i64x4;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i64x4) -> Self::Output {
     i64x4::splat(self).sub(rhs)
   }
@@ -123,7 +115,6 @@ impl Sub<i64x4> for i64 {
 impl Mul<i64x4> for i64 {
   type Output = i64x4;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: i64x4) -> Self::Output {
     i64x4::splat(self).mul(rhs)
   }
@@ -132,7 +123,6 @@ impl Mul<i64x4> for i64 {
 impl BitAnd for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -150,7 +140,6 @@ impl BitAnd for i64x4 {
 impl BitOr for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
     if #[cfg(target_feature="avx2")] {
@@ -168,7 +157,6 @@ impl BitOr for i64x4 {
 impl BitXor for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -189,7 +177,6 @@ macro_rules! impl_shl_t_for_i64x4 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -214,7 +201,6 @@ macro_rules! impl_shr_t_for_i64x4 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -236,7 +222,6 @@ impl_shr_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -254,7 +239,6 @@ impl CmpEq for i64x4 {
 impl CmpGt for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -272,7 +256,6 @@ impl CmpGt for i64x4 {
 impl CmpLt for i64x4 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {

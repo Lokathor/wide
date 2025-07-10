@@ -33,7 +33,6 @@ pick! {
 
       impl Default for u16x8 {
         #[inline]
-        #[must_use]
         fn default() -> Self {
           Self::splat(0)
         }
@@ -41,7 +40,6 @@ pick! {
 
       impl PartialEq for u16x8 {
         #[inline]
-        #[must_use]
         fn eq(&self, other: &Self) -> bool {
           unsafe { vminvq_u16(vceqq_u16(self.neon, other.neon))==u16::MAX }
         }
@@ -63,7 +61,6 @@ unsafe impl Pod for u16x8 {}
 impl Add for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -91,7 +88,6 @@ impl Add for u16x8 {
 impl Sub for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -119,7 +115,6 @@ impl Sub for u16x8 {
 impl Mul for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -147,7 +142,6 @@ impl Mul for u16x8 {
 impl Add<u16> for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u16) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -156,7 +150,6 @@ impl Add<u16> for u16x8 {
 impl Sub<u16> for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u16) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -165,7 +158,6 @@ impl Sub<u16> for u16x8 {
 impl Mul<u16> for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: u16) -> Self::Output {
     self.mul(Self::splat(rhs))
   }
@@ -174,7 +166,6 @@ impl Mul<u16> for u16x8 {
 impl Add<u16x8> for u16 {
   type Output = u16x8;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u16x8) -> Self::Output {
     u16x8::splat(self).add(rhs)
   }
@@ -183,7 +174,6 @@ impl Add<u16x8> for u16 {
 impl Sub<u16x8> for u16 {
   type Output = u16x8;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u16x8) -> Self::Output {
     u16x8::splat(self).sub(rhs)
   }
@@ -192,7 +182,6 @@ impl Sub<u16x8> for u16 {
 impl Mul<u16x8> for u16 {
   type Output = u16x8;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: u16x8) -> Self::Output {
     u16x8::splat(self).mul(rhs)
   }
@@ -201,7 +190,6 @@ impl Mul<u16x8> for u16 {
 impl BitAnd for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -229,7 +217,6 @@ impl BitAnd for u16x8 {
 impl BitOr for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -257,7 +244,6 @@ impl BitOr for u16x8 {
 impl BitXor for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -288,7 +274,6 @@ macro_rules! impl_shl_t_for_u16x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
@@ -324,7 +309,6 @@ macro_rules! impl_shr_t_for_u16x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
@@ -357,7 +341,6 @@ impl_shr_t_for_u16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for u16x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     Self::cmp_eq(self, rhs)
   }

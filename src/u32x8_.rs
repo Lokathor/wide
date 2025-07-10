@@ -20,7 +20,6 @@ unsafe impl Pod for u32x8 {}
 impl Add for u32x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -38,7 +37,6 @@ impl Add for u32x8 {
 impl Sub for u32x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -56,7 +54,6 @@ impl Sub for u32x8 {
 impl Mul for u32x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -74,7 +71,6 @@ impl Mul for u32x8 {
 impl BitAnd for u32x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -92,7 +88,6 @@ impl BitAnd for u32x8 {
 impl BitOr for u32x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -110,7 +105,6 @@ impl BitOr for u32x8 {
 impl BitXor for u32x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -128,7 +122,6 @@ impl BitXor for u32x8 {
 impl From<u16x8> for u32x8 {
   /// widens and zero extends to u32x8
   #[inline]
-  #[must_use]
   fn from(v: u16x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -160,7 +153,6 @@ macro_rules! impl_shl_t_for_u32x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -185,7 +177,6 @@ macro_rules! impl_shr_t_for_u32x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -214,7 +205,6 @@ impl Shr<u32x8> for u32x8 {
   type Output = Self;
 
   #[inline]
-  #[must_use]
   fn shr(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -240,7 +230,6 @@ impl Shl<u32x8> for u32x8 {
   type Output = Self;
 
   #[inline]
-  #[must_use]
   fn shl(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -260,7 +249,6 @@ impl Shl<u32x8> for u32x8 {
 impl CmpEq for u32x8 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     Self::cmp_eq(self, rhs)
   }

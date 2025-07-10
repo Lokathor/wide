@@ -33,7 +33,6 @@ pick! {
 
     impl Default for u64x2 {
       #[inline]
-      #[must_use]
       fn default() -> Self {
         unsafe { Self { neon: vdupq_n_u64(0)} }
       }
@@ -41,7 +40,6 @@ pick! {
 
     impl PartialEq for u64x2 {
       #[inline]
-      #[must_use]
       fn eq(&self, other: &Self) -> bool {
         unsafe {
           vgetq_lane_u64(self.neon,0) == vgetq_lane_u64(other.neon,0) && vgetq_lane_u64(self.neon,1) == vgetq_lane_u64(other.neon,1)
@@ -65,7 +63,6 @@ unsafe impl Pod for u64x2 {}
 impl Add for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -87,7 +84,6 @@ impl Add for u64x2 {
 impl Sub for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -110,7 +106,6 @@ impl Sub for u64x2 {
 impl Mul for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="simd128")] {
@@ -130,7 +125,6 @@ impl Mul for u64x2 {
 impl Add<u64> for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u64) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -139,7 +133,6 @@ impl Add<u64> for u64x2 {
 impl Sub<u64> for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u64) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -148,7 +141,6 @@ impl Sub<u64> for u64x2 {
 impl Mul<u64> for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: u64) -> Self::Output {
     self.mul(Self::splat(rhs))
   }
@@ -157,7 +149,6 @@ impl Mul<u64> for u64x2 {
 impl Add<u64x2> for u64 {
   type Output = u64x2;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u64x2) -> Self::Output {
     u64x2::splat(self).add(rhs)
   }
@@ -166,7 +157,6 @@ impl Add<u64x2> for u64 {
 impl Sub<u64x2> for u64 {
   type Output = u64x2;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u64x2) -> Self::Output {
     u64x2::splat(self).sub(rhs)
   }
@@ -175,7 +165,6 @@ impl Sub<u64x2> for u64 {
 impl Mul<u64x2> for u64 {
   type Output = u64x2;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: u64x2) -> Self::Output {
     u64x2::splat(self).mul(rhs)
   }
@@ -184,7 +173,6 @@ impl Mul<u64x2> for u64 {
 impl BitAnd for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -206,7 +194,6 @@ impl BitAnd for u64x2 {
 impl BitOr for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -228,7 +215,6 @@ impl BitOr for u64x2 {
 impl BitXor for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -253,7 +239,6 @@ macro_rules! impl_shl_t_for_u64x2 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
@@ -283,7 +268,6 @@ macro_rules! impl_shr_t_for_u64x2 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
@@ -310,7 +294,6 @@ impl_shr_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for u64x2 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     Self::cmp_eq(self, rhs)
   }
