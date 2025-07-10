@@ -20,7 +20,6 @@ unsafe impl Pod for i8x32 {}
 impl Add for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -38,7 +37,6 @@ impl Add for i8x32 {
 impl Sub for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -56,7 +54,6 @@ impl Sub for i8x32 {
 impl Add<i8> for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i8) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -65,7 +62,6 @@ impl Add<i8> for i8x32 {
 impl Sub<i8> for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i8) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -74,7 +70,6 @@ impl Sub<i8> for i8x32 {
 impl Add<i8x32> for i8 {
   type Output = i8x32;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i8x32) -> Self::Output {
     i8x32::splat(self).add(rhs)
   }
@@ -83,7 +78,6 @@ impl Add<i8x32> for i8 {
 impl Sub<i8x32> for i8 {
   type Output = i8x32;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i8x32) -> Self::Output {
     i8x32::splat(self).sub(rhs)
   }
@@ -92,7 +86,6 @@ impl Sub<i8x32> for i8 {
 impl BitAnd for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -110,7 +103,6 @@ impl BitAnd for i8x32 {
 impl BitOr for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -128,7 +120,6 @@ impl BitOr for i8x32 {
 impl BitXor for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -146,7 +137,6 @@ impl BitXor for i8x32 {
 impl CmpEq for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -164,7 +154,6 @@ impl CmpEq for i8x32 {
 impl CmpGt for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -182,7 +171,6 @@ impl CmpGt for i8x32 {
 impl CmpLt for i8x32 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     rhs.cmp_gt(self)
   }

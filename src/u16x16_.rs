@@ -20,7 +20,6 @@ unsafe impl Pod for u16x16 {}
 impl Add for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -38,7 +37,6 @@ impl Add for u16x16 {
 impl Sub for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -56,7 +54,6 @@ impl Sub for u16x16 {
 impl Add<u16> for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u16) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -65,7 +62,6 @@ impl Add<u16> for u16x16 {
 impl Sub<u16> for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u16) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -74,7 +70,6 @@ impl Sub<u16> for u16x16 {
 impl Add<u16x16> for u16 {
   type Output = u16x16;
   #[inline]
-  #[must_use]
   fn add(self, rhs: u16x16) -> Self::Output {
     u16x16::splat(self).add(rhs)
   }
@@ -83,7 +78,6 @@ impl Add<u16x16> for u16 {
 impl Sub<u16x16> for u16 {
   type Output = u16x16;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: u16x16) -> Self::Output {
     u16x16::splat(self).sub(rhs)
   }
@@ -92,7 +86,6 @@ impl Sub<u16x16> for u16 {
 impl BitAnd for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -110,7 +103,6 @@ impl BitAnd for u16x16 {
 impl BitOr for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -128,7 +120,6 @@ impl BitOr for u16x16 {
 impl BitXor for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -166,7 +157,6 @@ macro_rules! impl_shl_t_for_u16x16 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -191,7 +181,6 @@ macro_rules! impl_shr_t_for_u16x16 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -213,7 +202,6 @@ impl_shr_t_for_u16x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -231,7 +219,6 @@ impl CmpEq for u16x16 {
 impl Mul for u16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -250,7 +237,6 @@ impl Mul for u16x16 {
 impl From<u8x16> for u16x16 {
   /// widens and sign extends to u16x16
   #[inline]
-  #[must_use]
   fn from(v: u8x16) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

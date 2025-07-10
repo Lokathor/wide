@@ -20,7 +20,6 @@ unsafe impl Pod for i16x16 {}
 impl Add for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -38,7 +37,6 @@ impl Add for i16x16 {
 impl Sub for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -56,7 +54,6 @@ impl Sub for i16x16 {
 impl Mul for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -74,7 +71,6 @@ impl Mul for i16x16 {
 impl Add<i16> for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i16) -> Self::Output {
     self.add(Self::splat(rhs))
   }
@@ -83,7 +79,6 @@ impl Add<i16> for i16x16 {
 impl Sub<i16> for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i16) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
@@ -92,7 +87,6 @@ impl Sub<i16> for i16x16 {
 impl Mul<i16> for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: i16) -> Self::Output {
     self.mul(Self::splat(rhs))
   }
@@ -101,7 +95,6 @@ impl Mul<i16> for i16x16 {
 impl Add<i16x16> for i16 {
   type Output = i16x16;
   #[inline]
-  #[must_use]
   fn add(self, rhs: i16x16) -> Self::Output {
     i16x16::splat(self).add(rhs)
   }
@@ -110,7 +103,6 @@ impl Add<i16x16> for i16 {
 impl Sub<i16x16> for i16 {
   type Output = i16x16;
   #[inline]
-  #[must_use]
   fn sub(self, rhs: i16x16) -> Self::Output {
     i16x16::splat(self).sub(rhs)
   }
@@ -119,7 +111,6 @@ impl Sub<i16x16> for i16 {
 impl Mul<i16x16> for i16 {
   type Output = i16x16;
   #[inline]
-  #[must_use]
   fn mul(self, rhs: i16x16) -> Self::Output {
     i16x16::splat(self).mul(rhs)
   }
@@ -128,7 +119,6 @@ impl Mul<i16x16> for i16 {
 impl BitAnd for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -146,7 +136,6 @@ impl BitAnd for i16x16 {
 impl BitOr for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -164,7 +153,6 @@ impl BitOr for i16x16 {
 impl BitXor for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -185,7 +173,6 @@ macro_rules! impl_shl_t_for_i16x16 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -210,7 +197,6 @@ macro_rules! impl_shr_t_for_i16x16 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
-      #[must_use]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -232,7 +218,6 @@ impl_shr_t_for_i16x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -250,7 +235,6 @@ impl CmpEq for i16x16 {
 impl CmpGt for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -268,7 +252,6 @@ impl CmpGt for i16x16 {
 impl CmpLt for i16x16 {
   type Output = Self;
   #[inline]
-  #[must_use]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -286,7 +269,6 @@ impl CmpLt for i16x16 {
 impl From<i8x16> for i16x16 {
   /// widen with sign extend from i8 to i16
   #[inline]
-  #[must_use]
   fn from(i: i8x16) -> Self {
     i16x16::from_i8x16(i)
   }
@@ -295,7 +277,6 @@ impl From<i8x16> for i16x16 {
 impl From<u8x16> for i16x16 {
   /// widen with zero extend from u8 to i16
   #[inline]
-  #[must_use]
   fn from(i: u8x16) -> Self {
     cast(u16x16::from(i))
   }

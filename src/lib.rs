@@ -290,7 +290,6 @@ macro_rules! bulk_impl_op_ref_self_for {
         impl $op<&Self> for $t {
           type Output = Self;
           #[inline]
-          #[must_use]
           fn $method(self, rhs: &Self) -> Self::Output {
             self.$method(*rhs)
           }
@@ -351,7 +350,6 @@ macro_rules! impl_simple_neg {
       impl Neg for $t {
         type Output = Self;
         #[inline]
-        #[must_use]
         fn neg(self) -> Self::Output {
           Self::default() - self
         }
@@ -359,7 +357,6 @@ macro_rules! impl_simple_neg {
       impl Neg for &'_ $t {
         type Output = $t;
         #[inline]
-        #[must_use]
         fn neg(self) -> Self::Output {
           <$t>::default() - *self
         }
@@ -379,7 +376,6 @@ macro_rules! impl_simple_not {
       impl Not for $t {
         type Output = Self;
         #[inline]
-        #[must_use]
         fn not(self) -> Self::Output {
           self ^ cast::<u128, $t>(u128::MAX)
         }
@@ -387,7 +383,6 @@ macro_rules! impl_simple_not {
       impl Not for &'_ $t {
         type Output = $t;
         #[inline]
-        #[must_use]
         fn not(self) -> Self::Output {
           *self ^ cast::<u128, $t>(u128::MAX)
         }
@@ -468,14 +463,12 @@ macro_rules! impl_from_a_for_b_with_cast {
   ($(($arr:ty, $simd:ty)),+  $(,)?) => {
     $(impl From<$arr> for $simd {
       #[inline]
-      #[must_use]
       fn from(arr: $arr) -> Self {
         cast(arr)
       }
     }
     impl From<$simd> for $arr {
       #[inline]
-      #[must_use]
       fn from(simd: $simd) -> Self {
         cast(simd)
       }
@@ -495,7 +488,6 @@ macro_rules! impl_from_single_value {
     $(impl From<$elem> for $simd {
       /// Splats the single value given across all lanes.
       #[inline]
-      #[must_use]
       fn from(elem: $elem) -> Self {
         cast([elem; $len])
       }
@@ -914,7 +906,6 @@ macro_rules! bulk_impl_const_rhs_op {
     impl $op<$rhs> for $lhs {
       type Output = Self;
       #[inline]
-      #[must_use]
       fn $method(self, rhs: $rhs) -> Self::Output {
         self.$method(<$lhs>::splat(rhs))
       }
