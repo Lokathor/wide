@@ -182,7 +182,7 @@ impl Shl for i64x4 {
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
+      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
         // mask the shift count to 63 to have same behavior on all platforms
         let shift_by = bitand_m256i(rhs.avx2, set_splat_i64_m256i(63));
         Self { avx2: shl_each_u64_m256i(self.avx2, shift_by) }
