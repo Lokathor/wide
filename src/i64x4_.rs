@@ -183,7 +183,7 @@ impl Shl for i64x4 {
   fn shl(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(all(target_arch="x86", target_feature="avx2"))] {
-        // avx2 on x86 doesn't have set_splat_i64_m256i
+        // avx x86 doesn't have set_splat_i64_m256i
         let arr: [i64; 4] = cast(self);
         let rhs: [i64; 4] = cast(rhs);
         cast([
