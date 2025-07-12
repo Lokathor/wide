@@ -66,12 +66,40 @@ fn impl_bitxor_for_i64x2() {
 }
 
 #[test]
+fn impl_shl_each_for_i64x2() {
+  let a = i64x2::from([i64::MAX - 1, -1]);
+  let shift = i64x2::from([2, 65 /* test masking behavior */]);
+  let expected = i64x2::from([(i64::MAX - 1) << 2, -1 << 1]);
+  let actual = a << shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i64x2, b| a << b,
+    |a, b| a.wrapping_shl(b as u32),
+  );
+}
+
+#[test]
 fn impl_shl_for_i64x2() {
   let a = i64x2::from([i64::MAX - 1, i64::MAX - 1]);
   let b = 2;
   let expected = i64x2::from([(i64::MAX - 1) << 2, (i64::MAX - 1) << 2]);
   let actual = a << b;
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_shr_each_for_i64x2() {
+  let a = i64x2::from([i64::MAX - 1, -1]);
+  let shift = i64x2::from([2, 65 /* test masking behavior */]);
+  let expected = i64x2::from([(i64::MAX - 1) >> 2, -1 >> 1]);
+  let actual = a >> shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: i64x2, b| a >> b,
+    |a, b| a.wrapping_shr(b as u32),
+  );
 }
 
 #[test]

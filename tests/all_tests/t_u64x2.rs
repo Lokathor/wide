@@ -72,12 +72,40 @@ fn impl_bitxor_for_u64x2() {
 }
 
 #[test]
+fn impl_shl_each_for_u64x2() {
+  let a = u64x2::from([u64::MAX - 1, u64::MAX]);
+  let shift = u64x2::from([2, 65 /* test masking behavior */]);
+  let expected = u64x2::from([(u64::MAX - 1) << 2, u64::MAX << 1]);
+  let actual = a << shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u64x2, b| a << b,
+    |a, b| a.wrapping_shl(b as u32),
+  );
+}
+
+#[test]
 fn impl_shl_for_u64x2() {
   let a = u64x2::from([u64::MAX - 1, u64::MAX - 1]);
   let b = 2;
   let expected = u64x2::from([(u64::MAX - 1) << 2, (u64::MAX - 1) << 2]);
   let actual = a << b;
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_shr_each_for_u64x2() {
+  let a = u64x2::from([u64::MAX - 1, u64::MAX]);
+  let shift = u64x2::from([2, 65 /* test masking behavior */]);
+  let expected = u64x2::from([(u64::MAX - 1) >> 2, u64::MAX >> 1]);
+  let actual = a >> shift;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u64x2, b| a >> b,
+    |a, b| a.wrapping_shr(b as u32),
+  );
 }
 
 #[test]

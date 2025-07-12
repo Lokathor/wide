@@ -233,6 +233,39 @@ impl BitXor for u64x2 {
   }
 }
 
+/// Shifts lanes by the corresponding lane.
+///
+/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shl`)
+impl Shl for u64x2 {
+  type Output = Self;
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // mask the shift count to 63 to have same behavior on all platforms
+        let shift_by = bitand_m128i(rhs.sse, set_splat_i64_m128i(63));
+        Self { sse: shl_each_u64_m128i(self.sse, shift_by) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // mask the shift count to 63 to have same behavior on all platforms
+          let shift_by = vreinterpretq_s64_u64(vandq_u64(rhs.neon, vmovq_n_u64(63)));
+          Self { neon: vshlq_u64(self.neon, shift_by) }
+        }
+      } else {
+        let arr: [u64; 2] = cast(self);
+        let rhs: [u64; 2] = cast(rhs);
+        cast([
+          arr[0].wrapping_shl(rhs[0] as u32),
+          arr[1].wrapping_shl(rhs[1] as u32),
+        ])
+      }
+    }
+  }
+}
+
 macro_rules! impl_shl_t_for_u64x2 {
   ($($shift_type:ty),+ $(,)?) => {
     $(impl Shl<$shift_type> for u64x2 {
@@ -261,6 +294,40 @@ macro_rules! impl_shl_t_for_u64x2 {
   };
 }
 impl_shl_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+
+/// Shifts lanes by the corresponding lane.
+///
+/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shr`)
+impl Shr for u64x2 {
+  type Output = Self;
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // mask the shift count to 63 to have same behavior on all platforms
+        let shift_by = bitand_m128i(rhs.sse, set_splat_i64_m128i(63));
+        Self { sse: shr_each_u64_m128i(self.sse, shift_by) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // mask the shift count to 63 to have same behavior on all platforms
+          // no right shift, have to pass negative value to left shift on neon
+          let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.neon, vmovq_n_u64(63))));
+          Self { neon: vshlq_u64(self.neon, shift_by) }
+        }
+      } else {
+        let arr: [u64; 2] = cast(self);
+        let rhs: [u64; 2] = cast(rhs);
+        cast([
+          arr[0].wrapping_shr(rhs[0] as u32),
+          arr[1].wrapping_shr(rhs[1] as u32),
+        ])
+      }
+    }
+  }
+}
 
 macro_rules! impl_shr_t_for_u64x2 {
   ($($shift_type:ty),+ $(,)?) => {
