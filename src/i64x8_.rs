@@ -1,29 +1,29 @@
 use super::*;
 
 pick! {
-  if #[cfg(target_feature="avx2")] {
+  if #[cfg(target_feature="avx512f")] {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
-    #[repr(C, align(32))]
-    pub struct u64x4 { pub(crate) avx2: m256i }
+    #[repr(C, align(64))]
+    pub struct i64x8 { pub(crate) avx512: m512i }
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
-    #[repr(C, align(32))]
-    pub struct u64x4 { pub(crate) a : u64x2, pub(crate) b : u64x2 }
+    #[repr(C, align(64))]
+    pub struct i64x8 { pub(crate) a : i64x4, pub(crate) b : i64x4 }
   }
 }
 
-int_uint_consts!(u64, 4, u64x4, 256);
+int_uint_consts!(i64, 8, i64x8, 512);
 
-unsafe impl Zeroable for u64x4 {}
-unsafe impl Pod for u64x4 {}
+unsafe impl Zeroable for i64x8 {}
+unsafe impl Pod for i64x8 {}
 
-impl Add for u64x4 {
+impl Add for i64x8 {
   type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_i64_m256i(self.avx2, rhs.avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: add_i64_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.add(rhs.a),
@@ -34,13 +34,13 @@ impl Add for u64x4 {
   }
 }
 
-impl Sub for u64x4 {
+impl Sub for i64x8 {
   type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_i64_m256i(self.avx2, rhs.avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: sub_i64_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.sub(rhs.a),
@@ -51,19 +51,23 @@ impl Sub for u64x4 {
   }
 }
 
-impl Mul for u64x4 {
+impl Mul for i64x8 {
   type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        let arr1: [i64; 4] = cast(self);
-        let arr2: [i64; 4] = cast(rhs);
+      if #[cfg(target_feature="avx512f")] {
+        let arr1: [i64; 8] = cast(self);
+        let arr2: [i64; 8] = cast(rhs);
         cast([
           arr1[0].wrapping_mul(arr2[0]),
           arr1[1].wrapping_mul(arr2[1]),
           arr1[2].wrapping_mul(arr2[2]),
           arr1[3].wrapping_mul(arr2[3]),
+          arr1[4].wrapping_mul(arr2[4]),
+          arr1[5].wrapping_mul(arr2[5]),
+          arr1[6].wrapping_mul(arr2[6]),
+          arr1[7].wrapping_mul(arr2[7]),
         ])
       } else {
         Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
@@ -72,61 +76,61 @@ impl Mul for u64x4 {
   }
 }
 
-impl Add<u64> for u64x4 {
+impl Add<i64> for i64x8 {
   type Output = Self;
   #[inline]
-  fn add(self, rhs: u64) -> Self::Output {
+  fn add(self, rhs: i64) -> Self::Output {
     self.add(Self::splat(rhs))
   }
 }
 
-impl Sub<u64> for u64x4 {
+impl Sub<i64> for i64x8 {
   type Output = Self;
   #[inline]
-  fn sub(self, rhs: u64) -> Self::Output {
+  fn sub(self, rhs: i64) -> Self::Output {
     self.sub(Self::splat(rhs))
   }
 }
 
-impl Mul<u64> for u64x4 {
+impl Mul<i64> for i64x8 {
   type Output = Self;
   #[inline]
-  fn mul(self, rhs: u64) -> Self::Output {
+  fn mul(self, rhs: i64) -> Self::Output {
     self.mul(Self::splat(rhs))
   }
 }
 
-impl Add<u64x4> for u64 {
-  type Output = u64x4;
+impl Add<i64x8> for i64 {
+  type Output = i64x8;
   #[inline]
-  fn add(self, rhs: u64x4) -> Self::Output {
-    u64x4::splat(self).add(rhs)
+  fn add(self, rhs: i64x8) -> Self::Output {
+    i64x8::splat(self).add(rhs)
   }
 }
 
-impl Sub<u64x4> for u64 {
-  type Output = u64x4;
+impl Sub<i64x8> for i64 {
+  type Output = i64x8;
   #[inline]
-  fn sub(self, rhs: u64x4) -> Self::Output {
-    u64x4::splat(self).sub(rhs)
+  fn sub(self, rhs: i64x8) -> Self::Output {
+    i64x8::splat(self).sub(rhs)
   }
 }
 
-impl Mul<u64x4> for u64 {
-  type Output = u64x4;
+impl Mul<i64x8> for i64 {
+  type Output = i64x8;
   #[inline]
-  fn mul(self, rhs: u64x4) -> Self::Output {
-    u64x4::splat(self).mul(rhs)
+  fn mul(self, rhs: i64x8) -> Self::Output {
+    i64x8::splat(self).mul(rhs)
   }
 }
 
-impl BitAnd for u64x4 {
+impl BitAnd for i64x8 {
   type Output = Self;
   #[inline]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitand_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.bitand(rhs.a),
@@ -137,13 +141,13 @@ impl BitAnd for u64x4 {
   }
 }
 
-impl BitOr for u64x4 {
+impl BitOr for i64x8 {
   type Output = Self;
   #[inline]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
-    if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
+    if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitor_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.bitor(rhs.a),
@@ -154,13 +158,13 @@ impl BitOr for u64x4 {
   }
 }
 
-impl BitXor for u64x4 {
+impl BitXor for i64x8 {
   type Output = Self;
   #[inline]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.bitxor(rhs.a),
@@ -171,17 +175,17 @@ impl BitXor for u64x4 {
   }
 }
 
-macro_rules! impl_shl_t_for_u64x4 {
+macro_rules! impl_shl_t_for_i64x8 {
   ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for u64x4 {
+    $(impl Shl<$shift_type> for i64x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
-          if #[cfg(target_feature="avx2")] {
+          if #[cfg(target_feature="avx512f")] {
             let shift = cast([rhs as u64, 0]);
-            Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
+            Self { avx512: shl_all_u64_m512i(self.avx512, shift) }
           } else {
             Self {
               a : self.a.shl(rhs),
@@ -193,19 +197,19 @@ macro_rules! impl_shl_t_for_u64x4 {
     })+
   };
 }
-impl_shl_t_for_u64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+impl_shl_t_for_i64x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-macro_rules! impl_shr_t_for_u64x4 {
+macro_rules! impl_shr_t_for_i64x8 {
   ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for u64x4 {
+    $(impl Shr<$shift_type> for i64x8 {
       type Output = Self;
       /// Shifts all lanes by the value given.
       #[inline]
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
-          if #[cfg(target_feature="avx2")] {
+          if #[cfg(target_feature="avx512f")] {
             let shift = cast([rhs as u64, 0]);
-            Self { avx2: shr_all_u64_m256i(self.avx2, shift) }
+            Self { avx512: shr_all_i64_m512i(self.avx512, shift) }
           } else {
             Self {
               a : self.a.shr(rhs),
@@ -217,9 +221,9 @@ macro_rules! impl_shr_t_for_u64x4 {
     })+
   };
 }
-impl_shr_t_for_u64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+impl_shr_t_for_i64x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-impl CmpEq for u64x4 {
+impl CmpEq for i64x8 {
   type Output = Self;
   #[inline]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
@@ -227,18 +231,18 @@ impl CmpEq for u64x4 {
   }
 }
 
-impl u64x4 {
+impl i64x8 {
   #[inline]
   #[must_use]
-  pub const fn new(array: [u64; 4]) -> Self {
+  pub const fn new(array: [i64; 8]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
   #[inline]
   #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_eq_mask_i64_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_eq(rhs.a),
@@ -251,10 +255,8 @@ impl u64x4 {
   #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        // no unsigned gt than so inverting the high bit will get the correct result
-        let highbit = u64x4::splat(1 << 63);
-        Self { avx2: cmp_gt_mask_i64_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_gt_mask_i64_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -275,8 +277,8 @@ impl u64x4 {
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: blend_varying_i8_m256i(f.avx2,t.avx2,self.avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,self.avx512) }
       } else {
         Self {
           a : self.a.blend(t.a, f.a),
@@ -287,17 +289,17 @@ impl u64x4 {
   }
 
   #[inline]
-  pub fn to_array(self) -> [u64; 4] {
+  pub fn to_array(self) -> [i64; 8] {
     cast(self)
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u64; 4] {
+  pub fn as_array_ref(&self) -> &[i64; 8] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u64; 4] {
+  pub fn as_array_mut(&mut self) -> &mut [i64; 8] {
     cast_mut(self)
   }
 
@@ -305,10 +307,13 @@ impl u64x4 {
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(all(target_feature = "avx512vl", target_feature = "avx512f"))] {
-        Self { avx2: min_u64_m256i(self.avx2, rhs.avx2) }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: min_i64_m512i(self.avx512, rhs.avx512) }
       } else {
-        self.cmp_lt(rhs).blend(self, rhs)
+        Self {
+          a: self.a.min(rhs.a),
+          b: self.b.min(rhs.b),
+        }
       }
     }
   }
@@ -317,44 +322,25 @@ impl u64x4 {
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(all(target_feature = "avx512vl", target_feature = "avx512f"))] {
-        Self { avx2: max_u64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        self.cmp_gt(rhs).blend(self, rhs)
-      }
-    }
-  }
-  
-  #[inline]
-  #[must_use]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let arr1: [u64; 4] = cast(self);
-        let arr2: [u64; 4] = cast(rhs);
-        cast([
-          (arr1[0] as u128 * arr2[0] as u128 >> 64) as u64,
-          (arr1[1] as u128 * arr2[1] as u128 >> 64) as u64,
-          (arr1[2] as u128 * arr2[2] as u128 >> 64) as u64,
-          (arr1[3] as u128 * arr2[3] as u128 >> 64) as u64,
-        ])
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: max_i64_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a: self.a.mul_keep_high(rhs.a),
-          b: self.b.mul_keep_high(rhs.b),
+          a: self.a.max(rhs.a),
+          b: self.b.max(rhs.b),
         }
       }
     }
   }
 }
 
-impl Not for u64x4 {
+impl Not for i64x8 {
   type Output = Self;
   #[inline]
-  fn not(self) -> Self {
+  fn not(self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512i(self.avx512, set_splat_i64_m512i(-1)) }
       } else {
         Self {
           a : self.a.not(),
