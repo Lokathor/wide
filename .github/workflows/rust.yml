@@ -65,7 +65,7 @@ jobs:
     - name: Test with 'native' CPU features + No Default Cargo Features
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
-    - name: Test with 'native' CPU features + All Cargo Features
+    - name: Test with 'native' CPU features + All Cargo Features 
       run: cargo test --target ${{ matrix.rust.target }} --all-features
   
   #cross_compile_aarch64:
