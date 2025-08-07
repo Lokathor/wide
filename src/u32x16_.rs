@@ -164,8 +164,8 @@ impl From<u16x16> for u32x16 {
         let lo: m128i = extract_m128i_from_m256i::<0>(v.avx2);
         let hi: m128i = extract_m128i_from_m256i::<1>(v.avx2);
         Self {
-          a: u32x8 { avx2: convert_to_u32_m512i_from_u16_m256i(lo) },
-          b: u32x8 { avx2: convert_to_u32_m512i_from_u16_m256i(hi) },
+          a: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(lo) },
+          b: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(hi) },
         }
       } else if #[cfg(target_feature = "sse2")] {
         Self {
