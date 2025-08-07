@@ -184,7 +184,7 @@ macro_rules! impl_shl_t_for_u64x8 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast([rhs as u64, 0]);
+            let shift = cast(rhs as u64);
             Self { avx512: shl_all_u64_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -208,7 +208,7 @@ macro_rules! impl_shr_t_for_u64x8 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast([rhs as u64, 0]);
+            let shift = cast(rhs as u64);
             Self { avx512: shr_all_u64_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -242,7 +242,7 @@ impl u64x8 {
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_eq_mask_i64_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_eq(rhs.a),
@@ -258,7 +258,7 @@ impl u64x8 {
       if #[cfg(target_feature="avx512f")] {
         // no unsigned gt than so inverting the high bit will get the correct result
         let highbit = u64x8::splat(1 << 63);
-        Self { avx512: cmp_gt_mask_i64_m512i((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
+        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -271,8 +271,18 @@ impl u64x8 {
   #[inline]
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
-    // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // no unsigned gt than so inverting the high bit will get the correct result
+        let highbit = u64x8::splat(1 << 63);
+        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
+      } else {
+        Self {
+          a : self.a.cmp_gt(rhs.a),
+          b : self.b.cmp_gt(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]
@@ -280,7 +290,7 @@ impl u64x8 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,self.avx512) }
+        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
       } else {
         Self {
           a : self.a.blend(t.a, f.a),

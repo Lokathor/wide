@@ -198,7 +198,7 @@ impl CmpEq for f64x8 {
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d(self.avx512, rhs.avx512, Cmp::Eq) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_eq(rhs.a),
@@ -215,7 +215,7 @@ impl CmpGt for f64x8 {
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d(self.avx512, rhs.avx512, Cmp::Gt) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -232,7 +232,7 @@ impl CmpGe for f64x8 {
   fn cmp_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d(self.avx512, rhs.avx512, Cmp::Ge) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_ge(rhs.a),
@@ -249,7 +249,7 @@ impl CmpLt for f64x8 {
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d(self.avx512, rhs.avx512, Cmp::Lt) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_lt(rhs.a),
@@ -266,7 +266,7 @@ impl CmpLe for f64x8 {
   fn cmp_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d(self.avx512, rhs.avx512, Cmp::Le) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_le(rhs.a),
@@ -283,7 +283,7 @@ impl CmpNe for f64x8 {
   fn cmp_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d(self.avx512, rhs.avx512, Cmp::Ne) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_ne(rhs.a),
@@ -306,7 +306,7 @@ impl f64x8 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_m512d(f.avx512, t.avx512, self.avx512) }
+        Self { avx512: blend_varying_m512d(f.avx512, t.avx512, movepi64_mask_m512d(self.avx512)) }
       } else {
         Self {
           a : self.a.blend(t.a, f.a),
@@ -321,7 +321,8 @@ impl f64x8 {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: abs_m512d(self.avx512) }
+        let non_sign_bits = f64x8::from(f64::from_bits(i64::MAX as u64));
+        self & non_sign_bits
       } else {
         Self {
           a: self.a.abs(),
@@ -366,7 +367,7 @@ impl f64x8 {
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d(self.avx512, self.avx512, Cmp::Unord) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(Unordered)}>(self.avx512, self.avx512) }
       } else {
         Self {
           a: self.a.is_nan(),
@@ -391,7 +392,7 @@ impl f64x8 {
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512d(self.avx512, RoundingMode::NearestTiesToEven) }
+        Self { avx512: round_m512d::<{round_op!(Nearest)}>(self.avx512) }
       } else {
         Self {
           a: self.a.round(),

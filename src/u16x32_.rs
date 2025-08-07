@@ -118,7 +118,7 @@ impl BitAnd for u16x32 {
   #[inline]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx512f")] {
+      if #[cfg(target_feature="avx512bw")] {
         Self { avx512: bitand_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
@@ -135,7 +135,7 @@ impl BitOr for u16x32 {
   #[inline]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
-    if #[cfg(target_feature="avx512f")] {
+    if #[cfg(target_feature="avx512bw")] {
         Self { avx512: bitor_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
@@ -152,7 +152,7 @@ impl BitXor for u16x32 {
   #[inline]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx512f")] {
+      if #[cfg(target_feature="avx512bw")] {
         Self { avx512: bitxor_m512i(self.avx512, rhs.avx512) }
       } else {
         Self {
@@ -173,7 +173,7 @@ macro_rules! impl_shl_t_for_u16x32 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            let shift = cast([rhs as u16, 0, 0, 0, 0, 0, 0, 0]);
+            let shift = cast(rhs as u16);
             Self { avx512: shl_all_u16_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -197,7 +197,7 @@ macro_rules! impl_shr_t_for_u16x32 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            let shift = cast([rhs as u16, 0, 0, 0, 0, 0, 0, 0]);
+            let shift = cast(rhs as u16);
             Self { avx512: shr_all_u16_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -220,6 +220,23 @@ impl CmpEq for u16x32 {
   }
 }
 
+impl Not for u16x32 {
+  type Output = Self;
+  #[inline]
+  fn not(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: bitxor_m512i(self.avx512, set_splat_i16_m512i(-1)) }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+}
+
 impl u16x32 {
   #[inline]
   #[must_use]
@@ -232,7 +249,7 @@ impl u16x32 {
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_eq_mask_i16_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_eq(rhs.a),
@@ -247,7 +264,7 @@ impl u16x32 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_gt_mask_u16_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -260,16 +277,24 @@ impl u16x32 {
   #[inline]
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
-    // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : rhs.a.cmp_gt(self.a),
+          b : rhs.b.cmp_gt(self.b),
+        }
+      }
+    }
   }
 
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,self.avx512) }
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
       } else {
         Self {
           a : self.a.blend(t.a, f.a),
@@ -352,22 +377,5 @@ impl u16x32 {
   #[inline]
   pub fn as_array_mut(&mut self) -> &mut [u16; 32] {
     cast_mut(self)
-  }
-}
-
-impl Not for u16x32 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.avx512, set_splat_i16_m512i(-1)) }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
   }
 }

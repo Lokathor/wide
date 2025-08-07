@@ -173,7 +173,7 @@ macro_rules! impl_shl_t_for_i32x16 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast([rhs as u64, 0]);
+            let shift = cast(rhs as u32);
             Self { avx512: shl_all_u32_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -197,7 +197,7 @@ macro_rules! impl_shr_t_for_i32x16 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast([rhs as u64, 0]);
+            let shift = cast(rhs as u32);
             Self { avx512: shr_all_i32_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -232,7 +232,7 @@ impl i32x16 {
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_eq_mask_i32_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_eq(rhs.a),
@@ -247,7 +247,7 @@ impl i32x16 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_gt_mask_i32_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -260,8 +260,16 @@ impl i32x16 {
   #[inline]
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
-    // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : rhs.a.cmp_gt(self.a),
+          b : rhs.b.cmp_gt(self.b),
+        }
+      }
+    }
   }
 
   #[inline]
@@ -269,7 +277,7 @@ impl i32x16 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,self.avx512) }
+        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
       } else {
         Self {
           a : self.a.blend(t.a, f.a),

@@ -158,14 +158,14 @@ impl From<u16x16> for u32x16 {
     pick! {
       if #[cfg(target_feature = "avx512f")] {
         Self {
-          avx512: convert_to_i32_m512i_from_u16_m256i(v.avx2)
+          avx512: convert_to_u32_m512i_from_u16_m256i(v.avx2)
         }
       } else if #[cfg(target_feature = "avx2")] {
         let lo: m128i = extract_m128i_from_m256i::<0>(v.avx2);
         let hi: m128i = extract_m128i_from_m256i::<1>(v.avx2);
         Self {
-          a: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(lo) },
-          b: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(hi) },
+          a: u32x8 { avx2: convert_to_u32_m512i_from_u16_m256i(lo) },
+          b: u32x8 { avx2: convert_to_u32_m512i_from_u16_m256i(hi) },
         }
       } else if #[cfg(target_feature = "sse2")] {
         Self {
@@ -209,7 +209,7 @@ macro_rules! impl_shl_t_for_u32x16 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast([rhs as u64, 0]);
+            let shift = cast(rhs as u32);
             Self { avx512: shl_all_u32_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -233,7 +233,7 @@ macro_rules! impl_shr_t_for_u32x16 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast([rhs as u64, 0]);
+            let shift = cast(rhs as u32);
             Self { avx512: shr_all_u32_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -260,8 +260,7 @@ impl Shr<u32x16> for u32x16 {
   fn shr(self, rhs: u32x16) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // ensure same behavior as scalar wrapping_shr
-        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(63));
+        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
         Self { avx512: shr_each_u32_m512i(self.avx512, shift_by ) }
       } else {
         Self {
@@ -285,9 +284,8 @@ impl Shl<u32x16> for u32x16 {
   fn shl(self, rhs: u32x16) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // ensure same behavior as scalar wrapping_shl
-        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(63));
-        Self { avx512: shr_each_u32_m512i(self.avx512, shift_by) }
+        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
+        Self { avx512: shl_each_u32_m512i(self.avx512, shift_by) }
       } else {
         Self {
           a : self.a.shl(rhs.a),
@@ -318,7 +316,7 @@ impl u32x16 {
   pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_eq_mask_i32_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_eq(rhs.a),
@@ -333,7 +331,7 @@ impl u32x16 {
   pub fn cmp_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_gt_mask_u32_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.cmp_gt(rhs.a),
@@ -346,8 +344,16 @@ impl u32x16 {
   #[inline]
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
-    // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : rhs.a.cmp_gt(self.a),
+          b : rhs.b.cmp_gt(self.b),
+        }
+      }
+    }
   }
 
   #[inline]
@@ -355,7 +361,7 @@ impl u32x16 {
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,self.avx512) }
+        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
       } else {
         Self {
           a : self.a.blend(t.a, f.a),
@@ -399,9 +405,35 @@ impl u32x16 {
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
-    Self {
-      a: self.a.mul_keep_high(rhs.a),
-      b: self.b.mul_keep_high(rhs.b),
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let alo = extract_m256i32_from_m512i::<0>(self.avx512);
+        let ahi = extract_m256i32_from_m512i::<1>(self.avx512);
+        let blo = extract_m256i32_from_m512i::<0>(rhs.avx512);
+        let bhi = extract_m256i32_from_m512i::<1>(rhs.avx512);
+
+        let lo_res: m256i = {
+          let a8 = u32x8 { avx2: alo };
+          let b8 = u32x8 { avx2: blo };
+          a8.mul_keep_high(b8).avx2
+        };
+        let hi_res: m256i = {
+          let a8 = u32x8 { avx2: ahi };
+          let b8 = u32x8 { avx2: bhi };
+          a8.mul_keep_high(b8).avx2
+        };
+
+        let zero = zeroed_m512i();
+        let with_lo = insert_m256i32_to_m512i::<0>(zero, lo_res);
+        let combined = insert_m256i32_to_m512i::<1>(with_lo, hi_res);
+
+        Self { avx512: combined }
+      } else {
+        Self {
+          a: self.a.mul_keep_high(rhs.a),
+          b: self.b.mul_keep_high(rhs.b),
+        } 
+      }
     }
   }
 
@@ -410,8 +442,8 @@ impl u32x16 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        ((move_mask_i8_m512i(self.avx512) as u32) & 
-          0b1000100010001000100010001000100010001000100010001000100010001000) != 0
+        ((movepi8_mask_m512i(self.avx512) as u32) & 
+          0b10001000100010001000100010001000) != 0
       } else {
         (self.a | self.b).any()
       }
@@ -423,9 +455,9 @@ impl u32x16 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        ((move_mask_i8_m512i(self.avx512) as u32) & 
-          0b1000100010001000100010001000100010001000100010001000100010001000) == 
-          0b1000100010001000100010001000100010001000100010001000100010001000
+        ((movepi8_mask_m512i(self.avx512) as u32) & 
+          0b10001000100010001000100010001000) == 
+          0b10001000100010001000100010001000
       } else {
         (self.a & self.b).all()
       }
