@@ -131,6 +131,32 @@ jobs:
           path: sde-external-*
           key: sde-${{ runner.os }}-${{ matrix.rust.target }}-9.58.0-2025-06-16
 
+      - name: Set SDE path from cache (Linux)
+        if: runner.os == 'Linux' && steps.cache-sde.outputs.cache-hit == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDE_DIR=$(find . -maxdepth 1 -type d -name "sde-external-*")
+          if [ -z "$SDE_DIR" ]; then
+            echo "Error: SDE directory not found after cache restore"
+            exit 1
+          fi
+          echo "Found SDE directory: $SDE_DIR"
+          echo "$SDE_DIR" >> $GITHUB_PATH
+
+      - name: Set SDE path from cache (Windows)
+        if: runner.os == 'Windows' && steps.cache-sde.outputs.cache-hit == 'true'
+        shell: powershell
+        run: |
+          $SDE_DIR = Get-ChildItem -Directory | Where-Object Name -Like 'sde-external-*'
+          if (-not $SDE_DIR) {
+            Write-Error "Error: SDE directory not found after cache restore"
+            exit 1
+          }
+          Write-Host "Found SDE directory: $($SDE_DIR.FullName)"
+          # Add the extracted folder to PATH
+          "$($SDE_DIR.FullName)" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
       # Linux: download & extract if cache miss
       - name: Install Intel SDE (Linux)
         if: runner.os == 'Linux' && steps.cache-sde.outputs.cache-hit != 'true'
