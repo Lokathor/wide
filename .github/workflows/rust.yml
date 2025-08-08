@@ -129,7 +129,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: sde-external-*
-          key: ${{ runner.os }}-sde-9.58.0-2025-06-16
+          key: sde-${{ runner.os }}-${{ matrix.rust.target }}-9.58.0-2025-06-16
 
       # Linux: download & extract if cache miss
       - name: Install Intel SDE (Linux)
