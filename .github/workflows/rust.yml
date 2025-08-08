@@ -186,12 +186,7 @@ jobs:
       - name: Run tests under Intel SDE (Sapphire Rapids)
         run: |
           set -euo pipefail
-          # pick the right emulator executable
-          if [ "${RUNNER_OS}" = "Linux" ]; then
-            SDE_CMD="sde64 -spr"
-          else
-            SDE_CMD="sde -spr"
-          fi
+          SDE_CMD="sde -spr"
           find target/${{ matrix.rust.target }}/debug/deps -maxdepth 1 -type f \( -executable -o -iname '*.exe' \) | while read exe; do
             echo "→ $exe"
             $SDE_CMD -- "$exe"
