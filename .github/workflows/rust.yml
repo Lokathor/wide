@@ -96,3 +96,104 @@ jobs:
   #      env:
   #        FEATURES: ${{ matrix.features }}
   #        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+
+    avx512_emulated_test:
+      runs-on: ${{ matrix.rust.os }}
+      strategy:
+        matrix:
+          rust:
+            # Windows
+            - { target: x86_64-pc-windows-msvc, toolchain: 1.89.0, os: windows-latest }
+            - { target: x86_64-pc-windows-msvc, toolchain: stable,   os: windows-latest }
+            - { target: x86_64-pc-windows-msvc, toolchain: beta,     os: windows-latest }
+            - { target: x86_64-pc-windows-msvc, toolchain: nightly,  os: windows-latest }
+            # Linux
+            - { target: x86_64-unknown-linux-gnu, toolchain: "1.89", os: ubuntu-latest }
+            - { target: x86_64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
+            - { target: x86_64-unknown-linux-gnu, toolchain: beta,   os: ubuntu-latest }
+            - { target: x86_64-unknown-linux-gnu, toolchain: nightly,os: ubuntu-latest }
+      steps:
+        - uses: actions/checkout@v3
+
+        - name: Install Rust toolchain & target
+          uses: actions-rs/toolchain@v1
+          with:
+            toolchain: ${{ matrix.rust.toolchain }}
+            target:    ${{ matrix.rust.target }}
+            profile:   minimal
+            default:   true
+
+        # cache the downloaded SDE archive
+        - name: Cache Intel SDE
+          id: cache-sde
+          uses: actions/cache@v3
+          with:
+            path: sde-external-*
+            key: ${{ runner.os }}-sde-9.58.0-2025-06-16
+
+        # Linux: download & extract if cache miss
+        - name: Install Intel SDE (Linux)
+          if: runner.os == 'Linux' && steps.cache-sde.outputs.cache-hit != 'true'
+          run: |
+            SDE_VERSION=9.58.0
+            SDE_DATE=2025-06-16
+            SDE_ID=859732
+            SDE_FILENAME="sde-external-${SDE_VERSION}-${SDE_DATE}-lin.tar.xz"
+            for url in \
+              "https://downloadmirror.intel.com/${SDE_ID}/${SDE_FILENAME}" \
+              "https://software.intel.com/content/dam/develop/external/us/en/protected/${SDE_FILENAME}" \
+            ; do
+              if curl -fLO "$url"; then
+                tar xf "$SDE_FILENAME"
+                echo "Installed SDE to $(pwd)/sde-external-${SDE_VERSION}-${SDE_DATE}"
+                break
+              fi
+            done
+            echo "${PWD}/sde-external-${SDE_VERSION}-${SDE_DATE}" >> $GITHUB_PATH
+
+        # Windows: download & extract if cache miss
+        - name: Install Intel SDE (Windows)
+          if: runner.os == 'Windows' && steps.cache-sde.outputs.cache-hit != 'true'
+          shell: powershell
+          run: |
+            $SDE_VERSION = '9.58.0'
+            $SDE_DATE    = '2025-06-16'
+            $SDE_ID      = '859732'
+            $F = "sde-external-$SDE_VERSION-$SDE_DATE-win.tar.xz"
+            foreach ($u in @(
+              "https://downloadmirror.intel.com/$SDE_ID/$F",
+              "https://software.intel.com/content/dam/develop/external/us/en/protected/$F"
+            )) {
+              if (Invoke-WebRequest $u -UseBasicParsing -OutFile $F -ErrorAction SilentlyContinue) {
+                Write-Host "Downloaded $F"
+                break
+              }
+            }
+            tar -xf $F
+            $dir = Get-ChildItem -Directory | Where-Object Name -Like 'sde-external-*'
+            Write-Host "Installing SDE from $dir"
+            echo "$($dir.FullName)" >> $Env:GITHUB_PATH
+
+        - name: Set RUSTFLAGS for AVX512
+          if: always()
+          run: |
+            echo "RUSTFLAGS=-C target-feature=+avx512f,+avx512dq,+avx512cd,+avx512bw,+avx512vl" >> $GITHUB_ENV
+          shell: bash
+
+        - name: Build tests with AVX512
+          run: cargo test --target ${{ matrix.rust.target }} --no-run
+
+        - name: Run tests under Intel SDE (Sapphire Rapids)
+          run: |
+            set -euo pipefail
+            # pick the right emulator executable
+            if [ "${RUNNER_OS}" = "Linux" ]; then
+              SDE_CMD="sde64 -spr"
+            else
+              SDE_CMD="sde -spr"
+            fi
+            find target/${{ matrix.rust.target }}/debug/deps -maxdepth 1 -type f \( -executable -o -iname '*.exe' \) | while read exe; do
+              echo "→ $exe"
+              $SDE_CMD -- "$exe"
+            done
+          shell: bash
