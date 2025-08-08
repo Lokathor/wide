@@ -179,13 +179,13 @@ jobs:
         run: |
           if [ "${RUNNER_OS}" = "Linux" ]; then
             command -v sde64 || { echo "sde64 missing"; exit 1; }
-            sde64 -help | head -n1
+            sde64 --version | head -n1
           else
             powershell -Command "
               if (!(Get-Command sde -ErrorAction SilentlyContinue)) {
                 throw 'sde.exe missing'
               }
-              (sde -help)[0]
+              (sde --version)[0]
             "
           fi
         shell: bash
