@@ -304,25 +304,13 @@ impl u64x4 {
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature = "avx512vl", target_feature = "avx512f"))] {
-        Self { avx2: min_u64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        self.cmp_lt(rhs).blend(self, rhs)
-      }
-    }
+    self.cmp_lt(rhs).blend(self, rhs)
   }
   
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature = "avx512vl", target_feature = "avx512f"))] {
-        Self { avx2: max_u64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        self.cmp_gt(rhs).blend(self, rhs)
-      }
-    }
+    self.cmp_gt(rhs).blend(self, rhs)
   }
   
   #[inline]
