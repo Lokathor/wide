@@ -145,11 +145,12 @@ jobs:
           ; do
             if curl -fLO "$url"; then
               tar xf "$SDE_FILENAME"
-              echo "Installed SDE to $(pwd)/sde-external-${SDE_VERSION}-${SDE_DATE}"
               break
             fi
           done
-          echo "${PWD}/sde-external-${SDE_VERSION}-${SDE_DATE}" >> $GITHUB_PATH
+          SDE_DIR=$(find . -maxdepth 1 -type d -name "sde-external-*")
+          echo "SDE_DIR=$SDE_DIR" >> $GITHUB_ENV
+          echo "$SDE_DIR" >> $GITHUB_PATH
 
       # Windows: download & extract if cache miss
       - name: Install Intel SDE (Windows)
@@ -173,6 +174,21 @@ jobs:
           $dir = Get-ChildItem -Directory | Where-Object Name -Like 'sde-external-*'
           Write-Host "Installing SDE from $dir"
           echo "$($dir.FullName)" >> $Env:GITHUB_PATH
+
+      - name: Validate Intel SDE installation
+        run: |
+          if [ "${RUNNER_OS}" = "Linux" ]; then
+            command -v sde64 || { echo "sde64 missing"; exit 1; }
+            sde64 -help | head -n1
+          else
+            powershell -Command "
+              if (!(Get-Command sde -ErrorAction SilentlyContinue)) {
+                throw 'sde.exe missing'
+              }
+              (sde -help)[0]
+            "
+          fi
+        shell: bash
 
       - name: Set RUSTFLAGS for AVX512
         if: always()
