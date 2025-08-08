@@ -155,25 +155,34 @@ jobs:
       # Windows: download & extract if cache miss
       - name: Install Intel SDE (Windows)
         if: runner.os == 'Windows' && steps.cache-sde.outputs.cache-hit != 'true'
-        shell: powershell
+        shell: bash
         run: |
-          $SDE_VERSION = '9.58.0'
-          $SDE_DATE    = '2025-06-16'
-          $SDE_ID      = '859732'
-          $F = "sde-external-$SDE_VERSION-$SDE_DATE-win.tar.xz"
-          foreach ($u in @(
-            "https://downloadmirror.intel.com/$SDE_ID/$F",
-            "https://software.intel.com/content/dam/develop/external/us/en/protected/$F"
-          )) {
-            if (Invoke-WebRequest $u -UseBasicParsing -OutFile $F -ErrorAction SilentlyContinue) {
-              Write-Host "Downloaded $F"
+          set -euo pipefail
+
+          SDE_VERSION=9.58.0
+          SDE_DATE=2025-06-16
+          SDE_ID=859732
+          SDE_FILENAME="sde-external-${SDE_VERSION}-${SDE_DATE}-win.tar.xz"
+
+          echo "SDE_VERSION=$SDE_VERSION" >> $GITHUB_ENV
+          echo "SDE_DATE=$SDE_DATE" >> $GITHUB_ENV
+          echo "SDE_ID=$SDE_ID" >> $GITHUB_ENV
+          echo "SDE_FILENAME=$SDE_FILENAME" >> $GITHUB_ENV
+
+          for url in \
+            "https://downloadmirror.intel.com/${SDE_ID}/${SDE_FILENAME}" \
+            "https://software.intel.com/content/dam/develop/external/us/en/protected/${SDE_FILENAME}"; do
+            echo "Trying $url"
+            if curl -fLO "$url"; then
+              echo "Downloaded $SDE_FILENAME"
               break
-            }
-          }
-          tar -xf $F
-          $dir = Get-ChildItem -Directory | Where-Object Name -Like 'sde-external-*'
-          Write-Host "Installing SDE from $dir"
-          echo "$($dir.FullName)" >> $Env:GITHUB_PATH
+            fi
+          done
+
+          # Extract
+          tar -xf "$SDE_FILENAME"
+          SDE_DIR=$(find . -type d -name "sde-external-*")
+          echo "$SDE_DIR" >> "$GITHUB_PATH"
 
       - name: Validate Intel SDE installation
         run: |
