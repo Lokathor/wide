@@ -174,10 +174,11 @@ jobs:
           Write-Host "Installing SDE from $dir"
           echo "$($dir.FullName)" >> $Env:GITHUB_PATH
 
-      - name: Set RUSTFLAGS for AVX512
+      - name: Set RUSTFLAGS for native + AVX512
         if: always()
         run: |
-          echo "RUSTFLAGS=-C target-feature=+avx512f,+avx512dq,+avx512cd,+avx512bw,+avx512vl" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-C target-cpu=native \
+          -C target-feature=+avx512f,+avx512dq,+avx512cd,+avx512bw,+avx512vl" >> $GITHUB_ENV
         shell: bash
 
       - name: Build tests with AVX512
