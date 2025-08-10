@@ -23,7 +23,8 @@ std = []
 serde = ["dep:serde"]
 
 [dependencies]
-safe_arch = { version = "0.9", features = ["bytemuck"] }
+# safe_arch = { version = "0.9", features = ["bytemuck"] }
+safe_arch = { git = "https://github.com/Tritonn204/safe_arch.git", features = ["bytemuck"] }
 serde = { version = "1", default-features = false, optional = true }
 bytemuck = "1"
 

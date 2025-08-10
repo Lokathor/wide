@@ -297,6 +297,118 @@ impl i64x8 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // AVX512 might have this, unsure for now
+        let arr: [i64; 8] = cast(self);
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+            arr[2].wrapping_abs(),
+            arr[3].wrapping_abs(),
+            arr[4].wrapping_abs(),
+            arr[5].wrapping_abs(),
+            arr[6].wrapping_abs(),
+            arr[7].wrapping_abs(),
+          ])
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u64x8 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // AVX512 might have this, unsure for now
+        let arr: [i64; 8] = cast(self);
+        cast(
+          [
+            arr[0].unsigned_abs(),
+            arr[1].unsigned_abs(),
+            arr[2].unsigned_abs(),
+            arr[3].unsigned_abs(),
+            arr[4].unsigned_abs(),
+            arr[5].unsigned_abs(),
+            arr[6].unsigned_abs(),
+            arr[7].unsigned_abs(),
+          ])
+      } else {
+        u64x8 {
+          a : self.a.unsigned_abs(),
+          b : self.b.unsigned_abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn round_float(self) -> f64x8 {
+    let arr: [i64; 8] = cast(self);
+    cast([
+      arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64,
+      arr[4] as f64, arr[5] as f64, arr[6] as f64, arr[7] as f64
+    ])
+  }
+
+  /// returns the bit mask for each high bit set in the vector with the lowest
+  /// lane being the lowest bit
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // use f64 move_mask since it is the same size as i64
+        movepi64_mask_m512d(cast(self.avx512)) as i32
+      } else {
+        self.a.move_mask() | (self.b.move_mask() << 2)
+      }
+    }
+  }
+
+  /// true if any high bits are set for any value in the vector
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(cast(self.avx512)) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  /// true if all high bits are set for every value in the vector
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
+
+  /// true if no high bits are set for any values of the vector
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [i64; 8] {
     cast(self)
   }
