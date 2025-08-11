@@ -553,37 +553,36 @@ fn histogram_update_u64x8() {
   assert_eq!(total, 14);
 }
 
-// TODO: add vector x vector shifts to enable the code below
-// /// Generate magic and shift values for branch-free division for u32 with 16 lanes.
-// fn generate_branch_free_divide_magic_shift_u32x16(denom: u32x16) -> (u32x16, u32x16) {
-//   let mut magic = u32x16::ZERO;
-//   let mut shift = u32x16::ZERO;
-//   for i in 0..magic.as_array_ref().len() {
-//     let (m, s) = internal_gen_branch_free_u32(denom.as_array_ref()[i]);
-//     magic.as_array_mut()[i] = m;
-//     shift.as_array_mut()[i] = s;
-//   }
+/// Generate magic and shift values for branch-free division for u32 with 16 lanes.
+fn generate_branch_free_divide_magic_shift_u32x16(denom: u32x16) -> (u32x16, u32x16) {
+  let mut magic = u32x16::ZERO;
+  let mut shift = u32x16::ZERO;
+  for i in 0..magic.as_array_ref().len() {
+    let (m, s) = internal_gen_branch_free_u32(denom.as_array_ref()[i]);
+    magic.as_array_mut()[i] = m;
+    shift.as_array_mut()[i] = s;
+  }
   
-//   (magic, shift)
-// }
+  (magic, shift)
+}
 
-// // using the previously generated magic and shift, calculate the division
-// fn branch_free_divide_u32x16(numerator: u32x16, magic: u32x16, shift: u32x16) -> u32x16 {
-//   let q = u32x16::mul_keep_high(numerator, magic);
+// using the previously generated magic and shift, calculate the division
+fn branch_free_divide_u32x16(numerator: u32x16, magic: u32x16, shift: u32x16) -> u32x16 {
+  let q = u32x16::mul_keep_high(numerator, magic);
   
-//   let t = ((numerator - q) >> 1) + q;
-//   t >> shift
-// }
+  let t = ((numerator - q) >> 1) + q;
+  t >> shift
+}
 
-// #[test]
-// fn impl_u32x16_branch_free_divide() {
-//   crate::test_random_vector_vs_scalar(
-//     |a: u32x16, b| {
-//       // never divide by 0 or 1
-//       let b = b.max(u32x16::splat(2));
-//       let (magic, shift) = generate_branch_free_divide_magic_shift_u32x16(b);
-//       branch_free_divide_u32x16(a, magic, shift)
-//     },
-//     |a, b| a / b.max(2),
-//   );
-// }
+#[test]
+fn impl_u32x16_branch_free_divide() {
+  crate::test_random_vector_vs_scalar(
+    |a: u32x16, b| {
+      // never divide by 0 or 1
+      let b = b.max(u32x16::splat(2));
+      let (magic, shift) = generate_branch_free_divide_magic_shift_u32x16(b);
+      branch_free_divide_u32x16(a, magic, shift)
+    },
+    |a, b| a / b.max(2),
+  );
+}
