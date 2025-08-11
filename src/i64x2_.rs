@@ -248,7 +248,7 @@ impl Shl for i64x2 {
         // mask the shift count to 63 to have same behavior on all platforms
         let shift_by = rhs & Self::splat(63);
         Self { sse: shl_each_u64_m128i(self.sse, shift_by.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // mask the shift count to 63 to have same behavior on all platforms
           let shift_by = vandq_s64(rhs.neon, vmovq_n_s64(63));
@@ -306,7 +306,7 @@ impl Shr for i64x2 {
   #[inline]
   fn shr(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // mask the shift count to 63 to have same behavior on all platforms
           // no right shift, have to pass negative value to left shift on neon
