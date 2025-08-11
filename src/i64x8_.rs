@@ -76,6 +76,72 @@ impl Mul for i64x8 {
   }
 }
 
+impl Shr for i64x8 {
+  type Output = Self;
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
+        // Self { avx512: shr_each_i64_m512i(self.avx512, rhs.avx512) }
+        // Fallback for now:
+        let a: [i64; 8] = cast(self);
+        let r: [i64; 8] = cast(rhs);
+        cast([
+          a[0].wrapping_shr(r[0] as u32),
+          a[1].wrapping_shr(r[1] as u32),
+          a[2].wrapping_shr(r[2] as u32),
+          a[3].wrapping_shr(r[3] as u32),
+          a[4].wrapping_shr(r[4] as u32),
+          a[5].wrapping_shr(r[5] as u32),
+          a[6].wrapping_shr(r[6] as u32),
+          a[7].wrapping_shr(r[7] as u32),
+        ])
+      } else {
+        // widen via two halves
+        Self {
+          a: self.a.shr(rhs.a),
+          b: self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl Shl for i64x8 {
+  type Output = Self;
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO(safe_arch): add shl_each_i64_m512i
+        // Self { avx512: shl_each_i64_m512i(self.avx512, rhs.avx512) }
+        // Fallback for now:
+        let a: [i64; 8] = cast(self);
+        let r: [i64; 8] = cast(rhs);
+        cast([
+          a[0].wrapping_shl(r[0] as u32),
+          a[1].wrapping_shl(r[1] as u32),
+          a[2].wrapping_shl(r[2] as u32),
+          a[3].wrapping_shl(r[3] as u32),
+          a[4].wrapping_shl(r[4] as u32),
+          a[5].wrapping_shl(r[5] as u32),
+          a[6].wrapping_shl(r[6] as u32),
+          a[7].wrapping_shl(r[7] as u32),
+        ])
+      } else {
+        // widen via two halves
+        Self {
+          a: self.a.shl(rhs.a),
+          b: self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl Add<i64> for i64x8 {
   type Output = Self;
   #[inline]
