@@ -183,16 +183,9 @@ impl Shl for i64x4 {
   fn shl(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        // avx x86 doesn't have set_splat_i64_m256i
-        // should be auto vectorized
-        let arr: [i64; 4] = cast(self);
-        let rhs: [i64; 4] = cast(rhs);
-        cast([
-          arr[0].wrapping_shl(rhs[0] as u32),
-          arr[1].wrapping_shl(rhs[1] as u32),
-          arr[2].wrapping_shl(rhs[2] as u32),
-          arr[3].wrapping_shl(rhs[3] as u32),
-        ])
+        // mask the shift count to 63 to have same behavior on all platforms
+        let shift_by = rhs & Self::splat(63);
+        Self { avx2: shl_each_u64_m256i(self.avx2, shift_by.avx2) }
       } else {
         Self {
           a : self.a.shl(rhs.a),
