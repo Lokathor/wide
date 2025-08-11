@@ -171,6 +171,31 @@ impl BitXor for i64x4 {
   }
 }
 
+/// Shifts lanes by the corresponding lane.
+///
+/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shl`)
+impl Shl for i64x4 {
+  type Output = Self;
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // mask the shift count to 63 to have same behavior on all platforms
+        let shift_by = rhs & Self::splat(63);
+        Self { avx2: shl_each_u64_m256i(self.avx2, shift_by.avx2) }
+      } else {
+        Self {
+          a : self.a.shl(rhs.a),
+          b : self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 macro_rules! impl_shl_t_for_i64x4 {
   ($($shift_type:ty),+ $(,)?) => {
     $(impl Shl<$shift_type> for i64x4 {
@@ -194,6 +219,36 @@ macro_rules! impl_shl_t_for_i64x4 {
   };
 }
 impl_shl_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+
+/// Shifts lanes by the corresponding lane.
+///
+/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+/// of the type. (same as `wrapping_shr`)
+impl Shr for i64x4 {
+  type Output = Self;
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let arr: [i64; 4] = cast(self);
+        let rhs: [i64; 4] = cast(rhs);
+        cast([
+          arr[0].wrapping_shr(rhs[0] as u32),
+          arr[1].wrapping_shr(rhs[1] as u32),
+          arr[2].wrapping_shr(rhs[2] as u32),
+          arr[3].wrapping_shr(rhs[3] as u32),
+        ])
+      } else {
+        Self {
+          a : self.a.shr(rhs.a),
+          b : self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+}
 
 macro_rules! impl_shr_t_for_i64x4 {
   ($($shift_type:ty),+ $(,)?) => {
