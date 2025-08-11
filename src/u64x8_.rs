@@ -100,30 +100,6 @@ impl Mul<u64> for u64x8 {
   }
 }
 
-impl Add<u64x8> for u64 {
-  type Output = u64x8;
-  #[inline]
-  fn add(self, rhs: u64x8) -> Self::Output {
-    u64x8::splat(self).add(rhs)
-  }
-}
-
-impl Sub<u64x8> for u64 {
-  type Output = u64x8;
-  #[inline]
-  fn sub(self, rhs: u64x8) -> Self::Output {
-    u64x8::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<u64x8> for u64 {
-  type Output = u64x8;
-  #[inline]
-  fn mul(self, rhs: u64x8) -> Self::Output {
-    u64x8::splat(self).mul(rhs)
-  }
-}
-
 impl BitAnd for u64x8 {
   type Output = Self;
   #[inline]
@@ -184,8 +160,8 @@ macro_rules! impl_shl_t_for_u64x8 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast(rhs as u64);
-            Self { avx512: shl_all_u64_m512i(self.avx512, shift) }
+            let shift = cast([rhs as u64, 0]);
+            Self { avx512: shl_all_u64_m256i(self.avx512, shift) }
           } else {
             Self {
               a : self.a.shl(rhs),
@@ -208,8 +184,8 @@ macro_rules! impl_shr_t_for_u64x8 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast(rhs as u64);
-            Self { avx512: shr_all_u64_m512i(self.avx512, shift) }
+            let shift = cast([rhs as u64, 0]);
+            Self { avx512: shr_all_u64_m256i(self.avx512, shift) }
           } else {
             Self {
               a : self.a.shr(rhs),
@@ -223,11 +199,72 @@ macro_rules! impl_shr_t_for_u64x8 {
 }
 impl_shr_t_for_u64x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+impl Shr for u64x8 {
+  type Output = Self;
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick!{
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shr_each_u64_m512i(self, rhs) }
+      } else {
+        Self {
+          a : self.a.shr(rhs.a),
+          b : self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl Shl for u64x8 {
+  type Output = Self;
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick!{
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shl_each_u64_m512i(self, rhs) }
+      } else {
+        Self {
+          a : self.a.shl(rhs.a),
+          b : self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl CmpEq for u64x8 {
   type Output = Self;
   #[inline]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     Self::cmp_eq(self, rhs)
+  }
+}
+
+
+impl Add<u64x8> for u64 {
+  type Output = u64x8;
+  #[inline]
+  fn add(self, rhs: u64x8) -> Self::Output {
+    u64x8::splat(self).add(rhs)
+  }
+}
+
+impl Sub<u64x8> for u64 {
+  type Output = u64x8;
+  #[inline]
+  fn sub(self, rhs: u64x8) -> Self::Output {
+    u64x8::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<u64x8> for u64 {
+  type Output = u64x8;
+  #[inline]
+  fn mul(self, rhs: u64x8) -> Self::Output {
+    u64x8::splat(self).mul(rhs)
   }
 }
 

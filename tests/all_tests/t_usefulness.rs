@@ -412,64 +412,64 @@ fn impl_u32x8_branch_free_divide() {
 }
 
 // TODO: add vector x vector shifts to enable the code below
-// // Example implementation of a branch-free division algorithm using u64x8.
+// Example implementation of a branch-free division algorithm using u64x8.
 
-// /// Generate magic and shift values for branch-free division for u64 values.
-// fn generate_branch_free_divide_magic_shift_u64(denom: u64x8) -> (u64x8, u64x8) {
-//   let mut magic = u64x8::ZERO;
-//   let mut shift = u64x8::ZERO;
-//   for i in 0..magic.as_array_ref().len() {
-//     let d = denom.as_array_ref()[i];
-//     assert!(d > 1);
+/// Generate magic and shift values for branch-free division for u64 values.
+fn generate_branch_free_divide_magic_shift_u64(denom: u64x8) -> (u64x8, u64x8) {
+  let mut magic = u64x8::ZERO;
+  let mut shift = u64x8::ZERO;
+  for i in 0..magic.as_array_ref().len() {
+    let d = denom.as_array_ref()[i];
+    assert!(d > 1);
     
-//     let floor_log_2_d = (63u32) - d.leading_zeros();
+    let floor_log_2_d = (63u32) - d.leading_zeros();
     
-//     if (d & (d - 1)) == 0 {
-//       // Power of 2
-//       magic.as_array_mut()[i] = 0;
-//       shift.as_array_mut()[i] = floor_log_2_d as u64 - 1;
-//     } else {
-//       let (proposed_m, rem) = ((1u128 << (floor_log_2_d + 64)) / d as u128, (1u128 << (floor_log_2_d + 64)) % d as u128);
+    if (d & (d - 1)) == 0 {
+      // Power of 2
+      magic.as_array_mut()[i] = 0;
+      shift.as_array_mut()[i] = floor_log_2_d as u64 - 1;
+    } else {
+      let (proposed_m, rem) = ((1u128 << (floor_log_2_d + 64)) / d as u128, (1u128 << (floor_log_2_d + 64)) % d as u128);
       
-//       let mut proposed_m = proposed_m as u64;
-//       let rem = rem as u64;
-//       assert!(rem > 0 && rem < d);
+      let mut proposed_m = proposed_m as u64;
+      let rem = rem as u64;
+      assert!(rem > 0 && rem < d);
       
-//       proposed_m = proposed_m.wrapping_add(proposed_m);
-//       let twice_rem = rem.wrapping_add(rem);
-//       if twice_rem >= d || twice_rem < rem {
-//         proposed_m += 1;
-//       }
+      proposed_m = proposed_m.wrapping_add(proposed_m);
+      let twice_rem = rem.wrapping_add(rem);
+      if twice_rem >= d || twice_rem < rem {
+        proposed_m += 1;
+      }
       
-//       magic.as_array_mut()[i] = 1 + proposed_m;
-//       shift.as_array_mut()[i] = floor_log_2_d as u64;
-//     }
-//   }
+      magic.as_array_mut()[i] = 1 + proposed_m;
+      shift.as_array_mut()[i] = floor_log_2_d as u64;
+    }
+  }
   
-//   (magic, shift)
-// }
+  (magic, shift)
+}
 
-// // using the previously generated magic and shift, calculate the division
-// fn branch_free_divide_u64(numerator: u64x8, magic: u64x8, shift: u64x8) -> u64x8 {
-//   let q = u64x8::mul_keep_high(numerator, magic);
+// using the previously generated magic and shift, calculate the division
+fn branch_free_divide_u64(numerator: u64x8, magic: u64x8, shift: u64x8) -> u64x8 {
+  let q = u64x8::mul_keep_high(numerator, magic);
   
-//   let t = ((numerator - q) >> 1) + q;
-//   t >> shift
-// }
+  let t = ((numerator - q) >> 1) + q;
+  t >> shift
+}
 
-// #[test]
-// fn impl_u64x8_branch_free_divide() {
-//   crate::test_random_vector_vs_scalar(
-//     |a: u64x8, b| {
-//       // never divide by 0 or 1 (since the branch free division doesn't support
-//       // division by 1)
-//       let b = b.max(u64x8::splat(2));
-//       let (magic, shift) = generate_branch_free_divide_magic_shift_u64(b);
-//       branch_free_divide_u64(a, magic, shift)
-//     },
-//     |a, b| a / b.max(2),
-//   );
-// }
+#[test]
+fn impl_u64x8_branch_free_divide() {
+  crate::test_random_vector_vs_scalar(
+    |a: u64x8, b| {
+      // never divide by 0 or 1 (since the branch free division doesn't support
+      // division by 1)
+      let b = b.max(u64x8::splat(2));
+      let (magic, shift) = generate_branch_free_divide_magic_shift_u64(b);
+      branch_free_divide_u64(a, magic, shift)
+    },
+    |a, b| a / b.max(2),
+  );
+}
 
 /// Example of using i64x8 for simultaneous min/max tracking across 8 channels
 #[test]
