@@ -376,6 +376,14 @@ fn internal_gen_branch_free_u32(d: u32) -> (u32, u32) {
   }
 }
 
+// using the previously generated magic and shift, calculate the division
+fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
+  let q = u32x8::mul_keep_high(numerator, magic);
+
+  let t = ((numerator - q) >> 1) + q;
+  t >> shift
+}
+
 /// Generate magic and shift values for branch-free division.
 fn generate_branch_free_divide_magic_shift(denom: u32x8) -> (u32x8, u32x8) {
   let mut magic = u32x8::ZERO;
@@ -389,14 +397,6 @@ fn generate_branch_free_divide_magic_shift(denom: u32x8) -> (u32x8, u32x8) {
   (magic, shift)
 }
 
-// using the previously generated magic and shift, calculate the division
-fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
-  let q = u32x8::mul_keep_high(numerator, magic);
-
-  let t = ((numerator - q) >> 1) + q;
-  t >> shift
-}
-
 #[test]
 fn impl_u32x8_branch_free_divide() {
   crate::test_random_vector_vs_scalar(
@@ -406,6 +406,182 @@ fn impl_u32x8_branch_free_divide() {
       let b = b.max(u32x8::splat(2));
       let (magic, shift) = generate_branch_free_divide_magic_shift(b);
       branch_free_divide(a, magic, shift)
+    },
+    |a, b| a / b.max(2),
+  );
+}
+
+// TODO: add vector x vector shifts to enable the code below
+// Example implementation of a branch-free division algorithm using u64x8.
+
+/// Generate magic and shift values for branch-free division for u64 values.
+fn generate_branch_free_divide_magic_shift_u64(denom: u64x8) -> (u64x8, u64x8) {
+  let mut magic = u64x8::ZERO;
+  let mut shift = u64x8::ZERO;
+  for i in 0..magic.as_array_ref().len() {
+    let d = denom.as_array_ref()[i];
+    assert!(d > 1);
+    
+    let floor_log_2_d = (63u32) - d.leading_zeros();
+    
+    if (d & (d - 1)) == 0 {
+      // Power of 2
+      magic.as_array_mut()[i] = 0;
+      shift.as_array_mut()[i] = floor_log_2_d as u64 - 1;
+    } else {
+      let (proposed_m, rem) = ((1u128 << (floor_log_2_d + 64)) / d as u128, (1u128 << (floor_log_2_d + 64)) % d as u128);
+      
+      let mut proposed_m = proposed_m as u64;
+      let rem = rem as u64;
+      assert!(rem > 0 && rem < d);
+      
+      proposed_m = proposed_m.wrapping_add(proposed_m);
+      let twice_rem = rem.wrapping_add(rem);
+      if twice_rem >= d || twice_rem < rem {
+        proposed_m += 1;
+      }
+      
+      magic.as_array_mut()[i] = 1 + proposed_m;
+      shift.as_array_mut()[i] = floor_log_2_d as u64;
+    }
+  }
+  
+  (magic, shift)
+}
+
+// using the previously generated magic and shift, calculate the division
+fn branch_free_divide_u64(numerator: u64x8, magic: u64x8, shift: u64x8) -> u64x8 {
+  let q = u64x8::mul_keep_high(numerator, magic);
+  
+  let t = ((numerator - q) >> 1) + q;
+  t >> shift
+}
+
+#[test]
+fn impl_u64x8_branch_free_divide() {
+  crate::test_random_vector_vs_scalar(
+    |a: u64x8, b| {
+      // never divide by 0 or 1 (since the branch free division doesn't support
+      // division by 1)
+      let b = b.max(u64x8::splat(2));
+      let (magic, shift) = generate_branch_free_divide_magic_shift_u64(b);
+      branch_free_divide_u64(a, magic, shift)
+    },
+    |a, b| a / b.max(2),
+  );
+}
+
+/// Example of using i64x8 for simultaneous min/max tracking across 8 channels
+#[test]
+fn parallel_min_max_tracking_i64x8() {
+  // Track min/max for 8 independent data streams
+  let mut minimums = i64x8::from([i64::MAX; 8]);
+  let mut maximums = i64x8::from([i64::MIN; 8]);
+  
+  // Simulate incoming data batches
+  let data_batch_1 = i64x8::from([10, -20, 30, -40, 50, -60, 70, -80]);
+  let data_batch_2 = i64x8::from([5, -15, 35, -45, 45, -55, 75, -85]);
+  let data_batch_3 = i64x8::from([15, -25, 25, -35, 55, -65, 65, -75]);
+  
+  // Update min/max with each batch
+  for batch in [data_batch_1, data_batch_2, data_batch_3] {
+    minimums = minimums.min(batch);
+    maximums = maximums.max(batch);
+  }
+  
+  // Verify results
+  let min_array = minimums.to_array();
+  let max_array = maximums.to_array();
+  
+  assert_eq!(min_array[0], 5);
+  assert_eq!(max_array[0], 15);
+  assert_eq!(min_array[1], -25);
+  assert_eq!(max_array[1], -15);
+  assert_eq!(min_array[2], 25);
+  assert_eq!(max_array[2], 35);
+  assert_eq!(min_array[3], -45);
+  assert_eq!(max_array[3], -35);
+  assert_eq!(min_array[4], 45);
+  assert_eq!(max_array[4], 55);
+  assert_eq!(min_array[5], -65);
+  assert_eq!(max_array[5], -55);
+  assert_eq!(min_array[6], 65);
+  assert_eq!(max_array[6], 75);
+  assert_eq!(min_array[7], -85);
+  assert_eq!(max_array[7], -75);
+}
+
+/// Example of using u64x8 for histogram updates - processing 8 bins at once.
+/// This demonstrates how AVX512 width can be useful for processing more data
+/// in parallel.
+#[test] 
+fn histogram_update_u64x8() {
+  // Create a simple histogram with 64 bins
+  let mut histogram = [0u64; 64];
+  
+  // Simulate some data that maps to bin indices
+  let bin_indices = [3, 15, 23, 31, 40, 45, 50, 63];
+  let increments = u64x8::from([1, 2, 1, 3, 1, 1, 4, 1]);
+  
+  // In a naive implementation, we'd update each bin individually
+  // With u64x8, we can gather from 8 bins at once
+  let mut bins = u64x8::ZERO;
+  for (i, &idx) in bin_indices.iter().enumerate() {
+    bins.as_array_mut()[i] = histogram[idx as usize];
+  }
+  
+  // Add increments
+  let updated_bins = bins + increments;
+  
+  // Scatter back to histogram
+  for (i, &idx) in bin_indices.iter().enumerate() {
+    histogram[idx as usize] = updated_bins.as_array_ref()[i];
+  }
+  
+  // Verify results
+  assert_eq!(histogram[3], 1);
+  assert_eq!(histogram[15], 2);
+  assert_eq!(histogram[23], 1);
+  assert_eq!(histogram[31], 3);
+  assert_eq!(histogram[40], 1); 
+  assert_eq!(histogram[45], 1);
+  assert_eq!(histogram[50], 4);
+  assert_eq!(histogram[63], 1);
+  
+  // All other bins should still be 0
+  let total: u64 = histogram.iter().sum();
+  assert_eq!(total, 14);
+}
+
+/// Generate magic and shift values for branch-free division for u32 with 16 lanes.
+fn generate_branch_free_divide_magic_shift_u32x16(denom: u32x16) -> (u32x16, u32x16) {
+  let mut magic = u32x16::ZERO;
+  let mut shift = u32x16::ZERO;
+  for i in 0..magic.as_array_ref().len() {
+    let (m, s) = internal_gen_branch_free_u32(denom.as_array_ref()[i]);
+    magic.as_array_mut()[i] = m;
+    shift.as_array_mut()[i] = s;
+  }
+  
+  (magic, shift)
+}
+
+// using the previously generated magic and shift, calculate the division
+fn branch_free_divide_u32x16(numerator: u32x16, magic: u32x16, shift: u32x16) -> u32x16 {
+  let q = u32x16::mul_keep_high(numerator, magic);
+  
+  let t = ((numerator - q) >> 1) + q;
+  t >> shift
+}
+
+#[test]
+fn impl_u32x16_branch_free_divide() {
+  crate::test_random_vector_vs_scalar(
+    |a: u32x16, b| {
+      // never divide by 0 or 1
+      let b = b.max(u32x16::splat(2));
+      let (magic, shift) = generate_branch_free_divide_magic_shift_u32x16(b);
+      branch_free_divide_u32x16(a, magic, shift)
     },
     |a, b| a / b.max(2),
   );

@@ -461,6 +461,18 @@ impl i64x4 {
   pub fn as_array_mut(&mut self) -> &mut [i64; 4] {
     cast_mut(self)
   }
+
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    self.cmp_lt(rhs).blend(self, rhs)
+  }
+  
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    self.cmp_gt(rhs).blend(self, rhs)
+  }
 }
 
 impl Not for i64x4 {

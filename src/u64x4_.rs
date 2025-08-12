@@ -350,6 +350,40 @@ impl u64x4 {
   pub fn as_array_mut(&mut self) -> &mut [u64; 4] {
     cast_mut(self)
   }
+
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    self.cmp_lt(rhs).blend(self, rhs)
+  }
+  
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    self.cmp_gt(rhs).blend(self, rhs)
+  }
+  
+  #[inline]
+  #[must_use]
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let arr1: [u64; 4] = cast(self);
+        let arr2: [u64; 4] = cast(rhs);
+        cast([
+          (arr1[0] as u128 * arr2[0] as u128 >> 64) as u64,
+          (arr1[1] as u128 * arr2[1] as u128 >> 64) as u64,
+          (arr1[2] as u128 * arr2[2] as u128 >> 64) as u64,
+          (arr1[3] as u128 * arr2[3] as u128 >> 64) as u64,
+        ])
+      } else {
+        Self {
+          a: self.a.mul_keep_high(rhs.a),
+          b: self.b.mul_keep_high(rhs.b),
+        }
+      }
+    }
+  }
 }
 
 impl Not for u64x4 {

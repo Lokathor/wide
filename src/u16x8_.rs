@@ -378,6 +378,43 @@ impl u16x8 {
   }
   #[inline]
   #[must_use]
+  pub fn cmp_gt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature = "sse2")] {
+        use safe_arch::*;
+
+        let bias = m128i::from([0x8000u16; 8]);
+
+        let a_biased = sub_i16_m128i(self.sse, bias);
+        let b_biased = sub_i16_m128i(rhs.sse, bias);
+        let mask = cmp_gt_mask_i16_m128i(a_biased, b_biased);
+
+        Self { sse: mask }
+      } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+        unsafe {
+          use core::arch::aarch64::*;
+          Self {
+            neon: vcgtq_u16(self.neon, rhs.neon),
+          }
+        }
+      } else {
+        Self {
+          arr: [
+            if self.arr[0] > rhs.arr[0] { u16::MAX } else { 0 },
+            if self.arr[1] > rhs.arr[1] { u16::MAX } else { 0 },
+            if self.arr[2] > rhs.arr[2] { u16::MAX } else { 0 },
+            if self.arr[3] > rhs.arr[3] { u16::MAX } else { 0 },
+            if self.arr[4] > rhs.arr[4] { u16::MAX } else { 0 },
+            if self.arr[5] > rhs.arr[5] { u16::MAX } else { 0 },
+            if self.arr[6] > rhs.arr[6] { u16::MAX } else { 0 },
+            if self.arr[7] > rhs.arr[7] { u16::MAX } else { 0 },
+          ]
+        }
+      }
+    }
+  }
+  #[inline]
+  #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {

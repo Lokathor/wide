@@ -295,6 +295,26 @@ impl u16x16 {
 
   #[inline]
   #[must_use]
+  pub fn cmp_gt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature = "avx2")] {
+        let bias = m256i::from([0x8000u16; 16]);
+        let a_biased = sub_i16_m256i(self.avx2, bias);
+        let b_biased = sub_i16_m256i(rhs.avx2, bias);
+        let mask = cmp_gt_mask_i16_m256i(a_biased, b_biased);
+
+        Self { avx2: mask }
+      } else {
+        Self {
+          a: self.a.cmp_gt(rhs.a),
+          b: self.b.cmp_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
