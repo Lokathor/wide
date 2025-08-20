@@ -151,6 +151,23 @@ impl CmpEq for u8x32 {
   }
 }
 
+impl Not for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: self.avx.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+}
+
 impl u8x32 {
   #[inline]
   #[must_use]

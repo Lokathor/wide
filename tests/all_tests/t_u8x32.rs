@@ -108,6 +108,26 @@ fn impl_u8x32_cmp_eq() {
 }
 
 #[test]
+fn impl_u8x32_not() {
+  let a = u8x32::from([
+    233, 90, 206, 251, 179, 93, 136, 194, 
+    135, 57, 6, 243, 234, 196, 243, 49, 
+    44, 116, 195, 174, 208, 190, 94, 155, 
+    233, 244, 133, 1, 76, 10, 180, 175
+  ]);
+  let expected = u8x32::from([
+    22, 165, 49, 4, 76, 162, 119, 61, 
+    120, 198, 249, 12, 21, 59, 12, 206, 
+    211, 139, 60, 81, 47, 65, 161, 100, 
+    22, 11, 122, 254, 179, 245, 75, 80
+  ]);
+  let actual = !a;
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(|a: u8x32, _b| !a, |a, _b| !a);
+}
+
+#[test]
 fn impl_u8x32_blend() {
   let use_t: u8 = 0xff;
   let t = u8x32::from([
