@@ -1582,6 +1582,52 @@ impl f32x4 {
     Self::pow_f32x4(self, f32x4::splat(y))
   }
 
+  #[must_use]
+  #[inline]
+  pub fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: _mm_unpacklo_ps(self.sse, b.simd) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: u32x4_shuffle::<0, 4, 1, 5>(self.simd, b.simd)
+        }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))]{
+        unsafe {Self { neon: vzip1q_f32(self.neon, b.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0],
+          b.arr[0],
+          self.arr[1],
+          b.arr[1],
+        ]}
+      }
+    }
+  }
+
+  #[must_use]
+  #[inline]
+  pub fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: _mm_unpackhi_ps(self.sse, b.simd) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: u32x4_shuffle::<2, 6, 3, 7>(self.simd, b.simd)
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vzip2q_f32(self.neon, b.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[2],
+          b.arr[2],
+          self.arr[3],
+          b.arr[3],
+        ]}
+      }
+    }
+  }
+
   /// Transpose matrix of 4x4 `f32` matrix. Currently only accelerated on SSE.
   #[must_use]
   #[inline]
@@ -1596,6 +1642,18 @@ impl f32x4 {
         transpose_four_m128(&mut e0.sse, &mut e1.sse, &mut e2.sse, &mut e3.sse);
 
         [e0, e1, e2, e3]
+      } else if #[cfg(any(all(target_feature="neon",target_arch="aarch64"), target_feature="simd128"))] {
+        let a = data[0].unpack_lo(data[2]);
+        let b = data[1].unpack_lo(data[3]);
+        let c = data[0].unpack_hi(data[2]);
+        let d = data[1].unpack_hi(data[3]);
+
+        [
+          a.unpack_lo(b),
+          a.unpack_hi(b),
+          c.unpack_lo(d),
+          c.unpack_hi(d),
+        ]
       } else {
         #[inline(always)]
         fn transpose_column(data: &[f32x4; 4], index: usize) -> f32x4 {
