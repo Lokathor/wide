@@ -1587,7 +1587,7 @@ impl f32x4 {
   pub fn unpack_lo(self, b: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
-        Self { sse: _mm_unpacklo_ps(self.sse, b.simd) }
+        Self { sse: unpack_low_m128(self.sse, b.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
           simd: u32x4_shuffle::<0, 4, 1, 5>(self.simd, b.simd)
@@ -1610,7 +1610,7 @@ impl f32x4 {
   pub fn unpack_hi(self, b: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
-        Self { sse: _mm_unpackhi_ps(self.sse, b.simd) }
+        Self { sse: unpack_high_m128(self.sse, b.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
           simd: u32x4_shuffle::<2, 6, 3, 7>(self.simd, b.simd)
