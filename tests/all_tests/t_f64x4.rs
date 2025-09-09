@@ -710,6 +710,27 @@ fn impl_f64x4_reduce_add() {
   assert_eq!(p.reduce_add(), 0.004);
 }
 
+// Regression test for lack of aarch64+neon FMA instructions
+// for `mul_add` that lead to subpar accuracy.
+#[test]
+#[cfg(any(
+  all(target_feature = "fma", any(target_arch = "x86", target_arch = "x86_64")),
+  all(target_feature = "neon", target_arch = "aarch64")
+))]
+fn regression_for_f64x4_fma() {
+  let a = f64::from_bits(13857435315930660864);
+  let b = f64::from_bits(4832221662680186888);
+  let c = f64::from_bits(4859139800860736384);
+  let wide_a = f64x4::splat(a);
+  let wide_b = f64x4::splat(b);
+  let wide_c = f64x4::splat(c);
+
+  let result = a.mul_add(b, c);
+  let wide_result = wide_a.mul_add(wide_b, wide_c);
+  assert_eq!(result.to_bits(), 4823328195304192032);
+  assert_eq!(wide_result.to_array()[0].to_bits(), 4823328195304192032);
+}
+
 #[test]
 fn impl_f64x4_sum() {
   let mut p = Vec::with_capacity(250_000);
