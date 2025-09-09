@@ -846,6 +846,8 @@ impl f32x4 {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self { sse: fused_mul_add_m128(self.sse, m.sse, a.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vfmaq_f32(a.neon, self.neon, m.neon) } }
       } else {
         (self * m) + a
       }
@@ -858,6 +860,8 @@ impl f32x4 {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self { sse: fused_mul_sub_m128(self.sse, m.sse, s.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vfmaq_f32(vnegq_f32(s.neon), self.neon, m.neon) } }
       } else {
         (self * m) - s
       }
@@ -870,6 +874,8 @@ impl f32x4 {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self { sse: fused_mul_neg_add_m128(self.sse, m.sse, a.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vfmsq_f32(a.neon, self.neon, m.neon) } }
       } else {
         a - (self * m)
       }
@@ -882,6 +888,8 @@ impl f32x4 {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self { sse: fused_mul_neg_sub_m128(self.sse, m.sse, a.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vnegq_f32(vfmaq_f32(a.neon, self.neon, m.neon)) } }
       } else {
         -(self * m) - a
       }
