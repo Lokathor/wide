@@ -8,88 +8,25 @@ fn size_align() {
 
 #[test]
 fn impl_add_for_u64x8() {
-  let a = u64x8::from([
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    u64::MAX - 1,
-  ]);
-  let b = u64x8::from([
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    1,
-  ]);
-  let expected = u64x8::from([
-    17,
-    19,
-    21,
-    23,
-    25,
-    27,
-    29,
-    u64::MAX,
-  ]);
+  let a = u64x8::from([0, 1, 2, 3, 4, 5, 6, u64::MAX - 1]);
+  let b = u64x8::from([17, 18, 19, 20, 21, 22, 23, 1]);
+  let expected = u64x8::from([17, 19, 21, 23, 25, 27, 29, u64::MAX]);
   let actual = a + b;
   assert_eq!(expected, actual);
 }
 
 #[test]
 fn impl_sub_for_u64x8() {
-  let a = u64x8::from([
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    1,
-  ]);
-  let b = u64x8::from([
-    17,
-    18,
-    19,
-    0,
-    2,
-    23,
-    24,
-    1,
-  ]);
-  let expected = u64x8::from([
-    0,
-    0,
-    0,
-    20,
-    19,
-    u64::MAX,
-    u64::MAX,
-    0,
-  ]);
+  let a = u64x8::from([17, 18, 19, 20, 21, 22, 23, 1]);
+  let b = u64x8::from([17, 18, 19, 0, 2, 23, 24, 1]);
+  let expected = u64x8::from([0, 0, 0, 20, 19, u64::MAX, u64::MAX, 0]);
   let actual = a - b;
   assert_eq!(expected, actual);
 }
 
 #[test]
 fn impl_mul_for_u64x8() {
-  let a = u64x8::from([
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    1 << 32,
-    24,
-  ]);
+  let a = u64x8::from([17, 18, 19, 20, 21, 22, 1 << 32, 24]);
   let b = a;
   let expected = u64x8::from([
     17 * 17,

@@ -1,6 +1,7 @@
 macro_rules! int_uint_consts {
   ($type:ty, $lanes:expr, $simd:ty, $bits:expr) => {
-    // ensure the size of the SIMD type is the same as the size of the array and number of bits is OK
+    // ensure the size of the SIMD type is the same as the size of the array and
+    // number of bits is OK
     const _: () = assert!(
       core::mem::size_of::<$simd>() == core::mem::size_of::<[$type; $lanes]>()
         && core::mem::size_of::<$simd>() * 8 == $bits as usize

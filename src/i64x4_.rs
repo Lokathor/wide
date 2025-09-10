@@ -467,7 +467,7 @@ impl i64x4 {
   pub fn min(self, rhs: Self) -> Self {
     self.cmp_lt(rhs).blend(self, rhs)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

@@ -310,7 +310,7 @@ impl u32x16 {
   pub const fn new(array: [u32; 16]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
@@ -325,7 +325,7 @@ impl u32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
@@ -370,7 +370,7 @@ impl u32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
@@ -385,7 +385,7 @@ impl u32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -400,8 +400,7 @@ impl u32x16 {
       }
     }
   }
-  
-  
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
@@ -432,7 +431,7 @@ impl u32x16 {
         Self {
           a: self.a.mul_keep_high(rhs.a),
           b: self.b.mul_keep_high(rhs.b),
-        } 
+        }
       }
     }
   }
@@ -442,7 +441,7 @@ impl u32x16 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        ((movepi8_mask_m512i(self.avx512) as u32) & 
+        ((movepi8_mask_m512i(self.avx512) as u32) &
           0b10001000100010001000100010001000) != 0
       } else {
         (self.a | self.b).any()
@@ -455,8 +454,8 @@ impl u32x16 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        ((movepi8_mask_m512i(self.avx512) as u32) & 
-          0b10001000100010001000100010001000) == 
+        ((movepi8_mask_m512i(self.avx512) as u32) &
+          0b10001000100010001000100010001000) ==
           0b10001000100010001000100010001000
       } else {
         (self.a & self.b).all()

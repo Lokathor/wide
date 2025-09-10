@@ -228,7 +228,7 @@ impl Shr for u64x8 {
 
   #[inline]
   fn shr(self, rhs: Self) -> Self::Output {
-    pick!{
+    pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: shr_each_u64_m512i(self.avx512, rhs.avx512) }
       } else {
@@ -246,7 +246,7 @@ impl Shl for u64x8 {
 
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
-    pick!{
+    pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: shl_each_u64_m512i(self.avx512, rhs.avx512) }
       } else {
@@ -365,7 +365,7 @@ impl u64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

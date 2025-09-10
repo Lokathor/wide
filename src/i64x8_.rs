@@ -421,8 +421,14 @@ impl i64x8 {
   pub fn round_float(self) -> f64x8 {
     let arr: [i64; 8] = cast(self);
     cast([
-      arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64,
-      arr[4] as f64, arr[5] as f64, arr[6] as f64, arr[7] as f64
+      arr[0] as f64,
+      arr[1] as f64,
+      arr[2] as f64,
+      arr[3] as f64,
+      arr[4] as f64,
+      arr[5] as f64,
+      arr[6] as f64,
+      arr[7] as f64,
     ])
   }
 
@@ -503,7 +509,7 @@ impl i64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
