@@ -418,6 +418,78 @@ impl f32x16 {
   pub fn as_array_mut(&mut self) -> &mut [f32; 16] {
     cast_mut(self)
   }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+        Self { avx512: fused_mul_add_m512(self.avx512, m.avx512, a.avx512) }
+      } else if #[cfg(target_feature="avx512f")] {
+        // still want to use 512 bit ops
+        (self * m) + a
+      } else {
+        Self {
+          a: self.a.mul_add(m.a, a.a),
+          b: self.b.mul_add(m.b, a.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_sub(self, m: Self, s: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+        Self { avx512: fused_mul_sub_m512(self.avx512, m.avx512, s.avx512) }
+      } else if #[cfg(target_feature="avx512f")] {
+        // still want to use 512 bit ops
+        (self * m) - s
+      } else {
+        Self {
+          a: self.a.mul_sub(m.a, s.a),
+          b: self.b.mul_sub(m.b, s.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+        Self { avx512: fused_mul_neg_add_m512(self.avx512, m.avx512, a.avx512) }
+      } else if #[cfg(target_feature="avx512f")] {
+        // still want to use 512 bit ops
+        a - (self * m)
+      } else {
+        Self {
+          a: self.a.mul_neg_add(m.a, a.a),
+          b: self.b.mul_neg_add(m.b, a.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+        Self { avx512: fused_mul_neg_sub_m512(self.avx512, m.avx512, s.avx512) }
+      } else if #[cfg(target_feature="avx512f")] {
+        // still want to use 512 bit ops
+        -(self * m) - s
+      } else {
+        Self {
+          a: self.a.mul_neg_sub(m.a, s.a),
+          b: self.b.mul_neg_sub(m.b, s.b),
+        }
+      }
+    }
+  }
 }
 
 impl Not for f32x16 {
