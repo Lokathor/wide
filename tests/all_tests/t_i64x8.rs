@@ -8,108 +8,31 @@ fn size_align() {
 
 #[test]
 fn impl_add_for_i64x8() {
-  let a = i64x8::from([
-    1,
-    2,
-    i64::MAX - 1,
-    i64::MAX - 1,
-    100,
-    -50,
-    i64::MIN + 1,
-    0,
-  ]);
-  let b = i64x8::from([
-    17,
-    18,
-    1,
-    2,
-    200,
-    -30,
-    -1,
-    i64::MAX,
-  ]);
-  let expected = i64x8::from([
-    18,
-    20,
-    i64::MAX,
-    i64::MIN,
-    300,
-    -80,
-    i64::MIN,
-    i64::MAX,
-  ]);
+  let a =
+    i64x8::from([1, 2, i64::MAX - 1, i64::MAX - 1, 100, -50, i64::MIN + 1, 0]);
+  let b = i64x8::from([17, 18, 1, 2, 200, -30, -1, i64::MAX]);
+  let expected =
+    i64x8::from([18, 20, i64::MAX, i64::MIN, 300, -80, i64::MIN, i64::MAX]);
   let actual = a + b;
   assert_eq!(expected, actual);
 }
 
 #[test]
 fn impl_sub_for_i64x8() {
-  let a = i64x8::from([
-    1,
-    2,
-    i64::MIN + 1,
-    i64::MIN + 1,
-    100,
-    -50,
-    i64::MAX - 1,
-    0,
-  ]);
-  let b = i64x8::from([
-    17,
-    18,
-    1,
-    2,
-    200,
-    -30,
-    -1,
-    i64::MAX,
-  ]);
-  let expected = i64x8::from([
-    -16,
-    -16,
-    i64::MIN,
-    i64::MAX,
-    -100,
-    -20,
-    i64::MAX,
-    -i64::MAX,
-  ]);
+  let a =
+    i64x8::from([1, 2, i64::MIN + 1, i64::MIN + 1, 100, -50, i64::MAX - 1, 0]);
+  let b = i64x8::from([17, 18, 1, 2, 200, -30, -1, i64::MAX]);
+  let expected =
+    i64x8::from([-16, -16, i64::MIN, i64::MAX, -100, -20, i64::MAX, -i64::MAX]);
   let actual = a - b;
   assert_eq!(expected, actual);
 }
 
 #[test]
 fn impl_mul_for_i64x8() {
-  let a = i64x8::from([
-    1,
-    2,
-    3,
-    4,
-    -5,
-    -6,
-    -7,
-    0,
-  ]);
-  let b = i64x8::from([
-    17,
-    -18,
-    19,
-    -20,
-    21,
-    -22,
-    -23,
-    i64::MAX,
-  ]);
-  let expected = i64x8::from([
-    17,
-    -36,
-    57,
-    -80,
-    -105,
-    132,
-    161,
-    0,
-  ]);
+  let a = i64x8::from([1, 2, 3, 4, -5, -6, -7, 0]);
+  let b = i64x8::from([17, -18, 19, -20, 21, -22, -23, i64::MAX]);
+  let expected = i64x8::from([17, -36, 57, -80, -105, 132, 161, 0]);
   let actual = a * b;
   assert_eq!(expected, actual);
 }
@@ -154,7 +77,8 @@ fn impl_shl_for_i64x8() {
 fn impl_shr_for_i64x8() {
   let a = i64x8::from([2, 4, 6, 8, 7, i64::MAX / 2, 65536, i64::MAX]);
   let b = 1;
-  let expected = i64x8::from([1, 2, 3, 4, 3, i64::MAX / 4, 32768, i64::MAX / 2]);
+  let expected =
+    i64x8::from([1, 2, 3, 4, 3, i64::MAX / 4, 32768, i64::MAX / 2]);
   let actual = a >> b;
   assert_eq!(expected, actual);
 }

@@ -300,7 +300,7 @@ impl f32x16 {
   pub fn new(array: [f32; 16]) -> Self {
     Self::from(array)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -315,7 +315,7 @@ impl f32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -330,7 +330,7 @@ impl f32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
@@ -345,7 +345,7 @@ impl f32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {
@@ -360,7 +360,7 @@ impl f32x16 {
       }
     }
   }
-    
+
   #[inline]
   #[must_use]
   pub fn is_finite(self) -> Self {
@@ -370,7 +370,7 @@ impl f32x16 {
     let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
     cast(out)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn round(self) -> Self {
@@ -385,7 +385,7 @@ impl f32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn round_int(self) -> i32x16 {
@@ -400,19 +400,19 @@ impl f32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn to_array(self) -> [f32; 16] {
     cast(self)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn as_array_ref(&self) -> &[f32; 16] {
     cast_ref(self)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn as_array_mut(&mut self) -> &mut [f32; 16] {

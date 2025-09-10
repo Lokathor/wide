@@ -714,7 +714,10 @@ fn impl_f64x4_reduce_add() {
 // for `mul_add` that lead to subpar accuracy.
 #[test]
 #[cfg(any(
-  all(target_feature = "fma", any(target_arch = "x86", target_arch = "x86_64")),
+  all(
+    target_feature = "fma",
+    any(target_arch = "x86", target_arch = "x86_64")
+  ),
   all(target_feature = "neon", target_arch = "aarch64")
 ))]
 fn regression_for_f64x4_fma() {

@@ -330,7 +330,7 @@ impl f64x8 {
   pub const fn new(array: [f64; 8]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -345,7 +345,7 @@ impl f64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -361,7 +361,7 @@ impl f64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn floor(self) -> Self {
@@ -420,7 +420,7 @@ impl f64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn fast_min(self, rhs: Self) -> Self {
@@ -450,7 +450,7 @@ impl f64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {
@@ -465,7 +465,7 @@ impl f64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn is_finite(self) -> Self {
@@ -475,7 +475,7 @@ impl f64x8 {
     let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
     cast(out)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn is_inf(self) -> Self {
@@ -500,7 +500,7 @@ impl f64x8 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn round_int(self) -> i64x8 {
@@ -516,7 +516,7 @@ impl f64x8 {
       rounded[7] as i64,
     ])
   }
-  
+
   #[inline]
   #[must_use]
   pub fn mul_add(self, m: Self, a: Self) -> Self {
@@ -1441,13 +1441,13 @@ impl f64x8 {
   pub fn to_array(self) -> [f64; 8] {
     cast(self)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn as_array_ref(&self) -> &[f64; 8] {
     cast_ref(self)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn as_array_mut(&mut self) -> &mut [f64; 8] {

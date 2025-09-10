@@ -226,7 +226,7 @@ impl i32x16 {
   pub const fn new(array: [i32; 16]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
@@ -241,7 +241,7 @@ impl i32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
@@ -286,7 +286,7 @@ impl i32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
@@ -301,7 +301,7 @@ impl i32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -331,7 +331,7 @@ impl i32x16 {
   pub fn as_array_mut(&mut self) -> &mut [i32; 16] {
     cast_mut(self)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x16 {

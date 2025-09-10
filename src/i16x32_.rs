@@ -226,7 +226,7 @@ impl i16x32 {
   pub const fn new(array: [i16; 32]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn cmp_eq(self, rhs: Self) -> Self {
@@ -241,7 +241,7 @@ impl i16x32 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn cmp_gt(self, rhs: Self) -> Self {
@@ -286,7 +286,7 @@ impl i16x32 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -316,7 +316,7 @@ impl i16x32 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -331,7 +331,7 @@ impl i16x32 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -346,7 +346,7 @@ impl i16x32 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   pub fn saturating_sub(self, rhs: Self) -> Self {

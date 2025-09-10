@@ -356,13 +356,13 @@ impl u64x4 {
   pub fn min(self, rhs: Self) -> Self {
     self.cmp_lt(rhs).blend(self, rhs)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     self.cmp_gt(rhs).blend(self, rhs)
   }
-  
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
