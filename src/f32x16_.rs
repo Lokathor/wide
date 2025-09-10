@@ -321,7 +321,10 @@ impl f32x16 {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: max_m512(self.avx512, rhs.avx512) }
+        // max_m512 seems to do rhs < self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { avx512: max_m512(self.avx512, rhs.avx512) })
       } else {
         Self {
           a: self.a.max(rhs.a),
@@ -336,7 +339,10 @@ impl f32x16 {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: min_m512(self.avx512, rhs.avx512) }
+        // min_m512 seems to do rhs > self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().blend(self, Self { avx512: min_m512(self.avx512, rhs.avx512) })
       } else {
         Self {
           a: self.a.min(rhs.a),
