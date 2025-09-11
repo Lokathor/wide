@@ -539,6 +539,29 @@ impl f64x4 {
     ])
   }
 
+  /// Performs a multiply-add operation: `self * m + a`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// multiply and add operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfmadd` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX only: Uses `(self * m) + a` (two roundings)
+  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x4;
+  /// let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
+  /// let b = f64x4::from([2.0; 4]);
+  /// let c = f64x4::from([10.0; 4]);
+  /// 
+  /// let result = a.mul_add(b, c);
+  /// 
+  /// let expected = f64x4::from([12.0, 14.0, 16.0, 18.0]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_add(self, m: Self, a: Self) -> Self {
@@ -557,24 +580,70 @@ impl f64x4 {
     }
   }
 
+  /// Performs a multiply-subtract operation: `self * m - s`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// multiply and subtract operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfmsub` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX only: Uses `(self * m) - s` (two roundings)
+  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x4;
+  /// let a = f64x4::from([10.0; 4]);
+  /// let b = f64x4::from([2.0; 4]);
+  /// let c = f64x4::from([5.0; 4]);
+  /// 
+  /// let result = a.mul_sub(b, c);
+  /// 
+  /// let expected = f64x4::from([15.0; 4]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
-  pub fn mul_sub(self, m: Self, a: Self) -> Self {
+  pub fn mul_sub(self, m: Self, s: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-        Self { avx: fused_mul_sub_m256d(self.avx, m.avx, a.avx) }
+        Self { avx: fused_mul_sub_m256d(self.avx, m.avx, s.avx) }
       } else if #[cfg(target_feature="avx")] {
         // still want to use 256 bit ops
-        (self * m) - a
+        (self * m) - s
       } else {
         Self {
-          a : self.a.mul_sub(m.a, a.a),
-          b : self.b.mul_sub(m.b, a.b),
+          a : self.a.mul_sub(m.a, s.a),
+          b : self.b.mul_sub(m.b, s.b),
         }
       }
     }
   }
 
+  /// Performs a negative multiply-add operation: `a - (self * m)`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfnmadd` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX only: Uses `a - (self * m)` (two roundings)
+  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x4;
+  /// let a = f64x4::from([3.0; 4]);
+  /// let b = f64x4::from([2.0; 4]);
+  /// let c = f64x4::from([10.0; 4]);
+  /// 
+  /// let result = a.mul_neg_add(b, c);
+  /// 
+  /// let expected = f64x4::from([4.0; 4]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
@@ -593,19 +662,42 @@ impl f64x4 {
     }
   }
 
+  /// Performs a negative multiply-subtract operation: `-(self * m) - s`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfnmsub` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX only: Uses `-(self * m) - s` (two roundings)
+  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x4;
+  /// let a = f64x4::from([3.0; 4]);
+  /// let b = f64x4::from([2.0; 4]);
+  /// let c = f64x4::from([1.0; 4]);
+  /// 
+  /// let result = a.mul_neg_sub(b, c);
+  /// 
+  /// let expected = f64x4::from([-7.0; 4]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
-  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
+  pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
     pick! {
        if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-         Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, a.avx) }
+         Self { avx: fused_mul_neg_sub_m256d(self.avx, m.avx, s.avx) }
         } else if #[cfg(target_feature="avx")] {
           // still want to use 256 bit ops
-          -(self * m) - a
+          -(self * m) - s
         } else {
          Self {
-           a : self.a.mul_neg_sub(m.a, a.a),
-           b : self.b.mul_neg_sub(m.b, a.b),
+           a : self.a.mul_neg_sub(m.a, s.a),
+           b : self.b.mul_neg_sub(m.b, s.b),
          }
        }
     }

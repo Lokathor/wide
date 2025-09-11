@@ -425,6 +425,29 @@ impl f32x16 {
     cast_mut(self)
   }
 
+  /// Performs a multiply-add operation: `self * m + a`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// multiply and add operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfmadd` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX-512F only: Uses `(self * m) + a` (two roundings)
+  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([1.0; 16]);
+  /// let b = f32x16::from([2.0; 16]);
+  /// let c = f32x16::from([10.0; 16]);
+  /// 
+  /// let result = a.mul_add(b, c);
+  /// 
+  /// let expected = f32x16::from([12.0; 16]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_add(self, m: Self, a: Self) -> Self {
@@ -443,6 +466,29 @@ impl f32x16 {
     }
   }
 
+  /// Performs a multiply-subtract operation: `self * m - s`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// multiply and subtract operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfmsub` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX-512F only: Uses `(self * m) - s` (two roundings)
+  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([10.0; 16]);
+  /// let b = f32x16::from([3.0; 16]);
+  /// let c = f32x16::from([5.0; 16]);
+  /// 
+  /// let result = a.mul_sub(b, c);
+  /// 
+  /// let expected = f32x16::from([25.0; 16]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_sub(self, m: Self, s: Self) -> Self {
@@ -461,6 +507,29 @@ impl f32x16 {
     }
   }
 
+  /// Performs a negative multiply-add operation: `a - (self * m)`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfnmadd` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX-512F only: Uses `a - (self * m)` (two roundings)
+  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([4.0; 16]);
+  /// let b = f32x16::from([2.0; 16]);
+  /// let c = f32x16::from([10.0; 16]);
+  /// 
+  /// let result = a.mul_neg_add(b, c);
+  /// 
+  /// let expected = f32x16::from([2.0; 16]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
@@ -479,6 +548,29 @@ impl f32x16 {
     }
   }
 
+  /// Performs a negative multiply-subtract operation: `-(self * m) - s`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfnmsub` (single rounding, best accuracy)
+  /// - On x86/x86_64 with AVX-512F only: Uses `-(self * m) - s` (two roundings)
+  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([4.0; 16]);
+  /// let b = f32x16::from([2.0; 16]);
+  /// let c = f32x16::from([1.0; 16]);
+  /// 
+  /// let result = a.mul_neg_sub(b, c);
+  /// 
+  /// let expected = f32x16::from([-9.0; 16]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
