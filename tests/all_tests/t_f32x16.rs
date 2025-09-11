@@ -77,146 +77,144 @@ fn impl_sub_const_for_f32x16() {
   assert_eq!(expected, actual);
 }
 
-// TODO
+#[test]
+fn impl_mul_const_for_f32x16() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
+  let expected = f32x16::from([2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0]);
+  let actual = a * 2.0;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_mul_const_for_f32x16() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
-//   let expected = f32x16::from([2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0]);
-//   let actual = a * 2.0;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_div_const_for_f32x16() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
+  let expected = f32x16::from([0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0]);
+  let actual = a / 2.0;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_div_const_for_f32x16() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
-//   let expected = f32x16::from([0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]);
-//   let actual = a / 2.0;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_sub_for_f32x16() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
+  let b = f32x16::from([5.0, 7.0, 17.0, 1.0, 1.0, 9.0, 2.0, 6.0, 3.0, 5.0, 8.0, 10.0, 15.0, 11.0, 20.0, 14.0]);
+  let expected = f32x16::from([-4.0, -5.0, -14.0, 3.0, 4.0, -3.0, 5.0, 2.0, 6.0, 5.0, 3.0, 2.0, -2.0, 3.0, -5.0, 2.0]);
+  let actual = a - b;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_sub_for_f32x16() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
-//   let b = f32x16::from([5.0, 7.0, 17.0, 1.0, 1.0, 9.0, 2.0, 6.0]);
-//   let expected = f32x16::from([-4.0, -5.0, -14.0, 3.0, 4.0, -3.0, 5.0, 2.0]);
-//   let actual = a - b;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_mul_for_f32x16() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
+  let b = f32x16::from([5.0, 7.0, 17.0, 1.0, 5.0, 6.0, 7.0, 8.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+  let expected = f32x16::from([5.0, 14.0, 51.0, 4.0, 25.0, 36.0, 49.0, 64.0, 18.0, 30.0, 44.0, 60.0, 78.0, 98.0, 120.0, 144.0]);
+  let actual = a * b;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_mul_for_f32x16() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
-//   let b = f32x16::from([5.0, 7.0, 17.0, 1.0, 5.0, 6.0, 7.0, 8.0]);
-//   let expected = f32x16::from([5.0, 14.0, 51.0, 4.0, 25.0, 36.0, 49.0,
-// 64.0]);   let actual = a * b;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_div_for_f32x16() {
+  let a = f32x16::from([4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.0, 18.0, 20.0, 15.0, 16.0, 21.0, 24.0, 30.0, 32.0]);
+  let b = f32x16::from([2.0, 2.0, 5.0, -3.0, 2.0, 1.5, 3.0, 2.5, 3.0, 4.0, 5.0, 8.0, 7.0, 6.0, 10.0, 16.0]);
+  let expected = f32x16::from([2.0, 4.5, 2.0, -4.0, 2.5, 4.0, 2.3333333, 3.2, 6.0, 5.0, 3.0, 2.0, 3.0, 4.0, 3.0, 2.0]);
+  let actual = a / b;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_div_for_f32x16() {
-//   let a = f32x16::from([4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.0]);
-//   let b = f32x16::from([2.0, 2.0, 5.0, -3.0, 2.0, 1.5, 3.0, 2.5]);
-//   let expected = f32x16::from([2.0, 4.5, 2.0, -4.0, 2.5, 4.0, 2.3333333,
-// 3.2]);   let actual = a / b;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_bitand_for_f32x16() {
+  let a = f32x16::from([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0]);
+  let b = f32x16::from([0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]);
+  let expected = f32x16::from([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0]);
+  let actual = a & b;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_bitand_for_f32x16() {
-//   let a = f32x16::from([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0]);
-//   let b = f32x16::from([0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0]);
-//   let expected = f32x16::from([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
-//   let actual = a & b;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_bitor_for_f32x16() {
+  let a = f32x16::from([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0]);
+  let b = f32x16::from([0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]);
+  let expected = f32x16::from([0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0]);
+  let actual = a | b;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_bitor_for_f32x16() {
-//   let a = f32x16::from([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0]);
-//   let b = f32x16::from([0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0]);
-//   let expected = f32x16::from([0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]);
-//   let actual = a | b;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_bitxor_for_f32x16() {
+  let a = f32x16::from([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0]);
+  let b = f32x16::from([0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]);
+  let expected = f32x16::from([0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0]);
+  let actual = a ^ b;
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_bitxor_for_f32x16() {
-//   let a = f32x16::from([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0]);
-//   let b = f32x16::from([0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0]);
-//   let expected = f32x16::from([0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0]);
-//   let actual = a ^ b;
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_cmp_eq() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0, 2.0, 3.0, 2.0, 4.0, 2.0, 5.0, 2.0, 6.0]);
+  let b = f32x16::from([2.0; 16]);
+  let expected: [i32; 16] = [0, -1, 0, 0, 0, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0];
+  let actual: [i32; 16] = cast(a.cmp_eq(b));
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_f32x16_cmp_eq() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
-//   let b = f32x16::from([2.0; 8]);
-//   let expected: [i32; 8] = [0, -1, 0, 0, 0, 0, -1, 0];
-//   let actual: [i32; 8] = cast(a.cmp_eq(b));
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_cmp_ne() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0, 2.0, 3.0, 2.0, 4.0, 2.0, 5.0, 2.0, 6.0]);
+  let b = f32x16::from([2.0; 16]);
+  let expected: [i32; 16] = [-1, 0, -1, -1, -1, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1];
+  let actual: [i32; 16] = cast(a.cmp_ne(b));
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_f32x16_cmp_ne() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
-//   let b = f32x16::from([2.0; 8]);
-//   let expected: [i32; 8] = [-1, 0, -1, -1, -1, -1, 0, -1];
-//   let actual: [i32; 8] = cast(a.cmp_ne(b));
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_cmp_ge() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0, 2.0, 3.0, 2.0, 4.0, 2.0, 5.0, 2.0, 6.0]);
+  let b = f32x16::from([2.0; 16]);
+  let expected: [i32; 16] = [0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1];
+  let actual: [i32; 16] = cast(a.cmp_ge(b));
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_f32x16_cmp_ge() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
-//   let b = f32x16::from([2.0; 8]);
-//   let expected: [i32; 8] = [0, -1, -1, -1, -1, -1, -1, 0];
-//   let actual: [i32; 8] = cast(a.cmp_ge(b));
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_cmp_gt() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.0, 1.0, 7.0, 8.0, 3.0, 2.0, 9.0, 10.0, 3.0, 11.0]);
+  let b = f32x16::from([3.0; 16]);
+  let expected: [i32; 16] = [0, 0, 0, -1, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, -1];
+  let actual: [i32; 16] = cast(a.cmp_gt(b));
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_f32x16_cmp_gt() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.0, 1.0]);
-//   let b = f32x16::from([3.0; 8]);
-//   let expected: [i32; 8] = [0, 0, 0, -1, -1, -1, 0, 0];
-//   let actual: [i32; 8] = cast(a.cmp_gt(b));
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_cmp_le() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0, 4.0, 3.0, 7.0, 8.0, 4.0, 2.0, 9.0, 10.0]);
+  let b = f32x16::from([4.0; 16]);
+  let expected: [i32; 16] = [-1, -1, -1, -1, 0, 0, -1, -1, -1, -1, 0, 0, -1, -1, 0, 0];
+  let actual: [i32; 16] = cast(a.cmp_le(b));
+  assert_eq!(expected, actual);
+}
 
-// #[test]
-// fn impl_f32x16_cmp_le() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
-//   let b = f32x16::from([4.0; 8]);
-//   let expected: [i32; 8] = [-1, -1, -1, -1, 0, 0, -1, -1];
-//   let actual: [i32; 8] = cast(a.cmp_le(b));
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_cmp_lt() {
+  let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0, 3.0, 7.0, 8.0, 2.0, 1.0, 3.0, 9.0, 10.0]);
+  let b = f32x16::from([3.0; 16]);
+  let expected: [i32; 16] = [-1, -1, 0, 0, 0, 0, -1, -1, 0, 0, 0, -1, -1, 0, 0, 0];
+  let actual: [i32; 16] = cast(a.cmp_lt(b));
+  assert_eq!(expected, actual);
 
-// #[test]
-// fn impl_f32x16_cmp_lt() {
-//   let a = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
-//   let b = f32x16::from([3.0; 8]);
-//   let expected: [i32; 8] = [-1, -1, 0, 0, 0, 0, -1, -1];
-//   let actual: [i32; 8] = cast(a.cmp_lt(b));
-//   assert_eq!(expected, actual);
+  let expected: [i32; 16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  let actual: [i32; 16] = cast(a.cmp_lt(a));
+  assert_eq!(expected, actual);
+}
 
-//   let expected: [i32; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
-//   let actual: [i32; 8] = cast(a.cmp_lt(a));
-//   assert_eq!(expected, actual);
-// }
-
-// #[test]
-// fn impl_f32x16_blend() {
-//   let use_t: f32 = f32::from_bits(u32::MAX);
-//   let t = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
-//   let f = f32x16::from([5.0, 6.0, 7.0, 8.0, 21.0, 22.0, 23.0, 24.0]);
-//   let mask = f32x16::from([use_t, 0.0, use_t, 0.0, 0.0, 0.0, 0.0, use_t]);
-//   let expected = f32x16::from([1.0, 6.0, 3.0, 8.0, 21.0, 22.0, 23.0, 8.0]);
-//   let actual = mask.blend(t, f);
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_blend() {
+  let use_t: f32 = f32::from_bits(u32::MAX);
+  let t = f32x16::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
+  let f = f32x16::from([5.0, 6.0, 7.0, 8.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0]);
+  let mask = f32x16::from([use_t, 0.0, use_t, 0.0, 0.0, 0.0, 0.0, use_t, use_t, 0.0, use_t, 0.0, 0.0, use_t, 0.0, use_t]);
+  let expected = f32x16::from([1.0, 6.0, 3.0, 8.0, 21.0, 22.0, 23.0, 8.0, 9.0, 26.0, 11.0, 28.0, 29.0, 14.0, 31.0, 16.0]);
+  let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}
 
 // #[test]
 // fn impl_f32x16_abs() {
@@ -257,16 +255,14 @@ fn impl_sub_const_for_f32x16() {
 //   assert_eq!(expected, actual);
 // }
 
-// #[test]
-// fn impl_f32x16_max() {
-//   let a = f32x16::from([1.0, 5.0, 3.0, f32::NAN, 6.0, -8.0, 12.0, f32::NAN]);
-//   let b =
-//     f32x16::from([2.0, -3.0, f32::INFINITY, 10.0, 19.0, f32::NAN, -1.0,
-// -9.0]);   let expected =
-//     f32x16::from([2.0, 5.0, f32::INFINITY, 10.0, 19.0, -8.0, 12.0, -9.0]);
-//   let actual = a.max(b);
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_max() {
+  let a = f32x16::from([1.0, 5.0, 3.0, f32::NAN, 6.0, -8.0, 12.0, f32::NAN, 0.0, -5.0, 7.0, 15.0, f32::NAN, -20.0, 8.0, 11.0]);
+  let b = f32x16::from([2.0, -3.0, f32::INFINITY, 10.0, 19.0, f32::NAN, -1.0, -9.0, 5.0, -2.0, f32::NAN, 10.0, 3.0, -15.0, 9.0, f32::NAN]);
+  let expected = f32x16::from([2.0, 5.0, f32::INFINITY, 10.0, 19.0, -8.0, 12.0, -9.0, 5.0, -2.0, 7.0, 15.0, 3.0, -15.0, 9.0, 11.0]);
+  let actual = a.max(b);
+  assert_eq!(expected, actual);
+}
 
 // #[test]
 // fn impl_f32x16_fast_min() {
@@ -278,17 +274,14 @@ fn impl_sub_const_for_f32x16() {
 //   assert_eq!(expected, actual);
 // }
 
-// #[test]
-// fn impl_f32x16_min() {
-//   let a =
-//     f32x16::from([1.0, 5.0, 3.0, f32::NEG_INFINITY, 6.0, -8.0, 12.0,
-// f32::NAN]);   let b =
-//     f32x16::from([2.0, -3.0, f32::INFINITY, 10.0, 19.0, f32::NAN, -1.0,
-// -9.0]);   let expected =
-//     f32x16::from([1.0, -3.0, 3.0, f32::NEG_INFINITY, 6.0, -8.0, -1.0, -9.0]);
-//   let actual = a.min(b);
-//   assert_eq!(expected, actual);
-// }
+#[test]
+fn impl_f32x16_min() {
+  let a = f32x16::from([1.0, 5.0, 3.0, f32::NEG_INFINITY, 6.0, -8.0, 12.0, f32::NAN, 0.0, -5.0, 7.0, 15.0, f32::NAN, -20.0, 8.0, 11.0]);
+  let b = f32x16::from([2.0, -3.0, f32::INFINITY, 10.0, 19.0, f32::NAN, -1.0, -9.0, 5.0, -2.0, f32::NAN, 10.0, 3.0, -15.0, 9.0, f32::NAN]);
+  let expected = f32x16::from([1.0, -3.0, 3.0, f32::NEG_INFINITY, 6.0, -8.0, -1.0, -9.0, 0.0, -5.0, 7.0, 10.0, 3.0, -20.0, 8.0, 11.0]);
+  let actual = a.min(b);
+  assert_eq!(expected, actual);
+}
 
 // #[test]
 // fn impl_f32x16_is_nan() {
@@ -315,47 +308,57 @@ fn impl_sub_const_for_f32x16() {
 //   assert_eq!(expected, actual);
 // }
 
-// #[test]
-// fn impl_f32x16_round() {
-//   let a = f32x16::from([1.1, 2.5, 3.7, 4.0, 7.2, 10.5, 12.7, 35.12]);
-//   let expected = f32x16::from([1.0, 2.0, 4.0, 4.0, 7.0, 10.0, 13.0, 35.0]);
-//   let actual = a.round();
-//   assert_eq!(expected, actual);
-//   //
-//   let a = f32x16::from([-1.1, -2.5, -3.7, -4.0, -7.2, -10.5, -12.7, -35.12]);
-//   let expected =
-//     f32x16::from([-1.0, -2.0, -4.0, -4.0, -7.0, -10.0, -13.0, -35.0]);
-//   let actual = a.round();
-//   assert_eq!(expected, actual);
-//   //
-//   let a = f32x16::from([
-//     f32::INFINITY,
-//     f32::NEG_INFINITY,
-//     5.5,
-//     5.0,
-//     7.2,
-//     10.5,
-//     12.7,
-//     35.12,
-//   ]);
-//   let expected = f32x16::from([
-//     f32::INFINITY,
-//     f32::NEG_INFINITY,
-//     6.0,
-//     5.0,
-//     7.0,
-//     10.0,
-//     13.0,
-//     35.0,
-//   ]);
-//   let actual = a.round();
-//   assert_eq!(expected, actual);
-//   //
-//   let a = f32x16::from(f32::NAN);
-//   let expected: [u32; 8] = [u32::MAX; 8];
-//   let actual: [u32; 8] = cast(a.round().is_nan());
-//   assert_eq!(expected, actual);
-//   //
+#[test]
+fn impl_f32x16_round() {
+  let a = f32x16::from([1.1, 2.5, 3.7, 4.0, 7.2, 10.5, 12.7, 35.12, -1.1, -2.5, -3.7, -4.0, -7.2, -10.5, -12.7, -35.12]);
+  let expected = f32x16::from([1.0, 2.0, 4.0, 4.0, 7.0, 10.0, 13.0, 35.0, -1.0, -2.0, -4.0, -4.0, -7.0, -10.0, -13.0, -35.0]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x16::from([
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    5.5,
+    5.0,
+    7.2,
+    10.5,
+    12.7,
+    35.12,
+    0.0,
+    -0.0,
+    0.4,
+    -0.4,
+    3.6,
+    -3.6,
+    4.5,
+    -4.5,
+  ]);
+  let expected = f32x16::from([
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    6.0,
+    5.0,
+    7.0,
+    10.0,
+    13.0,
+    35.0,
+    0.0,
+    -0.0,
+    0.0,
+    -0.0,
+    4.0,
+    -4.0,
+    4.0,
+    -4.0,
+  ]);
+  let actual = a.round();
+  assert_eq!(expected, actual);
+  //
+  let a = f32x16::from(f32::NAN);
+  let expected: [u32; 16] = [u32::MAX; 16];
+  let actual: [u32; 16] = cast(a.round().is_nan());
+  assert_eq!(expected, actual);
+}
 //   let a = f32x16::from(-0.0);
 //   let expected = a;
 //   let actual = a.round();
@@ -434,31 +437,89 @@ fn impl_sub_const_for_f32x16() {
 //   }
 // }
 
-// #[test]
-// fn impl_f32x16_mul_add() {
-//   let a = f32x16::from([2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2]);
-//   let b = f32x16::from([4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6]);
-//   let c = f32x16::from([1.0; 8]);
-//   let expected: [f32; 8] =
-//     cast(f32x16::from([9.0, 16.0, 25.0, 36.0, 11.05, 82.88, 49.3, 69.32]));
-//   let actual: [f32; 8] = cast(a.mul_add(b, c));
-//   for (act, exp) in actual.iter().zip(expected.iter()) {
-//     assert!((exp - act).abs() < 0.000001);
-//   }
-// }
+#[test]
+fn impl_f32x16_mul_add() {
+  let a = f32x16::from([
+    2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+    7.0, 8.0,
+  ]);
+  let b = f32x16::from([
+    4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+    9.0,
+  ]);
+  let c = f32x16::from([1.0; 16]);
+  let expected: [f32; 16] = cast(f32x16::from([
+    9.0, 16.0, 25.0, 36.0, 11.05, 82.88, 49.3, 69.32, 3.0, 7.0, 13.0, 21.0,
+    31.0, 43.0, 57.0, 73.0,
+  ]));
+  let actual: [f32; 16] = cast(a.mul_add(b, c));
+  for (act, exp) in actual.iter().zip(expected.iter()) {
+    assert!((exp - act).abs() < 0.000001);
+  }
+}
 
-// #[test]
-// fn impl_f32x16_mul_neg_add() {
-//   let a = f32x16::from([2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2]);
-//   let b = f32x16::from([4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, -5.6]);
-//   let c = f32x16::from([1.0; 8]);
-//   let expected: [f32; 8] =
-//     cast(f32x16::from([-7.0, -14.0, -23.0, -34.0, -9.05, -80.88, -47.3,
-// 69.32]));   let actual: [f32; 8] = cast(a.mul_neg_add(b, c));
-//   for (act, exp) in actual.iter().zip(expected.iter()) {
-//     assert!((exp - act).abs() < 0.00001);
-//   }
-// }
+#[test]
+fn impl_f32x16_mul_neg_add() {
+  let a = f32x16::from([
+    2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+    7.0, 8.0,
+  ]);
+  let b = f32x16::from([
+    4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, -5.6, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+    9.0,
+  ]);
+  let c = f32x16::from([1.0; 16]);
+  let expected: [f32; 16] = cast(f32x16::from([
+    -7.0, -14.0, -23.0, -34.0, -9.05, -80.88, -47.3, 69.32, -1.0, -5.0, -11.0,
+    -19.0, -29.0, -41.0, -55.0, -71.0,
+  ]));
+  let actual: [f32; 16] = cast(a.mul_neg_add(b, c));
+  for (act, exp) in actual.iter().zip(expected.iter()) {
+    assert!((exp - act).abs() < 0.00001);
+  }
+}
+
+#[test]
+fn impl_f32x16_mul_sub() {
+  let a = f32x16::from([
+    2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+    7.0, 8.0,
+  ]);
+  let b = f32x16::from([
+    4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+    9.0,
+  ]);
+  let c = f32x16::from([1.0; 16]);
+  let expected: [f32; 16] = cast(f32x16::from([
+    7.0, 14.0, 23.0, 34.0, 9.05, 80.88, 47.3, 67.32, 1.0, 5.0, 11.0, 19.0,
+    29.0, 41.0, 55.0, 71.0,
+  ]));
+  let actual: [f32; 16] = cast(a.mul_sub(b, c));
+  for (act, exp) in actual.iter().zip(expected.iter()) {
+    assert!((exp - act).abs() < 0.000001);
+  }
+}
+
+#[test]
+fn impl_f32x16_mul_neg_sub() {
+  let a = f32x16::from([
+    2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
+    7.0, 8.0,
+  ]);
+  let b = f32x16::from([
+    4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, -5.6, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+    9.0,
+  ]);
+  let c = f32x16::from([1.0; 16]);
+  let expected: [f32; 16] = cast(f32x16::from([
+    -9.0, -16.0, -25.0, -36.0, -11.05, -82.88, -49.3, 67.32, -3.0, -7.0, -13.0,
+    -21.0, -31.0, -43.0, -57.0, -73.0,
+  ]));
+  let actual: [f32; 16] = cast(a.mul_neg_sub(b, c));
+  for (act, exp) in actual.iter().zip(expected.iter()) {
+    assert!((exp - act).abs() < 0.00001);
+  }
+}
 
 // #[test]
 // fn impl_f32x16_flip_signs() {

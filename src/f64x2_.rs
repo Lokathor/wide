@@ -689,6 +689,29 @@ impl f64x2 {
     let rounded: [f64; 2] = cast(self.round());
     cast([rounded[0] as i64, rounded[1] as i64])
   }
+  /// Performs a multiply-add operation: `self * m + a`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// multiply and add operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with FMA: Uses `vfmadd` (single rounding, best accuracy)
+  /// - On ARM64 with NEON: Uses `vfmaq_f64` (single rounding, best accuracy)  
+  /// - Without FMA support: Uses `(self * m) + a` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x2;
+  /// let a = f64x2::from([1.0, 2.0]);
+  /// let b = f64x2::from([3.0, 4.0]);
+  /// let c = f64x2::from([5.0, 6.0]);
+  /// 
+  /// let result = a.mul_add(b, c);
+  /// 
+  /// let expected = f64x2::from([8.0, 14.0]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_add(self, m: Self, a: Self) -> Self {
@@ -703,20 +726,66 @@ impl f64x2 {
     }
   }
 
+  /// Performs a multiply-subtract operation: `self * m - s`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// multiply and subtract operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with FMA: Uses `vfmsub` (single rounding, best accuracy)
+  /// - On ARM64 with NEON: Uses `vfmaq_f64(-s, self, m)` (single rounding, best accuracy)
+  /// - Without FMA support: Uses `(self * m) - s` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x2;
+  /// let a = f64x2::from([10.0, 20.0]);
+  /// let b = f64x2::from([2.0, 3.0]);
+  /// let c = f64x2::from([5.0, 10.0]);
+  /// 
+  /// let result = a.mul_sub(b, c);
+  /// 
+  /// let expected = f64x2::from([15.0, 50.0]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
-  pub fn mul_sub(self, m: Self, a: Self) -> Self {
+  pub fn mul_sub(self, m: Self, s: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="fma"))] {
-        Self { sse: fused_mul_sub_m128d(self.sse, m.sse, a.sse) }
+        Self { sse: fused_mul_sub_m128d(self.sse, m.sse, s.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f64(vnegq_f64(a.neon), self.neon, m.neon) } }
+        unsafe { Self { neon: vfmaq_f64(vnegq_f64(s.neon), self.neon, m.neon) } }
       } else {
-        (self * m) - a
+        (self * m) - s
       }
     }
   }
 
+  /// Performs a negative multiply-add operation: `a - (self * m)`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with FMA: Uses `vfnmadd` (single rounding, best accuracy)
+  /// - On ARM64 with NEON: Uses `vfmsq_f64` (single rounding, best accuracy)
+  /// - Without FMA support: Uses `a - (self * m)` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x2;
+  /// let a = f64x2::from([3.0, 4.0]);
+  /// let b = f64x2::from([2.0, 2.0]);
+  /// let c = f64x2::from([10.0, 20.0]);
+  /// 
+  /// let result = a.mul_neg_add(b, c);
+  /// 
+  /// let expected = f64x2::from([4.0, 12.0]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
@@ -731,16 +800,39 @@ impl f64x2 {
     }
   }
 
+  /// Performs a negative multiply-subtract operation: `-(self * m) - s`
+  ///
+  /// When hardware FMA support is available, this computes the result with a
+  /// single rounding operation. Without FMA support, it falls back to separate
+  /// operations with two roundings.
+  ///
+  /// # Platform-specific behavior
+  /// - On x86/x86_64 with FMA: Uses `vfnmsub` (single rounding, best accuracy)
+  /// - On ARM64 with NEON: Uses `-(vfmaq_f64(s, self, m))` (single rounding, best accuracy)
+  /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f64x2;
+  /// let a = f64x2::from([3.0, 4.0]);
+  /// let b = f64x2::from([2.0, 2.0]);
+  /// let c = f64x2::from([1.0, 2.0]);
+  /// 
+  /// let result = a.mul_neg_sub(b, c);
+  /// 
+  /// let expected = f64x2::from([-7.0, -10.0]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
-  pub fn mul_neg_sub(self, m: Self, a: Self) -> Self {
+  pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
     pick! {
         if #[cfg(all(target_feature="fma"))] {
-          Self { sse: fused_mul_neg_sub_m128d(self.sse, m.sse, a.sse) }
+          Self { sse: fused_mul_neg_sub_m128d(self.sse, m.sse, s.sse) }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-          unsafe { Self { neon: vnegq_f64(vfmaq_f64(a.neon, self.neon, m.neon)) } }
+          unsafe { Self { neon: vnegq_f64(vfmaq_f64(s.neon, self.neon, m.neon)) } }
         } else {
-          -(self * m) - a
+          -(self * m) - s
         }
     }
   }
