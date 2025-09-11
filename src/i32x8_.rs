@@ -306,7 +306,7 @@ impl CmpLt for i32x8 {
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: !cmp_gt_mask_i32_m256i(self.avx2, rhs.avx2)  ^ cmp_eq_mask_i32_m256i(self.avx2,rhs.avx2) }
+        Self { avx2: cmp_gt_mask_i32_m256i(rhs.avx2, self.avx2) }
       } else {
         Self {
           a : self.a.cmp_lt(rhs.a),
