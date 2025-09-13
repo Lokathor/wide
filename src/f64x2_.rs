@@ -696,8 +696,9 @@ impl f64x2 {
   /// multiply and add operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with FMA: Uses `vfmadd` (single rounding, best accuracy)
-  /// - On ARM64 with NEON: Uses `vfmaq_f64` (single rounding, best accuracy)  
+  /// - On `x86`/`x86_64` with FMA: Uses `vfmadd` (single rounding, best
+  ///   accuracy)
+  /// - On ARM64 with NEON: Uses `vfmaq_f64` (single rounding, best accuracy)
   /// - Without FMA support: Uses `(self * m) + a` (two roundings)
   ///
   /// # Examples
@@ -706,9 +707,9 @@ impl f64x2 {
   /// let a = f64x2::from([1.0, 2.0]);
   /// let b = f64x2::from([3.0, 4.0]);
   /// let c = f64x2::from([5.0, 6.0]);
-  /// 
+  ///
   /// let result = a.mul_add(b, c);
-  /// 
+  ///
   /// let expected = f64x2::from([8.0, 14.0]);
   /// assert_eq!(result, expected);
   /// ```
@@ -733,8 +734,10 @@ impl f64x2 {
   /// multiply and subtract operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with FMA: Uses `vfmsub` (single rounding, best accuracy)
-  /// - On ARM64 with NEON: Uses `vfmaq_f64(-s, self, m)` (single rounding, best accuracy)
+  /// - On `x86`/`x86_64` with FMA: Uses `vfmsub` (single rounding, best
+  ///   accuracy)
+  /// - On ARM64 with NEON: Uses `vfmaq_f64(-s, self, m)` (single rounding, best
+  ///   accuracy)
   /// - Without FMA support: Uses `(self * m) - s` (two roundings)
   ///
   /// # Examples
@@ -743,9 +746,9 @@ impl f64x2 {
   /// let a = f64x2::from([10.0, 20.0]);
   /// let b = f64x2::from([2.0, 3.0]);
   /// let c = f64x2::from([5.0, 10.0]);
-  /// 
+  ///
   /// let result = a.mul_sub(b, c);
-  /// 
+  ///
   /// let expected = f64x2::from([15.0, 50.0]);
   /// assert_eq!(result, expected);
   /// ```
@@ -770,7 +773,8 @@ impl f64x2 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with FMA: Uses `vfnmadd` (single rounding, best accuracy)
+  /// - On `x86`/`x86_64` with FMA: Uses `vfnmadd` (single rounding, best
+  ///   accuracy)
   /// - On ARM64 with NEON: Uses `vfmsq_f64` (single rounding, best accuracy)
   /// - Without FMA support: Uses `a - (self * m)` (two roundings)
   ///
@@ -780,9 +784,9 @@ impl f64x2 {
   /// let a = f64x2::from([3.0, 4.0]);
   /// let b = f64x2::from([2.0, 2.0]);
   /// let c = f64x2::from([10.0, 20.0]);
-  /// 
+  ///
   /// let result = a.mul_neg_add(b, c);
-  /// 
+  ///
   /// let expected = f64x2::from([4.0, 12.0]);
   /// assert_eq!(result, expected);
   /// ```
@@ -807,8 +811,10 @@ impl f64x2 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with FMA: Uses `vfnmsub` (single rounding, best accuracy)
-  /// - On ARM64 with NEON: Uses `-(vfmaq_f64(s, self, m))` (single rounding, best accuracy)
+  /// - On `x86`/`x86_64` with FMA: Uses `vfnmsub` (single rounding, best
+  ///   accuracy)
+  /// - On ARM64 with NEON: Uses `-(vfmaq_f64(s, self, m))` (single rounding,
+  ///   best accuracy)
   /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
   ///
   /// # Examples
@@ -817,9 +823,9 @@ impl f64x2 {
   /// let a = f64x2::from([3.0, 4.0]);
   /// let b = f64x2::from([2.0, 2.0]);
   /// let c = f64x2::from([1.0, 2.0]);
-  /// 
+  ///
   /// let result = a.mul_neg_sub(b, c);
-  /// 
+  ///
   /// let expected = f64x2::from([-7.0, -10.0]);
   /// assert_eq!(result, expected);
   /// ```
@@ -1363,18 +1369,18 @@ impl f64x2 {
   }
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        move_mask_m128d(self.sse)
+        move_mask_m128d(self.sse) as u32
       } else if #[cfg(target_feature="simd128")] {
-        u64x2_bitmask(self.simd) as i32
+        u64x2_bitmask(self.simd) as u32
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
           let e = vreinterpretq_u64_f64(self.neon);
 
-          (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as i32
+          (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
         }
       } else {
         (((self.arr[0].to_bits() as i64) < 0) as i32) << 0 |

@@ -187,7 +187,7 @@ fn test_i32x4_move_mask() {
 
   crate::test_random_vector_vs_scalar_reduce(
     |a: i32x4| a.move_mask(),
-    0i32,
+    0_u32,
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );
 }
@@ -314,6 +314,6 @@ fn impl_i32x4_ser_de_roundtrip() {
   let serialized =
     bincode::serialize(&i32x4::ZERO).expect("serialization failed");
   let deserialized =
-    bincode::deserialize(&serialized).expect("deserializaion failed");
+    bincode::deserialize(&serialized).expect("deserialization failed");
   assert_eq!(i32x4::ZERO, deserialized);
 }

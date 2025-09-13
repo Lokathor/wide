@@ -169,7 +169,7 @@ fn test_i64x4_move_mask() {
 
   crate::test_random_vector_vs_scalar_reduce(
     |a: i64x4| a.move_mask(),
-    0i32,
+    0_u32,
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );
 }
