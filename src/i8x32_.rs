@@ -303,7 +303,7 @@ impl i8x32 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         move_mask_i8_m256i(self.avx)

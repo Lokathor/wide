@@ -474,7 +474,7 @@ impl i32x4 {
   /// on the corresponding lanes.
   ///
   /// Effectively does two multiplies on 128 bit platforms, but is easier
-  /// to use than wrapping mul_widen_i32_odd_m128i individually.
+  /// to use than wrapping `mul_widen_i32_odd_m128i` individually.
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i64x4 {
@@ -648,13 +648,13 @@ impl i32x4 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
-        move_mask_m128(cast(self.sse))
+        move_mask_m128(cast(self.sse)) as u32
       } else if #[cfg(target_feature="simd128")] {
-        u32x4_bitmask(self.simd) as i32
+        u32x4_bitmask(self.simd) as u32
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
@@ -666,13 +666,13 @@ impl i32x4 {
           let r = vandq_u32(masked, selectbit);
 
           // horizontally add the 32-bit lanes
-          vaddvq_u32(r) as i32
+          vaddvq_u32(r) as u32
          }
       } else {
-        ((self.arr[0] < 0) as i32) << 0 |
-        ((self.arr[1] < 0) as i32) << 1 |
-        ((self.arr[2] < 0) as i32) << 2 |
-        ((self.arr[3] < 0) as i32) << 3
+        ((self.arr[0] < 0) as u32) << 0 |
+        ((self.arr[1] < 0) as u32) << 1 |
+        ((self.arr[2] < 0) as u32) << 2 |
+        ((self.arr[3] < 0) as u32) << 3
       }
     }
   }

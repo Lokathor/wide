@@ -277,7 +277,7 @@ fn test_i16x8_move_mask() {
 
   crate::test_random_vector_vs_scalar_reduce(
     |a: i32x8| a.move_mask(),
-    0i32,
+    0_u32,
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );
 }

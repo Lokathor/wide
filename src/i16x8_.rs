@@ -428,12 +428,12 @@ impl i16x8 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        move_mask_i8_m128i( pack_i16_to_i8_m128i(self.sse,self.sse)) & 0xff
+        (move_mask_i8_m128i( pack_i16_to_i8_m128i(self.sse,self.sse)) as u32) & 0xff
       } else if #[cfg(target_feature="simd128")] {
-        i16x8_bitmask(self.simd) as i32
+        i16x8_bitmask(self.simd) as u32
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
@@ -445,17 +445,17 @@ impl i16x8 {
           let r = vandq_u16(masked, selectbit);
 
           // horizontally add the 16-bit lanes
-          vaddvq_u16(r) as i32
+          vaddvq_u16(r) as u32
          }
        } else {
-        ((self.arr[0] < 0) as i32) << 0 |
-        ((self.arr[1] < 0) as i32) << 1 |
-        ((self.arr[2] < 0) as i32) << 2 |
-        ((self.arr[3] < 0) as i32) << 3 |
-        ((self.arr[4] < 0) as i32) << 4 |
-        ((self.arr[5] < 0) as i32) << 5 |
-        ((self.arr[6] < 0) as i32) << 6 |
-        ((self.arr[7] < 0) as i32) << 7
+        ((self.arr[0] < 0) as u32) << 0 |
+        ((self.arr[1] < 0) as u32) << 1 |
+        ((self.arr[2] < 0) as u32) << 2 |
+        ((self.arr[3] < 0) as u32) << 3 |
+        ((self.arr[4] < 0) as u32) << 4 |
+        ((self.arr[5] < 0) as u32) << 5 |
+        ((self.arr[6] < 0) as u32) << 6 |
+        ((self.arr[7] < 0) as u32) << 7
       }
     }
   }

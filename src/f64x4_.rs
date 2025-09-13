@@ -546,8 +546,8 @@ impl f64x4 {
   /// multiply and add operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfmadd` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX only: Uses `(self * m) + a` (two roundings)
+  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfmadd` (single rounding, best accuracy)
+  /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) + a` (two roundings)
   /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   ///
   /// # Examples
@@ -587,8 +587,8 @@ impl f64x4 {
   /// multiply and subtract operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfmsub` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX only: Uses `(self * m) - s` (two roundings)
+  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfmsub` (single rounding, best accuracy)
+  /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) - s` (two roundings)
   /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   ///
   /// # Examples
@@ -628,8 +628,8 @@ impl f64x4 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfnmadd` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX only: Uses `a - (self * m)` (two roundings)
+  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfnmadd` (single rounding, best accuracy)
+  /// - On `x86`/`x86_64` with AVX only: Uses `a - (self * m)` (two roundings)
   /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   ///
   /// # Examples
@@ -669,8 +669,8 @@ impl f64x4 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX+FMA: Uses 256-bit `vfnmsub` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX only: Uses `-(self * m) - s` (two roundings)
+  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfnmsub` (single rounding, best accuracy)
+  /// - On `x86`/`x86_64` with AVX only: Uses `-(self * m) - s` (two roundings)
   /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   ///
   /// # Examples
@@ -1221,7 +1221,7 @@ impl f64x4 {
   }
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx")] {
         move_mask_m256d(self.avx)

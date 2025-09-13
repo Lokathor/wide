@@ -458,8 +458,8 @@ impl u64x2 {
     let arr1: [u64; 2] = cast(self);
     let arr2: [u64; 2] = cast(rhs);
     cast([
-      (arr1[0] as u128 * arr2[0] as u128 >> 64) as u64,
-      (arr1[1] as u128 * arr2[1] as u128 >> 64) as u64,
+      ((arr1[0] as u128 * arr2[0] as u128) >> 64) as u64,
+      ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
     ])
   }
 }

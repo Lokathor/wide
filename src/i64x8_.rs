@@ -436,7 +436,7 @@ impl i64x8 {
   /// lane being the lowest bit
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // use f64 move_mask since it is the same size as i64
