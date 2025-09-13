@@ -51,6 +51,30 @@ impl Sub for u32x8 {
   }
 }
 
+impl Add<u32> for u32x8 {
+  type Output = Self;
+  #[inline]
+  fn add(self, rhs: u32) -> Self::Output {
+    self + Self::splat(rhs)
+  }
+}
+
+impl Sub<u32> for u32x8 {
+  type Output = Self;
+  #[inline]
+  fn sub(self, rhs: u32) -> Self::Output {
+    self - Self::splat(rhs)
+  }
+}
+
+impl Mul<u32> for u32x8 {
+  type Output = Self;
+  #[inline]
+  fn mul(self, rhs: u32) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
 impl Mul for u32x8 {
   type Output = Self;
   #[inline]
@@ -250,19 +274,6 @@ impl CmpEq for u32x8 {
   type Output = Self;
   #[inline]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
-  }
-}
-
-impl u32x8 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u32; 8]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-  #[inline]
-  #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2 ) }
@@ -274,9 +285,12 @@ impl u32x8 {
       }
     }
   }
+}
+
+impl CmpGt for u32x8 {
+  type Output = Self;
   #[inline]
-  #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -290,12 +304,46 @@ impl u32x8 {
       }
     }
   }
+}
 
+impl CmpLt for u32x8 {
+  type Output = Self;
   #[inline]
-  #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  fn cmp_lt(self, rhs: Self) -> Self::Output {
     // lt is just gt the other way around
     rhs.cmp_gt(self)
+  }
+}
+
+impl CmpNe for u32x8 {
+  type Output = Self;
+  #[inline]
+  fn cmp_ne(self, rhs: Self) -> Self::Output {
+    !self.cmp_eq(rhs)
+  }
+}
+
+impl CmpGe for u32x8 {
+  type Output = Self;
+  #[inline]
+  fn cmp_ge(self, rhs: Self) -> Self::Output {
+    self.cmp_eq(rhs) | self.cmp_gt(rhs)
+  }
+}
+
+impl CmpLe for u32x8 {
+  type Output = Self;
+  #[inline]
+  fn cmp_le(self, rhs: Self) -> Self::Output {
+    self.cmp_eq(rhs) | self.cmp_lt(rhs)
+  }
+}
+
+impl u32x8 {
+  #[inline]
+  #[must_use]
+  pub const fn new(array: [u32; 8]) -> Self {
+    unsafe { core::mem::transmute(array) }
   }
 
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
