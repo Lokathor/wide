@@ -1115,7 +1115,7 @@ impl f32x8 {
   pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx")] {
-        move_mask_m256(self.avx)
+        move_mask_m256(self.avx) as u32
       } else {
         (self.b.move_mask() << 4) | self.a.move_mask()
       }

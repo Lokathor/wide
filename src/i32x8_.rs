@@ -503,7 +503,7 @@ impl i32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // use f32 move_mask since it is the same size as i32
-        move_mask_m256(cast(self.avx2))
+        move_mask_m256(cast(self.avx2)) as u32
       } else {
         self.a.move_mask() | (self.b.move_mask() << 4)
       }
