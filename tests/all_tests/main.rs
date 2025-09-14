@@ -7,6 +7,8 @@
 #![allow(clippy::precedence)]
 #![allow(clippy::eq_op)]
 #![allow(clippy::identity_op)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::redundant_closure)]
 
 use core::fmt;
 use std::{num::Wrapping, ops::ShlAssign};

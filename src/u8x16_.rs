@@ -588,8 +588,8 @@ impl u8x16 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
-    i8x16::move_mask(cast(self))
+  pub fn move_mask(self) -> u32 {
+    i8x16::move_mask(cast(self)) as u32
   }
 
   #[inline]

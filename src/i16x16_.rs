@@ -308,11 +308,11 @@ impl i16x16 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
           let [a,b] = cast::<_,[m128i;2]>(self);
-          move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b))
+          move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
         } else {
         self.a.move_mask() | (self.b.move_mask() << 8)
       }

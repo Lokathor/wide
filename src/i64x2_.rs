@@ -493,17 +493,17 @@ impl i64x2 {
   /// lane being the lowest bit
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse")] {
         // use f64 move_mask since it is the same size as i64
-        move_mask_m128d(cast(self.sse))
+        move_mask_m128d(cast(self.sse)) as u32
       } else if #[cfg(target_feature="simd128")] {
-        i64x2_bitmask(self.simd) as i32
+        i64x2_bitmask(self.simd) as u32
       } else {
         // nothing amazingly efficient for neon
         let arr: [u64; 2] = cast(self);
-        (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as i32
+        (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as u32
       }
     }
   }
