@@ -53,6 +53,15 @@ impl Sub for u32x8 {
 
 impl Add<u32> for u32x8 {
   type Output = Self;
+  /// Adds a scalar `u32` to each element of the vector.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::u32x8;
+  /// let vec = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  /// let result = vec + 10;
+  /// assert_eq!(result.to_array(), [11, 12, 13, 14, 15, 16, 17, 18]);
+  /// ```
   #[inline]
   fn add(self, rhs: u32) -> Self::Output {
     self + Self::splat(rhs)
@@ -61,6 +70,15 @@ impl Add<u32> for u32x8 {
 
 impl Sub<u32> for u32x8 {
   type Output = Self;
+  /// Subtracts a scalar `u32` from each element of the vector.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::u32x8;
+  /// let vec = u32x8::from([10, 20, 30, 40, 50, 60, 70, 80]);
+  /// let result = vec - 5;
+  /// assert_eq!(result.to_array(), [5, 15, 25, 35, 45, 55, 65, 75]);
+  /// ```
   #[inline]
   fn sub(self, rhs: u32) -> Self::Output {
     self - Self::splat(rhs)
@@ -69,6 +87,15 @@ impl Sub<u32> for u32x8 {
 
 impl Mul<u32> for u32x8 {
   type Output = Self;
+  /// Multiplies each element of the vector by a scalar `u32`.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::u32x8;
+  /// let vec = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  /// let result = vec * 3;
+  /// assert_eq!(result.to_array(), [3, 6, 9, 12, 15, 18, 21, 24]);
+  /// ```
   #[inline]
   fn mul(self, rhs: u32) -> Self::Output {
     self * Self::splat(rhs)
@@ -272,6 +299,20 @@ impl Shl<u32x8> for u32x8 {
 
 impl CmpEq for u32x8 {
   type Output = Self;
+  /// Element-wise equality comparison.
+  ///
+  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
+  /// corresponding elements are equal, or all-zeros (0x00000000) otherwise.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::{u32x8, CmpEq};
+  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
+  /// let mask = a.cmp_eq(b);
+  /// let expected = [0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0];
+  /// assert_eq!(mask.to_array(), expected);
+  /// ```
   #[inline]
   fn cmp_eq(self, rhs: Self) -> Self::Output {
     pick! {
@@ -289,6 +330,21 @@ impl CmpEq for u32x8 {
 
 impl CmpGt for u32x8 {
   type Output = Self;
+  /// Element-wise greater-than comparison.
+  ///
+  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
+  /// corresponding element in `self` is greater than the one in `rhs`,
+  /// or all-zeros (0x00000000) otherwise.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::{u32x8, CmpGt};
+  /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
+  /// let b = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  /// let mask = a.cmp_gt(b);
+  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// assert_eq!(mask.to_array(), expected);
+  /// ```
   #[inline]
   fn cmp_gt(self, rhs: Self) -> Self::Output {
     pick! {
@@ -308,6 +364,21 @@ impl CmpGt for u32x8 {
 
 impl CmpLt for u32x8 {
   type Output = Self;
+  /// Element-wise less-than comparison.
+  ///
+  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
+  /// corresponding element in `self` is less than the one in `rhs`,
+  /// or all-zeros (0x00000000) otherwise.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::{u32x8, CmpLt};
+  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  /// let b = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
+  /// let mask = a.cmp_lt(b);
+  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// assert_eq!(mask.to_array(), expected);
+  /// ```
   #[inline]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     // lt is just gt the other way around
@@ -317,6 +388,20 @@ impl CmpLt for u32x8 {
 
 impl CmpNe for u32x8 {
   type Output = Self;
+  /// Element-wise not-equal comparison.
+  ///
+  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
+  /// corresponding elements are not equal, or all-zeros (0x00000000) otherwise.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::{u32x8, CmpNe};
+  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
+  /// let mask = a.cmp_ne(b);
+  /// let expected = [0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF];
+  /// assert_eq!(mask.to_array(), expected);
+  /// ```
   #[inline]
   fn cmp_ne(self, rhs: Self) -> Self::Output {
     !self.cmp_eq(rhs)
@@ -325,6 +410,21 @@ impl CmpNe for u32x8 {
 
 impl CmpGe for u32x8 {
   type Output = Self;
+  /// Element-wise greater-than-or-equal comparison.
+  ///
+  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
+  /// corresponding element in `self` is greater than or equal to the one in `rhs`,
+  /// or all-zeros (0x00000000) otherwise.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::{u32x8, CmpGe};
+  /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
+  /// let b = u32x8::from([5, 2, 3, 4, 5, 6, 8, 8]);
+  /// let mask = a.cmp_ge(b);
+  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// assert_eq!(mask.to_array(), expected);
+  /// ```
   #[inline]
   fn cmp_ge(self, rhs: Self) -> Self::Output {
     self.cmp_eq(rhs) | self.cmp_gt(rhs)
@@ -333,6 +433,21 @@ impl CmpGe for u32x8 {
 
 impl CmpLe for u32x8 {
   type Output = Self;
+  /// Element-wise less-than-or-equal comparison.
+  ///
+  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
+  /// corresponding element in `self` is less than or equal to the one in `rhs`,
+  /// or all-zeros (0x00000000) otherwise.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::{u32x8, CmpLe};
+  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  /// let b = u32x8::from([1, 4, 3, 2, 10, 9, 7, 7]);
+  /// let mask = a.cmp_le(b);
+  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// assert_eq!(mask.to_array(), expected);
+  /// ```
   #[inline]
   fn cmp_le(self, rhs: Self) -> Self::Output {
     self.cmp_eq(rhs) | self.cmp_lt(rhs)
