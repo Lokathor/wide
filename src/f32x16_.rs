@@ -588,6 +588,197 @@ impl f32x16 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let non_sign_bits = f32x16::from(f32::from_bits(i32::MAX as u32));
+        self & non_sign_bits
+      } else {
+        Self {
+          a: self.a.abs(),
+          b: self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: sqrt_m512(self.avx512) }
+      } else {
+        Self {
+          a: self.a.sqrt(),
+          b: self.b.sqrt(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Down)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.floor(),
+          b: self.b.floor(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn ceil(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Up)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.ceil(),
+          b: self.b.ceil(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn fast_max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: max_m512(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.fast_max(rhs.a),
+          b: self.b.fast_max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn fast_min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: min_m512(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.fast_min(rhs.a),
+          b: self.b.fast_min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn move_mask(self) -> i32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        move_mask_m512(self.avx512)
+      } else {
+        (self.b.move_mask() << 8) | self.a.move_mask()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        move_mask_m512(self.avx512) != 0
+      } else {
+        self.a.any() || self.b.any()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        move_mask_m512(self.avx512) == 0b1111111111111111
+      } else {
+        self.a.all() && self.b.all()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> f32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // For AVX-512, we can use horizontal add operations
+        // First, extract two 256-bit halves and add them
+        let hi_half = extract_m256_from_m512::<1>(self.avx512);
+        let lo_half = extract_m256_from_m512::<0>(self.avx512);
+        let sum_half = add_m256(lo_half, hi_half);
+
+        // Now use f32x8's reduce_add on the sum
+        let f32x8_sum = f32x8 { avx: sum_half };
+        f32x8_sum.reduce_add()
+      } else {
+        self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn is_inf(self) -> Self {
+    let shifted_exp_mask = u32x16::splat(0x7F800000);
+    let u: u32x16 = cast(self);
+    let shift_u = u << 1_u32;
+    let inf_check = (shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    let mantissa_check = (shift_u & u32x16::splat(0x007FFFFF)).cmp_eq(u32x16::splat(0));
+    cast(inf_check & mantissa_check)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn flip_signs(self, signs: Self) -> Self {
+    self ^ (signs & Self::from(-0.0))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn copysign(self, sign: Self) -> Self {
+    let magnitude_mask = Self::from(f32::from_bits(u32::MAX >> 1));
+    (self & magnitude_mask) | (sign & Self::from(-0.0))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn to_degrees(self) -> Self {
+    const RAD_TO_DEG_RATIO: f32 = 180.0_f32 / core::f32::consts::PI;
+    self * Self::splat(RAD_TO_DEG_RATIO)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn to_radians(self) -> Self {
+    const DEG_TO_RAD_RATIO: f32 = core::f32::consts::PI / 180.0_f32;
+    self * Self::splat(DEG_TO_RAD_RATIO)
+  }
 }
 
 impl Not for f32x16 {
