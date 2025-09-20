@@ -823,23 +823,31 @@ impl f32x16 {
   ///   14.0, -15.0, 16.0,
   /// ]);
   /// let mask = a.move_mask();
-  /// assert_eq!(mask, 0b101010101010101);
+  /// assert_eq!(mask, 0b0101010101010101);
+  ///
+  /// // Test with all negative
+  /// let all_neg = f32x16::from([-1.0; 16]);
+  /// assert_eq!(all_neg.move_mask(), 0xFFFF);
+  ///
+  /// // Test with all positive
+  /// let all_pos = f32x16::from([1.0; 16]);
+  /// assert_eq!(all_pos.move_mask(), 0x0000);
   /// ```
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        move_mask_m512(self.avx512)
+        movepi32_mask_m512(self.avx512) as u32
       } else {
         (self.b.move_mask() << 8) | self.a.move_mask()
       }
     }
   }
 
-  /// True if any lane is non-zero when viewed as a signed integer.
+  /// True if any lane has a negative sign bit.
   ///
-  /// This essentially checks if any lane has a set sign bit.
+  /// This checks if any lane is negative (sign bit set).
   ///
   /// # Examples
   /// ```
@@ -858,16 +866,16 @@ impl f32x16 {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        move_mask_m512(self.avx512) != 0
+        movepi32_mask_m512(self.avx512) != 0
       } else {
         self.a.any() || self.b.any()
       }
     }
   }
 
-  /// True if all lanes are non-zero when viewed as signed integers.
+  /// True if all lanes have a negative sign bit.
   ///
-  /// This checks if all lanes have their sign bit set.
+  /// This checks if all lanes are negative (sign bit set).
   ///
   /// # Examples
   /// ```
@@ -886,16 +894,16 @@ impl f32x16 {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        move_mask_m512(self.avx512) == 0b1111111111111111
+        movepi32_mask_m512(self.avx512) == 0b1111111111111111
       } else {
         self.a.all() && self.b.all()
       }
     }
   }
 
-  /// True if no lanes are non-zero when viewed as signed integers.
+  /// True if no lanes have a negative sign bit.
   ///
-  /// This is equivalent to `!self.any()`.
+  /// This is equivalent to `!self.any()` and checks if all lanes are non-negative.
   ///
   /// # Examples
   /// ```
