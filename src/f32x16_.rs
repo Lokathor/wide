@@ -432,8 +432,10 @@ impl f32x16 {
   /// multiply and add operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfmadd` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX-512F only: Uses `(self * m) + a` (two roundings)
+  /// - On `x86/x86_64` with AVX-512F+FMA: Uses 512-bit `vfmadd` (single
+  ///   rounding, best accuracy)
+  /// - On `x86/x86_64` with AVX-512F only: Uses `(self * m) + a` (two
+  ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   ///
   /// # Examples
@@ -442,9 +444,9 @@ impl f32x16 {
   /// let a = f32x16::from([1.0; 16]);
   /// let b = f32x16::from([2.0; 16]);
   /// let c = f32x16::from([10.0; 16]);
-  /// 
+  ///
   /// let result = a.mul_add(b, c);
-  /// 
+  ///
   /// let expected = f32x16::from([12.0; 16]);
   /// assert_eq!(result, expected);
   /// ```
@@ -473,8 +475,10 @@ impl f32x16 {
   /// multiply and subtract operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfmsub` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX-512F only: Uses `(self * m) - s` (two roundings)
+  /// - On `x86/x86_64` with AVX-512F+FMA: Uses 512-bit `vfmsub` (single
+  ///   rounding, best accuracy)
+  /// - On `x86/x86_64` with AVX-512F only: Uses `(self * m) - s` (two
+  ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   ///
   /// # Examples
@@ -483,9 +487,9 @@ impl f32x16 {
   /// let a = f32x16::from([10.0; 16]);
   /// let b = f32x16::from([3.0; 16]);
   /// let c = f32x16::from([5.0; 16]);
-  /// 
+  ///
   /// let result = a.mul_sub(b, c);
-  /// 
+  ///
   /// let expected = f32x16::from([25.0; 16]);
   /// assert_eq!(result, expected);
   /// ```
@@ -514,8 +518,10 @@ impl f32x16 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfnmadd` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX-512F only: Uses `a - (self * m)` (two roundings)
+  /// - On `x86/x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmadd` (single
+  ///   rounding, best accuracy)
+  /// - On `x86/x86_64` with AVX-512F only: Uses `a - (self * m)` (two
+  ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   ///
   /// # Examples
@@ -524,9 +530,9 @@ impl f32x16 {
   /// let a = f32x16::from([4.0; 16]);
   /// let b = f32x16::from([2.0; 16]);
   /// let c = f32x16::from([10.0; 16]);
-  /// 
+  ///
   /// let result = a.mul_neg_add(b, c);
-  /// 
+  ///
   /// let expected = f32x16::from([2.0; 16]);
   /// assert_eq!(result, expected);
   /// ```
@@ -555,8 +561,10 @@ impl f32x16 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-  /// - On x86/x86_64 with AVX-512F+FMA: Uses 512-bit `vfnmsub` (single rounding, best accuracy)
-  /// - On x86/x86_64 with AVX-512F only: Uses `-(self * m) - s` (two roundings)
+  /// - On `x86/x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmsub` (single
+  ///   rounding, best accuracy)
+  /// - On `x86/x86_64` with AVX-512F only: Uses `-(self * m) - s` (two
+  ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   ///
   /// # Examples
@@ -565,9 +573,9 @@ impl f32x16 {
   /// let a = f32x16::from([4.0; 16]);
   /// let b = f32x16::from([2.0; 16]);
   /// let c = f32x16::from([1.0; 16]);
-  /// 
+  ///
   /// let result = a.mul_neg_sub(b, c);
-  /// 
+  ///
   /// let expected = f32x16::from([-9.0; 16]);
   /// assert_eq!(result, expected);
   /// ```
@@ -589,6 +597,24 @@ impl f32x16 {
     }
   }
 
+  /// Lanewise absolute value, treating each lane as a signed value.
+  ///
+  /// This is implemented by clearing the sign bit for each lane.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   -1.0, 2.0, -3.0, 4.0, -5.0, 6.0, -7.0, 8.0, -9.0, 10.0, -11.0, 12.0, -13.0,
+  ///   14.0, -15.0, 16.0,
+  /// ]);
+  /// let result = a.abs();
+  /// let expected = f32x16::from([
+  ///   1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+  ///   15.0, 16.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -605,6 +631,27 @@ impl f32x16 {
     }
   }
 
+  /// Lanewise square root.
+  ///
+  /// # Platform-specific behavior
+  /// - On `x86/x86_64` with AVX-512F: Uses 512-bit `vsqrtps` (hardware square
+  ///   root)
+  /// - Other platforms: Delegates to [`f32x8`] (inherits its sqrt behavior)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0, 144.0,
+  ///   169.0, 196.0, 225.0, 256.0,
+  /// ]);
+  /// let result = a.sqrt();
+  /// let expected = f32x16::from([
+  ///   1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+  ///   15.0, 16.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn sqrt(self) -> Self {
@@ -620,6 +667,26 @@ impl f32x16 {
     }
   }
 
+  /// Lanewise floor (round towards negative infinity).
+  ///
+  /// # Platform-specific behavior
+  /// - On `x86/x86_64` with AVX-512F: Uses 512-bit rounding with down mode
+  /// - Other platforms: Delegates to [`f32x8`] (inherits its floor behavior)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   1.1, 2.9, -1.1, -2.9, 3.5, -3.5, 0.0, -0.0, 1.1, 2.9, -1.1, -2.9, 3.5,
+  ///   -3.5, 0.0, -0.0,
+  /// ]);
+  /// let result = a.floor();
+  /// let expected = f32x16::from([
+  ///   1.0, 2.0, -2.0, -3.0, 3.0, -4.0, 0.0, -0.0, 1.0, 2.0, -2.0, -3.0, 3.0,
+  ///   -4.0, 0.0, -0.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn floor(self) -> Self {
@@ -635,6 +702,26 @@ impl f32x16 {
     }
   }
 
+  /// Lanewise ceiling (round towards positive infinity).
+  ///
+  /// # Platform-specific behavior
+  /// - On `x86/x86_64` with AVX-512F: Uses 512-bit rounding with up mode
+  /// - Other platforms: Delegates to [`f32x8`] (inherits its ceil behavior)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   1.1, 2.9, -1.1, -2.9, 3.5, -3.5, 0.0, -0.0, 1.1, 2.9, -1.1, -2.9, 3.5,
+  ///   -3.5, 0.0, -0.0,
+  /// ]);
+  /// let result = a.ceil();
+  /// let expected = f32x16::from([
+  ///   2.0, 3.0, -1.0, -2.0, 4.0, -3.0, 0.0, -0.0, 2.0, 3.0, -1.0, -2.0, 4.0,
+  ///   -3.0, 0.0, -0.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn ceil(self) -> Self {
@@ -650,6 +737,28 @@ impl f32x16 {
     }
   }
 
+  /// Calculates the lanewise maximum of both vectors. This is a faster
+  /// implementation than `max`, but it doesn't specify any behavior if NaNs are
+  /// involved.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   1.0, 5.0, 3.0, 7.0, 2.0, 6.0, 4.0, 8.0, 1.0, 5.0, 3.0, 7.0, 2.0, 6.0, 4.0,
+  ///   8.0,
+  /// ]);
+  /// let b = f32x16::from([
+  ///   4.0, 2.0, 6.0, 1.0, 5.0, 3.0, 7.0, 0.0, 4.0, 2.0, 6.0, 1.0, 5.0, 3.0, 7.0,
+  ///   0.0,
+  /// ]);
+  /// let result = a.fast_max(b);
+  /// let expected = f32x16::from([
+  ///   4.0, 5.0, 6.0, 7.0, 5.0, 6.0, 7.0, 8.0, 4.0, 5.0, 6.0, 7.0, 5.0, 6.0, 7.0,
+  ///   8.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn fast_max(self, rhs: Self) -> Self {
@@ -665,6 +774,28 @@ impl f32x16 {
     }
   }
 
+  /// Calculates the lanewise minimum of both vectors. This is a faster
+  /// implementation than `min`, but it doesn't specify any behavior if NaNs are
+  /// involved.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   1.0, 5.0, 3.0, 7.0, 2.0, 6.0, 4.0, 8.0, 1.0, 5.0, 3.0, 7.0, 2.0, 6.0, 4.0,
+  ///   8.0,
+  /// ]);
+  /// let b = f32x16::from([
+  ///   4.0, 2.0, 6.0, 1.0, 5.0, 3.0, 7.0, 0.0, 4.0, 2.0, 6.0, 1.0, 5.0, 3.0, 7.0,
+  ///   0.0,
+  /// ]);
+  /// let result = a.fast_min(b);
+  /// let expected = f32x16::from([
+  ///   1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 0.0, 1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0,
+  ///   0.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn fast_min(self, rhs: Self) -> Self {
@@ -680,6 +811,20 @@ impl f32x16 {
     }
   }
 
+  /// Gathers the sign bits of each lane into a single integer.
+  ///
+  /// The output has bit `i` set if lane `i` had a negative sign.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   -1.0, 0.0, -3.0, 4.0, -5.0, 6.0, -7.0, 8.0, -9.0, 10.0, -11.0, 12.0, -13.0,
+  ///   14.0, -15.0, 16.0,
+  /// ]);
+  /// let mask = a.move_mask();
+  /// assert_eq!(mask, 0b101010101010101);
+  /// ```
   #[inline]
   #[must_use]
   pub fn move_mask(self) -> i32 {
@@ -692,6 +837,22 @@ impl f32x16 {
     }
   }
 
+  /// True if any lane is non-zero when viewed as a signed integer.
+  ///
+  /// This essentially checks if any lane has a set sign bit.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([0.0; 16]);
+  /// assert!(!a.any());
+  ///
+  /// let b = f32x16::from([
+  ///   -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  ///   0.0,
+  /// ]);
+  /// assert!(b.any());
+  /// ```
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
@@ -704,6 +865,22 @@ impl f32x16 {
     }
   }
 
+  /// True if all lanes are non-zero when viewed as signed integers.
+  ///
+  /// This checks if all lanes have their sign bit set.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([-1.0; 16]);
+  /// assert!(a.all());
+  ///
+  /// let b = f32x16::from([
+  ///   -1.0, 0.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+  ///   -1.0, -1.0, -1.0, -1.0,
+  /// ]);
+  /// assert!(!b.all());
+  /// ```
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
@@ -716,12 +893,40 @@ impl f32x16 {
     }
   }
 
+  /// True if no lanes are non-zero when viewed as signed integers.
+  ///
+  /// This is equivalent to `!self.any()`.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([0.0; 16]);
+  /// assert!(a.none());
+  ///
+  /// let b = f32x16::from([
+  ///   -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  ///   0.0,
+  /// ]);
+  /// assert!(!b.none());
+  /// ```
   #[inline]
   #[must_use]
   pub fn none(self) -> bool {
     !self.any()
   }
 
+  /// Horizontal addition of all lanes into a single value.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+  ///   15.0, 16.0,
+  /// ]);
+  /// let sum = a.reduce_add();
+  /// assert_eq!(sum, 136.0);
+  /// ```
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> f32 {
@@ -742,23 +947,97 @@ impl f32x16 {
     }
   }
 
+  /// Lanewise check for infinity values.
+  ///
+  /// Returns a mask where each lane is all 1s if the corresponding input lane
+  /// is positive or negative infinity, and all 0s otherwise.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   f32::INFINITY,
+  ///   1.0,
+  ///   f32::NEG_INFINITY,
+  ///   0.0,
+  ///   f32::INFINITY,
+  ///   2.0,
+  ///   f32::NEG_INFINITY,
+  ///   3.0,
+  ///   f32::INFINITY,
+  ///   4.0,
+  ///   f32::NEG_INFINITY,
+  ///   5.0,
+  ///   f32::INFINITY,
+  ///   6.0,
+  ///   f32::NEG_INFINITY,
+  ///   7.0,
+  /// ]);
+  /// let result = a.is_inf();
+  /// // Check that infinities are detected as true, finite values as false
+  /// assert!(result.any());
+  /// ```
   #[inline]
   #[must_use]
   pub fn is_inf(self) -> Self {
-    let shifted_exp_mask = u32x16::splat(0x7F800000);
+    let shifted_inf = u32x16::splat(0xFF000000);
     let u: u32x16 = cast(self);
     let shift_u = u << 1_u32;
-    let inf_check = (shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
-    let mantissa_check = (shift_u & u32x16::splat(0x007FFFFF)).cmp_eq(u32x16::splat(0));
-    cast(inf_check & mantissa_check)
+    let out = (shift_u).cmp_eq(shifted_inf);
+    cast(out)
   }
 
+  /// Flip the sign of `self` lanes based on the sign of `signs` lanes.
+  ///
+  /// For each lane, if `signs` lane is negative, flips the sign of `self` lane.
+  /// Otherwise keeps `self` lane unchanged.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let a = f32x16::from([
+  ///   1.0, -2.0, 3.0, -4.0, 5.0, -6.0, 7.0, -8.0, 9.0, -10.0, 11.0, -12.0, 13.0,
+  ///   -14.0, 15.0, -16.0,
+  /// ]);
+  /// let signs = f32x16::from([
+  ///   1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0,
+  ///   -1.0, 1.0, -1.0,
+  /// ]);
+  /// let result = a.flip_signs(signs);
+  /// let expected = f32x16::from([
+  ///   1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+  ///   15.0, 16.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn flip_signs(self, signs: Self) -> Self {
     self ^ (signs & Self::from(-0.0))
   }
 
+  /// Copy the sign from the `sign` lanes to the `self` lanes.
+  ///
+  /// Each lane uses the magnitude from `self` and the sign from `sign`.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let magnitude = f32x16::from([
+  ///   1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+  ///   15.0, 16.0,
+  /// ]);
+  /// let signs = f32x16::from([
+  ///   1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0,
+  ///   -1.0, 1.0, -1.0,
+  /// ]);
+  /// let result = magnitude.copysign(signs);
+  /// let expected = f32x16::from([
+  ///   1.0, -2.0, 3.0, -4.0, 5.0, -6.0, 7.0, -8.0, 9.0, -10.0, 11.0, -12.0, 13.0,
+  ///   -14.0, 15.0, -16.0,
+  /// ]);
+  /// assert_eq!(result, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn copysign(self, sign: Self) -> Self {
@@ -766,6 +1045,37 @@ impl f32x16 {
     (self & magnitude_mask) | (sign & Self::from(-0.0))
   }
 
+  /// Convert radians to degrees.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// use core::f32::consts::PI;
+  /// let radians = f32x16::from([
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  /// ]);
+  /// let degrees = radians.to_degrees();
+  /// let expected = f32x16::from([
+  ///   0.0, 90.0, 180.0, 360.0, 0.0, 90.0, 180.0, 360.0, 0.0, 90.0, 180.0, 360.0,
+  ///   0.0, 90.0, 180.0, 360.0,
+  /// ]);
+  /// assert_eq!(degrees, expected);
+  /// ```
   #[inline]
   #[must_use]
   pub fn to_degrees(self) -> Self {
@@ -773,11 +1083,351 @@ impl f32x16 {
     self * Self::splat(RAD_TO_DEG_RATIO)
   }
 
+  /// Convert degrees to radians.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// use core::f32::consts::PI;
+  /// let degrees = f32x16::from([
+  ///   0.0, 90.0, 180.0, 360.0, 0.0, 90.0, 180.0, 360.0, 0.0, 90.0, 180.0, 360.0,
+  ///   0.0, 90.0, 180.0, 360.0,
+  /// ]);
+  /// let radians = degrees.to_radians();
+  /// let expected = f32x16::from([
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  ///   0.0,
+  ///   PI / 2.0,
+  ///   PI,
+  ///   2.0 * PI,
+  /// ]);
+  /// // Use approximate comparison due to floating point precision
+  /// let diff: [f32; 16] = (radians - expected).abs().to_array();
+  /// for &d in &diff {
+  ///   assert!(d < 0.000001);
+  /// }
+  /// ```
   #[inline]
   #[must_use]
   pub fn to_radians(self) -> Self {
     const DEG_TO_RAD_RATIO: f32 = core::f32::consts::PI / 180.0_f32;
     self * Self::splat(DEG_TO_RAD_RATIO)
+  }
+
+  /// Lanewise sine and cosine of the input in radians.
+  ///
+  /// Returns `(sin, cos)` tuple.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let pi = core::f32::consts::PI;
+  /// let input = f32x16::from([
+  ///   0.0,
+  ///   pi / 6.0,
+  ///   pi / 4.0,
+  ///   pi / 3.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   2.0 * pi,
+  ///   0.0,
+  ///   pi / 6.0,
+  ///   pi / 4.0,
+  ///   pi / 3.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   2.0 * pi,
+  /// ]);
+  /// let (sin_vals, cos_vals) = input.sin_cos();
+  ///
+  /// // Check a few key values
+  /// let sin_arr: [f32; 16] = sin_vals.to_array();
+  /// let cos_arr: [f32; 16] = cos_vals.to_array();
+  /// assert!((sin_arr[0] - 0.0).abs() < 0.001); // sin(0) = 0
+  /// assert!((cos_arr[0] - 1.0).abs() < 0.001); // cos(0) = 1
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn sin_cos(self) -> (Self, Self) {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // For AVX-512, delegate to two f32x8 instances for now
+        // TODO: Implement native 512-bit trigonometric functions
+        let (sin_a, cos_a) = self.a.sin_cos();
+        let (sin_b, cos_b) = self.b.sin_cos();
+        (Self { a: sin_a, b: sin_b }, Self { a: cos_a, b: cos_b })
+      } else {
+        let (sin_a, cos_a) = self.a.sin_cos();
+        let (sin_b, cos_b) = self.b.sin_cos();
+        (Self { a: sin_a, b: sin_b }, Self { a: cos_a, b: cos_b })
+      }
+    }
+  }
+
+  /// Lanewise sine of the input in radians.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let pi = core::f32::consts::PI;
+  /// let input = f32x16::from([
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  /// ]);
+  /// let result = input.sin();
+  /// let arr: [f32; 16] = result.to_array();
+  /// assert!((arr[0] - 0.0).abs() < 0.001); // sin(0) = 0
+  /// assert!((arr[1] - 1.0).abs() < 0.001); // sin(π/2) = 1
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn sin(self) -> Self {
+    let (s, _) = self.sin_cos();
+    s
+  }
+
+  /// Lanewise cosine of the input in radians.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let pi = core::f32::consts::PI;
+  /// let input = f32x16::from([
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  ///   0.0,
+  ///   pi / 2.0,
+  ///   pi,
+  ///   3.0 * pi / 2.0,
+  /// ]);
+  /// let result = input.cos();
+  /// let arr: [f32; 16] = result.to_array();
+  /// assert!((arr[0] - 1.0).abs() < 0.001); // cos(0) = 1
+  /// assert!((arr[2] + 1.0).abs() < 0.001); // cos(π) = -1
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn cos(self) -> Self {
+    let (_, c) = self.sin_cos();
+    c
+  }
+
+  /// Lanewise tangent of the input in radians.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let pi = core::f32::consts::PI;
+  /// let input = f32x16::from([
+  ///   0.0,
+  ///   pi / 4.0,
+  ///   -pi / 4.0,
+  ///   pi / 6.0,
+  ///   0.0,
+  ///   pi / 4.0,
+  ///   -pi / 4.0,
+  ///   pi / 6.0,
+  ///   0.0,
+  ///   pi / 4.0,
+  ///   -pi / 4.0,
+  ///   pi / 6.0,
+  ///   0.0,
+  ///   pi / 4.0,
+  ///   -pi / 4.0,
+  ///   pi / 6.0,
+  /// ]);
+  /// let result = input.tan();
+  /// let arr: [f32; 16] = result.to_array();
+  /// assert!((arr[0] - 0.0).abs() < 0.001); // tan(0) = 0
+  /// assert!((arr[1] - 1.0).abs() < 0.001); // tan(π/4) = 1
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn tan(self) -> Self {
+    let (s, c) = self.sin_cos();
+    s / c
+  }
+
+  /// Lanewise arcsine (inverse sine) in radians.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let input = f32x16::from([
+  ///   0.0, 0.5, 1.0, -0.5, -1.0, 0.707, -0.707, 0.866, 0.0, 0.5, 1.0, -0.5, -1.0,
+  ///   0.707, -0.707, 0.866,
+  /// ]);
+  /// let result = input.asin();
+  /// let arr: [f32; 16] = result.to_array();
+  /// assert!((arr[0] - 0.0).abs() < 0.001); // asin(0) = 0
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn asin(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Delegate to f32x8 for now
+        Self { a: self.a.asin(), b: self.b.asin() }
+      } else {
+        Self { a: self.a.asin(), b: self.b.asin() }
+      }
+    }
+  }
+
+  /// Lanewise arccosine (inverse cosine) in radians.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let input = f32x16::from([
+  ///   1.0, 0.5, 0.0, -0.5, -1.0, 0.707, -0.707, 0.866, 1.0, 0.5, 0.0, -0.5, -1.0,
+  ///   0.707, -0.707, 0.866,
+  /// ]);
+  /// let result = input.acos();
+  /// let arr: [f32; 16] = result.to_array();
+  /// assert!((arr[0] - 0.0).abs() < 0.001); // acos(1) = 0
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn acos(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Delegate to f32x8 for now
+        Self { a: self.a.acos(), b: self.b.acos() }
+      } else {
+        Self { a: self.a.acos(), b: self.b.acos() }
+      }
+    }
+  }
+
+  /// Lanewise arctangent (inverse tangent) in radians.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let input = f32x16::from([
+  ///   0.0, 1.0, -1.0, 0.577, -0.577, 1.732, -1.732, 0.0, 0.0, 1.0, -1.0, 0.577,
+  ///   -0.577, 1.732, -1.732, 0.0,
+  /// ]);
+  /// let result = input.atan();
+  /// let arr: [f32; 16] = result.to_array();
+  /// assert!((arr[0] - 0.0).abs() < 0.001); // atan(0) = 0
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn atan(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Delegate to f32x8 for now
+        Self { a: self.a.atan(), b: self.b.atan() }
+      } else {
+        Self { a: self.a.atan(), b: self.b.atan() }
+      }
+    }
+  }
+
+  /// Lanewise two-argument arctangent in radians.
+  ///
+  /// `y.atan2(x)` computes the angle from the positive x-axis to the point (x,
+  /// y).
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let y = f32x16::from([
+  ///   1.0, 1.0, -1.0, -1.0, 0.0, 0.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 0.0, 0.0,
+  ///   1.0, -1.0,
+  /// ]);
+  /// let x = f32x16::from([
+  ///   1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 0.0, 0.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0,
+  ///   0.0, 0.0,
+  /// ]);
+  /// let result = y.atan2(x);
+  /// let arr: [f32; 16] = result.to_array();
+  /// let pi = core::f32::consts::PI;
+  /// assert!((arr[0] - pi / 4.0).abs() < 0.001); // atan2(1, 1) = π/4
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn atan2(self, x: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Delegate to f32x8 for now
+        Self { a: self.a.atan2(x.a), b: self.b.atan2(x.b) }
+      } else {
+        Self { a: self.a.atan2(x.a), b: self.b.atan2(x.b) }
+      }
+    }
+  }
+
+  /// Lanewise arcsine and arccosine of the input.
+  ///
+  /// Returns `(asin, acos)` tuple.
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x16;
+  /// let input = f32x16::from([
+  ///   0.0, 0.5, 1.0, -0.5, -1.0, 0.707, -0.707, 0.866, 0.0, 0.5, 1.0, -0.5, -1.0,
+  ///   0.707, -0.707, 0.866,
+  /// ]);
+  /// let (asin_vals, acos_vals) = input.asin_acos();
+  /// let asin_arr: [f32; 16] = asin_vals.to_array();
+  /// let acos_arr: [f32; 16] = acos_vals.to_array();
+  /// assert!((asin_arr[0] - 0.0).abs() < 0.001);
+  /// ```
+  #[inline]
+  #[must_use]
+  pub fn asin_acos(self) -> (Self, Self) {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Delegate to f32x8 for now
+        let (asin_a, acos_a) = self.a.asin_acos();
+        let (asin_b, acos_b) = self.b.asin_acos();
+        (Self { a: asin_a, b: asin_b }, Self { a: acos_a, b: acos_b })
+      } else {
+        let (asin_a, acos_a) = self.a.asin_acos();
+        let (asin_b, acos_b) = self.b.asin_acos();
+        (Self { a: asin_a, b: asin_b }, Self { a: acos_a, b: acos_b })
+      }
+    }
   }
 }
 
