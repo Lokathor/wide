@@ -692,7 +692,7 @@ impl f32x16 {
   pub fn floor(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(Down)}>(self.avx512) }
+        Self { avx512: round_m512::<{round_op!(NegInf)}>(self.avx512) }
       } else {
         Self {
           a: self.a.floor(),
@@ -727,7 +727,7 @@ impl f32x16 {
   pub fn ceil(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(Up)}>(self.avx512) }
+        Self { avx512: round_m512::<{round_op!(PosInf)}>(self.avx512) }
       } else {
         Self {
           a: self.a.ceil(),
@@ -1173,11 +1173,18 @@ impl f32x16 {
   pub fn sin_cos(self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // For AVX-512, delegate to two f32x8 instances for now
-        // TODO: Implement native 512-bit trigonometric functions
-        let (sin_a, cos_a) = self.a.sin_cos();
-        let (sin_b, cos_b) = self.b.sin_cos();
-        (Self { a: sin_a, b: sin_b }, Self { a: cos_a, b: cos_b })
+        // For AVX-512, extract to two 256-bit vectors, compute separately, then combine
+        let lo_256 = extract_m256_from_m512::<0>(self.avx512);
+        let hi_256 = extract_m256_from_m512::<1>(self.avx512);
+        let lo_f32x8 = f32x8 { avx: lo_256 };
+        let hi_f32x8 = f32x8 { avx: hi_256 };
+        let (sin_lo, cos_lo) = lo_f32x8.sin_cos();
+        let (sin_hi, cos_hi) = hi_f32x8.sin_cos();
+        let sin_512 = cast_m256_to_m512(sin_lo.avx);
+        let sin_result = insert_m256_to_m512::<1>(sin_512, sin_hi.avx);
+        let cos_512 = cast_m256_to_m512(cos_lo.avx);
+        let cos_result = insert_m256_to_m512::<1>(cos_512, cos_hi.avx);
+        (Self { avx512: sin_result }, Self { avx512: cos_result })
       } else {
         let (sin_a, cos_a) = self.a.sin_cos();
         let (sin_b, cos_b) = self.b.sin_cos();
@@ -1312,8 +1319,16 @@ impl f32x16 {
   pub fn asin(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // Delegate to f32x8 for now
-        Self { a: self.a.asin(), b: self.b.asin() }
+        // Extract to two 256-bit vectors, compute separately, then combine
+        let lo_256 = extract_m256_from_m512::<0>(self.avx512);
+        let hi_256 = extract_m256_from_m512::<1>(self.avx512);
+        let lo_f32x8 = f32x8 { avx: lo_256 };
+        let hi_f32x8 = f32x8 { avx: hi_256 };
+        let asin_lo = lo_f32x8.asin();
+        let asin_hi = hi_f32x8.asin();
+        let result_512 = cast_m256_to_m512(asin_lo.avx);
+        let result = insert_m256_to_m512::<1>(result_512, asin_hi.avx);
+        Self { avx512: result }
       } else {
         Self { a: self.a.asin(), b: self.b.asin() }
       }
@@ -1338,8 +1353,16 @@ impl f32x16 {
   pub fn acos(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // Delegate to f32x8 for now
-        Self { a: self.a.acos(), b: self.b.acos() }
+        // Extract to two 256-bit vectors, compute separately, then combine
+        let lo_256 = extract_m256_from_m512::<0>(self.avx512);
+        let hi_256 = extract_m256_from_m512::<1>(self.avx512);
+        let lo_f32x8 = f32x8 { avx: lo_256 };
+        let hi_f32x8 = f32x8 { avx: hi_256 };
+        let acos_lo = lo_f32x8.acos();
+        let acos_hi = hi_f32x8.acos();
+        let result_512 = cast_m256_to_m512(acos_lo.avx);
+        let result = insert_m256_to_m512::<1>(result_512, acos_hi.avx);
+        Self { avx512: result }
       } else {
         Self { a: self.a.acos(), b: self.b.acos() }
       }
@@ -1364,8 +1387,16 @@ impl f32x16 {
   pub fn atan(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // Delegate to f32x8 for now
-        Self { a: self.a.atan(), b: self.b.atan() }
+        // Extract to two 256-bit vectors, compute separately, then combine
+        let lo_256 = extract_m256_from_m512::<0>(self.avx512);
+        let hi_256 = extract_m256_from_m512::<1>(self.avx512);
+        let lo_f32x8 = f32x8 { avx: lo_256 };
+        let hi_f32x8 = f32x8 { avx: hi_256 };
+        let atan_lo = lo_f32x8.atan();
+        let atan_hi = hi_f32x8.atan();
+        let result_512 = cast_m256_to_m512(atan_lo.avx);
+        let result = insert_m256_to_m512::<1>(result_512, atan_hi.avx);
+        Self { avx512: result }
       } else {
         Self { a: self.a.atan(), b: self.b.atan() }
       }
@@ -1398,8 +1429,20 @@ impl f32x16 {
   pub fn atan2(self, x: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // Delegate to f32x8 for now
-        Self { a: self.a.atan2(x.a), b: self.b.atan2(x.b) }
+        // Extract to two 256-bit vectors, compute separately, then combine
+        let lo_256 = extract_m256_from_m512::<0>(self.avx512);
+        let hi_256 = extract_m256_from_m512::<1>(self.avx512);
+        let x_lo_256 = extract_m256_from_m512::<0>(x.avx512);
+        let x_hi_256 = extract_m256_from_m512::<1>(x.avx512);
+        let lo_f32x8 = f32x8 { avx: lo_256 };
+        let hi_f32x8 = f32x8 { avx: hi_256 };
+        let x_lo_f32x8 = f32x8 { avx: x_lo_256 };
+        let x_hi_f32x8 = f32x8 { avx: x_hi_256 };
+        let atan2_lo = lo_f32x8.atan2(x_lo_f32x8);
+        let atan2_hi = hi_f32x8.atan2(x_hi_f32x8);
+        let result_512 = cast_m256_to_m512(atan2_lo.avx);
+        let result = insert_m256_to_m512::<1>(result_512, atan2_hi.avx);
+        Self { avx512: result }
       } else {
         Self { a: self.a.atan2(x.a), b: self.b.atan2(x.b) }
       }
@@ -1427,10 +1470,18 @@ impl f32x16 {
   pub fn asin_acos(self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // Delegate to f32x8 for now
-        let (asin_a, acos_a) = self.a.asin_acos();
-        let (asin_b, acos_b) = self.b.asin_acos();
-        (Self { a: asin_a, b: asin_b }, Self { a: acos_a, b: acos_b })
+        // Extract to two 256-bit vectors, compute separately, then combine
+        let lo_256 = extract_m256_from_m512::<0>(self.avx512);
+        let hi_256 = extract_m256_from_m512::<1>(self.avx512);
+        let lo_f32x8 = f32x8 { avx: lo_256 };
+        let hi_f32x8 = f32x8 { avx: hi_256 };
+        let (asin_lo, acos_lo) = lo_f32x8.asin_acos();
+        let (asin_hi, acos_hi) = hi_f32x8.asin_acos();
+        let asin_512 = cast_m256_to_m512(asin_lo.avx);
+        let asin_result = insert_m256_to_m512::<1>(asin_512, asin_hi.avx);
+        let acos_512 = cast_m256_to_m512(acos_lo.avx);
+        let acos_result = insert_m256_to_m512::<1>(acos_512, acos_hi.avx);
+        (Self { avx512: asin_result }, Self { avx512: acos_result })
       } else {
         let (asin_a, acos_a) = self.a.asin_acos();
         let (asin_b, acos_b) = self.b.asin_acos();
