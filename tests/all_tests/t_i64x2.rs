@@ -188,7 +188,7 @@ fn test_i64x2_move_mask() {
 
   crate::test_random_vector_vs_scalar_reduce(
     |a: i64x2| a.move_mask(),
-    0i32,
+    0_u32,
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );
 }

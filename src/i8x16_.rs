@@ -601,12 +601,12 @@ impl i8x16 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        move_mask_i8_m128i(self.sse)
+        move_mask_i8_m128i(self.sse) as u32
       } else if #[cfg(target_feature="simd128")] {
-        i8x16_bitmask(self.simd) as i32
+        i8x16_bitmask(self.simd) as u32
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
@@ -622,25 +622,25 @@ impl i8x16 {
           let r = vqtbl1q_u8(out, table);
 
           // horizontally add the 16-bit lanes
-          vaddvq_u16(vreinterpretq_u16_u8(r)) as i32
+          vaddvq_u16(vreinterpretq_u16_u8(r)) as u32
         }
        } else {
-        ((self.arr[0] < 0) as i32) << 0 |
-        ((self.arr[1] < 0) as i32) << 1 |
-        ((self.arr[2] < 0) as i32) << 2 |
-        ((self.arr[3] < 0) as i32) << 3 |
-        ((self.arr[4] < 0) as i32) << 4 |
-        ((self.arr[5] < 0) as i32) << 5 |
-        ((self.arr[6] < 0) as i32) << 6 |
-        ((self.arr[7] < 0) as i32) << 7 |
-        ((self.arr[8] < 0) as i32) << 8 |
-        ((self.arr[9] < 0) as i32) << 9 |
-        ((self.arr[10] < 0) as i32) << 10 |
-        ((self.arr[11] < 0) as i32) << 11 |
-        ((self.arr[12] < 0) as i32) << 12 |
-        ((self.arr[13] < 0) as i32) << 13 |
-        ((self.arr[14] < 0) as i32) << 14 |
-        ((self.arr[15] < 0) as i32) << 15
+        ((self.arr[0] < 0) as u32) << 0 |
+        ((self.arr[1] < 0) as u32) << 1 |
+        ((self.arr[2] < 0) as u32) << 2 |
+        ((self.arr[3] < 0) as u32) << 3 |
+        ((self.arr[4] < 0) as u32) << 4 |
+        ((self.arr[5] < 0) as u32) << 5 |
+        ((self.arr[6] < 0) as u32) << 6 |
+        ((self.arr[7] < 0) as u32) << 7 |
+        ((self.arr[8] < 0) as u32) << 8 |
+        ((self.arr[9] < 0) as u32) << 9 |
+        ((self.arr[10] < 0) as u32) << 10 |
+        ((self.arr[11] < 0) as u32) << 11 |
+        ((self.arr[12] < 0) as u32) << 12 |
+        ((self.arr[13] < 0) as u32) << 13 |
+        ((self.arr[14] < 0) as u32) << 14 |
+        ((self.arr[15] < 0) as u32) << 15
       }
     }
   }

@@ -403,11 +403,11 @@ impl i64x4 {
   /// lane being the lowest bit
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> i32 {
+  pub fn move_mask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // use f64 move_mask since it is the same size as i64
-        move_mask_m256d(cast(self.avx2))
+        move_mask_m256d(cast(self.avx2)) as u32
       } else {
         self.a.move_mask() | (self.b.move_mask() << 2)
       }
