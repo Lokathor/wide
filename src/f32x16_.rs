@@ -903,7 +903,8 @@ impl f32x16 {
 
   /// True if no lanes have a negative sign bit.
   ///
-  /// This is equivalent to `!self.any()` and checks if all lanes are non-negative.
+  /// This is equivalent to `!self.any()` and checks if all lanes are
+  /// non-negative.
   ///
   /// # Examples
   /// ```
