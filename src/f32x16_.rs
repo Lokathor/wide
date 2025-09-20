@@ -518,15 +518,9 @@ impl f32x16 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-<<<<<<< HEAD
-  /// - On `x86/x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmadd` (single
-  ///   rounding, best accuracy)
-  /// - On `x86/x86_64` with AVX-512F only: Uses `a - (self * m)` (two
-=======
   /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmadd` (single
   ///   rounding, best accuracy)
   /// - On `x86`/`x86_64` with AVX-512F only: Uses `a - (self * m)` (two
->>>>>>> c5b178e319aba48708d471eab594d0f5215d8fa0
   ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   ///
@@ -567,15 +561,9 @@ impl f32x16 {
   /// operations with two roundings.
   ///
   /// # Platform-specific behavior
-<<<<<<< HEAD
-  /// - On `x86/x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmsub` (single
-  ///   rounding, best accuracy)
-  /// - On `x86/x86_64` with AVX-512F only: Uses `-(self * m) - s` (two
-=======
   /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmsub` (single
   ///   rounding, best accuracy)
   /// - On `x86`/`x86_64` with AVX-512F only: Uses `-(self * m) - s` (two
->>>>>>> c5b178e319aba48708d471eab594d0f5215d8fa0
   ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   ///
