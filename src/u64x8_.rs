@@ -289,7 +289,7 @@ impl u64x8 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // no unsigned gt than so inverting the high bit will get the correct result
