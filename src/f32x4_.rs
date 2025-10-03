@@ -405,7 +405,7 @@ impl CmpNe for f32x4 {
 impl CmpLe for f32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self { sse: cmp_le_mask_m128(self.sse, rhs.sse) }
@@ -1130,7 +1130,7 @@ impl f32x4 {
     // medium: z = (t-1.0) / (t+1.0);
     // big:    z = -1.0 / t;
     let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
-    let notbig = t.cmp_le(Self::SQRT_2 + Self::ONE);
+    let notbig = t.simd_le(Self::SQRT_2 + Self::ONE);
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;

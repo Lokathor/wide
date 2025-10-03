@@ -141,7 +141,7 @@ fn impl_f64x8_cmp_le() {
   let a = f64x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
   let b = f64x8::from([2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 8] = [-1, -1, 0, 0, 0, 0, 0, 0];
-  let actual: [i64; 8] = cast(a.cmp_le(b));
+  let actual: [i64; 8] = cast(a.simd_le(b));
   assert_eq!(actual, expected);
 }
 

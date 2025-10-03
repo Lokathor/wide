@@ -388,7 +388,7 @@ impl CmpNe for f64x2 {
 impl CmpLe for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_le_mask_m128d(self.sse, rhs.sse) }
@@ -1144,7 +1144,7 @@ impl f64x2 {
     // small:  t < 0.66
     // medium: t <= t <= 2.4142 (1+sqrt(2))
     // big:    t > 2.4142
-    let notbig = t.cmp_le(T3PO8);
+    let notbig = t.simd_le(T3PO8);
     let notsmal = t.simd_ge(Self::splat(0.66));
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
@@ -1219,7 +1219,7 @@ impl f64x2 {
     // small:  t < 0.66
     // medium: t <= t <= 2.4142 (1+sqrt(2))
     // big:    t > 2.4142
-    let notbig = t.cmp_le(T3PO8);
+    let notbig = t.simd_le(T3PO8);
     let notsmal = t.simd_ge(Self::splat(0.66));
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);

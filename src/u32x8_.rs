@@ -457,7 +457,7 @@ impl CmpLe for u32x8 {
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     self.simd_eq(rhs) | self.cmp_lt(rhs)
   }
 }

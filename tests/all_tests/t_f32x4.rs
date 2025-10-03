@@ -155,7 +155,7 @@ fn impl_f32x4_cmp_le() {
   let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i32; 4] = [-1, -1, 0, 0];
-  let actual: [i32; 4] = cast(a.cmp_le(b));
+  let actual: [i32; 4] = cast(a.simd_le(b));
   assert_eq!(expected, actual);
 }
 

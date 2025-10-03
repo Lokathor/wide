@@ -301,14 +301,14 @@ impl CmpNe for f32x8 {
 impl CmpLe for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_le(rhs.a),
-          b : self.b.cmp_le(rhs.b),
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
         }
       }
     }
@@ -907,7 +907,7 @@ impl f32x8 {
     // medium: z = (t-1.0) / (t+1.0);
     // big:    z = -1.0 / t;
     let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
-    let notbig = t.cmp_le(Self::SQRT_2 + Self::ONE);
+    let notbig = t.simd_le(Self::SQRT_2 + Self::ONE);
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
