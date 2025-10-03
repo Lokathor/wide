@@ -548,9 +548,9 @@ impl f32x8 {
     pick! {
       if #[cfg(target_feature="avx")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
+        let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
         let cast: i32x8 = cast(convert_to_i32_m256i_from_m256(non_nan.avx));
         flip_to_max ^ cast
       } else {
@@ -589,9 +589,9 @@ impl f32x8 {
     pick! {
         if #[cfg(target_feature="avx")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
+        let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
         let cast: i32x8 = cast(convert_truncate_to_i32_m256i_from_m256(non_nan.avx));
         flip_to_max ^ cast
       } else {

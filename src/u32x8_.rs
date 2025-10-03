@@ -309,7 +309,7 @@ impl CmpEq for u32x8 {
   /// # use wide::{u32x8, CmpEq};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
-  /// let mask = a.cmp_eq(b);
+  /// let mask = a.simd_eq(b);
   /// let expected = [0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
@@ -341,7 +341,7 @@ impl CmpGt for u32x8 {
   /// # use wide::{u32x8, CmpGt};
   /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
   /// let b = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let mask = a.cmp_gt(b);
+  /// let mask = a.simd_gt(b);
   /// let expected =
   ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
@@ -376,7 +376,7 @@ impl CmpLt for u32x8 {
   /// # use wide::{u32x8, CmpLt};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
-  /// let mask = a.cmp_lt(b);
+  /// let mask = a.simd_lt(b);
   /// let expected =
   ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
@@ -400,7 +400,7 @@ impl CmpNe for u32x8 {
   /// # use wide::{u32x8, CmpNe};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
-  /// let mask = a.cmp_ne(b);
+  /// let mask = a.simd_ne(b);
   /// let expected = [0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
@@ -423,7 +423,7 @@ impl CmpGe for u32x8 {
   /// # use wide::{u32x8, CmpGe};
   /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
   /// let b = u32x8::from([5, 2, 3, 4, 5, 6, 8, 8]);
-  /// let mask = a.cmp_ge(b);
+  /// let mask = a.simd_ge(b);
   /// let expected = [
   ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
   ///   0,
@@ -449,7 +449,7 @@ impl CmpLe for u32x8 {
   /// # use wide::{u32x8, CmpLe};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([1, 4, 3, 2, 10, 9, 7, 7]);
-  /// let mask = a.cmp_le(b);
+  /// let mask = a.simd_le(b);
   /// let expected = [
   ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
   ///   0,
