@@ -233,14 +233,14 @@ impl BitXor for f32x8 {
 impl CmpEq for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -250,14 +250,14 @@ impl CmpEq for f32x8 {
 impl CmpGe for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_ge(rhs.a),
-          b : self.b.cmp_ge(rhs.b),
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
         }
       }
     }
@@ -267,14 +267,14 @@ impl CmpGe for f32x8 {
 impl CmpGt for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -284,14 +284,14 @@ impl CmpGt for f32x8 {
 impl CmpNe for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
+  fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_ne(rhs.a),
-          b : self.b.cmp_ne(rhs.b),
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
         }
       }
     }
@@ -301,14 +301,14 @@ impl CmpNe for f32x8 {
 impl CmpLe for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_le(rhs.a),
-          b : self.b.cmp_le(rhs.b),
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
         }
       }
     }
@@ -318,14 +318,14 @@ impl CmpLe for f32x8 {
 impl CmpLt for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
         }
       }
     }
@@ -493,7 +493,7 @@ impl f32x8 {
     let shifted_exp_mask = u32x8::from(0xFF000000);
     let u: u32x8 = cast(self);
     let shift_u = u << 1_u64;
-    let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
     cast(out)
   }
   #[inline]
@@ -502,7 +502,7 @@ impl f32x8 {
     let shifted_inf = u32x8::from(0xFF000000);
     let u: u32x8 = cast(self);
     let shift_u = u << 1_u64;
-    let out = (shift_u).cmp_eq(shifted_inf);
+    let out = (shift_u).simd_eq(shifted_inf);
     cast(out)
   }
 
@@ -548,9 +548,9 @@ impl f32x8 {
     pick! {
       if #[cfg(target_feature="avx")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
+        let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
         let cast: i32x8 = cast(convert_to_i32_m256i_from_m256(non_nan.avx));
         flip_to_max ^ cast
       } else {
@@ -589,9 +589,9 @@ impl f32x8 {
     pick! {
         if #[cfg(target_feature="avx")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
+        let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x8 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
         let cast: i32x8 = cast(convert_truncate_to_i32_m256i_from_m256(non_nan.avx));
         flip_to_max ^ cast
       } else {
@@ -794,7 +794,7 @@ impl f32x8 {
     const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x8::splat(0.5));
+    let big = xa.simd_ge(f32x8::splat(0.5));
 
     let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
     let x2 = xa * xa;
@@ -810,7 +810,7 @@ impl f32x8 {
     let z1 = z + z;
 
     // acos
-    let z3 = self.cmp_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
+    let z3 = self.simd_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
     let z4 = f32x8::FRAC_PI_2 - z.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -834,7 +834,7 @@ impl f32x8 {
     const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x8::splat(0.5));
+    let big = xa.simd_ge(f32x8::splat(0.5));
 
     let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
     let x2 = xa * xa;
@@ -869,7 +869,7 @@ impl f32x8 {
     const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x8::splat(0.5));
+    let big = xa.simd_ge(f32x8::splat(0.5));
 
     let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
     let x2 = xa * xa;
@@ -885,7 +885,7 @@ impl f32x8 {
     let z1 = z + z;
 
     // acos
-    let z3 = self.cmp_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
+    let z3 = self.simd_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
     let z4 = f32x8::FRAC_PI_2 - z.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -906,8 +906,8 @@ impl f32x8 {
     // small:  z = t / 1.0;
     // medium: z = (t-1.0) / (t+1.0);
     // big:    z = -1.0 / t;
-    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
-    let notbig = t.cmp_le(Self::SQRT_2 + Self::ONE);
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
+    let notbig = t.simd_le(Self::SQRT_2 + Self::ONE);
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
@@ -944,7 +944,7 @@ impl f32x8 {
     // move in first octant
     let x1 = x.abs();
     let y1 = y.abs();
-    let swapxy = y1.cmp_gt(x1);
+    let swapxy = y1.simd_gt(x1);
     // swap x and y if y1 > x1
     let mut x2 = swapxy.blend(y1, x1);
     let mut y2 = swapxy.blend(x1, y1);
@@ -962,7 +962,7 @@ impl f32x8 {
 
     // small:  z = t / 1.0;
     // medium: z = (t-1.0) / (t+1.0);
-    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
 
     let a = notsmal.blend(t - Self::ONE, t);
     let b = notsmal.blend(t + Self::ONE, Self::ONE);
@@ -977,7 +977,7 @@ impl f32x8 {
 
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).cmp_eq(Self::ZERO)).blend(Self::ZERO, re);
+    re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
     re = (x.sign_bit()).blend(Self::PI - re, re);
 
     // get sign bit
@@ -1019,9 +1019,9 @@ impl f32x8 {
     let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
       + f32x8::from(0.5).mul_neg_add(x2, f32x8::from(1.0));
 
-    let swap = !(q & i32x8::from(1)).cmp_eq(i32x8::from(0));
+    let swap = !(q & i32x8::from(1)).simd_eq(i32x8::from(0));
 
-    let mut overflow: f32x8 = cast(q.cmp_gt(i32x8::from(0x2000000)));
+    let mut overflow: f32x8 = cast(q.simd_gt(i32x8::from(0x2000000)));
     overflow &= xa.is_finite();
     s = overflow.blend(f32x8::from(0.0), s);
     c = overflow.blend(f32x8::from(1.0), c);
@@ -1112,12 +1112,12 @@ impl f32x8 {
   }
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx")] {
         move_mask_m256(self.avx) as u32
       } else {
-        (self.b.move_mask() << 4) | self.a.move_mask()
+        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
       }
     }
   }
@@ -1180,7 +1180,7 @@ impl f32x8 {
     let n2 = Self::vm_pow2n(r);
     let z = (z + Self::ONE) * n2;
     // check for overflow
-    let in_range = self.abs().cmp_lt(max_x);
+    let in_range = self.abs().simd_lt(max_x);
     let in_range = in_range & self.is_finite();
     in_range.blend(z, Self::ZERO)
   }
@@ -1209,7 +1209,7 @@ impl f32x8 {
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i32x8>(self);
     let t = t & i32x8::splat(0x7F800000);
-    i32x8::round_float(t.cmp_eq(i32x8::splat(0)))
+    i32x8::round_float(t.simd_eq(i32x8::splat(0)))
   }
   #[inline]
   fn infinity() -> Self {
@@ -1227,7 +1227,7 @@ impl f32x8 {
   pub fn sign_bit(self) -> Self {
     let t1 = cast::<_, i32x8>(self);
     let t2 = t1 >> 31;
-    !cast::<_, f32x8>(t2).cmp_eq(f32x8::ZERO)
+    !cast::<_, f32x8>(t2).simd_eq(f32x8::ZERO)
   }
 
   /// horizontal add of all the elements of the vector
@@ -1274,7 +1274,7 @@ impl f32x8 {
     let x1 = self;
     let x = Self::fraction_2(x1);
     let e = Self::exponent(x1);
-    let mask = x.cmp_gt(Self::SQRT_2 * HALF);
+    let mask = x.simd_gt(Self::SQRT_2 * HALF);
     let x = (!mask).blend(x + x, x);
     let fe = mask.blend(e + Self::ONE, e);
     let x = x - Self::ONE;
@@ -1285,7 +1285,7 @@ impl f32x8 {
     let res = res + x2.mul_neg_add(HALF, x);
     let res = fe.mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
-    let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
+    let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
     if !mask.any() {
       res
@@ -1333,7 +1333,7 @@ impl f32x8 {
 
     let x1 = self.abs();
     let x = x1.fraction_2();
-    let mask = x.cmp_gt(f32x8::SQRT_2 * f32x8::HALF);
+    let mask = x.simd_gt(f32x8::SQRT_2 * f32x8::HALF);
     let x = (!mask).blend(x + x, x);
 
     let x = x - f32x8::ONE;
@@ -1370,10 +1370,10 @@ impl f32x8 {
     let ei = cast::<_, i32x8>(ee.round_int());
     let ej = cast::<_, i32x8>(ei + (cast::<_, i32x8>(z) >> 23));
 
-    let overflow = cast::<_, f32x8>(ej.cmp_gt(i32x8::splat(0x0FF)))
-      | (ee.cmp_gt(f32x8::splat(300.0)));
-    let underflow = cast::<_, f32x8>(ej.cmp_lt(i32x8::splat(0x000)))
-      | (ee.cmp_lt(f32x8::splat(-300.0)));
+    let overflow = cast::<_, f32x8>(ej.simd_gt(i32x8::splat(0x0FF)))
+      | (ee.simd_gt(f32x8::splat(300.0)));
+    let underflow = cast::<_, f32x8>(ej.simd_lt(i32x8::splat(0x000)))
+      | (ee.simd_lt(f32x8::splat(-300.0)));
 
     // Add exponent by integer addition
     let z = cast::<_, f32x8>(cast::<_, i32x8>(z) + (ei << 23));
@@ -1384,9 +1384,9 @@ impl f32x8 {
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
     let z = x_zero.blend(
-      y.cmp_lt(f32x8::ZERO).blend(
+      y.simd_lt(f32x8::ZERO).blend(
         Self::infinity(),
-        y.cmp_eq(f32x8::ZERO).blend(f32x8::ONE, f32x8::ZERO),
+        y.simd_eq(f32x8::ZERO).blend(f32x8::ONE, f32x8::ZERO),
       ),
       z,
     );
@@ -1394,13 +1394,13 @@ impl f32x8 {
     let x_sign = self.sign_bit();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.cmp_eq(y.round());
+      let yi = y.simd_eq(y.round());
 
       // Is y odd?
       let y_odd = cast::<_, i32x8>(y.round_int() << 31).round_float();
 
       let z1 =
-        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+        yi.blend(z | y_odd, self.simd_eq(Self::ZERO).blend(z, Self::nan_pow()));
 
       x_sign.blend(z1, z)
     } else {
@@ -1470,14 +1470,14 @@ impl f32x8 {
         #[inline(always)]
         fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
           f32x8::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
-            data[4].as_array_ref()[index],
-            data[5].as_array_ref()[index],
-            data[6].as_array_ref()[index],
-            data[7].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+            data[4].as_array()[index],
+            data[5].as_array()[index],
+            data[6].as_array()[index],
+            data[7].as_array()[index],
           ])
         }
 
@@ -1501,12 +1501,12 @@ impl f32x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[f32; 8] {
+  pub fn as_array(&self) -> &[f32; 8] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [f32; 8] {
+  pub fn as_mut_array(&mut self) -> &mut [f32; 8] {
     cast_mut(self)
   }
 
@@ -1517,14 +1517,14 @@ impl f32x8 {
         Self { avx: convert_to_m256_from_i32_m256i(v.avx2) }
       } else {
         Self::new([
-            v.as_array_ref()[0] as f32,
-            v.as_array_ref()[1] as f32,
-            v.as_array_ref()[2] as f32,
-            v.as_array_ref()[3] as f32,
-            v.as_array_ref()[4] as f32,
-            v.as_array_ref()[5] as f32,
-            v.as_array_ref()[6] as f32,
-            v.as_array_ref()[7] as f32,
+            v.as_array()[0] as f32,
+            v.as_array()[1] as f32,
+            v.as_array()[2] as f32,
+            v.as_array()[3] as f32,
+            v.as_array()[4] as f32,
+            v.as_array()[5] as f32,
+            v.as_array()[6] as f32,
+            v.as_array()[7] as f32,
           ])
       }
     }

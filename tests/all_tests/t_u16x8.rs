@@ -169,7 +169,7 @@ fn impl_u16x8_cmp_eq() {
   let a = u16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
   let b = u16x8::from([2_u16; 8]);
   let expected = u16x8::from([0, u16::MAX, 0, 0, 0, u16::MAX, 0, 0]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

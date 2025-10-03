@@ -308,7 +308,7 @@ fn impl_u32x16_cmp_eq() {
     0,
     0,
   ]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 
@@ -351,11 +351,11 @@ fn impl_u32x16_cmp_gt() {
     u32::MAX,
     u32::MAX,
   ]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar(
-    |a: u32x16, b| a.cmp_gt(b),
+    |a: u32x16, b| a.simd_gt(b),
     |a, b| if a > b { u32::MAX } else { 0 },
   );
 }
@@ -399,11 +399,11 @@ fn impl_u32x16_cmp_lt() {
     u32::MAX,
     u32::MAX,
   ]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar(
-    |a: u32x16, b| a.cmp_lt(b),
+    |a: u32x16, b| a.simd_lt(b),
     |a, b| if a < b { u32::MAX } else { 0 },
   );
 }

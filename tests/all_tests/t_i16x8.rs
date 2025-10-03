@@ -172,7 +172,7 @@ fn impl_i16x8_cmp_eq() {
   let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
   let b = i16x8::from([2_i16; 8]);
   let expected = i16x8::from([0, -1, 0, 0, 0, -1, 0, 0]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 
@@ -181,7 +181,7 @@ fn impl_i16x8_cmp_gt() {
   let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
   let b = i16x8::from([2_i16; 8]);
   let expected = i16x8::from([0, 0, -1, -1, 0, 0, -1, -1]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 
@@ -190,11 +190,11 @@ fn impl_i16x8_cmp_lt() {
   let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
   let b = i16x8::from([2_i16; 8]);
   let expected = i16x8::from([-1, 0, 0, 0, -1, 0, 0, 0]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   let expected = i16x8::from([0, 0, 0, 0, 0, 0, 0, 0]);
-  let actual = a.cmp_lt(a);
+  let actual = a.simd_lt(a);
   assert_eq!(expected, actual);
 }
 
@@ -301,12 +301,12 @@ fn impl_from_i16_slice() {
 fn test_i16x8_move_mask() {
   let a = i16x8::from([-1, 0, -2, -3, -1, 0, -2, -3]);
   let expected = 0b11011101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = i16x8::from([1, 0, 2, -3, 1, 0, 2, -3]);
   let expected = 0b10001000;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
 

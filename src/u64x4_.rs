@@ -272,8 +272,8 @@ impl_shr_t_for_u64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for u64x4 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -285,21 +285,21 @@ impl u64x4 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -307,8 +307,8 @@ impl u64x4 {
         Self { avx2: cmp_gt_mask_i64_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -316,9 +316,9 @@ impl u64x4 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  pub fn simd_lt(self, rhs: Self) -> Self {
     // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    rhs.simd_gt(self)
   }
 
   #[inline]
@@ -342,25 +342,25 @@ impl u64x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u64; 4] {
+  pub fn as_array(&self) -> &[u64; 4] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u64; 4] {
+  pub fn as_mut_array(&mut self) -> &mut [u64; 4] {
     cast_mut(self)
   }
 
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
-    self.cmp_lt(rhs).blend(self, rhs)
+    self.simd_lt(rhs).blend(self, rhs)
   }
 
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
-    self.cmp_gt(rhs).blend(self, rhs)
+    self.simd_gt(rhs).blend(self, rhs)
   }
 
   #[inline]

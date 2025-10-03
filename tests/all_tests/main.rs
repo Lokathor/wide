@@ -231,7 +231,7 @@ where
   test_random_vector_vs_scalar(|a: V, b| a | b, |a, b| a | b);
 
   test_random_vector_vs_scalar(
-    |a: V, b| a.cmp_eq(b),
+    |a: V, b| a.simd_eq(b),
     |a, b| if a == b { !T::default() } else { T::default() },
   );
 

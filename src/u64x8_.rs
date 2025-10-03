@@ -262,8 +262,8 @@ impl Shl for u64x8 {
 impl CmpEq for u64x8 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -275,21 +275,21 @@ impl u64x8 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -297,8 +297,8 @@ impl u64x8 {
         Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -306,7 +306,7 @@ impl u64x8 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  pub fn simd_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -314,8 +314,8 @@ impl u64x8 {
         Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -342,12 +342,12 @@ impl u64x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u64; 8] {
+  pub fn as_array(&self) -> &[u64; 8] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u64; 8] {
+  pub fn as_mut_array(&mut self) -> &mut [u64; 8] {
     cast_mut(self)
   }
 

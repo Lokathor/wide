@@ -302,7 +302,7 @@ impl BitXor for f64x2 {
 impl CmpEq for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_m128d(self.sse, rhs.sse) }
@@ -323,7 +323,7 @@ impl CmpEq for f64x2 {
 impl CmpGe for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_ge_mask_m128d(self.sse, rhs.sse) }
@@ -344,7 +344,7 @@ impl CmpGe for f64x2 {
 impl CmpGt for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { sse: cmp_op_mask_m128d::<{cmp_op!(GreaterThanOrdered)}>(self.sse, rhs.sse) }
@@ -367,7 +367,7 @@ impl CmpGt for f64x2 {
 impl CmpNe for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
+  fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_neq_mask_m128d(self.sse, rhs.sse) }
@@ -388,7 +388,7 @@ impl CmpNe for f64x2 {
 impl CmpLe for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_le_mask_m128d(self.sse, rhs.sse) }
@@ -409,7 +409,7 @@ impl CmpLe for f64x2 {
 impl CmpLt for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_m128d(self.sse, rhs.sse) }
@@ -653,7 +653,7 @@ impl f64x2 {
     let shifted_exp_mask = u64x2::from(0xFFE0000000000000);
     let u: u64x2 = cast(self);
     let shift_u = u << 1_u64;
-    let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
     cast(out)
   }
   #[inline]
@@ -662,7 +662,7 @@ impl f64x2 {
     let shifted_inf = u64x2::from(0xFFE0000000000000);
     let u: u64x2 = cast(self);
     let shift_u = u << 1_u64;
-    let out = (shift_u).cmp_eq(shifted_inf);
+    let out = (shift_u).simd_eq(shifted_inf);
     cast(out)
   }
 
@@ -886,7 +886,7 @@ impl f64x2 {
 
     let xa = self.abs();
 
-    let big = xa.cmp_ge(f64x2::splat(0.625));
+    let big = xa.simd_ge(f64x2::splat(0.625));
 
     let x1 = big.blend(f64x2::splat(1.0) - xa, xa * xa);
 
@@ -940,7 +940,7 @@ impl f64x2 {
     let asin = asin.flip_signs(self);
 
     // acos
-    let z3 = self.cmp_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
+    let z3 = self.simd_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
     let z4 = f64x2::FRAC_PI_2 - z2.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -977,7 +977,7 @@ impl f64x2 {
 
     let xa = self.abs();
 
-    let big = xa.cmp_ge(f64x2::splat(0.625));
+    let big = xa.simd_ge(f64x2::splat(0.625));
 
     let x1 = big.blend(f64x2::splat(1.0) - xa, xa * xa);
 
@@ -1026,7 +1026,7 @@ impl f64x2 {
     }
 
     // acos
-    let z3 = self.cmp_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
+    let z3 = self.simd_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
     let z4 = f64x2::FRAC_PI_2 - z2.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -1063,7 +1063,7 @@ impl f64x2 {
 
     let xa = self.abs();
 
-    let big = xa.cmp_ge(f64x2::splat(0.625));
+    let big = xa.simd_ge(f64x2::splat(0.625));
 
     let x1 = big.blend(f64x2::splat(1.0) - xa, xa * xa);
 
@@ -1144,8 +1144,8 @@ impl f64x2 {
     // small:  t < 0.66
     // medium: t <= t <= 2.4142 (1+sqrt(2))
     // big:    t > 2.4142
-    let notbig = t.cmp_le(T3PO8);
-    let notsmal = t.cmp_ge(Self::splat(0.66));
+    let notbig = t.simd_le(T3PO8);
+    let notsmal = t.simd_ge(Self::splat(0.66));
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
@@ -1200,7 +1200,7 @@ impl f64x2 {
     // move in first octant
     let x1 = x.abs();
     let y1 = y.abs();
-    let swapxy = y1.cmp_gt(x1);
+    let swapxy = y1.simd_gt(x1);
     // swap x and y if y1 > x1
     let mut x2 = swapxy.blend(y1, x1);
     let mut y2 = swapxy.blend(x1, y1);
@@ -1219,8 +1219,8 @@ impl f64x2 {
     // small:  t < 0.66
     // medium: t <= t <= 2.4142 (1+sqrt(2))
     // big:    t > 2.4142
-    let notbig = t.cmp_le(T3PO8);
-    let notsmal = t.cmp_ge(Self::splat(0.66));
+    let notbig = t.simd_le(T3PO8);
+    let notsmal = t.simd_ge(Self::splat(0.66));
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
@@ -1246,7 +1246,7 @@ impl f64x2 {
 
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).cmp_eq(Self::ZERO)).blend(Self::ZERO, re);
+    re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
     re = (x.sign_bit()).blend(Self::PI - re, re);
 
     // get sign bit
@@ -1295,9 +1295,9 @@ impl f64x2 {
     c =
       (x2 * x2).mul_add(c, x2.mul_neg_add(f64x2::from(0.5), f64x2::from(1.0)));
 
-    let swap = !((q & i64x2::from(1)).cmp_eq(i64x2::from(0)));
+    let swap = !((q & i64x2::from(1)).simd_eq(i64x2::from(0)));
 
-    let mut overflow: f64x2 = cast(q.cmp_gt(i64x2::from(0x80000000000000)));
+    let mut overflow: f64x2 = cast(q.simd_gt(i64x2::from(0x80000000000000)));
     overflow &= xa.is_finite();
     s = overflow.blend(f64x2::from(0.0), s);
     c = overflow.blend(f64x2::from(1.0), c);
@@ -1369,7 +1369,7 @@ impl f64x2 {
   }
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         move_mask_m128d(self.sse) as u32
@@ -1395,7 +1395,7 @@ impl f64x2 {
       if #[cfg(target_feature="simd128")] {
         v128_any_true(self.simd)
       } else {
-        self.move_mask() != 0
+        self.to_bitmask() != 0
       }
     }
   }
@@ -1407,7 +1407,7 @@ impl f64x2 {
         u64x2_all_true(self.simd)
       } else {
         // two lanes
-        self.move_mask() == 0b11
+        self.to_bitmask() == 0b11
       }
     }
   }
@@ -1453,7 +1453,7 @@ impl f64x2 {
     let n2 = Self::vm_pow2n(r);
     let z = (z + Self::ONE) * n2;
     // check for overflow
-    let in_range = self.abs().cmp_lt(max_x);
+    let in_range = self.abs().simd_lt(max_x);
     let in_range = in_range & self.is_finite();
     in_range.blend(z, Self::ZERO)
   }
@@ -1483,7 +1483,7 @@ impl f64x2 {
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i64x2>(self);
     let t = t & i64x2::splat(0x7FF0000000000000);
-    i64x2::round_float(t.cmp_eq(i64x2::splat(0)))
+    i64x2::round_float(t.simd_eq(i64x2::splat(0)))
   }
 
   #[inline]
@@ -1505,7 +1505,7 @@ impl f64x2 {
   fn sign_bit(self) -> Self {
     let t1 = cast::<_, i64x2>(self);
     let t2 = t1 >> 63;
-    !cast::<_, f64x2>(t2).cmp_eq(f64x2::ZERO)
+    !cast::<_, f64x2>(t2).simd_eq(f64x2::ZERO)
   }
 
   /// horizontal add of all the elements of the vector
@@ -1550,7 +1550,7 @@ impl f64x2 {
     let x1 = self;
     let x = Self::fraction_2(x1);
     let e = Self::exponent(x1);
-    let mask = x.cmp_gt(VM_SQRT2 * f64x2::HALF);
+    let mask = x.simd_gt(VM_SQRT2 * f64x2::HALF);
     let x = (!mask).blend(x + x, x);
     let fe = mask.blend(e + Self::ONE, e);
     let x = x - Self::ONE;
@@ -1563,7 +1563,7 @@ impl f64x2 {
     let res = res + x2.mul_neg_add(f64x2::HALF, x);
     let res = fe.mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
-    let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
+    let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
     if !mask.any() {
       res
@@ -1622,7 +1622,7 @@ impl f64x2 {
 
     let x1 = self.abs();
     let x = x1.fraction_2();
-    let mask = x.cmp_gt(f64x2::SQRT_2 * f64x2::HALF);
+    let mask = x.simd_gt(f64x2::SQRT_2 * f64x2::HALF);
     let x = (!mask).blend(x + x, x);
     let x = x - f64x2::ONE;
     let x2 = x * x;
@@ -1655,10 +1655,10 @@ impl f64x2 {
     let ei = cast::<_, i64x2>(ee.round_int());
     let ej = cast::<_, i64x2>(ei + (cast::<_, i64x2>(z) >> 52));
 
-    let overflow = cast::<_, f64x2>(!ej.cmp_lt(i64x2::splat(0x07FF)))
-      | ee.cmp_gt(f64x2::splat(3000.0));
-    let underflow = cast::<_, f64x2>(!ej.cmp_gt(i64x2::splat(0x000)))
-      | ee.cmp_lt(f64x2::splat(-3000.0));
+    let overflow = cast::<_, f64x2>(!ej.simd_lt(i64x2::splat(0x07FF)))
+      | ee.simd_gt(f64x2::splat(3000.0));
+    let underflow = cast::<_, f64x2>(!ej.simd_gt(i64x2::splat(0x000)))
+      | ee.simd_lt(f64x2::splat(-3000.0));
 
     // Add exponent by integer addition
     let z = cast::<_, f64x2>(cast::<_, i64x2>(z) + (ei << 52));
@@ -1674,9 +1674,9 @@ impl f64x2 {
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
     let z = x_zero.blend(
-      y.cmp_lt(f64x2::ZERO).blend(
+      y.simd_lt(f64x2::ZERO).blend(
         Self::infinity(),
-        y.cmp_eq(f64x2::ZERO).blend(f64x2::ONE, f64x2::ZERO),
+        y.simd_eq(f64x2::ZERO).blend(f64x2::ONE, f64x2::ZERO),
       ),
       z,
     );
@@ -1684,12 +1684,12 @@ impl f64x2 {
     let x_sign = self.sign_bit();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.cmp_eq(y.round());
+      let yi = y.simd_eq(y.round());
       // Is y odd?
       let y_odd = cast::<_, i64x2>(y.round_int() << 63).round_float();
 
       let z1 =
-        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+        yi.blend(z | y_odd, self.simd_eq(Self::ZERO).blend(z, Self::nan_pow()));
       x_sign.blend(z1, z)
     } else {
       z
@@ -1717,12 +1717,12 @@ impl f64x2 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[f64; 2] {
+  pub fn as_array(&self) -> &[f64; 2] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [f64; 2] {
+  pub fn as_mut_array(&mut self) -> &mut [f64; 2] {
     cast_mut(self)
   }
 
@@ -1739,8 +1739,8 @@ impl f64x2 {
         Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.neon))) }}
       } else {
         Self { arr: [
-            v.as_array_ref()[0] as f64,
-            v.as_array_ref()[1] as f64,
+            v.as_array()[0] as f64,
+            v.as_array()[1] as f64,
         ]}
       }
     }

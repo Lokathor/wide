@@ -382,7 +382,7 @@ impl Shl<i32x4> for i32x4 {
 impl CmpEq for i32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
@@ -405,7 +405,7 @@ impl CmpEq for i32x4 {
 impl CmpGt for i32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_i32_m128i(self.sse, rhs.sse) }
@@ -428,7 +428,7 @@ impl CmpGt for i32x4 {
 impl CmpLt for i32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_i32_m128i(self.sse, rhs.sse) }
@@ -605,7 +605,7 @@ impl i32x4 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_max(self.simd, rhs.simd) }
       } else {
-        self.cmp_lt(rhs).blend(rhs, self)
+        self.simd_lt(rhs).blend(rhs, self)
       }
     }
   }
@@ -620,7 +620,7 @@ impl i32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_s32(self.neon, rhs.neon) }}
       } else {
-        self.cmp_lt(rhs).blend(self, rhs)
+        self.simd_lt(rhs).blend(self, rhs)
       }
     }
   }
@@ -648,7 +648,7 @@ impl i32x4 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
@@ -748,10 +748,10 @@ impl i32x4 {
         #[inline(always)]
         fn transpose_column(data: &[i32x4; 4], index: usize) -> i32x4 {
           i32x4::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
           ])
         }
 
@@ -771,12 +771,12 @@ impl i32x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i32; 4] {
+  pub fn as_array(&self) -> &[i32; 4] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [i32; 4] {
+  pub fn as_mut_array(&mut self) -> &mut [i32; 4] {
     cast_mut(self)
   }
 }

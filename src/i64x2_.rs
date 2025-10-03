@@ -354,7 +354,7 @@ impl_shr_t_for_i64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
@@ -377,7 +377,7 @@ impl CmpEq for i64x2 {
 impl CmpGt for i64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
@@ -400,7 +400,7 @@ impl CmpGt for i64x2 {
 impl CmpLt for i64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         Self { sse: !cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
@@ -493,7 +493,7 @@ impl i64x2 {
   /// lane being the lowest bit
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse")] {
         // use f64 move_mask since it is the same size as i64
@@ -555,12 +555,12 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i64; 2] {
+  pub fn as_array(&self) -> &[i64; 2] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [i64; 2] {
+  pub fn as_mut_array(&mut self) -> &mut [i64; 2] {
     cast_mut(self)
   }
 }

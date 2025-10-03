@@ -113,7 +113,7 @@ fn impl_f64x4_cmp_eq() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [0, -1, 0, 0];
-  let actual: [i64; 4] = cast(a.cmp_eq(b));
+  let actual: [i64; 4] = cast(a.simd_eq(b));
   assert_eq!(expected, actual);
 }
 
@@ -122,7 +122,7 @@ fn impl_f64x4_cmp_ne() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [-1, 0, -1, -1];
-  let actual: [i64; 4] = cast(a.cmp_ne(b));
+  let actual: [i64; 4] = cast(a.simd_ne(b));
   assert_eq!(expected, actual);
 }
 
@@ -131,7 +131,7 @@ fn impl_f64x4_cmp_ge() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [0, -1, -1, -1];
-  let actual: [i64; 4] = cast(a.cmp_ge(b));
+  let actual: [i64; 4] = cast(a.simd_ge(b));
   assert_eq!(expected, actual);
 }
 
@@ -140,7 +140,7 @@ fn impl_f64x4_cmp_gt() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [0, 0, -1, -1];
-  let actual: [i64; 4] = cast(a.cmp_gt(b));
+  let actual: [i64; 4] = cast(a.simd_gt(b));
   assert_eq!(expected, actual);
 }
 
@@ -149,7 +149,7 @@ fn impl_f64x4_cmp_le() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [-1, -1, 0, 0];
-  let actual: [i64; 4] = cast(a.cmp_le(b));
+  let actual: [i64; 4] = cast(a.simd_le(b));
   assert_eq!(expected, actual);
 }
 
@@ -158,11 +158,11 @@ fn impl_f64x4_cmp_lt() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [-1, 0, 0, 0];
-  let actual: [i64; 4] = cast(a.cmp_lt(b));
+  let actual: [i64; 4] = cast(a.simd_lt(b));
   assert_eq!(expected, actual);
 
   let expected: [i64; 4] = [0, 0, 0, 0];
-  let actual: [i64; 4] = cast(a.cmp_lt(a));
+  let actual: [i64; 4] = cast(a.simd_lt(a));
   assert_eq!(expected, actual);
 }
 
@@ -598,12 +598,12 @@ fn impl_f64x4_exp() {
 fn test_f64x4_move_mask() {
   let a = f64x4::from([-1.0, 0.0, -2.0, -3.0]);
   let expected = 0b1101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = f64x4::from([1.0, 0.0, 2.0, -3.0]);
   let expected = 0b1000;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
 

@@ -341,7 +341,7 @@ impl_shr_t_for_i16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i16x8 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i16_m128i(self.sse, rhs.sse) }
@@ -368,7 +368,7 @@ impl CmpEq for i16x8 {
 impl CmpGt for i16x8 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_i16_m128i(self.sse, rhs.sse) }
@@ -395,7 +395,7 @@ impl CmpGt for i16x8 {
 impl CmpLt for i16x8 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_i16_m128i(self.sse, rhs.sse) }
@@ -428,7 +428,7 @@ impl i16x8 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         (move_mask_i8_m128i( pack_i16_to_i8_m128i(self.sse,self.sse)) as u32) & 0xff
@@ -582,14 +582,14 @@ impl i16x8 {
         }
 
         i16x8::new([
-          clamp(v.as_array_ref()[0]),
-          clamp(v.as_array_ref()[1]),
-          clamp(v.as_array_ref()[2]),
-          clamp(v.as_array_ref()[3]),
-          clamp(v.as_array_ref()[4]),
-          clamp(v.as_array_ref()[5]),
-          clamp(v.as_array_ref()[6]),
-          clamp(v.as_array_ref()[7]),
+          clamp(v.as_array()[0]),
+          clamp(v.as_array()[1]),
+          clamp(v.as_array()[2]),
+          clamp(v.as_array()[3]),
+          clamp(v.as_array()[4]),
+          clamp(v.as_array()[5]),
+          clamp(v.as_array()[6]),
+          clamp(v.as_array()[7]),
         ])
       }
     }
@@ -610,14 +610,14 @@ impl i16x8 {
         i16x8 { sse: pack_i32_to_i16_m128i( a, b)  }
       } else {
       i16x8::new([
-        v.as_array_ref()[0] as i16,
-        v.as_array_ref()[1] as i16,
-        v.as_array_ref()[2] as i16,
-        v.as_array_ref()[3] as i16,
-        v.as_array_ref()[4] as i16,
-        v.as_array_ref()[5] as i16,
-        v.as_array_ref()[6] as i16,
-        v.as_array_ref()[7] as i16,
+        v.as_array()[0] as i16,
+        v.as_array()[1] as i16,
+        v.as_array()[2] as i16,
+        v.as_array()[3] as i16,
+        v.as_array()[4] as i16,
+        v.as_array()[5] as i16,
+        v.as_array()[6] as i16,
+        v.as_array()[7] as i16,
       ])
       }
     }
@@ -660,7 +660,7 @@ impl i16x8 {
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.cmp_lt(Self::zeroed())
+    self.simd_lt(Self::zeroed())
   }
 
   /// horizontal add of all the elements of the vector
@@ -828,7 +828,7 @@ impl i16x8 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmaxq_s16(self.neon, rhs.neon) }}
       } else {
-        self.cmp_lt(rhs).blend(rhs, self)
+        self.simd_lt(rhs).blend(rhs, self)
       }
     }
   }
@@ -843,7 +843,7 @@ impl i16x8 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_s16(self.neon, rhs.neon) }}
       } else {
-        self.cmp_lt(rhs).blend(self, rhs)
+        self.simd_lt(rhs).blend(self, rhs)
       }
     }
   }
@@ -995,14 +995,14 @@ impl i16x8 {
         Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
       } else {
         i16x8::new([
-          ((i32::from(rhs.as_array_ref()[0]) * i32::from(lhs.as_array_ref()[0])) >> 16) as i16,
-          ((i32::from(rhs.as_array_ref()[1]) * i32::from(lhs.as_array_ref()[1])) >> 16) as i16,
-          ((i32::from(rhs.as_array_ref()[2]) * i32::from(lhs.as_array_ref()[2])) >> 16) as i16,
-          ((i32::from(rhs.as_array_ref()[3]) * i32::from(lhs.as_array_ref()[3])) >> 16) as i16,
-          ((i32::from(rhs.as_array_ref()[4]) * i32::from(lhs.as_array_ref()[4])) >> 16) as i16,
-          ((i32::from(rhs.as_array_ref()[5]) * i32::from(lhs.as_array_ref()[5])) >> 16) as i16,
-          ((i32::from(rhs.as_array_ref()[6]) * i32::from(lhs.as_array_ref()[6])) >> 16) as i16,
-          ((i32::from(rhs.as_array_ref()[7]) * i32::from(lhs.as_array_ref()[7])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[0]) * i32::from(lhs.as_array()[0])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[1]) * i32::from(lhs.as_array()[1])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[2]) * i32::from(lhs.as_array()[2])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[3]) * i32::from(lhs.as_array()[3])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[4]) * i32::from(lhs.as_array()[4])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[5]) * i32::from(lhs.as_array()[5])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[6]) * i32::from(lhs.as_array()[6])) >> 16) as i16,
+          ((i32::from(rhs.as_array()[7]) * i32::from(lhs.as_array()[7])) >> 16) as i16,
         ])
       }
     }
@@ -1036,8 +1036,8 @@ impl i16x8 {
 
          i32x8 { a: i32x4 { neon: low }, b: i32x4 {neon: high } }
        } else {
-        let a = self.as_array_ref();
-        let b = rhs.as_array_ref();
+        let a = self.as_array();
+        let b = rhs.as_array();
          i32x8::new([
            i32::from(a[0]) * i32::from(b[0]),
            i32::from(a[1]) * i32::from(b[1]),
@@ -1162,14 +1162,14 @@ impl i16x8 {
         #[inline(always)]
         fn transpose_column(data: &[i16x8; 8], index: usize) -> i16x8 {
           i16x8::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
-            data[4].as_array_ref()[index],
-            data[5].as_array_ref()[index],
-            data[6].as_array_ref()[index],
-            data[7].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+            data[4].as_array()[index],
+            data[5].as_array()[index],
+            data[6].as_array()[index],
+            data[7].as_array()[index],
           ])
         }
 
@@ -1238,12 +1238,12 @@ impl i16x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i16; 8] {
+  pub fn as_array(&self) -> &[i16; 8] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [i16; 8] {
+  pub fn as_mut_array(&mut self) -> &mut [i16; 8] {
     cast_mut(self)
   }
 }

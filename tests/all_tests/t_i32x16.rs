@@ -195,7 +195,7 @@ fn impl_cmp_eq_for_i32x16() {
   let b = i32x16::from([0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14]);
   let expected =
     i32x16::from([-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 
@@ -206,7 +206,7 @@ fn impl_cmp_gt_for_i32x16() {
   let b = i32x16::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   let expected =
     i32x16::from([0, -1, -1, -1, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 
@@ -216,7 +216,7 @@ fn impl_cmp_lt_for_i32x16() {
     i32x16::from([0, 1, 2, 3, -4, -3, -2, -1, 8, 9, 10, 11, 12, 13, 14, 15]);
   let b = i32x16::from([100; 16]);
   let expected = i32x16::from([-1; 16]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 }
 
@@ -409,15 +409,15 @@ fn impl_shift_for_i32x16() {
 #[test]
 fn impl_cmp_for_i32x16() {
   crate::test_random_vector_vs_scalar(
-    |a: i32x16, b| a.cmp_eq(b),
+    |a: i32x16, b| a.simd_eq(b),
     |a, b| if a == b { -1 } else { 0 },
   );
   crate::test_random_vector_vs_scalar(
-    |a: i32x16, b| a.cmp_gt(b),
+    |a: i32x16, b| a.simd_gt(b),
     |a, b| if a > b { -1 } else { 0 },
   );
   crate::test_random_vector_vs_scalar(
-    |a: i32x16, b| a.cmp_lt(b),
+    |a: i32x16, b| a.simd_lt(b),
     |a, b| if a < b { -1 } else { 0 },
   );
 }

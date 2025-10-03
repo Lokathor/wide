@@ -243,7 +243,7 @@ fn impl_cmp_eq_for_u16x32() {
     u16::MAX,
     0,
   ]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 
@@ -291,7 +291,7 @@ fn impl_cmp_gt_for_u16x32() {
     0,
     u16::MAX,
   ]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 
@@ -303,7 +303,7 @@ fn impl_cmp_lt_for_u16x32() {
   ]);
   let b = u16x32::from([100; 32]);
   let expected = u16x32::from([u16::MAX; 32]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 }
 

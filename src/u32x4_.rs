@@ -380,8 +380,8 @@ impl Shl<u32x4> for u32x4 {
 impl CmpEq for u32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -393,7 +393,7 @@ impl u32x4 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
@@ -413,7 +413,7 @@ impl u32x4 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // no unsigned less than so inverting the high bit will get the correct result
@@ -435,9 +435,9 @@ impl u32x4 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  pub fn simd_lt(self, rhs: Self) -> Self {
     // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    rhs.simd_gt(self)
   }
 
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
@@ -660,10 +660,10 @@ impl u32x4 {
         #[inline(always)]
         fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
           u32x4::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
           ])
         }
 
@@ -683,12 +683,12 @@ impl u32x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u32; 4] {
+  pub fn as_array(&self) -> &[u32; 4] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u32; 4] {
+  pub fn as_mut_array(&mut self) -> &mut [u32; 4] {
     cast_mut(self)
   }
 }

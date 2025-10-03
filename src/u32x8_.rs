@@ -184,14 +184,14 @@ impl From<u16x8> for u32x8 {
         }
       } else {
         u32x8::new([
-          u32::from(v.as_array_ref()[0]),
-          u32::from(v.as_array_ref()[1]),
-          u32::from(v.as_array_ref()[2]),
-          u32::from(v.as_array_ref()[3]),
-          u32::from(v.as_array_ref()[4]),
-          u32::from(v.as_array_ref()[5]),
-          u32::from(v.as_array_ref()[6]),
-          u32::from(v.as_array_ref()[7]),
+          u32::from(v.as_array()[0]),
+          u32::from(v.as_array()[1]),
+          u32::from(v.as_array()[2]),
+          u32::from(v.as_array()[3]),
+          u32::from(v.as_array()[4]),
+          u32::from(v.as_array()[5]),
+          u32::from(v.as_array()[6]),
+          u32::from(v.as_array()[7]),
         ])
       }
     }
@@ -309,19 +309,19 @@ impl CmpEq for u32x8 {
   /// # use wide::{u32x8, CmpEq};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
-  /// let mask = a.cmp_eq(b);
+  /// let mask = a.simd_eq(b);
   /// let expected = [0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -341,12 +341,13 @@ impl CmpGt for u32x8 {
   /// # use wide::{u32x8, CmpGt};
   /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
   /// let b = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let mask = a.cmp_gt(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let mask = a.simd_gt(b);
+  /// let expected =
+  ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -354,8 +355,8 @@ impl CmpGt for u32x8 {
         Self { avx2: cmp_gt_mask_i32_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2 ) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -375,14 +376,15 @@ impl CmpLt for u32x8 {
   /// # use wide::{u32x8, CmpLt};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
-  /// let mask = a.cmp_lt(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let mask = a.simd_lt(b);
+  /// let expected =
+  ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    rhs.simd_gt(self)
   }
 }
 
@@ -398,13 +400,13 @@ impl CmpNe for u32x8 {
   /// # use wide::{u32x8, CmpNe};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
-  /// let mask = a.cmp_ne(b);
+  /// let mask = a.simd_ne(b);
   /// let expected = [0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
-    !self.cmp_eq(rhs)
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    !self.simd_eq(rhs)
   }
 }
 
@@ -413,21 +415,24 @@ impl CmpGe for u32x8 {
   /// Element-wise greater-than-or-equal comparison.
   ///
   /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding element in `self` is greater than or equal to the one in `rhs`,
-  /// or all-zeros (0x00000000) otherwise.
+  /// corresponding element in `self` is greater than or equal to the one in
+  /// `rhs`, or all-zeros (0x00000000) otherwise.
   ///
   /// # Examples
   /// ```
   /// # use wide::{u32x8, CmpGe};
   /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
   /// let b = u32x8::from([5, 2, 3, 4, 5, 6, 8, 8]);
-  /// let mask = a.cmp_ge(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let mask = a.simd_ge(b);
+  /// let expected = [
+  ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+  ///   0,
+  /// ];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
-    self.cmp_eq(rhs) | self.cmp_gt(rhs)
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    self.simd_eq(rhs) | self.simd_gt(rhs)
   }
 }
 
@@ -444,13 +449,16 @@ impl CmpLe for u32x8 {
   /// # use wide::{u32x8, CmpLe};
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([1, 4, 3, 2, 10, 9, 7, 7]);
-  /// let mask = a.cmp_le(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let mask = a.simd_le(b);
+  /// let expected = [
+  ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+  ///   0,
+  /// ];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
-    self.cmp_eq(rhs) | self.cmp_lt(rhs)
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    self.simd_eq(rhs) | self.simd_lt(rhs)
   }
 }
 
@@ -566,12 +574,12 @@ impl u32x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u32; 8] {
+  pub fn as_array(&self) -> &[u32; 8] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u32; 8] {
+  pub fn as_mut_array(&mut self) -> &mut [u32; 8] {
     cast_mut(self)
   }
 }

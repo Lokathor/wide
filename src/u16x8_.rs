@@ -341,8 +341,8 @@ impl_shr_t_for_u16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for u16x8 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -354,7 +354,7 @@ impl u16x8 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i16_m128i(self.sse, rhs.sse) }
@@ -378,7 +378,7 @@ impl u16x8 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature = "sse2")] {
         use safe_arch::*;
@@ -604,8 +604,8 @@ impl u16x8 {
 
          u32x8 { a: u32x4 { neon: low }, b: u32x4 {neon: high } }
        } else {
-        let a = self.as_array_ref();
-        let b = rhs.as_array_ref();
+        let a = self.as_array();
+        let b = rhs.as_array();
          u32x8::new([
            u32::from(a[0]) * u32::from(b[0]),
            u32::from(a[1]) * u32::from(b[1]),
@@ -645,14 +645,14 @@ impl u16x8 {
         Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
       } else {
         u16x8::new([
-          ((u32::from(rhs.as_array_ref()[0]) * u32::from(self.as_array_ref()[0])) >> 16) as u16,
-          ((u32::from(rhs.as_array_ref()[1]) * u32::from(self.as_array_ref()[1])) >> 16) as u16,
-          ((u32::from(rhs.as_array_ref()[2]) * u32::from(self.as_array_ref()[2])) >> 16) as u16,
-          ((u32::from(rhs.as_array_ref()[3]) * u32::from(self.as_array_ref()[3])) >> 16) as u16,
-          ((u32::from(rhs.as_array_ref()[4]) * u32::from(self.as_array_ref()[4])) >> 16) as u16,
-          ((u32::from(rhs.as_array_ref()[5]) * u32::from(self.as_array_ref()[5])) >> 16) as u16,
-          ((u32::from(rhs.as_array_ref()[6]) * u32::from(self.as_array_ref()[6])) >> 16) as u16,
-          ((u32::from(rhs.as_array_ref()[7]) * u32::from(self.as_array_ref()[7])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[0]) * u32::from(self.as_array()[0])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[1]) * u32::from(self.as_array()[1])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[2]) * u32::from(self.as_array()[2])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[3]) * u32::from(self.as_array()[3])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[4]) * u32::from(self.as_array()[4])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[5]) * u32::from(self.as_array()[5])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[6]) * u32::from(self.as_array()[6])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[7]) * u32::from(self.as_array()[7])) >> 16) as u16,
         ])
       }
     }
@@ -664,12 +664,12 @@ impl u16x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u16; 8] {
+  pub fn as_array(&self) -> &[u16; 8] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u16; 8] {
+  pub fn as_mut_array(&mut self) -> &mut [u16; 8] {
     cast_mut(self)
   }
 }

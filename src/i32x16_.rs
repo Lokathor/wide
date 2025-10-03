@@ -215,8 +215,8 @@ impl_shr_t_for_i32x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -229,14 +229,14 @@ impl i32x16 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -244,14 +244,14 @@ impl i32x16 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -259,14 +259,14 @@ impl i32x16 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  pub fn simd_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : rhs.a.cmp_gt(self.a),
-          b : rhs.b.cmp_gt(self.b),
+          a : rhs.a.simd_gt(self.a),
+          b : rhs.b.simd_gt(self.b),
         }
       }
     }
@@ -323,12 +323,12 @@ impl i32x16 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i32; 16] {
+  pub fn as_array(&self) -> &[i32; 16] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [i32; 16] {
+  pub fn as_mut_array(&mut self) -> &mut [i32; 16] {
     cast_mut(self)
   }
 

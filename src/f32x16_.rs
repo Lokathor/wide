@@ -195,14 +195,14 @@ impl BitXor for f32x16 {
 impl CmpEq for f32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512::<{cmp_op!(EqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -212,14 +212,14 @@ impl CmpEq for f32x16 {
 impl CmpGt for f32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512::<{cmp_op!(GreaterThanOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -229,14 +229,14 @@ impl CmpGt for f32x16 {
 impl CmpGe for f32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512::<{cmp_op!(GreaterEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_ge(rhs.a),
-          b : self.b.cmp_ge(rhs.b),
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
         }
       }
     }
@@ -246,14 +246,14 @@ impl CmpGe for f32x16 {
 impl CmpLt for f32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512::<{cmp_op!(LessThanOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
         }
       }
     }
@@ -263,14 +263,14 @@ impl CmpLt for f32x16 {
 impl CmpLe for f32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_le(self, rhs: Self) -> Self::Output {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512::<{cmp_op!(LessEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_le(rhs.a),
-          b : self.b.cmp_le(rhs.b),
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
         }
       }
     }
@@ -280,14 +280,14 @@ impl CmpLe for f32x16 {
 impl CmpNe for f32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
+  fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512::<{cmp_op!(NotEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_ne(rhs.a),
-          b : self.b.cmp_ne(rhs.b),
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
         }
       }
     }
@@ -373,7 +373,7 @@ impl f32x16 {
     let shifted_exp_mask = u32x16::splat(0x7F800000);
     let u: u32x16 = cast(self);
     let shift_u = u << 1_u32;
-    let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
     cast(out)
   }
 
@@ -415,13 +415,13 @@ impl f32x16 {
 
   #[inline]
   #[must_use]
-  pub fn as_array_ref(&self) -> &[f32; 16] {
+  pub fn as_array(&self) -> &[f32; 16] {
     cast_ref(self)
   }
 
   #[inline]
   #[must_use]
-  pub fn as_array_mut(&mut self) -> &mut [f32; 16] {
+  pub fn as_mut_array(&mut self) -> &mut [f32; 16] {
     cast_mut(self)
   }
 

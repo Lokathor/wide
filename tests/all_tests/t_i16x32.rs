@@ -281,7 +281,7 @@ fn impl_cmp_eq_for_i16x32() {
     -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1,
     0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0,
   ]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 
@@ -299,7 +299,7 @@ fn impl_cmp_gt_for_i16x32() {
     0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   ]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 
@@ -311,7 +311,7 @@ fn impl_cmp_lt_for_i16x32() {
   ]);
   let b = i16x32::from([100; 32]);
   let expected = i16x32::from([-1; 32]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 }
 

@@ -268,8 +268,8 @@ impl BitXor for u8x16 {
 impl CmpEq for u8x16 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -281,7 +281,7 @@ impl u8x16 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
@@ -473,14 +473,14 @@ impl u8x16 {
             u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
         } else {
             u8x16::new([
-                lhs.as_array_ref()[0], rhs.as_array_ref()[0],
-                lhs.as_array_ref()[1], rhs.as_array_ref()[1],
-                lhs.as_array_ref()[2], rhs.as_array_ref()[2],
-                lhs.as_array_ref()[3], rhs.as_array_ref()[3],
-                lhs.as_array_ref()[4], rhs.as_array_ref()[4],
-                lhs.as_array_ref()[5], rhs.as_array_ref()[5],
-                lhs.as_array_ref()[6], rhs.as_array_ref()[6],
-                lhs.as_array_ref()[7], rhs.as_array_ref()[7],
+                lhs.as_array()[0], rhs.as_array()[0],
+                lhs.as_array()[1], rhs.as_array()[1],
+                lhs.as_array()[2], rhs.as_array()[2],
+                lhs.as_array()[3], rhs.as_array()[3],
+                lhs.as_array()[4], rhs.as_array()[4],
+                lhs.as_array()[5], rhs.as_array()[5],
+                lhs.as_array()[6], rhs.as_array()[6],
+                lhs.as_array()[7], rhs.as_array()[7],
             ])
         }
     }
@@ -503,14 +503,14 @@ impl u8x16 {
             u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
         } else {
             u8x16::new([
-                lhs.as_array_ref()[8], rhs.as_array_ref()[8],
-                lhs.as_array_ref()[9], rhs.as_array_ref()[9],
-                lhs.as_array_ref()[10], rhs.as_array_ref()[10],
-                lhs.as_array_ref()[11], rhs.as_array_ref()[11],
-                lhs.as_array_ref()[12], rhs.as_array_ref()[12],
-                lhs.as_array_ref()[13], rhs.as_array_ref()[13],
-                lhs.as_array_ref()[14], rhs.as_array_ref()[14],
-                lhs.as_array_ref()[15], rhs.as_array_ref()[15],
+                lhs.as_array()[8], rhs.as_array()[8],
+                lhs.as_array()[9], rhs.as_array()[9],
+                lhs.as_array()[10], rhs.as_array()[10],
+                lhs.as_array()[11], rhs.as_array()[11],
+                lhs.as_array()[12], rhs.as_array()[12],
+                lhs.as_array()[13], rhs.as_array()[13],
+                lhs.as_array()[14], rhs.as_array()[14],
+                lhs.as_array()[15], rhs.as_array()[15],
             ])
         }
     }
@@ -541,22 +541,22 @@ impl u8x16 {
             }
 
             Self { arr: [
-                clamp(lhs.as_array_ref()[0]),
-                clamp(lhs.as_array_ref()[1]),
-                clamp(lhs.as_array_ref()[2]),
-                clamp(lhs.as_array_ref()[3]),
-                clamp(lhs.as_array_ref()[4]),
-                clamp(lhs.as_array_ref()[5]),
-                clamp(lhs.as_array_ref()[6]),
-                clamp(lhs.as_array_ref()[7]),
-                clamp(rhs.as_array_ref()[0]),
-                clamp(rhs.as_array_ref()[1]),
-                clamp(rhs.as_array_ref()[2]),
-                clamp(rhs.as_array_ref()[3]),
-                clamp(rhs.as_array_ref()[4]),
-                clamp(rhs.as_array_ref()[5]),
-                clamp(rhs.as_array_ref()[6]),
-                clamp(rhs.as_array_ref()[7]),
+                clamp(lhs.as_array()[0]),
+                clamp(lhs.as_array()[1]),
+                clamp(lhs.as_array()[2]),
+                clamp(lhs.as_array()[3]),
+                clamp(lhs.as_array()[4]),
+                clamp(lhs.as_array()[5]),
+                clamp(lhs.as_array()[6]),
+                clamp(lhs.as_array()[7]),
+                clamp(rhs.as_array()[0]),
+                clamp(rhs.as_array()[1]),
+                clamp(rhs.as_array()[2]),
+                clamp(rhs.as_array()[3]),
+                clamp(rhs.as_array()[4]),
+                clamp(rhs.as_array()[5]),
+                clamp(rhs.as_array()[6]),
+                clamp(rhs.as_array()[7]),
             ]}
         }
     }
@@ -588,8 +588,8 @@ impl u8x16 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
-    i8x16::move_mask(cast(self)) as u32
+  pub fn to_bitmask(self) -> u32 {
+    i8x16::to_bitmask(cast(self)) as u32
   }
 
   #[inline]
@@ -616,12 +616,12 @@ impl u8x16 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u8; 16] {
+  pub fn as_array(&self) -> &[u8; 16] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u8; 16] {
+  pub fn as_mut_array(&mut self) -> &mut [u8; 16] {
     cast_mut(self)
   }
 }

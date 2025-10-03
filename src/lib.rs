@@ -519,8 +519,8 @@ macro_rules! impl_from_single_value {
     impl $simd {
       #[inline]
       #[must_use]
-      pub fn splat(elem: $elem) -> $simd {
-        cast([elem; $len])
+      pub const fn splat(elem: $elem) -> $simd {
+        unsafe { core::mem::transmute([elem; $len]) }
       }
     })+
   };
@@ -904,32 +904,32 @@ fn test_software_sqrt() {
 
 pub trait CmpEq<Rhs = Self> {
   type Output;
-  fn cmp_eq(self, rhs: Rhs) -> Self::Output;
+  fn simd_eq(self, rhs: Rhs) -> Self::Output;
 }
 
 pub trait CmpGt<Rhs = Self> {
   type Output;
-  fn cmp_gt(self, rhs: Rhs) -> Self::Output;
+  fn simd_gt(self, rhs: Rhs) -> Self::Output;
 }
 
 pub trait CmpGe<Rhs = Self> {
   type Output;
-  fn cmp_ge(self, rhs: Rhs) -> Self::Output;
+  fn simd_ge(self, rhs: Rhs) -> Self::Output;
 }
 
 pub trait CmpNe<Rhs = Self> {
   type Output;
-  fn cmp_ne(self, rhs: Rhs) -> Self::Output;
+  fn simd_ne(self, rhs: Rhs) -> Self::Output;
 }
 
 pub trait CmpLt<Rhs = Self> {
   type Output;
-  fn cmp_lt(self, rhs: Rhs) -> Self::Output;
+  fn simd_lt(self, rhs: Rhs) -> Self::Output;
 }
 
 pub trait CmpLe<Rhs = Self> {
   type Output;
-  fn cmp_le(self, rhs: Rhs) -> Self::Output;
+  fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
 
 macro_rules! bulk_impl_const_rhs_op {
@@ -946,12 +946,12 @@ macro_rules! bulk_impl_const_rhs_op {
   };
 }
 
-bulk_impl_const_rhs_op!((CmpEq, cmp_eq) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpLt, cmp_lt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpGt, cmp_gt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpNe, cmp_ne) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpLe, cmp_le) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpGe, cmp_ge) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+bulk_impl_const_rhs_op!((CmpEq, simd_eq) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+bulk_impl_const_rhs_op!((CmpLt, simd_lt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+bulk_impl_const_rhs_op!((CmpGt, simd_gt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+bulk_impl_const_rhs_op!((CmpNe, simd_ne) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+bulk_impl_const_rhs_op!((CmpLe, simd_le) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+bulk_impl_const_rhs_op!((CmpGe, simd_ge) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
 
 macro_rules! impl_serde {
   ($i:ident, [$t:ty; $len:expr]) => {
@@ -962,7 +962,7 @@ macro_rules! impl_serde {
       where
         S: serde::Serializer,
       {
-        let array = self.as_array_ref();
+        let array = self.as_array();
         let mut seq = serializer.serialize_tuple($len)?;
         for e in array {
           seq.serialize_element(e)?;

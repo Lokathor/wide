@@ -121,7 +121,7 @@ fn impl_f32x8_cmp_eq() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
   let b = f32x8::from([2.0; 8]);
   let expected: [i32; 8] = [0, -1, 0, 0, 0, 0, -1, 0];
-  let actual: [i32; 8] = cast(a.cmp_eq(b));
+  let actual: [i32; 8] = cast(a.simd_eq(b));
   assert_eq!(expected, actual);
 }
 
@@ -130,7 +130,7 @@ fn impl_f32x8_cmp_ne() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
   let b = f32x8::from([2.0; 8]);
   let expected: [i32; 8] = [-1, 0, -1, -1, -1, -1, 0, -1];
-  let actual: [i32; 8] = cast(a.cmp_ne(b));
+  let actual: [i32; 8] = cast(a.simd_ne(b));
   assert_eq!(expected, actual);
 }
 
@@ -139,7 +139,7 @@ fn impl_f32x8_cmp_ge() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
   let b = f32x8::from([2.0; 8]);
   let expected: [i32; 8] = [0, -1, -1, -1, -1, -1, -1, 0];
-  let actual: [i32; 8] = cast(a.cmp_ge(b));
+  let actual: [i32; 8] = cast(a.simd_ge(b));
   assert_eq!(expected, actual);
 }
 
@@ -148,7 +148,7 @@ fn impl_f32x8_cmp_gt() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.0, 1.0]);
   let b = f32x8::from([3.0; 8]);
   let expected: [i32; 8] = [0, 0, 0, -1, -1, -1, 0, 0];
-  let actual: [i32; 8] = cast(a.cmp_gt(b));
+  let actual: [i32; 8] = cast(a.simd_gt(b));
   assert_eq!(expected, actual);
 }
 
@@ -157,7 +157,7 @@ fn impl_f32x8_cmp_le() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
   let b = f32x8::from([4.0; 8]);
   let expected: [i32; 8] = [-1, -1, -1, -1, 0, 0, -1, -1];
-  let actual: [i32; 8] = cast(a.cmp_le(b));
+  let actual: [i32; 8] = cast(a.simd_le(b));
   assert_eq!(expected, actual);
 }
 
@@ -166,11 +166,11 @@ fn impl_f32x8_cmp_lt() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
   let b = f32x8::from([3.0; 8]);
   let expected: [i32; 8] = [-1, -1, 0, 0, 0, 0, -1, -1];
-  let actual: [i32; 8] = cast(a.cmp_lt(b));
+  let actual: [i32; 8] = cast(a.simd_lt(b));
   assert_eq!(expected, actual);
 
   let expected: [i32; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
-  let actual: [i32; 8] = cast(a.cmp_lt(a));
+  let actual: [i32; 8] = cast(a.simd_lt(a));
   assert_eq!(expected, actual);
 }
 
@@ -820,12 +820,12 @@ fn impl_f32x8_exp() {
 fn test_f32x8_move_mask() {
   let a = f32x8::from([-1.0, 0.0, -2.0, -3.0, -1.0, 0.0, -2.0, -3.0]);
   let expected = 0b11011101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = f32x8::from([1.0, 0.0, 2.0, -3.0, 1.0, 0.0, 2.0, -3.0]);
   let expected = 0b10001000;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
 

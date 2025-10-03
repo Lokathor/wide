@@ -15,3 +15,11 @@ architectures this is done by carefully writing functions so that LLVM hopefully
 does the right thing. When Rust stabilizes more explicit intrinsics then they
 can go into `safe_arch` and then they can get used here.
 
+## Rust Version Policy
+
+* The `rust-version` entry of the crate's `Cargo.toml` will be kept accurate to
+  the required Rust compiler version.
+* The `rust-version` entry may increase in *any* new release (major, minor, or patch).
+* If your build uses Resolver 3 (or later) this will be fine. If you're using a
+  Resolver earlier than 3 then **you are responsible** for pinning a maximum
+  crate version when you're using an old Rust version.

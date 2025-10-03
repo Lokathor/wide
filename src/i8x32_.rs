@@ -137,14 +137,14 @@ impl BitXor for i8x32 {
 impl CmpEq for i8x32 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx : cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -154,14 +154,14 @@ impl CmpEq for i8x32 {
 impl CmpGt for i8x32 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -171,8 +171,8 @@ impl CmpGt for i8x32 {
 impl CmpLt for i8x32 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
-    rhs.cmp_gt(self)
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    rhs.simd_gt(self)
   }
 }
 
@@ -303,12 +303,12 @@ impl i8x32 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         move_mask_i8_m256i(self.avx) as u32
       } else {
-        self.a.move_mask() | (self.b.move_mask() << 16)
+        self.a.to_bitmask() | (self.b.to_bitmask() << 16)
       }
     }
   }
@@ -394,12 +394,12 @@ impl i8x32 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i8; 32] {
+  pub fn as_array(&self) -> &[i8; 32] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [i8; 32] {
+  pub fn as_mut_array(&mut self) -> &mut [i8; 32] {
     cast_mut(self)
   }
 }

@@ -90,7 +90,7 @@ fn impl_i32x4_cmp_eq() {
   let a = i32x4::from([1, 2, 3, 4]);
   let b = i32x4::from([2_i32; 4]);
   let expected = i32x4::from([0, -1, 0, 0]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 
@@ -99,7 +99,7 @@ fn impl_i32x4_cmp_gt() {
   let a = i32x4::from([1, 2, 3, 4]);
   let b = i32x4::from([2_i32; 4]);
   let expected = i32x4::from([0, 0, -1, -1]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 
@@ -108,11 +108,11 @@ fn impl_i32x4_cmp_lt() {
   let a = i32x4::from([1, 2, 3, 4]);
   let b = i32x4::from([2_i32; 4]);
   let expected = i32x4::from([-1, 0, 0, 0]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   let expected = i32x4::from([0, 0, 0, 0]);
-  let actual = a.cmp_lt(a);
+  let actual = a.simd_lt(a);
   assert_eq!(expected, actual);
 }
 
@@ -177,16 +177,16 @@ fn impl_i32x4_round_float() {
 fn test_i32x4_move_mask() {
   let a = i32x4::from([-1, 0, -2, -3]);
   let expected = 0b1101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = i32x4::from([i32::MAX, 0, 2, -3]);
   let expected = 0b1000;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar_reduce(
-    |a: i32x4| a.move_mask(),
+    |a: i32x4| a.to_bitmask(),
     0_u32,
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );

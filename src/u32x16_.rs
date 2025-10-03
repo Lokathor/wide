@@ -188,7 +188,7 @@ impl From<u16x16> for u32x16 {
         }
       } else {
         // Portable fallback
-        let arr = v.as_array_ref();
+        let arr = v.as_array();
         Self::new([
           arr[0] as u32,  arr[1] as u32,  arr[2] as u32,  arr[3] as u32,
           arr[4] as u32,  arr[5] as u32,  arr[6] as u32,  arr[7] as u32,
@@ -299,8 +299,8 @@ impl Shl<u32x16> for u32x16 {
 impl CmpEq for u32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -313,14 +313,14 @@ impl u32x16 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -328,14 +328,14 @@ impl u32x16 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -343,14 +343,14 @@ impl u32x16 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_lt(self, rhs: Self) -> Self {
+  pub fn simd_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : rhs.a.cmp_gt(self.a),
-          b : rhs.b.cmp_gt(self.b),
+          a : rhs.a.simd_gt(self.a),
+          b : rhs.b.simd_gt(self.b),
         }
       }
     }
@@ -475,12 +475,12 @@ impl u32x16 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u32; 16] {
+  pub fn as_array(&self) -> &[u32; 16] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u32; 16] {
+  pub fn as_mut_array(&mut self) -> &mut [u32; 16] {
     cast_mut(self)
   }
 }

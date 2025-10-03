@@ -103,7 +103,7 @@ fn impl_u8x32_cmp_eq() {
     0, 0xff, 0, 0, 0, 0xff, 0, 0, 0, 0xff, 0, 0, 0, 0xff, 0, 0, 0, 0xff, 0, 0,
     0, 0xff, 0, 0, 0, 0xff, 0, 0, 0, 0xff, 0, 0,
   ]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 
@@ -165,7 +165,7 @@ fn test_u8x32_move_mask() {
     0xff, 0,
   ]);
   let expected = 0b01010101011111110101010111011101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
 

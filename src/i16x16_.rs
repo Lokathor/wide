@@ -218,14 +218,14 @@ impl_shr_t_for_i16x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i16x16 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i16_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -235,14 +235,14 @@ impl CmpEq for i16x16 {
 impl CmpGt for i16x16 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_gt_mask_i16_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -252,14 +252,14 @@ impl CmpGt for i16x16 {
 impl CmpLt for i16x16 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: !cmp_gt_mask_i16_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i16_m256i(self.avx2,rhs.avx2) }
       } else {
         Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
         }
       }
     }
@@ -308,13 +308,13 @@ impl i16x16 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
           let [a,b] = cast::<_,[m128i;2]>(self);
           move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
         } else {
-        self.a.move_mask() | (self.b.move_mask() << 8)
+        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
       }
     }
   }
@@ -367,22 +367,22 @@ impl i16x16 {
       } else {
 
         i16x16::new([
-          v.as_array_ref()[0] as i16,
-          v.as_array_ref()[1] as i16,
-          v.as_array_ref()[2] as i16,
-          v.as_array_ref()[3] as i16,
-          v.as_array_ref()[4] as i16,
-          v.as_array_ref()[5] as i16,
-          v.as_array_ref()[6] as i16,
-          v.as_array_ref()[7] as i16,
-          v.as_array_ref()[8] as i16,
-          v.as_array_ref()[9] as i16,
-          v.as_array_ref()[10] as i16,
-          v.as_array_ref()[11] as i16,
-          v.as_array_ref()[12] as i16,
-          v.as_array_ref()[13] as i16,
-          v.as_array_ref()[14] as i16,
-          v.as_array_ref()[15] as i16,
+          v.as_array()[0] as i16,
+          v.as_array()[1] as i16,
+          v.as_array()[2] as i16,
+          v.as_array()[3] as i16,
+          v.as_array()[4] as i16,
+          v.as_array()[5] as i16,
+          v.as_array()[6] as i16,
+          v.as_array()[7] as i16,
+          v.as_array()[8] as i16,
+          v.as_array()[9] as i16,
+          v.as_array()[10] as i16,
+          v.as_array()[11] as i16,
+          v.as_array()[12] as i16,
+          v.as_array()[13] as i16,
+          v.as_array()[14] as i16,
+          v.as_array()[15] as i16,
           ])
       }
     }
@@ -571,12 +571,12 @@ impl i16x16 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i16; 16] {
+  pub fn as_array(&self) -> &[i16; 16] {
     cast_ref(self)
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [i16; 16] {
+  pub fn as_mut_array(&mut self) -> &mut [i16; 16] {
     cast_mut(self)
   }
 }
