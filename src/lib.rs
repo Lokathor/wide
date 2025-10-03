@@ -519,8 +519,8 @@ macro_rules! impl_from_single_value {
     impl $simd {
       #[inline]
       #[must_use]
-      pub fn splat(elem: $elem) -> $simd {
-        cast([elem; $len])
+      pub const fn splat(elem: $elem) -> $simd {
+        unsafe { core::mem::transmute([elem; $len]) }
       }
     })+
   };
