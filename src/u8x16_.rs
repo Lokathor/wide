@@ -268,7 +268,7 @@ impl BitXor for u8x16 {
 impl CmpEq for u8x16 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     Self::cmp_eq(self, rhs)
   }
 }

@@ -302,7 +302,7 @@ impl BitXor for f64x2 {
 impl CmpEq for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_m128d(self.sse, rhs.sse) }
@@ -1246,7 +1246,7 @@ impl f64x2 {
 
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).cmp_eq(Self::ZERO)).blend(Self::ZERO, re);
+    re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
     re = (x.sign_bit()).blend(Self::PI - re, re);
 
     // get sign bit
@@ -1295,7 +1295,7 @@ impl f64x2 {
     c =
       (x2 * x2).mul_add(c, x2.mul_neg_add(f64x2::from(0.5), f64x2::from(1.0)));
 
-    let swap = !((q & i64x2::from(1)).cmp_eq(i64x2::from(0)));
+    let swap = !((q & i64x2::from(1)).simd_eq(i64x2::from(0)));
 
     let mut overflow: f64x2 = cast(q.cmp_gt(i64x2::from(0x80000000000000)));
     overflow &= xa.is_finite();
@@ -1483,7 +1483,7 @@ impl f64x2 {
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i64x2>(self);
     let t = t & i64x2::splat(0x7FF0000000000000);
-    i64x2::round_float(t.cmp_eq(i64x2::splat(0)))
+    i64x2::round_float(t.simd_eq(i64x2::splat(0)))
   }
 
   #[inline]
@@ -1505,7 +1505,7 @@ impl f64x2 {
   fn sign_bit(self) -> Self {
     let t1 = cast::<_, i64x2>(self);
     let t2 = t1 >> 63;
-    !cast::<_, f64x2>(t2).cmp_eq(f64x2::ZERO)
+    !cast::<_, f64x2>(t2).simd_eq(f64x2::ZERO)
   }
 
   /// horizontal add of all the elements of the vector
@@ -1676,7 +1676,7 @@ impl f64x2 {
     let z = x_zero.blend(
       y.cmp_lt(f64x2::ZERO).blend(
         Self::infinity(),
-        y.cmp_eq(f64x2::ZERO).blend(f64x2::ONE, f64x2::ZERO),
+        y.simd_eq(f64x2::ZERO).blend(f64x2::ONE, f64x2::ZERO),
       ),
       z,
     );
@@ -1684,12 +1684,12 @@ impl f64x2 {
     let x_sign = self.sign_bit();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.cmp_eq(y.round());
+      let yi = y.simd_eq(y.round());
       // Is y odd?
       let y_odd = cast::<_, i64x2>(y.round_int() << 63).round_float();
 
       let z1 =
-        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+        yi.blend(z | y_odd, self.simd_eq(Self::ZERO).blend(z, Self::nan_pow()));
       x_sign.blend(z1, z)
     } else {
       z

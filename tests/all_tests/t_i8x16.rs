@@ -158,7 +158,7 @@ fn impl_i8x16_cmp_eq() {
   let b = i8x16::from([2_i8; 16]);
   let expected =
     i8x16::from([0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

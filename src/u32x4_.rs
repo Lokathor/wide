@@ -380,7 +380,7 @@ impl Shl<u32x4> for u32x4 {
 impl CmpEq for u32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     Self::cmp_eq(self, rhs)
   }
 }

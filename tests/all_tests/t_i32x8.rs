@@ -107,7 +107,7 @@ fn impl_i32x8_cmp_eq() {
   let a = i32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
   let b = i32x8::from([2_i32; 8]);
   let expected = i32x8::from([0, -1, 0, 0, -1, 0, 0, -1]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

@@ -151,7 +151,7 @@ fn impl_i64x4_cmp_eq() {
   let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
   let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
   let expected = i64x4::from([0, -1, -1, 0]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

@@ -262,7 +262,7 @@ impl Shl for u64x8 {
 impl CmpEq for u64x8 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     Self::cmp_eq(self, rhs)
   }
 }

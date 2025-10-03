@@ -268,7 +268,7 @@ impl BitXor for i8x16 {
 impl CmpEq for i8x16 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }

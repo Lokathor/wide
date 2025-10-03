@@ -137,7 +137,7 @@ impl BitXor for u8x32 {
 impl CmpEq for u8x32 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx : cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }

@@ -144,7 +144,7 @@ fn impl_u32x8_cmp_eq() {
   let a = u32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
   let b = u32x8::from([2_u32; 8]);
   let expected = u32x8::from([0, u32::MAX, 0, 0, u32::MAX, 0, 0, u32::MAX]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

@@ -354,7 +354,7 @@ impl_shr_t_for_i64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 impl CmpEq for i64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }

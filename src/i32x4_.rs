@@ -382,7 +382,7 @@ impl Shl<i32x4> for i32x4 {
 impl CmpEq for i32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }

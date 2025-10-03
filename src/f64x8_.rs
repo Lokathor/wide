@@ -202,14 +202,14 @@ impl BitXor for f64x8 {
 impl CmpEq for f64x8 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -1093,7 +1093,7 @@ impl f64x8 {
 
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).cmp_eq(Self::ZERO)).blend(Self::ZERO, re);
+    re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
     re = (x.sign_bit()).blend(Self::PI - re, re);
 
     // get sign bit
@@ -1328,7 +1328,7 @@ impl f64x8 {
   fn sign_bit(self) -> Self {
     let t1 = cast::<_, i64x8>(self);
     let t2 = t1 >> 63;
-    !cast::<_, f64x8>(t2).cmp_eq(f64x8::ZERO)
+    !cast::<_, f64x8>(t2).simd_eq(f64x8::ZERO)
   }
 
   #[inline]
@@ -1501,7 +1501,7 @@ impl f64x8 {
     let z = x_zero.blend(
       y.cmp_lt(f64x8::ZERO).blend(
         Self::infinity(),
-        y.cmp_eq(f64x8::ZERO).blend(f64x8::ONE, f64x8::ZERO),
+        y.simd_eq(f64x8::ZERO).blend(f64x8::ONE, f64x8::ZERO),
       ),
       z,
     );
@@ -1510,11 +1510,11 @@ impl f64x8 {
 
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.cmp_eq(y.round());
+      let yi = y.simd_eq(y.round());
       // Is y odd?
       let y_odd = cast::<_, i64x8>(y.round_int() << 63).round_float();
       let z1 =
-        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+        yi.blend(z | y_odd, self.simd_eq(Self::ZERO).blend(z, Self::nan_pow()));
       x_sign.blend(z1, z)
     } else {
       z

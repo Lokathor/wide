@@ -313,7 +313,7 @@ impl BitXor for f32x4 {
 impl CmpEq for f32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self { sse: cmp_eq_mask_m128(self.sse, rhs.sse) }
@@ -775,7 +775,7 @@ impl f32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
+        let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
         let flip_to_max: i32x4 = cast(self.cmp_ge(Self::splat(2147483648.0)));
         let cast: i32x4 = cast(convert_to_i32_m128i_from_m128(non_nan.sse));
@@ -820,7 +820,7 @@ impl f32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.cmp_eq(self);
+        let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
         let flip_to_max: i32x4 = cast(self.cmp_ge(Self::splat(2147483648.0)));
         let cast: i32x4 = cast(truncate_m128_to_m128i(non_nan.sse));
@@ -1200,7 +1200,7 @@ impl f32x4 {
 
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).cmp_eq(Self::ZERO)).blend(Self::ZERO, re);
+    re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
     re = (x.sign_bit()).blend(Self::PI - re, re);
 
     // get sign bit
@@ -1242,7 +1242,7 @@ impl f32x4 {
     let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
       + f32x4::from(0.5).mul_neg_add(x2, f32x4::from(1.0));
 
-    let swap = !(q & i32x4::from(1)).cmp_eq(i32x4::from(0));
+    let swap = !(q & i32x4::from(1)).simd_eq(i32x4::from(0));
 
     let mut overflow: f32x4 = cast(q.cmp_gt(i32x4::from(0x2000000)));
     overflow &= xa.is_finite();
@@ -1485,7 +1485,7 @@ impl f32x4 {
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i32x4>(self);
     let t = t & i32x4::splat(0x7F800000);
-    i32x4::round_float(t.cmp_eq(i32x4::splat(0)))
+    i32x4::round_float(t.simd_eq(i32x4::splat(0)))
   }
   #[inline]
   fn infinity() -> Self {
@@ -1503,7 +1503,7 @@ impl f32x4 {
   pub fn sign_bit(self) -> Self {
     let t1 = cast::<_, i32x4>(self);
     let t2 = t1 >> 31;
-    !cast::<_, f32x4>(t2).cmp_eq(f32x4::ZERO)
+    !cast::<_, f32x4>(t2).simd_eq(f32x4::ZERO)
   }
 
   /// horizontal add of all the elements of the vector
@@ -1654,7 +1654,7 @@ impl f32x4 {
     let z = x_zero.blend(
       y.cmp_lt(f32x4::ZERO).blend(
         Self::infinity(),
-        y.cmp_eq(f32x4::ZERO).blend(f32x4::ONE, f32x4::ZERO),
+        y.simd_eq(f32x4::ZERO).blend(f32x4::ONE, f32x4::ZERO),
       ),
       z,
     );
@@ -1662,12 +1662,12 @@ impl f32x4 {
     let x_sign = self.sign_bit();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.cmp_eq(y.round());
+      let yi = y.simd_eq(y.round());
       // Is y odd?
       let y_odd = cast::<_, i32x4>(y.round_int() << 31).round_float();
 
       let z1 =
-        yi.blend(z | y_odd, self.cmp_eq(Self::ZERO).blend(z, Self::nan_pow()));
+        yi.blend(z | y_odd, self.simd_eq(Self::ZERO).blend(z, Self::nan_pow()));
       x_sign.blend(z1, z)
     } else {
       z

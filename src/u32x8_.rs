@@ -314,7 +314,7 @@ impl CmpEq for u32x8 {
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_eq(self, rhs: Self) -> Self::Output {
+  fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2 ) }
@@ -404,7 +404,7 @@ impl CmpNe for u32x8 {
   /// ```
   #[inline]
   fn cmp_ne(self, rhs: Self) -> Self::Output {
-    !self.cmp_eq(rhs)
+    !self.simd_eq(rhs)
   }
 }
 
@@ -427,7 +427,7 @@ impl CmpGe for u32x8 {
   /// ```
   #[inline]
   fn cmp_ge(self, rhs: Self) -> Self::Output {
-    self.cmp_eq(rhs) | self.cmp_gt(rhs)
+    self.simd_eq(rhs) | self.cmp_gt(rhs)
   }
 }
 
@@ -450,7 +450,7 @@ impl CmpLe for u32x8 {
   /// ```
   #[inline]
   fn cmp_le(self, rhs: Self) -> Self::Output {
-    self.cmp_eq(rhs) | self.cmp_lt(rhs)
+    self.simd_eq(rhs) | self.cmp_lt(rhs)
   }
 }
 
