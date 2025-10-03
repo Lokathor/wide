@@ -314,7 +314,7 @@ impl i16x16 {
           let [a,b] = cast::<_,[m128i;2]>(self);
           move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
         } else {
-        self.a.move_mask() | (self.b.move_mask() << 8)
+        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
       }
     }
   }

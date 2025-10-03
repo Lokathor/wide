@@ -1124,12 +1124,12 @@ fn impl_f32x16_mul_neg_sub() {
 // fn test_f32x16_move_mask() {
 //   let a = f32x16::from([-1.0, 0.0, -2.0, -3.0, -1.0, 0.0, -2.0, -3.0]);
 //   let expected = 0b11011101;
-//   let actual = a.move_mask();
+//   let actual = a.to_bitmask();
 //   assert_eq!(expected, actual);
 //   //
 //   let a = f32x16::from([1.0, 0.0, 2.0, -3.0, 1.0, 0.0, 2.0, -3.0]);
 //   let expected = 0b10001000;
-//   let actual = a.move_mask();
+//   let actual = a.to_bitmask();
 //   assert_eq!(expected, actual);
 // }
 
