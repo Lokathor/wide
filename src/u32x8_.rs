@@ -355,8 +355,8 @@ impl CmpGt for u32x8 {
         Self { avx2: cmp_gt_mask_i32_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2 ) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }

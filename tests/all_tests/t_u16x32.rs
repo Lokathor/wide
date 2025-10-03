@@ -291,7 +291,7 @@ fn impl_cmp_gt_for_u16x32() {
     0,
     u16::MAX,
   ]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 

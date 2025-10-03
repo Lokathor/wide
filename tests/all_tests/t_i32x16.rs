@@ -206,7 +206,7 @@ fn impl_cmp_gt_for_i32x16() {
   let b = i32x16::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   let expected =
     i32x16::from([0, -1, -1, -1, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 
@@ -413,7 +413,7 @@ fn impl_cmp_for_i32x16() {
     |a, b| if a == b { -1 } else { 0 },
   );
   crate::test_random_vector_vs_scalar(
-    |a: i32x16, b| a.cmp_gt(b),
+    |a: i32x16, b| a.simd_gt(b),
     |a, b| if a > b { -1 } else { 0 },
   );
   crate::test_random_vector_vs_scalar(

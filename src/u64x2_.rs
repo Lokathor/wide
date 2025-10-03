@@ -394,7 +394,7 @@ impl u64x2 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         // no unsigned gt so inverting the high bit will get the correct result
@@ -418,7 +418,7 @@ impl u64x2 {
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    rhs.simd_gt(self)
   }
 
   #[inline]

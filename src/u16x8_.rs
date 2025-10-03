@@ -378,7 +378,7 @@ impl u16x8 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature = "sse2")] {
         use safe_arch::*;

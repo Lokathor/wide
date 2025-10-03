@@ -1144,7 +1144,7 @@ impl f64x8 {
 
     let swap = !((q & i64x8::from(1)).simd_eq(i64x8::from(0)));
 
-    let mut overflow: f64x8 = cast(q.cmp_gt(i64x8::from(0x80000000000000)));
+    let mut overflow: f64x8 = cast(q.simd_gt(i64x8::from(0x80000000000000)));
     overflow &= xa.is_finite();
     s = overflow.blend(f64x8::from(0.0), s);
     c = overflow.blend(f64x8::from(1.0), c);
@@ -1482,7 +1482,7 @@ impl f64x8 {
 
     let overflow = cast::<_, f64x8>(!ej.cmp_lt(i64x8::splat(0x07FF)))
       | ee.simd_gt(f64x8::splat(3000.0));
-    let underflow = cast::<_, f64x8>(!ej.cmp_gt(i64x8::splat(0x000)))
+    let underflow = cast::<_, f64x8>(!ej.simd_gt(i64x8::splat(0x000)))
       | ee.simd_lt(f64x8::splat(-3000.0));
 
     // Add exponent by integer addition

@@ -97,7 +97,7 @@ fn impl_i64x8_cmp_gt() {
   let a = i64x8::from([1, 2, 3, 4, -1, -2, -3, i64::MIN]);
   let b = i64x8::from([0, 2, 2, 5, -2, -1, -4, i64::MAX]);
   let expected = i64x8::from([-1, 0, -1, 0, -1, 0, -1, 0]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 

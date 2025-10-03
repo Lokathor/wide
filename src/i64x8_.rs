@@ -319,7 +319,7 @@ impl i64x8 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }

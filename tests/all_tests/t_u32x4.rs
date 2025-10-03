@@ -117,11 +117,11 @@ fn impl_u32x4_cmp_gt() {
   let a = u32x4::from([1, 2, 3, u32::MAX]);
   let b = u32x4::from([u32::MAX, 2, 2, 2]);
   let expected = u32x4::from([0, 0, u32::MAX, u32::MAX]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar(
-    |a: u32x4, b| a.cmp_gt(b),
+    |a: u32x4, b| a.simd_gt(b),
     |a, b| if a > b { u32::MAX } else { 0 },
   );
 }

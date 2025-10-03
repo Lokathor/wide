@@ -297,8 +297,8 @@ impl u64x8 {
         Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -314,8 +314,8 @@ impl u64x8 {
         Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }

@@ -299,7 +299,7 @@ impl u64x4 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -307,8 +307,8 @@ impl u64x4 {
         Self { avx2: cmp_gt_mask_i64_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -318,7 +318,7 @@ impl u64x4 {
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    rhs.simd_gt(self)
   }
 
   #[inline]
@@ -360,7 +360,7 @@ impl u64x4 {
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
-    self.cmp_gt(rhs).blend(self, rhs)
+    self.simd_gt(rhs).blend(self, rhs)
   }
 
   #[inline]

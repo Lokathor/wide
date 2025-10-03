@@ -413,7 +413,7 @@ impl u32x4 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_gt(self, rhs: Self) -> Self {
+  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // no unsigned less than so inverting the high bit will get the correct result
@@ -437,7 +437,7 @@ impl u32x4 {
   #[must_use]
   pub fn cmp_lt(self, rhs: Self) -> Self {
     // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    rhs.simd_gt(self)
   }
 
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
