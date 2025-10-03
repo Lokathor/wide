@@ -158,11 +158,11 @@ fn impl_f64x4_cmp_lt() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [-1, 0, 0, 0];
-  let actual: [i64; 4] = cast(a.cmp_lt(b));
+  let actual: [i64; 4] = cast(a.simd_lt(b));
   assert_eq!(expected, actual);
 
   let expected: [i64; 4] = [0, 0, 0, 0];
-  let actual: [i64; 4] = cast(a.cmp_lt(a));
+  let actual: [i64; 4] = cast(a.simd_lt(a));
   assert_eq!(expected, actual);
 }
 

@@ -167,11 +167,11 @@ fn impl_u32x8_cmp_lt() {
   let a = u32x8::from([5, 5, 5, 5, 5, 5, 5, 5]);
   let b = u32x8::from([1, 2, u32::MAX, 4, 1, 2, 8, 10]);
   let expected = u32x8::from([0, 0, u32::MAX, 0, 0, 0, u32::MAX, u32::MAX]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar(
-    |a: u32x8, b| a.cmp_lt(b),
+    |a: u32x8, b| a.simd_lt(b),
     |a, b| if a < b { u32::MAX } else { 0 },
   );
 }

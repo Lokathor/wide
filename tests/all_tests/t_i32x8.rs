@@ -125,11 +125,11 @@ fn impl_i32x8_cmp_lt() {
   let a = i32x8::from([1, 2, 9, 4, 1, 2, 8, 10]);
   let b = i32x8::from([5_i32; 8]);
   let expected = i32x8::from([-1, -1, 0, -1, -1, -1, 0, 0]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   let expected = i32x8::from([0, 0, 0, 0, 0, 0, 0, 0]);
-  let actual = a.cmp_lt(a);
+  let actual = a.simd_lt(a);
   assert_eq!(expected, actual);
 }
 

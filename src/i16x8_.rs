@@ -395,7 +395,7 @@ impl CmpGt for i16x8 {
 impl CmpLt for i16x8 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_i16_m128i(self.sse, rhs.sse) }
@@ -660,7 +660,7 @@ impl i16x8 {
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.cmp_lt(Self::zeroed())
+    self.simd_lt(Self::zeroed())
   }
 
   /// horizontal add of all the elements of the vector

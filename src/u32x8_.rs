@@ -382,7 +382,7 @@ impl CmpLt for u32x8 {
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     // lt is just gt the other way around
     rhs.simd_gt(self)
   }
@@ -458,7 +458,7 @@ impl CmpLe for u32x8 {
   /// ```
   #[inline]
   fn simd_le(self, rhs: Self) -> Self::Output {
-    self.simd_eq(rhs) | self.cmp_lt(rhs)
+    self.simd_eq(rhs) | self.simd_lt(rhs)
   }
 }
 

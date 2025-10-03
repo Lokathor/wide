@@ -166,11 +166,11 @@ fn impl_f32x8_cmp_lt() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
   let b = f32x8::from([3.0; 8]);
   let expected: [i32; 8] = [-1, -1, 0, 0, 0, 0, -1, -1];
-  let actual: [i32; 8] = cast(a.cmp_lt(b));
+  let actual: [i32; 8] = cast(a.simd_lt(b));
   assert_eq!(expected, actual);
 
   let expected: [i32; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
-  let actual: [i32; 8] = cast(a.cmp_lt(a));
+  let actual: [i32; 8] = cast(a.simd_lt(a));
   assert_eq!(expected, actual);
 }
 

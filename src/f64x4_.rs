@@ -318,14 +318,14 @@ impl CmpLe for f64x4 {
 impl CmpLt for f64x4 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
         }
       }
     }
@@ -805,7 +805,7 @@ impl f64x4 {
     let asin = asin.flip_signs(self);
 
     // acos
-    let z3 = self.cmp_lt(f64x4::ZERO).blend(f64x4::PI - z1, z1);
+    let z3 = self.simd_lt(f64x4::ZERO).blend(f64x4::PI - z1, z1);
     let z4 = f64x4::FRAC_PI_2 - z2.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -891,7 +891,7 @@ impl f64x4 {
     }
 
     // acos
-    let z3 = self.cmp_lt(f64x4::ZERO).blend(f64x4::PI - z1, z1);
+    let z3 = self.simd_lt(f64x4::ZERO).blend(f64x4::PI - z1, z1);
     let z4 = f64x4::FRAC_PI_2 - z2.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -1298,7 +1298,7 @@ impl f64x4 {
     let n2 = Self::vm_pow2n(r);
     let z = (z + Self::ONE) * n2;
     // check for overflow
-    let in_range = self.abs().cmp_lt(max_x);
+    let in_range = self.abs().simd_lt(max_x);
     let in_range = in_range & self.is_finite();
     in_range.blend(z, Self::ZERO)
   }
@@ -1404,7 +1404,7 @@ impl f64x4 {
     let res = res + x2.mul_neg_add(HALF, x);
     let res = fe.mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
-    let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
+    let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
     if !mask.any() {
       res
@@ -1496,10 +1496,10 @@ impl f64x4 {
     let ei = cast::<_, i64x4>(ee.round_int());
     let ej = cast::<_, i64x4>(ei + (cast::<_, i64x4>(z) >> 52));
 
-    let overflow = cast::<_, f64x4>(!ej.cmp_lt(i64x4::splat(0x07FF)))
+    let overflow = cast::<_, f64x4>(!ej.simd_lt(i64x4::splat(0x07FF)))
       | ee.simd_gt(f64x4::splat(3000.0));
     let underflow = cast::<_, f64x4>(!ej.simd_gt(i64x4::splat(0x000)))
-      | ee.cmp_lt(f64x4::splat(-3000.0));
+      | ee.simd_lt(f64x4::splat(-3000.0));
 
     // Add exponent by integer addition
     let z = cast::<_, f64x4>(cast::<_, i64x4>(z) + (ei << 52));
@@ -1515,7 +1515,7 @@ impl f64x4 {
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
     let z = x_zero.blend(
-      y.cmp_lt(f64x4::ZERO).blend(
+      y.simd_lt(f64x4::ZERO).blend(
         Self::infinity(),
         y.simd_eq(f64x4::ZERO).blend(f64x4::ONE, f64x4::ZERO),
       ),

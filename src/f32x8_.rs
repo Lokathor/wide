@@ -318,14 +318,14 @@ impl CmpLe for f32x8 {
 impl CmpLt for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
         }
       }
     }
@@ -810,7 +810,7 @@ impl f32x8 {
     let z1 = z + z;
 
     // acos
-    let z3 = self.cmp_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
+    let z3 = self.simd_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
     let z4 = f32x8::FRAC_PI_2 - z.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -885,7 +885,7 @@ impl f32x8 {
     let z1 = z + z;
 
     // acos
-    let z3 = self.cmp_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
+    let z3 = self.simd_lt(f32x8::ZERO).blend(f32x8::PI - z1, z1);
     let z4 = f32x8::FRAC_PI_2 - z.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -1180,7 +1180,7 @@ impl f32x8 {
     let n2 = Self::vm_pow2n(r);
     let z = (z + Self::ONE) * n2;
     // check for overflow
-    let in_range = self.abs().cmp_lt(max_x);
+    let in_range = self.abs().simd_lt(max_x);
     let in_range = in_range & self.is_finite();
     in_range.blend(z, Self::ZERO)
   }
@@ -1285,7 +1285,7 @@ impl f32x8 {
     let res = res + x2.mul_neg_add(HALF, x);
     let res = fe.mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
-    let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
+    let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
     if !mask.any() {
       res
@@ -1372,8 +1372,8 @@ impl f32x8 {
 
     let overflow = cast::<_, f32x8>(ej.simd_gt(i32x8::splat(0x0FF)))
       | (ee.simd_gt(f32x8::splat(300.0)));
-    let underflow = cast::<_, f32x8>(ej.cmp_lt(i32x8::splat(0x000)))
-      | (ee.cmp_lt(f32x8::splat(-300.0)));
+    let underflow = cast::<_, f32x8>(ej.simd_lt(i32x8::splat(0x000)))
+      | (ee.simd_lt(f32x8::splat(-300.0)));
 
     // Add exponent by integer addition
     let z = cast::<_, f32x8>(cast::<_, i32x8>(z) + (ei << 23));
@@ -1384,7 +1384,7 @@ impl f32x8 {
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
     let z = x_zero.blend(
-      y.cmp_lt(f32x8::ZERO).blend(
+      y.simd_lt(f32x8::ZERO).blend(
         Self::infinity(),
         y.simd_eq(f32x8::ZERO).blend(f32x8::ONE, f32x8::ZERO),
       ),

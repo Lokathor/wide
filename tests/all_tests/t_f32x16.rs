@@ -287,11 +287,11 @@ fn impl_f32x16_cmp_lt() {
   let b = f32x16::from([3.0; 16]);
   let expected: [i32; 16] =
     [-1, -1, 0, 0, 0, 0, -1, -1, 0, 0, 0, -1, -1, 0, 0, 0];
-  let actual: [i32; 16] = cast(a.cmp_lt(b));
+  let actual: [i32; 16] = cast(a.simd_lt(b));
   assert_eq!(expected, actual);
 
   let expected: [i32; 16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  let actual: [i32; 16] = cast(a.cmp_lt(a));
+  let actual: [i32; 16] = cast(a.simd_lt(a));
   assert_eq!(expected, actual);
 }
 

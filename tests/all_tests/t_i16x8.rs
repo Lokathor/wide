@@ -190,11 +190,11 @@ fn impl_i16x8_cmp_lt() {
   let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
   let b = i16x8::from([2_i16; 8]);
   let expected = i16x8::from([-1, 0, 0, 0, -1, 0, 0, 0]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   let expected = i16x8::from([0, 0, 0, 0, 0, 0, 0, 0]);
-  let actual = a.cmp_lt(a);
+  let actual = a.simd_lt(a);
   assert_eq!(expected, actual);
 }
 

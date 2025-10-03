@@ -108,11 +108,11 @@ fn impl_i32x4_cmp_lt() {
   let a = i32x4::from([1, 2, 3, 4]);
   let b = i32x4::from([2_i32; 4]);
   let expected = i32x4::from([-1, 0, 0, 0]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   let expected = i32x4::from([0, 0, 0, 0]);
-  let actual = a.cmp_lt(a);
+  let actual = a.simd_lt(a);
   assert_eq!(expected, actual);
 }
 

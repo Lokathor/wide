@@ -311,14 +311,14 @@ impl CmpGt for i64x4 {
 impl CmpLt for i64x4 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
       } else {
         Self {
-          a : self.a.cmp_lt(rhs.a),
-          b : self.b.cmp_lt(rhs.b),
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
         }
       }
     }
@@ -465,7 +465,7 @@ impl i64x4 {
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
-    self.cmp_lt(rhs).blend(self, rhs)
+    self.simd_lt(rhs).blend(self, rhs)
   }
 
   #[inline]

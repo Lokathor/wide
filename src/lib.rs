@@ -924,7 +924,7 @@ pub trait CmpNe<Rhs = Self> {
 
 pub trait CmpLt<Rhs = Self> {
   type Output;
-  fn cmp_lt(self, rhs: Rhs) -> Self::Output;
+  fn simd_lt(self, rhs: Rhs) -> Self::Output;
 }
 
 pub trait CmpLe<Rhs = Self> {
@@ -947,7 +947,7 @@ macro_rules! bulk_impl_const_rhs_op {
 }
 
 bulk_impl_const_rhs_op!((CmpEq, simd_eq) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpLt, cmp_lt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+bulk_impl_const_rhs_op!((CmpLt, simd_lt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
 bulk_impl_const_rhs_op!((CmpGt, simd_gt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
 bulk_impl_const_rhs_op!((CmpNe, simd_ne) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
 bulk_impl_const_rhs_op!((CmpLe, simd_le) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);

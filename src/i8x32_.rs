@@ -171,7 +171,7 @@ impl CmpGt for i8x32 {
 impl CmpLt for i8x32 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     rhs.simd_gt(self)
   }
 }

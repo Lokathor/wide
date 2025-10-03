@@ -409,7 +409,7 @@ impl CmpLe for f64x2 {
 impl CmpLt for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_lt(self, rhs: Self) -> Self::Output {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_lt_mask_m128d(self.sse, rhs.sse) }
@@ -940,7 +940,7 @@ impl f64x2 {
     let asin = asin.flip_signs(self);
 
     // acos
-    let z3 = self.cmp_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
+    let z3 = self.simd_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
     let z4 = f64x2::FRAC_PI_2 - z2.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -1026,7 +1026,7 @@ impl f64x2 {
     }
 
     // acos
-    let z3 = self.cmp_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
+    let z3 = self.simd_lt(f64x2::ZERO).blend(f64x2::PI - z1, z1);
     let z4 = f64x2::FRAC_PI_2 - z2.flip_signs(self);
     let acos = big.blend(z3, z4);
 
@@ -1453,7 +1453,7 @@ impl f64x2 {
     let n2 = Self::vm_pow2n(r);
     let z = (z + Self::ONE) * n2;
     // check for overflow
-    let in_range = self.abs().cmp_lt(max_x);
+    let in_range = self.abs().simd_lt(max_x);
     let in_range = in_range & self.is_finite();
     in_range.blend(z, Self::ZERO)
   }
@@ -1563,7 +1563,7 @@ impl f64x2 {
     let res = res + x2.mul_neg_add(f64x2::HALF, x);
     let res = fe.mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
-    let underflow = x1.cmp_lt(VM_SMALLEST_NORMAL);
+    let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
     if !mask.any() {
       res
@@ -1655,10 +1655,10 @@ impl f64x2 {
     let ei = cast::<_, i64x2>(ee.round_int());
     let ej = cast::<_, i64x2>(ei + (cast::<_, i64x2>(z) >> 52));
 
-    let overflow = cast::<_, f64x2>(!ej.cmp_lt(i64x2::splat(0x07FF)))
+    let overflow = cast::<_, f64x2>(!ej.simd_lt(i64x2::splat(0x07FF)))
       | ee.simd_gt(f64x2::splat(3000.0));
     let underflow = cast::<_, f64x2>(!ej.simd_gt(i64x2::splat(0x000)))
-      | ee.cmp_lt(f64x2::splat(-3000.0));
+      | ee.simd_lt(f64x2::splat(-3000.0));
 
     // Add exponent by integer addition
     let z = cast::<_, f64x2>(cast::<_, i64x2>(z) + (ei << 52));
@@ -1674,7 +1674,7 @@ impl f64x2 {
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
     let z = x_zero.blend(
-      y.cmp_lt(f64x2::ZERO).blend(
+      y.simd_lt(f64x2::ZERO).blend(
         Self::infinity(),
         y.simd_eq(f64x2::ZERO).blend(f64x2::ONE, f64x2::ZERO),
       ),
