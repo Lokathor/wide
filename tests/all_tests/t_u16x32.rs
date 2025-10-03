@@ -303,7 +303,7 @@ fn impl_cmp_lt_for_u16x32() {
   ]);
   let b = u16x32::from([100; 32]);
   let expected = u16x32::from([u16::MAX; 32]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 }
 

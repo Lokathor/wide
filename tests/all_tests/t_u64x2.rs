@@ -156,11 +156,11 @@ fn impl_u64x2_cmp_lt() {
   let a = u64x2::from([3_u64, 4]);
   let b = u64x2::from([1_u64, 4]);
   let expected = u64x2::from([0, 0]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar(
-    |a: u64x2, b| a.cmp_lt(b),
+    |a: u64x2, b| a.simd_lt(b),
     |a, b| if a < b { u64::MAX } else { 0 },
   );
 }

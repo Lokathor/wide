@@ -106,7 +106,7 @@ fn impl_i64x8_cmp_lt() {
   let a = i64x8::from([1, 2, 3, 4, -1, -2, -3, i64::MIN]);
   let b = i64x8::from([0, 2, 4, 3, 0, -3, -2, i64::MAX]);
   let expected = i64x8::from([0, 0, -1, 0, -1, 0, -1, -1]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 }
 

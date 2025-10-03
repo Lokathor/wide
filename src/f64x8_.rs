@@ -1480,7 +1480,7 @@ impl f64x8 {
     let ei = cast::<_, i64x8>(ee.round_int());
     let ej = cast::<_, i64x8>(ei + (cast::<_, i64x8>(z) >> 52));
 
-    let overflow = cast::<_, f64x8>(!ej.cmp_lt(i64x8::splat(0x07FF)))
+    let overflow = cast::<_, f64x8>(!ej.simd_lt(i64x8::splat(0x07FF)))
       | ee.simd_gt(f64x8::splat(3000.0));
     let underflow = cast::<_, f64x8>(!ej.simd_gt(i64x8::splat(0x000)))
       | ee.simd_lt(f64x8::splat(-3000.0));

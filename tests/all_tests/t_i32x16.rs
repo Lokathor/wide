@@ -216,7 +216,7 @@ fn impl_cmp_lt_for_i32x16() {
     i32x16::from([0, 1, 2, 3, -4, -3, -2, -1, 8, 9, 10, 11, 12, 13, 14, 15]);
   let b = i32x16::from([100; 16]);
   let expected = i32x16::from([-1; 16]);
-  let actual = a.cmp_lt(b);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 }
 
@@ -417,7 +417,7 @@ fn impl_cmp_for_i32x16() {
     |a, b| if a > b { -1 } else { 0 },
   );
   crate::test_random_vector_vs_scalar(
-    |a: i32x16, b| a.cmp_lt(b),
+    |a: i32x16, b| a.simd_lt(b),
     |a, b| if a < b { -1 } else { 0 },
   );
 }
