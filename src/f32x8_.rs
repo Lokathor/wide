@@ -1112,12 +1112,12 @@ impl f32x8 {
   }
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx")] {
         move_mask_m256(self.avx) as u32
       } else {
-        (self.b.move_mask() << 4) | self.a.move_mask()
+        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
       }
     }
   }

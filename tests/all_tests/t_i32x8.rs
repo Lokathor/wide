@@ -267,16 +267,16 @@ fn impl_from_u16x8() {
 fn test_i16x8_move_mask() {
   let a = i16x8::from([-1, 0, -2, -3, -1, 0, -2, -3]);
   let expected = 0b11011101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = i16x8::from([1, 0, 2, -3, 1, 0, 2, -3]);
   let expected = 0b10001000;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar_reduce(
-    |a: i32x8| a.move_mask(),
+    |a: i32x8| a.to_bitmask(),
     0_u32,
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );

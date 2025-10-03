@@ -1207,12 +1207,12 @@ impl f64x8 {
   }
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(self.avx512) as u32
       } else {
-        (self.b.move_mask() << 4) | self.a.move_mask()
+        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
       }
     }
   }

@@ -1369,7 +1369,7 @@ impl f32x4 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse")] {
         move_mask_m128(self.sse) as u32
@@ -1403,7 +1403,7 @@ impl f32x4 {
       if #[cfg(target_feature="simd128")] {
         v128_any_true(self.simd)
       } else {
-        self.move_mask() != 0
+        self.to_bitmask() != 0
       }
     }
   }
@@ -1415,7 +1415,7 @@ impl f32x4 {
         u32x4_all_true(self.simd)
       } else {
         // four lanes
-        self.move_mask() == 0b1111
+        self.to_bitmask() == 0b1111
       }
     }
   }

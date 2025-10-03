@@ -248,8 +248,8 @@ impl u8x32 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
-    i8x32::move_mask(cast(self)) as u32
+  pub fn to_bitmask(self) -> u32 {
+    i8x32::to_bitmask(cast(self)) as u32
   }
 
   #[inline]

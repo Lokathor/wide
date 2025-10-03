@@ -308,7 +308,7 @@ impl i16x16 {
 
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
           let [a,b] = cast::<_,[m128i;2]>(self);

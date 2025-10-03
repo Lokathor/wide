@@ -604,14 +604,14 @@ fn test_i16x16_move_mask() {
     let a =
       i16x16::from(indexes.map(|x| if i & (1 << x) != 0 { -1 } else { 0 }));
 
-    assert_eq!(a.move_mask(), i);
+    assert_eq!(a.to_bitmask(), i);
   }
 
   let a =
     i16x16::from([-1, 0, -2, -3, -1, 0, -2, -3, -1, 0, -1, 0, -1, 0, -1, 0]);
 
   let expected = 0b0101010111011101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
 

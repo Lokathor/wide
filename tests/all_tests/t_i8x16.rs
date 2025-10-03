@@ -384,7 +384,7 @@ fn test_i8x16_move_mask() {
   let a =
     i8x16::from([-1, 0, -2, -3, -1, 0, -2, -3, -1, 0, -1, 0, -1, 0, -1, 0]);
   let expected = 0b0101010111011101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
 

@@ -1369,7 +1369,7 @@ impl f64x2 {
   }
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         move_mask_m128d(self.sse) as u32
@@ -1395,7 +1395,7 @@ impl f64x2 {
       if #[cfg(target_feature="simd128")] {
         v128_any_true(self.simd)
       } else {
-        self.move_mask() != 0
+        self.to_bitmask() != 0
       }
     }
   }
@@ -1407,7 +1407,7 @@ impl f64x2 {
         u64x2_all_true(self.simd)
       } else {
         // two lanes
-        self.move_mask() == 0b11
+        self.to_bitmask() == 0b11
       }
     }
   }

@@ -744,7 +744,7 @@ fn test_f64x8_move_mask() {
   let a = f64x8::from([-1.0, 0.0, -2.0, -3.0, 1.0, -4.0, 0.0, -5.0]);
   // negative lanes -> bit 1
   let expected = 0b10101101;
-  assert_eq!(a.move_mask(), expected);
+  assert_eq!(a.to_bitmask(), expected);
 }
 
 #[test]

@@ -693,12 +693,12 @@ fn impl_f64x2_sqrt() {
 fn test_f64x2_move_mask() {
   let a = f64x2::from([-1.0, 0.0]);
   let expected = 0b01;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = f64x2::from([1.0, -0.0]);
   let expected = 0b10;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
 

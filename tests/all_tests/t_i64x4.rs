@@ -159,16 +159,16 @@ fn impl_i64x4_cmp_eq() {
 fn test_i64x4_move_mask() {
   let a = i64x4::from([-1, 0, -2, -3]);
   let expected = 0b1101;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = i64x4::from([i64::MAX, 0, 2, -3]);
   let expected = 0b1000;
-  let actual = a.move_mask();
+  let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar_reduce(
-    |a: i64x4| a.move_mask(),
+    |a: i64x4| a.to_bitmask(),
     0_u32,
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );

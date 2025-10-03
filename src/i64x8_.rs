@@ -436,13 +436,13 @@ impl i64x8 {
   /// lane being the lowest bit
   #[inline]
   #[must_use]
-  pub fn move_mask(self) -> u32 {
+  pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // use f64 move_mask since it is the same size as i64
         movepi64_mask_m512d(cast(self.avx512)) as u32
       } else {
-        self.a.move_mask() | (self.b.move_mask() << 2)
+        self.a.to_bitmask() | (self.b.to_bitmask() << 2)
       }
     }
   }
