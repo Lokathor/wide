@@ -248,7 +248,7 @@ fn impl_f32x16_cmp_ge() {
   let b = f32x16::from([2.0; 16]);
   let expected: [i32; 16] =
     [0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1];
-  let actual: [i32; 16] = cast(a.cmp_ge(b));
+  let actual: [i32; 16] = cast(a.simd_ge(b));
   assert_eq!(expected, actual);
 }
 

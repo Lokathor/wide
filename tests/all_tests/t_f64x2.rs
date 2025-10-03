@@ -120,13 +120,13 @@ fn impl_f64x2_cmp_ge() {
   let a = f64x2::from([1.0, 2.0]);
   let b = f64x2::from([2.0, 2.0]);
   let expected: [i64; 2] = [0, -1];
-  let actual: [i64; 2] = cast(a.cmp_ge(b));
+  let actual: [i64; 2] = cast(a.simd_ge(b));
   assert_eq!(expected, actual);
   //
   let a = f64x2::from([3.0, 4.0]);
   let b = f64x2::from([2.0, 2.0]);
   let expected: [i64; 2] = [-1, -1];
-  let actual: [i64; 2] = cast(a.cmp_ge(b));
+  let actual: [i64; 2] = cast(a.simd_ge(b));
   assert_eq!(expected, actual);
 }
 

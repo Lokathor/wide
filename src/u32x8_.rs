@@ -342,7 +342,8 @@ impl CmpGt for u32x8 {
   /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
   /// let b = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let mask = a.cmp_gt(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let expected =
+  ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
@@ -376,7 +377,8 @@ impl CmpLt for u32x8 {
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
   /// let mask = a.cmp_lt(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let expected =
+  ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
@@ -413,8 +415,8 @@ impl CmpGe for u32x8 {
   /// Element-wise greater-than-or-equal comparison.
   ///
   /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding element in `self` is greater than or equal to the one in `rhs`,
-  /// or all-zeros (0x00000000) otherwise.
+  /// corresponding element in `self` is greater than or equal to the one in
+  /// `rhs`, or all-zeros (0x00000000) otherwise.
   ///
   /// # Examples
   /// ```
@@ -422,11 +424,14 @@ impl CmpGe for u32x8 {
   /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
   /// let b = u32x8::from([5, 2, 3, 4, 5, 6, 8, 8]);
   /// let mask = a.cmp_ge(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let expected = [
+  ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+  ///   0,
+  /// ];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     self.simd_eq(rhs) | self.cmp_gt(rhs)
   }
 }
@@ -445,7 +450,10 @@ impl CmpLe for u32x8 {
   /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   /// let b = u32x8::from([1, 4, 3, 2, 10, 9, 7, 7]);
   /// let mask = a.cmp_le(b);
-  /// let expected = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
+  /// let expected = [
+  ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+  ///   0,
+  /// ];
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]

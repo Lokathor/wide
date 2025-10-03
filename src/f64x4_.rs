@@ -250,14 +250,14 @@ impl CmpEq for f64x4 {
 impl CmpGe for f64x4 {
   type Output = Self;
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_ge(rhs.a),
-          b : self.b.cmp_ge(rhs.b),
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
         }
       }
     }
@@ -750,7 +750,7 @@ impl f64x4 {
 
     let xa = self.abs();
 
-    let big = xa.cmp_ge(f64x4::splat(0.625));
+    let big = xa.simd_ge(f64x4::splat(0.625));
 
     let x1 = big.blend(f64x4::splat(1.0) - xa, xa * xa);
 
@@ -842,7 +842,7 @@ impl f64x4 {
 
     let xa = self.abs();
 
-    let big = xa.cmp_ge(f64x4::splat(0.625));
+    let big = xa.simd_ge(f64x4::splat(0.625));
 
     let x1 = big.blend(f64x4::splat(1.0) - xa, xa * xa);
 
@@ -928,7 +928,7 @@ impl f64x4 {
 
     let xa = self.abs();
 
-    let big = xa.cmp_ge(f64x4::splat(0.625));
+    let big = xa.simd_ge(f64x4::splat(0.625));
 
     let x1 = big.blend(f64x4::splat(1.0) - xa, xa * xa);
 
@@ -1010,7 +1010,7 @@ impl f64x4 {
     // medium: t <= t <= 2.4142 (1+sqrt(2))
     // big:    t > 2.4142
     let notbig = t.cmp_le(T3PO8);
-    let notsmal = t.cmp_ge(Self::splat(0.66));
+    let notsmal = t.simd_ge(Self::splat(0.66));
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
@@ -1085,7 +1085,7 @@ impl f64x4 {
     // medium: t <= t <= 2.4142 (1+sqrt(2))
     // big:    t > 2.4142
     let notbig = t.cmp_le(T3PO8);
-    let notsmal = t.cmp_ge(Self::splat(0.66));
+    let notsmal = t.simd_ge(Self::splat(0.66));
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;

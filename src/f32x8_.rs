@@ -250,14 +250,14 @@ impl CmpEq for f32x8 {
 impl CmpGe for f32x8 {
   type Output = Self;
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_ge(rhs.a),
-          b : self.b.cmp_ge(rhs.b),
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
         }
       }
     }
@@ -794,7 +794,7 @@ impl f32x8 {
     const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x8::splat(0.5));
+    let big = xa.simd_ge(f32x8::splat(0.5));
 
     let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
     let x2 = xa * xa;
@@ -834,7 +834,7 @@ impl f32x8 {
     const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x8::splat(0.5));
+    let big = xa.simd_ge(f32x8::splat(0.5));
 
     let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
     let x2 = xa * xa;
@@ -869,7 +869,7 @@ impl f32x8 {
     const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x8::splat(0.5));
+    let big = xa.simd_ge(f32x8::splat(0.5));
 
     let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
     let x2 = xa * xa;
@@ -906,7 +906,7 @@ impl f32x8 {
     // small:  z = t / 1.0;
     // medium: z = (t-1.0) / (t+1.0);
     // big:    z = -1.0 / t;
-    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
     let notbig = t.cmp_le(Self::SQRT_2 + Self::ONE);
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
@@ -962,7 +962,7 @@ impl f32x8 {
 
     // small:  z = t / 1.0;
     // medium: z = (t-1.0) / (t+1.0);
-    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
 
     let a = notsmal.blend(t - Self::ONE, t);
     let b = notsmal.blend(t + Self::ONE, Self::ONE);

@@ -336,7 +336,7 @@ impl CmpEq for f32x4 {
 impl CmpGe for f32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_ge(self, rhs: Self) -> Self::Output {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self { sse: cmp_ge_mask_m128(self.sse, rhs.sse) }
@@ -777,7 +777,7 @@ impl f32x4 {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
         let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x4 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
         let cast: i32x4 = cast(convert_to_i32_m128i_from_m128(non_nan.sse));
         flip_to_max ^ cast
       } else if #[cfg(target_feature="simd128")] {
@@ -822,7 +822,7 @@ impl f32x4 {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
         let non_nan_mask = self.simd_eq(self);
         let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x4 = cast(self.cmp_ge(Self::splat(2147483648.0)));
+        let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
         let cast: i32x4 = cast(truncate_m128_to_m128i(non_nan.sse));
         flip_to_max ^ cast
       } else if #[cfg(target_feature="simd128")] {
@@ -1018,7 +1018,7 @@ impl f32x4 {
     const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x4::splat(0.5));
+    let big = xa.simd_ge(f32x4::splat(0.5));
 
     let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
     let x2 = xa * xa;
@@ -1057,7 +1057,7 @@ impl f32x4 {
     const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x4::splat(0.5));
+    let big = xa.simd_ge(f32x4::splat(0.5));
 
     let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
     let x2 = xa * xa;
@@ -1092,7 +1092,7 @@ impl f32x4 {
     const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
 
     let xa = self.abs();
-    let big = xa.cmp_ge(f32x4::splat(0.5));
+    let big = xa.simd_ge(f32x4::splat(0.5));
 
     let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
     let x2 = xa * xa;
@@ -1129,7 +1129,7 @@ impl f32x4 {
     // small:  z = t / 1.0;
     // medium: z = (t-1.0) / (t+1.0);
     // big:    z = -1.0 / t;
-    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
     let notbig = t.cmp_le(Self::SQRT_2 + Self::ONE);
 
     let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
@@ -1185,7 +1185,7 @@ impl f32x4 {
 
     // small:  z = t / 1.0;
     // medium: z = (t-1.0) / (t+1.0);
-    let notsmal = t.cmp_ge(Self::SQRT_2 - Self::ONE);
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
 
     let a = notsmal.blend(t - Self::ONE, t);
     let b = notsmal.blend(t + Self::ONE, Self::ONE);
