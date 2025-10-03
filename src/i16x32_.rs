@@ -216,7 +216,7 @@ impl CmpEq for i16x32 {
   type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -229,7 +229,7 @@ impl i16x32 {
 
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }

@@ -653,7 +653,7 @@ impl f64x2 {
     let shifted_exp_mask = u64x2::from(0xFFE0000000000000);
     let u: u64x2 = cast(self);
     let shift_u = u << 1_u64;
-    let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
     cast(out)
   }
   #[inline]
@@ -662,7 +662,7 @@ impl f64x2 {
     let shifted_inf = u64x2::from(0xFFE0000000000000);
     let u: u64x2 = cast(self);
     let shift_u = u << 1_u64;
-    let out = (shift_u).cmp_eq(shifted_inf);
+    let out = (shift_u).simd_eq(shifted_inf);
     cast(out)
   }
 

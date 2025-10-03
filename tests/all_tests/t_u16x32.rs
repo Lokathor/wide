@@ -243,7 +243,7 @@ fn impl_cmp_eq_for_u16x32() {
     u16::MAX,
     0,
   ]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

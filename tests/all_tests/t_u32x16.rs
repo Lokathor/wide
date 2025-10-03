@@ -308,7 +308,7 @@ fn impl_u32x16_cmp_eq() {
     0,
     0,
   ]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

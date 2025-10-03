@@ -133,7 +133,7 @@ fn impl_u64x4_cmp_eq() {
   let a = u64x4::from([1_u64, 4, u64::MAX, 5]);
   let b = u64x4::from([3_u64, 4, u64::MAX, 1]);
   let expected = u64x4::from([0, u64::MAX, u64::MAX, 0]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

@@ -362,7 +362,7 @@ impl CmpEq for u64x2 {
   type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -374,7 +374,7 @@ impl u64x2 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }

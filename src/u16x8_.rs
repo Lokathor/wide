@@ -342,7 +342,7 @@ impl CmpEq for u16x8 {
   type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
-    Self::cmp_eq(self, rhs)
+    Self::simd_eq(self, rhs)
   }
 }
 
@@ -354,7 +354,7 @@ impl u16x8 {
   }
   #[inline]
   #[must_use]
-  pub fn cmp_eq(self, rhs: Self) -> Self {
+  pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_eq_mask_i16_m128i(self.sse, rhs.sse) }

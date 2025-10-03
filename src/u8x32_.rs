@@ -143,8 +143,8 @@ impl CmpEq for u8x32 {
         Self { avx : cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_eq(rhs.a),
-          b : self.b.cmp_eq(rhs.b),
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
         }
       }
     }

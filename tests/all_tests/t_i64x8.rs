@@ -88,7 +88,7 @@ fn impl_i64x8_cmp_eq() {
   let a = i64x8::from([1, 2, 3, 4, -1, -2, -3, i64::MIN]);
   let b = i64x8::from([2, 2, 2, 2, -1, -1, -1, i64::MIN]);
   let expected = i64x8::from([0, -1, 0, 0, -1, 0, 0, -1]);
-  let actual = a.cmp_eq(b);
+  let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
 }
 

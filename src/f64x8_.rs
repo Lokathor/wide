@@ -472,7 +472,7 @@ impl f64x8 {
     let shifted_exp_mask = u64x8::splat(0xFFE0000000000000);
     let u: u64x8 = cast(self);
     let shift_u = u << 1_u64;
-    let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
     cast(out)
   }
 
@@ -482,7 +482,7 @@ impl f64x8 {
     let shifted_inf = u64x8::from(0xFFE0000000000000);
     let u: u64x8 = cast(self);
     let shift_u = u << 1_u64;
-    let out = (shift_u).cmp_eq(shifted_inf);
+    let out = (shift_u).simd_eq(shifted_inf);
     cast(out)
   }
 
@@ -1142,7 +1142,7 @@ impl f64x8 {
     c =
       (x2 * x2).mul_add(c, x2.mul_neg_add(f64x8::from(0.5), f64x8::from(1.0)));
 
-    let swap = !((q & i64x8::from(1)).cmp_eq(i64x8::from(0)));
+    let swap = !((q & i64x8::from(1)).simd_eq(i64x8::from(0)));
 
     let mut overflow: f64x8 = cast(q.cmp_gt(i64x8::from(0x80000000000000)));
     overflow &= xa.is_finite();
@@ -1310,7 +1310,7 @@ impl f64x8 {
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i64x8>(self);
     let t = t & i64x8::splat(0x7FF0000000000000);
-    i64x8::round_float(t.cmp_eq(i64x8::splat(0)))
+    i64x8::round_float(t.simd_eq(i64x8::splat(0)))
   }
   #[inline]
   fn infinity() -> Self {

@@ -373,7 +373,7 @@ impl f32x16 {
     let shifted_exp_mask = u32x16::splat(0x7F800000);
     let u: u32x16 = cast(self);
     let shift_u = u << 1_u32;
-    let out = !(shift_u & shifted_exp_mask).cmp_eq(shifted_exp_mask);
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
     cast(out)
   }
 
