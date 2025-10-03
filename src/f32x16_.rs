@@ -421,7 +421,7 @@ impl f32x16 {
 
   #[inline]
   #[must_use]
-  pub fn as_array_mut(&mut self) -> &mut [f32; 16] {
+  pub fn as_mut_array(&mut self) -> &mut [f32; 16] {
     cast_mut(self)
   }
 

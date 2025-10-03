@@ -1722,7 +1722,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [f64; 2] {
+  pub fn as_mut_array(&mut self) -> &mut [f64; 2] {
     cast_mut(self)
   }
 

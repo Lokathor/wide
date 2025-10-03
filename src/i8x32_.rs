@@ -399,7 +399,7 @@ impl i8x32 {
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [i8; 32] {
+  pub fn as_mut_array(&mut self) -> &mut [i8; 32] {
     cast_mut(self)
   }
 }

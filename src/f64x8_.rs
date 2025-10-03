@@ -1550,7 +1550,7 @@ impl f64x8 {
 
   #[inline]
   #[must_use]
-  pub fn as_array_mut(&mut self) -> &mut [f64; 8] {
+  pub fn as_mut_array(&mut self) -> &mut [f64; 8] {
     cast_mut(self)
   }
 

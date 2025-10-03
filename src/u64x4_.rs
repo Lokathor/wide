@@ -347,7 +347,7 @@ impl u64x4 {
   }
 
   #[inline]
-  pub fn as_array_mut(&mut self) -> &mut [u64; 4] {
+  pub fn as_mut_array(&mut self) -> &mut [u64; 4] {
     cast_mut(self)
   }
 
