@@ -1807,10 +1807,10 @@ impl f32x4 {
         Self { neon: unsafe { vcvtq_f32_s32(v.neon) }}
       } else {
         Self { arr: [
-            v.as_array_ref()[0] as f32,
-            v.as_array_ref()[1] as f32,
-            v.as_array_ref()[2] as f32,
-            v.as_array_ref()[3] as f32,
+            v.as_array()[0] as f32,
+            v.as_array()[1] as f32,
+            v.as_array()[2] as f32,
+            v.as_array()[3] as f32,
           ] }
       }
     }

@@ -188,7 +188,7 @@ impl From<u16x16> for u32x16 {
         }
       } else {
         // Portable fallback
-        let arr = v.as_array_ref();
+        let arr = v.as_array();
         Self::new([
           arr[0] as u32,  arr[1] as u32,  arr[2] as u32,  arr[3] as u32,
           arr[4] as u32,  arr[5] as u32,  arr[6] as u32,  arr[7] as u32,

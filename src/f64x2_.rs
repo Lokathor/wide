@@ -1739,8 +1739,8 @@ impl f64x2 {
         Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.neon))) }}
       } else {
         Self { arr: [
-            v.as_array_ref()[0] as f64,
-            v.as_array_ref()[1] as f64,
+            v.as_array()[0] as f64,
+            v.as_array()[1] as f64,
         ]}
       }
     }

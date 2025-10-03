@@ -184,14 +184,14 @@ impl From<u16x8> for u32x8 {
         }
       } else {
         u32x8::new([
-          u32::from(v.as_array_ref()[0]),
-          u32::from(v.as_array_ref()[1]),
-          u32::from(v.as_array_ref()[2]),
-          u32::from(v.as_array_ref()[3]),
-          u32::from(v.as_array_ref()[4]),
-          u32::from(v.as_array_ref()[5]),
-          u32::from(v.as_array_ref()[6]),
-          u32::from(v.as_array_ref()[7]),
+          u32::from(v.as_array()[0]),
+          u32::from(v.as_array()[1]),
+          u32::from(v.as_array()[2]),
+          u32::from(v.as_array()[3]),
+          u32::from(v.as_array()[4]),
+          u32::from(v.as_array()[5]),
+          u32::from(v.as_array()[6]),
+          u32::from(v.as_array()[7]),
         ])
       }
     }

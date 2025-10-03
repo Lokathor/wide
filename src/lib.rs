@@ -962,7 +962,7 @@ macro_rules! impl_serde {
       where
         S: serde::Serializer,
       {
-        let array = self.as_array_ref();
+        let array = self.as_array();
         let mut seq = serializer.serialize_tuple($len)?;
         for e in array {
           seq.serialize_element(e)?;

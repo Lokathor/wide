@@ -367,22 +367,22 @@ impl i16x16 {
       } else {
 
         i16x16::new([
-          v.as_array_ref()[0] as i16,
-          v.as_array_ref()[1] as i16,
-          v.as_array_ref()[2] as i16,
-          v.as_array_ref()[3] as i16,
-          v.as_array_ref()[4] as i16,
-          v.as_array_ref()[5] as i16,
-          v.as_array_ref()[6] as i16,
-          v.as_array_ref()[7] as i16,
-          v.as_array_ref()[8] as i16,
-          v.as_array_ref()[9] as i16,
-          v.as_array_ref()[10] as i16,
-          v.as_array_ref()[11] as i16,
-          v.as_array_ref()[12] as i16,
-          v.as_array_ref()[13] as i16,
-          v.as_array_ref()[14] as i16,
-          v.as_array_ref()[15] as i16,
+          v.as_array()[0] as i16,
+          v.as_array()[1] as i16,
+          v.as_array()[2] as i16,
+          v.as_array()[3] as i16,
+          v.as_array()[4] as i16,
+          v.as_array()[5] as i16,
+          v.as_array()[6] as i16,
+          v.as_array()[7] as i16,
+          v.as_array()[8] as i16,
+          v.as_array()[9] as i16,
+          v.as_array()[10] as i16,
+          v.as_array()[11] as i16,
+          v.as_array()[12] as i16,
+          v.as_array()[13] as i16,
+          v.as_array()[14] as i16,
+          v.as_array()[15] as i16,
           ])
       }
     }

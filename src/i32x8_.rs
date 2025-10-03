@@ -345,14 +345,14 @@ impl i32x8 {
         }
       } else {
         i32x8::new([
-          i32::from(v.as_array_ref()[0]),
-          i32::from(v.as_array_ref()[1]),
-          i32::from(v.as_array_ref()[2]),
-          i32::from(v.as_array_ref()[3]),
-          i32::from(v.as_array_ref()[4]),
-          i32::from(v.as_array_ref()[5]),
-          i32::from(v.as_array_ref()[6]),
-          i32::from(v.as_array_ref()[7]),
+          i32::from(v.as_array()[0]),
+          i32::from(v.as_array()[1]),
+          i32::from(v.as_array()[2]),
+          i32::from(v.as_array()[3]),
+          i32::from(v.as_array()[4]),
+          i32::from(v.as_array()[5]),
+          i32::from(v.as_array()[6]),
+          i32::from(v.as_array()[7]),
         ])
       }
     }
@@ -372,14 +372,14 @@ impl i32x8 {
         }
       } else {
         i32x8::new([
-          i32::from(v.as_array_ref()[0]),
-          i32::from(v.as_array_ref()[1]),
-          i32::from(v.as_array_ref()[2]),
-          i32::from(v.as_array_ref()[3]),
-          i32::from(v.as_array_ref()[4]),
-          i32::from(v.as_array_ref()[5]),
-          i32::from(v.as_array_ref()[6]),
-          i32::from(v.as_array_ref()[7]),
+          i32::from(v.as_array()[0]),
+          i32::from(v.as_array()[1]),
+          i32::from(v.as_array()[2]),
+          i32::from(v.as_array()[3]),
+          i32::from(v.as_array()[4]),
+          i32::from(v.as_array()[5]),
+          i32::from(v.as_array()[6]),
+          i32::from(v.as_array()[7]),
         ])
       }
     }

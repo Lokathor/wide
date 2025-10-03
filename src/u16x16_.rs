@@ -249,22 +249,22 @@ impl From<u8x16> for u16x16 {
       } else {
 
         u16x16::new([
-          v.as_array_ref()[0] as u16,
-          v.as_array_ref()[1] as u16,
-          v.as_array_ref()[2] as u16,
-          v.as_array_ref()[3] as u16,
-          v.as_array_ref()[4] as u16,
-          v.as_array_ref()[5] as u16,
-          v.as_array_ref()[6] as u16,
-          v.as_array_ref()[7] as u16,
-          v.as_array_ref()[8] as u16,
-          v.as_array_ref()[9] as u16,
-          v.as_array_ref()[10] as u16,
-          v.as_array_ref()[11] as u16,
-          v.as_array_ref()[12] as u16,
-          v.as_array_ref()[13] as u16,
-          v.as_array_ref()[14] as u16,
-          v.as_array_ref()[15] as u16,
+          v.as_array()[0] as u16,
+          v.as_array()[1] as u16,
+          v.as_array()[2] as u16,
+          v.as_array()[3] as u16,
+          v.as_array()[4] as u16,
+          v.as_array()[5] as u16,
+          v.as_array()[6] as u16,
+          v.as_array()[7] as u16,
+          v.as_array()[8] as u16,
+          v.as_array()[9] as u16,
+          v.as_array()[10] as u16,
+          v.as_array()[11] as u16,
+          v.as_array()[12] as u16,
+          v.as_array()[13] as u16,
+          v.as_array()[14] as u16,
+          v.as_array()[15] as u16,
           ])
       }
     }
