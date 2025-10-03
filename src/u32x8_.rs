@@ -405,7 +405,7 @@ impl CmpNe for u32x8 {
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
+  fn simd_ne(self, rhs: Self) -> Self::Output {
     !self.simd_eq(rhs)
   }
 }

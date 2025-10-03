@@ -287,14 +287,14 @@ impl CmpLe for f64x8 {
 impl CmpNe for f64x8 {
   type Output = Self;
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
+  fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_ne(rhs.a),
-          b : self.b.cmp_ne(rhs.b),
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
         }
       }
     }

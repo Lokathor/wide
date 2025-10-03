@@ -130,7 +130,7 @@ fn impl_f32x8_cmp_ne() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 1.0]);
   let b = f32x8::from([2.0; 8]);
   let expected: [i32; 8] = [-1, 0, -1, -1, -1, -1, 0, -1];
-  let actual: [i32; 8] = cast(a.cmp_ne(b));
+  let actual: [i32; 8] = cast(a.simd_ne(b));
   assert_eq!(expected, actual);
 }
 

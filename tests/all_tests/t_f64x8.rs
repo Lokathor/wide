@@ -114,7 +114,7 @@ fn impl_f64x8_cmp_ne() {
   let a = f64x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
   let b = f64x8::from([2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 8] = [-1, 0, -1, -1, -1, -1, -1, -1];
-  let actual: [i64; 8] = cast(a.cmp_ne(b));
+  let actual: [i64; 8] = cast(a.simd_ne(b));
   assert_eq!(actual, expected);
 }
 

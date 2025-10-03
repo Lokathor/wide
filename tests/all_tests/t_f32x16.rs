@@ -235,7 +235,7 @@ fn impl_f32x16_cmp_ne() {
   let b = f32x16::from([2.0; 16]);
   let expected: [i32; 16] =
     [-1, 0, -1, -1, -1, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1];
-  let actual: [i32; 16] = cast(a.cmp_ne(b));
+  let actual: [i32; 16] = cast(a.simd_ne(b));
   assert_eq!(expected, actual);
 }
 

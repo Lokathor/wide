@@ -367,7 +367,7 @@ impl CmpGt for f64x2 {
 impl CmpNe for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
+  fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_neq_mask_m128d(self.sse, rhs.sse) }

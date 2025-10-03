@@ -284,14 +284,14 @@ impl CmpGt for f64x4 {
 impl CmpNe for f64x4 {
   type Output = Self;
   #[inline]
-  fn cmp_ne(self, rhs: Self) -> Self::Output {
+  fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
         Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.cmp_ne(rhs.a),
-          b : self.b.cmp_ne(rhs.b),
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
         }
       }
     }
