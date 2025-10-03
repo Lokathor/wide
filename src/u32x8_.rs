@@ -347,7 +347,7 @@ impl CmpGt for u32x8 {
   /// assert_eq!(mask.to_array(), expected);
   /// ```
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -384,7 +384,7 @@ impl CmpLt for u32x8 {
   #[inline]
   fn cmp_lt(self, rhs: Self) -> Self::Output {
     // lt is just gt the other way around
-    rhs.cmp_gt(self)
+    rhs.simd_gt(self)
   }
 }
 
@@ -432,7 +432,7 @@ impl CmpGe for u32x8 {
   /// ```
   #[inline]
   fn simd_ge(self, rhs: Self) -> Self::Output {
-    self.simd_eq(rhs) | self.cmp_gt(rhs)
+    self.simd_eq(rhs) | self.simd_gt(rhs)
   }
 }
 

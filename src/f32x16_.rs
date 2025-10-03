@@ -212,14 +212,14 @@ impl CmpEq for f32x16 {
 impl CmpGt for f32x16 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: cmp_op_mask_m512::<{cmp_op!(GreaterThanOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }

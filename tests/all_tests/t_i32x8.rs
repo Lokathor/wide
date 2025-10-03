@@ -116,7 +116,7 @@ fn impl_i32x8_cmp_gt() {
   let a = i32x8::from([1, 2, 9, 4, 1, 2, 8, 10]);
   let b = i32x8::from([5_i32; 8]);
   let expected = i32x8::from([0, 0, -1, 0, 0, 0, -1, -1]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 

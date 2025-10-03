@@ -250,8 +250,8 @@ impl i32x16 {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -265,8 +265,8 @@ impl i32x16 {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : rhs.a.cmp_gt(self.a),
-          b : rhs.b.cmp_gt(self.b),
+          a : rhs.a.simd_gt(self.a),
+          b : rhs.b.simd_gt(self.b),
         }
       }
     }

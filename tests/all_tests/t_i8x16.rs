@@ -168,7 +168,7 @@ fn impl_i8x16_cmp_gt() {
   let b = i8x16::from([2_i8; 16]);
   let expected =
     i8x16::from([0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 

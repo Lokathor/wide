@@ -140,7 +140,7 @@ fn impl_f64x4_cmp_gt() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f64x4::from([2.0, 2.0, 2.0, 2.0]);
   let expected: [i64; 4] = [0, 0, -1, -1];
-  let actual: [i64; 4] = cast(a.cmp_gt(b));
+  let actual: [i64; 4] = cast(a.simd_gt(b));
   assert_eq!(expected, actual);
 }
 

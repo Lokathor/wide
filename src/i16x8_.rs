@@ -368,7 +368,7 @@ impl CmpEq for i16x8 {
 impl CmpGt for i16x8 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_i16_m128i(self.sse, rhs.sse) }

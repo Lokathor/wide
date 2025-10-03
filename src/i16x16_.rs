@@ -235,14 +235,14 @@ impl CmpEq for i16x16 {
 impl CmpGt for i16x16 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: cmp_gt_mask_i16_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.cmp_gt(rhs.a),
-          b : self.b.cmp_gt(rhs.b),
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
         }
       }
     }

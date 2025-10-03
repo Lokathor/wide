@@ -261,7 +261,7 @@ fn impl_f32x16_cmp_gt() {
   let b = f32x16::from([3.0; 16]);
   let expected: [i32; 16] =
     [0, 0, 0, -1, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, -1];
-  let actual: [i32; 16] = cast(a.cmp_gt(b));
+  let actual: [i32; 16] = cast(a.simd_gt(b));
   assert_eq!(expected, actual);
 }
 

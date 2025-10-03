@@ -143,7 +143,7 @@ fn impl_i64x2_cmp_gt() {
   let a = i64x2::from([3_i64, 4]);
   let b = i64x2::from([1_i64, 4]);
   let expected = i64x2::from([-1, 0]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 

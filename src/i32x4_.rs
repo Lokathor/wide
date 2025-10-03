@@ -405,7 +405,7 @@ impl CmpEq for i32x4 {
 impl CmpGt for i32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self { sse: cmp_gt_mask_i32_m128i(self.sse, rhs.sse) }

@@ -99,7 +99,7 @@ fn impl_i32x4_cmp_gt() {
   let a = i32x4::from([1, 2, 3, 4]);
   let b = i32x4::from([2_i32; 4]);
   let expected = i32x4::from([0, 0, -1, -1]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 

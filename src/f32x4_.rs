@@ -359,7 +359,7 @@ impl CmpGe for f32x4 {
 impl CmpGt for f32x4 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self { sse: cmp_gt_mask_m128(self.sse, rhs.sse) }
@@ -1167,7 +1167,7 @@ impl f32x4 {
     // move in first octant
     let x1 = x.abs();
     let y1 = y.abs();
-    let swapxy = y1.cmp_gt(x1);
+    let swapxy = y1.simd_gt(x1);
     // swap x and y if y1 > x1
     let mut x2 = swapxy.blend(y1, x1);
     let mut y2 = swapxy.blend(x1, y1);
@@ -1244,7 +1244,7 @@ impl f32x4 {
 
     let swap = !(q & i32x4::from(1)).simd_eq(i32x4::from(0));
 
-    let mut overflow: f32x4 = cast(q.cmp_gt(i32x4::from(0x2000000)));
+    let mut overflow: f32x4 = cast(q.simd_gt(i32x4::from(0x2000000)));
     overflow &= xa.is_finite();
     s = overflow.blend(f32x4::from(0.0), s);
     c = overflow.blend(f32x4::from(1.0), c);
@@ -1535,7 +1535,7 @@ impl f32x4 {
     let x1 = self;
     let x = Self::fraction_2(x1);
     let e = Self::exponent(x1);
-    let mask = x.cmp_gt(Self::SQRT_2 * HALF);
+    let mask = x.simd_gt(Self::SQRT_2 * HALF);
     let x = (!mask).blend(x + x, x);
     let fe = mask.blend(e + Self::ONE, e);
     let x = x - Self::ONE;
@@ -1595,7 +1595,7 @@ impl f32x4 {
     let x1 = self.abs();
     let x = x1.fraction_2();
 
-    let mask = x.cmp_gt(f32x4::SQRT_2 * f32x4::HALF);
+    let mask = x.simd_gt(f32x4::SQRT_2 * f32x4::HALF);
     let x = (!mask).blend(x + x, x);
 
     let x = x - f32x4::ONE;
@@ -1633,8 +1633,8 @@ impl f32x4 {
     let ei = cast::<_, i32x4>(ee.round_int());
     let ej = cast::<_, i32x4>(ei + (cast::<_, i32x4>(z) >> 23));
 
-    let overflow = cast::<_, f32x4>(ej.cmp_gt(i32x4::splat(0x0FF)))
-      | (ee.cmp_gt(f32x4::splat(300.0)));
+    let overflow = cast::<_, f32x4>(ej.simd_gt(i32x4::splat(0x0FF)))
+      | (ee.simd_gt(f32x4::splat(300.0)));
     let underflow = cast::<_, f32x4>(ej.cmp_lt(i32x4::splat(0x000)))
       | (ee.cmp_lt(f32x4::splat(-300.0)));
 

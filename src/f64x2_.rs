@@ -344,7 +344,7 @@ impl CmpGe for f64x2 {
 impl CmpGt for f64x2 {
   type Output = Self;
   #[inline]
-  fn cmp_gt(self, rhs: Self) -> Self::Output {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { sse: cmp_op_mask_m128d::<{cmp_op!(GreaterThanOrdered)}>(self.sse, rhs.sse) }
@@ -1200,7 +1200,7 @@ impl f64x2 {
     // move in first octant
     let x1 = x.abs();
     let y1 = y.abs();
-    let swapxy = y1.cmp_gt(x1);
+    let swapxy = y1.simd_gt(x1);
     // swap x and y if y1 > x1
     let mut x2 = swapxy.blend(y1, x1);
     let mut y2 = swapxy.blend(x1, y1);
@@ -1297,7 +1297,7 @@ impl f64x2 {
 
     let swap = !((q & i64x2::from(1)).simd_eq(i64x2::from(0)));
 
-    let mut overflow: f64x2 = cast(q.cmp_gt(i64x2::from(0x80000000000000)));
+    let mut overflow: f64x2 = cast(q.simd_gt(i64x2::from(0x80000000000000)));
     overflow &= xa.is_finite();
     s = overflow.blend(f64x2::from(0.0), s);
     c = overflow.blend(f64x2::from(1.0), c);
@@ -1550,7 +1550,7 @@ impl f64x2 {
     let x1 = self;
     let x = Self::fraction_2(x1);
     let e = Self::exponent(x1);
-    let mask = x.cmp_gt(VM_SQRT2 * f64x2::HALF);
+    let mask = x.simd_gt(VM_SQRT2 * f64x2::HALF);
     let x = (!mask).blend(x + x, x);
     let fe = mask.blend(e + Self::ONE, e);
     let x = x - Self::ONE;
@@ -1622,7 +1622,7 @@ impl f64x2 {
 
     let x1 = self.abs();
     let x = x1.fraction_2();
-    let mask = x.cmp_gt(f64x2::SQRT_2 * f64x2::HALF);
+    let mask = x.simd_gt(f64x2::SQRT_2 * f64x2::HALF);
     let x = (!mask).blend(x + x, x);
     let x = x - f64x2::ONE;
     let x2 = x * x;
@@ -1656,8 +1656,8 @@ impl f64x2 {
     let ej = cast::<_, i64x2>(ei + (cast::<_, i64x2>(z) >> 52));
 
     let overflow = cast::<_, f64x2>(!ej.cmp_lt(i64x2::splat(0x07FF)))
-      | ee.cmp_gt(f64x2::splat(3000.0));
-    let underflow = cast::<_, f64x2>(!ej.cmp_gt(i64x2::splat(0x000)))
+      | ee.simd_gt(f64x2::splat(3000.0));
+    let underflow = cast::<_, f64x2>(!ej.simd_gt(i64x2::splat(0x000)))
       | ee.cmp_lt(f64x2::splat(-3000.0));
 
     // Add exponent by integer addition

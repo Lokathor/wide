@@ -223,7 +223,7 @@ fn impl_i8x32_cmp_gt() {
     0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0,
     -1, -1, 0, 0, -1, -1, 0, 0, -1, -1,
   ]);
-  let actual = a.cmp_gt(b);
+  let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
 }
 
