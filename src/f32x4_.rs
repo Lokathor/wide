@@ -1764,10 +1764,10 @@ impl f32x4 {
         #[inline(always)]
         fn transpose_column(data: &[f32x4; 4], index: usize) -> f32x4 {
           f32x4::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
           ])
         }
 
@@ -1787,7 +1787,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[f32; 4] {
+  pub fn as_array(&self) -> &[f32; 4] {
     cast_ref(self)
   }
 

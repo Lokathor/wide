@@ -1557,7 +1557,7 @@ impl f64x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[f64; 4] {
+  pub fn as_array(&self) -> &[f64; 4] {
     cast_ref(self)
   }
 
@@ -1573,10 +1573,10 @@ impl f64x4 {
         Self { avx: convert_to_m256d_from_i32_m128i(v.sse) }
       } else {
         Self::new([
-          v.as_array_ref()[0] as f64,
-          v.as_array_ref()[1] as f64,
-          v.as_array_ref()[2] as f64,
-          v.as_array_ref()[3] as f64,
+          v.as_array()[0] as f64,
+          v.as_array()[1] as f64,
+          v.as_array()[2] as f64,
+          v.as_array()[3] as f64,
         ])
       }
     }

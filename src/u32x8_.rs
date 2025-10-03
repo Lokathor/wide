@@ -574,7 +574,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u32; 8] {
+  pub fn as_array(&self) -> &[u32; 8] {
     cast_ref(self)
   }
 

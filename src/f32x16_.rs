@@ -415,7 +415,7 @@ impl f32x16 {
 
   #[inline]
   #[must_use]
-  pub fn as_array_ref(&self) -> &[f32; 16] {
+  pub fn as_array(&self) -> &[f32; 16] {
     cast_ref(self)
   }
 

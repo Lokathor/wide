@@ -660,10 +660,10 @@ impl u32x4 {
         #[inline(always)]
         fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
           u32x4::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
           ])
         }
 
@@ -683,7 +683,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u32; 4] {
+  pub fn as_array(&self) -> &[u32; 4] {
     cast_ref(self)
   }
 

@@ -1470,14 +1470,14 @@ impl f32x8 {
         #[inline(always)]
         fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
           f32x8::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
-            data[4].as_array_ref()[index],
-            data[5].as_array_ref()[index],
-            data[6].as_array_ref()[index],
-            data[7].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+            data[4].as_array()[index],
+            data[5].as_array()[index],
+            data[6].as_array()[index],
+            data[7].as_array()[index],
           ])
         }
 
@@ -1501,7 +1501,7 @@ impl f32x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[f32; 8] {
+  pub fn as_array(&self) -> &[f32; 8] {
     cast_ref(self)
   }
 
@@ -1517,14 +1517,14 @@ impl f32x8 {
         Self { avx: convert_to_m256_from_i32_m256i(v.avx2) }
       } else {
         Self::new([
-            v.as_array_ref()[0] as f32,
-            v.as_array_ref()[1] as f32,
-            v.as_array_ref()[2] as f32,
-            v.as_array_ref()[3] as f32,
-            v.as_array_ref()[4] as f32,
-            v.as_array_ref()[5] as f32,
-            v.as_array_ref()[6] as f32,
-            v.as_array_ref()[7] as f32,
+            v.as_array()[0] as f32,
+            v.as_array()[1] as f32,
+            v.as_array()[2] as f32,
+            v.as_array()[3] as f32,
+            v.as_array()[4] as f32,
+            v.as_array()[5] as f32,
+            v.as_array()[6] as f32,
+            v.as_array()[7] as f32,
           ])
       }
     }

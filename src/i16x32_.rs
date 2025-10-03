@@ -368,7 +368,7 @@ impl i16x32 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i16; 32] {
+  pub fn as_array(&self) -> &[i16; 32] {
     cast_ref(self)
   }
 

@@ -388,8 +388,8 @@ fn branch_free_divide(numerator: u32x8, magic: u32x8, shift: u32x8) -> u32x8 {
 fn generate_branch_free_divide_magic_shift(denom: u32x8) -> (u32x8, u32x8) {
   let mut magic = u32x8::ZERO;
   let mut shift = u32x8::ZERO;
-  for i in 0..magic.as_array_ref().len() {
-    let (m, s) = internal_gen_branch_free_u32(denom.as_array_ref()[i]);
+  for i in 0..magic.as_array().len() {
+    let (m, s) = internal_gen_branch_free_u32(denom.as_array()[i]);
     magic.as_array_mut()[i] = m;
     shift.as_array_mut()[i] = s;
   }
@@ -418,8 +418,8 @@ fn impl_u32x8_branch_free_divide() {
 fn generate_branch_free_divide_magic_shift_u64(denom: u64x8) -> (u64x8, u64x8) {
   let mut magic = u64x8::ZERO;
   let mut shift = u64x8::ZERO;
-  for i in 0..magic.as_array_ref().len() {
-    let d = denom.as_array_ref()[i];
+  for i in 0..magic.as_array().len() {
+    let d = denom.as_array()[i];
     assert!(d > 1);
 
     let floor_log_2_d = (63u32) - d.leading_zeros();
@@ -542,7 +542,7 @@ fn histogram_update_u64x8() {
 
   // Scatter back to histogram
   for (i, &idx) in bin_indices.iter().enumerate() {
-    histogram[idx as usize] = updated_bins.as_array_ref()[i];
+    histogram[idx as usize] = updated_bins.as_array()[i];
   }
 
   // Verify results
@@ -567,8 +567,8 @@ fn generate_branch_free_divide_magic_shift_u32x16(
 ) -> (u32x16, u32x16) {
   let mut magic = u32x16::ZERO;
   let mut shift = u32x16::ZERO;
-  for i in 0..magic.as_array_ref().len() {
-    let (m, s) = internal_gen_branch_free_u32(denom.as_array_ref()[i]);
+  for i in 0..magic.as_array().len() {
+    let (m, s) = internal_gen_branch_free_u32(denom.as_array()[i]);
     magic.as_array_mut()[i] = m;
     shift.as_array_mut()[i] = s;
   }

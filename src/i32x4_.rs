@@ -748,10 +748,10 @@ impl i32x4 {
         #[inline(always)]
         fn transpose_column(data: &[i32x4; 4], index: usize) -> i32x4 {
           i32x4::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
           ])
         }
 
@@ -771,7 +771,7 @@ impl i32x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i32; 4] {
+  pub fn as_array(&self) -> &[i32; 4] {
     cast_ref(self)
   }
 

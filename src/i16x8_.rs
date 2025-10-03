@@ -1162,14 +1162,14 @@ impl i16x8 {
         #[inline(always)]
         fn transpose_column(data: &[i16x8; 8], index: usize) -> i16x8 {
           i16x8::new([
-            data[0].as_array_ref()[index],
-            data[1].as_array_ref()[index],
-            data[2].as_array_ref()[index],
-            data[3].as_array_ref()[index],
-            data[4].as_array_ref()[index],
-            data[5].as_array_ref()[index],
-            data[6].as_array_ref()[index],
-            data[7].as_array_ref()[index],
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+            data[4].as_array()[index],
+            data[5].as_array()[index],
+            data[6].as_array()[index],
+            data[7].as_array()[index],
           ])
         }
 
@@ -1238,7 +1238,7 @@ impl i16x8 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i16; 8] {
+  pub fn as_array(&self) -> &[i16; 8] {
     cast_ref(self)
   }
 

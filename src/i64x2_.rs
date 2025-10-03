@@ -555,7 +555,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[i64; 2] {
+  pub fn as_array(&self) -> &[i64; 2] {
     cast_ref(self)
   }
 

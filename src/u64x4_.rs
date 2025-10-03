@@ -342,7 +342,7 @@ impl u64x4 {
   }
 
   #[inline]
-  pub fn as_array_ref(&self) -> &[u64; 4] {
+  pub fn as_array(&self) -> &[u64; 4] {
     cast_ref(self)
   }
 
