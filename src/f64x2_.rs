@@ -1383,8 +1383,8 @@ impl f64x2 {
           (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
         }
       } else {
-        (((self.arr[0].to_bits() as i64) < 0) as i32) << 0 |
-        (((self.arr[1].to_bits() as i64) < 0) as i32) << 1
+        (((self.arr[0].to_bits() as i64) < 0) as u32) << 0 |
+        (((self.arr[1].to_bits() as i64) < 0) as u32) << 1
       }
     }
   }

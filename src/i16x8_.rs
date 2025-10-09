@@ -284,7 +284,7 @@ macro_rules! impl_shl_t_for_i16x8 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_s16(self.neon, vmovq_n_s16(rhs as i16)) }}
           } else {
-            let u = rhs as u64;
+            let u = rhs as u32;
             Self { arr: [
               self.arr[0].wrapping_shl(u),
               self.arr[1].wrapping_shl(u),
@@ -319,7 +319,7 @@ macro_rules! impl_shr_t_for_i16x8 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_s16(self.neon, vmovq_n_s16( -(rhs as i16))) }}
           } else {
-            let u = rhs as u64;
+            let u = rhs as u32;
             Self { arr: [
               self.arr[0].wrapping_shr(u),
               self.arr[1].wrapping_shr(u),
