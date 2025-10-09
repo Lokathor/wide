@@ -31,7 +31,7 @@ jobs:
         #- { target: wasm32-wasip1, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
         #- { target: wasm32-wasip1, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust.toolchain }}
@@ -50,6 +50,7 @@ jobs:
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
+
     - name: Test with default CPU features + All Cargo Features
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
@@ -68,34 +69,28 @@ jobs:
     - name: Test with 'native' CPU features + All Cargo Features 
       run: cargo test --target ${{ matrix.rust.target }} --all-features
   
-  #cross_compile_aarch64:
-  #  runs-on: ubuntu-latest
-  #  strategy:
-  #    matrix:
-  #      rust: ["1.89", stable, nightly]
-  #      features: ["", "std"]
-  #  steps:
-  #    - name: Installing emulator and linker
-  #      run: |
-  #        sudo apt-get update
-  #        sudo apt-get install qemu binfmt-support qemu-user-static gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
-  #    - name: Installing Rust toolchain
-  #      uses: dtolnay/rust-toolchain@master
-  #      with:
-  #        toolchain: ${{ matrix.rust }}
-  #        target: aarch64-unknown-linux-musl
-  #    - uses: actions/checkout@v4
-  #    - name: build
-  #      run: >
-  #        cargo build --verbose --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
-  #      env:
-  #        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
-  #    - name: test
-  #      run: >
-  #        cargo test --tests --benches --no-default-features --target aarch64-unknown-linux-musl --features "$FEATURES"
-  #      env:
-  #        FEATURES: ${{ matrix.features }}
-  #        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+  build_check_only:
+    runs-on: ${{ matrix.rust.os }}
+    strategy:
+      matrix:
+        rust:
+        - { target: x86_64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
+    steps:
+    - uses: actions/checkout@v5
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust.toolchain }}
+        target:  ${{ matrix.rust.target }}
+
+    - name: Add targets via Rustup
+      run: rustup target add riscv64gc-unknown-linux-gnu arm-unknown-linux-gnueabihf armv7-unknown-linux-gnueabihf
+
+    - name: Check the crate 1
+      run: cargo check --target riscv64gc-unknown-linux-gnu
+    - name: Check the crate 2
+      run: cargo check --target arm-unknown-linux-gnueabihf
+    - name: Check the crate 3
+      run: cargo check --target armv7-unknown-linux-gnueabihf
 
   avx512_emulated_test:
     runs-on: ${{ matrix.rust.os }}
