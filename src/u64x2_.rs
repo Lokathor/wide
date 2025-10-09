@@ -42,7 +42,8 @@ pick! {
       #[inline]
       fn eq(&self, other: &Self) -> bool {
         unsafe {
-          vgetq_lane_u64(self.neon,0) == vgetq_lane_u64(other.neon,0) && vgetq_lane_u64(self.neon,1) == vgetq_lane_u64(other.neon,1)
+          vgetq_lane_u64(self.neon,0) == vgetq_lane_u64(other.neon,0) &&
+          vgetq_lane_u64(self.neon,1) == vgetq_lane_u64(other.neon,1)
         }
       }
     }
@@ -345,7 +346,7 @@ macro_rules! impl_shr_t_for_u64x2 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-(rhs as i64))) }}
           } else {
-            let u = rhs as u64;
+            let u = rhs as u32;
             Self { arr: [
               self.arr[0].wrapping_shr(u),
               self.arr[1].wrapping_shr(u),
