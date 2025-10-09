@@ -282,7 +282,7 @@ macro_rules! impl_shl_t_for_i64x2 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             unsafe {Self { neon: vshlq_s64(self.neon, vmovq_n_s64(rhs as i64)) }}
           } else {
-            let u = rhs as u64;
+            let u = rhs as u32;
             Self { arr: [
               self.arr[0].wrapping_shl(u),
               self.arr[1].wrapping_shl(u),
