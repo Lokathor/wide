@@ -507,12 +507,28 @@ impl GenSample for f32 {
 
   /// floating points Nan always fails equality so we need to special case it
   fn binary_eq(self, b: Self) -> bool {
-    if self.is_nan() {
+    const MAX_REL_DIFF: f32 = 0.000001;
+
+    if self == b {
+      return true;
+    } else if self.is_nan() {
       b.is_nan()
     } else if self.is_infinite() {
       b.is_infinite() && self.is_sign_positive() == b.is_sign_positive()
+    } else if (self - b).abs() < MAX_REL_DIFF {
+      // return true if the difference is very small in absolute terms
+      return true;
     } else {
-      (self - b).abs() < 0.000001
+      // the error could be large in absolute terms, but small in relative terms
+      // if both numbers are large
+      let denominator = self.abs().max(b.abs());
+
+      // one or both are zero, but not equal
+      if denominator == 0.0 {
+        return false;
+      }
+
+      (self - b).abs() / denominator < MAX_REL_DIFF
     }
   }
 }
@@ -535,12 +551,28 @@ impl GenSample for f64 {
 
   /// floating points Nan always fails equality so we need to special case it
   fn binary_eq(self, b: Self) -> bool {
-    if self.is_nan() {
+    const MAX_REL_DIFF: f64 = 0.000001;
+
+    if self == b {
+      return true;
+    } else if self.is_nan() {
       b.is_nan()
     } else if self.is_infinite() {
       b.is_infinite() && self.is_sign_positive() == b.is_sign_positive()
+    } else if (self - b).abs() < MAX_REL_DIFF {
+      // return true if the difference is very small in absolute terms
+      return true;
     } else {
-      (self - b).abs() < 0.000001
+      // the error could be large in absolute terms, but small in relative terms
+      // if both numbers are large
+      let denominator = self.abs().max(b.abs());
+
+      // one or both are zero, but not equal
+      if denominator == 0.0 {
+        return false;
+      }
+
+      (self - b).abs() / denominator < MAX_REL_DIFF
     }
   }
 }
