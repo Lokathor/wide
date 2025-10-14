@@ -7,16 +7,7 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<u32x8>(), 32);
 }
 
-#[test]
-fn basic_traits() {
-  type T = u32x8;
-  use crate::TestBasicTraits;
-
-  T::test_basic_traits_int();
-  T::test_wrapping_mul_for_int();
-  T::test_basic_traits_simd_cmp();
-  T::test_basic_traits_aligned_to();
-}
+crate::generate_basic_traits_test!(u32x8, u32);
 
 #[test]
 fn impl_add_for_u32x8() {

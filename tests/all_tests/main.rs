@@ -279,6 +279,18 @@ where
     );
   }
 
+  fn test_shl_shr()
+  where
+    V: std::ops::Shl<u32, Output = V> + std::ops::Shr<u32, Output = V>,
+    T: std::ops::Shl<u32, Output = T> + std::ops::Shr<u32, Output = T>,
+  {
+    // test shl
+    test_random_vector_vs_scalar(|a: V, _b| a << 3, |a, _b| a << 3);
+
+    // test shr
+    test_random_vector_vs_scalar(|a: V, _b| a >> 3, |a, _b| a >> 3);
+  }
+
   /// tests the basic traits according to floating point operations
   fn test_basic_traits_float()
   where
@@ -531,4 +543,104 @@ impl GenSample for f64 {
       (self - b).abs() < 0.000001
     }
   }
+}
+
+#[macro_export]
+macro_rules! generate_basic_traits_test {
+  ($simd_type:ident, $elem_type:ident) => {
+    #[test]
+    fn basic_traits() {
+      type T = $simd_type;
+      use crate::TestBasicTraits;
+
+      crate::basic_traits_tests_for!($elem_type, T);
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! basic_traits_tests_for {
+  (f32, $T:ident) => {
+    $T::test_basic_traits_float();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_simd_cmp_ge_le();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (f64, $T:ident) => {
+    $T::test_basic_traits_float();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_simd_cmp_ge_le();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (i8, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (u8, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (u16, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (i16, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (u32, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (i32, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (u32, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (i64, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (u64, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  ($other:ident, $T:ident) => {
+    compile_error!(concat!("Unsupported element type: ", stringify!($other)));
+  };
 }

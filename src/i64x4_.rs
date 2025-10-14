@@ -261,17 +261,9 @@ macro_rules! impl_shr_t_for_i64x4 {
       /// Shifts all lanes by the value given.
       #[inline]
       fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
-            Self { avx2: shr_all_u64_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shr(rhs),
-              b : self.b.shr(rhs),
-            }
-          }
-        }
+          // there is no signed right shift in AVX2
+          let [a,b] : [i64x2; 2] = cast(self);
+          cast([a.shr(rhs), b.shr(rhs)])
       }
     })+
   };

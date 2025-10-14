@@ -6,25 +6,7 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<i64x2>(), 16);
 }
 
-#[test]
-fn basic_traits() {
-  type T = i64x2;
-  use crate::TestBasicTraits;
-
-  T::test_basic_traits_int();
-  T::test_wrapping_mul_for_int();
-  T::test_basic_traits_simd_cmp();
-  T::test_basic_traits_aligned_to();
-}
-
-#[test]
-fn impl_add_for_i64x2() {
-  let a = i64x2::from([i64::MAX - 1, i64::MAX - 1]);
-  let b = i64x2::from([1, 2]);
-  let expected = i64x2::from([i64::MAX, i64::MIN]);
-  let actual = a + b;
-  assert_eq!(expected, actual);
-}
+crate::generate_basic_traits_test!(i64x2, i64);
 
 #[test]
 fn impl_sub_for_i64x2() {

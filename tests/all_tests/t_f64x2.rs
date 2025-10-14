@@ -826,16 +826,7 @@ fn impl_f64x2_reduce_add() {
   assert_eq!(p.reduce_add(), 0.002);
 }
 
-#[test]
-fn test_basic_traits() {
-  type T = f64x2;
-  use crate::TestBasicTraits;
-
-  T::test_basic_traits_aligned_to();
-  T::test_basic_traits_float();
-  T::test_basic_traits_simd_cmp();
-  T::test_basic_traits_simd_cmp_ge_le();
-}
+crate::generate_basic_traits_test!(f64x2, f64);
 
 #[test]
 fn impl_f64x2_sum() {
