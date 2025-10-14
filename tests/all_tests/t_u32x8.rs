@@ -9,7 +9,11 @@ fn size_align() {
 
 #[test]
 fn basic_traits() {
-  crate::test_basic_traits::<u32x8, _, 8>();
+  type T = u32x8;
+
+  crate::test_basic_traits_int::<T, _, _>();
+  crate::test_basic_traits_aligned_to::<T, _, _>();
+  crate::test_basic_traits_simd_cmp::<T, _, _>();
 }
 
 #[test]

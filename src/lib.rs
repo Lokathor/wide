@@ -932,6 +932,26 @@ pub trait CmpLe<Rhs = Self> {
   fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
 
+pub trait AlignTo
+where
+  Self: Pod + Default + std::fmt::Debug + PartialEq + From<Self::Elem>,
+  Self::Elem: Pod + Default + std::fmt::Debug + PartialEq,
+{
+  type Elem;
+
+  fn simd_align_to(
+    slice: &[Self::Elem],
+  ) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+    pod_align_to(slice)
+  }
+
+  fn simd_align_to_mut(
+    slice: &mut [Self::Elem],
+  ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+    pod_align_to_mut(slice)
+  }
+}
+
 macro_rules! bulk_impl_const_rhs_op {
   (($op:ident,$method:ident) => [$(($lhs:ty,$rhs:ty),)+]) => {
     $(

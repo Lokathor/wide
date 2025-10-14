@@ -17,6 +17,10 @@ int_uint_consts!(i64, 4, i64x4, 256);
 unsafe impl Zeroable for i64x4 {}
 unsafe impl Pod for i64x4 {}
 
+impl AlignTo for i64x4 {
+  type Elem = i64;
+}
+
 impl Add for i64x4 {
   type Output = Self;
   #[inline]

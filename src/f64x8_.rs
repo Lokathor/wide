@@ -22,6 +22,10 @@ macro_rules! const_f64_as_f64x8 {
 unsafe impl Zeroable for f64x8 {}
 unsafe impl Pod for f64x8 {}
 
+impl AlignTo for f64x8 {
+  type Elem = f64;
+}
+
 impl Add for f64x8 {
   type Output = Self;
   #[inline]

@@ -827,6 +827,13 @@ fn impl_f64x2_reduce_add() {
 }
 
 #[test]
+fn test_basic_traits() {
+  type T = f64x2;
+
+  crate::test_basic_traits_aligned_to::<T, _, _>();
+}
+
+#[test]
 fn impl_f64x2_sum() {
   let mut p = Vec::with_capacity(250_000);
   for _ in 0..500_000 {

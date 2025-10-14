@@ -7,6 +7,15 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  type T = u64x8;
+
+  crate::test_basic_traits_int::<T, _, _>();
+  crate::test_basic_traits_aligned_to::<T, _, _>();
+  crate::test_basic_traits_simd_cmp::<T, _, _>();
+}
+
+#[test]
 fn impl_add_for_u64x8() {
   let a = u64x8::from([0, 1, 2, 3, 4, 5, 6, u64::MAX - 1]);
   let b = u64x8::from([17, 18, 19, 20, 21, 22, 23, 1]);

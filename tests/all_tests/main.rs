@@ -13,6 +13,8 @@
 use core::fmt;
 use std::{num::Wrapping, ops::ShlAssign};
 
+use wide::AlignTo;
+
 mod t_f32x16;
 mod t_f32x4;
 mod t_f32x8;
@@ -77,6 +79,7 @@ fn gen_random<T: GenSample>(rng: &mut u64) -> T {
 /// Test a vector operation against a pure scalar implementation for random
 /// values to make sure that the behavior is the same. This allows for easier
 /// for correctness for various values of the vector.
+#[track_caller]
 fn test_random_vector_vs_scalar<
   V,
   VR,
@@ -118,11 +121,12 @@ fn test_random_vector_vs_scalar<
     for i in 0..N {
       assert!(
         expected_arr[i].binary_eq(expected_vec_arr[i]),
-        "scalar = {:?}\nvec = {:?}\na = {:?}\nb = {:?}",
+        "scalar = {:?}\nvec = {:?}\na = {:?}\nb = {:?} caller={:?}",
         expected_arr,
         expected_vec_arr,
         a_arr,
-        b_arr
+        b_arr,
+        std::panic::Location::caller()
       );
     }
   }
@@ -136,6 +140,7 @@ fn test_random_vector_vs_scalar<
 /// The scalar operation uses the same construction as the Rust fold function
 /// which takes an accumulator and returns the accumulator after applying the
 /// operation.
+#[track_caller]
 fn test_random_vector_vs_scalar_reduce<
   V,
   T,
@@ -170,14 +175,18 @@ fn test_random_vector_vs_scalar_reduce<
 
     let expected_vec = vector_fn(V::from(a_arr));
     assert_eq!(
-      expected_scalar, expected_vec,
-      "scalar = {:?} vec = {:?} source = {:?}",
-      expected_scalar, expected_vec, a_arr
+      expected_scalar,
+      expected_vec,
+      "scalar = {:?} vec = {:?} source = {:?} caller={:?}",
+      expected_scalar,
+      expected_vec,
+      a_arr,
+      std::panic::Location::caller()
     );
   }
 }
 
-fn test_basic_traits<V, T, const N: usize>()
+fn test_basic_traits_int<V, T, const N: usize>()
 where
   V: Copy
     + From<[T; N]>
@@ -192,7 +201,8 @@ where
     + wide::CmpEq<Output = V>
     + PartialEq
     + Eq
-    + fmt::Debug,
+    + fmt::Debug
+    + AlignTo<Elem = T>,
   T: Copy
     + Default
     + std::fmt::Debug
@@ -203,8 +213,9 @@ where
     + std::ops::BitOr<Output = T>
     + std::ops::BitAnd<Output = T>
     + std::ops::Not<Output = T>,
-  Wrapping<T>:
-    std::ops::Add<Output = Wrapping<T>> + std::ops::Sub<Output = Wrapping<T>>,
+  Wrapping<T>: std::ops::Add<Output = Wrapping<T>>
+    + std::ops::Sub<Output = Wrapping<T>>
+    + std::ops::Neg<Output = Wrapping<T>>,
 {
   // test add
   test_random_vector_vs_scalar(
@@ -219,10 +230,7 @@ where
   );
 
   // test neg
-  test_random_vector_vs_scalar(
-    |a: V, b| a - (-b),
-    |a, b| (Wrapping::<T>(a) + Wrapping::<T>(b)).0,
-  );
+  test_random_vector_vs_scalar(|a: V, _b| -a, |a, _b| (-Wrapping::<T>(a)).0);
 
   test_random_vector_vs_scalar(|a: V, b| a ^ b, |a, b| a ^ b);
 
@@ -241,6 +249,73 @@ where
   assert!(a != b);
   assert!(a == a);
   assert!(b == a.not());
+}
+
+fn test_basic_traits_simd_cmp<V, T, const N: usize>()
+where
+  V: Copy
+    + From<[T; N]>
+    + Into<[T; N]>
+    + wide::CmpGt<Output = V>
+    + wide::CmpLt<Output = V>
+    + PartialEq
+    + fmt::Debug
+    + AlignTo<Elem = T>,
+  T: Copy
+    + Default
+    + std::fmt::Debug
+    + GenSample
+    + PartialEq
+    + std::cmp::Ord
+    + std::ops::Not<Output = T>,
+{
+  // test gt
+  test_random_vector_vs_scalar(
+    |a: V, b| a.simd_gt(b),
+    |a, b| if a > b { !T::default() } else { T::default() },
+  );
+
+  test_random_vector_vs_scalar(
+    |a: V, b| a.simd_lt(b),
+    |a, b| if a < b { !T::default() } else { T::default() },
+  );
+}
+
+fn test_basic_traits_aligned_to<V, T, const N: usize>()
+where
+  V: Copy
+    + From<[T; N]>
+    + Into<[T; N]>
+    + PartialEq
+    + fmt::Debug
+    + AlignTo<Elem = T>,
+  T: Copy + Default + std::fmt::Debug + GenSample + PartialEq,
+{
+  // test AlignTo
+  let mut rng = 0x123456789abcdef0;
+  let mut my_slice = [T::default(); 57];
+  for i in 0..my_slice.len() {
+    my_slice[i] = gen_random(&mut rng);
+  }
+
+  for i in 0..57 {
+    let (head, body, tail) = V::simd_align_to(&my_slice[i..]);
+    assert_eq!(head.len() + body.len() * N + tail.len(), my_slice.len() - i);
+
+    for j in 0..head.len() {
+      assert!(head[j] == my_slice[i + j]);
+    }
+    for j in 0..body.len() {
+      let vec_arr: [T; N] = body[j].into();
+      for k in 0..N {
+        assert!(vec_arr[k] == my_slice[i + head.len() + j * N + k]);
+      }
+    }
+
+    for j in 0..tail.len() {
+      assert!(tail[j] == my_slice[i + head.len() + body.len() * N + j]);
+    }
+  }
 }
 
 /// trait to reduce a 64 bit pseudo-random number to a random sample value

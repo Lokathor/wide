@@ -11,6 +11,12 @@ fn size_align() {
 }
 
 #[test]
+fn test_basic_traits() {
+  type T = f64x8;
+  crate::test_basic_traits_aligned_to::<T, _, _>();
+}
+
+#[test]
 fn impl_debug_for_f64x8() {
   let expected = "(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0)";
   let actual =

@@ -7,6 +7,14 @@ fn size_align() {
 }
 
 #[test]
+fn basic_traits() {
+  type T = u8x32;
+
+  crate::test_basic_traits_int::<T, _, _>();
+  crate::test_basic_traits_aligned_to::<T, _, _>();
+}
+
+#[test]
 fn impl_add_for_u8x32() {
   crate::test_random_vector_vs_scalar(
     |a: u8x32, b| a + b,

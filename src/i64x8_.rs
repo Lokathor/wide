@@ -17,6 +17,10 @@ int_uint_consts!(i64, 8, i64x8, 512);
 unsafe impl Zeroable for i64x8 {}
 unsafe impl Pod for i64x8 {}
 
+impl AlignTo for i64x8 {
+  type Elem = i64;
+}
+
 impl Add for i64x8 {
   type Output = Self;
   #[inline]
@@ -294,6 +298,22 @@ impl CmpEq for i64x8 {
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
     Self::simd_eq(self, rhs)
+  }
+}
+
+impl CmpGt for i64x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    Self::simd_gt(self, rhs)
+  }
+}
+
+impl CmpLt for i64x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    Self::simd_lt(self, rhs)
   }
 }
 

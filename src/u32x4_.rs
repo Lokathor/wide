@@ -58,6 +58,10 @@ int_uint_consts!(u32, 4, u32x4, 128);
 unsafe impl Zeroable for u32x4 {}
 unsafe impl Pod for u32x4 {}
 
+impl AlignTo for u32x4 {
+  type Elem = u32;
+}
+
 impl Add for u32x4 {
   type Output = Self;
   #[inline]
@@ -382,6 +386,23 @@ impl CmpEq for u32x4 {
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
     Self::simd_eq(self, rhs)
+  }
+}
+
+impl CmpGt for u32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    Self::simd_gt(self, rhs)
+  }
+}
+
+impl CmpLt for u32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    // no gt, so just reverse to get same answer
+    Self::simd_gt(rhs, self)
   }
 }
 

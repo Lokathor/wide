@@ -15,6 +15,10 @@ pick! {
 unsafe impl Zeroable for f32x16 {}
 unsafe impl Pod for f32x16 {}
 
+impl AlignTo for f32x16 {
+  type Elem = f32;
+}
+
 impl Add for f32x16 {
   type Output = Self;
   #[inline]

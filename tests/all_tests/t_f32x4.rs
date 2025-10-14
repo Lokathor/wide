@@ -9,6 +9,13 @@ fn size_align() {
 }
 
 #[test]
+fn test_basic_traits() {
+  type T = f32x4;
+
+  crate::test_basic_traits_aligned_to::<T, _, _>();
+}
+
+#[test]
 fn impl_debug_for_f32x4() {
   let expected = "(1.0, 2.0, 3.0, 4.0)";
   let actual = format!("{:?}", f32x4::from([1.0, 2.0, 3.0, 4.0]));
