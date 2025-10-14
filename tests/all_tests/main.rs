@@ -545,15 +545,16 @@ impl GenSample for f64 {
   }
 }
 
+/// defines tests per type of SIMD vector. This allows us to easily generate
+/// the same tests for multiple types without copy/pasting code.
 #[macro_export]
 macro_rules! generate_basic_traits_test {
   ($simd_type:ident, $elem_type:ident) => {
     #[test]
     fn basic_traits() {
-      type T = $simd_type;
       use crate::TestBasicTraits;
 
-      crate::basic_traits_tests_for!($elem_type, T);
+      crate::basic_traits_tests_for!($elem_type, $simd_type);
     }
   };
 }
@@ -565,6 +566,10 @@ macro_rules! basic_traits_tests_for {
     $T::test_basic_traits_simd_cmp();
     $T::test_basic_traits_simd_cmp_ge_le();
     $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.round(), |a, _| a.round());
   };
 
   (f64, $T:ident) => {
@@ -572,24 +577,28 @@ macro_rules! basic_traits_tests_for {
     $T::test_basic_traits_simd_cmp();
     $T::test_basic_traits_simd_cmp_ge_le();
     $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.round(), |a, _| a.round());
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.floor(), |a, _| a.floor());
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.ceil(), |a, _| a.ceil());
   };
 
   (i8, $T:ident) => {
     $T::test_basic_traits_int();
     $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
   };
 
   (u8, $T:ident) => {
     $T::test_basic_traits_int();
     $T::test_basic_traits_aligned_to();
-  };
 
-  (u16, $T:ident) => {
-    $T::test_basic_traits_int();
-    $T::test_wrapping_mul_for_int();
-    $T::test_shl_shr();
-    $T::test_basic_traits_simd_cmp();
-    $T::test_basic_traits_aligned_to();
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
   };
 
   (i16, $T:ident) => {
@@ -598,14 +607,39 @@ macro_rules! basic_traits_tests_for {
     $T::test_shl_shr();
     $T::test_basic_traits_simd_cmp();
     $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, _b| a.abs(), |a, _b| a.abs());
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_add(b),
+      |a, b| a.saturating_add(b),
+    );
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_sub(b),
+      |a, b| a.saturating_sub(b),
+    );
   };
 
-  (u32, $T:ident) => {
+  (u16, $T:ident) => {
     $T::test_basic_traits_int();
     $T::test_wrapping_mul_for_int();
     $T::test_shl_shr();
     $T::test_basic_traits_simd_cmp();
     $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_add(b),
+      |a, b| a.saturating_add(b),
+    );
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_sub(b),
+      |a, b| a.saturating_sub(b),
+    );
   };
 
   (i32, $T:ident) => {
@@ -614,6 +648,9 @@ macro_rules! basic_traits_tests_for {
     $T::test_shl_shr();
     $T::test_basic_traits_simd_cmp();
     $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
   };
 
   (u32, $T:ident) => {
@@ -622,6 +659,9 @@ macro_rules! basic_traits_tests_for {
     $T::test_shl_shr();
     $T::test_basic_traits_simd_cmp();
     $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
   };
 
   (i64, $T:ident) => {
