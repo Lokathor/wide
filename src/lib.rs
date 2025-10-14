@@ -933,8 +933,8 @@ pub trait CmpLe<Rhs = Self> {
 }
 pub trait AlignTo
 where
-  Self: Pod + Default + std::fmt::Debug + PartialEq + From<Self::Elem>,
-  Self::Elem: Pod + Default + std::fmt::Debug + PartialEq,
+  Self: Pod + Default + PartialEq + From<Self::Elem>,
+  Self::Elem: Pod + Default + PartialEq,
 {
   type Elem;
 
