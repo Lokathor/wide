@@ -407,7 +407,8 @@ impl CmpLt for i64x2 {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
-        Self { sse: !cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
+        // only has gt, so flip arguments around to get lt
+        Self { sse: cmp_gt_mask_i64_m128i( rhs.sse, self.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i64x2_lt(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{

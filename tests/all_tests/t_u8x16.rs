@@ -9,8 +9,10 @@ fn size_align() {
 #[test]
 fn basic_traits() {
   type T = u8x16;
-  crate::test_basic_traits_int::<T, _, _>();
-  crate::test_basic_traits_aligned_to::<T, _, _>();
+  use crate::TestBasicTraits;
+
+  T::test_basic_traits_int();
+  T::test_basic_traits_aligned_to();
 }
 
 #[test]

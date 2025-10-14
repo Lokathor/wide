@@ -1,5 +1,7 @@
 use wide::*;
 
+use crate::TestBasicTraits;
+
 #[test]
 fn size_align() {
   assert_eq!(core::mem::size_of::<i16x8>(), 16);
@@ -9,10 +11,12 @@ fn size_align() {
 #[test]
 fn basic_traits() {
   type T = i16x8;
+  use crate::TestBasicTraits;
 
-  crate::test_basic_traits_int::<T, _, _>();
-  crate::test_basic_traits_aligned_to::<T, _, _>();
-  crate::test_basic_traits_simd_cmp::<T, _, _>();
+  T::test_basic_traits_int();
+  T::test_wrapping_mul_for_int();
+  T::test_basic_traits_simd_cmp();
+  T::test_basic_traits_aligned_to();
 }
 
 #[test]

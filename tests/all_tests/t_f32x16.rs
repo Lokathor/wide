@@ -11,8 +11,12 @@ fn size_align() {
 #[test]
 fn test_basic_traits() {
   type T = f32x16;
+  use crate::TestBasicTraits;
 
-  crate::test_basic_traits_aligned_to::<T, _, _>();
+  T::test_basic_traits_aligned_to();
+  T::test_basic_traits_float();
+  T::test_basic_traits_simd_cmp();
+  T::test_basic_traits_simd_cmp_ge_le();
 }
 
 #[test]

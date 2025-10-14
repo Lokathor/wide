@@ -931,7 +931,6 @@ pub trait CmpLe<Rhs = Self> {
   type Output;
   fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
-
 pub trait AlignTo
 where
   Self: Pod + Default + std::fmt::Debug + PartialEq + From<Self::Elem>,
