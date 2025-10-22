@@ -47,6 +47,10 @@ impl f32x8 {
 unsafe impl Zeroable for f32x8 {}
 unsafe impl Pod for f32x8 {}
 
+impl AlignTo for f32x8 {
+  type Elem = f32;
+}
+
 impl Add for f32x8 {
   type Output = Self;
   #[inline]

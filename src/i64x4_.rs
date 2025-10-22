@@ -17,6 +17,10 @@ int_uint_consts!(i64, 4, i64x4, 256);
 unsafe impl Zeroable for i64x4 {}
 unsafe impl Pod for i64x4 {}
 
+impl AlignTo for i64x4 {
+  type Elem = i64;
+}
+
 impl Add for i64x4 {
   type Output = Self;
   #[inline]
@@ -257,17 +261,9 @@ macro_rules! impl_shr_t_for_i64x4 {
       /// Shifts all lanes by the value given.
       #[inline]
       fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
-            Self { avx2: shr_all_u64_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shr(rhs),
-              b : self.b.shr(rhs),
-            }
-          }
-        }
+          // there is no signed right shift in AVX2
+          let [a,b] : [i64x2; 2] = cast(self);
+          cast([a.shr(rhs), b.shr(rhs)])
       }
     })+
   };

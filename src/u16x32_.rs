@@ -17,6 +17,10 @@ int_uint_consts!(u16, 32, u16x32, 512);
 unsafe impl Zeroable for u16x32 {}
 unsafe impl Pod for u16x32 {}
 
+impl AlignTo for u16x32 {
+  type Elem = u16;
+}
+
 impl Add for u16x32 {
   type Output = Self;
   #[inline]
@@ -220,6 +224,22 @@ impl CmpEq for u16x32 {
   }
 }
 
+impl CmpLt for u16x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    Self::simd_lt(self, rhs)
+  }
+}
+
+impl CmpGt for u16x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    Self::simd_gt(self, rhs)
+  }
+}
+
 impl Not for u16x32 {
   type Output = Self;
   #[inline]
@@ -249,7 +269,7 @@ impl u16x32 {
   pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_eq(rhs.a),
@@ -264,7 +284,7 @@ impl u16x32 {
   pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_gt(rhs.a),
@@ -279,7 +299,7 @@ impl u16x32 {
   pub fn simd_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : rhs.a.simd_gt(self.a),

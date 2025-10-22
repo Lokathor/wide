@@ -6,10 +6,7 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<i16x16>(), 32);
 }
 
-#[test]
-fn basic_traits() {
-  crate::test_basic_traits::<i16x16, _, 16>();
-}
+crate::generate_basic_traits_test!(i16x16, i16);
 
 #[test]
 fn impl_add_for_i16x16() {

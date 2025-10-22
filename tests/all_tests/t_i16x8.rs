@@ -1,15 +1,14 @@
 use wide::*;
 
+use crate::TestBasicTraits;
+
 #[test]
 fn size_align() {
   assert_eq!(core::mem::size_of::<i16x8>(), 16);
   assert_eq!(core::mem::align_of::<i16x8>(), 16);
 }
 
-#[test]
-fn basic_traits() {
-  crate::test_basic_traits::<i16x8, _, 8>();
-}
+crate::generate_basic_traits_test!(i16x8, i16);
 
 #[test]
 fn impl_add_for_i16x8() {

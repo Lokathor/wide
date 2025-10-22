@@ -826,6 +826,8 @@ fn impl_f64x2_reduce_add() {
   assert_eq!(p.reduce_add(), 0.002);
 }
 
+crate::generate_basic_traits_test!(f64x2, f64);
+
 #[test]
 fn impl_f64x2_sum() {
   let mut p = Vec::with_capacity(250_000);

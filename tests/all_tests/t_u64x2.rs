@@ -7,10 +7,7 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<u64x2>(), 16);
 }
 
-#[test]
-fn basic_traits() {
-  crate::test_basic_traits::<u64x2, _, 2>();
-}
+crate::generate_basic_traits_test!(u64x2, u64);
 
 #[test]
 fn impl_add_for_u64x2() {

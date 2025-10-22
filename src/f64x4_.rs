@@ -47,6 +47,10 @@ impl f64x4 {
 unsafe impl Zeroable for f64x4 {}
 unsafe impl Pod for f64x4 {}
 
+impl AlignTo for f64x4 {
+  type Elem = f64;
+}
+
 impl Add for f64x4 {
   type Output = Self;
   #[inline]

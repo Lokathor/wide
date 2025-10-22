@@ -2,11 +2,15 @@ use wide::*;
 
 use bytemuck::*;
 
+use crate::TestBasicTraits;
+
 #[test]
 fn size_align() {
   assert_eq!(core::mem::size_of::<f32x4>(), 16);
   assert_eq!(core::mem::align_of::<f32x4>(), 16);
 }
+
+crate::generate_basic_traits_test!(f32x4, f32);
 
 #[test]
 fn impl_debug_for_f32x4() {

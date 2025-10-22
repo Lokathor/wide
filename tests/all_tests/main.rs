@@ -13,6 +13,8 @@
 use core::fmt;
 use std::{num::Wrapping, ops::ShlAssign};
 
+use wide::AlignTo;
+
 mod t_f32x16;
 mod t_f32x4;
 mod t_f32x8;
@@ -77,6 +79,7 @@ fn gen_random<T: GenSample>(rng: &mut u64) -> T {
 /// Test a vector operation against a pure scalar implementation for random
 /// values to make sure that the behavior is the same. This allows for easier
 /// for correctness for various values of the vector.
+#[track_caller]
 fn test_random_vector_vs_scalar<
   V,
   VR,
@@ -118,11 +121,12 @@ fn test_random_vector_vs_scalar<
     for i in 0..N {
       assert!(
         expected_arr[i].binary_eq(expected_vec_arr[i]),
-        "scalar = {:?}\nvec = {:?}\na = {:?}\nb = {:?}",
+        "scalar = {:?}\nvec = {:?}\na = {:?}\nb = {:?} caller={:?}",
         expected_arr,
         expected_vec_arr,
         a_arr,
-        b_arr
+        b_arr,
+        std::panic::Location::caller()
       );
     }
   }
@@ -136,6 +140,7 @@ fn test_random_vector_vs_scalar<
 /// The scalar operation uses the same construction as the Rust fold function
 /// which takes an accumulator and returns the accumulator after applying the
 /// operation.
+#[track_caller]
 fn test_random_vector_vs_scalar_reduce<
   V,
   T,
@@ -170,84 +175,258 @@ fn test_random_vector_vs_scalar_reduce<
 
     let expected_vec = vector_fn(V::from(a_arr));
     assert_eq!(
-      expected_scalar, expected_vec,
-      "scalar = {:?} vec = {:?} source = {:?}",
-      expected_scalar, expected_vec, a_arr
+      expected_scalar,
+      expected_vec,
+      "scalar = {:?} vec = {:?} source = {:?} caller={:?}",
+      expected_scalar,
+      expected_vec,
+      a_arr,
+      std::panic::Location::caller()
     );
   }
 }
 
-fn test_basic_traits<V, T, const N: usize>()
+/// Trait to implement various basic tests for SIMD vector types.
+///
+/// This is a bit of a weird use of traits, but it allows us to easily implement
+/// test methods that can be called as associated functions on the vector types
+/// themselves, e.g. `f32x4::test_basic_traits()`.
+///
+/// This has a couple nice features:
+/// - The values for V, T and N are inferred from the type that the trait is
+///   implemented for, so we don't have to specify them manually.
+/// - The associated functions can take advantage of the basic traits that are
+///   already required for the type at the trait level, and not have to
+///   re-specify them for each function.
+trait TestBasicTraits<V, T, const N: usize>
+where
+  V: Copy
+    + Clone
+    + From<[T; N]>
+    + Into<[T; N]>
+    + PartialEq
+    + Default
+    + std::fmt::Debug
+    + AlignTo<Elem = T>,
+  T: Copy
+    + Clone
+    + PartialEq
+    + Default
+    + std::fmt::Debug
+    + GenSample
+    + PartialOrd,
+{
+  /// tests the traits of integer SIMD types
+  fn test_basic_traits_int()
+  where
+    V: std::ops::Add<Output = V>
+      + std::ops::Sub<Output = V>
+      + std::ops::BitXor<Output = V>
+      + std::ops::BitOr<Output = V>
+      + std::ops::BitAnd<Output = V>
+      + std::ops::Not<Output = V>
+      + std::ops::Neg<Output = V>
+      + wide::CmpEq<Output = V>,
+    T: Copy
+      + std::ops::BitXor<Output = T>
+      + std::ops::BitOr<Output = T>
+      + std::ops::BitAnd<Output = T>
+      + std::ops::Not<Output = T>,
+    Wrapping<T>: std::ops::Add<Output = Wrapping<T>>
+      + std::ops::Sub<Output = Wrapping<T>>
+      + std::ops::Neg<Output = Wrapping<T>>,
+  {
+    // test add
+    test_random_vector_vs_scalar(
+      |a: V, b| a + b,
+      |a, b| (Wrapping::<T>(a) + Wrapping::<T>(b)).0,
+    );
+
+    // test sub
+    test_random_vector_vs_scalar(
+      |a: V, b| a - b,
+      |a, b| (Wrapping::<T>(a) - Wrapping::<T>(b)).0,
+    );
+
+    // test neg
+    test_random_vector_vs_scalar(|a: V, _b| -a, |a, _b| (-Wrapping::<T>(a)).0);
+
+    test_random_vector_vs_scalar(|a: V, b| a ^ b, |a, b| a ^ b);
+
+    test_random_vector_vs_scalar(|a: V, b| a & b, |a, b| a & b);
+
+    test_random_vector_vs_scalar(|a: V, b| a | b, |a, b| a | b);
+
+    // test not
+    let a = V::from([T::default(); N]);
+    let b = V::from([!T::default(); N]);
+
+    assert!(a != b);
+    assert!(a == a);
+    assert!(b == a.not());
+  }
+
+  fn test_wrapping_mul_for_int()
+  where
+    V: std::ops::Mul<Output = V>,
+    T: std::ops::Mul<Output = T>,
+    Wrapping<T>: std::ops::Mul<Output = Wrapping<T>>,
+  {
+    // test mul
+    test_random_vector_vs_scalar(
+      |a: V, b| a * b,
+      |a, b| (Wrapping::<T>(a) * Wrapping::<T>(b)).0,
+    );
+  }
+
+  fn test_shl_shr()
+  where
+    V: std::ops::Shl<u32, Output = V> + std::ops::Shr<u32, Output = V>,
+    T: std::ops::Shl<u32, Output = T> + std::ops::Shr<u32, Output = T>,
+  {
+    // test shl
+    test_random_vector_vs_scalar(|a: V, _b| a << 3, |a, _b| a << 3);
+
+    // test shr
+    test_random_vector_vs_scalar(|a: V, _b| a >> 3, |a, _b| a >> 3);
+  }
+
+  /// tests the basic traits according to floating point operations
+  fn test_basic_traits_float()
+  where
+    V: std::ops::Add<Output = V>
+      + std::ops::Sub<Output = V>
+      + std::ops::Mul<Output = V>
+      + std::ops::Div<Output = V>
+      + std::ops::Neg<Output = V>
+      + wide::CmpEq<Output = V>,
+    T: std::ops::Add<Output = T>
+      + std::ops::Sub<Output = T>
+      + std::ops::Neg<Output = T>
+      + std::ops::Mul<Output = T>
+      + std::ops::Div<Output = T>,
+  {
+    // test add
+    test_random_vector_vs_scalar(|a: V, b| a + b, |a, b| a + b);
+
+    // test sub
+    test_random_vector_vs_scalar(|a: V, b| a - b, |a, b| a - b);
+
+    // test mul
+    test_random_vector_vs_scalar(|a: V, b| a * b, |a, b| a * b);
+
+    // test div (rust floating point does not panic on div by zero)
+    test_random_vector_vs_scalar(|a: V, b| a / b, |a, b| a / b);
+
+    // test neg
+    test_random_vector_vs_scalar(|a: V, _b| -a, |a, _b| -a);
+  }
+
+  /// tests the traits of SIMD comparison operations
+  fn test_basic_traits_simd_cmp()
+  where
+    V: wide::CmpGt<Output = V>
+      + wide::CmpLt<Output = V>
+      + wide::CmpEq<Output = V>,
+  {
+    test_random_vector_vs_scalar(
+      |a: V, b| a.simd_eq(b),
+      |a, b| if a == b { T::NOT } else { T::default() },
+    );
+
+    // test gt
+    test_random_vector_vs_scalar(
+      |a: V, b| a.simd_gt(b),
+      |a, b| if a > b { T::NOT } else { T::default() },
+    );
+
+    test_random_vector_vs_scalar(
+      |a: V, b| a.simd_lt(b),
+      |a, b| if a < b { T::NOT } else { T::default() },
+    );
+  }
+
+  /// tests the traits of SIMD comparison operations ge and le
+  fn test_basic_traits_simd_cmp_ge_le()
+  where
+    V: wide::CmpGe<Output = V> + wide::CmpLe<Output = V>,
+  {
+    // test greater or equal
+    test_random_vector_vs_scalar(
+      |a: V, b| a.simd_ge(b),
+      |a, b| if a >= b { T::NOT } else { T::default() },
+    );
+
+    // test less than or equal
+    test_random_vector_vs_scalar(
+      |a: V, b| a.simd_le(b),
+      |a, b| if a <= b { T::NOT } else { T::default() },
+    );
+  }
+
+  fn test_basic_traits_aligned_to() {
+    // test AlignTo
+    let mut rng = 0x123456789abcdef0;
+    let mut my_slice = [T::default(); 57];
+    for i in 0..my_slice.len() {
+      my_slice[i] = gen_random(&mut rng);
+    }
+
+    for i in 0..57 {
+      let (head, body, tail) = V::simd_align_to(&my_slice[i..]);
+
+      assert_eq!(head.len() + body.len() * N + tail.len(), my_slice.len() - i);
+
+      for j in 0..head.len() {
+        assert!(head[j] == my_slice[i + j]);
+      }
+      for j in 0..body.len() {
+        let vec_arr: [T; N] = body[j].into();
+        for k in 0..N {
+          assert!(vec_arr[k] == my_slice[i + head.len() + j * N + k]);
+        }
+      }
+
+      for j in 0..tail.len() {
+        assert!(tail[j] == my_slice[i + head.len() + body.len() * N + j]);
+      }
+
+      // assert that mutable version returned the same thing
+      let h = head.to_vec();
+      let b = body.to_vec();
+      let t = tail.to_vec();
+
+      let (head_mut, body_mut, tail_mut) =
+        V::simd_align_to_mut(&mut my_slice[i..]);
+      assert_eq!(head_mut, h);
+      assert_eq!(body_mut, b);
+      assert_eq!(tail_mut, t);
+    }
+  }
+}
+
+/// implement blanket trait to allow calling test functions as associated
+/// functions
+impl<V, T, const N: usize> TestBasicTraits<V, T, N> for V
 where
   V: Copy
     + From<[T; N]>
     + Into<[T; N]>
-    + std::ops::Add<Output = V>
-    + std::ops::Sub<Output = V>
-    + std::ops::BitXor<Output = V>
-    + std::ops::BitOr<Output = V>
-    + std::ops::BitAnd<Output = V>
-    + std::ops::Not<Output = V>
-    + std::ops::Neg<Output = V>
-    + wide::CmpEq<Output = V>
-    + PartialEq
-    + Eq
-    + fmt::Debug,
-  T: Copy
     + Default
     + std::fmt::Debug
-    + GenSample
     + PartialEq
-    + Eq
-    + std::ops::BitXor<Output = T>
-    + std::ops::BitOr<Output = T>
-    + std::ops::BitAnd<Output = T>
-    + std::ops::Not<Output = T>,
-  Wrapping<T>:
-    std::ops::Add<Output = Wrapping<T>> + std::ops::Sub<Output = Wrapping<T>>,
+    + AlignTo<Elem = T>,
+  T: Copy + Default + std::fmt::Debug + GenSample + PartialEq + PartialOrd,
 {
-  // test add
-  test_random_vector_vs_scalar(
-    |a: V, b| a + b,
-    |a, b| (Wrapping::<T>(a) + Wrapping::<T>(b)).0,
-  );
-
-  // test sub
-  test_random_vector_vs_scalar(
-    |a: V, b| a - b,
-    |a, b| (Wrapping::<T>(a) - Wrapping::<T>(b)).0,
-  );
-
-  // test neg
-  test_random_vector_vs_scalar(
-    |a: V, b| a - (-b),
-    |a, b| (Wrapping::<T>(a) + Wrapping::<T>(b)).0,
-  );
-
-  test_random_vector_vs_scalar(|a: V, b| a ^ b, |a, b| a ^ b);
-
-  test_random_vector_vs_scalar(|a: V, b| a & b, |a, b| a & b);
-
-  test_random_vector_vs_scalar(|a: V, b| a | b, |a, b| a | b);
-
-  test_random_vector_vs_scalar(
-    |a: V, b| a.simd_eq(b),
-    |a, b| if a == b { !T::default() } else { T::default() },
-  );
-
-  let a = V::from([T::default(); N]);
-  let b = V::from([!T::default(); N]);
-
-  assert!(a != b);
-  assert!(a == a);
-  assert!(b == a.not());
 }
 
 /// trait to reduce a 64 bit pseudo-random number to a random sample value
 trait GenSample
 where
-  Self: PartialEq + Copy,
+  Self: PartialEq + Copy + Default,
 {
+  const NOT: Self;
+
   fn get_sample(v: u64) -> Self;
   fn binary_eq(self, b: Self) -> bool {
     self == b
@@ -255,54 +434,64 @@ where
 }
 
 impl GenSample for u64 {
+  const NOT: Self = u64::MAX;
   fn get_sample(v: u64) -> Self {
     v
   }
 }
 
 impl GenSample for u32 {
+  const NOT: Self = u32::MAX;
   fn get_sample(v: u64) -> Self {
     v as u32
   }
 }
 
 impl GenSample for u16 {
+  const NOT: Self = u16::MAX;
   fn get_sample(v: u64) -> Self {
     v as u16
   }
 }
 
 impl GenSample for u8 {
+  const NOT: Self = u8::MAX;
   fn get_sample(v: u64) -> Self {
     v as u8
   }
 }
 
 impl GenSample for i64 {
+  const NOT: Self = -1;
+
   fn get_sample(v: u64) -> Self {
     v as i64
   }
 }
 
 impl GenSample for i32 {
+  const NOT: Self = -1;
   fn get_sample(v: u64) -> Self {
     v as i32
   }
 }
 
 impl GenSample for i16 {
+  const NOT: Self = -1;
   fn get_sample(v: u64) -> Self {
     v as i16
   }
 }
 
 impl GenSample for i8 {
+  const NOT: Self = -1;
   fn get_sample(v: u64) -> Self {
     v as i8
   }
 }
 
 impl GenSample for f32 {
+  const NOT: Self = f32::from_bits(u32::MAX);
   fn get_sample(v: u64) -> Self {
     // generate special float values more often than random
     // chance to test edge cases
@@ -318,17 +507,35 @@ impl GenSample for f32 {
 
   /// floating points Nan always fails equality so we need to special case it
   fn binary_eq(self, b: Self) -> bool {
-    if self.is_nan() {
+    const MAX_REL_DIFF: f32 = 0.000001;
+
+    if self == b {
+      return true;
+    } else if self.is_nan() {
       b.is_nan()
     } else if self.is_infinite() {
       b.is_infinite() && self.is_sign_positive() == b.is_sign_positive()
+    } else if (self - b).abs() < MAX_REL_DIFF {
+      // return true if the difference is very small in absolute terms
+      return true;
     } else {
-      (self - b).abs() < 0.000001
+      // the error could be large in absolute terms, but small in relative terms
+      // if both numbers are large
+      let denominator = self.abs().max(b.abs());
+
+      // one or both are zero, but not equal
+      if denominator == 0.0 {
+        return false;
+      }
+
+      (self - b).abs() / denominator < MAX_REL_DIFF
     }
   }
 }
 
 impl GenSample for f64 {
+  const NOT: Self = f64::from_bits(u64::MAX);
+
   // generate special float values more often than random
   // chance to test edge cases
   fn get_sample(v: u64) -> Self {
@@ -344,12 +551,168 @@ impl GenSample for f64 {
 
   /// floating points Nan always fails equality so we need to special case it
   fn binary_eq(self, b: Self) -> bool {
-    if self.is_nan() {
+    const MAX_REL_DIFF: f64 = 0.000001;
+
+    if self == b {
+      return true;
+    } else if self.is_nan() {
       b.is_nan()
     } else if self.is_infinite() {
       b.is_infinite() && self.is_sign_positive() == b.is_sign_positive()
+    } else if (self - b).abs() < MAX_REL_DIFF {
+      // return true if the difference is very small in absolute terms
+      return true;
     } else {
-      (self - b).abs() < 0.000001
+      // the error could be large in absolute terms, but small in relative terms
+      // if both numbers are large
+      let denominator = self.abs().max(b.abs());
+
+      // one or both are zero, but not equal
+      if denominator == 0.0 {
+        return false;
+      }
+
+      (self - b).abs() / denominator < MAX_REL_DIFF
     }
   }
+}
+
+/// defines tests per type of SIMD vector. This allows us to easily generate
+/// the same tests for multiple types without copy/pasting code.
+#[macro_export]
+macro_rules! generate_basic_traits_test {
+  ($simd_type:ident, $elem_type:ident) => {
+    #[test]
+    fn basic_traits() {
+      use crate::TestBasicTraits;
+
+      crate::basic_traits_tests_for!($elem_type, $simd_type);
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! basic_traits_tests_for {
+  (f32, $T:ident) => {
+    $T::test_basic_traits_float();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_simd_cmp_ge_le();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.round(), |a, _| a.round());
+  };
+
+  (f64, $T:ident) => {
+    $T::test_basic_traits_float();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_simd_cmp_ge_le();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.round(), |a, _| a.round());
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.floor(), |a, _| a.floor());
+    crate::test_random_vector_vs_scalar(|a: $T, _| a.ceil(), |a, _| a.ceil());
+  };
+
+  (i8, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+  };
+
+  (u8, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+  };
+
+  (i16, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, _b| a.abs(), |a, _b| a.abs());
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_add(b),
+      |a, b| a.saturating_add(b),
+    );
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_sub(b),
+      |a, b| a.saturating_sub(b),
+    );
+  };
+
+  (u16, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_add(b),
+      |a, b| a.saturating_add(b),
+    );
+    crate::test_random_vector_vs_scalar(
+      |a: $T, b| a.saturating_sub(b),
+      |a, b| a.saturating_sub(b),
+    );
+  };
+
+  (i32, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+  };
+
+  (u32, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.max(b), |a, b| a.max(b));
+    crate::test_random_vector_vs_scalar(|a: $T, b| a.min(b), |a, b| a.min(b));
+  };
+
+  (i64, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  (u64, $T:ident) => {
+    $T::test_basic_traits_int();
+    $T::test_wrapping_mul_for_int();
+    $T::test_shl_shr();
+    $T::test_basic_traits_simd_cmp();
+    $T::test_basic_traits_aligned_to();
+  };
+
+  ($other:ident, $T:ident) => {
+    compile_error!(concat!("Unsupported element type: ", stringify!($other)));
+  };
 }

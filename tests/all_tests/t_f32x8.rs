@@ -8,6 +8,8 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<f32x8>(), 32);
 }
 
+crate::generate_basic_traits_test!(f32x8, f32);
+
 #[test]
 fn impl_debug_for_f32x8() {
   let expected = "(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0)";

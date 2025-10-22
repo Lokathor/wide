@@ -10,6 +10,8 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<f64x4>(), 32);
 }
 
+crate::generate_basic_traits_test!(f64x4, f64);
+
 #[test]
 fn impl_debug_for_f64x4() {
   let expected = "(1.0, 2.0, 3.0, 4.0)";

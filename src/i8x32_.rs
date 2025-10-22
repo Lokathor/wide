@@ -17,6 +17,10 @@ int_uint_consts!(i8, 32, i8x32, 256);
 unsafe impl Zeroable for i8x32 {}
 unsafe impl Pod for i8x32 {}
 
+impl AlignTo for i8x32 {
+  type Elem = i8;
+}
+
 impl Add for i8x32 {
   type Output = Self;
   #[inline]

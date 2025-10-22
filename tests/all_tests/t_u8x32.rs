@@ -6,6 +6,8 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<u8x32>(), 32);
 }
 
+crate::generate_basic_traits_test!(u8x32, u8);
+
 #[test]
 fn impl_add_for_u8x32() {
   crate::test_random_vector_vs_scalar(

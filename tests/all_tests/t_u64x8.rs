@@ -6,6 +6,8 @@ fn size_align() {
   assert_eq!(core::mem::align_of::<u64x8>(), 64);
 }
 
+crate::generate_basic_traits_test!(u64x8, u64);
+
 #[test]
 fn impl_add_for_u64x8() {
   let a = u64x8::from([0, 1, 2, 3, 4, 5, 6, u64::MAX - 1]);
