@@ -15,6 +15,31 @@ architectures this is done by carefully writing functions so that LLVM hopefully
 does the right thing. When Rust stabilizes more explicit intrinsics then they
 can go into `safe_arch` and then they can get used here.
 
+## Enabling SIMD instructions in your build
+
+### Aarch64 (64-bit ARM) 
+
+Aarch64 always enables the NEON extension, so `wide` can always take advantage of SIMD on this platform.
+
+### WASM
+
+SIMD is an optional extension for WASM, but it is [supported by all modern browsers](https://caniuse.com/wasm-simd).
+
+To enable SIMD in your build you need to set `RUSTFLAGS="-C target-feature=+simd128"`, e.g.:
+```
+RUSTFLAGS="-C target-feature=+simd128" cargo build --target wasm32-unknown-unknown
+```
+
+### x86
+
+Rust i686 and x86_64 targets guarantee only the presence of basic operations on 128-bit vectors (SSE2). If you need anything else, you need to explicitly enable the relevant SIMD extensions at build time. For example, this will use all SIMD extensions available on your CPU:
+```
+RUSTFLAGS='-C target-cpu=native' cargo build --release
+```
+However, attempting to use an instruction that is not supported by the CPU will crash the program or lead to undefined behavior. Therefore distributing binaries built with SIMD extensions enabled is not recommended.
+
+**Note:** `wide` only supports detecting the available SIMD extensions at build time. Runtime feature detection via [`is_x86_feature_detected!`](https://doc.rust-lang.org/stable/std/macro.is_x86_feature_detected.html) or crates like [multiversion](https://crates.io/crates/multiversion) do not work with `wide`.
+
 ## Rust Version Policy
 
 * The `rust-version` entry of the crate's `Cargo.toml` will be kept accurate to
