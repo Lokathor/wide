@@ -336,6 +336,19 @@ impl i32x16 {
       }
     }
   }
+  
+  #[inline]
+  #[must_use]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        // use f32 move_mask since it is the same size as i32
+        movepi32_mask_m512d(cast(self.avx512)) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
+      }
+    }
+  }
 
   #[inline]
   pub fn to_array(self) -> [i32; 16] {
