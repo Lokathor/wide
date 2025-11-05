@@ -389,7 +389,7 @@ impl i16x32 {
         // use f16 move_mask since it is the same size as i16
         movepi16_mask_m512i(self.avx512) as u32
       } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
+        self.a.to_bitmask() | (self.b.to_bitmask() << 16)
       }
     }
   }  

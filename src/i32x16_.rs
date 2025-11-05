@@ -344,7 +344,7 @@ impl i32x16 {
       if #[cfg(target_feature="avx512dq")] {
         movepi32_mask_m512i(self.avx512) as u32
       } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
+        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
       }
     }
   }
