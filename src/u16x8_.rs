@@ -411,6 +411,8 @@ impl u16x8 {
         let mask = cmp_gt_mask_i16_m128i(a_biased, b_biased);
 
         Self { sse: mask }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_gt(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
         unsafe {
           use core::arch::aarch64::*;
