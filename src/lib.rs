@@ -7,7 +7,7 @@
 #![allow(clippy::let_and_return)]
 #![allow(clippy::unusual_byte_groupings)]
 #![allow(clippy::misrefactored_assign_op)]
-#![cfg_attr(test, allow(clippy::approx_constant))]
+#![allow(clippy::approx_constant)]
 
 //! A crate to help you go wide.
 //!
