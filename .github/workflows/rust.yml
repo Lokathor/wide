@@ -83,7 +83,7 @@ jobs:
         target:  ${{ matrix.rust.target }}
 
     - name: Add targets via Rustup
-      run: rustup target add riscv64gc-unknown-linux-gnu arm-unknown-linux-gnueabihf armv7-unknown-linux-gnueabihf
+      run: rustup target add riscv64gc-unknown-linux-gnu arm-unknown-linux-gnueabihf armv7-unknown-linux-gnueabihf wasm32-unknown-unknown
 
     - name: Check the crate 1
       run: cargo check --target riscv64gc-unknown-linux-gnu
