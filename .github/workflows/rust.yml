@@ -91,6 +91,8 @@ jobs:
       run: cargo check --target arm-unknown-linux-gnueabihf
     - name: Check the crate 3
       run: cargo check --target armv7-unknown-linux-gnueabihf
+    - name: Check the crate 4
+      run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target=wasm32-unknown-unknown
 
   avx512_emulated_test:
     runs-on: ${{ matrix.rust.os }}
