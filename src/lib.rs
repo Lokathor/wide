@@ -938,12 +938,14 @@ where
 {
   type Elem;
 
+  #[inline]
   fn simd_align_to(
     slice: &[Self::Elem],
   ) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
     pod_align_to(slice)
   }
 
+  #[inline]
   fn simd_align_to_mut(
     slice: &mut [Self::Elem],
   ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
