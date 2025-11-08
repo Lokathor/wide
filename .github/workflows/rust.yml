@@ -94,6 +94,7 @@ jobs:
     - name: Check the crate 4
       run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target wasm32-unknown-unknown
     - name: Check the crate 5
+      if: ${{ matrix.rust.toolchain == "nightly" }}
       run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target wasm64-unknown-unknown -Z build-std
 
   avx512_emulated_test:
