@@ -9,6 +9,8 @@
 #![allow(clippy::identity_op)]
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::redundant_closure)]
+#![allow(clippy::needless_return)]
+#![allow(clippy::crate_in_macro_def)]
 
 use core::fmt;
 use std::{num::Wrapping, ops::ShlAssign};
