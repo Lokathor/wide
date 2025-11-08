@@ -91,14 +91,9 @@ jobs:
       run: cargo check --target arm-unknown-linux-gnueabihf
     - name: Check the crate 3
       run: cargo check --target armv7-unknown-linux-gnueabihf
-    - name: Check the crate 4
+    - name: Check wasm32 with simd128
       run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target wasm32-unknown-unknown
-
-    - name: Add nightly targets via Rustup
-      if: matrix.rust.toolchain == 'nightly'
-      run: rustup target add rust-src
-
-    - name: Check the crate 5
+    - name: Check wasm64 with simd128
       if: matrix.rust.toolchain == 'nightly'
       run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target wasm64-unknown-unknown -Z build-std
 
