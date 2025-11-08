@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## 0.8.2
+
+* Fixed additional build errors on wasm targets.
+
 ## 0.8.1
 
 * Fixed type errors in the fallback implementations of some methods that
