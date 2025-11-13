@@ -697,6 +697,12 @@ impl u32x4 {
       }
     }
   }
+  
+  #[inline]
+  #[must_use]
+  pub fn to_bitmask(self) -> u32 {
+    i32x4::to_bitmask(cast(self))
+  }
 
   #[inline]
   pub fn to_array(self) -> [u32; 4] {

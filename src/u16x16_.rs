@@ -391,6 +391,12 @@ impl u16x16 {
       }
     }
   }
+  
+  #[inline]
+  #[must_use]
+  pub fn to_bitmask(self) -> u32 {
+    i16x16::to_bitmask(cast(self)) 
+  }
 
   #[inline]
   pub fn to_array(self) -> [u16; 16] {

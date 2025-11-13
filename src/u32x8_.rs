@@ -541,6 +541,12 @@ impl u32x8 {
       }
     }
   }
+  
+  #[inline]
+  #[must_use]
+  pub fn to_bitmask(self) -> u32 {
+    i32x8::to_bitmask(cast(self))
+  }
 
   #[inline]
   #[must_use]

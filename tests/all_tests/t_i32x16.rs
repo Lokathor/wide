@@ -423,3 +423,32 @@ fn impl_cmp_for_i32x16() {
     |a, b| if a < b { -1 } else { 0 },
   );
 }
+
+#[test]
+fn test_i32x4_move_mask() {
+  let a = i32x16::from([
+    -1, 0, -2, -3,
+    -1, 0, -2, -3,
+    -1, 0, -2, -3,
+    -1, 0, -2, -3,
+  ]);
+  let expected = 0b1101110111011101;
+  let actual = a.to_bitmask();
+  assert_eq!(expected, actual);
+  //
+  let a = i32x16::from([
+    i32::MAX, 0, 2, -3,
+    i32::MAX, 0, 2, -3,
+    i32::MAX, 0, 2, -3,
+    i32::MAX, 0, 2, -3,
+  ]);
+  let expected = 0b1000100010001000;
+  let actual = a.to_bitmask();
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar_reduce(
+    |a: i32x16| a.to_bitmask(),
+    0_u32,
+    |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
+  );
+}

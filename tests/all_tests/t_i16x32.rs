@@ -720,3 +720,26 @@ fn impl_i16x32_new() {
   let actual = a.to_array();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn test_i16x32_move_mask() {
+  let a = i16x32::from([
+    -1, 0, -2, -3, -1, 0, -2, -3,
+    -1, 0, -2, -3, -1, 0, -2, -3,
+    -1, 0, -2, -3, -1, 0, -2, -3,
+    -1, 0, -2, -3, -1, 0, -2, -3,
+  ]);
+  let expected = 0b11011101110111011101110111011101;
+  let actual = a.to_bitmask();
+  assert_eq!(expected, actual);
+  
+  let a = i16x32::from([
+    1, 0, 2, -3, 1, 0, 2, -3,
+    1, 0, 2, -3, 1, 0, 2, -3,
+    1, 0, 2, -3, 1, 0, 2, -3,
+    1, 0, 2, -3, 1, 0, 2, -3,
+  ]);
+  let expected = 0b10001000100010001000100010001000;
+  let actual = a.to_bitmask();
+  assert_eq!(expected, actual);
+}
