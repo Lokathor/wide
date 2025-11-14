@@ -55,7 +55,7 @@ jobs:
       env:
         CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --all-features
-    
+
     - name: Build the crate with SSE4.1 (the "native" of CI will be above this)
       if: matrix.rust.os == 'ubuntu-latest' && matrix.rust.target == 'x86_64-unknown-linux-gnu'
       run: RUSTFLAGS="-Ctarget-feature=+sse4.1" cargo build --target ${{ matrix.rust.target }}
@@ -66,21 +66,21 @@ jobs:
     - name: Test with 'native' CPU features + No Default Cargo Features
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
-    - name: Test with 'native' CPU features + All Cargo Features 
+    - name: Test with 'native' CPU features + All Cargo Features
       run: cargo test --target ${{ matrix.rust.target }} --all-features
-  
+
   build_check_only:
     runs-on: ${{ matrix.rust.os }}
     strategy:
       matrix:
         rust:
-        - { target: x86_64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
+        - { toolchain: stable, os: ubuntu-latest }
+        - { toolchain: nightly, os: ubuntu-latest }
     steps:
     - uses: actions/checkout@v5
     - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust.toolchain }}
-        target:  ${{ matrix.rust.target }}
 
     - name: Add targets via Rustup
       run: rustup target add riscv64gc-unknown-linux-gnu arm-unknown-linux-gnueabihf armv7-unknown-linux-gnueabihf wasm32-unknown-unknown
@@ -91,8 +91,16 @@ jobs:
       run: cargo check --target arm-unknown-linux-gnueabihf
     - name: Check the crate 3
       run: cargo check --target armv7-unknown-linux-gnueabihf
-    - name: Check the crate 4
-      run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target=wasm32-unknown-unknown
+    - name: Check wasm32 with simd128
+      run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target wasm32-unknown-unknown
+
+    - name: Add nightly targets via Rustup
+      if: matrix.rust.toolchain == 'nightly'
+      run: rustup component add rust-src
+
+    - name: Check wasm64 with simd128
+      if: matrix.rust.toolchain == 'nightly'
+      run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target wasm64-unknown-unknown -Z build-std
 
   avx512_emulated_test:
     runs-on: ${{ matrix.rust.os }}
