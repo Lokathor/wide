@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## 0.8.3
+
+* `to_bitmask` implemented for all unsigned int types.
+
 ## 0.8.2
 
 * Fixed additional build errors on wasm targets.
