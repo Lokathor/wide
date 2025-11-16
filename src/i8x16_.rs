@@ -6,7 +6,10 @@ pick! {
     #[repr(C, align(16))]
     pub struct i8x16 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
+    #[cfg(target_arch = "wasm32")]
     use core::arch::wasm32::*;
+    #[cfg(target_arch = "wasm64")]
+    use core::arch::wasm64::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
@@ -397,7 +400,10 @@ impl i8x16 {
           i8x16 { neon: vcombine_s8(vqmovn_s16(v.a.neon), vqmovn_s16(v.b.neon)) }
         }
       } else if #[cfg(target_feature="simd128")] {
+        #[cfg(target_arch = "wasm32")]
         use core::arch::wasm32::*;
+        #[cfg(target_arch = "wasm64")]
+        use core::arch::wasm64::*;
 
         i8x16 { simd: i8x16_narrow_i16x8(v.a.simd, v.b.simd) }
       } else {
