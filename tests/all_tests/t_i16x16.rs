@@ -706,6 +706,26 @@ fn impl_i16x16_reduce_max() {
   }
 }
 
+#[test]
+fn test_mul_add() {
+  let a = i16x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  let b = i16x16::from([
+    10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160,
+  ]);
+  let expected = i32x8::from([
+    1 * 10 + 2 * 20,
+    3 * 30 + 4 * 40,
+    5 * 50 + 6 * 60,
+    7 * 70 + 8 * 80,
+    9 * 90 + 10 * 100,
+    11 * 110 + 12 * 120,
+    13 * 130 + 14 * 140,
+    15 * 150 + 16 * 160,
+  ]);
+  let actual = a.mul_add(b);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i16x16_ser_de_roundtrip() {

@@ -420,6 +420,20 @@ fn impl_i16x8_mul_widen() {
   );
 }
 
+#[test]
+fn test_mul_add() {
+  let a = i16x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
+  let b = i16x8::from([10, 20, 30, 40, 50, 60, 70, 80]);
+  let expected = i32x4::from([
+    1 * 10 + 2 * 20,
+    3 * 30 + 4 * 40,
+    5 * 50 + 6 * 60,
+    7 * 70 + 8 * 80,
+  ]);
+  let actual = a.mul_add(b);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i16x8_ser_de_roundtrip() {

@@ -1187,6 +1187,34 @@ impl i16x8 {
     }
   }
 
+  /// Multiple and then add pairs of lanes
+  #[inline]
+  #[must_use]
+  pub fn mul_add(self, rhs: Self) -> i32x4 {
+    pick! {
+        if #[cfg(target_feature="sse2")] {
+          i32x4 { sse:  mul_i16_horizontal_add_m128i(self.sse, rhs.sse) }
+        } else if #[cfg(target_feature="simd128")] {
+          let mul = i32x4_dot_i16x8(self.simd, rhs.simd);
+          i32x4 { simd: i32x4_add(self.simd, mul) }
+        } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+          unsafe {
+            let pl = vmull_s16(vget_low_s16(self.neon),  vget_low_s16(rhs.neon));
+            let ph = vmull_high_s16(self.neon, rhs.neon);
+            let dot = vpaddq_s32(pl, ph);
+            i32x4 { neon: vaddq_s32(vreinterpretq_s32_s16(self.neon), dot) }
+          }
+        } else {
+          i32x4 { arr: [
+            i32::from(self.arr[0]) + (i32::from(self.arr[0]) * i32::from(rhs.arr[0])) + (i32::from(self.arr[1]) * i32::from(rhs.arr[1])),
+            i32::from(self.arr[2]) + (i32::from(self.arr[2]) * i32::from(rhs.arr[2])) + (i32::from(self.arr[3]) * i32::from(rhs.arr[3])),
+            i32::from(self.arr[4]) + (i32::from(self.arr[4]) * i32::from(rhs.arr[4])) + (i32::from(self.arr[5]) * i32::from(rhs.arr[5])),
+            i32::from(self.arr[6]) + (i32::from(self.arr[6]) * i32::from(rhs.arr[6])) + (i32::from(self.arr[7]) * i32::from(rhs.arr[7])),
+          ] }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   /// Multiply and scale, equivalent to `((self * rhs) + 0x4000) >> 15` on each

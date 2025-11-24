@@ -403,6 +403,21 @@ impl i16x16 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn mul_add(self, rhs: Self) -> i32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        i32x8 { avx2: mul_i16_horizontal_add_m256i(self.avx2, rhs.avx2) }
+      } else {
+        i32x8 {
+          a : self.a.mul_add(rhs.a),
+          b : self.b.mul_add(rhs.b),
+        }
+      }
+    }
+  }
+
   /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]
