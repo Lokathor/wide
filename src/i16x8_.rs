@@ -1200,12 +1200,9 @@ impl i16x8 {
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
           unsafe {
             let low = vmull_s16(vget_low_s16(self.neon), vget_low_s16(rhs.neon));
-            let high = vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon));
+            let high = vmull_high_s16(self.neon, rhs.neon);
 
-            let low_sum = vpadd_s32(vget_low_s32(low), vget_high_s32(low));
-            let high_sum = vpadd_s32(vget_low_s32(high), vget_high_s32(high));
-
-            i32x4 { neon: vcombine_s32(low_sum, high_sum) }
+            i32x4 { neon: vpaddq_s32(low, high) }
           }
         } else {
           i32x4 { arr: [
