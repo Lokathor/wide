@@ -1199,10 +1199,13 @@ impl i16x8 {
           i32x4 { simd: i32x4_add(self.simd, mul) }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
           unsafe {
-            let pl = vmull_s16(vget_low_s16(self.neon),  vget_low_s16(rhs.neon));
-            let ph = vmull_high_s16(self.neon, rhs.neon);
-            let dot = vpaddq_s32(pl, ph);
-            i32x4 { neon: vaddq_s32(vreinterpretq_s32_s16(self.neon), dot) }
+            let low = vmull_s16(vget_low_s16(self.neon), vget_low_s16(rhs.neon));
+            let high = vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon));
+
+            let low_sum = vpadd_s32(vget_low_s32(low), vget_high_s32(low));
+            let high_sum = vpadd_s32(vget_low_s32(high), vget_high_s32(high));
+
+            i32x4 { neon: vcombine_s32(low_sum, high_sum) }
           }
         } else {
           i32x4 { arr: [
