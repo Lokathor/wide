@@ -26,8 +26,8 @@ jobs:
         - { target: aarch64-apple-darwin, toolchain: beta, os: macos-latest }
         - { target: aarch64-apple-darwin, toolchain: nightly, os: macos-latest }
         # wasm32
-        - { target: wasm32-wasi, toolchain: "1.89", os: ubuntu-latest, wasmtime: v5.0.0 }
-        - { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasip1, toolchain: "1.89", os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasip1, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasip1, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
         - { target: wasm32-wasip1, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
     steps:
