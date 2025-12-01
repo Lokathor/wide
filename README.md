@@ -44,7 +44,10 @@ However, attempting to use an instruction that is not supported by the CPU will 
 
 * The `rust-version` entry of the crate's `Cargo.toml` will be kept accurate to
   the required Rust compiler version.
-* The `rust-version` entry may increase in *any* new release (major, minor, or patch).
+* A bump in `rust-version` will be released as a change in either the major or
+  minor crate version number, but never as part of a patch release. This way,
+  users stuck on an old toolchain can always get necessary patch updates for
+  their major.minor version of the crate.
 * If your build uses Resolver 3 (or later) this will be fine. If you're using a
   Resolver earlier than 3 then **you are responsible** for pinning a maximum
   crate version when you're using an old Rust version.
