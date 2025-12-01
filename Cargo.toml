@@ -21,6 +21,9 @@ default = ["std"]
 std = []
 serde = ["dep:serde"]
 
+[target.'cfg(target_arch = "x86")'.dependencies]
+safe_arch = { version = "1.0.0", features = ["bytemuck"] }
+
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 safe_arch = { version = "1.0.0", features = ["bytemuck"] }
 

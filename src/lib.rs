@@ -42,6 +42,7 @@ use core::{
 };
 
 #[allow(unused_imports)]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 use safe_arch::*;
 
 use bytemuck::*;
