@@ -48,12 +48,12 @@ jobs:
 
     - name: Test with default CPU features + No Default Cargo Features
       env:
-        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --wasm-features all --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
     - name: Test with default CPU features + All Cargo Features
       env:
-        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --wasm-features all --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
       run: cargo test --target ${{ matrix.rust.target }} --all-features
     
     - name: Build the crate with SSE4.1 (the "native" of CI will be above this)
@@ -61,12 +61,15 @@ jobs:
       run: RUSTFLAGS="-Ctarget-feature=+sse4.1" cargo build --target ${{ matrix.rust.target }}
 
     - name: switch over to native cpu features
+      if: matrix.rust.target != 'wasm32-wasip1'
       run: mv .cargo-ci .cargo
 
     - name: Test with 'native' CPU features + No Default Cargo Features
+      if: matrix.rust.target != 'wasm32-wasip1'
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
     - name: Test with 'native' CPU features + All Cargo Features 
+      if: matrix.rust.target != 'wasm32-wasip1'
       run: cargo test --target ${{ matrix.rust.target }} --all-features
   
   build_check_only:
