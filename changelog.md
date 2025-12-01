@@ -1,5 +1,14 @@
 # `wide` Changelog
 
+## 1.0.2
+
+* fix edge case where `wide` was using the wrong avx512 sub-features to select
+  when `safe_arch` functions could be called, causing build errors.
+
+## 1.0.1
+
+* initial stable version
+
 ## 0.8.3
 
 * `to_bitmask` implemented for all unsigned int types.
