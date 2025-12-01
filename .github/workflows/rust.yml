@@ -49,11 +49,13 @@ jobs:
     - name: Test with default CPU features + No Default Cargo Features
       env:
         CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUSTFLAGS: "-C target-feature=+simd128"
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
     - name: Test with default CPU features + All Cargo Features
       env:
         CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUSTFLAGS: "-C target-feature=+simd128"
       run: cargo test --target ${{ matrix.rust.target }} --all-features
     
     - name: Test the crate with SSE4.1 (the "native" of CI will be above this)
