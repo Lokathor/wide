@@ -27,7 +27,7 @@ SIMD is an optional extension for WASM, but it is [supported by all modern brows
 
 To enable SIMD in your build you need to set `RUSTFLAGS="-C target-feature=+simd128"`, e.g.:
 ```
-RUSTFLAGS="-C target-feature=+simd128" cargo build --target wasm32-unknown-unknown
+RUSTFLAGS="-C target-feature=+simd128" cargo build --target wasm32-wasip1
 ```
 
 ### x86
