@@ -38,7 +38,7 @@ jobs:
         target:  ${{ matrix.rust.target }}
 
     - name: Install wasmtime
-      if: matrix.rust.target == 'wasm32-wasi' || matrix.rust.target == 'wasm32-wasip1'
+      if: matrix.rust.target == 'wasm32-wasip1'
       run: |
         curl https://wasmtime.dev/install.sh -sSf | bash -s -- --version ${{ matrix.rust.wasmtime }}
         echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
@@ -48,12 +48,12 @@ jobs:
 
     - name: Test with default CPU features + No Default Cargo Features
       env:
-        CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
     - name: Test with default CPU features + All Cargo Features
       env:
-        CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --wasm-features all --dir .
       run: cargo test --target ${{ matrix.rust.target }} --all-features
     
     - name: Build the crate with SSE4.1 (the "native" of CI will be above this)
