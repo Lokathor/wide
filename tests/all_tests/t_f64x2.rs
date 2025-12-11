@@ -29,6 +29,24 @@ fn impl_sub_for_f64x2() {
 }
 
 #[test]
+fn impl_neg_for_f64x2() {
+  let a = f64x2::from([1.0, -2.0]);
+  let expected = f64x2::from([-1.0, 2.0]);
+  assert_eq!(-a, expected);
+
+  // Verify that 0.0 and -0.0 are properly sign-flipped
+  let zero = f64x2::splat(0.0);
+  let neg_zero = -zero;
+  let bits: [u64; 2] = cast(neg_zero);
+  assert_eq!(bits, [0x8000000000000000u64; 2]); // All should be -0.0
+
+  let neg_zero_input = f64x2::splat(-0.0);
+  let pos_zero = -neg_zero_input;
+  let bits: [u64; 2] = cast(pos_zero);
+  assert_eq!(bits, [0x0000000000000000u64; 2]); // All should be 0.0
+}
+
+#[test]
 fn impl_mul_for_f64x2() {
   let a = f64x2::from([1.0, 2.0]);
   let b = f64x2::from([5.0, -10.0]);
