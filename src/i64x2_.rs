@@ -568,4 +568,16 @@ impl i64x2 {
   pub fn as_mut_array(&mut self) -> &mut [i64; 2] {
     cast_mut(self)
   }
+
+  #[inline]
+  #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).blend(self, rhs)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).blend(self, rhs)
+  }
 }
