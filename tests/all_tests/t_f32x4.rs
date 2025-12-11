@@ -74,6 +74,24 @@ fn impl_sub_for_f32x4() {
 }
 
 #[test]
+fn impl_neg_for_f32x4() {
+  let a = f32x4::from([1.0, -2.0, 0.0, -0.0]);
+  let expected = f32x4::from([-1.0, 2.0, -0.0, 0.0]);
+  assert_eq!(-a, expected);
+
+  // Verify that 0.0 and -0.0 are properly sign-flipped
+  let zero = f32x4::splat(0.0);
+  let neg_zero = -zero;
+  let bits: [u32; 4] = cast(neg_zero);
+  assert_eq!(bits, [0x80000000u32; 4]); // All should be -0.0
+
+  let neg_zero_input = f32x4::splat(-0.0);
+  let pos_zero = -neg_zero_input;
+  let bits: [u32; 4] = cast(pos_zero);
+  assert_eq!(bits, [0x00000000u32; 4]); // All should be 0.0
+}
+
+#[test]
 fn impl_mul_for_f32x4() {
   let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f32x4::from([5.0, 7.0, 17.0, 1.0]);
