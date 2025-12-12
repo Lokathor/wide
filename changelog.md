@@ -1,5 +1,11 @@
 # `wide` Changelog
 
+## 1.1.0
+
+* add `i64x2::min`, `i64x2::max`.
+* add `u64x2::min`, `u64x2::max`.
+* add `u64x8::min`.
+
 ## 1.0.3
 
 * fix floating point negation edge cases, which also allows optimizations in
