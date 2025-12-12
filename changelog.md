@@ -1,5 +1,10 @@
 # `wide` Changelog
 
+## 1.0.3
+
+* fix floating point negation edge cases, which also allows optimizations in
+  more cases.
+
 ## 1.0.2
 
 * fix edge case where `wide` was using the wrong avx512 sub-features to select
