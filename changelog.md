@@ -1,5 +1,23 @@
 # `wide` Changelog
 
+## 1.0.3
+
+* fix floating point negation edge cases, which also allows optimizations in
+  more cases.
+
+## 1.0.2
+
+* fix edge case where `wide` was using the wrong avx512 sub-features to select
+  when `safe_arch` functions could be called, causing build errors.
+
+## 1.0.1
+
+* initial stable version
+
+## 0.8.3
+
+* `to_bitmask` implemented for all unsigned int types.
+
 ## 0.8.2
 
 * Fixed additional build errors on wasm targets.

@@ -1,13 +1,13 @@
 [package]
 name = "wide"
 description = "A crate to help you go wide."
-version = "0.8.2"
+version = "1.0.3"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/wide"
 readme = "README.md"
 keywords = ["simd", "wide", "lokathor"]
 categories = ["data-structures", "hardware-support"]
-edition = "2018"
+edition = "2024"
 license = "Zlib OR Apache-2.0 OR MIT"
 
 # When updating, also update CI workflows and the badge in the README.
@@ -21,14 +21,19 @@ default = ["std"]
 std = []
 serde = ["dep:serde"]
 
+[target.'cfg(target_arch = "x86")'.dependencies]
+safe_arch = { version = "1.0.0", features = ["bytemuck"] }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+safe_arch = { version = "1.0.0", features = ["bytemuck"] }
+
 [dependencies]
-safe_arch = { version = "0.9.2", features = ["bytemuck"] }
 serde = { version = "1", default-features = false, optional = true }
 bytemuck = "1.24.0"
 
 [dev-dependencies]
 bincode = { version = "1.3.3" }
-criterion = { version = "0.7.0" }
+criterion = { version = "0.7.0", default-features = false}
 
 [[bench]]
 name = "fma_benchmarks"

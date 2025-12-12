@@ -26,10 +26,10 @@ jobs:
         - { target: aarch64-apple-darwin, toolchain: beta, os: macos-latest }
         - { target: aarch64-apple-darwin, toolchain: nightly, os: macos-latest }
         # wasm32
-        #- { target: wasm32-wasi, toolchain: "1.89", os: ubuntu-latest, wasmtime: v5.0.0 }
-        #- { target: wasm32-wasi, toolchain: stable, os: ubuntu-latest, wasmtime: v5.0.0 }
-        #- { target: wasm32-wasip1, toolchain: beta, os: ubuntu-latest, wasmtime: v5.0.0 }
-        #- { target: wasm32-wasip1, toolchain: nightly, os: ubuntu-latest, wasmtime: v5.0.0 }
+        - { target: wasm32-wasip1, toolchain: "1.89", os: ubuntu-latest, wasmtime: v39.0.1 }
+        - { target: wasm32-wasip1, toolchain: stable, os: ubuntu-latest, wasmtime: v39.0.1 }
+        - { target: wasm32-wasip1, toolchain: beta, os: ubuntu-latest, wasmtime: v39.0.1 }
+        - { target: wasm32-wasip1, toolchain: nightly, os: ubuntu-latest, wasmtime: v39.0.1 }
     steps:
     - uses: actions/checkout@v5
     - uses: dtolnay/rust-toolchain@master
@@ -38,7 +38,7 @@ jobs:
         target:  ${{ matrix.rust.target }}
 
     - name: Install wasmtime
-      if: matrix.rust.target == 'wasm32-wasi' || matrix.rust.target == 'wasm32-wasip1'
+      if: matrix.rust.target == 'wasm32-wasip1'
       run: |
         curl https://wasmtime.dev/install.sh -sSf | bash -s -- --version ${{ matrix.rust.wasmtime }}
         echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
@@ -48,25 +48,38 @@ jobs:
 
     - name: Test with default CPU features + No Default Cargo Features
       env:
-        CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUSTFLAGS: "-C target-feature=+simd128"
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
     - name: Test with default CPU features + All Cargo Features
       env:
-        CARGO_TARGET_WASM32_WASI_RUNNER: wasmtime run --wasm-features all --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUSTFLAGS: "-C target-feature=+simd128"
       run: cargo test --target ${{ matrix.rust.target }} --all-features
-
-    - name: Build the crate with SSE4.1 (the "native" of CI will be above this)
+    
+    - name: Test the crate with SSE4.1 (the "native" of CI will be above this)
       if: matrix.rust.os == 'ubuntu-latest' && matrix.rust.target == 'x86_64-unknown-linux-gnu'
-      run: RUSTFLAGS="-Ctarget-feature=+sse4.1" cargo build --target ${{ matrix.rust.target }}
+      run: RUSTFLAGS="-Ctarget-feature=+sse4.1" cargo test --target ${{ matrix.rust.target }} --all-features
+
+    - name: Test the crate with SSE4.2 (the "native" of CI will be above this)
+      if: matrix.rust.os == 'ubuntu-latest' && matrix.rust.target == 'x86_64-unknown-linux-gnu'
+      run: RUSTFLAGS="-Ctarget-feature=+sse4.2" cargo test --target ${{ matrix.rust.target }} --all-features
+
+    - name: Test the crate with SSSE3 (the "native" of CI will be above this)
+      if: matrix.rust.os == 'ubuntu-latest' && matrix.rust.target == 'x86_64-unknown-linux-gnu'
+      run: RUSTFLAGS="-Ctarget-feature=+ssse3" cargo test --target ${{ matrix.rust.target }} --all-features
 
     - name: switch over to native cpu features
+      if: matrix.rust.target != 'wasm32-wasip1'
       run: mv .cargo-ci .cargo
 
     - name: Test with 'native' CPU features + No Default Cargo Features
+      if: matrix.rust.target != 'wasm32-wasip1'
       run: cargo test --target ${{ matrix.rust.target }} --no-default-features
 
-    - name: Test with 'native' CPU features + All Cargo Features
+    - name: Test with 'native' CPU features + All Cargo Features 
+      if: matrix.rust.target != 'wasm32-wasip1'
       run: cargo test --target ${{ matrix.rust.target }} --all-features
 
   build_check_only:

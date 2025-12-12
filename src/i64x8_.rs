@@ -458,7 +458,7 @@ impl i64x8 {
   #[must_use]
   pub fn to_bitmask(self) -> u32 {
     pick! {
-      if #[cfg(target_feature="avx512f")] {
+      if #[cfg(target_feature="avx512dq")] {
         // use f64 move_mask since it is the same size as i64
         movepi64_mask_m512d(cast(self.avx512)) as u32
       } else {
@@ -485,7 +485,7 @@ impl i64x8 {
   #[must_use]
   pub fn all(self) -> bool {
     pick! {
-      if #[cfg(target_feature="avx512f")] {
+      if #[cfg(target_feature="avx512bw")] {
         movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
       } else {
         (self.a & self.b).all()

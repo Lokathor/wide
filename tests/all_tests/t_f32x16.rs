@@ -126,6 +126,30 @@ fn impl_sub_for_f32x16() {
 }
 
 #[test]
+fn impl_neg_for_f32x16() {
+  let a = f32x16::from([
+    1.0, -2.0, 3.0, -4.0, 5.0, -6.0, 7.0, -8.0, 0.0, -0.0, f32::INFINITY,
+    f32::NEG_INFINITY, 9.0, -10.0, 11.0, -12.0,
+  ]);
+  let expected = f32x16::from([
+    -1.0, 2.0, -3.0, 4.0, -5.0, 6.0, -7.0, 8.0, -0.0, 0.0, f32::NEG_INFINITY,
+    f32::INFINITY, -9.0, 10.0, -11.0, 12.0,
+  ]);
+  assert_eq!(-a, expected);
+
+  // Verify that 0.0 and -0.0 are properly sign-flipped
+  let zero = f32x16::splat(0.0);
+  let neg_zero = -zero;
+  let bits: [u32; 16] = cast(neg_zero);
+  assert_eq!(bits, [0x80000000u32; 16]); // All should be -0.0
+
+  let neg_zero_input = f32x16::splat(-0.0);
+  let pos_zero = -neg_zero_input;
+  let bits: [u32; 16] = cast(pos_zero);
+  assert_eq!(bits, [0x00000000u32; 16]); // All should be 0.0
+}
+
+#[test]
 fn impl_mul_for_f32x16() {
   let a = f32x16::from([
     1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
