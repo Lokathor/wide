@@ -482,6 +482,18 @@ impl u64x2 {
 
   #[inline]
   #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).blend(self, rhs)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).blend(self, rhs)
+  }
+
+  #[inline]
+  #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
     let arr1: [u64; 2] = cast(self);
     let arr2: [u64; 2] = cast(rhs);

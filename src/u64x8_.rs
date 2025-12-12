@@ -380,6 +380,21 @@ impl u64x8 {
 
   #[inline]
   #[must_use]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: min_u64_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.min(rhs.a),
+          b: self.b.min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
