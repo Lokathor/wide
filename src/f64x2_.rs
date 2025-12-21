@@ -176,6 +176,27 @@ impl Div for f64x2 {
   }
 }
 
+impl Neg for f64x2 {
+  type Output = Self;
+  #[inline]
+  fn neg(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: bitxor_m128d(self.sse, Self::splat(-0.0).sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_neg(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vnegq_f64(self.neon) }}
+      } else {
+        Self { arr: [
+          -self.arr[0],
+          -self.arr[1],
+        ]}
+      }
+    }
+  }
+}
+
 impl Add<f64> for f64x2 {
   type Output = Self;
   #[inline]

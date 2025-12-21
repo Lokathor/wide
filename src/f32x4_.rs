@@ -181,6 +181,29 @@ impl Div for f32x4 {
   }
 }
 
+impl Neg for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn neg(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: bitxor_m128(self.sse, Self::splat(-0.0).sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_neg(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vnegq_f32(self.neon) }}
+      } else {
+        Self { arr: [
+          -self.arr[0],
+          -self.arr[1],
+          -self.arr[2],
+          -self.arr[3],
+        ]}
+      }
+    }
+  }
+}
+
 impl Add<f32> for f32x4 {
   type Output = Self;
   #[inline]

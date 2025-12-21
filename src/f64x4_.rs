@@ -119,6 +119,23 @@ impl Div for f64x4 {
   }
 }
 
+impl Neg for f64x4 {
+  type Output = Self;
+  #[inline]
+  fn neg(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: bitxor_m256d(self.avx, Self::splat(-0.0).avx) }
+      } else {
+        Self {
+          a : self.a.neg(),
+          b : self.b.neg(),
+        }
+      }
+    }
+  }
+}
+
 impl Add<f64> for f64x4 {
   type Output = Self;
   #[inline]
