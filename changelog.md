@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## 1.1.1
+
+* Further improvements to the `Neg` impls on non-x86 targets.
+
 ## 1.1.0
 
 * add `i64x2::min`, `i64x2::max`.
