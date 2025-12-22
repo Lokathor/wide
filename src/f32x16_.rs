@@ -81,6 +81,23 @@ impl Div for f32x16 {
   }
 }
 
+impl Neg for f32x16 {
+  type Output = Self;
+  #[inline]
+  fn neg(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512(self.avx512, Self::splat(-0.0).avx512) }
+      } else {
+        Self {
+          a : self.a.neg(),
+          b : self.b.neg(),
+        }
+      }
+    }
+  }
+}
+
 impl Add<f32> for f32x16 {
   type Output = Self;
   #[inline]

@@ -88,6 +88,23 @@ impl Div for f64x8 {
   }
 }
 
+impl Neg for f64x8 {
+  type Output = Self;
+  #[inline]
+  fn neg(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512d(self.avx512, Self::splat(-0.0).avx512) }
+      } else {
+        Self {
+          a : self.a.neg(),
+          b : self.b.neg(),
+        }
+      }
+    }
+  }
+}
+
 impl Add<f64> for f64x8 {
   type Output = Self;
   #[inline]
