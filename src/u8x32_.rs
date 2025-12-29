@@ -161,12 +161,13 @@ impl CmpLt for u8x32 {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_gt_mask_i8_m256i(rhs.avx,self.avx) }
+        // Convert from u8 to i8.
+        let offset = Self::splat(0x80);
+        let self_i8 = self.bitxor(offset).avx;
+        let rhs_i8 = rhs.bitxor(offset).avx;
+        Self { avx: cmp_gt_mask_i8_m256i(rhs_i8, self_i8)}
       } else {
-        Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
-        }
+        Self { a: self.a.simd_lt(rhs.a), b: self.b.simd_lt(rhs.b) }
       }
     }
   }
@@ -178,14 +179,14 @@ impl CmpLe for u8x32 {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        // a <= b  is equivalent to  !(b < a)  or  !(a > b)
-        let gt_mask = Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx)};
+        // Convert from u8 to i8.
+        let offset = Self::splat(0x80);
+        let self_i8 = self.bitxor(offset).avx;
+        let rhs_i8 = rhs.bitxor(offset).avx;
+        let gt_mask = Self { avx : cmp_gt_mask_i8_m256i(self_i8,rhs_i8) };
         Self { avx: gt_mask.bitxor(Self::splat(0xFF)).avx }
       } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
+        Self { a: self.a.simd_le(rhs.a), b: self.b.simd_le(rhs.b) }
       }
     }
   }
@@ -197,13 +198,14 @@ impl CmpGe for u8x32 {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        let gt_mask = Self { avx : cmp_gt_mask_i8_m256i(rhs.avx, self.avx)};
-        Self { avx: gt_mask.bitxor(Self::splat(0xFF)).avx }
+        // Convert from u8 to i8.
+        let offset = Self::splat(0x80);
+        let self_i8 = self.bitxor(offset).avx;
+        let rhs_i8 = rhs.bitxor(offset).avx;
+        let lt_mask = Self { avx: cmp_gt_mask_i8_m256i(rhs_i8, self_i8)};
+        Self { avx: lt_mask.bitxor(Self::splat(0xFF)).avx }
       } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
+        Self { a: self.a.simd_ge(rhs.a), b: self.b.simd_ge(rhs.b) }
       }
     }
   }
@@ -215,12 +217,13 @@ impl CmpGt for u8x32 {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
+        // Convert from u8 to i8.
+        let offset = Self::splat(0x80);
+        let self_i8 = self.bitxor(offset).avx;
+        let rhs_i8 = rhs.bitxor(offset).avx;
+        Self { avx : cmp_gt_mask_i8_m256i(self_i8,rhs_i8) }
       } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
+        Self { a: self.a.simd_gt(rhs.a), b: self.b.simd_gt(rhs.b) }
       }
     }
   }
