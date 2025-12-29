@@ -151,6 +151,50 @@ fn impl_u8x16_cmp_eq() {
 }
 
 #[test]
+fn impl_u8x16_cmp_lt() {
+  let a = u8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = u8x16::from([2_u8; 16]);
+  let expected =
+    u8x16::from([0xff, 0, 0, 0, 0xff, 0, 0, 0, 0xff, 0, 0, 0, 0xff, 0, 0, 0]);
+  let actual = a.simd_lt(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u8x16_cmp_le() {
+  let a = u8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = u8x16::from([2_u8; 16]);
+  let expected = u8x16::from([
+    0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+  ]);
+  let actual = a.simd_le(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u8x16_cmp_ge() {
+  let a = u8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = u8x16::from([2_u8; 16]);
+  let expected = u8x16::from([
+    0, 0xff, 0xff, 0xff, 0, 0xff, 0xff, 0xff, 0, 0xff, 0xff, 0xff, 0, 0xff,
+    0xff, 0xff,
+  ]);
+  let actual = a.simd_ge(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u8x16_cmp_gt() {
+  let a = u8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = u8x16::from([2_u8; 16]);
+  let expected = u8x16::from([
+    0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff,
+  ]);
+  let actual = a.simd_gt(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_u8x16_blend() {
   let use_t: u8 = u8::MAX;
   let t =
