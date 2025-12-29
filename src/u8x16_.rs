@@ -352,10 +352,11 @@ impl u8x16 {
   pub fn simd_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
+        // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_flipped = self.bitxor(offset);
-        let rhs_flipped = rhs.bitxor(offset);
-        Self { sse: cmp_lt_mask_i8_m128i(self_flipped.sse, rhs_flipped.sse) }
+        let self_i8 = self.bitxor(offset).sse;
+        let rhs_i8 = rhs.bitxor(offset).sse;
+        Self { sse: cmp_lt_mask_i8_m128i(self_i8, rhs_i8) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u8x16_lt(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -387,11 +388,12 @@ impl u8x16 {
   pub fn simd_le(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
+        // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_flipped = self.bitxor(offset);
-        let rhs_flipped = rhs.bitxor(offset);
+        let self_i8 = self.bitxor(offset).sse;
+        let rhs_i8 = rhs.bitxor(offset).sse;
         // a <= b  is equivalent to  !(b < a)  or  !(a > b)
-        let gt_mask = u8x16 { sse: cmp_gt_mask_i8_m128i(self_flipped.sse, rhs_flipped.sse) };
+        let gt_mask = u8x16 { sse: cmp_gt_mask_i8_m128i(self_i8, rhs_i8) };
         Self { sse: gt_mask.bitxor(u8x16::splat(0xFF)).sse }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u8x16_le(self.simd, rhs.simd) }
@@ -424,11 +426,12 @@ impl u8x16 {
   pub fn simd_ge(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
+        // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_flipped = self.bitxor(offset);
-        let rhs_flipped = rhs.bitxor(offset);
+        let self_i8 = self.bitxor(offset).sse;
+        let rhs_i8 = rhs.bitxor(offset).sse;
         // a >= b  is equivalent to  !(b > a)  or  !(a < b)
-        let lt_mask = u8x16 { sse: cmp_lt_mask_i8_m128i(self_flipped.sse, rhs_flipped.sse) };
+        let lt_mask = u8x16 { sse: cmp_lt_mask_i8_m128i(self_i8, rhs_i8) };
         Self { sse: lt_mask.bitxor(u8x16::splat(0xFF)).sse }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u8x16_ge(self.simd, rhs.simd) }
@@ -461,10 +464,11 @@ impl u8x16 {
   pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
+        // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_flipped = self.bitxor(offset);
-        let rhs_flipped = rhs.bitxor(offset);
-        Self { sse: cmp_gt_mask_i8_m128i(self_flipped.sse, rhs_flipped.sse) }
+        let self_i8 = self.bitxor(offset).sse;
+        let rhs_i8 = rhs.bitxor(offset).sse;
+        Self { sse: cmp_gt_mask_i8_m128i(self_i8, rhs_i8) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: u8x16_gt(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
