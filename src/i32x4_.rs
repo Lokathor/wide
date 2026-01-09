@@ -608,6 +608,8 @@ impl i32x4 {
         Self { sse: max_i32_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i32x4_max(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmaxq_s32(self.neon, rhs.neon) }}
       } else {
         self.simd_lt(rhs).blend(rhs, self)
       }
