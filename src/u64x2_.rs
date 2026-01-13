@@ -461,6 +461,7 @@ impl u64x2 {
   
   #[inline]
   #[must_use]
+  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     i64x2::to_bitmask(cast(self))
   }

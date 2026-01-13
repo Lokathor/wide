@@ -700,6 +700,7 @@ impl u32x4 {
   
   #[inline]
   #[must_use]
+  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     i32x4::to_bitmask(cast(self))
   }

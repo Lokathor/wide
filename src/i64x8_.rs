@@ -456,6 +456,7 @@ impl i64x8 {
   /// lane being the lowest bit
   #[inline]
   #[must_use]
+  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512dq")] {

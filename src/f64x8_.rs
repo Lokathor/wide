@@ -1228,6 +1228,7 @@ impl f64x8 {
   }
   #[inline]
   #[must_use]
+  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {

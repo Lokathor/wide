@@ -605,6 +605,7 @@ impl i8x16 {
 
   #[inline]
   #[must_use]
+  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
