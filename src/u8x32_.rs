@@ -252,6 +252,7 @@ impl u8x32 {
 
   #[inline]
   #[must_use]
+  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     i8x32::to_bitmask(cast(self)) as u32
   }
