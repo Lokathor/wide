@@ -48,7 +48,7 @@ use safe_arch::*;
 use bytemuck::*;
 
 #[cfg(feature = "serde")]
-use serde::{ser::SerializeTuple, Deserialize, Serialize};
+use serde_core::{ser::SerializeTuple, Deserialize, Serialize};
 
 #[macro_use]
 mod macros;
@@ -982,7 +982,7 @@ macro_rules! impl_serde {
       #[inline]
       fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
       where
-        S: serde::Serializer,
+        S: serde_core::Serializer,
       {
         let array = self.as_array();
         let mut seq = serializer.serialize_tuple($len)?;
@@ -998,7 +998,7 @@ macro_rules! impl_serde {
       #[inline]
       fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
       where
-        D: serde::Deserializer<'de>,
+        D: serde_core::Deserializer<'de>,
       {
         Ok(<[$t; $len]>::deserialize(deserializer)?.into())
       }
