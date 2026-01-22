@@ -589,6 +589,54 @@ impl u8x16 {
   pub fn swizzle_relaxed(self, rhs: u8x16) -> u8x16 {
     cast(i8x16::swizzle_relaxed(cast(self), cast(rhs)))
   }
+  
+  #[inline]
+  #[must_use]
+  pub fn simd_gt(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature = "sse2")] {
+        use safe_arch::*;
+        
+        let bias = m128i::from([128u8; 16]);
+
+        let a_biased = sub_i8_m128i(self.sse, bias);
+        let b_biased = sub_i8_m128i(rhs.sse, bias);
+        let mask = cmp_gt_mask_i8_m128i(a_biased, b_biased);
+        
+        Self { sse: mask }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u8x16_gt(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+        unsafe {
+          use core::arch::aarch64::*;
+          Self {
+            neon: vcgtq_u8(self.neon, rhs.neon),
+          }
+        }
+      } else {
+        Self {
+          arr: [
+            if self.arr[0] > rhs.arr[0] { u8::MAX } else { 0 },
+            if self.arr[1] > rhs.arr[1] { u8::MAX } else { 0 },
+            if self.arr[2] > rhs.arr[2] { u8::MAX } else { 0 },
+            if self.arr[3] > rhs.arr[3] { u8::MAX } else { 0 },
+            if self.arr[4] > rhs.arr[4] { u8::MAX } else { 0 },
+            if self.arr[5] > rhs.arr[5] { u8::MAX } else { 0 },
+            if self.arr[6] > rhs.arr[6] { u8::MAX } else { 0 },
+            if self.arr[7] > rhs.arr[7] { u8::MAX } else { 0 },
+            if self.arr[8] > rhs.arr[8] { u8::MAX } else { 0 },
+            if self.arr[9] > rhs.arr[9] { u8::MAX } else { 0 },
+            if self.arr[10] > rhs.arr[10] { u8::MAX } else { 0 },
+            if self.arr[11] > rhs.arr[11] { u8::MAX } else { 0 },
+            if self.arr[12] > rhs.arr[12] { u8::MAX } else { 0 },
+            if self.arr[13] > rhs.arr[13] { u8::MAX } else { 0 },
+            if self.arr[14] > rhs.arr[14] { u8::MAX } else { 0 },
+            if self.arr[15] > rhs.arr[15] { u8::MAX } else { 0 },            
+          ]
+        }
+      }
+    }
+  }  
 
   #[inline]
   #[must_use]

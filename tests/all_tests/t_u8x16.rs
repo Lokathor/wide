@@ -151,6 +151,55 @@ fn impl_u8x16_cmp_eq() {
 }
 
 #[test]
+fn impl_u8x16_cmp_gt() {
+  let a = u8x16::from([
+    1,
+    2,
+    u8::MAX,
+    4,
+    1,
+    2,
+    8,
+    10,
+    1,
+    2,
+    u8::MIN,
+    4,
+    1,
+    2,
+    8,
+    10,
+  ]);
+  let b = u8x16::from([5_u8; 16]);
+  let expected = u8x16::from([
+    0,
+    0,
+    u8::MAX,
+    0,
+    0,
+    0,
+    u8::MAX,
+    u8::MAX,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    u8::MAX,
+    u8::MAX,
+  ]);
+  let actual = a.simd_gt(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u8x16, b| a.simd_gt(b),
+    |a, b| if a > b { u8::MAX } else { 0 },
+  );
+  
+}
+
+#[test]
 fn impl_u8x16_blend() {
   let use_t: u8 = u8::MAX;
   let t =
