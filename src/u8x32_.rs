@@ -172,6 +172,28 @@ impl Not for u8x32 {
   }
 }
 
+impl CmpGt for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature = "avx2")] {
+        let bias = m256i::from([128u8; 32]);
+        let a_biased = sub_i8_m256i(self.avx, bias);
+        let b_biased = sub_i8_m256i(rhs.avx, bias);
+        let mask = cmp_gt_mask_i8_m256i(a_biased, b_biased);
+
+        Self { avx: mask }
+      } else {
+        Self {
+          a: self.a.simd_gt(rhs.a),
+          b: self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl u8x32 {
   #[inline]
   #[must_use]

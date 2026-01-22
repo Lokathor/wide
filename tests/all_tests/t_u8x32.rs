@@ -110,6 +110,88 @@ fn impl_u8x32_cmp_eq() {
 }
 
 #[test]
+fn impl_u8x32_cmp_gt() {
+  let a = u8x32::from([
+    1,
+    2,
+    u8::MAX,
+    4,
+    1,
+    2,
+    8,
+    10,
+    1,
+    2,
+    u8::MIN,
+    4,
+    1,
+    2,
+    8,
+    10,
+
+    6,
+    3,
+    9,
+    u8::MIN,
+    10,
+    1,
+    2,
+    4,
+    u8::MAX,
+    19,
+    4,
+    2,
+    0,
+    7,
+    u8::MAX,
+    u8::MIN,
+  ]);
+  let b = u8x32::from([5_u8; 32]);
+  let expected = u8x32::from([
+    0,
+    0,
+    u8::MAX,
+    0,
+    0,
+    0,
+    u8::MAX,
+    u8::MAX,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    u8::MAX,
+    u8::MAX,
+    
+    u8::MAX,    // 6
+    0,          // 3
+    u8::MAX,    // 9
+    0,          // MIN
+    u8::MAX,    // 10
+    0,          // 1
+    0,          // 2
+    0,          // 4
+    u8::MAX,    // MAX
+    u8::MAX,    // 19
+    0,          // 4
+    0,          // 2
+    0,          // 0
+    u8::MAX,    // 7
+    u8::MAX,    // MAX
+    0,          // MIN
+  ]);
+  let actual = a.simd_gt(b);
+  assert_eq!(expected, actual);
+
+  crate::test_random_vector_vs_scalar(
+    |a: u8x32, b| a.simd_gt(b),
+    |a, b| if a > b { u8::MAX } else { 0 },
+  );
+}
+
+#[test]
 fn impl_u8x32_not() {
   let a = u8x32::from([
     233, 90, 206, 251, 179, 93, 136, 194, 135, 57, 6, 243, 234, 196, 243, 49,
