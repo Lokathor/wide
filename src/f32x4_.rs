@@ -937,7 +937,7 @@ impl f32x4 {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self { sse: fused_mul_sub_m128(self.sse, m.sse, s.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f32(vnegq_f32(s.neon), self.neon, m.neon) } }
+        unsafe { Self { neon: vfmsq_f32(s.neon, self.neon, m.neon) } }
       } else {
         (self * m) - s
       }

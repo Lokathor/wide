@@ -784,7 +784,7 @@ impl f64x2 {
       if #[cfg(all(target_feature="fma"))] {
         Self { sse: fused_mul_sub_m128d(self.sse, m.sse, s.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f64(vnegq_f64(s.neon), self.neon, m.neon) } }
+        unsafe { Self { neon: vfmsq_f64(s.neon, self.neon, m.neon) } }
       } else {
         (self * m) - s
       }
