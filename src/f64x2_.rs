@@ -466,6 +466,8 @@ impl f64x2 {
         Self { sse: blend_varying_m128d(f.sse, t.sse, self.sse) }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vbslq_f64(vreinterpretq_u64_f64(self.neon), t.neon, f.neon) }}
       } else {
         generic_bit_blend(self, t, f)
       }

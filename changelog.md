@@ -1,5 +1,11 @@
 # `wide` Changelog
 
+## 1.1.2
+
+* Use native NEON intrinsics for `f32x4::blend` and `f64x2::blend` on aarch64,
+  improving performance by using a single `vbslq` instruction instead of the
+  generic 3-operation fallback.
+
 ## 1.1.1
 
 * Further improvements to the `Neg` impls on non-x86 targets.
