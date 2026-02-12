@@ -6,7 +6,10 @@ pick! {
     #[repr(C, align(16))]
     pub struct f32x4 { pub(crate) sse: m128 }
   } else if #[cfg(target_feature="simd128")] {
+    #[cfg(target_arch = "wasm32")]
     use core::arch::wasm32::*;
+    #[cfg(target_arch = "wasm64")]
+    use core::arch::wasm64::*;
 
     #[derive(Clone, Copy)]
     #[repr(transparent)]
