@@ -306,6 +306,30 @@ impl i16x32 {
     }
   }
 
+  /// horizontal add of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> i16 {
+    let arr: [i16x16; 2] = cast(self);
+    (arr[0] + arr[1]).reduce_add()
+  }
+
+  /// horizontal min of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i16 {
+    let arr: [i16x16; 2] = cast(self);
+    arr[0].min(arr[1]).reduce_min()
+  }
+
+  /// horizontal max of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i16 {
+    let arr: [i16x16; 2] = cast(self);
+    arr[0].max(arr[1]).reduce_max()
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -376,6 +400,25 @@ impl i16x32 {
         Self {
           a: self.a.saturating_sub(rhs.a),
           b: self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  /// Calculates partial dot product.
+  /// Multiplies packed signed 16-bit integers, producing intermediate signed
+  /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
+  /// integers.
+  #[inline]
+  #[must_use]
+  pub fn dot(self, rhs: Self) -> i32x16 {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        i32x16 { avx512: mul_i16_horizontal_add_m512i(self.avx512, rhs.avx512) }
+      } else {
+        i32x16 {
+          a : self.a.dot(rhs.a),
+          b : self.b.dot(rhs.b),
         }
       }
     }
