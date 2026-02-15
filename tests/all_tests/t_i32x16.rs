@@ -452,3 +452,31 @@ fn test_i32x4_move_mask() {
     |acc, a, idx| acc | if a < 0 { 1 << idx } else { 0 },
   );
 }
+
+#[test]
+fn impl_i32x16_reduce_add() {
+  let p = i32x16::from([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+  ]);
+  assert_eq!(p.reduce_add(), 136);
+}
+
+#[test]
+fn impl_i32x16_reduce_min() {
+  for i in 0..16 {
+    let mut v = [i32::MAX; 16];
+    v[i] = i32::MIN;
+    let p = i32x16::from(v);
+    assert_eq!(p.reduce_min(), i32::MIN);
+  }
+}
+
+#[test]
+fn impl_i32x16_reduce_max() {
+  for i in 0..16 {
+    let mut v = [i32::MIN; 16];
+    v[i] = i32::MAX;
+    let p = i32x16::from(v);
+    assert_eq!(p.reduce_max(), i32::MAX);
+  }
+}

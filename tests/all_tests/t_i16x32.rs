@@ -743,3 +743,56 @@ fn test_i16x32_move_mask() {
   let actual = a.to_bitmask();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_dot_for_i16x32() {
+  let a = i16x32::from([
+    1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN,
+    10, 20, 30, 40, 50, 60, i16::MAX - 1, i16::MAX,
+    1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN,
+    10, 20, 30, 40, 50, 60, i16::MAX - 1, i16::MAX,
+  ]);
+  let b = i16x32::from([
+    17, -18, 190, -20, 21, -22, 3, 2,
+    170, -180, 1900, -200, 210, -220, 30, 20,
+    17, -18, 190, -20, 21, -22, 3, 2,
+    170, -180, 1900, -200, 210, -220, 30, 20,
+  ]);
+  let expected = i32x16::from([
+    -19, 490, -27, -163837,
+    -1900, 49000, -2700, 1638320,
+    -19, 490, -27, -163837,
+    -1900, 49000, -2700, 1638320,
+  ]);
+  let actual = a.dot(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x32_reduce_add() {
+  let p = i16x32::from([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+  ]);
+  assert_eq!(p.reduce_add(), 528);
+}
+
+#[test]
+fn impl_i16x32_reduce_min() {
+  for i in 0..32 {
+    let mut v = [i16::MAX; 32];
+    v[i] = i16::MIN;
+    let p = i16x32::from(v);
+    assert_eq!(p.reduce_min(), i16::MIN);
+  }
+}
+
+#[test]
+fn impl_i16x32_reduce_max() {
+  for i in 0..32 {
+    let mut v = [i16::MIN; 32];
+    v[i] = i16::MAX;
+    let p = i16x32::from(v);
+    assert_eq!(p.reduce_max(), i16::MAX);
+  }
+}
