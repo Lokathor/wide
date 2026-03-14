@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## 1.2.0
+
+* added reduce operations and dot to `i16x32`
+
 ## 1.1.2
 
 * Use native NEON intrinsics for `f32x4::blend` and `f64x2::blend` on aarch64,
