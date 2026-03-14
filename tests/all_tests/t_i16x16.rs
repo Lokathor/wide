@@ -699,7 +699,7 @@ fn impl_i16x16_reduce_max() {
     let mut v = [i16::MIN; 16];
     v[i] = i16::MAX;
     let p = i16x16::from(v);
-    assert_eq!(p.reduce_min(), i16::MIN);
+    assert_eq!(p.reduce_max(), i16::MAX);
   }
 }
 

@@ -336,6 +336,30 @@ impl i32x16 {
       }
     }
   }
+
+  /// horizontal add of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> i32 {
+    let arr: [i32x8; 2] = cast(self);
+    (arr[0] + arr[1]).reduce_add()
+  }
+
+  /// horizontal min of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i32 {
+    let arr: [i32x8; 2] = cast(self);
+    arr[0].min(arr[1]).reduce_min()
+  }
+
+  /// horizontal max of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i32 {
+    let arr: [i32x8; 2] = cast(self);
+    arr[0].max(arr[1]).reduce_max()
+  }
   
   #[inline]
   #[must_use]
