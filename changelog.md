@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+* Corrected the behaviour of `f32x16::is_finite` and `f32x16::round_int`.
+
+* Added `f32x16` missing functions: `abs`, `floor`, `ceil`, `fast_max`,
+  `fast_min`, `is_inf`, `fast_round_int`, `fast_trunc_int`, `trunc_int`,
+  `flip_signs`, `copysign`, `asin_acos`, `asin`, `acos`, `atan`, `atan2`,
+  `sin_cos`, `sin`, `cos`, `tan`, `to_degrees`, `to_radians`, `recip`,
+  `recip_sqrt`, `sqrt`, `to_bitmask`, `any`, `all`, `none`, `sign_bit`,
+  `reduce_add`, `exp`, `ln`, `log2`, `log10`, `pow_f32x16`, `powf`, `transpose`,
+  `from_i32x16`.
+
 * Added floating-point constants to `f32x16` and made `f32x16::new` a `const fn`.
 
 ## 1.2.0
