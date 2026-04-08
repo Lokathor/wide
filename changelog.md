@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## Unreleased
+
+* Added floating-point constants to `f32x16` and made `f32x16::new` a `const fn`.
+
 ## 1.2.0
 
 * added reduce operations and dot to `i16x32`

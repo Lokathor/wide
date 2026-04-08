@@ -12,6 +12,38 @@ pick! {
   }
 }
 
+macro_rules! const_f32_as_f32x16 {
+  ($i:ident, $f:expr) => {
+    #[allow(non_upper_case_globals)]
+    pub const $i: f32x16 = f32x16::new([$f; 16]);
+  };
+}
+
+impl f32x16 {
+  const_f32_as_f32x16!(ONE, 1.0);
+  const_f32_as_f32x16!(HALF, 0.5);
+  const_f32_as_f32x16!(ZERO, 0.0);
+  const_f32_as_f32x16!(E, core::f32::consts::E);
+  const_f32_as_f32x16!(FRAC_1_PI, core::f32::consts::FRAC_1_PI);
+  const_f32_as_f32x16!(FRAC_2_PI, core::f32::consts::FRAC_2_PI);
+  const_f32_as_f32x16!(FRAC_2_SQRT_PI, core::f32::consts::FRAC_2_SQRT_PI);
+  const_f32_as_f32x16!(FRAC_1_SQRT_2, core::f32::consts::FRAC_1_SQRT_2);
+  const_f32_as_f32x16!(FRAC_PI_2, core::f32::consts::FRAC_PI_2);
+  const_f32_as_f32x16!(FRAC_PI_3, core::f32::consts::FRAC_PI_3);
+  const_f32_as_f32x16!(FRAC_PI_4, core::f32::consts::FRAC_PI_4);
+  const_f32_as_f32x16!(FRAC_PI_6, core::f32::consts::FRAC_PI_6);
+  const_f32_as_f32x16!(FRAC_PI_8, core::f32::consts::FRAC_PI_8);
+  const_f32_as_f32x16!(LN_2, core::f32::consts::LN_2);
+  const_f32_as_f32x16!(LN_10, core::f32::consts::LN_10);
+  const_f32_as_f32x16!(LOG2_E, core::f32::consts::LOG2_E);
+  const_f32_as_f32x16!(LOG10_E, core::f32::consts::LOG10_E);
+  const_f32_as_f32x16!(LOG10_2, core::f32::consts::LOG10_2);
+  const_f32_as_f32x16!(LOG2_10, core::f32::consts::LOG2_10);
+  const_f32_as_f32x16!(PI, core::f32::consts::PI);
+  const_f32_as_f32x16!(SQRT_2, core::f32::consts::SQRT_2);
+  const_f32_as_f32x16!(TAU, core::f32::consts::TAU);
+}
+
 unsafe impl Zeroable for f32x16 {}
 unsafe impl Pod for f32x16 {}
 
@@ -318,8 +350,8 @@ impl CmpNe for f32x16 {
 impl f32x16 {
   #[inline]
   #[must_use]
-  pub fn new(array: [f32; 16]) -> Self {
-    Self::from(array)
+  pub const fn new(array: [f32; 16]) -> Self {
+    unsafe { core::mem::transmute(array) }
   }
 
   #[inline]
