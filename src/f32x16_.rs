@@ -1117,11 +1117,11 @@ impl f32x16 {
   #[must_use]
   pub fn recip_sqrt(self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx")] {
+      if #[cfg(target_feature="avx512f")] {
         // TODO: Add `_mm512_rsqrt14_ps` to `safe_arch`, looks like it is
         // missing, then consider updating this implementation if the relative
         // error is acceptable.
-        self.recip().sqrt()
+        self.sqrt().recip()
       } else {
         Self {
           a : self.a.recip_sqrt(),
