@@ -19,6 +19,16 @@
 //! instructions to complete the task. In the worst case, the code just becomes
 //! totally scalar (though the math is still correct, at least).
 //!
+//! ## Casting
+//!
+//! The SIMD types implement the [`bytemuck::Pod`] trait, which means that it
+//! is possible to do bitwise casts between SIMD types of the same size with
+//! the [`bytemuck::cast()`] function and others. `bytemuck` is re-exported by
+//! this crate for convenience.
+//!
+//! This typically does not have much, if any, runtime overhead in optimized
+//! builds.
+//!
 //! ## Crate Features
 //!
 //! * `std`: This causes the feature to link to `std`.
@@ -46,6 +56,9 @@ use core::{
 use safe_arch::*;
 
 use bytemuck::*;
+
+// Re-export so that users don't need to add a bytemuck dependency of their own
+pub use bytemuck;
 
 #[cfg(feature = "serde")]
 use serde_core::{ser::SerializeTuple, Deserialize, Serialize};
