@@ -1,5 +1,11 @@
 # `wide` Changelog
 
+## Unreleased
+
+* Fixes the behaviour of `f32x16` functions `is_finite` and `round_int`.
+
+* Added missing `f32x16` functionality.
+
 ## 1.2.0
 
 * added reduce operations and dot to `i16x32`
