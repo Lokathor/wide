@@ -413,6 +413,23 @@ fn impl_f32x4_trunc_int() {
 }
 
 #[test]
+fn impl_f32x4_fract() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [5.3, -5.3, 27.8, -27.8],
+    [2401.63, -2401.63, 4911111.2, -4911111.2],
+    [18388608.0, 18388608.0, f32::MAX, f32::MIN],
+    [f32::INFINITY, f32::NEG_INFINITY, f32::NAN, 30.0],
+  ] {
+    let expected = f32x4::new(array.map(f32::fract));
+    let actual = f32x4::new(array).fract();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f32x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f32x4_mul_add() {
   let a = f32x4::from([2.0, 3.0, 4.0, 5.0]);
   let b = f32x4::from([4.0, 5.0, 6.0, 7.0]);

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Added wide-float function `trunc`.
+* Added more wide-float functionality.
 
 ## 1.3.0
 

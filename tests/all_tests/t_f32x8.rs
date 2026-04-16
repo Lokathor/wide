@@ -474,6 +474,40 @@ fn impl_f32x8_trunc_int() {
 }
 
 #[test]
+fn impl_f32x8_fract() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0, 5.3, -5.3, 27.8, -27.8],
+    [5.3, -5.3, 27.8, -27.8, 2401.63, -2401.63, 4911111.2, -4911111.2],
+    [
+      2401.63,
+      -2401.63,
+      4911111.2,
+      -4911111.2,
+      18388608.0,
+      18388608.0,
+      f32::MAX,
+      f32::MIN,
+    ],
+    [
+      f32::INFINITY,
+      f32::NEG_INFINITY,
+      f32::NAN,
+      30.0,
+      2401.63,
+      -2401.63,
+      4911111.2,
+      -4911111.2,
+    ],
+  ] {
+    let expected = f32x8::new(array.map(f32::fract));
+    let actual = f32x8::new(array).fract();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f32x8::ZERO);
+  }
+}
+
+#[test]
 fn impl_f32x8_mul_add() {
   let a = f32x8::from([2.0, 3.0, 4.0, 5.0, 6.7, 9.2, 11.5, 12.2]);
   let b = f32x8::from([4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6]);

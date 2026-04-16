@@ -912,6 +912,12 @@ impl f32x4 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn fract(self) -> Self {
+    self - self.trunc()
+  }
+
   /// Performs a multiply-add operation: `self * m + a`
   ///
   /// When hardware FMA support is available, this computes the result with a

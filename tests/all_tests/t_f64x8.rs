@@ -481,6 +481,39 @@ fn impl_f64x8_trunc() {
 }
 
 #[test]
+fn impl_f64x8_fract() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0, 27.8, -27.8, 2401.63, -2401.63],
+    [
+      18e15 - 2.7,
+      -18e15 + 2.7,
+      18e15 + 2.3,
+      -18e15 - 2.3,
+      1e20,
+      -1e20,
+      f64::MAX,
+      f64::MIN,
+    ],
+    [
+      f64::INFINITY,
+      f64::NEG_INFINITY,
+      f64::NAN,
+      30.0,
+      1e20,
+      -1e20,
+      f64::MAX,
+      f64::MIN,
+    ],
+  ] {
+    let expected = f64x8::new(array.map(f64::fract));
+    let actual = f64x8::new(array).fract();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x8::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x8_mul_add() {
   let a = f64x8::from([2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
   let b = f64x8::from([4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]);
