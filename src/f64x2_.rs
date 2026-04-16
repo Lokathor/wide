@@ -1651,6 +1651,14 @@ impl f64x2 {
     }
   }
 
+  /// horizontal multiplication of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> f64 {
+    let arr: [f64; 2] = cast(self);
+    arr.iter().product()
+  }
+
   #[inline]
   #[must_use]
   pub fn ln(self) -> Self {

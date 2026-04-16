@@ -844,6 +844,12 @@ fn impl_f64x4_reduce_add() {
   assert_eq!(p.reduce_add(), 0.004);
 }
 
+#[test]
+fn impl_f64x4_reduce_mul() {
+  let value = f64x4::new([2.0, 3.0, 5.0, 7.0]);
+  assert_eq!(value.reduce_mul(), 210.0);
+}
+
 // Regression test for lack of aarch64+neon FMA instructions
 // for `mul_add` that lead to subpar accuracy.
 #[test]

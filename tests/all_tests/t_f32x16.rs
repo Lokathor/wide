@@ -2068,6 +2068,15 @@ fn impl_f32x16_reduce_add() {
 }
 
 #[test]
+fn impl_f32x16_reduce_mul() {
+  let value = f32x16::new([
+    0.2, 0.3, 0.5, 0.7, 1.1, 1.3, 1.7, 1.9, 2.3, 2.9, 3.1, 3.7, 4.1, 4.3, 4.7,
+    5.3,
+  ]);
+  assert_eq!(value.reduce_mul(), 3258.9158);
+}
+
+#[test]
 fn impl_f32x16_sum() {
   let mut p = Vec::with_capacity(250_000);
   for _ in 0..125_000 {

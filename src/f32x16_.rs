@@ -1360,6 +1360,21 @@ impl f32x16 {
     }
   }
 
+  /// horizontal multiplication of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> f32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
+        // safe.
+        unsafe { _mm512_reduce_mul_ps(self.avx512) }
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
   /// Natural log (ln(x))
   #[inline]
   #[must_use]

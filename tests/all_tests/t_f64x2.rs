@@ -981,6 +981,12 @@ fn impl_f64x2_reduce_add() {
   assert_eq!(p.reduce_add(), 0.002);
 }
 
+#[test]
+fn impl_f64x2_reduce_mul() {
+  let value = f64x2::new([2.0, 3.0]);
+  assert_eq!(value.reduce_mul(), 6.0);
+}
+
 crate::generate_basic_traits_test!(f64x2, f64);
 
 #[test]

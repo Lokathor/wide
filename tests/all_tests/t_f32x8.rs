@@ -1119,6 +1119,12 @@ fn impl_f32x8_reduce_add() {
 }
 
 #[test]
+fn impl_f32x8_reduce_mul() {
+  let value = f32x8::new([2.0, 3.0, 5.0, 7.0, 11.0, 13.0, 17.0, 19.0]);
+  assert_eq!(value.reduce_mul(), 9699690.0);
+}
+
+#[test]
 fn impl_f32x8_sum() {
   let mut p = Vec::with_capacity(250_000);
   for _ in 0..125_000 {

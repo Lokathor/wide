@@ -1653,6 +1653,14 @@ impl f32x4 {
     arr.iter().sum()
   }
 
+  /// horizontal multiplication of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> f32 {
+    let arr: [f32; 4] = cast(self);
+    arr.iter().product()
+  }
+
   /// Natural log (ln(x))
   #[inline]
   #[must_use]
