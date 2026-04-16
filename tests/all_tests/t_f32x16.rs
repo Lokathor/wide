@@ -415,6 +415,34 @@ fn impl_f32x16_abs() {
 }
 
 #[test]
+fn impl_f32x16_signum() {
+  let array = [
+    0.0,
+    -0.0,
+    1.0,
+    -1.0,
+    24.01,
+    -24.01,
+    f32::MAX,
+    f32::MIN,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    f32::NAN,
+    f32::NAN,
+    24.01,
+    -24.01,
+    f32::MAX,
+    f32::MIN,
+  ];
+
+  let expected = f32x16::new(array.map(f32::signum));
+  let actual = f32x16::new(array).signum();
+
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x16::ZERO);
+}
+
+#[test]
 fn impl_f32x16_floor() {
   let a = f32x16::from([
     -1.1,

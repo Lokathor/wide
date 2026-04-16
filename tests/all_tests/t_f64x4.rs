@@ -206,6 +206,21 @@ fn impl_f64x4_abs() {
 }
 
 #[test]
+fn impl_f64x4_signum() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [24.01, -24.01, f64::MAX, f64::MIN],
+    [f64::NAN, f64::NAN, f64::INFINITY, f64::NEG_INFINITY],
+  ] {
+    let expected = f64x4::new(array.map(f64::signum));
+    let actual = f64x4::new(array).signum();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x4_floor() {
   let a = f64x4::from([-1.1, 60.9, 1.1, f64::INFINITY]);
   let expected = f64x4::from([-2.0, 60.0, 1.0, f64::INFINITY]);

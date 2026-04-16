@@ -388,6 +388,15 @@ impl f32x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn signum(self) -> Self {
+    let result = Self::ONE | self & -Self::ZERO;
+
+    self.is_nan().blend(self, result)
+  }
+
   #[inline]
   #[must_use]
   pub fn floor(self) -> Self {

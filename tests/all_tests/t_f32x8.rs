@@ -234,6 +234,29 @@ fn impl_f32x8_abs() {
 }
 
 #[test]
+fn impl_f32x8_signum() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0, 24.01, -24.01, f32::MAX, f32::MIN],
+    [
+      f32::INFINITY,
+      f32::NEG_INFINITY,
+      f32::NAN,
+      f32::NAN,
+      24.01,
+      -24.01,
+      f32::MAX,
+      f32::MIN,
+    ],
+  ] {
+    let expected = f32x8::new(array.map(f32::signum));
+    let actual = f32x8::new(array).signum();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f32x8::ZERO);
+  }
+}
+
+#[test]
 fn impl_f32x8_floor() {
   let a = f32x8::from([-1.1, 60.9, 1.1, f32::INFINITY, 96.6, -53.2, 0.1, 9.2]);
   let expected =
