@@ -365,6 +365,23 @@ fn impl_f32x4_round_int() {
 }
 
 #[test]
+fn impl_f32x4_trunc() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [5.3, -5.3, 27.8, -27.8],
+    [2401.63, -2401.63, 4911111.2, -4911111.2],
+    [18388608.0, 18388608.0, f32::MAX, f32::MIN],
+    [f32::INFINITY, f32::NEG_INFINITY, f32::NAN, 30.0],
+  ] {
+    let expected = f32x4::new(array.map(f32::trunc));
+    let actual = f32x4::new(array).trunc();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f32x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f32x4_fast_trunc_int() {
   let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);
   let expected = i32x4::from([1, 2, 3, 4]);

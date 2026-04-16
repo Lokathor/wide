@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## Unreleased
+
+* Added wide-float function `trunc`.
+
 ## 1.3.0
 
 * Fixes the behaviour of `f32x16` functions `is_finite` and `round_int`. They

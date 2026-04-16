@@ -578,6 +578,21 @@ impl f32x16 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Zero)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.trunc(),
+          b: self.b.trunc(),
+        }
+      }
+    }
+  }
+
   /// Truncates each lane into an integer. This is a faster implementation than
   /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
   /// values you get implementation defined behavior.

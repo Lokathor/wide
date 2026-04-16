@@ -716,6 +716,37 @@ impl f64x2 {
     let rounded: [f64; 2] = cast(self.round());
     cast([rounded[0] as i64, rounded[1] as i64])
   }
+
+  #[inline]
+  #[must_use]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128d::<{round_op!(Zero)}>(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_trunc(self.simd) }
+      } else {
+        // There does not seem to be an SSE2 intrinsic for this.
+        // `truncate_m128d_to_m128i` truncates to `i32` values which cannot
+        // represent all possible outputs.
+
+        let array: [f64; 2] = cast(self);
+        let result: Self = cast([
+          array[0] as i64 as f64,
+          array[1] as i64 as f64,
+        ]);
+
+        // Out of range values are either already round, infinite or NaN. Values
+        // in range can all be represented by `i64`.
+        const BOUNDS_LIMIT: i64 = 18e15_f64.to_bits().cast_signed();
+        let bounds_mask: Self = cast(cast::<f64x2, i64x2>(self.abs()).simd_lt(i64x2::splat(BOUNDS_LIMIT)));
+
+        // Reset the sign bit of the mask to preverse the sign of `self`.
+        bounds_mask.abs().blend(result, self)
+      }
+    }
+  }
+
   /// Performs a multiply-add operation: `self * m + a`
   ///
   /// When hardware FMA support is available, this computes the result with a

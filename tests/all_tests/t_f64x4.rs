@@ -337,6 +337,23 @@ fn impl_f64x4_round_int() {
 }
 
 #[test]
+fn impl_f64x4_trunc() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [27.8, -27.8, 2401.63, -2401.63],
+    [18e15 - 2.7, -18e15 + 2.7, 18e15 + 2.3, -18e15 - 2.3],
+    [1e20, -1e20, f64::MAX, f64::MIN],
+    [f64::INFINITY, f64::NEG_INFINITY, f64::NAN, 30.0],
+  ] {
+    let expected = f64x4::new(array.map(f64::trunc));
+    let actual = f64x4::new(array).trunc();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x4_mul_add() {
   let a = f64x4::from([2.0, 3.0, 4.0, 5.0]);
   let b = f64x4::from([4.0, 5.0, 6.0, 7.0]);

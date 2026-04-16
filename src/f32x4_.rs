@@ -825,6 +825,48 @@ impl f32x4 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128::<{round_op!(Zero)}>(self.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        // Ported from https://docs.rs/glam/latest/glam/f32/struct.Vec4.html#method.trunc
+        // Based on https://github.com/microsoft/DirectXMath `XMVectorTruncate`
+        let result: Self = cast(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.sse)));
+
+        // Out of range values are either already round, infinite or NaN.
+        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(
+            cast(self.abs()),
+            set_splat_i32_m128i(8388608_f32.to_bits() as i32),
+        ));
+
+        // Reset the sign bit of the mask to preverse the sign of `self`.
+        bounds_mask.abs().blend(result, self)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_trunc(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vrndq_f32(self.neon) } }
+      } else {
+        let array: [f32; 4] = cast(self);
+        let result: Self = cast([
+          array[0] as i32 as f32,
+          array[1] as i32 as f32,
+          array[2] as i32 as f32,
+          array[3] as i32 as f32,
+        ]);
+
+        // Out of range values are either already round, infinite or NaN.
+        const BOUNDS_LIMIT: i32 = 8388608_f32.to_bits() as i32;
+        let bounds_mask: Self = cast(cast::<f32x4, i32x4>(self.abs()).simd_lt(i32x4::splat(BOUNDS_LIMIT)));
+
+        // Reset the sign bit of the mask to preverse the sign of `self`.
+        bounds_mask.abs().blend(result, self)
+      }
+    }
+  }
+
   /// Truncates each lane into an integer. This is a faster implementation than
   /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
   /// values you get implementation defined behavior.
@@ -869,6 +911,7 @@ impl f32x4 {
       }
     }
   }
+
   /// Performs a multiply-add operation: `self * m + a`
   ///
   /// When hardware FMA support is available, this computes the result with a

@@ -538,6 +538,21 @@ impl f64x8 {
     ])
   }
 
+  #[inline]
+  #[must_use]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512d::<{round_op!(Zero)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.trunc(),
+          b: self.b.trunc(),
+        }
+      }
+    }
+  }
+
   /// Performs a multiply-add operation: `self * m + a`
   ///
   /// When hardware FMA support is available, this computes the result with a
