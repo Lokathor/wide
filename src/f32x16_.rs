@@ -495,6 +495,43 @@ impl f32x16 {
     }
   }
 
+  /// Restrict a value to a certain interval unless it is NaN.
+  ///
+  /// This is a faster implementation than `clamp`, but does not make assertions
+  /// or specify the result if NaNs are involved.
+  #[inline]
+  #[must_use]
+  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
+    self.fast_max(min).fast_min(max)
+  }
+
+  /// Restrict a value to a certain interval unless it is NaN.
+  ///
+  /// This function returns NaN if the initial value was NaN as well. Use
+  /// `fast_clamp` for a faster implementation that does not make assertions or
+  /// specify the result for NaNs.
+  ///
+  /// # Panics
+  ///
+  /// Panics if in any lane, `min > max`, `min` is NaN, or `max` is NaN.
+  #[inline]
+  #[must_use]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        assert!(min.simd_le(max).all(), "min > max, or either was NaN");
+        // For both `min_m512` and `max_m512` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { avx512: min_m512(max.avx512, max_m512(min.avx512, self.avx512)) }
+      } else {
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn midpoint(self, other: Self) -> Self {

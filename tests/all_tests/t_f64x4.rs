@@ -285,6 +285,54 @@ fn impl_f64x4_min() {
 }
 
 #[test]
+fn impl_f64x4_fast_clamp() {
+  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f64x4::new([3.0, 11.0, 5.0, 0.0]);
+  let max = f64x4::new([8.0, 14.0, 9.0, 0.0]);
+  let expected = f64x4::new([5.0, 11.0, 9.0, 0.0]);
+  let actual = value.fast_clamp(min, max);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x4_clamp() {
+  let value = f64x4::new([5.0, 10.0, 10.0, f64::NAN]);
+  let min = f64x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f64x4::new([8.0, 14.0, 9.0, 3.0]);
+  let expected = f64x4::new([5.0, 11.0, 9.0, f64::NAN]);
+  let actual = value.clamp(min, max);
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f64x4::ZERO);
+}
+
+#[test]
+#[should_panic]
+fn impl_f64x4_clamp_min_gt_max() {
+  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f64x4::new([10.0, 11.0, 5.0, 1.0]);
+  let max = f64x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[should_panic]
+fn impl_f64x4_clamp_nan_min() {
+  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f64x4::new([3.0, 11.0, 5.0, f64::NAN]);
+  let max = f64x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[should_panic]
+fn impl_f64x4_clamp_nan_max() {
+  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f64x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f64x4::new([8.0, 14.0, 9.0, f64::NAN]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
 fn impl_f64x4_midpoint() {
   let a: [f64; 4] = [5.2, -16349.0, 3467890356635.1, 2401.0];
   let b: [f64; 4] = [-21.0, -236456708943.0, 2340894786738.2, -4235.0];

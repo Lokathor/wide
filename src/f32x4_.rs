@@ -704,6 +704,50 @@ impl f32x4 {
     }
   }
 
+  /// Restrict a value to a certain interval unless it is NaN.
+  ///
+  /// This is a faster implementation than `clamp`, but does not make assertions
+  /// or specify the result if NaNs are involved.
+  #[inline]
+  #[must_use]
+  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
+    self.fast_max(min).fast_min(max)
+  }
+
+  /// Restrict a value to a certain interval unless it is NaN.
+  ///
+  /// This function returns NaN if the initial value was NaN as well. Use
+  /// `fast_clamp` for a faster implementation that does not make assertions or
+  /// specify the result for NaNs.
+  ///
+  /// # Panics
+  ///
+  /// Panics if in any lane, `min > max`, `min` is NaN, or `max` is NaN.
+  #[inline]
+  #[must_use]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    assert!(min.simd_le(max).all(), "min > max, or either was NaN");
+
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        // For both `min_m128` and `max_m128` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { sse: min_m128(max.sse, max_m128(min.sse, self.sse)) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_min(f32x4_max(self.simd, min.simd), max.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vminq_f32(vmaxq_f32(self.neon, min.neon), max.neon) } }
+      } else {
+        // The standard library does not have NaN propagating `min` and `max`
+        // functions.
+        let mut result = self;
+        result = result.simd_lt(min).blend(min, self);
+        result = result.simd_gt(max).blend(max, self);
+        result
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn midpoint(self, other: Self) -> Self {

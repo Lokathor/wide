@@ -293,6 +293,54 @@ fn impl_f32x4_min() {
 }
 
 #[test]
+fn impl_f32x4_fast_clamp() {
+  let value = f32x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f32x4::new([3.0, 11.0, 5.0, 0.0]);
+  let max = f32x4::new([8.0, 14.0, 9.0, 0.0]);
+  let expected = f32x4::new([5.0, 11.0, 9.0, 0.0]);
+  let actual = value.fast_clamp(min, max);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_clamp() {
+  let value = f32x4::new([5.0, 10.0, 10.0, f32::NAN]);
+  let min = f32x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f32x4::new([8.0, 14.0, 9.0, 3.0]);
+  let expected = f32x4::new([5.0, 11.0, 9.0, f32::NAN]);
+  let actual = value.clamp(min, max);
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x4::ZERO);
+}
+
+#[test]
+#[should_panic]
+fn impl_f32x4_clamp_min_gt_max() {
+  let value = f32x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f32x4::new([10.0, 11.0, 5.0, 1.0]);
+  let max = f32x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[should_panic]
+fn impl_f32x4_clamp_nan_min() {
+  let value = f32x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f32x4::new([3.0, 11.0, 5.0, f32::NAN]);
+  let max = f32x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[should_panic]
+fn impl_f32x4_clamp_nan_max() {
+  let value = f32x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f32x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f32x4::new([8.0, 14.0, 9.0, f32::NAN]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
 fn impl_f32x4_midpoint() {
   let a: [f32; 4] = [5.2, -16349.0, 3467890356635.1, 2401.0];
   let b: [f32; 4] = [-21.0, -236456708943.0, 2340894786738.2, -4235.0];
