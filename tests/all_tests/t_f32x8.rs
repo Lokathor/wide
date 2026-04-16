@@ -75,8 +75,26 @@ fn impl_sub_for_f32x8() {
 
 #[test]
 fn impl_neg_for_f32x8() {
-  let a = f32x8::from([1.0, -2.0, 3.0, -4.0, 0.0, -0.0, f32::INFINITY, f32::NEG_INFINITY]);
-  let expected = f32x8::from([-1.0, 2.0, -3.0, 4.0, -0.0, 0.0, f32::NEG_INFINITY, f32::INFINITY]);
+  let a = f32x8::from([
+    1.0,
+    -2.0,
+    3.0,
+    -4.0,
+    0.0,
+    -0.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+  ]);
+  let expected = f32x8::from([
+    -1.0,
+    2.0,
+    -3.0,
+    4.0,
+    -0.0,
+    0.0,
+    f32::NEG_INFINITY,
+    f32::INFINITY,
+  ]);
   assert_eq!(-a, expected);
 
   // Verify that 0.0 and -0.0 are properly sign-flipped
@@ -654,14 +672,14 @@ fn impl_f32x8_atan2() {
           let actual_arr: [f32; 8] = cast(vals);
           let actual = actual_arr[i];
           assert!(
-          (actual - expected).abs() < 0.0000006,
-          "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
-          name = name,
-          orig_y = orig_y,
-          orig_x = orig_x,
-          expected = expected,
-          actual = actual
-        );
+            (actual - expected).abs() < 0.0000006,
+            "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
+            name = name,
+            orig_y = orig_y,
+            orig_x = orig_x,
+            expected = expected,
+            actual = actual
+          );
         };
         check("atan2", actual_atan2s, orig_y.atan2(orig_x));
       }

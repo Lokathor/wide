@@ -596,14 +596,14 @@ fn impl_f32x4_atan2() {
           let actual_arr: [f32; 4] = cast(vals);
           let actual = actual_arr[i];
           assert!(
-          (actual - expected).abs() < 0.0000006,
-          "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
-          name = name,
-          orig_y = orig_y,
-          orig_x = orig_x,
-          expected = expected,
-          actual = actual
-        );
+            (actual - expected).abs() < 0.0000006,
+            "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
+            name = name,
+            orig_y = orig_y,
+            orig_x = orig_x,
+            expected = expected,
+            actual = actual
+          );
         };
         check("atan2", actual_atan2s, orig_y.atan2(orig_x));
       }

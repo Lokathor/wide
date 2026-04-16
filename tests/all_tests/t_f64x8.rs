@@ -42,8 +42,26 @@ fn impl_sub_for_f64x8() {
 
 #[test]
 fn impl_neg_for_f64x8() {
-  let a = f64x8::from([1.0, -2.0, 3.0, -4.0, 0.0, -0.0, f64::INFINITY, f64::NEG_INFINITY]);
-  let expected = f64x8::from([-1.0, 2.0, -3.0, 4.0, -0.0, 0.0, f64::NEG_INFINITY, f64::INFINITY]);
+  let a = f64x8::from([
+    1.0,
+    -2.0,
+    3.0,
+    -4.0,
+    0.0,
+    -0.0,
+    f64::INFINITY,
+    f64::NEG_INFINITY,
+  ]);
+  let expected = f64x8::from([
+    -1.0,
+    2.0,
+    -3.0,
+    4.0,
+    -0.0,
+    0.0,
+    f64::NEG_INFINITY,
+    f64::INFINITY,
+  ]);
   assert_eq!(-a, expected);
 
   // Verify that 0.0 and -0.0 are properly sign-flipped
