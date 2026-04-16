@@ -503,6 +503,13 @@ impl f32x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn midpoint(self, other: Self) -> Self {
+    (self + other) / 2.0
+  }
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {

@@ -767,6 +767,69 @@ fn impl_f32x16_min() {
 }
 
 #[test]
+fn impl_f32x16_midpoint() {
+  let a: [f32; 16] = [
+    5.2,
+    -16349.0,
+    3467890356635.1,
+    2401.0,
+    -21.0,
+    -236456708943.0,
+    2340894786738.2,
+    -4235.0,
+    -21.0,
+    -236456708943.0,
+    2340894786738.2,
+    -4235.0,
+    5.2,
+    -16349.0,
+    3467890356635.1,
+    2401.0,
+  ];
+  let b: [f32; 16] = [
+    -21.0,
+    -236456708943.0,
+    2340894786738.2,
+    -4235.0,
+    5.2,
+    -16349.0,
+    3467890356635.1,
+    2401.0,
+    5.2,
+    -16349.0,
+    3467890356635.1,
+    2401.0,
+    -21.0,
+    -236456708943.0,
+    2340894786738.2,
+    -4235.0,
+  ];
+
+  let expected = f32x16::new([
+    a[0].midpoint(b[0]),
+    a[1].midpoint(b[1]),
+    a[2].midpoint(b[2]),
+    a[3].midpoint(b[3]),
+    a[4].midpoint(b[4]),
+    a[5].midpoint(b[5]),
+    a[6].midpoint(b[6]),
+    a[7].midpoint(b[7]),
+    a[8].midpoint(b[8]),
+    a[9].midpoint(b[9]),
+    a[10].midpoint(b[10]),
+    a[11].midpoint(b[11]),
+    a[12].midpoint(b[12]),
+    a[13].midpoint(b[13]),
+    a[14].midpoint(b[14]),
+    a[15].midpoint(b[15]),
+  ]);
+  let actual = f32x16::new(a).midpoint(f32x16::new(b));
+
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x16::ZERO);
+}
+
+#[test]
 fn impl_f32x16_is_nan() {
   let a = f32x16::from([
     0.0,

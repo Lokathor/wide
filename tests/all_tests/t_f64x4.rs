@@ -285,6 +285,23 @@ fn impl_f64x4_min() {
 }
 
 #[test]
+fn impl_f64x4_midpoint() {
+  let a: [f64; 4] = [5.2, -16349.0, 3467890356635.1, 2401.0];
+  let b: [f64; 4] = [-21.0, -236456708943.0, 2340894786738.2, -4235.0];
+
+  let expected = f64x4::new([
+    a[0].midpoint(b[0]),
+    a[1].midpoint(b[1]),
+    a[2].midpoint(b[2]),
+    a[3].midpoint(b[3]),
+  ]);
+  let actual = f64x4::new(a).midpoint(f64x4::new(b));
+
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f64x4::ZERO);
+}
+
+#[test]
 fn impl_f64x4_is_nan() {
   let a = f64x4::from([0.0, f64::NAN, f64::NAN, 0.0]);
   let expected = [0, u64::MAX, u64::MAX, 0];

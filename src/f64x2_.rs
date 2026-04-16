@@ -667,6 +667,12 @@ impl f64x2 {
 
   #[inline]
   #[must_use]
+  pub fn midpoint(self, other: Self) -> Self {
+    (self + other) / 2.0
+  }
+
+  #[inline]
+  #[must_use]
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
