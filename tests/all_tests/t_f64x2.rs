@@ -869,6 +869,17 @@ fn impl_f64x2_exp() {
 }
 
 #[test]
+fn impl_f64x2_exp2() {
+  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4, 100.5, 1000.2] {
+    let _: f64 = x;
+    let expected = f64x2::from(x.exp2());
+    let actual = f64x2::from(x).exp2();
+    let diff_from_std: [f64; 2] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < expected.to_array()[0] * 1e-12);
+  }
+}
+
+#[test]
 fn test_f64x2_any() {
   let a = f64x2::from([-1.0, f64::NAN]).is_nan();
   assert!(a.any());

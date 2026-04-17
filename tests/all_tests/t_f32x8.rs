@@ -1035,6 +1035,17 @@ fn impl_f32x8_exp() {
 }
 
 #[test]
+fn impl_f32x8_exp2() {
+  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4] {
+    let _: f32 = x;
+    let expected = f32x8::from(x.exp2());
+    let actual = f32x8::from(x).exp2();
+    let diff_from_std: [f32; 8] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000000000000001);
+  }
+}
+
+#[test]
 fn test_f32x8_move_mask() {
   let a = f32x8::from([-1.0, 0.0, -2.0, -3.0, -1.0, 0.0, -2.0, -3.0]);
   let expected = 0b11011101;

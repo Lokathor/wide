@@ -1582,6 +1582,36 @@ impl f64x2 {
     in_range.blend(z, Self::ZERO)
   }
 
+  /// Returns `2^self`.
+  #[inline]
+  #[must_use]
+  pub fn exp2(self) -> Self {
+    const_f64_as_f64x2!(P2, 1.0 / 2.0);
+    const_f64_as_f64x2!(P3, 1.0 / 6.0);
+    const_f64_as_f64x2!(P4, 1.0 / 24.0);
+    const_f64_as_f64x2!(P5, 1.0 / 120.0);
+    const_f64_as_f64x2!(P6, 1.0 / 720.0);
+    const_f64_as_f64x2!(P7, 1.0 / 5040.0);
+    const_f64_as_f64x2!(P8, 1.0 / 40320.0);
+    const_f64_as_f64x2!(P9, 1.0 / 362880.0);
+    const_f64_as_f64x2!(P10, 1.0 / 3628800.0);
+
+    let round = self.round();
+    let round_exp2 = round.vm_pow2n();
+
+    let fract = (self - round) * Self::LN_2;
+    let fract_partial_exp2 =
+      polynomial_8!(fract, P2, P3, P4, P5, P6, P7, P8, P9, P10);
+    let fract2 = fract * fract;
+    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+
+    let result = fract_exp2 * round_exp2;
+    let bounds_mask =
+      self.abs().simd_lt(Self::splat(1020.0)) & self.is_finite();
+
+    bounds_mask.blend(result, Self::ZERO)
+  }
+
   #[inline]
   fn exponent(self) -> f64x2 {
     const_f64_as_f64x2!(pow2_52, 4503599627370496.0);

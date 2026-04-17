@@ -1888,6 +1888,17 @@ fn impl_f32x16_exp() {
 }
 
 #[test]
+fn impl_f32x16_exp2() {
+  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4] {
+    let _: f32 = x;
+    let expected = f32x16::from(x.exp2());
+    let actual = f32x16::from(x).exp2();
+    let diff_from_std: [f32; 16] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < 0.000000000000001);
+  }
+}
+
+#[test]
 fn test_f32x16_to_bitmask() {
   let a = f32x16::from([
     -1.0, 0.0, -2.0, -3.0, -1.0, 0.0, -2.0, -3.0, 5.0, -6.0, 7.0, -8.0, 9.0,

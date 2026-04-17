@@ -729,6 +729,17 @@ fn impl_f64x4_exp() {
 }
 
 #[test]
+fn impl_f64x4_exp2() {
+  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4, 100.5, 1000.2] {
+    let _: f64 = x;
+    let expected = f64x4::from(x.exp2());
+    let actual = f64x4::from(x).exp2();
+    let diff_from_std: [f64; 4] = cast((actual - expected).abs());
+    assert!(diff_from_std[0] < expected.to_array()[0] * 1e-12);
+  }
+}
+
+#[test]
 fn test_f64x4_move_mask() {
   let a = f64x4::from([-1.0, 0.0, -2.0, -3.0]);
   let expected = 0b1101;

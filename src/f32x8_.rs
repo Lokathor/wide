@@ -1282,6 +1282,31 @@ impl f32x8 {
     in_range.blend(z, Self::ZERO)
   }
 
+  /// Returns `2^self`.
+  #[inline]
+  #[must_use]
+  pub fn exp2(self) -> Self {
+    const_f32_as_f32x8!(P2, 1.0 / 2.0);
+    const_f32_as_f32x8!(P3, 1.0 / 6.0);
+    const_f32_as_f32x8!(P4, 1.0 / 24.0);
+    const_f32_as_f32x8!(P5, 1.0 / 120.0);
+    const_f32_as_f32x8!(P6, 1.0 / 720.0);
+    const_f32_as_f32x8!(P7, 1.0 / 5040.0);
+
+    let round = self.round();
+    let round_exp2 = round.vm_pow2n();
+
+    let fract = (self - round) * Self::LN_2;
+    let fract_partial_exp2 = polynomial_5!(fract, P2, P3, P4, P5, P6, P7);
+    let fract2 = fract * fract;
+    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+
+    let result = fract_exp2 * round_exp2;
+    let bounds_mask = self.abs().simd_lt(Self::splat(120.0)) & self.is_finite();
+
+    bounds_mask.blend(result, Self::ZERO)
+  }
+
   #[inline]
   fn exponent(self) -> f32x8 {
     const_f32_as_f32x8!(pow2_23, 8388608.0);
