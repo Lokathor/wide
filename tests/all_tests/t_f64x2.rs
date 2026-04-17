@@ -875,6 +875,7 @@ fn impl_f64x2_exp2() {
     let expected = f64x2::from(x.exp2());
     let actual = f64x2::from(x).exp2();
     let diff_from_std: [f64; 2] = cast((actual - expected).abs());
+    println!("x: {x:?}, expected: {expected:?}, actual: {actual:?}");
     assert!(diff_from_std[0] < expected.to_array()[0] * 1e-12);
   }
 }
