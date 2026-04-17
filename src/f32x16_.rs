@@ -1395,7 +1395,7 @@ impl f32x16 {
         // safe.
         #[cfg(target_arch = "x86")]
         use core::arch::x86::_mm512_reduce_mul_ps;
-        #[cfg(target_arch = "x86_x64")]
+        #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm512_reduce_mul_ps;
 
         unsafe { _mm512_reduce_mul_ps(self.avx512.0) }
