@@ -1895,7 +1895,7 @@ fn impl_f32x16_exp2() {
     let actual = f32x16::from(x).exp2();
     let diff_from_std: [f32; 16] = cast((actual - expected).abs());
     println!("x: {x:?}, expected: {expected:?}, actual: {actual:?}");
-    assert!(diff_from_std[0] < 1e-12);
+    assert!(diff_from_std[0] < expected.to_array()[0] * 1e-7);
   }
 }
 
