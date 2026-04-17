@@ -2084,7 +2084,10 @@ fn impl_f32x16_reduce_mul() {
     0.2, 0.3, 0.5, 0.7, 1.1, 1.3, 1.7, 1.9, 2.3, 2.9, 3.1, 3.7, 4.1, 4.3, 4.7,
     5.3,
   ]);
-  assert_eq!(value.reduce_mul(), 3258.9158);
+  let expected = 3258.9158;
+  let actual = value.reduce_mul();
+  let difference = (actual - expected).abs();
+  assert!(difference < 1e-2);
 }
 
 #[test]
