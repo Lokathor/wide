@@ -545,7 +545,7 @@ impl f64x4 {
   #[inline]
   #[must_use]
   pub fn midpoint(self, other: Self) -> Self {
-    (self + other) / 2.0
+    (self + other) * 0.5
   }
 
   #[inline]
