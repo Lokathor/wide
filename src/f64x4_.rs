@@ -821,6 +821,22 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  pub fn div_euclid(self, rhs: Self) -> Self {
+    let q = (self / rhs).trunc();
+    (self % rhs)
+      .simd_lt(Self::ZERO)
+      .blend(rhs.simd_gt(Self::ZERO).blend(q - Self::ONE, q + Self::ONE), q)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn rem_euclid(self, rhs: Self) -> Self {
+    let r = self % rhs;
+    r.simd_lt(Self::ZERO).blend(r + rhs.abs(), r)
+  }
+
+  #[inline]
+  #[must_use]
   pub fn flip_signs(self, signs: Self) -> Self {
     self ^ (signs & Self::from(-0.0))
   }

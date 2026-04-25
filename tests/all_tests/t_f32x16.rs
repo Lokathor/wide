@@ -1415,6 +1415,38 @@ fn impl_f32x16_mul_neg_sub() {
 }
 
 #[test]
+fn impl_f32x16_div_euclid() {
+  let a = [
+    4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.24, 18.0, 20.0, 15.0, 16.4, -21.0,
+    24.0, -30.0, 32.0,
+  ];
+  let b = [
+    2.0, 2.0, -5.0, -3.0, 2.0, 1.5, 3.0, -2.5, 3.5, 4.0, 5.1, 8.0, 7.68, 6.0,
+    10.0, -16.0,
+  ];
+  let expected =
+    f32x16::new(std::array::from_fn(|i| f32::div_euclid(a[i], b[i])));
+  let actual = f32x16::new(a).div_euclid(f32x16::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x16_rem_euclid() {
+  let a = [
+    4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.24, 18.0, 20.0, 15.0, 16.4, -21.0,
+    24.0, -30.0, 32.0,
+  ];
+  let b = [
+    2.0, 2.0, -5.0, -3.0, 2.0, 1.5, 3.0, -2.5, 3.5, 4.0, 5.1, 8.0, 7.68, 6.0,
+    10.0, -16.0,
+  ];
+  let expected =
+    f32x16::new(std::array::from_fn(|i| f32::rem_euclid(a[i], b[i])));
+  let actual = f32x16::new(a).rem_euclid(f32x16::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f32x16_flip_signs() {
   let a = f32x16::from([
     1.0, 1.0, -1.0, -1.0, 5.2, 6.7, -8.2, -12.5, 3.0, -6.4, 7.2, -24.01, 3.2,

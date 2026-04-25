@@ -588,6 +588,26 @@ fn impl_f64x2_mul_neg_add() {
 }
 
 #[test]
+fn impl_f64x2_div_euclid() {
+  let a = [-20.0, 15.0];
+  let b = [1.5, -3.0];
+  let expected =
+    f64x2::new(std::array::from_fn(|i| f64::div_euclid(a[i], b[i])));
+  let actual = f64x2::new(a).div_euclid(f64x2::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x8_rem_euclid() {
+  let a = [-20.0, 15.0];
+  let b = [1.5, -3.0];
+  let expected =
+    f64x2::new(std::array::from_fn(|i| f64::rem_euclid(a[i], b[i])));
+  let actual = f64x2::new(a).rem_euclid(f64x2::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f64x2_flip_signs() {
   let a = f64x2::from([1.0, 1.0]);
   let b = f64x2::from([2.0, -3.0]);

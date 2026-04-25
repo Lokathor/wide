@@ -663,6 +663,26 @@ fn impl_f32x8_mul_neg_add() {
 }
 
 #[test]
+fn impl_f32x8_div_euclid() {
+  let a = [6.0, 7.0, 8.24, 18.0, -20.0, -15.0, 16.4, -21.0];
+  let b = [2.0, 1.5, -3.0, -2.5, 3.5, 4.0, 5.1, -7.68];
+  let expected =
+    f32x8::new(std::array::from_fn(|i| f32::div_euclid(a[i], b[i])));
+  let actual = f32x8::new(a).div_euclid(f32x8::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x8_rem_euclid() {
+  let a = [6.0, 7.0, 8.24, 18.0, -20.0, -15.0, 16.4, -21.0];
+  let b = [2.0, 1.5, -3.0, -2.5, 3.5, 4.0, 5.1, -7.68];
+  let expected =
+    f32x8::new(std::array::from_fn(|i| f32::rem_euclid(a[i], b[i])));
+  let actual = f32x8::new(a).rem_euclid(f32x8::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f32x8_flip_signs() {
   let a = f32x8::from([1.0, 1.0, -1.0, -1.0, 5.2, 6.7, -8.2, -12.5]);
   let b = f32x8::from([2.0, -3.0, 4.0, -5.0, 5.2, 6.7, -8.2, -12.5]);
