@@ -879,6 +879,13 @@ fn impl_f32x4_from_i32x4() {
   assert_eq!(f32x4::from_i32x4(i), f)
 }
 
+#[test]
+fn impl_f32x4_index() {
+  let mut value = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+  assert_eq!(value[2], 2.0);
+  assert_eq!(&mut value[2], &mut 2.0);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_f32x4_ser_de_roundtrip() {
