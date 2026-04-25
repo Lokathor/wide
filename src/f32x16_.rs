@@ -946,7 +946,7 @@ impl f32x16 {
     re = re.mul_add(zz * z, z) + s;
 
     // get sign bit
-    re = (self.sign_bit()).blend(-re, re);
+    re = (self.is_sign_negative()).blend(-re, re);
 
     re
   }
@@ -999,10 +999,10 @@ impl f32x16 {
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
     re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
-    re = (x.sign_bit()).blend(Self::PI - re, re);
+    re = (x.is_sign_negative()).blend(Self::PI - re, re);
 
     // get sign bit
-    re = (y.sign_bit()).blend(-re, re);
+    re = (y.is_sign_negative()).blend(-re, re);
 
     re
   }
@@ -1269,7 +1269,16 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn sign_bit(self) -> Self {
+  #[must_use]
+  pub fn is_sign_positive(self) -> Self {
+    let t1 = cast::<_, i32x16>(self);
+    let t2 = t1 >> 31;
+    cast::<_, f32x16>(t2).simd_eq(f32x16::ZERO)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn is_sign_negative(self) -> Self {
     let t1 = cast::<_, i32x16>(self);
     let t2 = t1 >> 31;
     !cast::<_, f32x16>(t2).simd_eq(f32x16::ZERO)
@@ -1427,7 +1436,7 @@ impl f32x16 {
       z,
     );
 
-    let x_sign = self.sign_bit();
+    let x_sign = self.is_sign_negative();
     let z = if x_sign.any() {
       // Y into an integer
       let yi = y.simd_eq(y.round());
@@ -1537,6 +1546,13 @@ impl f32x16 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
+  pub fn sign_bit(self) -> Self {
+    self.is_sign_negative()
   }
 }
 

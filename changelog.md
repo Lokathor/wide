@@ -1,5 +1,10 @@
 # `wide` Changelog
 
+## Unreleased
+
+* Renamed float function `sign_bit` to `is_sign_negative` and added
+  `is_sign_positive`.
+
 ## 1.3.0
 
 * Fixes the behaviour of `f32x16` functions `is_finite` and `round_int`. They
