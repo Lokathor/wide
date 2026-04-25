@@ -319,16 +319,6 @@ fn impl_f32x8_min() {
 }
 
 #[test]
-fn impl_f32x8_fast_clamp() {
-  let value = f32x8::new([5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0]);
-  let min = f32x8::new([3.0, 11.0, 5.0, 0.0, 3.0, 11.0, 5.0, 0.0]);
-  let max = f32x8::new([8.0, 14.0, 9.0, 0.0, 8.0, 14.0, 9.0, 0.0]);
-  let expected = f32x8::new([5.0, 11.0, 9.0, 0.0, 5.0, 11.0, 9.0, 0.0]);
-  let actual = value.fast_clamp(min, max);
-  assert_eq!(expected, actual);
-}
-
-#[test]
 fn impl_f32x8_clamp() {
   let value =
     f32x8::new([5.0, 10.0, 10.0, f32::NAN, 5.0, 10.0, 10.0, f32::NAN]);
@@ -342,7 +332,7 @@ fn impl_f32x8_clamp() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f32x8_clamp_min_gt_max() {
   let value = f32x8::new([5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0]);
   let min = f32x8::new([10.0, 11.0, 5.0, 1.0, 10.0, 11.0, 5.0, 1.0]);
@@ -351,7 +341,7 @@ fn impl_f32x8_clamp_min_gt_max() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f32x8_clamp_nan_min() {
   let value = f32x8::new([5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0]);
   let min = f32x8::new([3.0, 11.0, 5.0, f32::NAN, 3.0, 11.0, 5.0, f32::NAN]);
@@ -360,7 +350,7 @@ fn impl_f32x8_clamp_nan_min() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f32x8_clamp_nan_max() {
   let value = f32x8::new([5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0]);
   let min = f32x8::new([3.0, 11.0, 5.0, 1.0, 3.0, 11.0, 5.0, 1.0]);

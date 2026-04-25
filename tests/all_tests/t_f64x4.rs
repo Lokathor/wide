@@ -285,16 +285,6 @@ fn impl_f64x4_min() {
 }
 
 #[test]
-fn impl_f64x4_fast_clamp() {
-  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
-  let min = f64x4::new([3.0, 11.0, 5.0, 0.0]);
-  let max = f64x4::new([8.0, 14.0, 9.0, 0.0]);
-  let expected = f64x4::new([5.0, 11.0, 9.0, 0.0]);
-  let actual = value.fast_clamp(min, max);
-  assert_eq!(expected, actual);
-}
-
-#[test]
 fn impl_f64x4_clamp() {
   let value = f64x4::new([5.0, 10.0, 10.0, f64::NAN]);
   let min = f64x4::new([3.0, 11.0, 5.0, 1.0]);
@@ -306,7 +296,7 @@ fn impl_f64x4_clamp() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f64x4_clamp_min_gt_max() {
   let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
   let min = f64x4::new([10.0, 11.0, 5.0, 1.0]);
@@ -315,7 +305,7 @@ fn impl_f64x4_clamp_min_gt_max() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f64x4_clamp_nan_min() {
   let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
   let min = f64x4::new([3.0, 11.0, 5.0, f64::NAN]);
@@ -324,7 +314,7 @@ fn impl_f64x4_clamp_nan_min() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f64x4_clamp_nan_max() {
   let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
   let min = f64x4::new([3.0, 11.0, 5.0, 1.0]);

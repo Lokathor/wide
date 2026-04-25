@@ -767,28 +767,6 @@ fn impl_f32x16_min() {
 }
 
 #[test]
-fn impl_f32x16_fast_clamp() {
-  let value = f32x16::new([
-    5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0,
-    10.0, 10.0, 0.0,
-  ]);
-  let min = f32x16::new([
-    3.0, 11.0, 5.0, 0.0, 3.0, 11.0, 5.0, 0.0, 3.0, 11.0, 5.0, 0.0, 3.0, 11.0,
-    5.0, 0.0,
-  ]);
-  let max = f32x16::new([
-    8.0, 14.0, 9.0, 0.0, 8.0, 14.0, 9.0, 0.0, 8.0, 14.0, 9.0, 0.0, 8.0, 14.0,
-    9.0, 0.0,
-  ]);
-  let expected = f32x16::new([
-    5.0, 11.0, 9.0, 0.0, 5.0, 11.0, 9.0, 0.0, 5.0, 11.0, 9.0, 0.0, 5.0, 11.0,
-    9.0, 0.0,
-  ]);
-  let actual = value.fast_clamp(min, max);
-  assert_eq!(expected, actual);
-}
-
-#[test]
 fn impl_f32x16_clamp() {
   let value = f32x16::new([
     5.0,
@@ -840,7 +818,7 @@ fn impl_f32x16_clamp() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f32x16_clamp_min_gt_max() {
   let value = f32x16::new([
     5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0,
@@ -858,7 +836,7 @@ fn impl_f32x16_clamp_min_gt_max() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f32x16_clamp_nan_min() {
   let value = f32x16::new([
     5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0,
@@ -890,7 +868,7 @@ fn impl_f32x16_clamp_nan_min() {
 }
 
 #[test]
-#[should_panic]
+#[cfg_attr(debug_assertions, should_panic)]
 fn impl_f32x16_clamp_nan_max() {
   let value = f32x16::new([
     5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0, 5.0,

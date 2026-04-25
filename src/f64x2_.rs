@@ -667,27 +667,17 @@ impl f64x2 {
 
   /// Restrict a value to a certain interval unless it is NaN.
   ///
-  /// This is a faster implementation than `clamp`, but does not make assertions
-  /// or specify the result if NaNs are involved.
-  #[inline]
-  #[must_use]
-  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
-    self.fast_max(min).fast_min(max)
-  }
-
-  /// Restrict a value to a certain interval unless it is NaN.
-  ///
-  /// This function returns NaN if the initial value was NaN as well. Use
-  /// `fast_clamp` for a faster implementation that does not make assertions or
-  /// specify the result for NaNs.
+  /// If `min > max`, `min` is NaN or `max` is NaN the result is unspecified.
   ///
   /// # Panics
   ///
-  /// Panics if in any lane, `min > max`, `min` is NaN, or `max` is NaN.
+  /// If debug assertions are enabled, this panics if for any lane `min > max`,
+  /// `min` is NaN or `max` is NaN.
   #[inline]
   #[must_use]
+  #[track_caller]
   pub fn clamp(self, min: Self, max: Self) -> Self {
-    assert!(min.simd_le(max).all(), "min > max, or either was NaN");
+    debug_assert!(min.simd_le(max).all(), "min > max, or either was NaN");
 
     pick! {
       if #[cfg(target_feature="sse2")] {
