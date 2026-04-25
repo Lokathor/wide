@@ -65,6 +65,15 @@ fn impl_div_for_f64x2() {
 }
 
 #[test]
+fn impl_rem_for_f64x2() {
+  let a = [4.0, 9.0];
+  let b = [2.0, 2.4];
+  let expected = f64x2::new(std::array::from_fn(|i| a[i] % b[i]));
+  let actual = f64x2::new(a) % f64x2::new(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_const_for_f64x2() {
   let a = f64x2::from([1.0, 2.0]);
   let expected = f64x2::from([-1.0, 0.0]);
@@ -85,6 +94,24 @@ fn impl_div_const_for_f64x2() {
   let a = f64x2::from([1.0, 2.0]);
   let expected = f64x2::from([0.5, 1.0]);
   let actual = a / 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_const_for_f64x2() {
+  let a = [1.3, -2.4];
+  let b = -5.0;
+  let expected = f64x2::new(a.map(|x| x % b));
+  let actual = f64x2::new(a) % b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_f64x2_for_f32() {
+  let a = -5.0;
+  let b = [-1.1, 2.1];
+  let expected = f64x2::new(b.map(|y| a % y));
+  let actual = a % f64x2::new(b);
   assert_eq!(expected, actual);
 }
 

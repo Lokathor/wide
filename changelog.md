@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-* Added more wide-float functionality.
+* Added more float functions.
+
+* Implemented `Rem` for float types.
 
 ## 1.3.0
 

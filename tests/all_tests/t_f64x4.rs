@@ -78,6 +78,15 @@ fn impl_div_for_f64x4() {
 }
 
 #[test]
+fn impl_rem_for_f64x4() {
+  let a = [4.0, 9.0, 10.0, 12.0];
+  let b = [2.0, 2.4, -5.0, -3.1];
+  let expected = f64x4::new(std::array::from_fn(|i| a[i] % b[i]));
+  let actual = f64x4::new(a) % f64x4::new(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_const_for_f64x4() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let expected = f64x4::from([-1.0, 0.0, 1.0, 2.0]);
@@ -98,6 +107,24 @@ fn impl_div_const_for_f64x4() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let expected = f64x4::from([0.5, 1.0, 1.5, 2.0]);
   let actual = a / 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_const_for_f64x4() {
+  let a = [1.3, -2.4, 5.34, -10.2];
+  let b = -5.0;
+  let expected = f64x4::new(a.map(|x| x % b));
+  let actual = f64x4::new(a) % b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_f64x4_for_f32() {
+  let a = -5.0;
+  let b = [1.0, 2.1, -3.54, 4.5];
+  let expected = f64x4::new(b.map(|y| a % y));
+  let actual = a % f64x4::new(b);
   assert_eq!(expected, actual);
 }
 

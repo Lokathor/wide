@@ -88,6 +88,23 @@ impl Div for f64x8 {
   }
 }
 
+impl Rem for f64x8 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: Self) -> Self::Output {
+    Self::new([
+      self.to_array()[0] % rhs.to_array()[0],
+      self.to_array()[1] % rhs.to_array()[1],
+      self.to_array()[2] % rhs.to_array()[2],
+      self.to_array()[3] % rhs.to_array()[3],
+      self.to_array()[4] % rhs.to_array()[4],
+      self.to_array()[5] % rhs.to_array()[5],
+      self.to_array()[6] % rhs.to_array()[6],
+      self.to_array()[7] % rhs.to_array()[7],
+    ])
+  }
+}
+
 impl Neg for f64x8 {
   type Output = Self;
   #[inline]
@@ -137,6 +154,14 @@ impl Div<f64> for f64x8 {
   }
 }
 
+impl Rem<f64> for f64x8 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: f64) -> Self::Output {
+    self.rem(Self::splat(rhs))
+  }
+}
+
 impl Add<f64x8> for f64 {
   type Output = f64x8;
   #[inline]
@@ -166,6 +191,14 @@ impl Div<f64x8> for f64 {
   #[inline]
   fn div(self, rhs: f64x8) -> Self::Output {
     f64x8::splat(self).div(rhs)
+  }
+}
+
+impl Rem<f64x8> for f64 {
+  type Output = f64x8;
+  #[inline]
+  fn rem(self, rhs: f64x8) -> Self::Output {
+    f64x8::splat(self).rem(rhs)
   }
 }
 

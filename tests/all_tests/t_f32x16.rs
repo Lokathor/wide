@@ -108,6 +108,30 @@ fn impl_div_const_for_f32x16() {
 }
 
 #[test]
+fn impl_rem_const_for_f32x16() {
+  let a = [
+    1.0, 2.0, -3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, -11.0, 12.0, -13.0,
+    14.0, 15.0, 16.0,
+  ];
+  let b = -5.0;
+  let expected = f32x16::new(a.map(|x| x % b));
+  let actual = f32x16::new(a) % b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_f32x16_for_f32() {
+  let a = -5.0;
+  let b = [
+    1.0, 2.0, -3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, -11.0, 12.0, -13.0,
+    14.0, 15.0, 16.0,
+  ];
+  let expected = f32x16::new(b.map(|y| a % y));
+  let actual = a % f32x16::new(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_for_f32x16() {
   let a = f32x16::from([
     1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
@@ -210,6 +234,21 @@ fn impl_div_for_f32x16() {
     4.0, 3.0, 2.0,
   ]);
   let actual = a / b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_for_f32x16() {
+  let a = [
+    4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.24, 18.0, 20.0, 15.0, 16.4, -21.0,
+    24.0, -30.0, 32.0,
+  ];
+  let b = [
+    2.0, 2.0, -5.0, -3.0, 2.0, 1.5, 3.0, -2.5, 3.5, 4.0, 5.1, 8.0, 7.68, 6.0,
+    10.0, -16.0,
+  ];
+  let expected = f32x16::new(std::array::from_fn(|i| a[i] % b[i]));
+  let actual = f32x16::new(a) % f32x16::new(b);
   assert_eq!(expected, actual);
 }
 

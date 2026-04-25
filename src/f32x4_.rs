@@ -181,6 +181,19 @@ impl Div for f32x4 {
   }
 }
 
+impl Rem for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: Self) -> Self::Output {
+    Self::new([
+      self.to_array()[0] % rhs.to_array()[0],
+      self.to_array()[1] % rhs.to_array()[1],
+      self.to_array()[2] % rhs.to_array()[2],
+      self.to_array()[3] % rhs.to_array()[3],
+    ])
+  }
+}
+
 impl Neg for f32x4 {
   type Output = Self;
   #[inline]
@@ -236,6 +249,14 @@ impl Div<f32> for f32x4 {
   }
 }
 
+impl Rem<f32> for f32x4 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: f32) -> Self::Output {
+    self.rem(Self::splat(rhs))
+  }
+}
+
 impl Add<f32x4> for f32 {
   type Output = f32x4;
   #[inline]
@@ -265,6 +286,14 @@ impl Div<f32x4> for f32 {
   #[inline]
   fn div(self, rhs: f32x4) -> Self::Output {
     f32x4::splat(self).div(rhs)
+  }
+}
+
+impl Rem<f32x4> for f32 {
+  type Output = f32x4;
+  #[inline]
+  fn rem(self, rhs: f32x4) -> Self::Output {
+    f32x4::splat(self).rem(rhs)
   }
 }
 

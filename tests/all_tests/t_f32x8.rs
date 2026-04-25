@@ -65,6 +65,24 @@ fn impl_div_const_for_f32x8() {
 }
 
 #[test]
+fn impl_rem_const_for_f32x8() {
+  let a = [1.0, 2.5, -3.0, -4.1, 5.0, 6.5, -7.0, 8.1];
+  let b = -5.0;
+  let expected = f32x8::new(a.map(|x| x % b));
+  let actual = f32x8::new(a) % b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_f32x8_for_f32() {
+  let a = -5.0;
+  let b = [1.0, 2.1, -3.54, 4.5, 5.0, 6.12, 7.0, 8.4];
+  let expected = f32x8::new(b.map(|y| a % y));
+  let actual = a % f32x8::new(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_for_f32x8() {
   let a = f32x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
   let b = f32x8::from([5.0, 7.0, 17.0, 1.0, 1.0, 9.0, 2.0, 6.0]);
@@ -124,6 +142,15 @@ fn impl_div_for_f32x8() {
   let b = f32x8::from([2.0, 2.0, 5.0, -3.0, 2.0, 1.5, 3.0, 2.5]);
   let expected = f32x8::from([2.0, 4.5, 2.0, -4.0, 2.5, 4.0, 2.3333333, 3.2]);
   let actual = a / b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_for_f32x8() {
+  let a = [4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.24];
+  let b = [2.0, 2.0, -5.0, -3.0, 2.0, 1.5, 3.0, -2.5];
+  let expected = f32x8::new(std::array::from_fn(|i| a[i] % b[i]));
+  let actual = f32x8::new(a) % f32x8::new(b);
   assert_eq!(expected, actual);
 }
 
