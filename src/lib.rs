@@ -733,6 +733,60 @@ from_array!(u32, u32, u32x16, 16);
 from_array!(f32, f32, f32x16, 16);
 from_array!(f64, f64, f64x8, 8);
 
+macro_rules! impl_index {
+  ($simd:ty, $elem:ty) => {
+    impl<I> Index<I> for $simd
+    where
+      [$elem]: Index<I>,
+    {
+      type Output = <[$elem] as Index<I>>::Output;
+
+      #[inline]
+      fn index(&self, index: I) -> &Self::Output {
+        &self.as_array()[index]
+      }
+    }
+
+    impl<I> IndexMut<I> for $simd
+    where
+      [$elem]: IndexMut<I>,
+    {
+      #[inline]
+      fn index_mut(&mut self, index: I) -> &mut Self::Output {
+        &mut self.as_mut_array()[index]
+      }
+    }
+  };
+}
+impl_index!(f32x4, f32);
+impl_index!(f32x8, f32);
+impl_index!(f32x16, f32);
+impl_index!(f64x2, f64);
+impl_index!(f64x4, f64);
+impl_index!(f64x8, f64);
+impl_index!(i8x16, i8);
+impl_index!(i8x32, i8);
+impl_index!(i16x8, i16);
+impl_index!(i16x16, i16);
+impl_index!(i16x32, i16);
+impl_index!(i32x4, i32);
+impl_index!(i32x8, i32);
+impl_index!(i32x16, i32);
+impl_index!(i64x2, i64);
+impl_index!(i64x4, i64);
+impl_index!(i64x8, i64);
+impl_index!(u8x16, u8);
+impl_index!(u8x32, u8);
+impl_index!(u16x8, u16);
+impl_index!(u16x16, u16);
+impl_index!(u16x32, u16);
+impl_index!(u32x4, u32);
+impl_index!(u32x8, u32);
+impl_index!(u32x16, u32);
+impl_index!(u64x2, u64);
+impl_index!(u64x4, u64);
+impl_index!(u64x8, u64);
+
 #[allow(unused)]
 fn software_sqrt(x: f64) -> f64 {
   use core::num::Wrapping;

@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## Unreleased
+
+* Implemented `Index` for all types.
+
 ## 1.3.0
 
 * Fixes the behaviour of `f32x16` functions `is_finite` and `round_int`. They
