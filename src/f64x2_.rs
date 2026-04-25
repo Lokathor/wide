@@ -1529,6 +1529,8 @@ impl f64x2 {
     cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
   }
 
+  /// Returns true for each element if it has a positive sign, including `+0.0`,
+  /// `NaN`s with positive sign bit and positive infinity.
   #[inline]
   #[must_use]
   pub fn is_sign_positive(self) -> Self {
@@ -1537,6 +1539,8 @@ impl f64x2 {
     cast::<_, f64x2>(t2).simd_eq(f64x2::ZERO)
   }
 
+  /// Returns true for each element if it has a negative sign, including `-0.0`,
+  /// `NaN`s with negative sign bit and negative infinity.
   #[inline]
   #[must_use]
   pub fn is_sign_negative(self) -> Self {

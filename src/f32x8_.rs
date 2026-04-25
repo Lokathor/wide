@@ -1246,6 +1246,8 @@ impl f32x8 {
     cast::<_, f32x8>(i32x8::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
 
+  /// Returns true for each element if it has a positive sign, including `+0.0`,
+  /// `NaN`s with positive sign bit and positive infinity.
   #[inline]
   #[must_use]
   pub fn is_sign_positive(self) -> Self {
@@ -1254,6 +1256,8 @@ impl f32x8 {
     cast::<_, f32x8>(t2).simd_eq(f32x8::ZERO)
   }
 
+  /// Returns true for each element if it has a negative sign, including `-0.0`,
+  /// `NaN`s with negative sign bit and negative infinity.
   #[inline]
   #[must_use]
   pub fn is_sign_negative(self) -> Self {
@@ -1562,6 +1566,12 @@ impl f32x8 {
     }
   }
 
+  /// Returns true for each element if its sign bit is set.
+  ///
+  /// If the sign bit is set, the result has all bits set, not just the sign
+  /// bit. This has been renamed to [`is_sign_negative`].
+  ///
+  /// [`is_sign_negative`]: Self::is_sign_negative
   #[inline]
   #[must_use]
   #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
