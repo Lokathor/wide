@@ -1535,9 +1535,12 @@ impl f32x4 {
   #[inline]
   #[must_use]
   pub fn is_sign_positive(self) -> Self {
-    let t1 = cast::<_, i32x4>(self);
-    let t2 = t1 >> 31;
-    cast::<_, f32x4>(t2).simd_eq(f32x4::ZERO)
+    const SIGN_MASK: u32x4 = u32x4::splat((-0.0_f32).to_bits());
+
+    let bits = cast::<f32x4, u32x4>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(u32x4::ZERO);
+    cast::<u32x4, f32x4>(result)
   }
 
   /// Returns true for each element if it has a negative sign, including `-0.0`,
@@ -1545,9 +1548,12 @@ impl f32x4 {
   #[inline]
   #[must_use]
   pub fn is_sign_negative(self) -> Self {
-    let t1 = cast::<_, i32x4>(self);
-    let t2 = t1 >> 31;
-    !cast::<_, f32x4>(t2).simd_eq(f32x4::ZERO)
+    const SIGN_MASK: u32x4 = u32x4::splat((-0.0_f32).to_bits());
+
+    let bits = cast::<f32x4, u32x4>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(SIGN_MASK);
+    cast::<u32x4, f32x4>(result)
   }
 
   /// horizontal add of all the elements of the vector

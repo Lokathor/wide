@@ -1534,9 +1534,22 @@ impl f64x2 {
   #[inline]
   #[must_use]
   pub fn is_sign_positive(self) -> Self {
-    let t1 = cast::<_, i64x2>(self);
-    let t2 = t1 >> 63;
-    cast::<_, f64x2>(t2).simd_eq(f64x2::ZERO)
+    pick! {
+      // Integer equality is slow without `sse4.1`.
+      if #[cfg(any(target_feature = "sse4.1", not(target_feature = "sse2")))] {
+        const SIGN_MASK: u64x2 = u64x2::splat((-0.0_f64).to_bits());
+
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits & SIGN_MASK;
+        let result = sign.simd_eq(u64x2::ZERO);
+        cast::<u64x2, f64x2>(result)
+      } else {
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits >> 63;
+        let sign = cast::<u64x2, f64x2>(sign);
+        sign.simd_eq(f64x2::ZERO)
+      }
+    }
   }
 
   /// Returns true for each element if it has a negative sign, including `-0.0`,
@@ -1544,9 +1557,22 @@ impl f64x2 {
   #[inline]
   #[must_use]
   pub fn is_sign_negative(self) -> Self {
-    let t1 = cast::<_, i64x2>(self);
-    let t2 = t1 >> 63;
-    !cast::<_, f64x2>(t2).simd_eq(f64x2::ZERO)
+    pick! {
+      // Integer equality is slow without `sse4.1`.
+      if #[cfg(any(target_feature = "sse4.1", not(target_feature = "sse2")))] {
+        const SIGN_MASK: u64x2 = u64x2::splat((-0.0_f64).to_bits());
+
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits & SIGN_MASK;
+        let result = sign.simd_eq(SIGN_MASK);
+        cast::<u64x2, f64x2>(result)
+      } else {
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits >> 63;
+        let sign = cast::<u64x2, f64x2>(sign);
+        sign.simd_ne(f64x2::ZERO)
+      }
+    }
   }
 
   /// horizontal add of all the elements of the vector
