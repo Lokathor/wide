@@ -915,6 +915,60 @@ fn impl_f32x8_pow_n() {
 }
 
 #[test]
+fn impl_f32x8_is_sign_positive() {
+  let a = f32x8::new([
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+  ]);
+  let expected = f32x8::new([
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+  ]);
+  let actual = a.is_sign_positive();
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x8::ZERO);
+}
+
+#[test]
+fn impl_f32x8_is_sign_negative() {
+  let a = f32x8::new([
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+  ]);
+  let expected = f32x8::new([
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+  ]);
+  let actual = a.is_sign_negative();
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x8::ZERO);
+}
+
+#[test]
 fn impl_f32x8_reduce_add() {
   let p = f32x8::from([0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.009]);
   assert!((p.reduce_add() - 0.037) < 0.000000001);

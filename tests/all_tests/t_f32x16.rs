@@ -1745,6 +1745,92 @@ fn impl_f32x16_powf() {
 }
 
 #[test]
+fn impl_f32x16_is_sign_positive() {
+  let a = f32x16::new([
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+  ]);
+  let expected = f32x16::new([
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+  ]);
+  let actual = a.is_sign_positive();
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x16::ZERO);
+}
+
+#[test]
+fn impl_f32x16_is_sign_negative() {
+  let a = f32x16::new([
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+    2401.0,
+    -123.0,
+    f32::INFINITY,
+    f32::NEG_INFINITY,
+  ]);
+  let expected = f32x16::new([
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+    0.0,
+    f32::from_bits(!0),
+  ]);
+  let actual = a.is_sign_negative();
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x16::ZERO);
+}
+
+#[test]
 fn impl_f32x16_reduce_add() {
   let p = f32x16::from([
     0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.009, 0.008, -0.01,
