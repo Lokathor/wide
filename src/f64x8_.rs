@@ -88,6 +88,23 @@ impl Div for f64x8 {
   }
 }
 
+impl Rem for f64x8 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: Self) -> Self::Output {
+    Self::new([
+      self.to_array()[0] % rhs.to_array()[0],
+      self.to_array()[1] % rhs.to_array()[1],
+      self.to_array()[2] % rhs.to_array()[2],
+      self.to_array()[3] % rhs.to_array()[3],
+      self.to_array()[4] % rhs.to_array()[4],
+      self.to_array()[5] % rhs.to_array()[5],
+      self.to_array()[6] % rhs.to_array()[6],
+      self.to_array()[7] % rhs.to_array()[7],
+    ])
+  }
+}
+
 impl Neg for f64x8 {
   type Output = Self;
   #[inline]
@@ -137,6 +154,14 @@ impl Div<f64> for f64x8 {
   }
 }
 
+impl Rem<f64> for f64x8 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: f64) -> Self::Output {
+    self.rem(Self::splat(rhs))
+  }
+}
+
 impl Add<f64x8> for f64 {
   type Output = f64x8;
   #[inline]
@@ -166,6 +191,14 @@ impl Div<f64x8> for f64 {
   #[inline]
   fn div(self, rhs: f64x8) -> Self::Output {
     f64x8::splat(self).div(rhs)
+  }
+}
+
+impl Rem<f64x8> for f64 {
+  type Output = f64x8;
+  #[inline]
+  fn rem(self, rhs: f64x8) -> Self::Output {
+    f64x8::splat(self).rem(rhs)
   }
 }
 
@@ -385,6 +418,14 @@ impl f64x8 {
 
   #[inline]
   #[must_use]
+  pub fn signum(self) -> Self {
+    let result = Self::ONE | self & -Self::ZERO;
+
+    self.is_nan().blend(self, result)
+  }
+
+  #[inline]
+  #[must_use]
   pub fn floor(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -472,6 +513,39 @@ impl f64x8 {
     }
   }
 
+  /// Restrict a value to a certain interval unless it is NaN.
+  ///
+  /// If `min > max`, `min` is NaN or `max` is NaN the result is unspecified.
+  ///
+  /// # Panics
+  ///
+  /// If debug assertions are enabled, this panics if for any lane `min > max`,
+  /// `min` is NaN or `max` is NaN.
+  #[inline]
+  #[must_use]
+  #[track_caller]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        debug_assert!(min.simd_le(max).all(), "min > max, or either was NaN");
+        // For both `min_m512d` and `max_m512d` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { avx512: min_m512d(max.avx512, max_m512d(min.avx512, self.avx512)) }
+      } else {
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn midpoint(self, other: Self) -> Self {
+    (self + other) * 0.5
+  }
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {
@@ -536,6 +610,27 @@ impl f64x8 {
       rounded[6] as i64,
       rounded[7] as i64,
     ])
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512d::<{round_op!(Zero)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.trunc(),
+          b: self.b.trunc(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn fract(self) -> Self {
+    self - self.trunc()
   }
 
   /// Performs a multiply-add operation: `self * m + a`
@@ -708,6 +803,22 @@ impl f64x8 {
          }
        }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn div_euclid(self, rhs: Self) -> Self {
+    let q = (self / rhs).trunc();
+    (self % rhs)
+      .simd_lt(Self::ZERO)
+      .blend(rhs.simd_gt(Self::ZERO).blend(q - Self::ONE, q + Self::ONE), q)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn rem_euclid(self, rhs: Self) -> Self {
+    let r = self % rhs;
+    r.simd_lt(Self::ZERO).blend(r + rhs.abs(), r)
   }
 
   #[inline]
@@ -1308,6 +1419,36 @@ impl f64x8 {
     in_range.blend(z, Self::ZERO)
   }
 
+  /// Returns `2^self`.
+  #[inline]
+  #[must_use]
+  pub fn exp2(self) -> Self {
+    const_f64_as_f64x8!(P2, 1.0 / 2.0);
+    const_f64_as_f64x8!(P3, 1.0 / 6.0);
+    const_f64_as_f64x8!(P4, 1.0 / 24.0);
+    const_f64_as_f64x8!(P5, 1.0 / 120.0);
+    const_f64_as_f64x8!(P6, 1.0 / 720.0);
+    const_f64_as_f64x8!(P7, 1.0 / 5040.0);
+    const_f64_as_f64x8!(P8, 1.0 / 40320.0);
+    const_f64_as_f64x8!(P9, 1.0 / 362880.0);
+    const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
+
+    let round = self.round();
+    let round_exp2 = round.vm_pow2n();
+
+    let fract = (self - round) * Self::LN_2;
+    let fract_partial_exp2 =
+      polynomial_8!(fract, P2, P3, P4, P5, P6, P7, P8, P9, P10);
+    let fract2 = fract * fract;
+    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+
+    let result = fract_exp2 * round_exp2;
+    let bounds_mask =
+      self.abs().simd_lt(Self::splat(1020.0)) & self.is_finite();
+
+    bounds_mask.blend(result, Self::ZERO)
+  }
+
   #[inline]
   fn exponent(self) -> f64x8 {
     const_f64_as_f64x8!(pow2_52, 4503599627370496.0);
@@ -1388,6 +1529,27 @@ impl f64x8 {
         get_f64_from_m128d_s(s)
       } else {
         self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> f64 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
+        let lo = cast_to_m256d_from_m512d(self.avx512);
+        let hi = extract_m256d_from_m512d::<1>(self.avx512);
+        let v  = mul_m256d(lo, hi);
+        let lo = cast_to_m128d_from_m256d(v);
+        let hi = extract_m128d_from_m256d::<1>(v);
+        let lo = mul_m128d(lo,hi);
+        let hi64 = unpack_high_m128d(lo,lo);
+        let product = mul_m128d_s(lo,hi64);
+        get_f64_from_m128d_s(product)
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
       }
     }
   }

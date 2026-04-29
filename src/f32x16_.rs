@@ -113,6 +113,31 @@ impl Div for f32x16 {
   }
 }
 
+impl Rem for f32x16 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: Self) -> Self::Output {
+    Self::new([
+      self.to_array()[0] % rhs.to_array()[0],
+      self.to_array()[1] % rhs.to_array()[1],
+      self.to_array()[2] % rhs.to_array()[2],
+      self.to_array()[3] % rhs.to_array()[3],
+      self.to_array()[4] % rhs.to_array()[4],
+      self.to_array()[5] % rhs.to_array()[5],
+      self.to_array()[6] % rhs.to_array()[6],
+      self.to_array()[7] % rhs.to_array()[7],
+      self.to_array()[8] % rhs.to_array()[8],
+      self.to_array()[9] % rhs.to_array()[9],
+      self.to_array()[10] % rhs.to_array()[10],
+      self.to_array()[11] % rhs.to_array()[11],
+      self.to_array()[12] % rhs.to_array()[12],
+      self.to_array()[13] % rhs.to_array()[13],
+      self.to_array()[14] % rhs.to_array()[14],
+      self.to_array()[15] % rhs.to_array()[15],
+    ])
+  }
+}
+
 impl Neg for f32x16 {
   type Output = Self;
   #[inline]
@@ -162,6 +187,14 @@ impl Div<f32> for f32x16 {
   }
 }
 
+impl Rem<f32> for f32x16 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: f32) -> Self::Output {
+    self.rem(Self::splat(rhs))
+  }
+}
+
 impl Add<f32x16> for f32 {
   type Output = f32x16;
   #[inline]
@@ -191,6 +224,14 @@ impl Div<f32x16> for f32 {
   #[inline]
   fn div(self, rhs: f32x16) -> Self::Output {
     f32x16::splat(self).div(rhs)
+  }
+}
+
+impl Rem<f32x16> for f32 {
+  type Output = f32x16;
+  #[inline]
+  fn rem(self, rhs: f32x16) -> Self::Output {
+    f32x16::splat(self).rem(rhs)
   }
 }
 
@@ -387,6 +428,14 @@ impl f32x16 {
 
   #[inline]
   #[must_use]
+  pub fn signum(self) -> Self {
+    let result = Self::ONE | self & -Self::ZERO;
+
+    self.is_nan().blend(self, result)
+  }
+
+  #[inline]
+  #[must_use]
   pub fn floor(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -487,6 +536,39 @@ impl f32x16 {
     }
   }
 
+  /// Restrict a value to a certain interval unless it is NaN.
+  ///
+  /// If `min > max`, `min` is NaN or `max` is NaN the result is unspecified.
+  ///
+  /// # Panics
+  ///
+  /// If debug assertions are enabled, this panics if for any lane `min > max`,
+  /// `min` is NaN or `max` is NaN.
+  #[inline]
+  #[must_use]
+  #[track_caller]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        debug_assert!(min.simd_le(max).all(), "min > max, or either was NaN");
+        // For both `min_m512` and `max_m512` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { avx512: min_m512(max.avx512, max_m512(min.avx512, self.avx512)) }
+      } else {
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn midpoint(self, other: Self) -> Self {
+    (self + other) * 0.5
+  }
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {
@@ -578,6 +660,21 @@ impl f32x16 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Zero)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.trunc(),
+          b: self.b.trunc(),
+        }
+      }
+    }
+  }
+
   /// Truncates each lane into an integer. This is a faster implementation than
   /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
   /// values you get implementation defined behavior.
@@ -617,6 +714,12 @@ impl f32x16 {
         ])
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn fract(self) -> Self {
+    self - self.trunc()
   }
 
   /// Performs a multiply-add operation: `self * m + a`
@@ -789,6 +892,22 @@ impl f32x16 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn div_euclid(self, rhs: Self) -> Self {
+    let q = (self / rhs).trunc();
+    (self % rhs)
+      .simd_lt(Self::ZERO)
+      .blend(rhs.simd_gt(Self::ZERO).blend(q - Self::ONE, q + Self::ONE), q)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn rem_euclid(self, rhs: Self) -> Self {
+    let r = self % rhs;
+    r.simd_lt(Self::ZERO).blend(r + rhs.abs(), r)
   }
 
   #[inline]
@@ -1225,6 +1344,31 @@ impl f32x16 {
     in_range.blend(z, Self::ZERO)
   }
 
+  /// Returns `2^self`.
+  #[inline]
+  #[must_use]
+  pub fn exp2(self) -> Self {
+    const_f32_as_f32x16!(P2, 1.0 / 2.0);
+    const_f32_as_f32x16!(P3, 1.0 / 6.0);
+    const_f32_as_f32x16!(P4, 1.0 / 24.0);
+    const_f32_as_f32x16!(P5, 1.0 / 120.0);
+    const_f32_as_f32x16!(P6, 1.0 / 720.0);
+    const_f32_as_f32x16!(P7, 1.0 / 5040.0);
+
+    let round = self.round();
+    let round_exp2 = round.vm_pow2n();
+
+    let fract = (self - round) * Self::LN_2;
+    let fract_partial_exp2 = polynomial_5!(fract, P2, P3, P4, P5, P6, P7);
+    let fract2 = fract * fract;
+    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+
+    let result = fract_exp2 * round_exp2;
+    let bounds_mask = self.abs().simd_lt(Self::splat(120.0)) & self.is_finite();
+
+    bounds_mask.blend(result, Self::ZERO)
+  }
+
   #[inline]
   fn exponent(self) -> Self {
     const_f32_as_f32x16!(pow2_23, 8388608.0);
@@ -1303,6 +1447,26 @@ impl f32x16 {
         reduce_add_m512(self.avx512)
       } else {
         self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  /// horizontal multiplication of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> f32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
+        // safe.
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_reduce_mul_ps;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_reduce_mul_ps;
+
+        unsafe { _mm512_reduce_mul_ps(self.avx512.0) }
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
       }
     }
   }

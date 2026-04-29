@@ -65,6 +65,24 @@ fn impl_div_const_for_f32x4() {
 }
 
 #[test]
+fn impl_rem_const_for_f32x4() {
+  let a = [1.0, 2.0, -3.1, 4.5];
+  let b = -5.0;
+  let expected = f32x4::new(a.map(|x| x % b));
+  let actual = f32x4::new(a) % b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_f32x4_for_f32() {
+  let a = -5.0;
+  let b = [1.0, 2.1, -3.6, 4.55];
+  let expected = f32x4::new(b.map(|y| a % y));
+  let actual = a % f32x4::new(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_for_f32x4() {
   let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
   let b = f32x4::from([5.0, 7.0, 17.0, 1.0]);
@@ -106,6 +124,15 @@ fn impl_div_for_f32x4() {
   let b = f32x4::from([2.0, 2.0, 5.0, -3.0]);
   let expected = f32x4::from([2.0, 4.5, 2.0, -4.0]);
   let actual = a / b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_for_f32x4() {
+  let a = [8.24, 18.0, 20.0, -15.0];
+  let b = [2.2, 2.0, -5.3, -3.0];
+  let expected = f32x4::new(std::array::from_fn(|i| a[i] % b[i]));
+  let actual = f32x4::new(a) % f32x4::new(b);
   assert_eq!(expected, actual);
 }
 
@@ -214,6 +241,21 @@ fn impl_f32x4_abs() {
 }
 
 #[test]
+fn impl_f32x4_signum() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [24.01, -24.01, f32::MAX, f32::MIN],
+    [f32::INFINITY, f32::NEG_INFINITY, f32::NAN, f32::NAN],
+  ] {
+    let expected = f32x4::new(array.map(f32::signum));
+    let actual = f32x4::new(array).signum();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f32x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f32x4_floor() {
   let a = f32x4::from([-1.1, 60.9, 1.1, f32::INFINITY]);
   let expected = f32x4::from([-2.0, 60.0, 1.0, f32::INFINITY]);
@@ -275,6 +317,61 @@ fn impl_f32x4_min() {
   let expected = f32x4::from([1.0, f32::NEG_INFINITY, 3.0, 10.0]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_clamp() {
+  let value = f32x4::new([5.0, 10.0, 10.0, f32::NAN]);
+  let min = f32x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f32x4::new([8.0, 14.0, 9.0, 3.0]);
+  let expected = f32x4::new([5.0, 11.0, 9.0, f32::NAN]);
+  let actual = value.clamp(min, max);
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x4::ZERO);
+}
+
+#[test]
+#[cfg_attr(debug_assertions, should_panic)]
+fn impl_f32x4_clamp_min_gt_max() {
+  let value = f32x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f32x4::new([10.0, 11.0, 5.0, 1.0]);
+  let max = f32x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[cfg_attr(debug_assertions, should_panic)]
+fn impl_f32x4_clamp_nan_min() {
+  let value = f32x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f32x4::new([3.0, 11.0, 5.0, f32::NAN]);
+  let max = f32x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[cfg_attr(debug_assertions, should_panic)]
+fn impl_f32x4_clamp_nan_max() {
+  let value = f32x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f32x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f32x4::new([8.0, 14.0, 9.0, f32::NAN]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+fn impl_f32x4_midpoint() {
+  let a: [f32; 4] = [5.2, -16349.0, 3467890356635.1, 2401.0];
+  let b: [f32; 4] = [-21.0, -236456708943.0, 2340894786738.2, -4235.0];
+
+  let expected = f32x4::new([
+    a[0].midpoint(b[0]),
+    a[1].midpoint(b[1]),
+    a[2].midpoint(b[2]),
+    a[3].midpoint(b[3]),
+  ]);
+  let actual = f32x4::new(a).midpoint(f32x4::new(b));
+
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f32x4::ZERO);
 }
 
 #[test]
@@ -365,6 +462,23 @@ fn impl_f32x4_round_int() {
 }
 
 #[test]
+fn impl_f32x4_trunc() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [5.3, -5.3, 27.8, -27.8],
+    [2401.63, -2401.63, 4911111.2, -4911111.2],
+    [18388608.0, 18388608.0, f32::MAX, f32::MIN],
+    [f32::INFINITY, f32::NEG_INFINITY, f32::NAN, 30.0],
+  ] {
+    let expected = f32x4::new(array.map(f32::trunc));
+    let actual = f32x4::new(array).trunc();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f32x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f32x4_fast_trunc_int() {
   let a = f32x4::from([1.1, 2.5, 3.7, 4.0]);
   let expected = i32x4::from([1, 2, 3, 4]);
@@ -396,6 +510,23 @@ fn impl_f32x4_trunc_int() {
 }
 
 #[test]
+fn impl_f32x4_fract() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [5.3, -5.3, 27.8, -27.8],
+    [2401.63, -2401.63, 4911111.2, -4911111.2],
+    [18388608.0, 18388608.0, f32::MAX, f32::MIN],
+    [f32::INFINITY, f32::NEG_INFINITY, f32::NAN, 30.0],
+  ] {
+    let expected = f32x4::new(array.map(f32::fract));
+    let actual = f32x4::new(array).fract();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f32x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f32x4_mul_add() {
   let a = f32x4::from([2.0, 3.0, 4.0, 5.0]);
   let b = f32x4::from([4.0, 5.0, 6.0, 7.0]);
@@ -412,6 +543,26 @@ fn impl_f32x4_mul_neg_add() {
   let c = f32x4::from([1.0, 1.0, 1.0, 1.0]);
   let expected = f32x4::from([-7.0, -14.0, -23.0, -34.0]);
   let actual = a.mul_neg_add(b, c);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_div_euclid() {
+  let a = [8.24, -18.0, 20.0, 15.0];
+  let b = [5.1, 8.0, -7.68, -6.0];
+  let expected =
+    f32x4::new(std::array::from_fn(|i| f32::div_euclid(a[i], b[i])));
+  let actual = f32x4::new(a).div_euclid(f32x4::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_rem_euclid() {
+  let a = [8.24, -18.0, 20.0, 15.0];
+  let b = [5.1, 8.0, -7.68, -6.0];
+  let expected =
+    f32x4::new(std::array::from_fn(|i| f32::rem_euclid(a[i], b[i])));
+  let actual = f32x4::new(a).rem_euclid(f32x4::new(b));
   assert_eq!(expected, actual);
 }
 
@@ -596,14 +747,14 @@ fn impl_f32x4_atan2() {
           let actual_arr: [f32; 4] = cast(vals);
           let actual = actual_arr[i];
           assert!(
-          (actual - expected).abs() < 0.0000006,
-          "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
-          name = name,
-          orig_y = orig_y,
-          orig_x = orig_x,
-          expected = expected,
-          actual = actual
-        );
+            (actual - expected).abs() < 0.0000006,
+            "Wanted {name}({orig_y}, {orig_x}) to be {expected} but got {actual}",
+            name = name,
+            orig_y = orig_y,
+            orig_x = orig_x,
+            expected = expected,
+            actual = actual
+          );
         };
         check("atan2", actual_atan2s, orig_y.atan2(orig_x));
       }
@@ -741,6 +892,18 @@ fn impl_f32x4_exp() {
 }
 
 #[test]
+fn impl_f32x4_exp2() {
+  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4] {
+    let _: f32 = x;
+    let expected = f32x4::from(x.exp2());
+    let actual = f32x4::from(x).exp2();
+    let diff_from_std: [f32; 4] = cast((actual - expected).abs());
+    println!("x: {x:?}, expected: {expected:?}, actual: {actual:?}");
+    assert!(diff_from_std[0] < expected.to_array()[0] * 1e-7);
+  }
+}
+
+#[test]
 fn test_f32x4_move_mask() {
   let a = f32x4::from([-1.0, 0.0, -2.0, -3.0]);
   let expected = 0b1101;
@@ -853,6 +1016,12 @@ fn impl_f32x4_is_sign_negative() {
 fn impl_f32x4_reduce_add() {
   let p = f32x4::splat(0.001);
   assert_eq!(p.reduce_add(), 0.004);
+}
+
+#[test]
+fn impl_f32x4_reduce_mul() {
+  let value = f32x4::new([2.0, 3.0, 5.0, 7.0]);
+  assert_eq!(value.reduce_mul(), 210.0);
 }
 
 #[test]

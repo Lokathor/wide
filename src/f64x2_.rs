@@ -176,6 +176,17 @@ impl Div for f64x2 {
   }
 }
 
+impl Rem for f64x2 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: Self) -> Self::Output {
+    Self::new([
+      self.to_array()[0] % rhs.to_array()[0],
+      self.to_array()[1] % rhs.to_array()[1],
+    ])
+  }
+}
+
 impl Neg for f64x2 {
   type Output = Self;
   #[inline]
@@ -229,6 +240,14 @@ impl Div<f64> for f64x2 {
   }
 }
 
+impl Rem<f64> for f64x2 {
+  type Output = Self;
+  #[inline]
+  fn rem(self, rhs: f64) -> Self::Output {
+    self.rem(Self::splat(rhs))
+  }
+}
+
 impl Add<f64x2> for f64 {
   type Output = f64x2;
   #[inline]
@@ -258,6 +277,14 @@ impl Div<f64x2> for f64 {
   #[inline]
   fn div(self, rhs: f64x2) -> Self::Output {
     f64x2::splat(self).div(rhs)
+  }
+}
+
+impl Rem<f64x2> for f64 {
+  type Output = f64x2;
+  #[inline]
+  fn rem(self, rhs: f64x2) -> Self::Output {
+    f64x2::splat(self).rem(rhs)
   }
 }
 
@@ -487,6 +514,15 @@ impl f64x2 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn signum(self) -> Self {
+    let result = Self::ONE | self & -Self::ZERO;
+
+    self.is_nan().blend(self, result)
+  }
+
   #[inline]
   #[must_use]
   pub fn floor(self) -> Self {
@@ -656,6 +692,46 @@ impl f64x2 {
     }
   }
 
+  /// Restrict a value to a certain interval unless it is NaN.
+  ///
+  /// If `min > max`, `min` is NaN or `max` is NaN the result is unspecified.
+  ///
+  /// # Panics
+  ///
+  /// If debug assertions are enabled, this panics if for any lane `min > max`,
+  /// `min` is NaN or `max` is NaN.
+  #[inline]
+  #[must_use]
+  #[track_caller]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    debug_assert!(min.simd_le(max).all(), "min > max, or either was NaN");
+
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // For both `min_m128d` and `max_m128d` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { sse: min_m128d(max.sse, max_m128d(min.sse, self.sse)) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_min(f64x2_max(self.simd, min.simd), max.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vminq_f64(vmaxq_f64(self.neon, min.neon), max.neon) } }
+      } else {
+        // The standard library does not have NaN propagating `min` and `max`
+        // functions.
+        let mut result = self;
+        result = result.simd_lt(min).blend(min, self);
+        result = result.simd_gt(max).blend(max, self);
+        result
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn midpoint(self, other: Self) -> Self {
+    (self + other) * 0.5
+  }
+
   #[inline]
   #[must_use]
   pub fn is_nan(self) -> Self {
@@ -716,6 +792,43 @@ impl f64x2 {
     let rounded: [f64; 2] = cast(self.round());
     cast([rounded[0] as i64, rounded[1] as i64])
   }
+
+  #[inline]
+  #[must_use]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128d::<{round_op!(Zero)}>(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_trunc(self.simd) }
+      } else {
+        // There does not seem to be an SSE2 intrinsic for this.
+        // `truncate_m128d_to_m128i` truncates to `i32` values which cannot
+        // represent all possible outputs.
+
+        let array: [f64; 2] = cast(self);
+        let result: Self = cast([
+          array[0] as i64 as f64,
+          array[1] as i64 as f64,
+        ]);
+
+        // Out of range values are either already round, infinite or NaN. Values
+        // in range can all be represented by `i64`.
+        const BOUNDS_LIMIT: i64 = 18e15_f64.to_bits().cast_signed();
+        let bounds_mask: Self = cast(cast::<f64x2, i64x2>(self.abs()).simd_lt(i64x2::splat(BOUNDS_LIMIT)));
+
+        // Reset the sign bit of the mask to preverse the sign of `self`.
+        bounds_mask.abs().blend(result, self)
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn fract(self) -> Self {
+    self - self.trunc()
+  }
+
   /// Performs a multiply-add operation: `self * m + a`
   ///
   /// When hardware FMA support is available, this computes the result with a
@@ -868,6 +981,22 @@ impl f64x2 {
           -(self * m) - s
         }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn div_euclid(self, rhs: Self) -> Self {
+    let q = (self / rhs).trunc();
+    (self % rhs)
+      .simd_lt(Self::ZERO)
+      .blend(rhs.simd_gt(Self::ZERO).blend(q - Self::ONE, q + Self::ONE), q)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn rem_euclid(self, rhs: Self) -> Self {
+    let r = self % rhs;
+    r.simd_lt(Self::ZERO).blend(r + rhs.abs(), r)
   }
 
   #[inline]
@@ -1486,6 +1615,36 @@ impl f64x2 {
     in_range.blend(z, Self::ZERO)
   }
 
+  /// Returns `2^self`.
+  #[inline]
+  #[must_use]
+  pub fn exp2(self) -> Self {
+    const_f64_as_f64x2!(P2, 1.0 / 2.0);
+    const_f64_as_f64x2!(P3, 1.0 / 6.0);
+    const_f64_as_f64x2!(P4, 1.0 / 24.0);
+    const_f64_as_f64x2!(P5, 1.0 / 120.0);
+    const_f64_as_f64x2!(P6, 1.0 / 720.0);
+    const_f64_as_f64x2!(P7, 1.0 / 5040.0);
+    const_f64_as_f64x2!(P8, 1.0 / 40320.0);
+    const_f64_as_f64x2!(P9, 1.0 / 362880.0);
+    const_f64_as_f64x2!(P10, 1.0 / 3628800.0);
+
+    let round = self.round();
+    let round_exp2 = round.vm_pow2n();
+
+    let fract = (self - round) * Self::LN_2;
+    let fract_partial_exp2 =
+      polynomial_8!(fract, P2, P3, P4, P5, P6, P7, P8, P9, P10);
+    let fract2 = fract * fract;
+    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+
+    let result = fract_exp2 * round_exp2;
+    let bounds_mask =
+      self.abs().simd_lt(Self::splat(1020.0)) & self.is_finite();
+
+    bounds_mask.blend(result, Self::ZERO)
+  }
+
   #[inline]
   fn exponent(self) -> f64x2 {
     const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
@@ -1592,6 +1751,14 @@ impl f64x2 {
         self.arr.iter().sum()
       }
     }
+  }
+
+  /// horizontal multiplication of all the elements of the vector
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> f64 {
+    let arr: [f64; 2] = cast(self);
+    arr.iter().product()
   }
 
   #[inline]
