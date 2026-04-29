@@ -1149,7 +1149,7 @@ impl f64x8 {
     re += s + fac;
 
     // get sign bit
-    re = (self.sign_bit()).blend(-re, re);
+    re = (self.is_sign_negative()).blend(-re, re);
 
     re
   }
@@ -1226,10 +1226,10 @@ impl f64x8 {
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
     re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
-    re = (x.sign_bit()).blend(Self::PI - re, re);
+    re = (x.is_sign_negative()).blend(Self::PI - re, re);
 
     // get sign bit
-    re = (y.sign_bit()).blend(-re, re);
+    re = (y.is_sign_negative()).blend(-re, re);
 
     re
   }
@@ -1487,11 +1487,31 @@ impl f64x8 {
   fn nan_pow() -> Self {
     cast::<_, f64x8>(i64x8::splat(0x7FF8000000000000 | 0x101 << 29))
   }
+
+  /// Returns true for each element if it has a positive sign, including `+0.0`,
+  /// `NaN`s with positive sign bit and positive infinity.
   #[inline]
-  fn sign_bit(self) -> Self {
-    let t1 = cast::<_, i64x8>(self);
-    let t2 = t1 >> 63;
-    !cast::<_, f64x8>(t2).simd_eq(f64x8::ZERO)
+  #[must_use]
+  pub fn is_sign_positive(self) -> Self {
+    const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
+
+    let bits = cast::<f64x8, u64x8>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(u64x8::ZERO);
+    cast::<u64x8, f64x8>(result)
+  }
+
+  /// Returns true for each element if it has a negative sign, including `-0.0`,
+  /// `NaN`s with negative sign bit and negative infinity.
+  #[inline]
+  #[must_use]
+  pub fn is_sign_negative(self) -> Self {
+    const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
+
+    let bits = cast::<f64x8, u64x8>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(SIGN_MASK);
+    cast::<u64x8, f64x8>(result)
   }
 
   #[inline]
@@ -1690,7 +1710,7 @@ impl f64x8 {
       z,
     );
 
-    let x_sign = self.sign_bit();
+    let x_sign = self.is_sign_negative();
 
     let z = if x_sign.any() {
       // Y into an integer

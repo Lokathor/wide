@@ -888,6 +888,24 @@ fn impl_f64x4_pow_multiple() {
 }
 
 #[test]
+fn impl_f64x4_is_sign_positive() {
+  let a = f64x4::new([2401.0, -123.0, f64::INFINITY, f64::NEG_INFINITY]);
+  let expected = f64x4::new([f64::from_bits(!0), 0.0, f64::from_bits(!0), 0.0]);
+  let actual = a.is_sign_positive();
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f64x4::ZERO);
+}
+
+#[test]
+fn impl_f64x4_is_sign_negative() {
+  let a = f64x4::new([2401.0, -123.0, f64::INFINITY, f64::NEG_INFINITY]);
+  let expected = f64x4::new([0.0, f64::from_bits(!0), 0.0, f64::from_bits(!0)]);
+  let actual = a.is_sign_negative();
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f64x4::ZERO);
+}
+
+#[test]
 fn impl_f64x4_reduce_add() {
   let p = f64x4::splat(0.001);
   assert_eq!(p.reduce_add(), 0.004);

@@ -1065,7 +1065,7 @@ impl f32x16 {
     re = re.mul_add(zz * z, z) + s;
 
     // get sign bit
-    re = (self.sign_bit()).blend(-re, re);
+    re = (self.is_sign_negative()).blend(-re, re);
 
     re
   }
@@ -1118,10 +1118,10 @@ impl f32x16 {
     // move back in place
     re = swapxy.blend(Self::FRAC_PI_2 - re, re);
     re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
-    re = (x.sign_bit()).blend(Self::PI - re, re);
+    re = (x.is_sign_negative()).blend(Self::PI - re, re);
 
     // get sign bit
-    re = (y.sign_bit()).blend(-re, re);
+    re = (y.is_sign_negative()).blend(-re, re);
 
     re
   }
@@ -1412,11 +1412,30 @@ impl f32x16 {
     cast::<_, f32x16>(i32x16::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
 
+  /// Returns true for each element if it has a positive sign, including `+0.0`,
+  /// `NaN`s with positive sign bit and positive infinity.
   #[inline]
-  pub fn sign_bit(self) -> Self {
-    let t1 = cast::<_, i32x16>(self);
-    let t2 = t1 >> 31;
-    !cast::<_, f32x16>(t2).simd_eq(f32x16::ZERO)
+  #[must_use]
+  pub fn is_sign_positive(self) -> Self {
+    const SIGN_MASK: u32x16 = u32x16::splat((-0.0_f32).to_bits());
+
+    let bits = cast::<f32x16, u32x16>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(u32x16::ZERO);
+    cast::<u32x16, f32x16>(result)
+  }
+
+  /// Returns true for each element if it has a negative sign, including `-0.0`,
+  /// `NaN`s with negative sign bit and negative infinity.
+  #[inline]
+  #[must_use]
+  pub fn is_sign_negative(self) -> Self {
+    const SIGN_MASK: u32x16 = u32x16::splat((-0.0_f32).to_bits());
+
+    let bits = cast::<f32x16, u32x16>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(SIGN_MASK);
+    cast::<u32x16, f32x16>(result)
   }
 
   /// horizontal add of all the elements of the vector
@@ -1591,7 +1610,7 @@ impl f32x16 {
       z,
     );
 
-    let x_sign = self.sign_bit();
+    let x_sign = self.is_sign_negative();
     let z = if x_sign.any() {
       // Y into an integer
       let yi = y.simd_eq(y.round());
@@ -1701,6 +1720,19 @@ impl f32x16 {
         }
       }
     }
+  }
+
+  /// Returns true for each element if its sign bit is set.
+  ///
+  /// If the sign bit is set, the result has all bits set, not just the sign
+  /// bit. This has been renamed to [`is_sign_negative`].
+  ///
+  /// [`is_sign_negative`]: Self::is_sign_negative
+  #[inline]
+  #[must_use]
+  #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
+  pub fn sign_bit(self) -> Self {
+    self.is_sign_negative()
   }
 }
 
