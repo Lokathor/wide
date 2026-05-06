@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Added more float functions.
+* Implemented `Rem` for float types.
 * Renamed float function `sign_bit` to `is_sign_negative` and added
   `is_sign_positive`.
 

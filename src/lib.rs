@@ -61,7 +61,7 @@ use bytemuck::*;
 pub use bytemuck;
 
 #[cfg(feature = "serde")]
-use serde_core::{ser::SerializeTuple, Deserialize, Serialize};
+use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
 #[macro_use]
 mod macros;

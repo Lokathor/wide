@@ -78,6 +78,15 @@ fn impl_div_for_f64x4() {
 }
 
 #[test]
+fn impl_rem_for_f64x4() {
+  let a = [4.0, 9.0, 10.0, 12.0];
+  let b = [2.0, 2.4, -5.0, -3.1];
+  let expected = f64x4::new(std::array::from_fn(|i| a[i] % b[i]));
+  let actual = f64x4::new(a) % f64x4::new(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_sub_const_for_f64x4() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let expected = f64x4::from([-1.0, 0.0, 1.0, 2.0]);
@@ -98,6 +107,24 @@ fn impl_div_const_for_f64x4() {
   let a = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   let expected = f64x4::from([0.5, 1.0, 1.5, 2.0]);
   let actual = a / 2.0;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_const_for_f64x4() {
+  let a = [1.3, -2.4, 5.34, -10.2];
+  let b = -5.0;
+  let expected = f64x4::new(a.map(|x| x % b));
+  let actual = f64x4::new(a) % b;
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_rem_f64x4_for_f32() {
+  let a = -5.0;
+  let b = [1.0, 2.1, -3.54, 4.5];
+  let expected = f64x4::new(b.map(|y| a % y));
+  let actual = a % f64x4::new(b);
   assert_eq!(expected, actual);
 }
 
@@ -206,6 +233,21 @@ fn impl_f64x4_abs() {
 }
 
 #[test]
+fn impl_f64x4_signum() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [24.01, -24.01, f64::MAX, f64::MIN],
+    [f64::NAN, f64::NAN, f64::INFINITY, f64::NEG_INFINITY],
+  ] {
+    let expected = f64x4::new(array.map(f64::signum));
+    let actual = f64x4::new(array).signum();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x4_floor() {
   let a = f64x4::from([-1.1, 60.9, 1.1, f64::INFINITY]);
   let expected = f64x4::from([-2.0, 60.0, 1.0, f64::INFINITY]);
@@ -267,6 +309,61 @@ fn impl_f64x4_min() {
   let expected = f64x4::from([2.0, 5.0, f64::INFINITY, f64::INFINITY]);
   let actual = a.min(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x4_clamp() {
+  let value = f64x4::new([5.0, 10.0, 10.0, f64::NAN]);
+  let min = f64x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f64x4::new([8.0, 14.0, 9.0, 3.0]);
+  let expected = f64x4::new([5.0, 11.0, 9.0, f64::NAN]);
+  let actual = value.clamp(min, max);
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f64x4::ZERO);
+}
+
+#[test]
+#[cfg_attr(debug_assertions, should_panic)]
+fn impl_f64x4_clamp_min_gt_max() {
+  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f64x4::new([10.0, 11.0, 5.0, 1.0]);
+  let max = f64x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[cfg_attr(debug_assertions, should_panic)]
+fn impl_f64x4_clamp_nan_min() {
+  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f64x4::new([3.0, 11.0, 5.0, f64::NAN]);
+  let max = f64x4::new([8.0, 14.0, 9.0, 3.0]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+#[cfg_attr(debug_assertions, should_panic)]
+fn impl_f64x4_clamp_nan_max() {
+  let value = f64x4::new([5.0, 10.0, 10.0, 0.0]);
+  let min = f64x4::new([3.0, 11.0, 5.0, 1.0]);
+  let max = f64x4::new([8.0, 14.0, 9.0, f64::NAN]);
+  let _ = value.clamp(min, max);
+}
+
+#[test]
+fn impl_f64x4_midpoint() {
+  let a: [f64; 4] = [5.2, -16349.0, 3467890356635.1, 2401.0];
+  let b: [f64; 4] = [-21.0, -236456708943.0, 2340894786738.2, -4235.0];
+
+  let expected = f64x4::new([
+    a[0].midpoint(b[0]),
+    a[1].midpoint(b[1]),
+    a[2].midpoint(b[2]),
+    a[3].midpoint(b[3]),
+  ]);
+  let actual = f64x4::new(a).midpoint(f64x4::new(b));
+
+  // Use bitwise equality to accept NaNs as equal.
+  assert_eq!(expected ^ actual, f64x4::ZERO);
 }
 
 #[test]
@@ -337,6 +434,40 @@ fn impl_f64x4_round_int() {
 }
 
 #[test]
+fn impl_f64x4_trunc() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [27.8, -27.8, 2401.63, -2401.63],
+    [18e15 - 2.7, -18e15 + 2.7, 18e15 + 2.3, -18e15 - 2.3],
+    [1e20, -1e20, f64::MAX, f64::MIN],
+    [f64::INFINITY, f64::NEG_INFINITY, f64::NAN, 30.0],
+  ] {
+    let expected = f64x4::new(array.map(f64::trunc));
+    let actual = f64x4::new(array).trunc();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
+fn impl_f64x4_fract() {
+  for array in [
+    [0.0, -0.0, 1.0, -1.0],
+    [27.8, -27.8, 2401.63, -2401.63],
+    [18e15 - 2.7, -18e15 + 2.7, 18e15 + 2.3, -18e15 - 2.3],
+    [1e20, -1e20, f64::MAX, f64::MIN],
+    [f64::INFINITY, f64::NEG_INFINITY, f64::NAN, 30.0],
+  ] {
+    let expected = f64x4::new(array.map(f64::fract));
+    let actual = f64x4::new(array).fract();
+
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x4_mul_add() {
   let a = f64x4::from([2.0, 3.0, 4.0, 5.0]);
   let b = f64x4::from([4.0, 5.0, 6.0, 7.0]);
@@ -353,6 +484,26 @@ fn impl_f64x4_mul_neg_add() {
   let c = f64x4::from([1.0, 1.0, 1.0, 1.0]);
   let expected = f64x4::from([-7.0, -14.0, -23.0, -34.0]);
   let actual = a.mul_neg_add(b, c);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x4_div_euclid() {
+  let a = [6.0, 7.0, 8.24, 18.0];
+  let b = [2.0, 1.5, -3.0, -2.5];
+  let expected =
+    f64x4::new(std::array::from_fn(|i| f64::div_euclid(a[i], b[i])));
+  let actual = f64x4::new(a).div_euclid(f64x4::new(b));
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f64x4_rem_euclid() {
+  let a = [6.0, 7.0, 8.24, 18.0];
+  let b = [2.0, 1.5, -3.0, -2.5];
+  let expected =
+    f64x4::new(std::array::from_fn(|i| f64::rem_euclid(a[i], b[i])));
+  let actual = f64x4::new(a).rem_euclid(f64x4::new(b));
   assert_eq!(expected, actual);
 }
 
@@ -615,6 +766,18 @@ fn impl_f64x4_exp() {
 }
 
 #[test]
+fn impl_f64x4_exp2() {
+  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4, 100.5, 1000.2] {
+    let _: f64 = x;
+    let expected = f64x4::from(x.exp2());
+    let actual = f64x4::from(x).exp2();
+    let diff_from_std: [f64; 4] = cast((actual - expected).abs());
+    println!("x: {x:?}, expected: {expected:?}, actual: {actual:?}");
+    assert!(diff_from_std[0] < expected.to_array()[0] * 1e-12);
+  }
+}
+
+#[test]
 fn test_f64x4_move_mask() {
   let a = f64x4::from([-1.0, 0.0, -2.0, -3.0]);
   let expected = 0b1101;
@@ -746,6 +909,12 @@ fn impl_f64x4_is_sign_negative() {
 fn impl_f64x4_reduce_add() {
   let p = f64x4::splat(0.001);
   assert_eq!(p.reduce_add(), 0.004);
+}
+
+#[test]
+fn impl_f64x4_reduce_mul() {
+  let value = f64x4::new([2.0, 3.0, 5.0, 7.0]);
+  assert_eq!(value.reduce_mul(), 210.0);
 }
 
 // Regression test for lack of aarch64+neon FMA instructions
