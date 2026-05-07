@@ -701,6 +701,18 @@ fn impl_f64x4_sin_cos() {
       check("cos", actual_coses, angle.cos());
     }
   }
+
+  // Edge cases
+  let edge = f64x4::from([f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0]);
+  let (s, c) = edge.sin_cos();
+  assert!(s.to_array()[0].is_nan());
+  assert!(s.to_array()[1].is_nan());
+  assert!(s.to_array()[2].is_nan());
+  assert_eq!(s.to_array()[3], 0.0);
+  assert!(c.to_array()[0].is_nan());
+  assert!(c.to_array()[1].is_nan());
+  assert!(c.to_array()[2].is_nan());
+  assert_eq!(c.to_array()[3], 1.0);
 }
 
 #[test]
@@ -763,6 +775,14 @@ fn impl_f64x4_exp() {
     let diff_from_std: [f64; 4] = cast((actual - expected).abs());
     assert!(diff_from_std[0] < 0.000000000000001);
   }
+
+  // Edge cases
+  let edge = f64x4::from([f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 2000.0]);
+  let res = edge.exp();
+  assert!(res.to_array()[0].is_nan());
+  assert_eq!(res.to_array()[1], f64::INFINITY);
+  assert_eq!(res.to_array()[2], 0.0);
+  assert_eq!(res.to_array()[3], f64::INFINITY);
 }
 
 #[test]
@@ -775,6 +795,14 @@ fn impl_f64x4_exp2() {
     println!("x: {x:?}, expected: {expected:?}, actual: {actual:?}");
     assert!(diff_from_std[0] < expected.to_array()[0] * 1e-12);
   }
+
+  // Edge cases
+  let edge = f64x4::from([f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 2000.0]);
+  let res = edge.exp2();
+  assert!(res.to_array()[0].is_nan());
+  assert_eq!(res.to_array()[1], f64::INFINITY);
+  assert_eq!(res.to_array()[2], 0.0);
+  assert_eq!(res.to_array()[3], f64::INFINITY);
 }
 
 #[test]
@@ -827,6 +855,15 @@ fn impl_f64x4_ln() {
       assert!(diff_from_std[0] < 0.00000000001);
     }
   }
+
+  // Edge cases
+  let edge = f64x4::from([f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0]);
+  let res = edge.ln();
+  println!("res.to_array() = {:?}", res.to_array());
+  assert!(res.to_array()[0].is_nan());
+  assert_eq!(res.to_array()[1], f64::INFINITY);
+  assert!(res.to_array()[2].is_nan());
+  assert_eq!(res.to_array()[3], f64::NEG_INFINITY);
 }
 
 #[test]
