@@ -1,12 +1,13 @@
 # `wide` Changelog
 
-## Unreleased
+## 1.4.0
 
 * Added more float functions.
 * Implemented `Rem` for float types.
 * Renamed float function `sign_bit` to `is_sign_negative` and added
   `is_sign_positive`.
-* Corrected [several bugs](https://github.com/Lokathor/wide/pull/261) with non-finite inputs for various math functions.
+* Corrected [several bugs](https://github.com/Lokathor/wide/pull/261) with
+  non-finite inputs for various math functions.
 
 ## 1.3.0
 
