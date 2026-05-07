@@ -8,6 +8,10 @@
 #![allow(clippy::unusual_byte_groupings)]
 #![allow(clippy::misrefactored_assign_op)]
 #![allow(clippy::approx_constant)]
+#![cfg_attr(
+  all(target_arch = "wasm64", target_feature = "simd128"),
+  feature(simd_wasm64)
+)]
 
 //! A crate to help you go wide.
 //!
