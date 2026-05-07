@@ -1176,7 +1176,13 @@ impl f32x16 {
     let sign_cos: i32x16 = ((q + i32x16::from(1)) & i32x16::from(2)) << 30;
     cos1 ^= cast::<_, f32x16>(sign_cos);
 
-    (sin1, cos1)
+    // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
+    let finite = self.is_finite();
+    let nan = Self::splat(core::f32::NAN);
+    let sin_final = finite.blend(sin1, nan);
+    let cos_final = finite.blend(cos1, nan);
+
+    (sin_final, cos_final)
   }
 
   #[inline]
@@ -1340,8 +1346,14 @@ impl f32x16 {
     let z = (z + Self::ONE) * n2;
     // check for overflow
     let in_range = self.abs().simd_lt(max_x);
-    let in_range = in_range & self.is_finite();
-    in_range.blend(z, Self::ZERO)
+    let finite = self.is_finite();
+    let in_range = in_range & finite;
+    let mut result = in_range.blend(z, Self::ZERO);
+    let nan_mask = self.is_nan();
+    result = nan_mask.blend(Self::nan_pow(), result);
+    let overflow = !in_range & !nan_mask & !self.is_sign_negative();
+    result = overflow.blend(Self::infinity(), result);
+    result
   }
 
   /// Returns `2^self`.
@@ -1366,7 +1378,12 @@ impl f32x16 {
     let result = fract_exp2 * round_exp2;
     let bounds_mask = self.abs().simd_lt(Self::splat(120.0)) & self.is_finite();
 
-    bounds_mask.blend(result, Self::ZERO)
+    let mut result = bounds_mask.blend(result, Self::ZERO);
+    let nan_mask = self.is_nan();
+    result = nan_mask.blend(Self::nan_pow(), result);
+    let overflow = !bounds_mask & !nan_mask & !self.is_sign_negative();
+    result = overflow.blend(Self::infinity(), result);
+    result
   }
 
   #[inline]
@@ -1394,7 +1411,8 @@ impl f32x16 {
   fn is_zero_or_subnormal(self) -> Self {
     let t = cast::<_, i32x16>(self);
     let t = t & i32x16::splat(0x7F800000);
-    i32x16::round_float(t.simd_eq(i32x16::splat(0)))
+    let mask = t.simd_eq(i32x16::splat(0));
+    cast::<_, f32x16>(mask)
   }
 
   #[inline]
@@ -1510,8 +1528,13 @@ impl f32x16 {
     } else {
       let is_zero = self.is_zero_or_subnormal();
       let res = underflow.blend(Self::nan_log(), res);
-      let res = is_zero.blend(Self::infinity(), res);
+      // Note: is_zero_or_subnormal() lumps subnormals (exponent==0) with zero.
+      // Both get -Inf here. True subnormal inputs (~1.4e-45..1.175e-38) should produce
+      // a finite negative result, but are vanishingly rare in practice.
+      let res = is_zero.blend(-Self::infinity(), res);
       let res = overflow.blend(self, res);
+      // This must come *after* overflow.blend to overwrite ln(-∞) = -∞ to NaN
+      let res = (!self.is_finite() & self.is_sign_negative()).blend(Self::nan_log(), res);
       res
     }
   }
