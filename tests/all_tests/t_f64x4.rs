@@ -859,7 +859,7 @@ fn impl_f64x4_ln() {
   // Edge cases
   let edge = f64x4::from([f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0]);
   let res = edge.ln();
-  println!("res.to_array() = {:?}", res.to_array());
+
   assert!(res.to_array()[0].is_nan());
   assert_eq!(res.to_array()[1], f64::INFINITY);
   assert!(res.to_array()[2].is_nan());

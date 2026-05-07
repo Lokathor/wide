@@ -1529,7 +1529,7 @@ impl f32x16 {
       let is_zero = self.is_zero_or_subnormal();
       let res = underflow.blend(Self::nan_log(), res);
       // Note: is_zero_or_subnormal() lumps subnormals (exponent==0) with zero.
-      // Both get -Inf here. True subnormal inputs (~1e-308..1e-38) should produce
+      // Both get -Inf here. True subnormal inputs (~1.4e-45..1.175e-38) should produce
       // a finite negative result, but are vanishingly rare in practice.
       let res = is_zero.blend(-Self::infinity(), res);
       let res = overflow.blend(self, res);

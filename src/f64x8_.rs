@@ -1618,7 +1618,7 @@ impl f64x8 {
       let is_zero = self.is_zero_or_subnormal();
       let res = underflow.blend(Self::nan_log(), res);
       // Note: is_zero_or_subnormal() lumps subnormals (exponent==0) with zero.
-      // Both get -Inf here. True subnormal inputs (~1e-308..1e-38) should
+      // Both get -Inf here. True subnormal inputs (~5e-324..2.225e-308) should
       // produce a finite negative result, but are vanishingly rare in
       // practice.
       let res = is_zero.blend(-Self::infinity(), res);
