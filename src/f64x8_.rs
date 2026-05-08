@@ -598,18 +598,50 @@ impl f64x8 {
 
   #[inline]
   #[must_use]
+  pub fn fast_round_int(self) -> i64x8 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvtpd_epi64;
+
+        // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
+        cast(m512i(unsafe { _mm512_cvtpd_epi64(self.avx512.0) }))
+      } else {
+        cast([
+          self.a.fast_round_int(),
+          self.b.fast_round_int(),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_int(self) -> i64x8 {
-    let rounded: [f64; 8] = cast(self.round());
-    cast([
-      rounded[0] as i64,
-      rounded[1] as i64,
-      rounded[2] as i64,
-      rounded[3] as i64,
-      rounded[4] as i64,
-      rounded[5] as i64,
-      rounded[6] as i64,
-      rounded[7] as i64,
-    ])
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvtpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
+        let cast: i64x8 = cast(m512i(unsafe { _mm512_cvtpd_epi64(non_nan.avx512.0) }));
+        flip_to_max ^ cast
+      } else {
+        cast([
+          self.a.round_int(),
+          self.b.round_int(),
+        ])
+      }
+    }
   }
 
   #[inline]
@@ -623,6 +655,60 @@ impl f64x8 {
           a: self.a.trunc(),
           b: self.b.trunc(),
         }
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This is a faster implementation than
+  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
+  #[inline]
+  #[must_use]
+  pub fn fast_trunc_int(self) -> i64x8 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvttpd_epi64;
+
+        // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
+        cast(m512i(unsafe { _mm512_cvttpd_epi64(self.avx512.0) }))
+      } else {
+        cast([
+          self.a.fast_trunc_int(),
+          self.b.fast_trunc_int(),
+        ])
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This saturates out of range values
+  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
+  /// that doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn trunc_int(self) -> i64x8 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvttpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
+        let cast: i64x8 = cast(m512i(unsafe { _mm512_cvttpd_epi64(non_nan.avx512.0) }));
+        flip_to_max ^ cast
+      } else {
+        cast([
+          self.a.trunc_int(),
+          self.b.trunc_int(),
+        ])
       }
     }
   }

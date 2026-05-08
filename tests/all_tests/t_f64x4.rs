@@ -411,14 +411,43 @@ fn impl_f64x4_round() {
 }
 
 #[test]
-fn impl_f64x4_round_int() {
+fn impl_f64x4_fast_round_int() {
   for (f, i) in [
-    (1.0, 1i64),
+    (1.0, 1),
     (1.1, 1),
     (-2.1, -2),
     (2.5, 2),
+    (2.7, 3),
+    (-2.7, -3),
+    (-3.0, -3),
     (0.0, 0),
     (-0.0, 0),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x4::from(f);
+    let expected = i64x4::from(i);
+    let actual = a.fast_round_int();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_f64x4_round_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (2.7, 3),
+    (-2.7, -3),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+    (9223372036854775807.0, i64::MAX),
+    (9223372036854775808.0, i64::MAX),
+    (-9223372036854775808.0, i64::MIN),
     (f64::NAN, 0),
     (f64::INFINITY, i64::MAX),
     (f64::NEG_INFINITY, i64::MIN),
@@ -447,6 +476,58 @@ fn impl_f64x4_trunc() {
 
     // Use bitwise equality to accept NaNs as equal.
     assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
+fn impl_f64x4_fast_trunc_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (2.7, 2),
+    (-2.7, -2),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x4::from(f);
+    let expected = i64x4::from(i);
+    let actual = a.fast_trunc_int();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_f64x4_trunc_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (2.7, 2),
+    (-2.7, -2),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+    (9223372036854775807.0, i64::MAX),
+    (9223372036854775808.0, i64::MAX),
+    (-9223372036854775808.0, i64::MIN),
+    (f64::NAN, 0),
+    (f64::INFINITY, i64::MAX),
+    (f64::NEG_INFINITY, i64::MIN),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x4::from(f);
+    let expected = i64x4::from(i);
+    let actual = a.trunc_int();
+    assert_eq!(expected, actual);
   }
 }
 

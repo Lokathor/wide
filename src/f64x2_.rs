@@ -786,11 +786,50 @@ impl f64x2 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn fast_round_int(self) -> i64x2 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvtpd_epi64;
+
+        // TODO(safe_arch): Add `_mm_cvtpd_epi64`.
+        cast(m128i(unsafe { _mm_cvtpd_epi64(self.sse.0) }))
+      } else {
+        self.round_int()
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn round_int(self) -> i64x2 {
-    let rounded: [f64; 2] = cast(self.round());
-    cast([rounded[0] as i64, rounded[1] as i64])
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvtpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x2 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm_cvtpd_epi64`.
+        let cast: i64x2 = cast(m128i(unsafe { _mm_cvtpd_epi64(non_nan.sse.0) }));
+        flip_to_max ^ cast
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtaq_s64_f64(self.neon)) } })
+      } else {
+        let rounded: [f64; 2] = cast(self.round());
+        cast([rounded[0] as i64, rounded[1] as i64])
+      }
+    }
   }
 
   #[inline]
@@ -819,6 +858,58 @@ impl f64x2 {
 
         // Reset the sign bit of the mask to preverse the sign of `self`.
         bounds_mask.abs().blend(result, self)
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This is a faster implementation than
+  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
+  #[inline]
+  #[must_use]
+  pub fn fast_trunc_int(self) -> i64x2 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvttpd_epi64;
+
+        // TODO(safe_arch): Add `_mm_cvttpd_epi64`.
+        cast(m128i(unsafe { _mm_cvttpd_epi64(self.sse.0) }))
+      } else {
+        self.trunc_int()
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This saturates out of range values
+  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
+  /// that doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn trunc_int(self) -> i64x2 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvttpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x2 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm_cvttpd_epi64`.
+        let cast: i64x2 = cast(m128i(unsafe { _mm_cvttpd_epi64(non_nan.sse.0) }));
+        flip_to_max ^ cast
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtq_s64_f64(self.neon)) } })
+      } else {
+        // There does not seem to be an intrinsic for `wasm32`.
+        let n: [f64;2] = cast(self);
+        cast([n[0] as i64, n[1] as i64])
       }
     }
   }
