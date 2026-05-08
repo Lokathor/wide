@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Implemented `Cmp...` traits for all types and fixed bug in `u64x8::simd_lt`.
+* Added `recip` and `recip_sqrt` for float types where it is missing.
 
 ## 1.4.0
 

@@ -960,6 +960,32 @@ fn impl_f64x8_to_radians() {
 }
 
 #[test]
+fn impl_f64x8_recip() {
+  for value in [0.0, 1.0, 3.6, 34579.2, f64::NAN, f64::INFINITY]
+    .into_iter()
+    .flat_map(|value| [value, -value])
+  {
+    let expected = f64x8::splat(value.recip());
+    let actual = f64x8::splat(value).recip();
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x8::ZERO);
+  }
+}
+
+#[test]
+fn impl_f64x8_recip_sqrt() {
+  for value in [0.0, 1.0, 3.6, 34579.2, f64::NAN, f64::INFINITY]
+    .into_iter()
+    .flat_map(|value| [value, -value])
+  {
+    let expected = f64x8::splat(value.sqrt().recip());
+    let actual = f64x8::splat(value).recip_sqrt();
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x8::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x8_sqrt() {
   for &(f, e) in &[
     (f64::INFINITY, f64::INFINITY),

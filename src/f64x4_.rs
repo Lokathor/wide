@@ -1343,6 +1343,23 @@ impl f64x4 {
     const_f64_as_f64x4!(DEG_TO_RAD_RATIO, core::f64::consts::PI / 180.0_f64);
     self * DEG_TO_RAD_RATIO
   }
+
+  #[inline]
+  #[must_use]
+  pub fn recip(self) -> Self {
+    // There does not seem to be a `recip` intrinsic for any architecture. The
+    // closest is `_mm256_rcp14_pd` which has relative error.
+    Self::ONE / self
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn recip_sqrt(self) -> Self {
+    // There does not seem to be a `recip_sqrt` intrinsic for any architecture.
+    // The closest is `_mm256_rsqrt14_pd` which has relative error.
+    Self::ONE / self.sqrt()
+  }
+
   #[inline]
   #[must_use]
   pub fn sqrt(self) -> Self {
