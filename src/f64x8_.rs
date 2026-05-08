@@ -516,18 +516,12 @@ impl f64x8 {
   /// Restrict a value to a certain interval unless it is NaN.
   ///
   /// If `min > max`, `min` is NaN or `max` is NaN the result is unspecified.
-  ///
-  /// # Panics
-  ///
-  /// If debug assertions are enabled, this panics if for any lane `min > max`,
-  /// `min` is NaN or `max` is NaN.
+  /// Consider manually checking for those edge cases.
   #[inline]
   #[must_use]
-  #[track_caller]
   pub fn clamp(self, min: Self, max: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        debug_assert!(min.simd_le(max).all(), "min > max, or either was NaN");
         // For both `min_m512d` and `max_m512d` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
         Self { avx512: min_m512d(max.avx512, max_m512d(min.avx512, self.avx512)) }
