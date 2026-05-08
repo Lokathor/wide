@@ -500,6 +500,22 @@ impl i16x16 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u16x16 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        u16x16 { avx2: abs_i16_m256i(self.avx2) }
+      } else {
+        u16x16 {
+          a: self.a.unsigned_abs(),
+          b: self.b.unsigned_abs(),
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

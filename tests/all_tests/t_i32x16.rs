@@ -258,6 +258,90 @@ fn impl_blend_for_i32x16() {
 }
 
 #[test]
+fn impl_abs_for_i32x16() {
+  let a = i32x16::from([
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+  ]);
+  let expected = i32x16::from([
+    1,
+    2,
+    3,
+    i32::MIN,
+    6,
+    15,
+    19,
+    9,
+    1,
+    2,
+    3,
+    i32::MIN,
+    6,
+    15,
+    19,
+    9,
+  ]);
+  let actual = a.abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_unsigned_abs_for_i32x16() {
+  let a = i32x16::from([
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+  ]);
+  let expected = u32x16::from([
+    1,
+    2,
+    3,
+    i32::MIN as u32,
+    6,
+    15,
+    19,
+    9,
+    1,
+    2,
+    3,
+    i32::MIN as u32,
+    6,
+    15,
+    19,
+    9,
+  ]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_min_for_i32x16() {
   let a = i32x16::from([
     0,

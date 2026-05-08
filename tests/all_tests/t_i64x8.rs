@@ -147,6 +147,22 @@ fn impl_i64x8_blend() {
 }
 
 #[test]
+fn impl_i64x8_abs() {
+  let a = i64x8::from([-1, 2, -3, i64::MIN, 6, -15, -19, 9]);
+  let expected = i64x8::from([1, 2, 3, i64::MIN, 6, 15, 19, 9]);
+  let actual = a.abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x8_unsigned_abs() {
+  let a = i64x8::from([-1, 2, -3, i64::MIN, 6, -15, -19, 9]);
+  let expected = u64x8::from([1, 2, 3, i64::MIN as u64, 6, 15, 19, 9]);
+  let actual = a.unsigned_abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i64x8_to_array() {
   let a = i64x8::from([1, 2, 3, 4, -5, -6, -7, i64::MIN]);
   let expected = [1, 2, 3, 4, -5, -6, -7, i64::MIN];

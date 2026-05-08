@@ -411,7 +411,37 @@ impl i32x16 {
     let arr: [i32x8; 2] = cast(self);
     arr[0].max(arr[1]).reduce_max()
   }
-  
+
+  #[inline]
+  #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: abs_i32_m512i(self.avx512) }
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn unsigned_abs(self) -> u32x16 {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        u32x16 { avx512: abs_i32_m512i(self.avx512) }
+      } else {
+        u32x16 {
+          a : self.a.unsigned_abs(),
+          b : self.b.unsigned_abs(),
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

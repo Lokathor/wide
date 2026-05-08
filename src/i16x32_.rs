@@ -398,6 +398,21 @@ impl i16x32 {
 
   #[inline]
   #[must_use]
+  pub fn unsigned_abs(self) -> u16x32 {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        u16x32 { avx512: abs_i16_m512i(self.avx512) }
+      } else {
+        u16x32 {
+          a: self.a.unsigned_abs(),
+          b: self.b.unsigned_abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
