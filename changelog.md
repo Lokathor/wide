@@ -4,6 +4,7 @@
 
 * Implemented `Cmp...` traits for all types and fixed bug in `u64x8::simd_lt`.
 * Added `recip` and `recip_sqrt` for float types where it is missing.
+* Added missing implementations for `Sum` and `Neg` (for references).
 
 ## 1.4.0
 
