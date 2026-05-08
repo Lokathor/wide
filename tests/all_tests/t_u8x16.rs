@@ -151,6 +151,14 @@ fn impl_u8x16_cmp_eq() {
 }
 
 #[test]
+fn impl_u8x16_cmp_ne() {
+  let a = u8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = u8x16::from([2_u8; 16]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
 fn impl_u8x16_cmp_lt() {
   let a = u8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
   let b = u8x16::from([2_u8; 16]);

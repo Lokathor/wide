@@ -1,5 +1,9 @@
 # `wide` Changelog
 
+## Unreleased
+
+* Implemented `Cmp...` traits for all types and fixed bug in `u64x8::simd_lt`.
+
 ## 1.4.0
 
 * Added more float functions.

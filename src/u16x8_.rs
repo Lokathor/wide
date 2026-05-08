@@ -367,6 +367,87 @@ impl CmpLt for u16x8 {
   }
 }
 
+impl CmpNe for u16x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { u16::MAX } else { 0 },
+          if self.arr[1] != rhs.arr[1] { u16::MAX } else { 0 },
+          if self.arr[2] != rhs.arr[2] { u16::MAX } else { 0 },
+          if self.arr[3] != rhs.arr[3] { u16::MAX } else { 0 },
+          if self.arr[4] != rhs.arr[4] { u16::MAX } else { 0 },
+          if self.arr[5] != rhs.arr[5] { u16::MAX } else { 0 },
+          if self.arr[6] != rhs.arr[6] { u16::MAX } else { 0 },
+          if self.arr[7] != rhs.arr[7] { u16::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpLe for u16x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_le(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] <= rhs.arr[0] { u16::MAX } else { 0 },
+          if self.arr[1] <= rhs.arr[1] { u16::MAX } else { 0 },
+          if self.arr[2] <= rhs.arr[2] { u16::MAX } else { 0 },
+          if self.arr[3] <= rhs.arr[3] { u16::MAX } else { 0 },
+          if self.arr[4] <= rhs.arr[4] { u16::MAX } else { 0 },
+          if self.arr[5] <= rhs.arr[5] { u16::MAX } else { 0 },
+          if self.arr[6] <= rhs.arr[6] { u16::MAX } else { 0 },
+          if self.arr[7] <= rhs.arr[7] { u16::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpGe for u16x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_ge(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] >= rhs.arr[0] { u16::MAX } else { 0 },
+          if self.arr[1] >= rhs.arr[1] { u16::MAX } else { 0 },
+          if self.arr[2] >= rhs.arr[2] { u16::MAX } else { 0 },
+          if self.arr[3] >= rhs.arr[3] { u16::MAX } else { 0 },
+          if self.arr[4] >= rhs.arr[4] { u16::MAX } else { 0 },
+          if self.arr[5] >= rhs.arr[5] { u16::MAX } else { 0 },
+          if self.arr[6] >= rhs.arr[6] { u16::MAX } else { 0 },
+          if self.arr[7] >= rhs.arr[7] { u16::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
 impl u16x8 {
   #[inline]
   #[must_use]

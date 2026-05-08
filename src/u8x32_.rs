@@ -155,6 +155,23 @@ impl CmpEq for u8x32 {
   }
 }
 
+impl CmpNe for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl CmpLt for u8x32 {
   type Output = Self;
   #[inline]

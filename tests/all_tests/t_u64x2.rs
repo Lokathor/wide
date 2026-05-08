@@ -135,6 +135,22 @@ fn impl_u64x2_cmp_eq() {
 }
 
 #[test]
+fn impl_u64x2_cmp_ne() {
+  let a = u64x2::from([1_u64, 4]);
+  let b = u64x2::from([3_u64, 4]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_u64x2_cmp_ge() {
+  let a = u64x2::from([1_u64, 4]);
+  let b = u64x2::from([3_u64, 4]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_u64x2_cmp_gt() {
   let a = u64x2::from([1_u64, 4]);
   let b = u64x2::from([3_u64, 4]);
@@ -146,6 +162,14 @@ fn impl_u64x2_cmp_gt() {
     |a: u64x2, b| a.simd_gt(b),
     |a, b| if a > b { u64::MAX } else { 0 },
   );
+}
+
+#[test]
+fn impl_u64x2_cmp_le() {
+  let a = u64x2::from([1_u64, 4]);
+  let b = u64x2::from([3_u64, 4]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]

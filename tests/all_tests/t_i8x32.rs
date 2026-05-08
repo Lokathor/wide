@@ -210,6 +210,28 @@ fn impl_i8x32_cmp_eq() {
 }
 
 #[test]
+fn impl_i8x32_cmp_ne() {
+  let a = i8x32::from([
+    1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
+    2, 3, 4, 1, 2, 3, 4,
+  ]);
+  let b = i8x32::from([2_i8; 32]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_i8x32_cmp_ge() {
+  let a = i8x32::from([
+    1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
+    2, 3, 4, 1, 2, 3, 4,
+  ]);
+  let b = i8x32::from([2_i8; 32]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_i8x32_cmp_gt() {
   let a = i8x32::from([
     1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
@@ -222,6 +244,17 @@ fn impl_i8x32_cmp_gt() {
   ]);
   let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x32_cmp_le() {
+  let a = i8x32::from([
+    1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
+    2, 3, 4, 1, 2, 3, 4,
+  ]);
+  let b = i8x32::from([2_i8; 32]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]

@@ -146,6 +146,22 @@ fn impl_u32x8_cmp_eq() {
 }
 
 #[test]
+fn impl_u32x8_cmp_ne() {
+  let a = u32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
+  let b = u32x8::from([2_u32; 8]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_u32x8_cmp_ge() {
+  let a = u32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
+  let b = u32x8::from([2_u32; 8]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_u32x8_cmp_gt() {
   let a = u32x8::from([1, 2, u32::MAX, 4, 1, 2, 8, 10]);
   let b = u32x8::from([5, 5, 5, 5, 5, 5, 5, 5]);
@@ -157,6 +173,14 @@ fn impl_u32x8_cmp_gt() {
     |a: u32x8, b| a.simd_gt(b),
     |a, b| if a > b { u32::MAX } else { 0 },
   );
+}
+
+#[test]
+fn impl_u32x8_cmp_le() {
+  let a = u32x8::from([1, 2, 3, 4, 2, 1, 8, 2]);
+  let b = u32x8::from([2_u32; 8]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]

@@ -277,6 +277,41 @@ impl CmpEq for u8x16 {
   }
 }
 
+impl CmpNe for u8x16 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u8x16_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { u8::MAX } else { 0 },
+          if self.arr[1] != rhs.arr[1] { u8::MAX } else { 0 },
+          if self.arr[2] != rhs.arr[2] { u8::MAX } else { 0 },
+          if self.arr[3] != rhs.arr[3] { u8::MAX } else { 0 },
+          if self.arr[4] != rhs.arr[4] { u8::MAX } else { 0 },
+          if self.arr[5] != rhs.arr[5] { u8::MAX } else { 0 },
+          if self.arr[6] != rhs.arr[6] { u8::MAX } else { 0 },
+          if self.arr[7] != rhs.arr[7] { u8::MAX } else { 0 },
+          if self.arr[8] != rhs.arr[8] { u8::MAX } else { 0 },
+          if self.arr[9] != rhs.arr[9] { u8::MAX } else { 0 },
+          if self.arr[10] != rhs.arr[10] { u8::MAX } else { 0 },
+          if self.arr[11] != rhs.arr[11] { u8::MAX } else { 0 },
+          if self.arr[12] != rhs.arr[12] { u8::MAX } else { 0 },
+          if self.arr[13] != rhs.arr[13] { u8::MAX } else { 0 },
+          if self.arr[14] != rhs.arr[14] { u8::MAX } else { 0 },
+          if self.arr[15] != rhs.arr[15] { u8::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
 impl CmpLt for u8x16 {
   type Output = Self;
   #[inline]

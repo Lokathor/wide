@@ -153,6 +153,48 @@ fn impl_i64x4_cmp_eq() {
 }
 
 #[test]
+fn impl_i64x4_cmp_ne() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_i64x4_cmp_ge() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
+fn impl_i64x4_cmp_gt() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+  let expected = i64x4::from([0, 0, 0, -1]);
+  let actual = a.simd_gt(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x4_cmp_le() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
+}
+
+#[test]
+fn impl_i64x4_cmp_lt() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+  let expected = i64x4::from([-1, 0, 0, 0]);
+  let actual = a.simd_lt(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn test_i64x4_move_mask() {
   let a = i64x4::from([-1, 0, -2, -3]);
   let expected = 0b1101;

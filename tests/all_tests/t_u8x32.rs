@@ -110,6 +110,17 @@ fn impl_u8x32_cmp_eq() {
 }
 
 #[test]
+fn impl_u8x32_cmp_ne() {
+  let a = u8x32::from([
+    1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
+    2, 3, 4, 1, 2, 3, 4,
+  ]);
+  let b = u8x32::from([2_u8; 32]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
 fn impl_u8x32_cmp_lt() {
   let a = u8x32::from([
     1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
