@@ -770,6 +770,24 @@ impl u16x8 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    i16x8::any(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    i16x8::all(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [u16; 8] {
     cast(self)
   }

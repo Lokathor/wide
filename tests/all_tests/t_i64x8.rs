@@ -163,6 +163,39 @@ fn impl_i64x8_unsigned_abs() {
 }
 
 #[test]
+fn test_i64x8_any() {
+  assert!(!i64x8::splat(0).any());
+  assert!(i64x8::splat(!0).any());
+  for i in 0..8 {
+    let mut a = i64x8::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_i64x8_all() {
+  assert!(!i64x8::splat(0).all());
+  assert!(i64x8::splat(!0).all());
+  for i in 0..8 {
+    let mut a = i64x8::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_i64x8_none() {
+  assert!(i64x8::splat(0).none());
+  assert!(!i64x8::splat(!0).none());
+  for i in 0..8 {
+    let mut a = i64x8::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
 fn impl_i64x8_to_array() {
   let a = i64x8::from([1, 2, 3, 4, -5, -6, -7, i64::MIN]);
   let expected = [1, 2, 3, 4, -5, -6, -7, i64::MIN];

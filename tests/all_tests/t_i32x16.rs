@@ -562,6 +562,39 @@ fn test_i32x4_move_mask() {
 }
 
 #[test]
+fn test_i32x16_any() {
+  assert!(!i32x16::splat(0).any());
+  assert!(i32x16::splat(!0).any());
+  for i in 0..16 {
+    let mut a = i32x16::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_i32x16_all() {
+  assert!(!i32x16::splat(0).all());
+  assert!(i32x16::splat(!0).all());
+  for i in 0..16 {
+    let mut a = i32x16::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_i32x16_none() {
+  assert!(i32x16::splat(0).none());
+  assert!(!i32x16::splat(!0).none());
+  for i in 0..16 {
+    let mut a = i32x16::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
 fn impl_i32x16_reduce_add() {
   let p = i32x16::from([
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,

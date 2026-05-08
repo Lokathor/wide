@@ -186,6 +186,39 @@ fn impl_u64x4_cmp_lt() {
   );
 }
 
+#[test]
+fn test_u64x4_any() {
+  assert!(!u64x4::splat(0).any());
+  assert!(u64x4::splat(!0).any());
+  for i in 0..4 {
+    let mut a = u64x4::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_u64x4_all() {
+  assert!(!u64x4::splat(0).all());
+  assert!(u64x4::splat(!0).all());
+  for i in 0..4 {
+    let mut a = u64x4::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_u64x4_none() {
+  assert!(u64x4::splat(0).none());
+  assert!(!u64x4::splat(!0).none());
+  for i in 0..4 {
+    let mut a = u64x4::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u64x4_ser_de_roundtrip() {

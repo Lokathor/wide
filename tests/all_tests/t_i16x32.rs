@@ -932,6 +932,39 @@ fn test_i16x32_move_mask() {
 }
 
 #[test]
+fn test_i16x32_any() {
+  assert!(!i16x32::splat(0).any());
+  assert!(i16x32::splat(!0).any());
+  for i in 0..32 {
+    let mut a = i16x32::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_i16x32_all() {
+  assert!(!i16x32::splat(0).all());
+  assert!(i16x32::splat(!0).all());
+  for i in 0..32 {
+    let mut a = i16x32::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_i16x32_none() {
+  assert!(i16x32::splat(0).none());
+  assert!(!i16x32::splat(!0).none());
+  for i in 0..32 {
+    let mut a = i16x32::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
 fn impl_dot_for_i16x32() {
   let a = i16x32::from([
     1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN,

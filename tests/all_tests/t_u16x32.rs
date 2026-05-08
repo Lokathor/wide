@@ -684,6 +684,39 @@ fn impl_saturating_sub_for_u16x32() {
 }
 
 #[test]
+fn test_u16x32_any() {
+  assert!(!u16x32::splat(0).any());
+  assert!(u16x32::splat(!0).any());
+  for i in 0..32 {
+    let mut a = u16x32::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_u16x32_all() {
+  assert!(!u16x32::splat(0).all());
+  assert!(u16x32::splat(!0).all());
+  for i in 0..32 {
+    let mut a = u16x32::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_u16x32_none() {
+  assert!(u16x32::splat(0).none());
+  assert!(!u16x32::splat(!0).none());
+  for i in 0..32 {
+    let mut a = u16x32::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
 fn impl_u16x32_new() {
   let a = u16x32::new([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,

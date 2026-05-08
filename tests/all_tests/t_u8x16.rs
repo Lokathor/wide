@@ -274,6 +274,39 @@ fn impl_narrow_i16x8() {
   assert_eq!(c, [0, 2, 0, 4, 0, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 0]);
 }
 
+#[test]
+fn test_u8x16_any() {
+  assert!(!u8x16::splat(0).any());
+  assert!(u8x16::splat(!0).any());
+  for i in 0..16 {
+    let mut a = u8x16::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_u8x16_all() {
+  assert!(!u8x16::splat(0).all());
+  assert!(u8x16::splat(!0).all());
+  for i in 0..16 {
+    let mut a = u8x16::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_u8x16_none() {
+  assert!(u8x16::splat(0).none());
+  assert!(!u8x16::splat(!0).none());
+  for i in 0..16 {
+    let mut a = u8x16::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u8x16_ser_de_roundtrip() {

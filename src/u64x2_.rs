@@ -536,6 +536,24 @@ impl u64x2 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    i64x2::any(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    i64x2::all(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [u64; 2] {
     cast(self)
   }

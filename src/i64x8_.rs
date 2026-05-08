@@ -527,7 +527,8 @@ impl i64x8 {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(cast(self.avx512)) != 0
       } else {
-        (self.a | self.b).any()
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a | b).any()
       }
     }
   }
@@ -540,7 +541,8 @@ impl i64x8 {
       if #[cfg(target_feature="avx512bw")] {
         movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
       } else {
-        (self.a & self.b).all()
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a & b).all()
       }
     }
   }

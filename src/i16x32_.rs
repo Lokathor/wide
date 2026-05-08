@@ -505,6 +505,36 @@ impl i16x32 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi16_mask_m512i(self.avx512) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi16_mask_m512i(self.avx512) == 0xFFFFFFFF
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [i16; 32] {
     cast(self)
   }

@@ -456,6 +456,38 @@ impl i32x16 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi32_mask_m512i(self.avx512) != 0
+      } else {
+        let [a, b]: [i32x8; 2] = cast(self);
+        (a | b).any()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi32_mask_m512i(self.avx512) == 0xFFFF
+      } else {
+        let [a, b]: [i32x8; 2] = cast(self);
+        (a & b).all()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [i32; 16] {
     cast(self)
   }

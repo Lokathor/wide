@@ -443,6 +443,24 @@ impl u16x32 {
   }
 
   #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    i16x32::any(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    i16x32::all(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  #[inline]
   pub fn to_array(self) -> [u16; 32] {
     cast(self)
   }

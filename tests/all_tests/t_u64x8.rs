@@ -160,6 +160,39 @@ fn impl_u64x8_blend() {
 }
 
 #[test]
+fn test_u64x8_any() {
+  assert!(!u64x8::splat(0).any());
+  assert!(u64x8::splat(!0).any());
+  for i in 0..8 {
+    let mut a = u64x8::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_u64x8_all() {
+  assert!(!u64x8::splat(0).all());
+  assert!(u64x8::splat(!0).all());
+  for i in 0..8 {
+    let mut a = u64x8::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_u64x8_none() {
+  assert!(u64x8::splat(0).none());
+  assert!(!u64x8::splat(!0).none());
+  for i in 0..8 {
+    let mut a = u64x8::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
 fn impl_u64x8_to_array() {
   let a = u64x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   let expected = [1, 2, 3, 4, 5, 6, 7, 8];
