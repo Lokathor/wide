@@ -128,6 +128,14 @@ fn impl_i64x4_blend() {
 }
 
 #[test]
+fn impl_i64x4_is_negative() {
+  let value = i64x4::new([1, -1, 2, 0]);
+  let expected = i64x4::new([0, -1, 0, 0]);
+  let actual = value.is_negative();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i64x4_abs() {
   let a = i64x4::from([-1, 2, -3, i64::MIN]);
   let expected = i64x4::from([1, 2, 3, i64::MIN]);

@@ -166,6 +166,14 @@ fn impl_i32x8_blend() {
 }
 
 #[test]
+fn impl_i32x8_is_negative() {
+  let value = i32x8::new([1, -1, 2, 3, -2, -5, 0, 6]);
+  let expected = i32x8::new([0, -1, 0, 0, -1, -1, 0, 0]);
+  let actual = value.is_negative();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i32x8_abs() {
   let a = i32x8::from([-1, 2, -3, i32::MIN, 6, -15, -19, 9]);
   let expected = i32x8::from([1, 2, 3, i32::MIN, 6, 15, 19, 9]);

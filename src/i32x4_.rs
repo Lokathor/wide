@@ -543,6 +543,12 @@ impl i32x4 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
+  }
+
   /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
   /// on the corresponding lanes.
   ///

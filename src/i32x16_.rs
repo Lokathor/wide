@@ -360,6 +360,12 @@ impl i32x16 {
 
   #[inline]
   #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
+  }
+
+  #[inline]
+  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

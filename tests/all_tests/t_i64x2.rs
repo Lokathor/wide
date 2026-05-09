@@ -102,6 +102,17 @@ fn impl_i64x2_blend() {
 }
 
 #[test]
+fn impl_i64x2_is_negative() {
+  for (value, expected) in [
+    (i64x2::new([1, -1]), i64x2::new([0, -1])),
+    (i64x2::new([2, 0]), i64x2::new([0, 0])),
+  ] {
+    let actual = value.is_negative();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_i64x2_abs() {
   let a = i64x2::from([-1, i64::MIN]);
   let expected = i64x2::from([1, i64::MIN]);

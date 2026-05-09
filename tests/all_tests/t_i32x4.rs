@@ -149,6 +149,14 @@ fn impl_i32x4_blend() {
 }
 
 #[test]
+fn impl_i32x4_is_negative() {
+  let value = i32x4::new([1, -1, 2, 0]);
+  let expected = i32x4::new([0, -1, 0, 0]);
+  let actual = value.is_negative();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i32x4_abs() {
   let a = i32x4::from([-1, 2, -3, i32::MIN]);
   let expected = i32x4::from([1, 2, 3, i32::MIN]);

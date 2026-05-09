@@ -450,6 +450,16 @@ fn impl_i16x16_blend() {
 }
 
 #[test]
+fn impl_i16x16_is_negative() {
+  let value =
+    i16x16::new([1, -1, 2, 3, -2, -5, 0, 6, 9, 1, -2, -3, -4, 0, -1, 1]);
+  let expected =
+    i16x16::new([0, -1, 0, 0, -1, -1, 0, 0, 0, 0, -1, -1, -1, 0, -1, 0]);
+  let actual = value.is_negative();
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_i16x16_abs() {
   let a = i16x16::from([
     -1,

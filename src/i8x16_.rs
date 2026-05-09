@@ -589,6 +589,13 @@ impl i8x16 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {

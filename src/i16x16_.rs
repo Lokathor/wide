@@ -459,6 +459,12 @@ impl i16x16 {
     }
   }
 
+  #[inline]
+  #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
+  }
+
   /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]
