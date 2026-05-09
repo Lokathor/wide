@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-* Implemented `Cmp...` traits for all types and fixed bug in `u64x8::simd_lt`.
-* Added missing implementations for `Sum` and `Neg` (for references).
-* Added several functions that were inconsistently missing from types.
+* Added several functions and trait implementations that previously were only
+  implemented for some types inconsistently.
+* Fixed bug in `u64x8::simd_lt`.
 
 ## 1.4.0
 
