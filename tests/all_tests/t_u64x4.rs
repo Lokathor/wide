@@ -126,6 +126,38 @@ fn impl_u64x4_blend() {
 }
 
 #[test]
+fn impl_u64x4_reduce_add() {
+  let value = u64x4::new([1, 2, 3, 5]);
+  let expected = 11;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u64x4_reduce_max() {
+  for i in 0..4 {
+    let mut value = u64x4::new([9, 10, 5, 1]);
+    value.as_mut_array()[i] = u64::MAX - 1;
+
+    let expected = u64::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u64x4_reduce_min() {
+  for i in 0..4 {
+    let mut value = u64x4::new([9, 6, u64::MAX - 1, 5]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u64x4_cmp_eq() {
   let a = u64x4::from([1_u64, 4, u64::MAX, 5]);
   let b = u64x4::from([3_u64, 4, u64::MAX, 1]);

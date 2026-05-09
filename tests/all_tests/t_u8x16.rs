@@ -220,6 +220,57 @@ fn impl_u8x16_blend() {
 }
 
 #[test]
+fn impl_u8x16_reduce_add() {
+  let value =
+    u8x16::new([1, 2, 3, 5, 7, 11, 13, 17, 23, 27, 10, 4, 5, 3, 6, 4]);
+  let expected = 141;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u8x16_reduce_max() {
+  for i in 0..16 {
+    let mut value =
+      u8x16::new([9, 10, 5, 1, 3, 4, 5, 6, 3, 4, 5, 6, 3, 1, 5, 6]);
+    value.as_mut_array()[i] = u8::MAX - 1;
+
+    let expected = u8::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u8x16_reduce_min() {
+  for i in 0..16 {
+    let mut value = u8x16::new([
+      9,
+      u8::MAX - 1,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u8::MAX - 1,
+      5,
+      5,
+      6,
+    ]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u8x16_max() {
   let a =
     u8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 250, 250]);

@@ -644,6 +644,27 @@ impl u32x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> u32 {
+    cast(i32x4::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u32 {
+    let arr: [u32; 4] = cast(self);
+    arr[0].max(arr[1]).max(arr[2].max(arr[3]))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u32 {
+    let arr: [u32; 4] = cast(self);
+    arr[0].min(arr[1]).min(arr[2].min(arr[3]))
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

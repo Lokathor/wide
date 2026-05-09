@@ -410,6 +410,26 @@ impl u64x4 {
 
   #[inline]
   #[must_use]
+  pub fn reduce_add(self) -> u64 {
+    cast(i64x4::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0].max(array[1]).max(array[2]).max(array[3])
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0].min(array[1]).min(array[2]).min(array[3])
+  }
+
+  #[inline]
+  #[must_use]
   #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     i64x4::to_bitmask(cast(self))

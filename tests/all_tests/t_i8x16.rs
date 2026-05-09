@@ -235,6 +235,43 @@ fn impl_i8x16_is_negative() {
 }
 
 #[test]
+fn impl_i8x16_reduce_add() {
+  let value =
+    i8x16::new([1, 2, 3, 5, 7, 11, 13, 17, 23, 27, -1, -5, 4, -8, -9, -10]);
+  let expected = 80;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_reduce_max() {
+  for value in [
+    i8x16::new([9, 10, 5, 1, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6]),
+    i8x16::new([10, 9, -1, -2, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]),
+    i8x16::new([-1, 10, 9, -9, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]),
+  ] {
+    let expected = 10;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i8x16_reduce_min() {
+  for value in [
+    i8x16::new([
+      -9, -10, -5, -1, -3, -4, -5, -6, -3, -4, -5, -6, -3, -4, -5, -6,
+    ]),
+    i8x16::new([-10, -9, 1, 2, -1, -2, -3, -4, -1, -2, -3, -4, -1, -2, -3, -4]),
+    i8x16::new([1, -10, -9, 9, -1, -2, -3, -4, -1, -2, -3, -4, -1, -2, -3, -4]),
+  ] {
+    let expected = -10;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_i8x16_abs() {
   let a = i8x16::from([
     -1,

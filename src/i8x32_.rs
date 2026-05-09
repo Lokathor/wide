@@ -277,6 +277,27 @@ impl i8x32 {
 
   #[inline]
   #[must_use]
+  pub fn reduce_add(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+
+  #[inline]
+  #[must_use]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

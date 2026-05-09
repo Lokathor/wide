@@ -177,6 +177,38 @@ fn impl_u32x4_blend() {
 }
 
 #[test]
+fn impl_u32x4_reduce_add() {
+  let value = u32x4::new([1, 2, 3, 5]);
+  let expected = 11;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u32x4_reduce_max() {
+  for i in 0..4 {
+    let mut value = u32x4::new([9, 10, 5, 1]);
+    value.as_mut_array()[i] = u32::MAX - 1;
+
+    let expected = u32::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u32x4_reduce_min() {
+  for i in 0..4 {
+    let mut value = u32x4::new([9, 6, u32::MAX - 1, 5]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u32x4_max() {
   let a = u32x4::from([0, 2, 3, 4]);
   let b = u32x4::from([17, 1, 0, 20]);

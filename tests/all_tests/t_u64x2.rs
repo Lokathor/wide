@@ -126,6 +126,38 @@ fn impl_u64x2_blend() {
 }
 
 #[test]
+fn impl_u64x2_reduce_add() {
+  let value = u64x2::new([1, 2]);
+  let expected = 3;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u64x2_reduce_max() {
+  for i in 0..2 {
+    let mut value = u64x2::new([9, 10]);
+    value.as_mut_array()[i] = u64::MAX - 1;
+
+    let expected = u64::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u64x2_reduce_min() {
+  for i in 0..2 {
+    let mut value = u64x2::new([9, u64::MAX - 1]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u64x2_cmp_eq() {
   let a = u64x2::from([1_u64, 4]);
   let b = u64x2::from([3_u64, 4]);

@@ -445,6 +445,26 @@ impl u32x16 {
 
   #[inline]
   #[must_use]
+  pub fn reduce_add(self) -> u32 {
+    cast(i32x16::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u32 {
+    let array: [u32x8; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u32 {
+    let array: [u32x8; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+
+  #[inline]
+  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

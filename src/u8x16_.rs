@@ -545,6 +545,125 @@ impl u8x16 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> u8 {
+    cast(i8x16::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u8 {
+    #[allow(dead_code)]
+    const SHUFFLE_1: [i8; 16] =
+      [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_2: [i8; 16] =
+      [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_3: [i8; 16] =
+      [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_4: [i8; 16] =
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
+        let max = max_u8_m128i(self.sse, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_2));
+        let max = max_u8_m128i(max, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_3));
+        let max = max_u8_m128i(max, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_4));
+        let max = max_u8_m128i(max, rhs);
+        get_i32_from_m128i_s(max) as u8
+      } else if #[cfg(target_feature="simd128")] {
+        let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.simd);
+        let max = u8x16_max(self.simd, rhs);
+        let rhs = i8x16_shuffle::<4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0>(max);
+        let max = u8x16_max(max, rhs);
+        let rhs = i8x16_shuffle::<2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(max);
+        let max = u8x16_max(max, rhs);
+        let rhs = i8x16_shuffle::<1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(max);
+        let max = u8x16_max(max, rhs);
+        i8x16_extract_lane::<0>(max)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          let rhs = vqtbl1q_u8(self.simd, cast(SHUFFLE_1));
+          let max = vmaxq_u8(self.simd, rhs);
+          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_2));
+          let max = vmaxq_u8(max, rhs);
+          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_3));
+          let max = vmaxq_u8(max, rhs);
+          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_4));
+          let max = vmaxq_u8(max, rhs);
+          vgetq_lane_u8(max, 0)
+        }
+      } else {
+        let array: [u8; 16] = cast(self);
+        array.into_iter().reduce(u8::max).unwrap()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u8 {
+    #[allow(dead_code)]
+    const SHUFFLE_1: [i8; 16] =
+      [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_2: [i8; 16] =
+      [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_3: [i8; 16] =
+      [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_4: [i8; 16] =
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
+        let min = min_u8_m128i(self.sse, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_2));
+        let min = min_u8_m128i(min, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_3));
+        let min = min_u8_m128i(min, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_4));
+        let min = min_u8_m128i(min, rhs);
+        get_i32_from_m128i_s(min) as u8
+      } else if #[cfg(target_feature="simd128")] {
+        let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.simd);
+        let min = u8x16_min(self.simd, rhs);
+        let rhs = i8x16_shuffle::<4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0>(min);
+        let min = u8x16_min(min, rhs);
+        let rhs = i8x16_shuffle::<2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(min);
+        let min = u8x16_min(min, rhs);
+        let rhs = i8x16_shuffle::<1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(min);
+        let min = u8x16_min(min, rhs);
+        i8x16_extract_lane::<0>(min)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          let rhs = vqtbl1q_u8(self.simd, cast(SHUFFLE_1));
+          let min = vminq_u8(self.simd, rhs);
+          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_2));
+          let min = vminq_u8(min, rhs);
+          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_3));
+          let min = vminq_u8(min, rhs);
+          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_4));
+          let min = vminq_u8(min, rhs);
+          vgetq_lane_u8(min, 0)
+        }
+      } else {
+        let array: [u8; 16] = cast(self);
+        array.into_iter().reduce(u8::min).unwrap()
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

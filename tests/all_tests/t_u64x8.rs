@@ -160,6 +160,38 @@ fn impl_u64x8_blend() {
 }
 
 #[test]
+fn impl_u64x8_reduce_add() {
+  let value = u64x8::new([1, 2, 3, 5, 7, 11, 13, 17]);
+  let expected = 59;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u64x8_reduce_max() {
+  for i in 0..8 {
+    let mut value = u64x8::new([9, 10, 5, 1, 3, 4, 5, 6]);
+    value.as_mut_array()[i] = u64::MAX - 1;
+
+    let expected = u64::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u64x8_reduce_min() {
+  for i in 0..8 {
+    let mut value = u64x8::new([9, u64::MAX - 1, 5, 6, u64::MAX - 1, 5, 5, 6]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn test_u64x8_any() {
   assert!(!u64x8::splat(0).any());
   assert!(u64x8::splat(!0).any());

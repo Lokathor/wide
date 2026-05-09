@@ -527,7 +527,43 @@ impl u64x2 {
       }
     }
   }
-  
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> u64 {
+    cast(i64x2::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u64 {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [u64; 2] = cast(self);
+        array[0].max(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_i64(self.neon, 0).max(vgetq_lane_i64(self.neon, 1)) }
+      } else {
+        self.arr[0].max(self.arr[1])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u64 {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [u64; 2] = cast(self);
+        array[0].min(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_i64(self.neon, 0).min(vgetq_lane_i64(self.neon, 1)) }
+      } else {
+        self.arr[0].min(self.arr[1])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

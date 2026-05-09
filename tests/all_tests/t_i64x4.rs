@@ -136,6 +136,40 @@ fn impl_i64x4_is_negative() {
 }
 
 #[test]
+fn impl_i64x4_reduce_add() {
+  let value = i64x4::new([9, 10, 21, 19]);
+  let expected = 59;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x4_reduce_max() {
+  for value in [
+    i64x4::new([9, 10, 5, 1]),
+    i64x4::new([10, 9, -1, -2]),
+    i64x4::new([-1, 10, 9, -999]),
+  ] {
+    let expected = 10;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i64x4_reduce_min() {
+  for value in [
+    i64x4::new([-9, -10, -5, -1]),
+    i64x4::new([-10, -9, 1, 2]),
+    i64x4::new([1, -10, -9, 999]),
+  ] {
+    let expected = -10;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_i64x4_abs() {
   let a = i64x4::from([-1, 2, -3, i64::MIN]);
   let expected = i64x4::from([1, 2, 3, i64::MIN]);

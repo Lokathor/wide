@@ -283,6 +283,27 @@ impl u8x32 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> u8 {
+    cast(i8x32::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u8 {
+    let array: [u8x16; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u8 {
+    let array: [u8x16; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

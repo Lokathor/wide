@@ -532,6 +532,73 @@ impl u16x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> u16 {
+    cast(i16x8::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u16 {
+    pick! {
+      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+        let sum64 = min_u16_m128i(self.sse, hi64);
+        let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+        let sum32 = min_u16_m128i(sum64, hi32);
+        let lo16 = shr_imm_u32_m128i::<16>(sum32);
+        let sum16 = min_u16_m128i(sum32, lo16);
+        extract_i16_as_i32_m128i::<0>(sum16) as u16
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vminvq_u16(self.neon) }
+      } else {
+        let arr: [u16; 8] = cast(self);
+
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.min(arr[1]);
+        r = r.min(arr[2]);
+        r = r.min(arr[3]);
+        r = r.min(arr[4]);
+        r = r.min(arr[5]);
+        r = r.min(arr[6]);
+        r.min(arr[7])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u16 {
+    pick! {
+      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+        let sum64 = max_u16_m128i(self.sse, hi64);
+        let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+        let sum32 = max_u16_m128i(sum64, hi32);
+        let lo16 = shr_imm_u32_m128i::<16>(sum32);
+        let sum16 = max_u16_m128i(sum32, lo16);
+        extract_i16_as_i32_m128i::<0>(sum16) as u16
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vmaxvq_u16(self.neon) }
+      } else {
+        let arr: [u16; 8] = cast(self);
+
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.max(arr[1]);
+        r = r.max(arr[2]);
+        r = r.max(arr[3]);
+        r = r.max(arr[4]);
+        r = r.max(arr[5]);
+        r = r.max(arr[6]);
+        r.max(arr[7])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

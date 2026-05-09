@@ -401,6 +401,40 @@ impl i64x4 {
 
   #[inline]
   #[must_use]
+  pub fn reduce_add(self) -> i64 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
+        let xz_yw = add_i64_m256i(zwxx, self.avx2);
+        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
+        let sum = add_i64_m256i(xz_yw, yw_xz);
+        extract_i64_from_m256i::<0>(sum)
+      } else {
+        let array: [i64; 4] = cast(self);
+        array[0]
+          .wrapping_add(array[1])
+          .wrapping_add(array[2])
+          .wrapping_add(array[3])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0].max(array[1]).max(array[2]).max(array[3])
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0].min(array[1]).min(array[2]).min(array[3])
+  }
+
+  #[inline]
+  #[must_use]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

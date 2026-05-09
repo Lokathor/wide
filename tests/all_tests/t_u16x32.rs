@@ -398,6 +398,77 @@ fn impl_blend_for_u16x32() {
 }
 
 #[test]
+fn impl_u16x32_reduce_add() {
+  let value = u16x32::new([
+    1, 2, 3, 5, 7, 11, 13, 17, 23, 27, 10, 4, 5, 3, 6, 4, 1, 2, 3, 4, 5, 6, 1,
+    2, 3, 7, 23, 1, 125, 51, 125, 12,
+  ]);
+  let expected = 512;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u16x32_reduce_max() {
+  for i in 0..32 {
+    let mut value = u16x32::new([
+      9, 10, 5, 1, 3, 4, 5, 6, 3, 4, 5, 6, 3, 1, 5, 6, 4, 5, 6, 3, 1, 5, 6, 4,
+      5, 6, 3, 1, 5, 6, 4, 5,
+    ]);
+    value.as_mut_array()[i] = u16::MAX - 1;
+
+    let expected = u16::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u16x32_reduce_min() {
+  for i in 0..32 {
+    let mut value = u16x32::new([
+      9,
+      u16::MAX - 1,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u16::MAX - 1,
+      5,
+      5,
+      6,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u16::MAX - 1,
+      5,
+      4,
+      5,
+      6,
+      u16::MAX - 1,
+    ]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_min_for_u16x32() {
   let a = u16x32::from([
     0,

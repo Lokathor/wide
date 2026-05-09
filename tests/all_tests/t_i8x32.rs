@@ -318,6 +318,47 @@ fn impl_i8x32_is_negative() {
 }
 
 #[test]
+fn impl_i8x32_reduce_add() {
+  let value = i8x32::new([
+    1, 2, 3, 5, 7, 11, 13, 17, 23, 27, -1, -5, 4, -8, -9, -10, -1, -5, 4, -8,
+    -9, -10, -1, -5, 4, -8, -9, 23, 27, 7, 11, 1,
+  ]);
+  let expected = 101;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x32_reduce_max() {
+  for i in 0..32 {
+    let mut value = i8x32::new([
+      9, 3, 5, 1, 3, -1, 5, 6, 3, -5, 5, 6, 3, 4, 5, 6, 4, 5, -5, 3, 4, 5, 6,
+      3, 4, 5, 6, 1, 2, -2, 4, 5,
+    ]);
+    value.as_mut_array()[i] = 10;
+
+    let expected = 10;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i8x32_reduce_min() {
+  for i in 0..32 {
+    let mut value = i8x32::new([
+      -9, 3, 5, 1, 3, -1, 5, -6, 3, -5, 5, 6, 3, 4, 5, -6, 4, 5, -5, 3, 4, -5,
+      6, -3, 4, 5, 6, 1, -2, -2, 4, 5,
+    ]);
+    value.as_mut_array()[i] = -10;
+
+    let expected = -10;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_i8x32_abs() {
   let a = i8x32::from([
     -1,
