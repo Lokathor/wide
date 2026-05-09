@@ -418,8 +418,6 @@ impl CmpLe for u64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_gt(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u64x2_le(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
@@ -441,8 +439,6 @@ impl CmpGe for u64x2 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_lt(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u64x2_ge(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
