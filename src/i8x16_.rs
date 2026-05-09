@@ -671,7 +671,7 @@ impl i8x16 {
       [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     pick! {
-      if #[cfg(target_feature="ssse3")] {
+      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
         let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
         let max = max_i8_m128i(self.sse, rhs);
         let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_2));
@@ -729,7 +729,7 @@ impl i8x16 {
       [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     pick! {
-      if #[cfg(target_feature="ssse3")] {
+      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
         let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
         let min = min_i8_m128i(self.sse, rhs);
         let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_2));

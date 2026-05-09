@@ -686,7 +686,7 @@ impl i64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i64x2_shuffle::<0, 2>(self.simd, b.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vextq_s64::<0b0>(self.neon, b.neon) } }
+        Self { neon: unsafe { vzip1q_s64(self.neon, b.neon) } }
       } else {
         Self::new([self.as_array()[0], b.as_array()[0]])
       }
@@ -704,7 +704,7 @@ impl i64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: i64x2_shuffle::<1, 3>(self.simd, b.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vextq_s64::<0b1>(self.neon, b.neon) } }
+        Self { neon: unsafe { vzip2q_s64(self.neon, b.neon) } }
       } else {
         Self::new([self.as_array()[1], b.as_array()[1]])
       }

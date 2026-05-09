@@ -824,7 +824,7 @@ impl f64x2 {
         let cast: i64x2 = cast(m128i(unsafe { _mm_cvtpd_epi64(non_nan.sse.0) }));
         flip_to_max ^ cast
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtaq_s64_f64(self.neon)) } })
+        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtnq_s64_f64(self.neon)) } })
       } else {
         let rounded: [f64; 2] = cast(self.round());
         cast([rounded[0] as i64, rounded[1] as i64])
