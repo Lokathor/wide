@@ -344,6 +344,18 @@ fn test_u16x8_none() {
   }
 }
 
+#[test]
+fn impl_u16x8_transpose() {
+  let data = std::array::from_fn(|i| {
+    u16x8::new(std::array::from_fn(|j| (i * 100 + j) as u16))
+  });
+  let expected = std::array::from_fn(|i| {
+    u16x8::new(std::array::from_fn(|j| (j * 100 + i) as u16))
+  });
+  let actual = u16x8::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u16x8_ser_de_roundtrip() {

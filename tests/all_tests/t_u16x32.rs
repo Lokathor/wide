@@ -729,3 +729,15 @@ fn impl_u16x32_new() {
   let actual = a.to_array();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_u16x32_transpose() {
+  let data = std::array::from_fn(|i| {
+    u16x32::new(std::array::from_fn(|j| (i * 100 + j) as u16))
+  });
+  let expected = std::array::from_fn(|i| {
+    u16x32::new(std::array::from_fn(|j| (j * 100 + i) as u16))
+  });
+  let actual = u16x32::transpose(data);
+  assert_eq!(expected, actual);
+}

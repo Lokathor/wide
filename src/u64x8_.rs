@@ -433,6 +433,13 @@ impl u64x8 {
     !self.any()
   }
 
+  /// Transpose matrix of 8x8 `u64` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u64x8; 8]) -> [u64x8; 8] {
+    cast(i64x8::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u64; 8] {
     cast(self)

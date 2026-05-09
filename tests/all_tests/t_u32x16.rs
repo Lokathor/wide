@@ -759,6 +759,18 @@ fn impl_u32x16_mul_keep_high() {
   );
 }
 
+#[test]
+fn impl_u32x16_transpose() {
+  let data = std::array::from_fn(|i| {
+    u32x16::new(std::array::from_fn(|j| (i * 100 + j) as u32))
+  });
+  let expected = std::array::from_fn(|i| {
+    u32x16::new(std::array::from_fn(|j| (j * 100 + i) as u32))
+  });
+  let actual = u32x16::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u32x16_ser_de_roundtrip() {

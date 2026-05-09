@@ -214,6 +214,14 @@ fn test_i64x2_move_mask() {
   );
 }
 
+#[test]
+fn impl_i64x2_transpose() {
+  let data = [i64x2::new([11, 12]), i64x2::new([21, 22])];
+  let expected = [i64x2::new([11, 21]), i64x2::new([12, 22])];
+  let actual = i64x2::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i64x2_ser_de_roundtrip() {

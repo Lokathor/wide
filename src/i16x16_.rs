@@ -637,6 +637,54 @@ impl i16x16 {
     }
   }
 
+  /// Transpose matrix of 16x16 `i16` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i16x16; 16]) -> [i16x16; 16] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[i16x16; 16], index: usize) -> i16x16 {
+      i16x16::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+    ]
+  }
+
   #[inline]
   pub fn to_array(self) -> [i16; 16] {
     cast(self)

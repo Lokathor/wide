@@ -293,6 +293,18 @@ fn test_u8x32_none() {
   assert!(a.none());
 }
 
+#[test]
+fn impl_u8x32_transpose() {
+  let data = std::array::from_fn(|i| {
+    u8x32::new(std::array::from_fn(|j| (i * 100 + j) as u8))
+  });
+  let expected = std::array::from_fn(|i| {
+    u8x32::new(std::array::from_fn(|j| (j * 100 + i) as u8))
+  });
+  let actual = u8x32::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u8x32_ser_de_roundtrip() {

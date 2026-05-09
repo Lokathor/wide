@@ -690,6 +690,18 @@ fn test_i8x32_swizzle_half() {
   assert_eq!(expected, actual);
 }
 
+#[test]
+fn impl_i8x32_transpose() {
+  let data = std::array::from_fn(|i| {
+    i8x32::new(std::array::from_fn(|j| (i * 100 + j) as i8))
+  });
+  let expected = std::array::from_fn(|i| {
+    i8x32::new(std::array::from_fn(|j| (j * 100 + i) as i8))
+  });
+  let actual = i8x32::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i8x32_ser_de_roundtrip() {

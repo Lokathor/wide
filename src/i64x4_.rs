@@ -521,6 +521,76 @@ impl i64x4 {
   pub fn max(self, rhs: Self) -> Self {
     self.simd_gt(rhs).blend(self, rhs)
   }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let [aa, _]: [i64x2; 2] = cast(self);
+        let [ba, _]: [i64x2; 2] = cast(b);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
+      }
+    }
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let [_, ab]: [i64x2; 2] = cast(self);
+        let [_, bb]: [i64x2; 2] = cast(b);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
+      }
+    }
+  }
+
+  /// Transpose matrix of 4x4 `i64` matrix.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i64x4; 4]) -> [i64x4; 4] {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Can this be optimized?
+        let a = data[0].unpack_lo(data[2]);
+        let b = data[1].unpack_lo(data[3]);
+        let c = data[0].unpack_hi(data[2]);
+        let d = data[1].unpack_hi(data[3]);
+        [
+          a.unpack_lo(b),
+          a.unpack_hi(b),
+          c.unpack_lo(d),
+          c.unpack_hi(d),
+        ]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[i64x4; 4], index: usize) -> i64x4 {
+          i64x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
+      }
+    }
+  }
 }
 
 impl Not for i64x4 {

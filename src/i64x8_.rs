@@ -554,6 +554,38 @@ impl i64x8 {
     !self.any()
   }
 
+  /// Transpose matrix of 8x8 `i64` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i64x8; 8]) -> [i64x8; 8] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[i64x8; 8], index: usize) -> i64x8 {
+      i64x8::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+    ]
+  }
+
   #[inline]
   pub fn to_array(self) -> [i64; 8] {
     cast(self)

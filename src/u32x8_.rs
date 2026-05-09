@@ -579,6 +579,13 @@ impl u32x8 {
     !self.any()
   }
 
+  /// Transpose matrix of 8x8 `u32` matrix. Currently only accelerated on AVX2.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u32x8; 8]) -> [u32x8; 8] {
+    cast(i32x8::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u32; 8] {
     cast(self)

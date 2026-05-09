@@ -488,6 +488,18 @@ fn test_i8x16_swizzle_relaxed() {
   assert_eq!(expected, actual);
 }
 
+#[test]
+fn impl_i8x16_transpose() {
+  let data = std::array::from_fn(|i| {
+    i8x16::new(std::array::from_fn(|j| (i * 100 + j) as i8))
+  });
+  let expected = std::array::from_fn(|i| {
+    i8x16::new(std::array::from_fn(|j| (j * 100 + i) as i8))
+  });
+  let actual = i8x16::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i8x16_ser_de_roundtrip() {

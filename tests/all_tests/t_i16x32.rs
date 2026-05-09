@@ -1016,3 +1016,15 @@ fn impl_i16x32_reduce_max() {
     assert_eq!(p.reduce_max(), i16::MAX);
   }
 }
+
+#[test]
+fn impl_i16x32_transpose() {
+  let data = std::array::from_fn(|i| {
+    i16x32::new(std::array::from_fn(|j| (i * 100 + j) as i16))
+  });
+  let expected = std::array::from_fn(|i| {
+    i16x32::new(std::array::from_fn(|j| (j * 100 + i) as i16))
+  });
+  let actual = i16x32::transpose(data);
+  assert_eq!(expected, actual);
+}

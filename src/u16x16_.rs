@@ -468,6 +468,13 @@ impl u16x16 {
     !self.any()
   }
 
+  /// Transpose matrix of 16x16 `u16` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u16x16; 16]) -> [u16x16; 16] {
+    cast(i16x16::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u16; 16] {
     cast(self)

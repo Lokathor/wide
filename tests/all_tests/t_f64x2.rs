@@ -1181,6 +1181,14 @@ fn impl_f64x2_from_i32x4() {
   assert_eq!(f64x2::from_i32x4_lower2(i), f)
 }
 
+#[test]
+fn impl_f64x2_transpose() {
+  let data = [f64x2::new([11.0, 12.0]), f64x2::new([21.0, 22.0])];
+  let expected = [f64x2::new([11.0, 21.0]), f64x2::new([12.0, 22.0])];
+  let actual = f64x2::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_f64x2_ser_de_roundtrip() {

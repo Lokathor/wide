@@ -769,6 +769,18 @@ fn impl_i16x16_reduce_max() {
   }
 }
 
+#[test]
+fn impl_i16x16_transpose() {
+  let data = std::array::from_fn(|i| {
+    i16x16::new(std::array::from_fn(|j| (i * 100 + j) as i16))
+  });
+  let expected = std::array::from_fn(|i| {
+    i16x16::new(std::array::from_fn(|j| (j * 100 + i) as i16))
+  });
+  let actual = i16x16::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i16x16_ser_de_roundtrip() {

@@ -193,6 +193,18 @@ fn test_u64x8_none() {
 }
 
 #[test]
+fn impl_u64x8_transpose() {
+  let data = std::array::from_fn(|i| {
+    u64x8::new(std::array::from_fn(|j| (i * 100 + j) as u64))
+  });
+  let expected = std::array::from_fn(|i| {
+    u64x8::new(std::array::from_fn(|j| (j * 100 + i) as u64))
+  });
+  let actual = u64x8::transpose(data);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_u64x8_to_array() {
   let a = u64x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
   let expected = [1, 2, 3, 4, 5, 6, 7, 8];

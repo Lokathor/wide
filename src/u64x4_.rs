@@ -433,6 +433,13 @@ impl u64x4 {
     !self.any()
   }
 
+  /// Transpose matrix of 4x4 `u64` matrix.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u64x4; 4]) -> [u64x4; 4] {
+    cast(i64x4::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u64; 4] {
     cast(self)

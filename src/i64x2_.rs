@@ -624,6 +624,59 @@ impl i64x2 {
     !self.any()
   }
 
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_low_i64_m128i(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<0, 2>(self.simd, b.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vextq_s64::<0b00>(self.neon, b.neon) } }
+      } else {
+        Self::new([self.as_array()[0], b.as_array()[0]])
+      }
+    }
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_high_i64_m128i(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<1, 3>(self.simd, b.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vextq_s64::<0b11>(self.neon, b.neon) } }
+      } else {
+        Self::new([self.as_array()[1], b.as_array()[1]])
+      }
+    }
+  }
+
+  /// Transpose matrix of 2x2 `i64` matrix.
+  #[inline]
+  pub fn transpose(data: [i64x2; 2]) -> [i64x2; 2] {
+    pick! {
+      if #[cfg(any(
+        target_feature="sse2",
+        all(target_feature="neon",target_arch="aarch64"),
+        target_feature="simd128",
+      ))] {
+        [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
+      } else {
+        let [x, y, z, w]: [i64; 4] = cast(data);
+        cast([x, z, y, w])
+      }
+    }
+  }
+
   #[inline]
   pub fn to_array(self) -> [i64; 2] {
     cast(self)

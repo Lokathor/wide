@@ -1111,6 +1111,24 @@ fn impl_f64x4_from_i32x4() {
   assert_eq!(f64x4::from_i32x4(i), f);
 }
 
+#[test]
+fn impl_f64x4_transpose() {
+  let data = [
+    f64x4::new([11.0, 12.0, 13.0, 14.0]),
+    f64x4::new([21.0, 22.0, 23.0, 24.0]),
+    f64x4::new([31.0, 32.0, 33.0, 34.0]),
+    f64x4::new([41.0, 42.0, 43.0, 44.0]),
+  ];
+  let expected = [
+    f64x4::new([11.0, 21.0, 31.0, 41.0]),
+    f64x4::new([12.0, 22.0, 32.0, 42.0]),
+    f64x4::new([13.0, 23.0, 33.0, 43.0]),
+    f64x4::new([14.0, 24.0, 34.0, 44.0]),
+  ];
+  let actual = f64x4::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_f64x4_ser_de_roundtrip() {

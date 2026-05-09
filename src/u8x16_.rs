@@ -830,6 +830,13 @@ impl u8x16 {
     i8x16::none(cast(self))
   }
 
+  /// Transpose matrix of 16x16 `u8` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u8x16; 16]) -> [u8x16; 16] {
+    cast(i8x16::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u8; 16] {
     cast(self)

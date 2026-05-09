@@ -258,6 +258,18 @@ fn test_i32x4_none() {
   );
 }
 
+#[test]
+fn impl_i64x4_transpose() {
+  let data = std::array::from_fn(|i| {
+    i64x4::new(std::array::from_fn(|j| (i * 100 + j) as i64))
+  });
+  let expected = std::array::from_fn(|i| {
+    i64x4::new(std::array::from_fn(|j| (j * 100 + i) as i64))
+  });
+  let actual = i64x4::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i64x4_ser_de_roundtrip() {

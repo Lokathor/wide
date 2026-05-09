@@ -219,6 +219,18 @@ fn test_u64x4_none() {
   }
 }
 
+#[test]
+fn impl_u64x4_transpose() {
+  let data = std::array::from_fn(|i| {
+    u64x4::new(std::array::from_fn(|j| (i * 100 + j) as u64))
+  });
+  let expected = std::array::from_fn(|i| {
+    u64x4::new(std::array::from_fn(|j| (j * 100 + i) as u64))
+  });
+  let actual = u64x4::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u64x4_ser_de_roundtrip() {

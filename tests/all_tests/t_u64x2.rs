@@ -219,6 +219,14 @@ fn test_u64x2_none() {
   }
 }
 
+#[test]
+fn impl_u64x2_transpose() {
+  let data = [u64x2::new([11, 12]), u64x2::new([21, 22])];
+  let expected = [u64x2::new([11, 21]), u64x2::new([12, 22])];
+  let actual = u64x2::transpose(data);
+  assert_eq!(expected, actual);
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u64x2_ser_de_roundtrip() {

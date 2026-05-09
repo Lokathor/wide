@@ -787,6 +787,13 @@ impl u16x8 {
     !self.any()
   }
 
+  /// Transpose matrix of 8x8 `u16` matrix.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u16x8; 8]) -> [u16x8; 8] {
+    cast(i16x8::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u16; 8] {
     cast(self)

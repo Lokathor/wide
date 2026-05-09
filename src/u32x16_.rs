@@ -548,6 +548,13 @@ impl u32x16 {
     !self.any()
   }
 
+  /// Transpose matrix of 16x16 `u32` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u32x16; 16]) -> [u32x16; 16] {
+    cast(i32x16::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u32; 16] {
     cast(self)

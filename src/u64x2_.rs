@@ -553,6 +553,12 @@ impl u64x2 {
     !self.any()
   }
 
+  /// Transpose matrix of 2x2 `u64` matrix.
+  #[inline]
+  pub fn transpose(data: [u64x2; 2]) -> [u64x2; 2] {
+    cast(i64x2::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u64; 2] {
     cast(self)

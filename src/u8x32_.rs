@@ -393,6 +393,13 @@ impl u8x32 {
     !self.any()
   }
 
+  /// Transpose matrix of 32x32 `u8` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u8x32; 32]) -> [u8x32; 32] {
+    cast(i8x32::transpose(cast(data)))
+  }
+
   #[inline]
   pub fn to_array(self) -> [u8; 32] {
     cast(self)

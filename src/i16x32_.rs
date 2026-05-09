@@ -534,6 +534,86 @@ impl i16x32 {
     !self.any()
   }
 
+  /// Transpose matrix of 32x32 `i16` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i16x32; 32]) -> [i16x32; 32] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[i16x32; 32], index: usize) -> i16x32 {
+      i16x32::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+        data[16].as_array()[index],
+        data[17].as_array()[index],
+        data[18].as_array()[index],
+        data[19].as_array()[index],
+        data[20].as_array()[index],
+        data[21].as_array()[index],
+        data[22].as_array()[index],
+        data[23].as_array()[index],
+        data[24].as_array()[index],
+        data[25].as_array()[index],
+        data[26].as_array()[index],
+        data[27].as_array()[index],
+        data[28].as_array()[index],
+        data[29].as_array()[index],
+        data[30].as_array()[index],
+        data[31].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+      transpose_column(&data, 16),
+      transpose_column(&data, 17),
+      transpose_column(&data, 18),
+      transpose_column(&data, 19),
+      transpose_column(&data, 20),
+      transpose_column(&data, 21),
+      transpose_column(&data, 22),
+      transpose_column(&data, 23),
+      transpose_column(&data, 24),
+      transpose_column(&data, 25),
+      transpose_column(&data, 26),
+      transpose_column(&data, 27),
+      transpose_column(&data, 28),
+      transpose_column(&data, 29),
+      transpose_column(&data, 30),
+      transpose_column(&data, 31),
+    ]
+  }
+
   #[inline]
   pub fn to_array(self) -> [i16; 32] {
     cast(self)
