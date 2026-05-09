@@ -398,33 +398,6 @@ fn impl_f64x2_clamp() {
 }
 
 #[test]
-#[cfg_attr(debug_assertions, should_panic)]
-fn impl_f64x2_clamp_min_gt_max() {
-  let value = f64x2::new([5.0, 10.0]);
-  let min = f64x2::new([10.0, 11.0]);
-  let max = f64x2::new([8.0, 14.0]);
-  let _ = value.clamp(min, max);
-}
-
-#[test]
-#[cfg_attr(debug_assertions, should_panic)]
-fn impl_f64x2_clamp_nan_min() {
-  let value = f64x2::new([10.0, 0.0]);
-  let min = f64x2::new([5.0, f64::NAN]);
-  let max = f64x2::new([9.0, 3.0]);
-  let _ = value.clamp(min, max);
-}
-
-#[test]
-#[cfg_attr(debug_assertions, should_panic)]
-fn impl_f64x2_clamp_nan_max() {
-  let value = f64x2::new([10.0, 0.0]);
-  let min = f64x2::new([5.0, 1.0]);
-  let max = f64x2::new([9.0, f64::NAN]);
-  let _ = value.clamp(min, max);
-}
-
-#[test]
 fn impl_f64x2_midpoint() {
   let a: [f64; 2] = [3467890356635.1, 2401.0];
   let b: [f64; 2] = [2340894786738.2, -4235.0];

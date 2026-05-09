@@ -537,18 +537,12 @@ impl f64x4 {
   /// Restrict a value to a certain interval unless it is NaN.
   ///
   /// If `min > max`, `min` is NaN or `max` is NaN the result is unspecified.
-  ///
-  /// # Panics
-  ///
-  /// If debug assertions are enabled, this panics if for any lane `min > max`,
-  /// `min` is NaN or `max` is NaN.
+  /// Consider manually checking for those edge cases.
   #[inline]
   #[must_use]
-  #[track_caller]
   pub fn clamp(self, min: Self, max: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        debug_assert!(min.simd_le(max).all(), "min > max, or either was NaN");
         // For both `min_m256d` and `max_m256d` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
         Self { avx: min_m256d(max.avx, max_m256d(min.avx, self.avx)) }

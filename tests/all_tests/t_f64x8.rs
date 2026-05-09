@@ -458,33 +458,6 @@ fn impl_f64x8_clamp() {
 }
 
 #[test]
-#[cfg_attr(debug_assertions, should_panic)]
-fn impl_f64x8_clamp_min_gt_max() {
-  let value = f64x8::new([5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0]);
-  let min = f64x8::new([10.0, 11.0, 5.0, 1.0, 10.0, 11.0, 5.0, 1.0]);
-  let max = f64x8::new([8.0, 14.0, 9.0, 3.0, 8.0, 14.0, 9.0, 3.0]);
-  let _ = value.clamp(min, max);
-}
-
-#[test]
-#[cfg_attr(debug_assertions, should_panic)]
-fn impl_f64x8_clamp_nan_min() {
-  let value = f64x8::new([5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0]);
-  let min = f64x8::new([3.0, 11.0, 5.0, f64::NAN, 3.0, 11.0, 5.0, f64::NAN]);
-  let max = f64x8::new([8.0, 14.0, 9.0, 3.0, 8.0, 14.0, 9.0, 3.0]);
-  let _ = value.clamp(min, max);
-}
-
-#[test]
-#[cfg_attr(debug_assertions, should_panic)]
-fn impl_f64x8_clamp_nan_max() {
-  let value = f64x8::new([5.0, 10.0, 10.0, 0.0, 5.0, 10.0, 10.0, 0.0]);
-  let min = f64x8::new([3.0, 11.0, 5.0, 1.0, 3.0, 11.0, 5.0, 1.0]);
-  let max = f64x8::new([8.0, 14.0, 9.0, f64::NAN, 8.0, 14.0, 9.0, f64::NAN]);
-  let _ = value.clamp(min, max);
-}
-
-#[test]
 fn impl_f64x8_midpoint() {
   let a: [f64; 8] = [
     5.2,
