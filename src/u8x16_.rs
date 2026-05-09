@@ -591,13 +591,15 @@ impl u8x16 {
         i8x16_extract_lane::<0>(max)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-          let rhs = vqtbl1q_u8(self.simd, cast(SHUFFLE_1));
-          let max = vmaxq_u8(self.simd, rhs);
-          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_2));
+          // Use `transmute` instead of `cast` because `uint8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_u8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let max = vmaxq_u8(self.neon, rhs);
+          let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_2));
           let max = vmaxq_u8(max, rhs);
-          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_3));
+          let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_3));
           let max = vmaxq_u8(max, rhs);
-          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_4));
+          let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_4));
           let max = vmaxq_u8(max, rhs);
           vgetq_lane_u8(max, 0)
         }
@@ -647,13 +649,15 @@ impl u8x16 {
         i8x16_extract_lane::<0>(min)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-          let rhs = vqtbl1q_u8(self.simd, cast(SHUFFLE_1));
-          let min = vminq_u8(self.simd, rhs);
-          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_2));
+          // Use `transmute` instead of `cast` because `uint8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_u8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let min = vminq_u8(self.neon, rhs);
+          let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_2));
           let min = vminq_u8(min, rhs);
-          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_3));
+          let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_3));
           let min = vminq_u8(min, rhs);
-          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_4));
+          let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_4));
           let min = vminq_u8(min, rhs);
           vgetq_lane_u8(min, 0)
         }

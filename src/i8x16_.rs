@@ -635,13 +635,15 @@ impl i8x16 {
         i8x16_extract_lane::<0>(sum)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-          let rhs = vqtbl1q_u8(self.simd, cast(SHUFFLE_1));
-          let sum = vaddq_s8(self.simd, rhs);
-          let rhs = vqtbl1q_u8(sum, cast(SHUFFLE_2));
+          // Use `transmute` instead of `cast` because `int8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_s8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let sum = vaddq_s8(self.neon, rhs);
+          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_2));
           let sum = vaddq_s8(sum, rhs);
-          let rhs = vqtbl1q_u8(sum, cast(SHUFFLE_3));
+          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_3));
           let sum = vaddq_s8(sum, rhs);
-          let rhs = vqtbl1q_u8(sum, cast(SHUFFLE_4));
+          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_4));
           let sum = vaddq_s8(sum, rhs);
           vgetq_lane_s8(sum, 0)
         }
@@ -691,13 +693,15 @@ impl i8x16 {
         i8x16_extract_lane::<0>(max)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-          let rhs = vqtbl1q_u8(self.simd, cast(SHUFFLE_1));
-          let max = vmaxq_s8(self.simd, rhs);
-          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_2));
+          // Use `transmute` instead of `cast` because `int8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_s8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let max = vmaxq_s8(self.neon, rhs);
+          let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_2));
           let max = vmaxq_s8(max, rhs);
-          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_3));
+          let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_3));
           let max = vmaxq_s8(max, rhs);
-          let rhs = vqtbl1q_u8(max, cast(SHUFFLE_4));
+          let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_4));
           let max = vmaxq_s8(max, rhs);
           vgetq_lane_s8(max, 0)
         }
@@ -747,13 +751,15 @@ impl i8x16 {
         i8x16_extract_lane::<0>(min)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
-          let rhs = vqtbl1q_u8(self.simd, cast(SHUFFLE_1));
-          let min = vminq_s8(self.simd, rhs);
-          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_2));
+          // Use `transmute` instead of `cast` because `int8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_s8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let min = vminq_s8(self.neon, rhs);
+          let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_2));
           let min = vminq_s8(min, rhs);
-          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_3));
+          let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_3));
           let min = vminq_s8(min, rhs);
-          let rhs = vqtbl1q_u8(min, cast(SHUFFLE_4));
+          let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_4));
           let min = vminq_s8(min, rhs);
           vgetq_lane_s8(min, 0)
         }

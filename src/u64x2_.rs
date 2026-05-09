@@ -542,7 +542,7 @@ impl u64x2 {
         let array: [u64; 2] = cast(self);
         array[0].max(array[1])
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_i64(self.neon, 0).max(vgetq_lane_i64(self.neon, 1)) }
+        unsafe { vgetq_lane_u64(self.neon, 0).max(vgetq_lane_u64(self.neon, 1)) }
       } else {
         self.arr[0].max(self.arr[1])
       }
@@ -557,7 +557,7 @@ impl u64x2 {
         let array: [u64; 2] = cast(self);
         array[0].min(array[1])
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_i64(self.neon, 0).min(vgetq_lane_i64(self.neon, 1)) }
+        unsafe { vgetq_lane_u64(self.neon, 0).min(vgetq_lane_u64(self.neon, 1)) }
       } else {
         self.arr[0].min(self.arr[1])
       }
