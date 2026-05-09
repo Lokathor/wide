@@ -403,7 +403,7 @@ impl i64x4 {
   #[must_use]
   pub fn reduce_add(self) -> i64 {
     pick! {
-      if #[cfg(target_feature="avx2")] {
+      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
         let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
         let xz_yw = add_i64_m256i(zwxx, self.avx2);
         let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
