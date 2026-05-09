@@ -472,6 +472,64 @@ fn impl_max_for_i32x16() {
 }
 
 #[test]
+fn impl_i32x16_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i32::MAX - 1),
+    (-5, i32::MIN + 1),
+    (i32::MAX - 1, 5),
+    (i32::MIN + 1, -5),
+    (0, i32::MAX),
+    (0, i32::MIN),
+    (i32::MAX, 0),
+    (i32::MIN, 0),
+  ] {
+    let expected = i32x16::splat(value.saturating_add(rhs));
+    let actual = i32x16::splat(value).saturating_add(i32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i32x16_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i32::MAX - 1),
+    (-5, i32::MIN + 1),
+    (i32::MAX - 1, 5),
+    (i32::MIN + 1, -5),
+    (0, i32::MAX),
+    (0, i32::MIN),
+    (i32::MAX, 0),
+    (i32::MIN, 0),
+  ] {
+    let expected = i32x16::splat(value.saturating_sub(rhs));
+    let actual = i32x16::splat(value).saturating_sub(i32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_round_float_for_i32x16() {
   let a =
     i32x16::from([0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1]);

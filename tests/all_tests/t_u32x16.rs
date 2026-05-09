@@ -822,6 +822,42 @@ fn impl_u32x16_transpose() {
   assert_eq!(expected, actual);
 }
 
+#[test]
+fn impl_u32x16_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x16::splat(value.saturating_add(rhs));
+    let actual = u32x16::splat(value).saturating_add(u32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u32x16_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x16::splat(value.saturating_sub(rhs));
+    let actual = u32x16::splat(value).saturating_sub(u32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_u32x16_ser_de_roundtrip() {

@@ -264,3 +264,61 @@ fn impl_i64x8_new() {
   let actual = a.to_array();
   assert_eq!(expected, actual);
 }
+
+#[test]
+fn impl_i64x8_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i64::MAX - 1),
+    (-5, i64::MIN + 1),
+    (i64::MAX - 1, 5),
+    (i64::MIN + 1, -5),
+    (0, i64::MAX),
+    (0, i64::MIN),
+    (i64::MAX, 0),
+    (i64::MIN, 0),
+  ] {
+    let expected = i64x8::splat(value.saturating_add(rhs));
+    let actual = i64x8::splat(value).saturating_add(i64x8::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i64x8_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i64::MAX - 1),
+    (-5, i64::MIN + 1),
+    (i64::MAX - 1, 5),
+    (i64::MIN + 1, -5),
+    (0, i64::MAX),
+    (0, i64::MIN),
+    (i64::MAX, 0),
+    (i64::MIN, 0),
+  ] {
+    let expected = i64x8::splat(value.saturating_sub(rhs));
+    let actual = i64x8::splat(value).saturating_sub(i64x8::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}

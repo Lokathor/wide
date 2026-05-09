@@ -312,6 +312,64 @@ fn impl_i64x4_transpose() {
   assert_eq!(expected, actual);
 }
 
+#[test]
+fn impl_i64x4_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i64::MAX - 1),
+    (-5, i64::MIN + 1),
+    (i64::MAX - 1, 5),
+    (i64::MIN + 1, -5),
+    (0, i64::MAX),
+    (0, i64::MIN),
+    (i64::MAX, 0),
+    (i64::MIN, 0),
+  ] {
+    let expected = i64x4::splat(value.saturating_add(rhs));
+    let actual = i64x4::splat(value).saturating_add(i64x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i64x4_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i64::MAX - 1),
+    (-5, i64::MIN + 1),
+    (i64::MAX - 1, 5),
+    (i64::MIN + 1, -5),
+    (0, i64::MAX),
+    (0, i64::MIN),
+    (i64::MAX, 0),
+    (i64::MIN, 0),
+  ] {
+    let expected = i64x4::splat(value.saturating_sub(rhs));
+    let actual = i64x4::splat(value).saturating_sub(i64x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn impl_i64x4_ser_de_roundtrip() {

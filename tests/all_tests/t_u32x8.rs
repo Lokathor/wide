@@ -263,6 +263,42 @@ fn impl_u32x8_min() {
 }
 
 #[test]
+fn impl_u32x8_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x8::splat(value.saturating_add(rhs));
+    let actual = u32x8::splat(value).saturating_add(u32x8::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u32x8_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x8::splat(value.saturating_sub(rhs));
+    let actual = u32x8::splat(value).saturating_sub(u32x8::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u32x4_shr_each() {
   let a = u32x8::from([15313, 52322, u32::MAX, 4, 10, 20, 30, 40]);
   let shift =

@@ -714,6 +714,50 @@ impl u32x4 {
 
   #[inline]
   #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self + rhs;
+        result.simd_lt(self).blend(Self::MAX, result)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqaddq_u32(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_add(rhs.arr[0]),
+            self.arr[1].saturating_add(rhs.arr[1]),
+            self.arr[2].saturating_add(rhs.arr[2]),
+            self.arr[3].saturating_add(rhs.arr[3]),
+          ],
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self - rhs;
+        result.simd_gt(self).blend(Self::MIN, result)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqsubq_u32(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_sub(rhs.arr[0]),
+            self.arr[1].saturating_sub(rhs.arr[1]),
+            self.arr[2].saturating_sub(rhs.arr[2]),
+            self.arr[3].saturating_sub(rhs.arr[3]),
+          ],
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {

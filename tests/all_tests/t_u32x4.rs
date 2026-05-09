@@ -231,6 +231,42 @@ fn impl_u32x4_min() {
 }
 
 #[test]
+fn impl_u32x4_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x4::splat(value.saturating_add(rhs));
+    let actual = u32x4::splat(value).saturating_add(u32x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u32x4_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x4::splat(value.saturating_sub(rhs));
+    let actual = u32x4::splat(value).saturating_sub(u32x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u32x4_not() {
   let a = u32x4::from([15313, 52322, u32::MAX, 4]);
   let expected = u32x4::from([4294951982, 4294914973, 0, 4294967291]);
