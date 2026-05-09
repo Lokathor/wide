@@ -722,29 +722,51 @@ macro_rules! from_array {
       }
     }
   };
+  ($ty:ty,$dst:ty,$dst_wide:ident,2) => {
+    impl From<&[$ty]> for $dst_wide {
+      #[inline]
+      fn from(src: &[$ty]) -> $dst_wide {
+        match src.len() {
+          2 => $dst_wide::from([src[0] as $dst, src[1] as $dst]),
+          1 => $dst_wide::from([src[0] as $dst,0 as $dst]),
+          _ => panic!(
+            "Converting from an array larger than what can be stored in $dst_wide"
+          ),
+        }
+      }
+    }
+  };
 }
 
-from_array!(i8, i8, i8x32, 32);
+from_array!(f32, f32, f32x4, 4);
+from_array!(f32, f32, f32x8, 8);
+from_array!(f32, f32, f32x16, 16);
+from_array!(f64, f64, f64x2, 2);
+from_array!(f64, f64, f64x4, 4);
+from_array!(f64, f64, f64x8, 8);
 from_array!(i8, i8, i8x16, 16);
-from_array!(i8, i32, i32x8, 8);
+from_array!(i8, i8, i8x32, 32);
+from_array!(i16, i16, i16x8, 8);
+from_array!(i16, i16, i16x16, 16);
+from_array!(i16, i16, i16x32, 32);
+from_array!(i32, i32, i32x4, 4);
+from_array!(i32, i32, i32x8, 8);
+from_array!(i32, i32, i32x16, 16);
+from_array!(i64, i64, i64x2, 2);
+from_array!(i64, i64, i64x4, 4);
+from_array!(i64, i64, i64x8, 8);
 from_array!(u8, u8, u8x16, 16);
 from_array!(u8, u8, u8x32, 32);
-from_array!(i16, i16, i16x16, 16);
+from_array!(u16, u16, u16x8, 8);
 from_array!(u16, u16, u16x16, 16);
-from_array!(i32, i32, i32x8, 8);
-from_array!(f32, f32, f32x8, 8);
-from_array!(f32, f32, f32x4, 4);
-from_array!(f64, f64, f64x4, 4);
-from_array!(u64, u64, u64x4, 4);
-from_array!(i64, i64, i64x4, 4);
-from_array!(u64, u64, u64x8, 8);
-from_array!(i64, i64, i64x8, 8);
-from_array!(i16, i16, i16x32, 32);
 from_array!(u16, u16, u16x32, 32);
-from_array!(i32, i32, i32x16, 16);
+from_array!(u32, u32, u32x4, 4);
+from_array!(u32, u32, u32x8, 8);
 from_array!(u32, u32, u32x16, 16);
-from_array!(f32, f32, f32x16, 16);
-from_array!(f64, f64, f64x8, 8);
+from_array!(u64, u64, u64x2, 2);
+from_array!(u64, u64, u64x4, 4);
+from_array!(u64, u64, u64x8, 8);
+from_array!(i8, i32, i32x8, 8);
 
 #[allow(unused)]
 fn software_sqrt(x: f64) -> f64 {
