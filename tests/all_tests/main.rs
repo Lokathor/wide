@@ -34,6 +34,10 @@ mod t_i64x4;
 mod t_i64x8;
 mod t_i8x16;
 mod t_i8x32;
+mod t_simd;
+mod t_simd_float;
+mod t_simd_integer;
+mod t_simd_signed;
 mod t_u16x16;
 mod t_u16x32;
 mod t_u16x8;
@@ -46,6 +50,7 @@ mod t_u64x8;
 mod t_u8x16;
 mod t_u8x32;
 mod t_usefulness;
+mod utils;
 
 /// Generates the next pseudo-random number.
 /// Definitely non-cryptographic, just used for generating random test values.

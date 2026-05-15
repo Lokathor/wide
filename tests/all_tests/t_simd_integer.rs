@@ -1,0 +1,430 @@
+use std::iter::once;
+
+use wide::{
+  f32x4, f32x8, f32x16, i8x16, i8x32, i16x8, i16x16, i32x4, i32x8, i32x16,
+  i64x4, u8x16, u16x8, u32x4, u32x8, u32x16, u64x4,
+};
+
+use crate::utils::{for_simd_types, random_iter, simd_chunks};
+
+#[test]
+fn test_saturating_add() {
+  for_simd_types!(|T: Integer, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MAX - 1, T::MAX - 1, 15, 20, 100, T::MAX - 1, T::MAX / 2],
+      [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
+    )
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].saturating_add(right[i])));
+      let actual = Simd::new(left).saturating_add(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MIN / 2, 9],
+      [-17, 18, T::MAX, -2, -20, -100, 10],
+    )
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].saturating_add(right[i])));
+      let actual = Simd::new(left).saturating_add(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+}
+
+#[test]
+fn test_saturating_sub() {
+  for_simd_types!(|T: Integer, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MIN + 1, T::MIN + 1, 15, 20, 100, T::MIN + 1, T::MIN / 2],
+      [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
+    )
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
+      let actual = Simd::new(left).saturating_sub(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MAX / 2],
+      [17, -18, T::MIN, 2, 20, -100],
+    )
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
+      let actual = Simd::new(left).saturating_sub(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+}
+
+#[test]
+fn test_from_big_truncate() {
+  // `from_{big}_truncate` is inconsistently missing from types.
+
+  let value = i16x16::new([
+    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
+    255,
+  ]);
+  let expected = i8x16::new([
+    16, -23, 2, 3, 4, 5, 6, -1, 16, -23, 2, -128, 127, -128, 127, -1,
+  ]);
+  let actual = i8x16::from_i16x16_truncate(value);
+  assert_eq!(actual, expected);
+
+  let value = i32x8::new([10000, 1001, 2, 3, 4, 5, -65536, 65536]);
+  let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, 0, 0]);
+  let actual = i16x8::from_i32x8_truncate(value);
+  assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_from_big_saturate() {
+  // `from_{big}_saturate` is inconsistently missing from types.
+
+  let value = i16x16::new([
+    10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127,
+    255,
+  ]);
+  let expected = i8x16::new([
+    127, 127, 2, 3, 4, 5, 6, 127, 127, 127, 2, 127, -128, -128, 127, 127,
+  ]);
+  let actual = i8x16::from_i16x16_saturate(value);
+  assert_eq!(actual, expected);
+
+  let value = i32x8::new([10000, 1001, 2, 3, 4, 5, -65535, 65536]);
+  let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, -32768, 32767]);
+  let actual = i16x8::from_i32x8_saturate(value);
+  assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_mul_keep_high() {
+  // `mul_keep_high` is inconsistently missing from types.
+
+  for [left, right] in once([
+    [i16::MAX, 200, 300, 4568, -1, -2, -3, -4],
+    [i16::MIN, 600, 700, 8910, -15, -26, -37, 48],
+  ])
+  .chain(random_iter())
+  {
+    let expected = i16x8::new(std::array::from_fn(|i| {
+      (left[i] as i32 * right[i] as i32 >> 16) as i16
+    }));
+    let actual = i16x8::mul_keep_high(i16x8::new(left), i16x8::new(right));
+
+    assert_eq!(actual, expected);
+  }
+
+  for [left, right] in once([
+    [u16::MAX, 200, 300, 4568, 1, 2, 3, 200],
+    [u16::MAX, 600, 700, 8910, 15, 26, 37, 600],
+  ])
+  .chain(random_iter())
+  {
+    let expected = u16x8::new(std::array::from_fn(|i| {
+      (left[i] as u32 * right[i] as u32 >> 16) as u16
+    }));
+    let actual = u16x8::mul_keep_high(u16x8::new(left), u16x8::new(right));
+
+    assert_eq!(actual, expected);
+  }
+
+  for [left, right] in once([
+    [1, 2 * 10000000, 3 * 1000000, u32::MAX],
+    [5, 6 * 100, 7 * 1000000, u32::MAX],
+  ])
+  .chain(random_iter())
+  {
+    let expected = u32x4::new(std::array::from_fn(|i| {
+      (left[i] as u64 * right[i] as u64 >> 32) as u32
+    }));
+    let actual = u32x4::mul_keep_high(u32x4::new(left), u32x4::new(right));
+
+    assert_eq!(actual, expected);
+  }
+
+  for [left, right] in once([
+    [
+      1,
+      2 * 10000000,
+      3 * 1000000,
+      u32::MAX,
+      1,
+      2 * 10000000,
+      3 * 1000000,
+      u32::MAX,
+    ],
+    [5, 6 * 100, 7 * 1000000, u32::MAX, 5, 6 * 100, 7 * 1000000, u32::MAX],
+  ])
+  .chain(random_iter())
+  {
+    let expected = u32x8::new(std::array::from_fn(|i| {
+      (left[i] as u64 * right[i] as u64 >> 32) as u32
+    }));
+    let actual = u32x8::mul_keep_high(u32x8::new(left), u32x8::new(right));
+
+    assert_eq!(actual, expected);
+  }
+
+  for [left, right] in once([
+    [
+      1,
+      2 * 10000000,
+      3 * 1000000,
+      u32::MAX,
+      1,
+      2 * 10000000,
+      3 * 1000000,
+      u32::MAX,
+      1,
+      2 * 10000000,
+      3 * 1000000,
+      u32::MAX,
+      1,
+      2 * 10000000,
+      3 * 1000000,
+      u32::MAX,
+    ],
+    [
+      5,
+      6 * 100,
+      7 * 1000000,
+      u32::MAX,
+      5,
+      6 * 100,
+      7 * 1000000,
+      u32::MAX,
+      5,
+      6 * 100,
+      7 * 1000000,
+      u32::MAX,
+      5,
+      6 * 100,
+      7 * 1000000,
+      u32::MAX,
+    ],
+  ])
+  .chain(random_iter())
+  {
+    let expected = u32x16::new(std::array::from_fn(|i| {
+      (left[i] as u64 * right[i] as u64 >> 32) as u32
+    }));
+    let actual = u32x16::mul_keep_high(u32x16::new(left), u32x16::new(right));
+
+    assert_eq!(actual, expected);
+  }
+}
+
+#[test]
+fn test_mul_widen() {
+  // `mul_widen` is inconsistently missing from types.
+
+  for [left, right] in once([
+    [1, 2, 3, 4, 5, 6, i16::MIN, i16::MAX],
+    [17, -18, 190, -20, 21, -22, i16::MAX, i16::MAX],
+  ])
+  .chain(random_iter())
+  {
+    let expected =
+      i32x8::new(std::array::from_fn(|i| left[i] as i32 * right[i] as i32));
+    let actual = i16x8::new(left).mul_widen(i16x8::new(right));
+
+    assert_eq!(actual, expected);
+  }
+
+  for [left, right] in
+    once([[1, 2, 3 * -1000000, i32::MAX], [5, 6, 7 * -1000000, i32::MIN]])
+      .chain(random_iter())
+  {
+    let expected =
+      i64x4::new(std::array::from_fn(|i| left[i] as i64 * right[i] as i64));
+    let actual = i32x4::new(left).mul_widen(i32x4::new(right));
+
+    assert_eq!(actual, expected);
+  }
+
+  for [left, right] in once([
+    [1, 2, 3, 4, 5, 6, i16::MAX as u16, u16::MAX],
+    [17, 18, 190, 20, 21, 22, i16::MAX as u16, u16::MAX],
+  ])
+  .chain(random_iter())
+  {
+    let expected =
+      u32x8::new(std::array::from_fn(|i| left[i] as u32 * right[i] as u32));
+    let actual = u16x8::new(left).mul_widen(u16x8::new(right));
+
+    assert_eq!(actual, expected);
+  }
+
+  for [left, right] in
+    once([[1, 2, 3 * 1000000, u32::MAX], [5, 6, 7 * 1000000, u32::MAX]])
+      .chain(random_iter())
+  {
+    let expected =
+      u64x4::new(std::array::from_fn(|i| left[i] as u64 * right[i] as u64));
+    let actual = u32x4::new(left).mul_widen(u32x4::new(right));
+
+    assert_eq!(actual, expected);
+  }
+}
+
+#[test]
+fn test_round_float() {
+  // `round_float` only exists for select types.
+
+  let value = i32x4::new([-1, 30, i32::MIN, i32::MAX]);
+  let expected = f32x4::new([-1.0, 30.0, i32::MIN as f32, i32::MAX as f32]);
+  let actual = value.round_float();
+  assert_eq!(actual, expected);
+
+  let value =
+    i32x16::new([0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1]);
+  let expected = f32x16::new([
+    0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0,
+    -2.0, -1.0,
+  ]);
+  let actual = value.round_float();
+  assert_eq!(actual, expected);
+
+  let value = i32x8::new([-1, 30, i32::MIN, i32::MAX, 29, 35, -8, 0]);
+  let expected = f32x8::new([
+    -1.0,
+    30.0,
+    i32::MIN as f32,
+    i32::MAX as f32,
+    29.0,
+    35.0,
+    -8.0,
+    0.0,
+  ]);
+  let actual = value.round_float();
+  assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_swizzle() {
+  // `swizzle` is inconsistently missing from types.
+
+  for (value, indices, expected) in [
+    (
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+      [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+      [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+    ),
+    (
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+      [15, 17, -13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, -1, 0],
+      [16, 0, 0, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 1],
+    ),
+  ] {
+    let value = i8x16::new(value);
+    let indices = i8x16::new(indices);
+    let expected = i8x16::new(expected);
+    let actual = value.swizzle(indices);
+    assert_eq!(actual, expected);
+  }
+}
+
+#[test]
+fn test_swizzle_relaxed() {
+  // `swizzle_relaxed` is inconsistently missing from types.
+
+  for (value, indices, expected) in [
+    (
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+      [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+      [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+    ),
+    (
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+      [15, -17, -13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, -1, 0],
+      [16, 0, 0, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 1],
+    ),
+  ] {
+    let value = i8x16::new(value);
+    let indices = i8x16::new(indices);
+    let expected = i8x16::new(expected);
+    let actual = value.swizzle_relaxed(indices);
+    assert_eq!(actual, expected);
+  }
+}
+
+#[test]
+fn test_swizzle_half() {
+  // `swizzle_half` is inconsistently missing from types.
+
+  let value = i8x32::new([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+  ]);
+  let indices = i8x32::new([
+    15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11,
+    10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+  ]);
+  let expected = i8x32::new([
+    16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 32, 31, 30, 29, 28,
+    27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17,
+  ]);
+  let actual = value.swizzle_half(indices);
+  assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_from_u8x16_low() {
+  // This function only exists for select types.
+
+  let value =
+    u8x16::new([1, 2, 3, 4, 5, 6, 7, u8::MAX, 9, 10, 11, 12, 13, 14, 15, 16]);
+  let expected = i16x8::new([1, 2, 3, 4, 5, 6, 7, u8::MAX as i16]);
+  let actual = i16x8::from_u8x16_low(value);
+  assert_eq!(actual, expected);
+
+  let value =
+    u8x16::from([255, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
+  let expected = u16x8::from([255, 2, 3, 4, 5, 6, 7, 8]);
+  let actual = u16x8::from_u8x16_low(value);
+  assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_from_u8x16_high() {
+  // This function only exists for select types.
+
+  let value =
+    u8x16::new([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
+  let expected = i16x8::new([9, 10, 11, 12, 13, 14, 255, 128]);
+  let actual = i16x8::from_u8x16_high(value);
+  assert_eq!(actual, expected);
+
+  let value =
+    u8x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
+  let expected = u16x8::from([9, 10, 11, 12, 13, 14, 255, 128]);
+  let actual = u16x8::from_u8x16_high(value);
+  assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_narrow_i16x8() {
+  // This function only exists for select types.
+
+  let a = i16x8::new([-1, 2, -3, 4, -5, 6, -7, 8]);
+  let b = i16x8::new([9, 10, 11, 12, 13, -14, 15, -16]);
+  let expected =
+    u8x16::new([0, 2, 0, 4, 0, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 0]);
+  let actual = u8x16::narrow_i16x8(a, b);
+  assert_eq!(actual, expected);
+}
