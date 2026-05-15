@@ -541,7 +541,7 @@ impl i64x8 {
         // use f64 move_mask since it is the same size as i64
         movepi64_mask_m512d(cast(self.avx512)) as u32
       } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 2)
+        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
       }
     }
   }
