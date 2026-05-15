@@ -55,6 +55,68 @@ impl Sub for u16x16 {
   }
 }
 
+impl Shl for u16x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shl`)
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_sllv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_sllv_epi16;
+
+        // Mask `rhs` to 15 to match `wrapping_shl`.
+        let rhs = bitand_m256i(rhs.avx2, set_splat_i16_m256i(15));
+        // TODO(safe_arch): Add `_mm256_sllv_epi16`.
+        cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.0) })
+      } else {
+        let [self_a, self_b]: [u16x8; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
+
+        cast([self_a << rhs_a, self_b << rhs_b])
+      }
+    }
+  }
+}
+
+impl Shr for u16x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shr`)
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_srlv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_srlv_epi16;
+
+        // Mask `rhs` to 15 to match `wrapping_shr`.
+        let rhs = bitand_m256i(rhs.avx2, set_splat_i16_m256i(15));
+        // TODO(safe_arch): Add `_mm256_srlv_epi16`.
+        cast(unsafe { _mm256_srlv_epi16(self.avx2.0, rhs.0) })
+      } else {
+        let [self_a, self_b]: [u16x8; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
+
+        cast([self_a >> rhs_a, self_b >> rhs_b])
+      }
+    }
+  }
+}
+
 impl Add<u16> for u16x16 {
   type Output = Self;
   #[inline]
@@ -71,6 +133,15 @@ impl Sub<u16> for u16x16 {
   }
 }
 
+impl Mul<u16> for u16x16 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: u16) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
 impl Add<u16x16> for u16 {
   type Output = u16x16;
   #[inline]
@@ -84,6 +155,15 @@ impl Sub<u16x16> for u16 {
   #[inline]
   fn sub(self, rhs: u16x16) -> Self::Output {
     u16x16::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<u16x16> for u16 {
+  type Output = u16x16;
+
+  #[inline]
+  fn mul(self, rhs: u16x16) -> Self::Output {
+    u16x16::splat(self) * rhs
   }
 }
 

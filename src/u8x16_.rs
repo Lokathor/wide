@@ -132,6 +132,139 @@ impl Sub for u8x16 {
   }
 }
 
+impl Mul for u8x16 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    // For x86 and wasm, this technically can be done explicitly by converting
+    // to `i16` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vmulq_u8(self.neon, rhs.neon) } }
+      } else {
+        let self_array: [u8; 16] = cast(self);
+        let rhs_array: [u8; 16] = cast(rhs);
+
+        Self::new([
+          self_array[0].wrapping_mul(rhs_array[0]),
+          self_array[1].wrapping_mul(rhs_array[1]),
+          self_array[2].wrapping_mul(rhs_array[2]),
+          self_array[3].wrapping_mul(rhs_array[3]),
+          self_array[4].wrapping_mul(rhs_array[4]),
+          self_array[5].wrapping_mul(rhs_array[5]),
+          self_array[6].wrapping_mul(rhs_array[6]),
+          self_array[7].wrapping_mul(rhs_array[7]),
+          self_array[8].wrapping_mul(rhs_array[8]),
+          self_array[9].wrapping_mul(rhs_array[9]),
+          self_array[10].wrapping_mul(rhs_array[10]),
+          self_array[11].wrapping_mul(rhs_array[11]),
+          self_array[12].wrapping_mul(rhs_array[12]),
+          self_array[13].wrapping_mul(rhs_array[13]),
+          self_array[14].wrapping_mul(rhs_array[14]),
+          self_array[15].wrapping_mul(rhs_array[15]),
+        ])
+      }
+    }
+  }
+}
+
+impl Shl for u8x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shl`)
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `u16` or `u32` then converting back after multiplication, but that may
+    // not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // Mask `rhs` to 7 to match `wrapping_shl`.
+          let shift_by = vreinterpretq_s8_u8(vandq_u8(rhs.neon, vmovq_n_u8(7)));
+          Self { neon: vshlq_u8(self.neon, shift_by) }
+        }
+      } else {
+        let self_array: [u8; 16] = cast(self);
+        let rhs_array: [u8; 16] = cast(rhs);
+
+        Self::new([
+          self_array[0].wrapping_shl(rhs_array[0] as u32),
+          self_array[1].wrapping_shl(rhs_array[1] as u32),
+          self_array[2].wrapping_shl(rhs_array[2] as u32),
+          self_array[3].wrapping_shl(rhs_array[3] as u32),
+          self_array[4].wrapping_shl(rhs_array[4] as u32),
+          self_array[5].wrapping_shl(rhs_array[5] as u32),
+          self_array[6].wrapping_shl(rhs_array[6] as u32),
+          self_array[7].wrapping_shl(rhs_array[7] as u32),
+          self_array[8].wrapping_shl(rhs_array[8] as u32),
+          self_array[9].wrapping_shl(rhs_array[9] as u32),
+          self_array[10].wrapping_shl(rhs_array[10] as u32),
+          self_array[11].wrapping_shl(rhs_array[11] as u32),
+          self_array[12].wrapping_shl(rhs_array[12] as u32),
+          self_array[13].wrapping_shl(rhs_array[13] as u32),
+          self_array[14].wrapping_shl(rhs_array[14] as u32),
+          self_array[15].wrapping_shl(rhs_array[15] as u32),
+        ])
+      }
+    }
+  }
+}
+
+impl Shr for u8x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shr`)
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `u16` or `u32` then converting back after multiplication, but that may
+    // not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
+          // there is no shift-right intrinsic.
+          let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(vandq_u8(rhs.neon, vmovq_n_u8(7))));
+          Self { neon: vshlq_u8(self.neon, neg_rhs) }
+        }
+      } else {
+        let self_array: [u8; 16] = cast(self);
+        let rhs_array: [u8; 16] = cast(rhs);
+
+        Self::new([
+          self_array[0].wrapping_shr(rhs_array[0] as u32),
+          self_array[1].wrapping_shr(rhs_array[1] as u32),
+          self_array[2].wrapping_shr(rhs_array[2] as u32),
+          self_array[3].wrapping_shr(rhs_array[3] as u32),
+          self_array[4].wrapping_shr(rhs_array[4] as u32),
+          self_array[5].wrapping_shr(rhs_array[5] as u32),
+          self_array[6].wrapping_shr(rhs_array[6] as u32),
+          self_array[7].wrapping_shr(rhs_array[7] as u32),
+          self_array[8].wrapping_shr(rhs_array[8] as u32),
+          self_array[9].wrapping_shr(rhs_array[9] as u32),
+          self_array[10].wrapping_shr(rhs_array[10] as u32),
+          self_array[11].wrapping_shr(rhs_array[11] as u32),
+          self_array[12].wrapping_shr(rhs_array[12] as u32),
+          self_array[13].wrapping_shr(rhs_array[13] as u32),
+          self_array[14].wrapping_shr(rhs_array[14] as u32),
+          self_array[15].wrapping_shr(rhs_array[15] as u32),
+        ])
+      }
+    }
+  }
+}
+
 impl Add<u8> for u8x16 {
   type Output = Self;
   #[inline]
@@ -148,6 +281,138 @@ impl Sub<u8> for u8x16 {
   }
 }
 
+impl Mul<u8> for u8x16 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: u8) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
+macro_rules! impl_shl_scalar {
+  ($Rhs:ident) => {
+    impl Shl<$Rhs> for u8x16 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      ///
+      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+      /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+      /// of the type. (same as `wrapping_shl`)
+      #[inline]
+      fn shl(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `u16` or `u32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        pick! {
+          if #[cfg(target_feature="simd128")] {
+            // Mask `rhs` to 7 to match `wrapping_shl`.
+            Self { simd: u8x16_shl(self.simd, rhs as u32 & 7) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // Mask `rhs` to 7 to match `wrapping_shl`.
+            unsafe { Self { neon: vshlq_u8(self.neon, vmovq_n_s8(rhs as i8 & 7)) } }
+          } else {
+            let self_array = self.to_array();
+            let rhs = rhs as u32;
+
+            cast([
+              self_array[0].wrapping_shl(rhs),
+              self_array[1].wrapping_shl(rhs),
+              self_array[2].wrapping_shl(rhs),
+              self_array[3].wrapping_shl(rhs),
+              self_array[4].wrapping_shl(rhs),
+              self_array[5].wrapping_shl(rhs),
+              self_array[6].wrapping_shl(rhs),
+              self_array[7].wrapping_shl(rhs),
+              self_array[8].wrapping_shl(rhs),
+              self_array[9].wrapping_shl(rhs),
+              self_array[10].wrapping_shl(rhs),
+              self_array[11].wrapping_shl(rhs),
+              self_array[12].wrapping_shl(rhs),
+              self_array[13].wrapping_shl(rhs),
+              self_array[14].wrapping_shl(rhs),
+              self_array[15].wrapping_shl(rhs),
+            ])
+          }
+        }
+      }
+    }
+  };
+}
+impl_shl_scalar!(i8);
+impl_shl_scalar!(u8);
+impl_shl_scalar!(i16);
+impl_shl_scalar!(u16);
+impl_shl_scalar!(i32);
+impl_shl_scalar!(u32);
+impl_shl_scalar!(i64);
+impl_shl_scalar!(u64);
+impl_shl_scalar!(i128);
+impl_shl_scalar!(u128);
+
+macro_rules! impl_shr_scalar {
+  ($Rhs:ident) => {
+    impl Shr<$Rhs> for u8x16 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      ///
+      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+      /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+      /// of the type. (same as `wrapping_shr`)
+      #[inline]
+      fn shr(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `u16` or `u32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        pick! {
+          if #[cfg(target_feature="simd128")] {
+            // Mask `rhs` to 7 to match `wrapping_shr`.
+            Self { simd: u8x16_shr(self.simd, rhs as u32 & 7) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
+            // there is no shift-right intrinsic.
+            unsafe { Self { neon: vshlq_u8(self.neon, vmovq_n_s8(rhs as i8 & 7 | i8::MIN)) } }
+          } else {
+            let self_array = self.to_array();
+            let rhs = rhs as u32;
+
+            cast([
+              self_array[0].wrapping_shr(rhs),
+              self_array[1].wrapping_shr(rhs),
+              self_array[2].wrapping_shr(rhs),
+              self_array[3].wrapping_shr(rhs),
+              self_array[4].wrapping_shr(rhs),
+              self_array[5].wrapping_shr(rhs),
+              self_array[6].wrapping_shr(rhs),
+              self_array[7].wrapping_shr(rhs),
+              self_array[8].wrapping_shr(rhs),
+              self_array[9].wrapping_shr(rhs),
+              self_array[10].wrapping_shr(rhs),
+              self_array[11].wrapping_shr(rhs),
+              self_array[12].wrapping_shr(rhs),
+              self_array[13].wrapping_shr(rhs),
+              self_array[14].wrapping_shr(rhs),
+              self_array[15].wrapping_shr(rhs),
+            ])
+          }
+        }
+      }
+    }
+  };
+}
+impl_shr_scalar!(i8);
+impl_shr_scalar!(u8);
+impl_shr_scalar!(i16);
+impl_shr_scalar!(u16);
+impl_shr_scalar!(i32);
+impl_shr_scalar!(u32);
+impl_shr_scalar!(i64);
+impl_shr_scalar!(u64);
+impl_shr_scalar!(i128);
+impl_shr_scalar!(u128);
+
 impl Add<u8x16> for u8 {
   type Output = u8x16;
   #[inline]
@@ -161,6 +426,15 @@ impl Sub<u8x16> for u8 {
   #[inline]
   fn sub(self, rhs: u8x16) -> Self::Output {
     u8x16::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<u8x16> for u8 {
+  type Output = u8x16;
+
+  #[inline]
+  fn mul(self, rhs: u8x16) -> Self::Output {
+    u8x16::splat(self) * rhs
   }
 }
 

@@ -143,6 +143,99 @@ impl Mul for i16x8 {
   }
 }
 
+impl Shl for i16x8 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shl`)
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_sllv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_sllv_epi16;
+
+        // Mask `rhs` to 15 to match `wrapping_shl`.
+        let rhs = bitand_m128i(rhs.sse, set_splat_i16_m128i(15));
+        // TODO(safe_arch): Add `_mm_sllv_epi16`.
+        cast(unsafe { _mm_sllv_epi16(self.sse.0, rhs.0) })
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          // Mask `rhs` to 15 to match `wrapping_shl`.
+          let rhs = vandq_s16(rhs.neon, vmovq_n_s16(15));
+          Self { neon: vshlq_s16(self.neon, rhs) }
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].wrapping_shl(rhs_array[0] as u32),
+          self_array[1].wrapping_shl(rhs_array[1] as u32),
+          self_array[2].wrapping_shl(rhs_array[2] as u32),
+          self_array[3].wrapping_shl(rhs_array[3] as u32),
+          self_array[4].wrapping_shl(rhs_array[4] as u32),
+          self_array[5].wrapping_shl(rhs_array[5] as u32),
+          self_array[6].wrapping_shl(rhs_array[6] as u32),
+          self_array[7].wrapping_shl(rhs_array[7] as u32),
+        ])
+      }
+    }
+  }
+}
+
+impl Shr for i16x8 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shr`)
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_srlv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_srlv_epi16;
+
+        // Mask `rhs` to 15 to match `wrapping_shr`.
+        let rhs = bitand_m128i(rhs.sse, set_splat_i16_m128i(15));
+        // TODO(safe_arch): Add `_mm_srlv_epi16`.
+        cast(unsafe { _mm_srlv_epi16(self.sse.0, rhs.0) })
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          // Mask `rhs` to 15 to match `wrapping_shr`, and negate it because
+          // there is no shift-right intrinsic.
+          let neg_rhs = vnegq_s16(vandq_s16(rhs.neon, vmovq_n_s16(15)));
+          Self { neon: vshlq_s16(self.neon, neg_rhs) }
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].wrapping_shr(rhs_array[0] as u32),
+          self_array[1].wrapping_shr(rhs_array[1] as u32),
+          self_array[2].wrapping_shr(rhs_array[2] as u32),
+          self_array[3].wrapping_shr(rhs_array[3] as u32),
+          self_array[4].wrapping_shr(rhs_array[4] as u32),
+          self_array[5].wrapping_shr(rhs_array[5] as u32),
+          self_array[6].wrapping_shr(rhs_array[6] as u32),
+          self_array[7].wrapping_shr(rhs_array[7] as u32),
+        ])
+      }
+    }
+  }
+}
+
 impl Add<i16> for i16x8 {
   type Output = Self;
   #[inline]

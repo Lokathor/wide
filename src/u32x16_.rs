@@ -71,6 +71,14 @@ impl Sub<u32> for u32x16 {
   }
 }
 
+impl Mul<u32> for u32x16 {
+  type Output = Self;
+  #[inline]
+  fn mul(self, rhs: u32) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
 impl Add<u32x16> for u32 {
   type Output = u32x16;
   #[inline]
@@ -84,6 +92,15 @@ impl Sub<u32x16> for u32 {
   #[inline]
   fn sub(self, rhs: u32x16) -> Self::Output {
     u32x16::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<u32x16> for u32 {
+  type Output = u32x16;
+
+  #[inline]
+  fn mul(self, rhs: u32x16) -> Self::Output {
+    u32x16::splat(self) * rhs
   }
 }
 
@@ -559,7 +576,7 @@ impl u32x16 {
       }
     }
   }
-  
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

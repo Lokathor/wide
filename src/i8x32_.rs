@@ -55,6 +55,48 @@ impl Sub for i8x32 {
   }
 }
 
+impl Mul for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // then converting back after multiplication, but that may not actually be
+    // faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a * rhs_a, self_b * rhs_b])
+  }
+}
+
+impl Shl for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // or `i32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a << rhs_a, self_b << rhs_b])
+  }
+}
+
+impl Shr for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // or `i32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a >> rhs_a, self_b >> rhs_b])
+  }
+}
+
 impl Add<i8> for i8x32 {
   type Output = Self;
   #[inline]
@@ -71,6 +113,71 @@ impl Sub<i8> for i8x32 {
   }
 }
 
+impl Mul<i8> for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: i8) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
+macro_rules! impl_shl_scalar {
+  ($Rhs:ident) => {
+    impl Shl<$Rhs> for i8x32 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      #[inline]
+      fn shl(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `i16` or `i32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        let [self_a, self_b]: [i8x16; 2] = cast(self);
+        cast([self_a << rhs, self_b << rhs])
+      }
+    }
+  };
+}
+impl_shl_scalar!(i8);
+impl_shl_scalar!(u8);
+impl_shl_scalar!(i16);
+impl_shl_scalar!(u16);
+impl_shl_scalar!(i32);
+impl_shl_scalar!(u32);
+impl_shl_scalar!(i64);
+impl_shl_scalar!(u64);
+impl_shl_scalar!(i128);
+impl_shl_scalar!(u128);
+
+macro_rules! impl_shr_scalar {
+  ($Rhs:ident) => {
+    impl Shr<$Rhs> for i8x32 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      #[inline]
+      fn shr(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `i16` or `i32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        let [self_a, self_b]: [i8x16; 2] = cast(self);
+        cast([self_a >> rhs, self_b >> rhs])
+      }
+    }
+  };
+}
+impl_shr_scalar!(i8);
+impl_shr_scalar!(u8);
+impl_shr_scalar!(i16);
+impl_shr_scalar!(u16);
+impl_shr_scalar!(i32);
+impl_shr_scalar!(u32);
+impl_shr_scalar!(i64);
+impl_shr_scalar!(u64);
+impl_shr_scalar!(i128);
+impl_shr_scalar!(u128);
+
 impl Add<i8x32> for i8 {
   type Output = i8x32;
   #[inline]
@@ -84,6 +191,15 @@ impl Sub<i8x32> for i8 {
   #[inline]
   fn sub(self, rhs: i8x32) -> Self::Output {
     i8x32::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<i8x32> for i8 {
+  type Output = i8x32;
+
+  #[inline]
+  fn mul(self, rhs: i8x32) -> Self::Output {
+    i8x32::splat(self) * rhs
   }
 }
 

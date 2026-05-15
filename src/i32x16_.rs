@@ -168,6 +168,56 @@ impl BitXor for i32x16 {
   }
 }
 
+impl Shl for i32x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shl`)
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Mask `rhs` to 31 to match `wrapping_shl`.
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
+        Self { avx512: shl_each_u32_m512i(self.avx512, rhs) }
+      } else {
+        Self {
+          a: self.a.shl(rhs.a),
+          b: self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl Shr for i32x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shr`)
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Mask `rhs` to 31 to match `wrapping_shr`.
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
+        Self { avx512: shr_each_u32_m512i(self.avx512, rhs) }
+      } else {
+        Self {
+          a: self.a >> rhs.a,
+          b: self.b >> rhs.b,
+        }
+      }
+    }
+  }
+}
+
 macro_rules! impl_shl_t_for_i32x16 {
   ($($shift_type:ty),+ $(,)?) => {
     $(impl Shl<$shift_type> for i32x16 {

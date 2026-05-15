@@ -69,6 +69,56 @@ impl Mul for u16x32 {
   }
 }
 
+impl Shl for u16x32 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shl`)
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        // Mask `rhs` to 15 to match `wrapping_shl`.
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i16_m512i(15));
+        Self { avx512: shl_each_u16_m512i(self.avx512, rhs) }
+      } else {
+        let [self_a, self_b]: [u16x16; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
+
+        cast([self_a << rhs_a, self_b << rhs_b])
+      }
+    }
+  }
+}
+
+impl Shr for u16x32 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shr`)
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        // Mask `rhs` to 15 to match `wrapping_shr`.
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i16_m512i(15));
+        Self { avx512: shr_each_u16_m512i(self.avx512, rhs) }
+      } else {
+        let [self_a, self_b]: [u16x16; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
+
+        cast([self_a >> rhs_a, self_b >> rhs_b])
+      }
+    }
+  }
+}
+
 impl Add<u16> for u16x32 {
   type Output = Self;
   #[inline]

@@ -798,7 +798,7 @@ impl u32x4 {
   pub fn transpose(data: [u32x4; 4]) -> [u32x4; 4] {
     cast(i32x4::transpose(cast(data)))
   }
-  
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]
