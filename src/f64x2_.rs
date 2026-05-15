@@ -771,11 +771,15 @@ impl f64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f64x2_nearest(self.simd) }
       } else {
-        let sign_mask = f64x2::from(-0.0);
-        let magic = f64x2::from(f64::from_bits(0x43300000_00000000));
-        let sign = self & sign_mask;
-        let signed_magic = magic | sign;
-        self + signed_magic - signed_magic
+        const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
+        const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
+
+        let self_sign = self & SIGN_MASK;
+        let magic_value = MAGIC_VALUE | self_sign;
+        let result = self + magic_value - magic_value;
+
+        let bounds_mask = self.abs().simd_le(MAGIC_VALUE);
+        bounds_mask.abs().blend(result, self)
       }
     }
   }
