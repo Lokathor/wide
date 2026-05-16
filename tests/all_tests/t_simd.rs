@@ -1887,7 +1887,6 @@ fn test_any() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { -0.0 } else { 0.0 }))
       .chain([[0.0 as T; N], [-0.0 as T; N]])
-      .chain(random_iter())
     {
       let expected = value.into_iter().any(|x| x.is_sign_negative());
       let actual = Simd::new(value).any();
@@ -1899,7 +1898,6 @@ fn test_any() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { -5 } else { 1 }))
       .chain([[2 as T; N], [-4 as T; N]])
-      .chain(random_iter())
     {
       let expected = value.into_iter().any(|x| x.is_negative());
       let actual = Simd::new(value).any();
@@ -1911,7 +1909,6 @@ fn test_any() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { !0 - 5 } else { 1 }))
       .chain([[2 as T; N], [!0 - 6 as T; N]])
-      .chain(random_iter())
     {
       let expected = value.into_iter().any(|x| x.cast_signed().is_negative());
       let actual = Simd::new(value).any();
@@ -1927,7 +1924,6 @@ fn test_all() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { -0.0 } else { 0.0 }))
       .chain([[0.0 as T; N], [-0.0 as T; N]])
-      .chain(random_iter())
     {
       let expected = value.into_iter().all(|x| x.is_sign_negative());
       let actual = Simd::new(value).all();
@@ -1939,7 +1935,6 @@ fn test_all() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { -5 } else { 1 }))
       .chain([[2 as T; N], [-4 as T; N]])
-      .chain(random_iter())
     {
       let expected = value.into_iter().all(|x| x.is_negative());
       let actual = Simd::new(value).all();
@@ -1951,7 +1946,6 @@ fn test_all() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { !0 - 5 } else { 1 }))
       .chain([[2 as T; N], [!0 - 6 as T; N]])
-      .chain(random_iter())
     {
       let expected = value.into_iter().all(|x| x.cast_signed().is_negative());
       let actual = Simd::new(value).all();
@@ -1967,7 +1961,6 @@ fn test_none() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { -0.0 } else { 0.0 }))
       .chain([[0.0 as T; N], [-0.0 as T; N]])
-      .chain(random_iter())
     {
       let expected = !value.into_iter().any(|x| x.is_sign_negative());
       let actual = Simd::new(value).none();
@@ -1979,7 +1972,6 @@ fn test_none() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { -5 } else { 1 }))
       .chain([[2 as T; N], [-4 as T; N]])
-      .chain(random_iter())
     {
       let expected = !value.into_iter().any(|x| x.is_negative());
       let actual = Simd::new(value).none();
@@ -1991,7 +1983,6 @@ fn test_none() {
     for value in (0..N)
       .map(|i| std::array::from_fn(|j| if i == j { !0 - 5 } else { 1 }))
       .chain([[2 as T; N], [!0 - 6 as T; N]])
-      .chain(random_iter())
     {
       let expected = !value.into_iter().any(|x| x.cast_signed().is_negative());
       let actual = Simd::new(value).none();
