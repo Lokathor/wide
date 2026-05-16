@@ -202,14 +202,14 @@ impl Shr for i16x8 {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
         #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm_srlv_epi16;
+        use core::arch::x86::_mm_srav_epi16;
         #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm_srlv_epi16;
+        use core::arch::x86_64::_mm_srav_epi16;
 
         // Mask `rhs` to 15 to match `wrapping_shr`.
         let rhs = bitand_m128i(rhs.sse, set_splat_i16_m128i(15));
-        // TODO(safe_arch): Add `_mm_srlv_epi16`.
-        cast(unsafe { _mm_srlv_epi16(self.sse.0, rhs.0) })
+        // TODO(safe_arch): Add `_mm_srav_epi16`.
+        cast(unsafe { _mm_srav_epi16(self.sse.0, rhs.0) })
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           // Mask `rhs` to 15 to match `wrapping_shr`, and negate it because

@@ -106,9 +106,15 @@ impl Shr for i16x32 {
   fn shr(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_srav_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_srav_epi16;
+
         // Mask `rhs` to 15 to match `wrapping_shr`.
         let rhs = bitand_m512i(rhs.avx512, set_splat_i16_m512i(15));
-        Self { avx512: shr_each_u16_m512i(self.avx512, rhs) }
+        // TODO(safe_arch): Add `_mm512_srav_epi16`.
+        cast(unsafe { _mm512_srav_epi16(self.avx512.0, rhs.0) })
       } else {
         let [self_a, self_b]: [i16x16; 2] = cast(self);
         let [rhs_a, rhs_b]: [i16x16; 2] = cast(rhs);
