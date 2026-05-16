@@ -368,7 +368,7 @@ macro_rules! impl_shr_scalar {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
             // there is no shift-right intrinsic.
-            unsafe { Self { neon: vshlq_s8(self.neon, vmovq_n_s8(-(rhs & 7) as i8)) } }
+            unsafe { Self { neon: vshlq_s8(self.neon, vmovq_n_s8(-(rhs as i8 & 7))) } }
           } else {
             let self_array = self.to_array();
             let rhs = rhs as u32;
