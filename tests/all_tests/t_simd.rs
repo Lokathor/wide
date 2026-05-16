@@ -1110,7 +1110,10 @@ fn test_simd_eq() {
       }));
       let actual = Simd::new(left).simd_eq(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1125,7 +1128,10 @@ fn test_simd_eq() {
       }));
       let actual = Simd::new(left).simd_eq(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1161,7 +1167,10 @@ fn test_simd_eq_scalar() {
       // that do not support scalars.
       let actual = CmpEq::simd_eq(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1177,7 +1186,10 @@ fn test_simd_eq_scalar() {
       // that do not support scalars.
       let actual = CmpEq::simd_eq(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1214,7 +1226,10 @@ fn test_simd_ne() {
       }));
       let actual = Simd::new(left).simd_ne(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1229,7 +1244,10 @@ fn test_simd_ne() {
       }));
       let actual = Simd::new(left).simd_ne(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1263,7 +1281,10 @@ fn test_simd_ne_scalar() {
         ));
       let actual = Simd::new(left).simd_ne(right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1277,7 +1298,10 @@ fn test_simd_ne_scalar() {
         ));
       let actual = Simd::new(left).simd_ne(right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1317,7 +1341,10 @@ fn test_simd_lt() {
         ));
       let actual = Simd::new(left).simd_lt(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1335,7 +1362,10 @@ fn test_simd_lt() {
         ));
       let actual = Simd::new(left).simd_lt(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1371,7 +1401,10 @@ fn test_simd_lt_scalar() {
       // that do not support scalars.
       let actual = CmpLt::simd_lt(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1387,7 +1420,10 @@ fn test_simd_lt_scalar() {
       // that do not support scalars.
       let actual = CmpLt::simd_lt(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1427,7 +1463,10 @@ fn test_simd_gt() {
         ));
       let actual = Simd::new(left).simd_gt(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1445,7 +1484,10 @@ fn test_simd_gt() {
         ));
       let actual = Simd::new(left).simd_gt(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1481,7 +1523,10 @@ fn test_simd_gt_scalar() {
       // that do not support scalars.
       let actual = CmpGt::simd_gt(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1497,7 +1542,10 @@ fn test_simd_gt_scalar() {
       // that do not support scalars.
       let actual = CmpGt::simd_gt(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1534,7 +1582,10 @@ fn test_simd_le() {
       }));
       let actual = Simd::new(left).simd_le(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1549,7 +1600,10 @@ fn test_simd_le() {
       }));
       let actual = Simd::new(left).simd_le(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1583,7 +1637,10 @@ fn test_simd_le_scalar() {
         ));
       let actual = Simd::new(left).simd_le(right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1599,7 +1656,10 @@ fn test_simd_le_scalar() {
       // that do not support scalars.
       let actual = CmpLe::simd_le(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1636,7 +1696,10 @@ fn test_simd_ge() {
       }));
       let actual = Simd::new(left).simd_ge(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1651,7 +1714,10 @@ fn test_simd_ge() {
       }));
       let actual = Simd::new(left).simd_ge(Simd::new(right));
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1685,7 +1751,10 @@ fn test_simd_ge_scalar() {
         ));
       let actual = Simd::new(left).simd_ge(right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
   for_simd_types!(|T: Integer, N| {
@@ -1701,7 +1770,10 @@ fn test_simd_ge_scalar() {
       // that do not support scalars.
       let actual = CmpGe::simd_ge(Simd::new(left), right);
 
-      assert_eq!(actual, expected);
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
     }
   });
 }
@@ -1820,7 +1892,7 @@ fn test_any() {
       let expected = value.into_iter().any(|x| x.is_sign_negative());
       let actual = Simd::new(value).any();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
   for_simd_types!(|T: Signed, N| {
@@ -1832,7 +1904,7 @@ fn test_any() {
       let expected = value.into_iter().any(|x| x.is_negative());
       let actual = Simd::new(value).any();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
   for_simd_types!(|T: Unsigned, N| {
@@ -1844,7 +1916,7 @@ fn test_any() {
       let expected = value.into_iter().any(|x| x.cast_signed().is_negative());
       let actual = Simd::new(value).any();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
 }
@@ -1860,7 +1932,7 @@ fn test_all() {
       let expected = value.into_iter().all(|x| x.is_sign_negative());
       let actual = Simd::new(value).all();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
   for_simd_types!(|T: Signed, N| {
@@ -1872,7 +1944,7 @@ fn test_all() {
       let expected = value.into_iter().all(|x| x.is_negative());
       let actual = Simd::new(value).all();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
   for_simd_types!(|T: Unsigned, N| {
@@ -1884,7 +1956,7 @@ fn test_all() {
       let expected = value.into_iter().all(|x| x.cast_signed().is_negative());
       let actual = Simd::new(value).all();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
 }
@@ -1900,7 +1972,7 @@ fn test_none() {
       let expected = !value.into_iter().any(|x| x.is_sign_negative());
       let actual = Simd::new(value).none();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
   for_simd_types!(|T: Signed, N| {
@@ -1912,7 +1984,7 @@ fn test_none() {
       let expected = !value.into_iter().any(|x| x.is_negative());
       let actual = Simd::new(value).none();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
   for_simd_types!(|T: Unsigned, N| {
@@ -1924,7 +1996,7 @@ fn test_none() {
       let expected = !value.into_iter().any(|x| x.cast_signed().is_negative());
       let actual = Simd::new(value).none();
 
-      assert_eq!(actual, expected);
+      assert_eq!(actual, expected, "\n   value: {value:?}");
     }
   });
 }
