@@ -294,7 +294,7 @@ impl CmpNe for u64x8 {
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Ne)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Ne)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_ne(rhs.a),
@@ -311,7 +311,7 @@ impl CmpLe for u64x8 {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Le)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Le)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_le(rhs.a),
@@ -328,7 +328,7 @@ impl CmpGe for u64x8 {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nlt)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Nlt)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_ge(rhs.a),
@@ -350,7 +350,7 @@ impl u64x8 {
   pub fn simd_eq(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_eq(rhs.a),
@@ -364,9 +364,7 @@ impl u64x8 {
   pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // no unsigned gt than so inverting the high bit will get the correct result
-        let highbit = u64x8::splat(1 << 63);
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
+        Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Gt)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_gt(rhs.a),
@@ -381,9 +379,7 @@ impl u64x8 {
   pub fn simd_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        // no unsigned gt than so inverting the high bit will get the correct result
-        let highbit = u64x8::splat(1 << 63);
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>((self ^ highbit).avx512, (rhs ^ highbit).avx512) }
+        Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_lt(rhs.a),
