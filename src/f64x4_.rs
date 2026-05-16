@@ -337,7 +337,7 @@ impl CmpNe for f64x4 {
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
       } else {
         Self {
           a : self.a.simd_ne(rhs.a),
