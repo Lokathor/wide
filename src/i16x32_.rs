@@ -114,7 +114,7 @@ impl Shr for i16x32 {
         // Mask `rhs` to 15 to match `wrapping_shr`.
         let rhs = bitand_m512i(rhs.avx512, set_splat_i16_m512i(15));
         // TODO(safe_arch): Add `_mm512_srav_epi16`.
-        cast(unsafe { _mm512_srav_epi16(self.avx512.0, rhs.0) })
+        Self { avx512: m512i(unsafe { _mm512_srav_epi16(self.avx512.0, rhs.0) }) }
       } else {
         let [self_a, self_b]: [i16x16; 2] = cast(self);
         let [rhs_a, rhs_b]: [i16x16; 2] = cast(rhs);
