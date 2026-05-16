@@ -2420,7 +2420,10 @@ fn test_serde() {
       let deserialized = bincode::deserialize::<Simd>(&serialized)
         .expect("deserializaion panicked");
 
-      assert_eq!(deserialized, value);
+      assert!(
+        (deserialized.simd_eq(value) | deserialized.is_nan() & value.is_nan())
+          .all(),
+      );
     }
   });
   for_simd_types!(|T: Signed, N| {
