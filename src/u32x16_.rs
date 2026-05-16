@@ -587,34 +587,19 @@ impl u32x16 {
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        ((movepi8_mask_m512i(self.avx512) as u32) &
-          0b10001000100010001000100010001000) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
+    i32x16::any(cast(self))
   }
 
   #[inline]
   #[must_use]
   pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        ((movepi8_mask_m512i(self.avx512) as u32) &
-          0b10001000100010001000100010001000) ==
-          0b10001000100010001000100010001000
-      } else {
-        (self.a & self.b).all()
-      }
-    }
+    i32x16::all(cast(self))
   }
 
   #[inline]
   #[must_use]
   pub fn none(self) -> bool {
-    !self.any()
+    i32x16::none(cast(self))
   }
 
   /// Transpose matrix of 16x16 `u32` matrix. Currently not accelerated.
