@@ -8,7 +8,6 @@
 * Fixed `simd_ne` NaN behavior for floats.
 * Fixed bug in `u64x8::simd_lt`.
 * Fixed bug in `i64x8` and `u64x8` function `to_bitmask`
-* Fixed the beahvior of shift operations for many integers.
 
 ## 1.4.0
 
