@@ -406,6 +406,75 @@ impl CmpLt for u32x4 {
   }
 }
 
+impl CmpNe for u32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { u32::MAX } else { 0 },
+          if self.arr[1] != rhs.arr[1] { u32::MAX } else { 0 },
+          if self.arr[2] != rhs.arr[2] { u32::MAX } else { 0 },
+          if self.arr[3] != rhs.arr[3] { u32::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpLe for u32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_le(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] <= rhs.arr[0] { u32::MAX } else { 0 },
+          if self.arr[1] <= rhs.arr[1] { u32::MAX } else { 0 },
+          if self.arr[2] <= rhs.arr[2] { u32::MAX } else { 0 },
+          if self.arr[3] <= rhs.arr[3] { u32::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpGe for u32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_ge(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] >= rhs.arr[0] { u32::MAX } else { 0 },
+          if self.arr[1] >= rhs.arr[1] { u32::MAX } else { 0 },
+          if self.arr[2] >= rhs.arr[2] { u32::MAX } else { 0 },
+          if self.arr[3] >= rhs.arr[3] { u32::MAX } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
 impl u32x4 {
   #[inline]
   #[must_use]
@@ -575,6 +644,27 @@ impl u32x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> u32 {
+    cast(i32x4::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u32 {
+    let arr: [u32; 4] = cast(self);
+    arr[0].max(arr[1]).max(arr[2].max(arr[3]))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u32 {
+    let arr: [u32; 4] = cast(self);
+    arr[0].min(arr[1]).min(arr[2].min(arr[3]))
+  }
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -624,6 +714,50 @@ impl u32x4 {
 
   #[inline]
   #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self + rhs;
+        result.simd_lt(self).blend(Self::MAX, result)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqaddq_u32(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_add(rhs.arr[0]),
+            self.arr[1].saturating_add(rhs.arr[1]),
+            self.arr[2].saturating_add(rhs.arr[2]),
+            self.arr[3].saturating_add(rhs.arr[3]),
+          ],
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self - rhs;
+        result.simd_gt(self).blend(Self::MIN, result)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqsubq_u32(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_sub(rhs.arr[0]),
+            self.arr[1].saturating_sub(rhs.arr[1]),
+            self.arr[2].saturating_sub(rhs.arr[2]),
+            self.arr[3].saturating_sub(rhs.arr[3]),
+          ],
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -662,42 +796,9 @@ impl u32x4 {
   #[must_use]
   #[inline]
   pub fn transpose(data: [u32x4; 4]) -> [u32x4; 4] {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        let mut e0 = data[0];
-        let mut e1 = data[1];
-        let mut e2 = data[2];
-        let mut e3 = data[3];
-
-        transpose_four_m128(
-          cast_mut(&mut e0.sse),
-          cast_mut(&mut e1.sse),
-          cast_mut(&mut e2.sse),
-          cast_mut(&mut e3.sse),
-        );
-
-        [e0, e1, e2, e3]
-      } else {
-        #[inline(always)]
-        fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
-          u32x4::new([
-            data[0].as_array()[index],
-            data[1].as_array()[index],
-            data[2].as_array()[index],
-            data[3].as_array()[index],
-          ])
-        }
-
-        [
-          transpose_column(&data, 0),
-          transpose_column(&data, 1),
-          transpose_column(&data, 2),
-          transpose_column(&data, 3),
-        ]
-      }
-    }
+    cast(i32x4::transpose(cast(data)))
   }
-  
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

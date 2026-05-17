@@ -128,6 +128,48 @@ fn impl_i64x4_blend() {
 }
 
 #[test]
+fn impl_i64x4_is_negative() {
+  let value = i64x4::new([1, -1, 2, 0]);
+  let expected = i64x4::new([0, -1, 0, 0]);
+  let actual = value.is_negative();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x4_reduce_add() {
+  let value = i64x4::new([9, 10, 21, 19]);
+  let expected = 59;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x4_reduce_max() {
+  for value in [
+    i64x4::new([9, 10, 5, 1]),
+    i64x4::new([10, 9, -1, -2]),
+    i64x4::new([-1, 10, 9, -999]),
+  ] {
+    let expected = 10;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i64x4_reduce_min() {
+  for value in [
+    i64x4::new([-9, -10, -5, -1]),
+    i64x4::new([-10, -9, 1, 2]),
+    i64x4::new([1, -10, -9, 999]),
+  ] {
+    let expected = -10;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_i64x4_abs() {
   let a = i64x4::from([-1, 2, -3, i64::MIN]);
   let expected = i64x4::from([1, 2, 3, i64::MIN]);
@@ -149,6 +191,48 @@ fn impl_i64x4_cmp_eq() {
   let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
   let expected = i64x4::from([0, -1, -1, 0]);
   let actual = a.simd_eq(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x4_cmp_ne() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_i64x4_cmp_ge() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
+fn impl_i64x4_cmp_gt() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+  let expected = i64x4::from([0, 0, 0, -1]);
+  let actual = a.simd_gt(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x4_cmp_le() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
+}
+
+#[test]
+fn impl_i64x4_cmp_lt() {
+  let a = i64x4::from([1_i64, 4, i64::MAX, 5]);
+  let b = i64x4::from([3_i64, 4, i64::MAX, 1]);
+  let expected = i64x4::from([-1, 0, 0, 0]);
+  let actual = a.simd_lt(b);
   assert_eq!(expected, actual);
 }
 
@@ -214,6 +298,76 @@ fn test_i32x4_none() {
     true,
     |acc, a, _idx| acc & !(a < 0),
   );
+}
+
+#[test]
+fn impl_i64x4_transpose() {
+  let data = std::array::from_fn(|i| {
+    i64x4::new(std::array::from_fn(|j| (i * 100 + j) as i64))
+  });
+  let expected = std::array::from_fn(|i| {
+    i64x4::new(std::array::from_fn(|j| (j * 100 + i) as i64))
+  });
+  let actual = i64x4::transpose(data);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i64x4_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i64::MAX - 1),
+    (-5, i64::MIN + 1),
+    (i64::MAX - 1, 5),
+    (i64::MIN + 1, -5),
+    (0, i64::MAX),
+    (0, i64::MIN),
+    (i64::MAX, 0),
+    (i64::MIN, 0),
+  ] {
+    let expected = i64x4::splat(value.saturating_add(rhs));
+    let actual = i64x4::splat(value).saturating_add(i64x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i64x4_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i64::MAX - 1),
+    (-5, i64::MIN + 1),
+    (i64::MAX - 1, 5),
+    (i64::MIN + 1, -5),
+    (0, i64::MAX),
+    (0, i64::MIN),
+    (i64::MAX, 0),
+    (i64::MIN, 0),
+  ] {
+    let expected = i64x4::splat(value.saturating_sub(rhs));
+    let actual = i64x4::splat(value).saturating_sub(i64x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
 }
 
 #[cfg(feature = "serde")]

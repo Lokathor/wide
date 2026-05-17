@@ -1016,6 +1016,24 @@ fn impl_f32x4_sum() {
 }
 
 #[test]
+fn impl_f32x4_unpack_lo() {
+  let a = f32x4::new([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::new([5.0, 6.0, 7.0, 8.0]);
+  let expected = f32x4::new([1.0, 5.0, 2.0, 6.0]);
+  let actual = a.unpack_lo(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_f32x4_unpack_hi() {
+  let a = f32x4::new([1.0, 2.0, 3.0, 4.0]);
+  let b = f32x4::new([5.0, 6.0, 7.0, 8.0]);
+  let expected = f32x4::new([3.0, 7.0, 4.0, 8.0]);
+  let actual = a.unpack_hi(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
 fn impl_f32x4_transpose() {
   let a = [
     f32x4::from([1.0, 2.0, 3.0, 4.0]),

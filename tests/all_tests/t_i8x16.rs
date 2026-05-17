@@ -160,6 +160,22 @@ fn impl_i8x16_cmp_eq() {
 }
 
 #[test]
+fn impl_i8x16_cmp_ne() {
+  let a = i8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i8x16::from([2_i8; 16]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_i8x16_cmp_ge() {
+  let a = i8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i8x16::from([2_i8; 16]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_i8x16_cmp_gt() {
   let a = i8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
   let b = i8x16::from([2_i8; 16]);
@@ -167,6 +183,14 @@ fn impl_i8x16_cmp_gt() {
     i8x16::from([0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1]);
   let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_cmp_le() {
+  let a = i8x16::from([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i8x16::from([2_i8; 16]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]
@@ -198,6 +222,53 @@ fn impl_i8x16_blend() {
     i8x16::from([1, 18, 3, 20, 5, 22, 7, 24, 9, 26, 11, 28, 13, 30, 126, 1]);
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_is_negative() {
+  let value =
+    i8x16::new([1, -1, 2, 3, -2, -5, 0, 6, 9, 1, -2, -3, -4, 0, -1, 1]);
+  let expected =
+    i8x16::new([0, -1, 0, 0, -1, -1, 0, 0, 0, 0, -1, -1, -1, 0, -1, 0]);
+  let actual = value.is_negative();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_reduce_add() {
+  let value =
+    i8x16::new([1, 2, 3, 5, 7, 11, 13, 17, 23, 27, -1, -5, 4, -8, -9, -10]);
+  let expected = 80;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_reduce_max() {
+  for value in [
+    i8x16::new([9, 10, 5, 1, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6]),
+    i8x16::new([10, 9, -1, -2, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]),
+    i8x16::new([-1, 10, 9, -9, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]),
+  ] {
+    let expected = 10;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i8x16_reduce_min() {
+  for value in [
+    i8x16::new([
+      -9, -10, -5, -1, -3, -4, -5, -6, -3, -4, -5, -6, -3, -4, -5, -6,
+    ]),
+    i8x16::new([-10, -9, 1, 2, -1, -2, -3, -4, -1, -2, -3, -4, -1, -2, -3, -4]),
+    i8x16::new([1, -10, -9, 9, -1, -2, -3, -4, -1, -2, -3, -4, -1, -2, -3, -4]),
+  ] {
+    let expected = -10;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
 }
 
 #[test]
@@ -461,6 +532,18 @@ fn test_i8x16_swizzle_relaxed() {
   let expected =
     i8x16::from([16, 0, 0, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 0, 1]);
   let actual = a.swizzle_relaxed(b);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i8x16_transpose() {
+  let data = std::array::from_fn(|i| {
+    i8x16::new(std::array::from_fn(|j| (i * 100 + j) as i8))
+  });
+  let expected = std::array::from_fn(|i| {
+    i8x16::new(std::array::from_fn(|j| (j * 100 + i) as i8))
+  });
+  let actual = i8x16::transpose(data);
   assert_eq!(expected, actual);
 }
 

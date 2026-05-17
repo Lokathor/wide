@@ -344,7 +344,7 @@ impl CmpNe for f64x8 {
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualOrdered)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
           a : self.a.simd_ne(rhs.a),
@@ -592,18 +592,50 @@ impl f64x8 {
 
   #[inline]
   #[must_use]
+  pub fn fast_round_int(self) -> i64x8 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvtpd_epi64;
+
+        // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
+        cast(m512i(unsafe { _mm512_cvtpd_epi64(self.avx512.0) }))
+      } else {
+        cast([
+          self.a.fast_round_int(),
+          self.b.fast_round_int(),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_int(self) -> i64x8 {
-    let rounded: [f64; 8] = cast(self.round());
-    cast([
-      rounded[0] as i64,
-      rounded[1] as i64,
-      rounded[2] as i64,
-      rounded[3] as i64,
-      rounded[4] as i64,
-      rounded[5] as i64,
-      rounded[6] as i64,
-      rounded[7] as i64,
-    ])
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvtpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
+        let cast: i64x8 = cast(m512i(unsafe { _mm512_cvtpd_epi64(non_nan.avx512.0) }));
+        flip_to_max ^ cast
+      } else {
+        cast([
+          self.a.round_int(),
+          self.b.round_int(),
+        ])
+      }
+    }
   }
 
   #[inline]
@@ -617,6 +649,60 @@ impl f64x8 {
           a: self.a.trunc(),
           b: self.b.trunc(),
         }
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This is a faster implementation than
+  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
+  #[inline]
+  #[must_use]
+  pub fn fast_trunc_int(self) -> i64x8 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvttpd_epi64;
+
+        // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
+        cast(m512i(unsafe { _mm512_cvttpd_epi64(self.avx512.0) }))
+      } else {
+        cast([
+          self.a.fast_trunc_int(),
+          self.b.fast_trunc_int(),
+        ])
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This saturates out of range values
+  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
+  /// that doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn trunc_int(self) -> i64x8 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_cvttpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
+        let cast: i64x8 = cast(m512i(unsafe { _mm512_cvttpd_epi64(non_nan.avx512.0) }));
+        flip_to_max ^ cast
+      } else {
+        cast([
+          self.a.trunc_int(),
+          self.b.trunc_int(),
+        ])
       }
     }
   }
@@ -1323,6 +1409,23 @@ impl f64x8 {
     const_f64_as_f64x8!(DEG_TO_RAD_RATIO, core::f64::consts::PI / 180.0_f64);
     self * DEG_TO_RAD_RATIO
   }
+
+  #[inline]
+  #[must_use]
+  pub fn recip(self) -> Self {
+    // There does not seem to be a `recip` intrinsic for any architecture. The
+    // closest is `_mm512_rcp14_pd` which has relative error.
+    Self::ONE / self
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn recip_sqrt(self) -> Self {
+    // There does not seem to be a `recip_sqrt` intrinsic for any architecture.
+    // The closest is `_mm512_rsqrt14_pd` which has relative error.
+    Self::ONE / self.sqrt()
+  }
+
   #[inline]
   #[must_use]
   pub fn sqrt(self) -> Self {
@@ -1757,6 +1860,38 @@ impl f64x8 {
   #[inline]
   pub fn powf(self, y: f64) -> Self {
     Self::pow_f64x8(self, f64x8::splat(y))
+  }
+
+  /// Transpose matrix of 8x8 `f64` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [f64x8; 8]) -> [f64x8; 8] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
+      f64x8::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+    ]
   }
 
   #[inline]

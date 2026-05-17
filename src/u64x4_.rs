@@ -281,6 +281,57 @@ impl CmpEq for u64x4 {
   }
 }
 
+impl CmpNe for u64x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpLe for u64x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_gt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpGe for u64x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_lt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl CmpGt for u64x4 {
   type Output = Self;
   #[inline]
@@ -359,9 +410,54 @@ impl u64x4 {
 
   #[inline]
   #[must_use]
+  pub fn reduce_add(self) -> u64 {
+    cast(i64x4::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0].max(array[1]).max(array[2]).max(array[3])
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0].min(array[1]).min(array[2]).min(array[3])
+  }
+
+  #[inline]
+  #[must_use]
   #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     i64x4::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    i64x4::any(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    i64x4::all(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  /// Transpose matrix of 4x4 `u64` matrix.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u64x4; 4]) -> [u64x4; 4] {
+    cast(i64x4::transpose(cast(data)))
   }
 
   #[inline]
@@ -389,6 +485,38 @@ impl u64x4 {
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     self.simd_gt(rhs).blend(self, rhs)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self + rhs;
+        result.simd_lt(self).blend(Self::MAX, result)
+      } else {
+        Self {
+          a: self.a.saturating_add(rhs.a),
+          b: self.b.saturating_add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self - rhs;
+        result.simd_gt(self).blend(Self::MIN, result)
+      } else {
+        Self {
+          a: self.a.saturating_sub(rhs.a),
+          b: self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]

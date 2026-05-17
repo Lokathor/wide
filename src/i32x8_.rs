@@ -321,6 +321,57 @@ impl CmpLt for i32x8 {
   }
 }
 
+impl CmpNe for i32x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpLe for i32x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_gt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpGe for i32x8 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_lt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl From<i16x8> for i32x8 {
   #[inline]
   fn from(value: i16x8) -> Self {
@@ -402,6 +453,12 @@ impl i32x8 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
   }
 
   /// horizontal add of all the elements of the vector
@@ -486,6 +543,45 @@ impl i32x8 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self + rhs;
+        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+      } else {
+        Self {
+          a: self.a.saturating_add(rhs.a),
+          b: self.b.saturating_add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self - rhs;
+        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+      } else {
+        Self {
+          a: self.a.saturating_sub(rhs.a),
+          b: self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x8 {

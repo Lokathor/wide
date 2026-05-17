@@ -110,6 +110,17 @@ fn impl_u8x32_cmp_eq() {
 }
 
 #[test]
+fn impl_u8x32_cmp_ne() {
+  let a = u8x32::from([
+    1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
+    2, 3, 4, 1, 2, 3, 4,
+  ]);
+  let b = u8x32::from([2_u8; 32]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
 fn impl_u8x32_cmp_lt() {
   let a = u8x32::from([
     1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
@@ -211,6 +222,77 @@ fn impl_u8x32_blend() {
 }
 
 #[test]
+fn impl_u8x32_reduce_add() {
+  let value = u8x32::new([
+    1, 2, 3, 5, 7, 1, 13, 17, 23, 27, 10, 4, 5, 3, 6, 4, 1, 2, 3, 4, 5, 6, 1,
+    2, 3, 7, 23, 1, 3, 5, 1, 12,
+  ]);
+  let expected = 210;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u8x32_reduce_max() {
+  for i in 0..32 {
+    let mut value = u8x32::new([
+      9, 10, 5, 1, 3, 4, 5, 6, 3, 4, 5, 6, 3, 1, 5, 6, 4, 5, 6, 3, 1, 5, 6, 4,
+      5, 6, 3, 1, 5, 6, 4, 5,
+    ]);
+    value.as_mut_array()[i] = u8::MAX - 1;
+
+    let expected = u8::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u8x32_reduce_min() {
+  for i in 0..32 {
+    let mut value = u8x32::new([
+      9,
+      u8::MAX - 1,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u8::MAX - 1,
+      5,
+      5,
+      6,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u8::MAX - 1,
+      5,
+      4,
+      5,
+      6,
+      u8::MAX - 1,
+    ]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u8x32_max() {
   crate::test_random_vector_vs_scalar(|a: u8x32, b| a.max(b), |a, b| a.max(b));
 }
@@ -280,6 +362,18 @@ fn test_u8x32_none() {
   //
   let a = u8x32::from([0; 32]);
   assert!(a.none());
+}
+
+#[test]
+fn impl_u8x32_transpose() {
+  let data = std::array::from_fn(|i| {
+    u8x32::new(std::array::from_fn(|j| (i * 100 + j) as u8))
+  });
+  let expected = std::array::from_fn(|i| {
+    u8x32::new(std::array::from_fn(|j| (j * 100 + i) as u8))
+  });
+  let actual = u8x32::transpose(data);
+  assert_eq!(expected, actual);
 }
 
 #[cfg(feature = "serde")]

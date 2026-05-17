@@ -176,12 +176,36 @@ fn impl_i16x8_cmp_eq() {
 }
 
 #[test]
+fn impl_i16x8_cmp_ne() {
+  let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i16x8::from([2_i16; 8]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_i16x8_cmp_ge() {
+  let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i16x8::from([2_i16; 8]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_i16x8_cmp_gt() {
   let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
   let b = i16x8::from([2_i16; 8]);
   let expected = i16x8::from([0, 0, -1, -1, 0, 0, -1, -1]);
   let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x8_cmp_le() {
+  let a = i16x8::from([1, 2, 3, 4, 1, 2, 3, 4]);
+  let b = i16x8::from([2_i16; 8]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]
@@ -205,6 +229,14 @@ fn impl_i16x8_blend() {
   let mask = i16x8::from([use_t, 0, use_t, 0, use_t, 0, use_t, 0]);
   let expected = i16x8::from([1, 18, 3, 20, 5, 22, 7, 24]);
   let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x8_is_negative() {
+  let value = i16x8::new([1, -1, 2, 3, -2, -5, 0, 6]);
+  let expected = i16x8::new([0, -1, 0, 0, -1, -1, 0, 0]);
+  let actual = value.is_negative();
   assert_eq!(expected, actual);
 }
 

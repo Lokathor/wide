@@ -386,6 +386,22 @@ fn impl_i16x16_cmp_eq() {
 }
 
 #[test]
+fn impl_i16x16_cmp_ne() {
+  let a = i16x16::from([1, 2, 3, 4, 2, 1, 8, 2, 1, 2, 3, 4, 2, 1, 8, 2]);
+  let b = i16x16::from([2_i16; 16]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_i16x16_cmp_ge() {
+  let a = i16x16::from([1, 2, 3, 4, 2, 1, 8, 2, 1, 2, 3, 4, 2, 1, 8, 2]);
+  let b = i16x16::from([2_i16; 16]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_i16x16_cmp_gt() {
   let a = i16x16::from([1, 2, 9, 4, 1, 2, 8, 10, 1, 2, 9, 4, 1, 2, 8, 10]);
   let b = i16x16::from([5_i16; 16]);
@@ -393,6 +409,14 @@ fn impl_i16x16_cmp_gt() {
     i16x16::from([0, 0, -1, 0, 0, 0, -1, -1, 0, 0, -1, 0, 0, 0, -1, -1]);
   let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x16_cmp_le() {
+  let a = i16x16::from([1, 2, 3, 4, 2, 1, 8, 2, 1, 2, 3, 4, 2, 1, 8, 2]);
+  let b = i16x16::from([2_i16; 16]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]
@@ -422,6 +446,16 @@ fn impl_i16x16_blend() {
   let expected =
     i16x16::from([1, 18, 3, 20, 25, 30, 50, 8, 1, 18, 3, 20, 25, 30, 50, 8]);
   let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x16_is_negative() {
+  let value =
+    i16x16::new([1, -1, 2, 3, -2, -5, 0, 6, 9, 1, -2, -3, -4, 0, -1, 1]);
+  let expected =
+    i16x16::new([0, -1, 0, 0, -1, -1, 0, 0, 0, 0, -1, -1, -1, 0, -1, 0]);
+  let actual = value.is_negative();
   assert_eq!(expected, actual);
 }
 
@@ -464,6 +498,48 @@ fn impl_i16x16_abs() {
     9,
   ]);
   let actual = a.abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i16x16_unsigned_abs() {
+  let a = i16x16::from([
+    -1,
+    2,
+    -3,
+    i16::MIN,
+    6,
+    -15,
+    -19,
+    9,
+    -1,
+    2,
+    -3,
+    i16::MIN,
+    6,
+    -15,
+    -19,
+    9,
+  ]);
+  let expected = u16x16::from([
+    1,
+    2,
+    3,
+    i16::MIN as u16,
+    6,
+    15,
+    19,
+    9,
+    1,
+    2,
+    3,
+    i16::MIN as u16,
+    6,
+    15,
+    19,
+    9,
+  ]);
+  let actual = a.unsigned_abs();
   assert_eq!(expected, actual);
 }
 
@@ -701,6 +777,18 @@ fn impl_i16x16_reduce_max() {
     let p = i16x16::from(v);
     assert_eq!(p.reduce_max(), i16::MAX);
   }
+}
+
+#[test]
+fn impl_i16x16_transpose() {
+  let data = std::array::from_fn(|i| {
+    i16x16::new(std::array::from_fn(|j| (i * 100 + j) as i16))
+  });
+  let expected = std::array::from_fn(|i| {
+    i16x16::new(std::array::from_fn(|j| (j * 100 + i) as i16))
+  });
+  let actual = i16x16::transpose(data);
+  assert_eq!(expected, actual);
 }
 
 #[cfg(feature = "serde")]

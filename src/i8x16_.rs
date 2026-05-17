@@ -132,6 +132,134 @@ impl Sub for i8x16 {
   }
 }
 
+impl Mul for i8x16 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    // For x86 and wasm, this technically can be done explicitly by converting
+    // to `i16` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vmulq_s8(self.neon, rhs.neon) } }
+      } else {
+        let self_array: [i8; 16] = cast(self);
+        let rhs_array: [i8; 16] = cast(rhs);
+
+        Self::new([
+          self_array[0].wrapping_mul(rhs_array[0]),
+          self_array[1].wrapping_mul(rhs_array[1]),
+          self_array[2].wrapping_mul(rhs_array[2]),
+          self_array[3].wrapping_mul(rhs_array[3]),
+          self_array[4].wrapping_mul(rhs_array[4]),
+          self_array[5].wrapping_mul(rhs_array[5]),
+          self_array[6].wrapping_mul(rhs_array[6]),
+          self_array[7].wrapping_mul(rhs_array[7]),
+          self_array[8].wrapping_mul(rhs_array[8]),
+          self_array[9].wrapping_mul(rhs_array[9]),
+          self_array[10].wrapping_mul(rhs_array[10]),
+          self_array[11].wrapping_mul(rhs_array[11]),
+          self_array[12].wrapping_mul(rhs_array[12]),
+          self_array[13].wrapping_mul(rhs_array[13]),
+          self_array[14].wrapping_mul(rhs_array[14]),
+          self_array[15].wrapping_mul(rhs_array[15]),
+        ])
+      }
+    }
+  }
+}
+
+impl Shl for i8x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shl`)
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that may
+    // not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // Mask `rhs` to 7 to match `wrapping_shl`.
+          let shift_by = vandq_s8(rhs.neon, vmovq_n_s8(7));
+          Self { neon: vshlq_s8(self.neon, shift_by) }
+        }
+      } else {
+        let self_array: [i8; 16] = cast(self);
+        let rhs_array: [i8; 16] = cast(rhs);
+
+        Self::new([
+          self_array[0].wrapping_shl(rhs_array[0] as u32),
+          self_array[1].wrapping_shl(rhs_array[1] as u32),
+          self_array[2].wrapping_shl(rhs_array[2] as u32),
+          self_array[3].wrapping_shl(rhs_array[3] as u32),
+          self_array[4].wrapping_shl(rhs_array[4] as u32),
+          self_array[5].wrapping_shl(rhs_array[5] as u32),
+          self_array[6].wrapping_shl(rhs_array[6] as u32),
+          self_array[7].wrapping_shl(rhs_array[7] as u32),
+          self_array[8].wrapping_shl(rhs_array[8] as u32),
+          self_array[9].wrapping_shl(rhs_array[9] as u32),
+          self_array[10].wrapping_shl(rhs_array[10] as u32),
+          self_array[11].wrapping_shl(rhs_array[11] as u32),
+          self_array[12].wrapping_shl(rhs_array[12] as u32),
+          self_array[13].wrapping_shl(rhs_array[13] as u32),
+          self_array[14].wrapping_shl(rhs_array[14] as u32),
+          self_array[15].wrapping_shl(rhs_array[15] as u32),
+        ])
+      }
+    }
+  }
+}
+
+impl Shr for i8x16 {
+  type Output = Self;
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that may
+    // not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
+          // there is no shift-right intrinsic.
+          let neg_rhs = vnegq_s8(vandq_s8(rhs.neon, vmovq_n_s8(7)));
+          Self { neon: vshlq_s8(self.neon, neg_rhs) }
+        }
+      } else {
+        let self_array: [i8; 16] = cast(self);
+        let rhs_array: [i8; 16] = cast(rhs);
+
+        Self::new([
+          self_array[0].wrapping_shr(rhs_array[0] as u32),
+          self_array[1].wrapping_shr(rhs_array[1] as u32),
+          self_array[2].wrapping_shr(rhs_array[2] as u32),
+          self_array[3].wrapping_shr(rhs_array[3] as u32),
+          self_array[4].wrapping_shr(rhs_array[4] as u32),
+          self_array[5].wrapping_shr(rhs_array[5] as u32),
+          self_array[6].wrapping_shr(rhs_array[6] as u32),
+          self_array[7].wrapping_shr(rhs_array[7] as u32),
+          self_array[8].wrapping_shr(rhs_array[8] as u32),
+          self_array[9].wrapping_shr(rhs_array[9] as u32),
+          self_array[10].wrapping_shr(rhs_array[10] as u32),
+          self_array[11].wrapping_shr(rhs_array[11] as u32),
+          self_array[12].wrapping_shr(rhs_array[12] as u32),
+          self_array[13].wrapping_shr(rhs_array[13] as u32),
+          self_array[14].wrapping_shr(rhs_array[14] as u32),
+          self_array[15].wrapping_shr(rhs_array[15] as u32),
+        ])
+      }
+    }
+  }
+}
+
 impl Add<i8> for i8x16 {
   type Output = Self;
   #[inline]
@@ -148,6 +276,138 @@ impl Sub<i8> for i8x16 {
   }
 }
 
+impl Mul<i8> for i8x16 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: i8) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
+macro_rules! impl_shl_scalar {
+  ($Rhs:ident) => {
+    impl Shl<$Rhs> for i8x16 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      ///
+      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+      /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+      /// of the type. (same as `wrapping_shl`)
+      #[inline]
+      fn shl(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `i16` or `i32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        pick! {
+          if #[cfg(target_feature="simd128")] {
+            // Mask `rhs` to 7 to match `wrapping_shl`.
+            Self { simd: i8x16_shl(self.simd, rhs as u32 & 7) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // Mask `rhs` to 7 to match `wrapping_shl`.
+            unsafe { Self { neon: vshlq_s8(self.neon, vmovq_n_s8(rhs as i8 & 7)) } }
+          } else {
+            let self_array = self.to_array();
+            let rhs = rhs as u32;
+
+            cast([
+              self_array[0].wrapping_shl(rhs),
+              self_array[1].wrapping_shl(rhs),
+              self_array[2].wrapping_shl(rhs),
+              self_array[3].wrapping_shl(rhs),
+              self_array[4].wrapping_shl(rhs),
+              self_array[5].wrapping_shl(rhs),
+              self_array[6].wrapping_shl(rhs),
+              self_array[7].wrapping_shl(rhs),
+              self_array[8].wrapping_shl(rhs),
+              self_array[9].wrapping_shl(rhs),
+              self_array[10].wrapping_shl(rhs),
+              self_array[11].wrapping_shl(rhs),
+              self_array[12].wrapping_shl(rhs),
+              self_array[13].wrapping_shl(rhs),
+              self_array[14].wrapping_shl(rhs),
+              self_array[15].wrapping_shl(rhs),
+            ])
+          }
+        }
+      }
+    }
+  };
+}
+impl_shl_scalar!(i8);
+impl_shl_scalar!(u8);
+impl_shl_scalar!(i16);
+impl_shl_scalar!(u16);
+impl_shl_scalar!(i32);
+impl_shl_scalar!(u32);
+impl_shl_scalar!(i64);
+impl_shl_scalar!(u64);
+impl_shl_scalar!(i128);
+impl_shl_scalar!(u128);
+
+macro_rules! impl_shr_scalar {
+  ($Rhs:ident) => {
+    impl Shr<$Rhs> for i8x16 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      ///
+      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+      /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+      /// of the type. (same as `wrapping_shr`)
+      #[inline]
+      fn shr(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `i16` or `i32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        pick! {
+          if #[cfg(target_feature="simd128")] {
+            // Mask `rhs` to 7 to match `wrapping_shr`.
+            Self { simd: i8x16_shr(self.simd, rhs as u32 & 7) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
+            // there is no shift-right intrinsic.
+            unsafe { Self { neon: vshlq_s8(self.neon, vmovq_n_s8(-(rhs as i8 & 7))) } }
+          } else {
+            let self_array = self.to_array();
+            let rhs = rhs as u32;
+
+            cast([
+              self_array[0].wrapping_shr(rhs),
+              self_array[1].wrapping_shr(rhs),
+              self_array[2].wrapping_shr(rhs),
+              self_array[3].wrapping_shr(rhs),
+              self_array[4].wrapping_shr(rhs),
+              self_array[5].wrapping_shr(rhs),
+              self_array[6].wrapping_shr(rhs),
+              self_array[7].wrapping_shr(rhs),
+              self_array[8].wrapping_shr(rhs),
+              self_array[9].wrapping_shr(rhs),
+              self_array[10].wrapping_shr(rhs),
+              self_array[11].wrapping_shr(rhs),
+              self_array[12].wrapping_shr(rhs),
+              self_array[13].wrapping_shr(rhs),
+              self_array[14].wrapping_shr(rhs),
+              self_array[15].wrapping_shr(rhs),
+            ])
+          }
+        }
+      }
+    }
+  };
+}
+impl_shr_scalar!(i8);
+impl_shr_scalar!(u8);
+impl_shr_scalar!(i16);
+impl_shr_scalar!(u16);
+impl_shr_scalar!(i32);
+impl_shr_scalar!(u32);
+impl_shr_scalar!(i64);
+impl_shr_scalar!(u64);
+impl_shr_scalar!(i128);
+impl_shr_scalar!(u128);
+
 impl Add<i8x16> for i8 {
   type Output = i8x16;
   #[inline]
@@ -161,6 +421,15 @@ impl Sub<i8x16> for i8 {
   #[inline]
   fn sub(self, rhs: i8x16) -> Self::Output {
     i8x16::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<i8x16> for i8 {
+  type Output = i8x16;
+
+  #[inline]
+  fn mul(self, rhs: i8x16) -> Self::Output {
+    i8x16::splat(self) * rhs
   }
 }
 
@@ -374,6 +643,111 @@ impl CmpLt for i8x16 {
   }
 }
 
+impl CmpNe for i8x16 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] != rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] != rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] != rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] != rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] != rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] != rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] != rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] != rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] != rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] != rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] != rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] != rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] != rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] != rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] != rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpLe for i8x16 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_le(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] <= rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] <= rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] <= rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] <= rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] <= rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] <= rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] <= rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] <= rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] <= rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] <= rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] <= rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] <= rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] <= rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] <= rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] <= rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] <= rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpGe for i8x16 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_ge(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] >= rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] >= rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] >= rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] >= rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] >= rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] >= rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] >= rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] >= rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] >= rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] >= rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] >= rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] >= rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] >= rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] >= rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] >= rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] >= rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
 impl i8x16 {
   #[inline]
   #[must_use]
@@ -484,6 +858,187 @@ impl i8x16 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> i8 {
+    #[allow(dead_code)]
+    const SHUFFLE_1: [i8; 16] =
+      [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_2: [i8; 16] =
+      [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_3: [i8; 16] =
+      [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_4: [i8; 16] =
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
+        let sum = add_i8_m128i(self.sse, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_2));
+        let sum = add_i8_m128i(sum, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_3));
+        let sum = add_i8_m128i(sum, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_4));
+        let sum = add_i8_m128i(sum, rhs);
+        get_i32_from_m128i_s(sum) as i8
+      } else if #[cfg(target_feature="simd128")] {
+        let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.simd, self.simd);
+        let sum = i8x16_add(self.simd, rhs);
+        let rhs = i8x16_shuffle::<4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0>(sum, sum);
+        let sum = i8x16_add(sum, rhs);
+        let rhs = i8x16_shuffle::<2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(sum, sum);
+        let sum = i8x16_add(sum, rhs);
+        let rhs = i8x16_shuffle::<1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(sum, sum);
+        let sum = i8x16_add(sum, rhs);
+        i8x16_extract_lane::<0>(sum)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Use `transmute` instead of `cast` because `int8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_s8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let sum = vaddq_s8(self.neon, rhs);
+          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_2));
+          let sum = vaddq_s8(sum, rhs);
+          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_3));
+          let sum = vaddq_s8(sum, rhs);
+          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_4));
+          let sum = vaddq_s8(sum, rhs);
+          vgetq_lane_s8(sum, 0)
+        }
+      } else {
+        let array: [i8; 16] = cast(self);
+        array.into_iter().reduce(i8::wrapping_add).unwrap()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i8 {
+    #[allow(dead_code)]
+    const SHUFFLE_1: [i8; 16] =
+      [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_2: [i8; 16] =
+      [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_3: [i8; 16] =
+      [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_4: [i8; 16] =
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    pick! {
+      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
+        let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
+        let max = max_i8_m128i(self.sse, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_2));
+        let max = max_i8_m128i(max, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_3));
+        let max = max_i8_m128i(max, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_4));
+        let max = max_i8_m128i(max, rhs);
+        get_i32_from_m128i_s(max) as i8
+      } else if #[cfg(target_feature="simd128")] {
+        let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.simd, self.simd);
+        let max = i8x16_max(self.simd, rhs);
+        let rhs = i8x16_shuffle::<4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0>(max, max);
+        let max = i8x16_max(max, rhs);
+        let rhs = i8x16_shuffle::<2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(max, max);
+        let max = i8x16_max(max, rhs);
+        let rhs = i8x16_shuffle::<1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(max, max);
+        let max = i8x16_max(max, rhs);
+        i8x16_extract_lane::<0>(max)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Use `transmute` instead of `cast` because `int8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_s8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let max = vmaxq_s8(self.neon, rhs);
+          let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_2));
+          let max = vmaxq_s8(max, rhs);
+          let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_3));
+          let max = vmaxq_s8(max, rhs);
+          let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_4));
+          let max = vmaxq_s8(max, rhs);
+          vgetq_lane_s8(max, 0)
+        }
+      } else {
+        let array: [i8; 16] = cast(self);
+        array.into_iter().reduce(i8::max).unwrap()
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i8 {
+    #[allow(dead_code)]
+    const SHUFFLE_1: [i8; 16] =
+      [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_2: [i8; 16] =
+      [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_3: [i8; 16] =
+      [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    #[allow(dead_code)]
+    const SHUFFLE_4: [i8; 16] =
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    pick! {
+      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
+        let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
+        let min = min_i8_m128i(self.sse, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_2));
+        let min = min_i8_m128i(min, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_3));
+        let min = min_i8_m128i(min, rhs);
+        let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_4));
+        let min = min_i8_m128i(min, rhs);
+        get_i32_from_m128i_s(min) as i8
+      } else if #[cfg(target_feature="simd128")] {
+        let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.simd, self.simd);
+        let min = i8x16_min(self.simd, rhs);
+        let rhs = i8x16_shuffle::<4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0>(min, min);
+        let min = i8x16_min(min, rhs);
+        let rhs = i8x16_shuffle::<2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(min, min);
+        let min = i8x16_min(min, rhs);
+        let rhs = i8x16_shuffle::<1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(min, min);
+        let min = i8x16_min(min, rhs);
+        i8x16_extract_lane::<0>(min)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Use `transmute` instead of `cast` because `int8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let rhs = vqtbl1q_s8(self.neon, core::mem::transmute(SHUFFLE_1));
+          let min = vminq_s8(self.neon, rhs);
+          let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_2));
+          let min = vminq_s8(min, rhs);
+          let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_3));
+          let min = vminq_s8(min, rhs);
+          let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_4));
+          let min = vminq_s8(min, rhs);
+          vgetq_lane_s8(min, 0)
+        }
+      } else {
+        let array: [i8; 16] = cast(self);
+        array.into_iter().reduce(i8::min).unwrap()
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -822,6 +1377,54 @@ impl i8x16 {
         ]}
       }
     }
+  }
+
+  /// Transpose matrix of 16x16 `i8` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i8x16; 16]) -> [i8x16; 16] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[i8x16; 16], index: usize) -> i8x16 {
+      i8x16::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+    ]
   }
 
   #[inline]

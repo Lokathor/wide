@@ -202,6 +202,22 @@ fn impl_cmp_eq_for_i32x16() {
 }
 
 #[test]
+fn impl_cmp_ne_for_i32x16() {
+  let a = i32x16::from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+  let b = i32x16::from([0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_cmp_ge_for_i32x16() {
+  let a = i32x16::from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+  let b = i32x16::from([0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_cmp_gt_for_i32x16() {
   let a =
     i32x16::from([0, 1, 2, 3, -4, -3, -2, -1, 8, 9, 10, 11, 12, 13, 14, 15]);
@@ -210,6 +226,14 @@ fn impl_cmp_gt_for_i32x16() {
     i32x16::from([0, -1, -1, -1, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1]);
   let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_cmp_le_for_i32x16() {
+  let a = i32x16::from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+  let b = i32x16::from([0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]
@@ -230,6 +254,100 @@ fn impl_blend_for_i32x16() {
   let f = i32x16::from([0; 16]);
   let expected = i32x16::from([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]);
   let actual = use_t.blend(t, f);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i32x16_is_negative() {
+  let value =
+    i32x16::new([1, -1, 2, 3, -2, -5, 0, 6, 9, 1, -2, -3, -4, 0, -1, 1]);
+  let expected =
+    i32x16::new([0, -1, 0, 0, -1, -1, 0, 0, 0, 0, -1, -1, -1, 0, -1, 0]);
+  let actual = value.is_negative();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_abs_for_i32x16() {
+  let a = i32x16::from([
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+  ]);
+  let expected = i32x16::from([
+    1,
+    2,
+    3,
+    i32::MIN,
+    6,
+    15,
+    19,
+    9,
+    1,
+    2,
+    3,
+    i32::MIN,
+    6,
+    15,
+    19,
+    9,
+  ]);
+  let actual = a.abs();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_unsigned_abs_for_i32x16() {
+  let a = i32x16::from([
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+    -1,
+    2,
+    -3,
+    i32::MIN,
+    6,
+    -15,
+    -19,
+    9,
+  ]);
+  let expected = u32x16::from([
+    1,
+    2,
+    3,
+    i32::MIN as u32,
+    6,
+    15,
+    19,
+    9,
+    1,
+    2,
+    3,
+    i32::MIN as u32,
+    6,
+    15,
+    19,
+    9,
+  ]);
+  let actual = a.unsigned_abs();
   assert_eq!(expected, actual);
 }
 
@@ -354,6 +472,64 @@ fn impl_max_for_i32x16() {
 }
 
 #[test]
+fn impl_i32x16_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i32::MAX - 1),
+    (-5, i32::MIN + 1),
+    (i32::MAX - 1, 5),
+    (i32::MIN + 1, -5),
+    (0, i32::MAX),
+    (0, i32::MIN),
+    (i32::MAX, 0),
+    (i32::MIN, 0),
+  ] {
+    let expected = i32x16::splat(value.saturating_add(rhs));
+    let actual = i32x16::splat(value).saturating_add(i32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i32x16_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i32::MAX - 1),
+    (-5, i32::MIN + 1),
+    (i32::MAX - 1, 5),
+    (i32::MIN + 1, -5),
+    (0, i32::MAX),
+    (0, i32::MIN),
+    (i32::MAX, 0),
+    (i32::MIN, 0),
+  ] {
+    let expected = i32x16::splat(value.saturating_sub(rhs));
+    let actual = i32x16::splat(value).saturating_sub(i32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_round_float_for_i32x16() {
   let a =
     i32x16::from([0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1]);
@@ -454,6 +630,39 @@ fn test_i32x4_move_mask() {
 }
 
 #[test]
+fn test_i32x16_any() {
+  assert!(!i32x16::splat(0).any());
+  assert!(i32x16::splat(!0).any());
+  for i in 0..16 {
+    let mut a = i32x16::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_i32x16_all() {
+  assert!(!i32x16::splat(0).all());
+  assert!(i32x16::splat(!0).all());
+  for i in 0..16 {
+    let mut a = i32x16::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_i32x16_none() {
+  assert!(i32x16::splat(0).none());
+  assert!(!i32x16::splat(!0).none());
+  for i in 0..16 {
+    let mut a = i32x16::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
 fn impl_i32x16_reduce_add() {
   let p = i32x16::from([
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -479,4 +688,16 @@ fn impl_i32x16_reduce_max() {
     let p = i32x16::from(v);
     assert_eq!(p.reduce_max(), i32::MAX);
   }
+}
+
+#[test]
+fn impl_i32x16_transpose() {
+  let data = std::array::from_fn(|i| {
+    i32x16::new(std::array::from_fn(|j| (i * 100 + j) as i32))
+  });
+  let expected = std::array::from_fn(|i| {
+    i32x16::new(std::array::from_fn(|j| (j * 100 + i) as i32))
+  });
+  let actual = i32x16::transpose(data);
+  assert_eq!(expected, actual);
 }

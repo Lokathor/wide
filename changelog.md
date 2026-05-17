@@ -1,5 +1,15 @@
 # `wide` Changelog
 
+## Unreleased
+
+* Added several functions and trait implementations that previously were only
+  implemented for some types inconsistently.
+* Fixed slight bug in `f64xN` functions `round` and `round_int`.
+* Fixed `simd_ne` NaN behavior for floats.
+* Fixed bug in `u64x8::simd_lt`.
+* Fixed bug in `i64x8` and `u64x8` function `to_bitmask`
+* Fixed bugs in `u32x16` functions `any`, `all` and `none`.
+
 ## 1.4.0
 
 * Added more float functions.

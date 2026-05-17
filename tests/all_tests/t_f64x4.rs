@@ -384,14 +384,45 @@ fn impl_f64x4_round() {
 }
 
 #[test]
-fn impl_f64x4_round_int() {
+fn impl_f64x4_fast_round_int() {
   for (f, i) in [
-    (1.0, 1i64),
+    (1.0, 1),
     (1.1, 1),
     (-2.1, -2),
     (2.5, 2),
+    (-2.5, -2),
+    (2.7, 3),
+    (-2.7, -3),
+    (-3.0, -3),
     (0.0, 0),
     (-0.0, 0),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x4::from(f);
+    let expected = i64x4::from(i);
+    let actual = a.fast_round_int();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_f64x4_round_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (-2.5, -2),
+    (2.7, 3),
+    (-2.7, -3),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+    (9223372036854775807.0, i64::MAX),
+    (9223372036854775808.0, i64::MAX),
+    (-9223372036854775808.0, i64::MIN),
     (f64::NAN, 0),
     (f64::INFINITY, i64::MAX),
     (f64::NEG_INFINITY, i64::MIN),
@@ -420,6 +451,58 @@ fn impl_f64x4_trunc() {
 
     // Use bitwise equality to accept NaNs as equal.
     assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
+fn impl_f64x4_fast_trunc_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (2.7, 2),
+    (-2.7, -2),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x4::from(f);
+    let expected = i64x4::from(i);
+    let actual = a.fast_trunc_int();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_f64x4_trunc_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (2.7, 2),
+    (-2.7, -2),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+    (9223372036854775807.0, i64::MAX),
+    (9223372036854775808.0, i64::MAX),
+    (-9223372036854775808.0, i64::MIN),
+    (f64::NAN, 0),
+    (f64::INFINITY, i64::MAX),
+    (f64::NEG_INFINITY, i64::MIN),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x4::from(f);
+    let expected = i64x4::from(i);
+    let actual = a.trunc_int();
+    assert_eq!(expected, actual);
   }
 }
 
@@ -707,6 +790,32 @@ fn impl_f64x4_to_radians() {
 }
 
 #[test]
+fn impl_f64x4_recip() {
+  for value in [0.0, 1.0, 3.6, 34579.2, f64::NAN, f64::INFINITY]
+    .into_iter()
+    .flat_map(|value| [value, -value])
+  {
+    let expected = f64x4::splat(value.recip());
+    let actual = f64x4::splat(value).recip();
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
+fn impl_f64x4_recip_sqrt() {
+  for value in [0.0, 1.0, 3.6, 34579.2, f64::NAN, f64::INFINITY]
+    .into_iter()
+    .flat_map(|value| [value, -value])
+  {
+    let expected = f64x4::splat(value.sqrt().recip());
+    let actual = f64x4::splat(value).recip_sqrt();
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x4::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x4_sqrt() {
   for (f, e) in [
     (f64::INFINITY, f64::INFINITY),
@@ -975,6 +1084,24 @@ fn impl_f64x4_from_i32x4() {
   let f = f64x4::from([1.0, 2.0, 3.0, 4.0]);
   assert_eq!(f64x4::from(i), f);
   assert_eq!(f64x4::from_i32x4(i), f);
+}
+
+#[test]
+fn impl_f64x4_transpose() {
+  let data = [
+    f64x4::new([11.0, 12.0, 13.0, 14.0]),
+    f64x4::new([21.0, 22.0, 23.0, 24.0]),
+    f64x4::new([31.0, 32.0, 33.0, 34.0]),
+    f64x4::new([41.0, 42.0, 43.0, 44.0]),
+  ];
+  let expected = [
+    f64x4::new([11.0, 21.0, 31.0, 41.0]),
+    f64x4::new([12.0, 22.0, 32.0, 42.0]),
+    f64x4::new([13.0, 23.0, 33.0, 43.0]),
+    f64x4::new([14.0, 24.0, 34.0, 44.0]),
+  ];
+  let actual = f64x4::transpose(data);
+  assert_eq!(expected, actual);
 }
 
 #[cfg(feature = "serde")]

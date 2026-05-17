@@ -771,19 +771,62 @@ impl f64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f64x2_nearest(self.simd) }
       } else {
-        let sign_mask = f64x2::from(-0.0);
-        let magic = f64x2::from(f64::from_bits(0x43300000_00000000));
-        let sign = self & sign_mask;
-        let signed_magic = magic | sign;
-        self + signed_magic - signed_magic
+        const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
+        const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
+
+        let self_sign = self & SIGN_MASK;
+        let magic_value = MAGIC_VALUE | self_sign;
+        let result = self + magic_value - magic_value;
+
+        let bounds_mask = self.abs().simd_le(MAGIC_VALUE);
+        bounds_mask.abs().blend(result, self)
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn fast_round_int(self) -> i64x2 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvtpd_epi64;
+
+        // TODO(safe_arch): Add `_mm_cvtpd_epi64`.
+        cast(m128i(unsafe { _mm_cvtpd_epi64(self.sse.0) }))
+      } else {
+        self.round_int()
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn round_int(self) -> i64x2 {
-    let rounded: [f64; 2] = cast(self.round());
-    cast([rounded[0] as i64, rounded[1] as i64])
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvtpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x2 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm_cvtpd_epi64`.
+        let cast: i64x2 = cast(m128i(unsafe { _mm_cvtpd_epi64(non_nan.sse.0) }));
+        flip_to_max ^ cast
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtnq_s64_f64(self.neon)) } })
+      } else {
+        let rounded: [f64; 2] = cast(self.round());
+        cast([rounded[0] as i64, rounded[1] as i64])
+      }
+    }
   }
 
   #[inline]
@@ -812,6 +855,58 @@ impl f64x2 {
 
         // Reset the sign bit of the mask to preverse the sign of `self`.
         bounds_mask.abs().blend(result, self)
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This is a faster implementation than
+  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
+  #[inline]
+  #[must_use]
+  pub fn fast_trunc_int(self) -> i64x2 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvttpd_epi64;
+
+        // TODO(safe_arch): Add `_mm_cvttpd_epi64`.
+        cast(m128i(unsafe { _mm_cvttpd_epi64(self.sse.0) }))
+      } else {
+        self.trunc_int()
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This saturates out of range values
+  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
+  /// that doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn trunc_int(self) -> i64x2 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_cvttpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x2 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm_cvttpd_epi64`.
+        let cast: i64x2 = cast(m128i(unsafe { _mm_cvttpd_epi64(non_nan.sse.0) }));
+        flip_to_max ^ cast
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtq_s64_f64(self.neon)) } })
+      } else {
+        // There does not seem to be an intrinsic for `wasm32`.
+        let n: [f64;2] = cast(self);
+        cast([n[0] as i64, n[1] as i64])
       }
     }
   }
@@ -1499,6 +1594,23 @@ impl f64x2 {
     const_f64_as_f64x2!(DEG_TO_RAD_RATIO, core::f64::consts::PI / 180.0_f64);
     self * DEG_TO_RAD_RATIO
   }
+
+  #[inline]
+  #[must_use]
+  pub fn recip(self) -> Self {
+    // There does not seem to be a `recip` intrinsic for any architecture. The
+    // closest is `_mm_rcp14_pd` which has relative error.
+    Self::ONE / self
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn recip_sqrt(self) -> Self {
+    // There does not seem to be a `recip_sqrt` intrinsic for any architecture.
+    // The closest is `_mm_rsqrt14_pd` which has relative error.
+    Self::ONE / self.sqrt()
+  }
+
   #[inline]
   #[must_use]
   pub fn sqrt(self) -> Self {
@@ -1961,6 +2073,59 @@ impl f64x2 {
   #[inline]
   pub fn powf(self, y: f64) -> Self {
     Self::pow_f64x2(self, f64x2::splat(y))
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_low_m128d(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<0, 2>(self.simd, b.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip1q_f64(self.neon, b.neon) } }
+      } else {
+        Self::new([self.as_array()[0], b.as_array()[0]])
+      }
+    }
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_high_m128d(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<1, 3>(self.simd, b.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip2q_f64(self.neon, b.neon) } }
+      } else {
+        Self::new([self.as_array()[1], b.as_array()[1]])
+      }
+    }
+  }
+
+  /// Transpose matrix of 2x2 `f64` matrix.
+  #[inline]
+  pub fn transpose(data: [f64x2; 2]) -> [f64x2; 2] {
+    pick! {
+      if #[cfg(any(
+        target_feature="sse2",
+        all(target_feature="neon",target_arch="aarch64"),
+        target_feature="simd128",
+      ))] {
+        [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
+      } else {
+        let [x, y, z, w]: [f64; 4] = cast(data);
+        cast([x, z, y, w])
+      }
+    }
   }
 
   #[inline]

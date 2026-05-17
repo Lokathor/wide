@@ -126,12 +126,60 @@ fn impl_u64x2_blend() {
 }
 
 #[test]
+fn impl_u64x2_reduce_add() {
+  let value = u64x2::new([1, 2]);
+  let expected = 3;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u64x2_reduce_max() {
+  for i in 0..2 {
+    let mut value = u64x2::new([9, 10]);
+    value.as_mut_array()[i] = u64::MAX - 1;
+
+    let expected = u64::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u64x2_reduce_min() {
+  for i in 0..2 {
+    let mut value = u64x2::new([9, u64::MAX - 1]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
 fn impl_u64x2_cmp_eq() {
   let a = u64x2::from([1_u64, 4]);
   let b = u64x2::from([3_u64, 4]);
   let expected = u64x2::from([0, u64::MAX]);
   let actual = a.simd_eq(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u64x2_cmp_ne() {
+  let a = u64x2::from([1_u64, 4]);
+  let b = u64x2::from([3_u64, 4]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_u64x2_cmp_ge() {
+  let a = u64x2::from([1_u64, 4]);
+  let b = u64x2::from([3_u64, 4]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
 }
 
 #[test]
@@ -149,6 +197,14 @@ fn impl_u64x2_cmp_gt() {
 }
 
 #[test]
+fn impl_u64x2_cmp_le() {
+  let a = u64x2::from([1_u64, 4]);
+  let b = u64x2::from([3_u64, 4]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
+}
+
+#[test]
 fn impl_u64x2_cmp_lt() {
   let a = u64x2::from([3_u64, 4]);
   let b = u64x2::from([1_u64, 4]);
@@ -160,6 +216,83 @@ fn impl_u64x2_cmp_lt() {
     |a: u64x2, b| a.simd_lt(b),
     |a, b| if a < b { u64::MAX } else { 0 },
   );
+}
+
+#[test]
+fn test_u64x2_any() {
+  assert!(!u64x2::splat(0).any());
+  assert!(u64x2::splat(!0).any());
+  for i in 0..2 {
+    let mut a = u64x2::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_u64x2_all() {
+  assert!(!u64x2::splat(0).all());
+  assert!(u64x2::splat(!0).all());
+  for i in 0..2 {
+    let mut a = u64x2::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_u64x2_none() {
+  assert!(u64x2::splat(0).none());
+  assert!(!u64x2::splat(!0).none());
+  for i in 0..2 {
+    let mut a = u64x2::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
+fn impl_u64x2_transpose() {
+  let data = [u64x2::new([11, 12]), u64x2::new([21, 22])];
+  let expected = [u64x2::new([11, 21]), u64x2::new([12, 22])];
+  let actual = u64x2::transpose(data);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u64x2_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u64::MAX - 1),
+    (u64::MAX - 1, 5),
+    (0, u64::MAX),
+    (u64::MAX, 0),
+  ] {
+    let expected = u64x2::splat(value.saturating_add(rhs));
+    let actual = u64x2::splat(value).saturating_add(u64x2::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u64x2_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u64::MAX - 1),
+    (u64::MAX - 1, 5),
+    (0, u64::MAX),
+    (u64::MAX, 0),
+  ] {
+    let expected = u64x2::splat(value.saturating_sub(rhs));
+    let actual = u64x2::splat(value).saturating_sub(u64x2::splat(rhs));
+    assert_eq!(expected, actual);
+  }
 }
 
 #[cfg(feature = "serde")]

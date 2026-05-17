@@ -452,6 +452,75 @@ impl CmpLt for i32x4 {
   }
 }
 
+impl CmpNe for i32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i32x4_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] != rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] != rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] != rhs.arr[3] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpLe for i32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i32x4_le(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] <= rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] <= rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] <= rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] <= rhs.arr[3] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
+impl CmpGe for i32x4 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i32x4_ge(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] >= rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] >= rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] >= rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] >= rhs.arr[3] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+}
+
 impl i32x4 {
   #[inline]
   #[must_use]
@@ -472,6 +541,12 @@ impl i32x4 {
         generic_bit_blend(self, t, f)
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
   }
 
   /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
@@ -630,6 +705,57 @@ impl i32x4 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self + rhs;
+        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqaddq_s32(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_add(rhs.arr[0]),
+            self.arr[1].saturating_add(rhs.arr[1]),
+            self.arr[2].saturating_add(rhs.arr[2]),
+            self.arr[3].saturating_add(rhs.arr[3]),
+          ],
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self - rhs;
+        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqsubq_s32(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_sub(rhs.arr[0]),
+            self.arr[1].saturating_sub(rhs.arr[1]),
+            self.arr[2].saturating_sub(rhs.arr[2]),
+            self.arr[3].saturating_sub(rhs.arr[3]),
+          ],
+        }
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x4 {

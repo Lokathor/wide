@@ -55,6 +55,48 @@ impl Sub for i8x32 {
   }
 }
 
+impl Mul for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // then converting back after multiplication, but that may not actually be
+    // faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a * rhs_a, self_b * rhs_b])
+  }
+}
+
+impl Shl for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // or `i32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a << rhs_a, self_b << rhs_b])
+  }
+}
+
+impl Shr for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // or `i32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a >> rhs_a, self_b >> rhs_b])
+  }
+}
+
 impl Add<i8> for i8x32 {
   type Output = Self;
   #[inline]
@@ -71,6 +113,71 @@ impl Sub<i8> for i8x32 {
   }
 }
 
+impl Mul<i8> for i8x32 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: i8) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
+macro_rules! impl_shl_scalar {
+  ($Rhs:ident) => {
+    impl Shl<$Rhs> for i8x32 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      #[inline]
+      fn shl(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `i16` or `i32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        let [self_a, self_b]: [i8x16; 2] = cast(self);
+        cast([self_a << rhs, self_b << rhs])
+      }
+    }
+  };
+}
+impl_shl_scalar!(i8);
+impl_shl_scalar!(u8);
+impl_shl_scalar!(i16);
+impl_shl_scalar!(u16);
+impl_shl_scalar!(i32);
+impl_shl_scalar!(u32);
+impl_shl_scalar!(i64);
+impl_shl_scalar!(u64);
+impl_shl_scalar!(i128);
+impl_shl_scalar!(u128);
+
+macro_rules! impl_shr_scalar {
+  ($Rhs:ident) => {
+    impl Shr<$Rhs> for i8x32 {
+      type Output = Self;
+
+      /// Shifts all lanes by a uniform value.
+      #[inline]
+      fn shr(self, rhs: $Rhs) -> Self::Output {
+        // For x86, this technically can be done explicitly by converting
+        // to `i16` or `i32` then converting back after multiplication, but that
+        // may not actually be faster than auto-vectorization.
+        let [self_a, self_b]: [i8x16; 2] = cast(self);
+        cast([self_a >> rhs, self_b >> rhs])
+      }
+    }
+  };
+}
+impl_shr_scalar!(i8);
+impl_shr_scalar!(u8);
+impl_shr_scalar!(i16);
+impl_shr_scalar!(u16);
+impl_shr_scalar!(i32);
+impl_shr_scalar!(u32);
+impl_shr_scalar!(i64);
+impl_shr_scalar!(u64);
+impl_shr_scalar!(i128);
+impl_shr_scalar!(u128);
+
 impl Add<i8x32> for i8 {
   type Output = i8x32;
   #[inline]
@@ -84,6 +191,15 @@ impl Sub<i8x32> for i8 {
   #[inline]
   fn sub(self, rhs: i8x32) -> Self::Output {
     i8x32::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<i8x32> for i8 {
+  type Output = i8x32;
+
+  #[inline]
+  fn mul(self, rhs: i8x32) -> Self::Output {
+    i8x32::splat(self) * rhs
   }
 }
 
@@ -180,6 +296,57 @@ impl CmpLt for i8x32 {
   }
 }
 
+impl CmpNe for i8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpLe for i8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_gt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpGe for i8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_lt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl Not for i8x32 {
   type Output = Self;
   #[inline]
@@ -217,6 +384,34 @@ impl i8x32 {
       }
     }
   }
+
+  #[inline]
+  #[must_use]
+  pub fn is_negative(self) -> Self {
+    self.simd_lt(Self::ZERO)
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -391,6 +586,86 @@ impl i8x32 {
         }
       }
     }
+  }
+
+  /// Transpose matrix of 32x32 `i8` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [i8x32; 32]) -> [i8x32; 32] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[i8x32; 32], index: usize) -> i8x32 {
+      i8x32::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+        data[16].as_array()[index],
+        data[17].as_array()[index],
+        data[18].as_array()[index],
+        data[19].as_array()[index],
+        data[20].as_array()[index],
+        data[21].as_array()[index],
+        data[22].as_array()[index],
+        data[23].as_array()[index],
+        data[24].as_array()[index],
+        data[25].as_array()[index],
+        data[26].as_array()[index],
+        data[27].as_array()[index],
+        data[28].as_array()[index],
+        data[29].as_array()[index],
+        data[30].as_array()[index],
+        data[31].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+      transpose_column(&data, 16),
+      transpose_column(&data, 17),
+      transpose_column(&data, 18),
+      transpose_column(&data, 19),
+      transpose_column(&data, 20),
+      transpose_column(&data, 21),
+      transpose_column(&data, 22),
+      transpose_column(&data, 23),
+      transpose_column(&data, 24),
+      transpose_column(&data, 25),
+      transpose_column(&data, 26),
+      transpose_column(&data, 27),
+      transpose_column(&data, 28),
+      transpose_column(&data, 29),
+      transpose_column(&data, 30),
+      transpose_column(&data, 31),
+    ]
   }
 
   #[inline]

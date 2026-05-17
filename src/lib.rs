@@ -418,19 +418,32 @@ macro_rules! impl_simple_not {
           self ^ cast::<u128, $t>(u128::MAX)
         }
       }
-      impl Not for &'_ $t {
-        type Output = $t;
-        #[inline]
-        fn not(self) -> Self::Output {
-          *self ^ cast::<u128, $t>(u128::MAX)
-        }
-      }
     )+
   };
 }
 
 impl_simple_not! {
   f32x4, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
+}
+
+macro_rules! impl_not_ref {
+  ($($t:ty),+ $(,)?) => {
+    $(
+      impl Not for &'_ $t {
+        type Output = $t;
+        #[inline]
+        fn not(self) -> Self::Output {
+          !*self
+        }
+      }
+    )+
+  };
+}
+
+impl_not_ref! {
+  f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i16x8, i16x16, i16x32, i32x4, i32x8,
+  i32x16, i64x2, i64x4, i64x8, u8x16, u8x32, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2,
+  u64x4, u64x8,
 }
 
 macro_rules! impl_simple_sum {
@@ -451,7 +464,7 @@ macro_rules! impl_simple_sum {
 }
 
 impl_simple_sum! {
-  f32x16, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x4, i64x2, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x2, u64x4, u64x8
+  f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x4, i64x2, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x2, u64x4, u64x8
 }
 
 macro_rules! impl_floating_product {
@@ -709,29 +722,51 @@ macro_rules! from_array {
       }
     }
   };
+  ($ty:ty,$dst:ty,$dst_wide:ident,2) => {
+    impl From<&[$ty]> for $dst_wide {
+      #[inline]
+      fn from(src: &[$ty]) -> $dst_wide {
+        match src.len() {
+          2 => $dst_wide::from([src[0] as $dst, src[1] as $dst]),
+          1 => $dst_wide::from([src[0] as $dst,0 as $dst]),
+          _ => panic!(
+            "Converting from an array larger than what can be stored in $dst_wide"
+          ),
+        }
+      }
+    }
+  };
 }
 
-from_array!(i8, i8, i8x32, 32);
+from_array!(f32, f32, f32x4, 4);
+from_array!(f32, f32, f32x8, 8);
+from_array!(f32, f32, f32x16, 16);
+from_array!(f64, f64, f64x2, 2);
+from_array!(f64, f64, f64x4, 4);
+from_array!(f64, f64, f64x8, 8);
 from_array!(i8, i8, i8x16, 16);
-from_array!(i8, i32, i32x8, 8);
+from_array!(i8, i8, i8x32, 32);
+from_array!(i16, i16, i16x8, 8);
+from_array!(i16, i16, i16x16, 16);
+from_array!(i16, i16, i16x32, 32);
+from_array!(i32, i32, i32x4, 4);
+from_array!(i32, i32, i32x8, 8);
+from_array!(i32, i32, i32x16, 16);
+from_array!(i64, i64, i64x2, 2);
+from_array!(i64, i64, i64x4, 4);
+from_array!(i64, i64, i64x8, 8);
 from_array!(u8, u8, u8x16, 16);
 from_array!(u8, u8, u8x32, 32);
-from_array!(i16, i16, i16x16, 16);
+from_array!(u16, u16, u16x8, 8);
 from_array!(u16, u16, u16x16, 16);
-from_array!(i32, i32, i32x8, 8);
-from_array!(f32, f32, f32x8, 8);
-from_array!(f32, f32, f32x4, 4);
-from_array!(f64, f64, f64x4, 4);
-from_array!(u64, u64, u64x4, 4);
-from_array!(i64, i64, i64x4, 4);
-from_array!(u64, u64, u64x8, 8);
-from_array!(i64, i64, i64x8, 8);
-from_array!(i16, i16, i16x32, 32);
 from_array!(u16, u16, u16x32, 32);
-from_array!(i32, i32, i32x16, 16);
+from_array!(u32, u32, u32x4, 4);
+from_array!(u32, u32, u32x8, 8);
 from_array!(u32, u32, u32x16, 16);
-from_array!(f32, f32, f32x16, 16);
-from_array!(f64, f64, f64x8, 8);
+from_array!(u64, u64, u64x2, 2);
+from_array!(u64, u64, u64x4, 4);
+from_array!(u64, u64, u64x8, 8);
+from_array!(i8, i32, i32x8, 8);
 
 #[allow(unused)]
 fn software_sqrt(x: f64) -> f64 {
@@ -968,7 +1003,7 @@ where
 }
 
 macro_rules! bulk_impl_const_rhs_op {
-  (($op:ident,$method:ident) => [$(($lhs:ty,$rhs:ty),)+]) => {
+  (($op:ident, $method:ident) => [$(($lhs:ty, $rhs:ty)),+ $(,)?]) => {
     $(
     impl $op<$rhs> for $lhs {
       type Output = Self;
@@ -981,12 +1016,47 @@ macro_rules! bulk_impl_const_rhs_op {
   };
 }
 
-bulk_impl_const_rhs_op!((CmpEq, simd_eq) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpLt, simd_lt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpGt, simd_gt) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpNe, simd_ne) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpLe, simd_le) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
-bulk_impl_const_rhs_op!((CmpGe, simd_ge) => [(f64x8, f64), (f64x4, f64), (f64x2, f64), (f32x4,f32), (f32x8,f32), (f32x16,f32),]);
+macro_rules! bulk_impl_const_rhs_ops {
+  ([$(($lhs:ty, $rhs:ty)),+ $(,)?]) => {
+    bulk_impl_const_rhs_op!((CmpEq, simd_eq) => [$(($lhs, $rhs)),+]);
+    bulk_impl_const_rhs_op!((CmpNe, simd_ne) => [$(($lhs, $rhs)),+]);
+    bulk_impl_const_rhs_op!((CmpLt, simd_lt) => [$(($lhs, $rhs)),+]);
+    bulk_impl_const_rhs_op!((CmpGt, simd_gt) => [$(($lhs, $rhs)),+]);
+    bulk_impl_const_rhs_op!((CmpLe, simd_le) => [$(($lhs, $rhs)),+]);
+    bulk_impl_const_rhs_op!((CmpGe, simd_ge) => [$(($lhs, $rhs)),+]);
+  };
+}
+
+bulk_impl_const_rhs_ops!([
+  (f32x4, f32),
+  (f32x8, f32),
+  (f32x16, f32),
+  (f64x2, f64),
+  (f64x4, f64),
+  (f64x8, f64),
+  (i8x16, i8),
+  (i8x32, i8),
+  (i16x8, i16),
+  (i16x16, i16),
+  (i16x32, i16),
+  (i32x4, i32),
+  (i32x8, i32),
+  (i32x16, i32),
+  (i64x2, i64),
+  (i64x4, i64),
+  (i64x8, i64),
+  (u8x16, u8),
+  (u8x32, u8),
+  (u16x8, u16),
+  (u16x16, u16),
+  (u16x32, u16),
+  (u32x4, u32),
+  (u32x8, u32),
+  (u32x16, u32),
+  (u64x2, u64),
+  (u64x4, u64),
+  (u64x8, u64),
+]);
 
 macro_rules! impl_serde {
   ($i:ident, [$t:ty; $len:expr]) => {

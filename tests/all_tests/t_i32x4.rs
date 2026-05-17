@@ -92,12 +92,36 @@ fn impl_i32x4_cmp_eq() {
 }
 
 #[test]
+fn impl_i32x4_cmp_ne() {
+  let a = i32x4::from([1, 2, 3, 4]);
+  let b = i32x4::from([2_i32; 4]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_i32x4_cmp_ge() {
+  let a = i32x4::from([1, 2, 3, 4]);
+  let b = i32x4::from([2_i32; 4]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_i32x4_cmp_gt() {
   let a = i32x4::from([1, 2, 3, 4]);
   let b = i32x4::from([2_i32; 4]);
   let expected = i32x4::from([0, 0, -1, -1]);
   let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i32x4_cmp_le() {
+  let a = i32x4::from([1, 2, 3, 4]);
+  let b = i32x4::from([2_i32; 4]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]
@@ -121,6 +145,14 @@ fn impl_i32x4_blend() {
   let mask = i32x4::from([use_t, 0, use_t, 0]);
   let expected = i32x4::from([1, 18, 3, 20]);
   let actual = mask.blend(t, f);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_i32x4_is_negative() {
+  let value = i32x4::new([1, -1, 2, 0]);
+  let expected = i32x4::new([0, -1, 0, 0]);
+  let actual = value.is_negative();
   assert_eq!(expected, actual);
 }
 
@@ -160,6 +192,64 @@ fn impl_i32x4_min() {
   assert_eq!(expected, actual);
 
   crate::test_random_vector_vs_scalar(|a: i32x4, b| a.min(b), |a, b| a.min(b));
+}
+
+#[test]
+fn impl_i32x4_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i32::MAX - 1),
+    (-5, i32::MIN + 1),
+    (i32::MAX - 1, 5),
+    (i32::MIN + 1, -5),
+    (0, i32::MAX),
+    (0, i32::MIN),
+    (i32::MAX, 0),
+    (i32::MIN, 0),
+  ] {
+    let expected = i32x4::splat(value.saturating_add(rhs));
+    let actual = i32x4::splat(value).saturating_add(i32x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_i32x4_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (15, -10),
+    (15, -20),
+    (-15, 20),
+    (-15, 10),
+    (-15, -16),
+    (0, 15),
+    (0, -15),
+    (15, 0),
+    (-15, 0),
+    (5, i32::MAX - 1),
+    (-5, i32::MIN + 1),
+    (i32::MAX - 1, 5),
+    (i32::MIN + 1, -5),
+    (0, i32::MAX),
+    (0, i32::MIN),
+    (i32::MAX, 0),
+    (i32::MIN, 0),
+  ] {
+    let expected = i32x4::splat(value.saturating_sub(rhs));
+    let actual = i32x4::splat(value).saturating_sub(i32x4::splat(rhs));
+    assert_eq!(expected, actual);
+  }
 }
 
 #[test]

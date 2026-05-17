@@ -310,6 +310,22 @@ fn impl_u32x16_cmp_eq() {
 }
 
 #[test]
+fn impl_u32x16_cmp_ne() {
+  let a = u32x16::from([1, 2, 3, 4, 2, 1, 8, 2, 4, 3, 2, 1, 4, 2, 3, 1]);
+  let b = u32x16::from([2_u32; 16]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_u32x16_cmp_ge() {
+  let a = u32x16::from([1, 2, 3, 4, 2, 1, 8, 2, 4, 3, 2, 1, 4, 2, 3, 1]);
+  let b = u32x16::from([2_u32; 16]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_u32x16_cmp_gt() {
   let a = u32x16::from([
     1,
@@ -355,6 +371,14 @@ fn impl_u32x16_cmp_gt() {
     |a: u32x16, b| a.simd_gt(b),
     |a, b| if a > b { u32::MAX } else { 0 },
   );
+}
+
+#[test]
+fn impl_u32x16_cmp_le() {
+  let a = u32x16::from([1, 2, 3, 4, 2, 1, 8, 2, 4, 3, 2, 1, 4, 2, 3, 1]);
+  let b = u32x16::from([2_u32; 16]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]
@@ -419,6 +443,57 @@ fn impl_u32x16_blend() {
     u32x16::from([1, 18, 3, 20, 25, 30, 50, 8, 1, 18, 3, 20, 25, 30, 50, 8]);
   let actual = mask.blend(t, f);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u32x16_reduce_add() {
+  let value =
+    u32x16::new([1, 2, 3, 5, 7, 11, 13, 17, 23, 27, 10, 4, 5, 3, 6, 4]);
+  let expected = 141;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u32x16_reduce_max() {
+  for i in 0..16 {
+    let mut value =
+      u32x16::new([9, 10, 5, 1, 3, 4, 5, 6, 3, 4, 5, 6, 3, 1, 5, 6]);
+    value.as_mut_array()[i] = u32::MAX - 1;
+
+    let expected = u32::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u32x16_reduce_min() {
+  for i in 0..16 {
+    let mut value = u32x16::new([
+      9,
+      u32::MAX - 1,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u32::MAX - 1,
+      5,
+      5,
+      6,
+    ]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
 }
 
 #[test]
@@ -733,6 +808,54 @@ fn impl_u32x16_mul_keep_high() {
     |a: u32x16, b| u32x16::mul_keep_high(a, b),
     |a, b| ((u64::from(a) * u64::from(b)) >> 32) as u32,
   );
+}
+
+#[test]
+fn impl_u32x16_transpose() {
+  let data = std::array::from_fn(|i| {
+    u32x16::new(std::array::from_fn(|j| (i * 100 + j) as u32))
+  });
+  let expected = std::array::from_fn(|i| {
+    u32x16::new(std::array::from_fn(|j| (j * 100 + i) as u32))
+  });
+  let actual = u32x16::transpose(data);
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u32x16_saturating_add() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x16::splat(value.saturating_add(rhs));
+    let actual = u32x16::splat(value).saturating_add(u32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u32x16_saturating_sub() {
+  for (value, rhs) in [
+    (1, 2),
+    (10, 20),
+    (0, 15),
+    (15, 0),
+    (5, u32::MAX - 1),
+    (u32::MAX - 1, 5),
+    (0, u32::MAX),
+    (u32::MAX, 0),
+  ] {
+    let expected = u32x16::splat(value.saturating_sub(rhs));
+    let actual = u32x16::splat(value).saturating_sub(u32x16::splat(rhs));
+    assert_eq!(expected, actual);
+  }
 }
 
 #[cfg(feature = "serde")]

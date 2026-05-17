@@ -530,22 +530,56 @@ fn impl_f64x8_round() {
 }
 
 #[test]
-fn impl_f64x8_round_int() {
+fn impl_f64x8_fast_round_int() {
   for (f, i) in [
-    (1.0, 1i64),
+    (1.0, 1),
     (1.1, 1),
     (-2.1, -2),
     (2.5, 2),
+    (-2.5, -2),
+    (2.7, 3),
+    (-2.7, -3),
+    (-3.0, -3),
     (0.0, 0),
     (-0.0, 0),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x8::from(f);
+    let expected = i64x8::from(i);
+    let actual = a.fast_round_int();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_f64x8_round_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (-2.5, -2),
+    (2.7, 3),
+    (-2.7, -3),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+    (9223372036854775807.0, i64::MAX),
+    (9223372036854775808.0, i64::MAX),
+    (-9223372036854775808.0, i64::MIN),
     (f64::NAN, 0),
     (f64::INFINITY, i64::MAX),
     (f64::NEG_INFINITY, i64::MIN),
-  ] {
+  ]
+  .iter()
+  .copied()
+  {
     let a = f64x8::from(f);
     let expected = i64x8::from(i);
     let actual = a.round_int();
-    assert_eq!(actual, expected);
+    assert_eq!(expected, actual);
   }
 }
 
@@ -579,6 +613,58 @@ fn impl_f64x8_trunc() {
 
     // Use bitwise equality to accept NaNs as equal.
     assert_eq!(expected ^ actual, f64x8::ZERO);
+  }
+}
+
+#[test]
+fn impl_f64x8_fast_trunc_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (2.7, 2),
+    (-2.7, -2),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x8::from(f);
+    let expected = i64x8::from(i);
+    let actual = a.fast_trunc_int();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_f64x8_trunc_int() {
+  for (f, i) in [
+    (1.0, 1),
+    (1.1, 1),
+    (-2.1, -2),
+    (2.5, 2),
+    (2.7, 2),
+    (-2.7, -2),
+    (-3.0, -3),
+    (0.0, 0),
+    (-0.0, 0),
+    (9223372036854775807.0, i64::MAX),
+    (9223372036854775808.0, i64::MAX),
+    (-9223372036854775808.0, i64::MIN),
+    (f64::NAN, 0),
+    (f64::INFINITY, i64::MAX),
+    (f64::NEG_INFINITY, i64::MIN),
+  ]
+  .iter()
+  .copied()
+  {
+    let a = f64x8::from(f);
+    let expected = i64x8::from(i);
+    let actual = a.trunc_int();
+    assert_eq!(expected, actual);
   }
 }
 
@@ -933,6 +1019,32 @@ fn impl_f64x8_to_radians() {
 }
 
 #[test]
+fn impl_f64x8_recip() {
+  for value in [0.0, 1.0, 3.6, 34579.2, f64::NAN, f64::INFINITY]
+    .into_iter()
+    .flat_map(|value| [value, -value])
+  {
+    let expected = f64x8::splat(value.recip());
+    let actual = f64x8::splat(value).recip();
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x8::ZERO);
+  }
+}
+
+#[test]
+fn impl_f64x8_recip_sqrt() {
+  for value in [0.0, 1.0, 3.6, 34579.2, f64::NAN, f64::INFINITY]
+    .into_iter()
+    .flat_map(|value| [value, -value])
+  {
+    let expected = f64x8::splat(value.sqrt().recip());
+    let actual = f64x8::splat(value).recip_sqrt();
+    // Use bitwise equality to accept NaNs as equal.
+    assert_eq!(expected ^ actual, f64x8::ZERO);
+  }
+}
+
+#[test]
 fn impl_f64x8_sqrt() {
   for &(f, e) in &[
     (f64::INFINITY, f64::INFINITY),
@@ -1109,6 +1221,32 @@ fn impl_f64x8_from_i32x8() {
   let f = f64x8::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
   assert_eq!(f64x8::from(i), f);
   assert_eq!(f64x8::from_i32x8(i), f);
+}
+
+#[test]
+fn impl_f64x8_transpose() {
+  let data = [
+    f64x8::new([11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0]),
+    f64x8::new([21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0]),
+    f64x8::new([31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0]),
+    f64x8::new([41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0]),
+    f64x8::new([51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0]),
+    f64x8::new([61.0, 62.0, 63.0, 64.0, 65.0, 66.0, 67.0, 68.0]),
+    f64x8::new([71.0, 72.0, 73.0, 74.0, 75.0, 76.0, 77.0, 78.0]),
+    f64x8::new([81.0, 82.0, 83.0, 84.0, 85.0, 86.0, 87.0, 88.0]),
+  ];
+  let expected = [
+    f64x8::new([11.0, 21.0, 31.0, 41.0, 51.0, 61.0, 71.0, 81.0]),
+    f64x8::new([12.0, 22.0, 32.0, 42.0, 52.0, 62.0, 72.0, 82.0]),
+    f64x8::new([13.0, 23.0, 33.0, 43.0, 53.0, 63.0, 73.0, 83.0]),
+    f64x8::new([14.0, 24.0, 34.0, 44.0, 54.0, 64.0, 74.0, 84.0]),
+    f64x8::new([15.0, 25.0, 35.0, 45.0, 55.0, 65.0, 75.0, 85.0]),
+    f64x8::new([16.0, 26.0, 36.0, 46.0, 56.0, 66.0, 76.0, 86.0]),
+    f64x8::new([17.0, 27.0, 37.0, 47.0, 57.0, 67.0, 77.0, 87.0]),
+    f64x8::new([18.0, 28.0, 38.0, 48.0, 58.0, 68.0, 78.0, 88.0]),
+  ];
+  let actual = f64x8::transpose(data);
+  assert_eq!(expected, actual);
 }
 
 #[cfg(feature = "serde")]

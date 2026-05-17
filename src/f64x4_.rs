@@ -337,7 +337,7 @@ impl CmpNe for f64x4 {
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualOrdered)}>(self.avx, rhs.avx) }
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
       } else {
         Self {
           a : self.a.simd_ne(rhs.a),
@@ -613,15 +613,46 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  pub fn fast_round_int(self) -> i64x4 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_cvtpd_epi64;
+
+        // TODO(safe_arch): Add `_mm256_cvtpd_epi64`.
+        cast(m256i(unsafe { _mm256_cvtpd_epi64(self.avx.0) }))
+      } else {
+        let [a, b]: [f64x2; 2] = cast(self);
+        cast([a.fast_round_int(), b.fast_round_int()])
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_int(self) -> i64x4 {
-    // NOTE:No optimization for this currently available so delegate to LLVM
-    let rounded: [f64; 4] = cast(self.round());
-    cast([
-      rounded[0] as i64,
-      rounded[1] as i64,
-      rounded[2] as i64,
-      rounded[3] as i64,
-    ])
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_cvtpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_cvtpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x4 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm256_cvtpd_epi64`.
+        let cast: i64x4 = cast(m256i(unsafe { _mm256_cvtpd_epi64(non_nan.avx.0) }));
+        flip_to_max ^ cast
+      } else {
+        let [a, b]: [f64x2; 2] = cast(self);
+        cast([a.round_int(), b.round_int()])
+      }
+    }
   }
 
   #[inline]
@@ -635,6 +666,56 @@ impl f64x4 {
           a : self.a.trunc(),
           b : self.b.trunc(),
         }
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This is a faster implementation than
+  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
+  /// values you get implementation defined behavior.
+  #[inline]
+  #[must_use]
+  pub fn fast_trunc_int(self) -> i64x4 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_cvttpd_epi64;
+
+        // TODO(safe_arch): Add `_mm256_cvttpd_epi64`.
+        cast(m256i(unsafe { _mm256_cvttpd_epi64(self.avx.0) }))
+      } else {
+        let [a, b]: [f64x2; 2] = cast(self);
+        cast([a.fast_trunc_int(), b.fast_trunc_int()])
+      }
+    }
+  }
+
+  /// Truncates each lane into an integer. This saturates out of range values
+  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
+  /// that doesn't handle out of range values or NaNs.
+  #[inline]
+  #[must_use]
+  pub fn trunc_int(self) -> i64x4 {
+    pick! {
+      if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_cvttpd_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_cvttpd_epi64;
+
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i64x4 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+
+        // TODO(safe_arch): Add `_mm256_cvttpd_epi64`.
+        let cast: i64x4 = cast(m256i(unsafe { _mm256_cvttpd_epi64(non_nan.avx.0) }));
+        flip_to_max ^ cast
+      } else {
+        let [a, b]: [f64x2; 2] = cast(self);
+        cast([a.trunc_int(), b.trunc_int()])
       }
     }
   }
@@ -1337,6 +1418,23 @@ impl f64x4 {
     const_f64_as_f64x4!(DEG_TO_RAD_RATIO, core::f64::consts::PI / 180.0_f64);
     self * DEG_TO_RAD_RATIO
   }
+
+  #[inline]
+  #[must_use]
+  pub fn recip(self) -> Self {
+    // There does not seem to be a `recip` intrinsic for any architecture. The
+    // closest is `_mm256_rcp14_pd` which has relative error.
+    Self::ONE / self
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn recip_sqrt(self) -> Self {
+    // There does not seem to be a `recip_sqrt` intrinsic for any architecture.
+    // The closest is `_mm256_rsqrt14_pd` which has relative error.
+    Self::ONE / self.sqrt()
+  }
+
   #[inline]
   #[must_use]
   pub fn sqrt(self) -> Self {
@@ -1765,6 +1863,80 @@ impl f64x4 {
   #[inline]
   pub fn powf(self, y: f64) -> Self {
     Self::pow_f64x4(self, f64x4::splat(y))
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // `unpack_lo_m256d` cannot be used because it actually performs a
+        // different operation.
+        let [aa, _]: [f64x2; 2] = cast(self);
+        let [ba, _]: [f64x2; 2] = cast(b);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
+      }
+    }
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // `unpack_hi_m256d` cannot be used because it actually performs a
+        // different operation.
+        let [_, ab]: [f64x2; 2] = cast(self);
+        let [_, bb]: [f64x2; 2] = cast(b);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
+      }
+    }
+  }
+
+  /// Transpose matrix of 4x4 `f64` matrix.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [f64x4; 4]) -> [f64x4; 4] {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // Can this be optimized?
+        let a = data[0].unpack_lo(data[2]);
+        let b = data[1].unpack_lo(data[3]);
+        let c = data[0].unpack_hi(data[2]);
+        let d = data[1].unpack_hi(data[3]);
+        [
+          a.unpack_lo(b),
+          a.unpack_hi(b),
+          c.unpack_lo(d),
+          c.unpack_hi(d),
+        ]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[f64x4; 4], index: usize) -> f64x4 {
+          f64x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
+      }
+    }
   }
 
   #[inline]

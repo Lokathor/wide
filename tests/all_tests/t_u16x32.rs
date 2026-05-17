@@ -250,6 +250,34 @@ fn impl_cmp_eq_for_u16x32() {
 }
 
 #[test]
+fn impl_cmp_ne_for_u16x32() {
+  let a = u16x32::from([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  ]);
+  let b = u16x32::from([
+    0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14, 16, 16, 18, 18, 20,
+    20, 22, 22, 24, 24, 26, 26, 28, 28, 30, 30,
+  ]);
+
+  assert_eq!(a.simd_ne(b), !a.simd_eq(b));
+}
+
+#[test]
+fn impl_cmp_ge_for_u16x32() {
+  let a = u16x32::from([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  ]);
+  let b = u16x32::from([
+    0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14, 16, 16, 18, 18, 20,
+    20, 22, 22, 24, 24, 26, 26, 28, 28, 30, 30,
+  ]);
+
+  assert_eq!(a.simd_ge(b), !a.simd_lt(b));
+}
+
+#[test]
 fn impl_cmp_gt_for_u16x32() {
   let a = u16x32::from([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -295,6 +323,20 @@ fn impl_cmp_gt_for_u16x32() {
   ]);
   let actual = a.simd_gt(b);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_cmp_le_for_u16x32() {
+  let a = u16x32::from([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  ]);
+  let b = u16x32::from([
+    0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14, 16, 16, 18, 18, 20,
+    20, 22, 22, 24, 24, 26, 26, 28, 28, 30, 30,
+  ]);
+
+  assert_eq!(a.simd_le(b), !a.simd_gt(b));
 }
 
 #[test]
@@ -353,6 +395,77 @@ fn impl_blend_for_u16x32() {
   ]);
   let actual = use_t.blend(t, f);
   assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u16x32_reduce_add() {
+  let value = u16x32::new([
+    1, 2, 3, 5, 7, 11, 13, 17, 23, 27, 10, 4, 5, 3, 6, 4, 1, 2, 3, 4, 5, 6, 1,
+    2, 3, 7, 23, 1, 125, 51, 125, 12,
+  ]);
+  let expected = 512;
+  let actual = value.reduce_add();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u16x32_reduce_max() {
+  for i in 0..32 {
+    let mut value = u16x32::new([
+      9, 10, 5, 1, 3, 4, 5, 6, 3, 4, 5, 6, 3, 1, 5, 6, 4, 5, 6, 3, 1, 5, 6, 4,
+      5, 6, 3, 1, 5, 6, 4, 5,
+    ]);
+    value.as_mut_array()[i] = u16::MAX - 1;
+
+    let expected = u16::MAX - 1;
+    let actual = value.reduce_max();
+    assert_eq!(expected, actual);
+  }
+}
+
+#[test]
+fn impl_u16x32_reduce_min() {
+  for i in 0..32 {
+    let mut value = u16x32::new([
+      9,
+      u16::MAX - 1,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u16::MAX - 1,
+      5,
+      5,
+      6,
+      5,
+      2,
+      3,
+      4,
+      5,
+      6,
+      3,
+      4,
+      5,
+      6,
+      u16::MAX - 1,
+      5,
+      4,
+      5,
+      6,
+      u16::MAX - 1,
+    ]);
+    value.as_mut_array()[i] = 1;
+
+    let expected = 1;
+    let actual = value.reduce_min();
+    assert_eq!(expected, actual);
+  }
 }
 
 #[test]
@@ -642,6 +755,39 @@ fn impl_saturating_sub_for_u16x32() {
 }
 
 #[test]
+fn test_u16x32_any() {
+  assert!(!u16x32::splat(0).any());
+  assert!(u16x32::splat(!0).any());
+  for i in 0..32 {
+    let mut a = u16x32::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(a.any());
+  }
+}
+
+#[test]
+fn test_u16x32_all() {
+  assert!(!u16x32::splat(0).all());
+  assert!(u16x32::splat(!0).all());
+  for i in 0..32 {
+    let mut a = u16x32::splat(!0);
+    a.as_mut_array()[i] = 0;
+    assert!(!a.all());
+  }
+}
+
+#[test]
+fn test_u16x32_none() {
+  assert!(u16x32::splat(0).none());
+  assert!(!u16x32::splat(!0).none());
+  for i in 0..32 {
+    let mut a = u16x32::splat(0);
+    a.as_mut_array()[i] = !0;
+    assert!(!a.none());
+  }
+}
+
+#[test]
 fn impl_u16x32_new() {
   let a = u16x32::new([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -652,5 +798,17 @@ fn impl_u16x32_new() {
     20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
   ];
   let actual = a.to_array();
+  assert_eq!(expected, actual);
+}
+
+#[test]
+fn impl_u16x32_transpose() {
+  let data = std::array::from_fn(|i| {
+    u16x32::new(std::array::from_fn(|j| (i * 100 + j) as u16))
+  });
+  let expected = std::array::from_fn(|i| {
+    u16x32::new(std::array::from_fn(|j| (j * 100 + i) as u16))
+  });
+  let actual = u16x32::transpose(data);
   assert_eq!(expected, actual);
 }

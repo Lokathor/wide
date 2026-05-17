@@ -55,6 +55,68 @@ impl Sub for u16x16 {
   }
 }
 
+impl Shl for u16x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shl`)
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_sllv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_sllv_epi16;
+
+        // Mask `rhs` to 15 to match `wrapping_shl`.
+        let rhs = bitand_m256i(rhs.avx2, set_splat_i16_m256i(15));
+        // TODO(safe_arch): Add `_mm256_sllv_epi16`.
+        cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.0) })
+      } else {
+        let [self_a, self_b]: [u16x8; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
+
+        cast([self_a << rhs_a, self_b << rhs_b])
+      }
+    }
+  }
+}
+
+impl Shr for u16x16 {
+  type Output = Self;
+
+  /// Shifts lanes by the corresponding lane.
+  ///
+  /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
+  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
+  /// of the type. (same as `wrapping_shr`)
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_srlv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_srlv_epi16;
+
+        // Mask `rhs` to 15 to match `wrapping_shr`.
+        let rhs = bitand_m256i(rhs.avx2, set_splat_i16_m256i(15));
+        // TODO(safe_arch): Add `_mm256_srlv_epi16`.
+        cast(unsafe { _mm256_srlv_epi16(self.avx2.0, rhs.0) })
+      } else {
+        let [self_a, self_b]: [u16x8; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
+
+        cast([self_a >> rhs_a, self_b >> rhs_b])
+      }
+    }
+  }
+}
+
 impl Add<u16> for u16x16 {
   type Output = Self;
   #[inline]
@@ -71,6 +133,15 @@ impl Sub<u16> for u16x16 {
   }
 }
 
+impl Mul<u16> for u16x16 {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: u16) -> Self::Output {
+    self * Self::splat(rhs)
+  }
+}
+
 impl Add<u16x16> for u16 {
   type Output = u16x16;
   #[inline]
@@ -84,6 +155,15 @@ impl Sub<u16x16> for u16 {
   #[inline]
   fn sub(self, rhs: u16x16) -> Self::Output {
     u16x16::splat(self).sub(rhs)
+  }
+}
+
+impl Mul<u16x16> for u16 {
+  type Output = u16x16;
+
+  #[inline]
+  fn mul(self, rhs: u16x16) -> Self::Output {
+    u16x16::splat(self) * rhs
   }
 }
 
@@ -237,6 +317,57 @@ impl CmpLt for u16x16 {
   }
 }
 
+impl CmpNe for u16x16 {
+  type Output = Self;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpLe for u16x16 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_gt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+impl CmpGe for u16x16 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_lt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl Mul for u16x16 {
   type Output = Self;
   #[inline]
@@ -312,6 +443,26 @@ impl u16x16 {
         }
       }
     }
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_add(self) -> u16 {
+    cast(i16x16::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_max(self) -> u16 {
+    let array: [u16x8; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn reduce_min(self) -> u16 {
+    let array: [u16x8; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
   }
 
   #[inline]
@@ -397,6 +548,31 @@ impl u16x16 {
   #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     i16x16::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn any(self) -> bool {
+    i16x16::any(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn all(self) -> bool {
+    i16x16::all(cast(self))
+  }
+
+  #[inline]
+  #[must_use]
+  pub fn none(self) -> bool {
+    !self.any()
+  }
+
+  /// Transpose matrix of 16x16 `u16` matrix. Currently not accelerated.
+  #[must_use]
+  #[inline]
+  pub fn transpose(data: [u16x16; 16]) -> [u16x16; 16] {
+    cast(i16x16::transpose(cast(data)))
   }
 
   #[inline]
