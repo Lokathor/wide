@@ -538,6 +538,7 @@ impl BitXor for i8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for i8x16 {
   type Output = Self;
   #[inline]
@@ -573,6 +574,7 @@ impl CmpEq for i8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for i8x16 {
   type Output = Self;
   #[inline]
@@ -608,6 +610,7 @@ impl CmpGt for i8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for i8x16 {
   type Output = Self;
   #[inline]
@@ -643,6 +646,7 @@ impl CmpLt for i8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for i8x16 {
   type Output = Self;
   #[inline]
@@ -678,6 +682,7 @@ impl CmpNe for i8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for i8x16 {
   type Output = Self;
   #[inline]
@@ -713,6 +718,7 @@ impl CmpLe for i8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for i8x16 {
   type Output = Self;
   #[inline]
@@ -754,6 +760,8 @@ impl i8x16 {
   pub const fn new(array: [i8; 16]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
 
   /// converts `i16` to `i8`, saturating values that are too large
   #[inline]

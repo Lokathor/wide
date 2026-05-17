@@ -2,10 +2,9 @@ use core::ops::{BitOr, Neg, Not};
 use std::{convert::identity, iter::once};
 
 use wide::{
-  AlignTo, CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, f32x4, f32x8, f32x16,
-  f64x2, f64x4, f64x8, i8x16, i8x32, i16x8, i16x16, i16x32, i32x4, i32x8,
-  i32x16, i64x2, i64x4, i64x8, u8x16, u8x32, u16x8, u16x16, u16x32, u32x4,
-  u32x8, u32x16, u64x2, u64x4, u64x8,
+  AlignTo, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i16x8,
+  i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16, u8x32,
+  u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
@@ -1163,9 +1162,7 @@ fn test_simd_eq_scalar() {
             if left[i] == right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpEq::simd_eq(Simd::new(left), right);
+      let actual = Simd::new(left).simd_eq(right);
 
       assert!(
         actual == expected,
@@ -1182,9 +1179,7 @@ fn test_simd_eq_scalar() {
             if left[i] == right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpEq::simd_eq(Simd::new(left), right);
+      let actual = Simd::new(left).simd_eq(right);
 
       assert!(
         actual == expected,
@@ -1397,9 +1392,7 @@ fn test_simd_lt_scalar() {
             if left[i] < right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpLt::simd_lt(Simd::new(left), right);
+      let actual = Simd::new(left).simd_lt(right);
 
       assert!(
         actual == expected,
@@ -1416,9 +1409,7 @@ fn test_simd_lt_scalar() {
             if left[i] < right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpLt::simd_lt(Simd::new(left), right);
+      let actual = Simd::new(left).simd_lt(right);
 
       assert!(
         actual == expected,
@@ -1519,9 +1510,7 @@ fn test_simd_gt_scalar() {
             if left[i] > right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpGt::simd_gt(Simd::new(left), right);
+      let actual = Simd::new(left).simd_gt(right);
 
       assert!(
         actual == expected,
@@ -1538,9 +1527,7 @@ fn test_simd_gt_scalar() {
             if left[i] > right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpGt::simd_gt(Simd::new(left), right);
+      let actual = Simd::new(left).simd_gt(right);
 
       assert!(
         actual == expected,
@@ -1652,9 +1639,7 @@ fn test_simd_le_scalar() {
             if left[i] <= right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpLe::simd_le(Simd::new(left), right);
+      let actual = Simd::new(left).simd_le(right);
 
       assert!(
         actual == expected,
@@ -1766,9 +1751,7 @@ fn test_simd_ge_scalar() {
             if left[i] >= right { !0 } else { 0 }
           },
         ));
-      // Some integers have inherit functions shadowing the trait implementation
-      // that do not support scalars.
-      let actual = CmpGe::simd_ge(Simd::new(left), right);
+      let actual = Simd::new(left).simd_ge(right);
 
       assert!(
         actual == expected,

@@ -273,14 +273,25 @@ macro_rules! impl_shr_t_for_u64x4 {
 }
 impl_shr_t_for_u64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+#[expect(deprecated)]
 impl CmpEq for u64x4 {
   type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
-    Self::simd_eq(self, rhs)
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for u64x4 {
   type Output = Self;
   #[inline]
@@ -298,6 +309,7 @@ impl CmpNe for u64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for u64x4 {
   type Output = Self;
   #[inline]
@@ -315,6 +327,7 @@ impl CmpLe for u64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for u64x4 {
   type Output = Self;
   #[inline]
@@ -332,46 +345,11 @@ impl CmpGe for u64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for u64x4 {
   type Output = Self;
   #[inline]
   fn simd_gt(self, rhs: Self) -> Self::Output {
-    Self::simd_gt(self, rhs)
-  }
-}
-
-impl CmpLt for u64x4 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    // no lt, so just call gt with swapped args
-    Self::simd_gt(rhs, self)
-  }
-}
-
-impl u64x4 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u64; 4]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-  #[inline]
-  #[must_use]
-  pub fn simd_eq(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn simd_gt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -385,13 +363,26 @@ impl u64x4 {
       }
     }
   }
+}
 
+#[expect(deprecated)]
+impl CmpLt for u64x4 {
+  type Output = Self;
   #[inline]
-  #[must_use]
-  pub fn simd_lt(self, rhs: Self) -> Self {
+  fn simd_lt(self, rhs: Self) -> Self::Output {
     // lt is just gt the other way around
     rhs.simd_gt(self)
   }
+}
+
+impl u64x4 {
+  #[inline]
+  #[must_use]
+  pub const fn new(array: [u64; 4]) -> Self {
+    unsafe { core::mem::transmute(array) }
+  }
+
+  simd_comparison_fns!();
 
   #[inline]
   #[must_use]

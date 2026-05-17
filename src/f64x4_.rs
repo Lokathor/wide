@@ -280,6 +280,7 @@ impl BitXor for f64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for f64x4 {
   type Output = Self;
   #[inline]
@@ -297,6 +298,7 @@ impl CmpEq for f64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for f64x4 {
   type Output = Self;
   #[inline]
@@ -314,6 +316,7 @@ impl CmpGe for f64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for f64x4 {
   type Output = Self;
   #[inline]
@@ -331,6 +334,7 @@ impl CmpGt for f64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for f64x4 {
   type Output = Self;
   #[inline]
@@ -348,6 +352,7 @@ impl CmpNe for f64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for f64x4 {
   type Output = Self;
   #[inline]
@@ -365,6 +370,7 @@ impl CmpLe for f64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for f64x4 {
   type Output = Self;
   #[inline]
@@ -388,6 +394,9 @@ impl f64x4 {
   pub const fn new(array: [f64; 4]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

@@ -319,6 +319,7 @@ impl Shl<u32x8> for u32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for u32x8 {
   type Output = Self;
   /// Element-wise equality comparison.
@@ -350,6 +351,7 @@ impl CmpEq for u32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for u32x8 {
   type Output = Self;
   /// Element-wise greater-than comparison.
@@ -385,6 +387,7 @@ impl CmpGt for u32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for u32x8 {
   type Output = Self;
   /// Element-wise less-than comparison.
@@ -410,6 +413,7 @@ impl CmpLt for u32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for u32x8 {
   type Output = Self;
   /// Element-wise not-equal comparison.
@@ -432,6 +436,7 @@ impl CmpNe for u32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for u32x8 {
   type Output = Self;
   /// Element-wise greater-than-or-equal comparison.
@@ -458,6 +463,7 @@ impl CmpGe for u32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for u32x8 {
   type Output = Self;
   /// Element-wise less-than-or-equal comparison.
@@ -490,6 +496,8 @@ impl u32x8 {
   pub const fn new(array: [u32; 8]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
 
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
   /// result. Useful for implementing divide constant value (see `t_usefulness`

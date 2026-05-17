@@ -543,14 +543,43 @@ impl BitXor for u8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for u8x16 {
   type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
-    Self::simd_eq(self, rhs)
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u8x16_eq(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vceqq_u8(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] == rhs.arr[0] { u8::MAX } else { 0 },
+          if self.arr[1] == rhs.arr[1] { u8::MAX } else { 0 },
+          if self.arr[2] == rhs.arr[2] { u8::MAX } else { 0 },
+          if self.arr[3] == rhs.arr[3] { u8::MAX } else { 0 },
+          if self.arr[4] == rhs.arr[4] { u8::MAX } else { 0 },
+          if self.arr[5] == rhs.arr[5] { u8::MAX } else { 0 },
+          if self.arr[6] == rhs.arr[6] { u8::MAX } else { 0 },
+          if self.arr[7] == rhs.arr[7] { u8::MAX } else { 0 },
+          if self.arr[8] == rhs.arr[8] { u8::MAX } else { 0 },
+          if self.arr[9] == rhs.arr[9] { u8::MAX } else { 0 },
+          if self.arr[10] == rhs.arr[10] { u8::MAX } else { 0 },
+          if self.arr[11] == rhs.arr[11] { u8::MAX } else { 0 },
+          if self.arr[12] == rhs.arr[12] { u8::MAX } else { 0 },
+          if self.arr[13] == rhs.arr[13] { u8::MAX } else { 0 },
+          if self.arr[14] == rhs.arr[14] { u8::MAX } else { 0 },
+          if self.arr[15] == rhs.arr[15] { u8::MAX } else { 0 },
+        ]}
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for u8x16 {
   type Output = Self;
   #[inline]
@@ -586,79 +615,11 @@ impl CmpNe for u8x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for u8x16 {
   type Output = Self;
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
-    Self::simd_lt(self, rhs)
-  }
-}
-
-impl CmpLe for u8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    Self::simd_le(self, rhs)
-  }
-}
-
-impl CmpGe for u8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    Self::simd_ge(self, rhs)
-  }
-}
-
-impl CmpGt for u8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    Self::simd_gt(self, rhs)
-  }
-}
-
-impl u8x16 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u8; 16]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-  #[inline]
-  #[must_use]
-  pub fn simd_eq(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u8x16_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vceqq_u8(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] == rhs.arr[0] { u8::MAX } else { 0 },
-          if self.arr[1] == rhs.arr[1] { u8::MAX } else { 0 },
-          if self.arr[2] == rhs.arr[2] { u8::MAX } else { 0 },
-          if self.arr[3] == rhs.arr[3] { u8::MAX } else { 0 },
-          if self.arr[4] == rhs.arr[4] { u8::MAX } else { 0 },
-          if self.arr[5] == rhs.arr[5] { u8::MAX } else { 0 },
-          if self.arr[6] == rhs.arr[6] { u8::MAX } else { 0 },
-          if self.arr[7] == rhs.arr[7] { u8::MAX } else { 0 },
-          if self.arr[8] == rhs.arr[8] { u8::MAX } else { 0 },
-          if self.arr[9] == rhs.arr[9] { u8::MAX } else { 0 },
-          if self.arr[10] == rhs.arr[10] { u8::MAX } else { 0 },
-          if self.arr[11] == rhs.arr[11] { u8::MAX } else { 0 },
-          if self.arr[12] == rhs.arr[12] { u8::MAX } else { 0 },
-          if self.arr[13] == rhs.arr[13] { u8::MAX } else { 0 },
-          if self.arr[14] == rhs.arr[14] { u8::MAX } else { 0 },
-          if self.arr[15] == rhs.arr[15] { u8::MAX } else { 0 },
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn simd_lt(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -692,9 +653,13 @@ impl u8x16 {
       }
     }
   }
+}
+
+#[expect(deprecated)]
+impl CmpLe for u8x16 {
+  type Output = Self;
   #[inline]
-  #[must_use]
-  pub fn simd_le(self, rhs: Self) -> Self {
+  fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -730,9 +695,13 @@ impl u8x16 {
       }
     }
   }
+}
+
+#[expect(deprecated)]
+impl CmpGe for u8x16 {
+  type Output = Self;
   #[inline]
-  #[must_use]
-  pub fn simd_ge(self, rhs: Self) -> Self {
+  fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -768,9 +737,13 @@ impl u8x16 {
       }
     }
   }
+}
+
+#[expect(deprecated)]
+impl CmpGt for u8x16 {
+  type Output = Self;
   #[inline]
-  #[must_use]
-  pub fn simd_gt(self, rhs: Self) -> Self {
+  fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -804,6 +777,17 @@ impl u8x16 {
       }
     }
   }
+}
+
+impl u8x16 {
+  #[inline]
+  #[must_use]
+  pub const fn new(array: [u8; 16]) -> Self {
+    unsafe { core::mem::transmute(array) }
+  }
+
+  simd_comparison_fns!();
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

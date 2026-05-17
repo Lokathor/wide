@@ -383,6 +383,7 @@ impl Shl<i32x4> for i32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for i32x4 {
   type Output = Self;
   #[inline]
@@ -406,6 +407,7 @@ impl CmpEq for i32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for i32x4 {
   type Output = Self;
   #[inline]
@@ -429,6 +431,7 @@ impl CmpGt for i32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for i32x4 {
   type Output = Self;
   #[inline]
@@ -452,6 +455,7 @@ impl CmpLt for i32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for i32x4 {
   type Output = Self;
   #[inline]
@@ -475,6 +479,7 @@ impl CmpNe for i32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for i32x4 {
   type Output = Self;
   #[inline]
@@ -498,6 +503,7 @@ impl CmpLe for i32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for i32x4 {
   type Output = Self;
   #[inline]
@@ -527,6 +533,9 @@ impl i32x4 {
   pub const fn new(array: [i32; 4]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

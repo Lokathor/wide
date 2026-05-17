@@ -1,7 +1,4 @@
-use wide::{
-  CmpEq, CmpLe, CmpLt, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8,
-  i32x16,
-};
+use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
 

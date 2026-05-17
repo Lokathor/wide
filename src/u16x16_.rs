@@ -283,6 +283,7 @@ macro_rules! impl_shr_t_for_u16x16 {
 }
 impl_shr_t_for_u16x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+#[expect(deprecated)]
 impl CmpEq for u16x16 {
   type Output = Self;
   #[inline]
@@ -300,14 +301,30 @@ impl CmpEq for u16x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for u16x16 {
   type Output = Self;
   #[inline]
   fn simd_gt(self, rhs: Self) -> Self::Output {
-    Self::simd_gt(self, rhs)
+    pick! {
+      if #[cfg(target_feature = "avx2")] {
+        let bias = m256i::from([0x8000u16; 16]);
+        let a_biased = sub_i16_m256i(self.avx2, bias);
+        let b_biased = sub_i16_m256i(rhs.avx2, bias);
+        let mask = cmp_gt_mask_i16_m256i(a_biased, b_biased);
+
+        Self { avx2: mask }
+      } else {
+        Self {
+          a: self.a.simd_gt(rhs.a),
+          b: self.b.simd_gt(rhs.b),
+        }
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for u16x16 {
   type Output = Self;
   #[inline]
@@ -317,6 +334,7 @@ impl CmpLt for u16x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for u16x16 {
   type Output = Self;
   #[inline]
@@ -334,6 +352,7 @@ impl CmpNe for u16x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for u16x16 {
   type Output = Self;
   #[inline]
@@ -351,6 +370,7 @@ impl CmpLe for u16x16 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for u16x16 {
   type Output = Self;
   #[inline]
@@ -430,6 +450,8 @@ impl u16x16 {
     unsafe { core::mem::transmute(array) }
   }
 
+  simd_comparison_fns!();
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
@@ -463,26 +485,6 @@ impl u16x16 {
   pub fn reduce_min(self) -> u16 {
     let array: [u16x8; 2] = cast(self);
     array[0].min(array[1]).reduce_min()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn simd_gt(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature = "avx2")] {
-        let bias = m256i::from([0x8000u16; 16]);
-        let a_biased = sub_i16_m256i(self.avx2, bias);
-        let b_biased = sub_i16_m256i(rhs.avx2, bias);
-        let mask = cmp_gt_mask_i16_m256i(a_biased, b_biased);
-
-        Self { avx2: mask }
-      } else {
-        Self {
-          a: self.a.simd_gt(rhs.a),
-          b: self.b.simd_gt(rhs.b),
-        }
-      }
-    }
   }
 
   #[inline]

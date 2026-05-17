@@ -224,6 +224,7 @@ where
     + PartialOrd,
 {
   /// tests the traits of integer SIMD types
+  #[expect(deprecated)]
   fn test_basic_traits_int()
   where
     V: std::ops::Add<Output = V>
@@ -299,6 +300,7 @@ where
   }
 
   /// tests the basic traits according to floating point operations
+  #[expect(deprecated)]
   fn test_basic_traits_float()
   where
     V: std::ops::Add<Output = V>
@@ -330,6 +332,7 @@ where
   }
 
   /// tests the traits of SIMD comparison operations
+  #[expect(deprecated)]
   fn test_basic_traits_simd_cmp()
   where
     V: wide::CmpGt<Output = V>
@@ -354,6 +357,7 @@ where
   }
 
   /// tests the traits of SIMD comparison operations ge and le
+  #[expect(deprecated)]
   fn test_basic_traits_simd_cmp_ge_le()
   where
     V: wide::CmpGe<Output = V> + wide::CmpLe<Output = V>,

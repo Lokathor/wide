@@ -381,31 +381,67 @@ impl Shl<u32x4> for u32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for u32x4 {
   type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
-    Self::simd_eq(self, rhs)
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_eq(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vceqq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] == rhs.arr[0] { u32::MAX } else { 0 },
+          if self.arr[1] == rhs.arr[1] { u32::MAX } else { 0 },
+          if self.arr[2] == rhs.arr[2] { u32::MAX } else { 0 },
+          if self.arr[3] == rhs.arr[3] { u32::MAX } else { 0 },
+        ]}
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for u32x4 {
   type Output = Self;
   #[inline]
   fn simd_gt(self, rhs: Self) -> Self::Output {
-    Self::simd_gt(self, rhs)
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // no unsigned less than so inverting the high bit will get the correct result
+        let h = u32x4::splat(1 << 31);
+        Self { sse: cmp_gt_mask_i32_m128i((self ^ h).sse, (rhs ^ h).sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_gt(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {Self { neon: vcgtq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] > rhs.arr[0] { u32::MAX } else { 0 },
+          if self.arr[1] > rhs.arr[1] { u32::MAX } else { 0 },
+          if self.arr[2] > rhs.arr[2] { u32::MAX } else { 0 },
+          if self.arr[3] > rhs.arr[3] { u32::MAX } else { 0 },
+        ]}
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for u32x4 {
   type Output = Self;
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
-    // no gt, so just reverse to get same answer
-    Self::simd_gt(rhs, self)
+    // lt is just gt the other way around
+    rhs.simd_gt(self)
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for u32x4 {
   type Output = Self;
   #[inline]
@@ -429,6 +465,7 @@ impl CmpNe for u32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for u32x4 {
   type Output = Self;
   #[inline]
@@ -452,6 +489,7 @@ impl CmpLe for u32x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for u32x4 {
   type Output = Self;
   #[inline]
@@ -481,54 +519,8 @@ impl u32x4 {
   pub const fn new(array: [u32; 4]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
-  #[inline]
-  #[must_use]
-  pub fn simd_eq(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vceqq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] == rhs.arr[0] { u32::MAX } else { 0 },
-          if self.arr[1] == rhs.arr[1] { u32::MAX } else { 0 },
-          if self.arr[2] == rhs.arr[2] { u32::MAX } else { 0 },
-          if self.arr[3] == rhs.arr[3] { u32::MAX } else { 0 },
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn simd_gt(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // no unsigned less than so inverting the high bit will get the correct result
-        let h = u32x4::splat(1 << 31);
-        Self { sse: cmp_gt_mask_i32_m128i((self ^ h).sse, (rhs ^ h).sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_gt(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {Self { neon: vcgtq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] > rhs.arr[0] { u32::MAX } else { 0 },
-          if self.arr[1] > rhs.arr[1] { u32::MAX } else { 0 },
-          if self.arr[2] > rhs.arr[2] { u32::MAX } else { 0 },
-          if self.arr[3] > rhs.arr[3] { u32::MAX } else { 0 },
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn simd_lt(self, rhs: Self) -> Self {
-    // lt is just gt the other way around
-    rhs.simd_gt(self)
-  }
+
+  simd_comparison_fns!();
 
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
   /// result. Useful for implementing divide constant value (see `t_usefulness`

@@ -272,6 +272,7 @@ impl BitXor for u8x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for u8x32 {
   type Output = Self;
   #[inline]
@@ -289,6 +290,7 @@ impl CmpEq for u8x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for u8x32 {
   type Output = Self;
   #[inline]
@@ -306,6 +308,7 @@ impl CmpNe for u8x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for u8x32 {
   type Output = Self;
   #[inline]
@@ -324,6 +327,7 @@ impl CmpLt for u8x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for u8x32 {
   type Output = Self;
   #[inline]
@@ -343,6 +347,7 @@ impl CmpLe for u8x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for u8x32 {
   type Output = Self;
   #[inline]
@@ -362,6 +367,7 @@ impl CmpGe for u8x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for u8x32 {
   type Output = Self;
   #[inline]
@@ -403,6 +409,9 @@ impl u8x32 {
   pub const fn new(array: [u8; 32]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {

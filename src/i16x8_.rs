@@ -435,6 +435,7 @@ macro_rules! impl_shr_t_for_i16x8 {
 }
 impl_shr_t_for_i16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+#[expect(deprecated)]
 impl CmpEq for i16x8 {
   type Output = Self;
   #[inline]
@@ -462,6 +463,7 @@ impl CmpEq for i16x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for i16x8 {
   type Output = Self;
   #[inline]
@@ -489,6 +491,7 @@ impl CmpGt for i16x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for i16x8 {
   type Output = Self;
   #[inline]
@@ -516,6 +519,7 @@ impl CmpLt for i16x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for i16x8 {
   type Output = Self;
   #[inline]
@@ -543,6 +547,7 @@ impl CmpNe for i16x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for i16x8 {
   type Output = Self;
   #[inline]
@@ -570,6 +575,7 @@ impl CmpLe for i16x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for i16x8 {
   type Output = Self;
   #[inline]
@@ -603,6 +609,8 @@ impl i16x8 {
   pub const fn new(array: [i16; 8]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
 
   #[inline]
   #[must_use]

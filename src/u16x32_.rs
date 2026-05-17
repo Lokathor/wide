@@ -266,30 +266,61 @@ macro_rules! impl_shr_t_for_u16x32 {
 }
 impl_shr_t_for_u16x32!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+#[expect(deprecated)]
 impl CmpEq for u16x32 {
   type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
-    Self::simd_eq(self, rhs)
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for u16x32 {
   type Output = Self;
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
-    Self::simd_lt(self, rhs)
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : rhs.a.simd_gt(self.a),
+          b : rhs.b.simd_gt(self.b),
+        }
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for u16x32 {
   type Output = Self;
   #[inline]
   fn simd_gt(self, rhs: Self) -> Self::Output {
-    Self::simd_gt(self, rhs)
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for u16x32 {
   type Output = Self;
   #[inline]
@@ -307,6 +338,7 @@ impl CmpNe for u16x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for u16x32 {
   type Output = Self;
   #[inline]
@@ -324,6 +356,7 @@ impl CmpLe for u16x32 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for u16x32 {
   type Output = Self;
   #[inline]
@@ -365,50 +398,7 @@ impl u16x32 {
     unsafe { core::mem::transmute(array) }
   }
 
-  #[inline]
-  #[must_use]
-  pub fn simd_eq(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn simd_gt(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn simd_lt(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_u16_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : rhs.a.simd_gt(self.a),
-          b : rhs.b.simd_gt(self.b),
-        }
-      }
-    }
-  }
+  simd_comparison_fns!();
 
   #[inline]
   #[must_use]
