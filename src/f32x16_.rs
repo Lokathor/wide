@@ -23,6 +23,13 @@ impl f32x16 {
   const_f32_as_f32x16!(ONE, 1.0);
   const_f32_as_f32x16!(HALF, 0.5);
   const_f32_as_f32x16!(ZERO, 0.0);
+  const_f32_as_f32x16!(EPSILON, f32::EPSILON);
+  const_f32_as_f32x16!(MIN, f32::MIN);
+  const_f32_as_f32x16!(MIN_POSITIVE, f32::MIN_POSITIVE);
+  const_f32_as_f32x16!(MAX, f32::MAX);
+  const_f32_as_f32x16!(NAN, f32::NAN);
+  const_f32_as_f32x16!(INFINITY, f32::INFINITY);
+  const_f32_as_f32x16!(NEG_INFINITY, f32::NEG_INFINITY);
   const_f32_as_f32x16!(E, core::f32::consts::E);
   const_f32_as_f32x16!(FRAC_1_PI, core::f32::consts::FRAC_1_PI);
   const_f32_as_f32x16!(FRAC_2_PI, core::f32::consts::FRAC_2_PI);
