@@ -17,9 +17,9 @@ use std::{num::Wrapping, ops::ShlAssign};
 
 use wide::AlignTo;
 
-mod t_simd;
-mod t_simd_float;
-mod t_simd_integer;
-mod t_simd_signed;
-mod t_usefulness;
+mod simd;
+mod simd_float;
+mod simd_integer;
+mod simd_signed;
+mod usefulness;
 mod utils;
