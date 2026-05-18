@@ -1510,6 +1510,12 @@ fn test_exp2() {
       1.5,
       2.0,
       10.4,
+      100.5,
+      127.0,
+      -149.0,
+      1000.2,
+      1023.0,
+      -1074.0,
       2000.0,
       T::NAN,
       T::INFINITY,
@@ -1518,8 +1524,12 @@ fn test_exp2() {
       let expected = Simd::new(value.map(T::exp2));
       let actual = Simd::new(value).exp2();
 
+      let tol = if size_of::<T>() == 8 { 1e-12 } else { 1e-7 };
+      let min_tol = if size_of::<T>() == 8 { 5e-324 } else { 1e-45 };
       assert!(
-        ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
+        ((actual - expected)
+          .abs()
+          .simd_le((expected.abs() * tol).max(Simd::splat(min_tol)))
           | actual.simd_eq(expected)
           | actual.is_nan() & expected.is_nan())
         .all(),
