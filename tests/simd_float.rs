@@ -1,6 +1,5 @@
 use wide::{
-  CmpEq, CmpLe, CmpLt, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8,
-  i32x16,
+  CmpEq, CmpLe, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16,
 };
 
 use bytemuck::cast;
@@ -1542,6 +1541,7 @@ fn test_exp2() {
 #[test]
 fn test_ln() {
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for value in simd_chunks!([
       0.1,
       0.5,
@@ -1574,6 +1574,7 @@ fn test_ln() {
 #[test]
 fn test_log2() {
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for value in simd_chunks!([
       0.1,
       0.5,
@@ -1606,6 +1607,7 @@ fn test_log2() {
 #[test]
 fn test_log10() {
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for value in simd_chunks!([
       0.1,
       0.5,
@@ -1653,6 +1655,7 @@ fn test_pow_simd() {
   // )
 
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for [value, n] in simd_chunks!(
       [1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, 5.1],
       [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 29.0],
@@ -1689,6 +1692,7 @@ fn test_powf() {
 
   for_simd_types!(|T: Float, N| {
     for value in simd_chunks!([1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3]) {
+      #[expect(clippy::approx_constant)]
       for n in [
         0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 2.7,
         4.0, -3.0, 29.0,
