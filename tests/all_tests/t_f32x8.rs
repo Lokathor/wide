@@ -1046,13 +1046,13 @@ fn impl_f32x8_exp() {
 
 #[test]
 fn impl_f32x8_exp2() {
-  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4] {
+  for x in [-2.0, -1.1, 0.0, 1.3, 1.5, 2.0, 10.4, 100.5, 127.0, -149.0] {
     let _: f32 = x;
     let expected = f32x8::from(x.exp2());
     let actual = f32x8::from(x).exp2();
     let diff_from_std: [f32; 8] = cast((actual - expected).abs());
     println!("x: {x:?}, expected: {expected:?}, actual: {actual:?}");
-    assert!(diff_from_std[0] < expected.to_array()[0] * 1e-7);
+    assert!(diff_from_std[0] <= (expected.to_array()[0] * 1e-7).max(1e-45));
   }
 }
 

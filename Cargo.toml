@@ -38,3 +38,7 @@ criterion = { version = "0.7.0", default-features = false }
 [[bench]]
 name = "fma_benchmarks"
 harness = false
+
+[[bench]]
+name = "math_benchmarks"
+harness = false

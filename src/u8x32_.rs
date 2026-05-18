@@ -140,8 +140,8 @@ macro_rules! impl_shl_scalar {
       /// Shifts all lanes by a uniform value.
       ///
       /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-      /// of the type. (same as `wrapping_shl`)
+      /// high-order bits of `rhs` that would cause the shift to exceed the
+      /// bitwidth of the type. (same as `wrapping_shl`)
       #[inline]
       fn shl(self, rhs: $Rhs) -> Self::Output {
         // For x86, this technically can be done explicitly by converting
@@ -171,9 +171,9 @@ macro_rules! impl_shr_scalar {
 
       /// Shifts all lanes by a uniform value.
       ///
-      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-      /// of the type. (same as `wrapping_shr`)
+      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes
+      /// any high-order bits of `rhs` that would cause the shift to exceed
+      /// the bitwidth of the type. (same as `wrapping_shr`)
       #[inline]
       fn shr(self, rhs: $Rhs) -> Self::Output {
         // For x86, this technically can be done explicitly by converting
