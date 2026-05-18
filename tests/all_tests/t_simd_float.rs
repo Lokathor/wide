@@ -1,5 +1,7 @@
 use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
+use bytemuck::cast;
+
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
 
 #[test]
@@ -277,6 +279,64 @@ fn test_clamp() {
       let expected =
         Simd::new(std::array::from_fn(|i| value[i].clamp(min[i], max[i])));
       let actual = Simd::new(value).clamp(Simd::new(min), Simd::new(max));
+
+      assert_eq!(
+        actual ^ expected,
+        Simd::ZERO,
+        "expected: {expected:?}\n  actual: {actual:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_clamp_nan_bounds() {
+  for_simd_types!(|T: Float, N| {
+    // 1. Test min > max results in min
+    let val = Simd::splat(5.0);
+    let min = Simd::splat(10.0);
+    let max = Simd::splat(2.0);
+    let res = val.clamp(min, max);
+    let res_arr: [T; N] = cast(res);
+    for x in res_arr {
+      assert_eq!(x, 10.0);
+    }
+
+    // 2. Test NaN propagation
+    let nan = Simd::splat(T::NAN);
+    let five = Simd::splat(5.0);
+    let two = Simd::splat(2.0);
+    let ten = Simd::splat(10.0);
+
+    // self is NaN
+    let res_arr: [T; N] = cast(nan.clamp(two, ten));
+    for x in res_arr {
+      assert!(x.is_nan());
+    }
+
+    // min is NaN
+    let res_arr: [T; N] = cast(five.clamp(nan, ten));
+    for x in res_arr {
+      assert!(x.is_nan());
+    }
+
+    // max is NaN
+    let res_arr: [T; N] = cast(five.clamp(two, nan));
+    for x in res_arr {
+      assert!(x.is_nan());
+    }
+  });
+}
+
+#[test]
+fn test_fast_clamp() {
+  for_simd_types!(|T: Float, N| {
+    for [value, min, max] in
+      simd_chunks!([5.0, 10.0, 10.0], [3.0, 11.0, 5.0], [8.0, 14.0, 9.0],)
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| value[i].clamp(min[i], max[i])));
+      let actual = Simd::new(value).fast_clamp(Simd::new(min), Simd::new(max));
 
       assert_eq!(
         actual ^ expected,
@@ -1721,4 +1781,560 @@ fn test_from_i32x4_lower2() {
   let expected = f64x2::new([1.0, 2.0]);
   let actual = f64x2::from_i32x4_lower2(value);
   assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_exp_m1() {
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      -2.0,
+      -1.0,
+      -0.5,
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      T::NAN,
+      T::INFINITY,
+      T::NEG_INFINITY,
+    ]) {
+      let expected = Simd::new(value.map(T::exp_m1));
+      let actual = Simd::new(value).exp_m1();
+      let tol = expected.abs().fast_max(Simd::splat(1 as T))
+        * Simd::splat(T::EPSILON * 2.0);
+
+      assert!(
+        ((actual - expected).abs().simd_le(tol)
+          | actual.simd_eq(expected)
+          | actual.is_nan() & expected.is_nan())
+        .all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+      );
+    }
+
+    let mut x = 0xdead_beef_u64;
+    let tol = if std::mem::size_of::<T>() == 4 {
+      f32::EPSILON as f64
+    } else {
+      f64::EPSILON
+    };
+    let max_input = if std::mem::size_of::<T>() == 4 { 88.37 } else { 709.4 };
+
+    for _ in 0..2000 {
+      x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+      let u = if std::mem::size_of::<T>() == 4 {
+        f32::from_bits(x as u32) as f64
+      } else {
+        f64::from_bits(x)
+      };
+
+      let v = if u.is_finite() && u.abs() <= max_input { u } else { 0.0 };
+      let t_v = v as T;
+      let expected = Simd::from(T::exp_m1(t_v));
+      let actual = Simd::from(t_v).exp_m1();
+
+      let diff = (actual - expected).abs();
+      let max_err =
+        expected.abs().fast_max(Simd::from(1.0 as T)) * Simd::from(tol as T);
+
+      assert!(
+        diff.simd_le(max_err).all(),
+        "exp_m1({v:e}) actual: {actual:?} expected: {expected:?}"
+      );
+    }
+
+    // Verify fast-exit for deeply negative values: exp_m1(x) = -1.0 exactly
+    let deep: T =
+      if std::mem::size_of::<T>() == 4 { (-200.0) as T } else { (-800.0) as T };
+    let input = Simd::splat(deep);
+    let result = input.exp_m1().to_array();
+    for &v in result.iter() {
+      assert!(
+        (v - (-1.0 as T)).abs() <= T::EPSILON * 1.0,
+        "exp_m1({deep:e}) != -1.0, got {v:e}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_ln_1p() {
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      -0.5,
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      10.0,
+      T::NAN,
+      T::INFINITY,
+      T::NEG_INFINITY,
+    ]) {
+      let expected = Simd::new(value.map(T::ln_1p));
+      let actual = Simd::new(value).ln_1p();
+      let tol = expected.abs().fast_max(Simd::splat(1 as T))
+        * Simd::splat(T::EPSILON * 1.0);
+
+      assert!(
+        ((actual - expected).abs().simd_le(tol)
+          | actual.simd_eq(expected)
+          | actual.is_nan() & expected.is_nan())
+        .all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+      );
+    }
+
+    let mut x = 0xcafe_babe_u64;
+    let tol = if std::mem::size_of::<T>() == 4 {
+      f32::EPSILON as f64
+    } else {
+      f64::EPSILON
+    };
+    let max_input =
+      if std::mem::size_of::<T>() == 4 { f32::MAX as f64 } else { f64::MAX };
+
+    for _ in 0..2000 {
+      x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+      let u = if std::mem::size_of::<T>() == 4 {
+        f32::from_bits(x as u32) as f64
+      } else {
+        f64::from_bits(x)
+      };
+
+      let v =
+        if u.is_finite() && u > -0.999 && u < max_input { u } else { 0.0 };
+      let t_v = v as T;
+      let expected = Simd::from(T::ln_1p(t_v));
+      let actual = Simd::from(t_v).ln_1p();
+
+      let diff = (actual - expected).abs();
+      let max_err =
+        expected.abs().fast_max(Simd::from(1.0 as T)) * Simd::from(tol as T);
+
+      assert!(
+        diff.simd_le(max_err).all(),
+        "ln_1p({v:e}) actual: {actual:?} expected: {expected:?}"
+      );
+    }
+
+    for &v in &[1e-16, 1e-14, 1e-12, 1e-10, 1e-8, 0.01, 0.1, 1.0] {
+      let t_v = v as T;
+      let expected = Simd::from(T::ln_1p(t_v));
+      let actual = Simd::from(t_v).ln_1p();
+      let diff = (actual - expected).abs();
+      let limit =
+        if std::mem::size_of::<T>() == 4 { 1e-6 as T } else { 1e-12 as T };
+      assert!(
+        diff.simd_le(Simd::from(limit)).all(),
+        "ln_1p({v:e}) off by {diff:?}"
+      );
+    }
+
+    // Edge cases: ln_1p(-1) → -inf, ln_1p(x < -1) → NaN, ln_1p(-0.0) → -0.0
+    let neg_one = Simd::splat(-1.0 as T);
+    let result = neg_one.ln_1p().to_array();
+    for &v in result.iter() {
+      assert!(v == T::NEG_INFINITY, "ln_1p(-1) should be -inf, got {v:e}");
+    }
+
+    let neg_two = Simd::splat(-2.0 as T);
+    let result = neg_two.ln_1p().to_array();
+    for &v in result.iter() {
+      assert!(v.is_nan(), "ln_1p(-2) should be NaN, got {v:e}");
+    }
+
+    let neg_zero = Simd::splat(-T::from_bits(0));
+    let result = neg_zero.ln_1p().to_array();
+    for &v in result.iter() {
+      assert!(
+        v.is_sign_negative() && v == T::from_bits(0),
+        "ln_1p(-0.0) should be -0.0, got {v:e}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_sinh() {
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      -2.0,
+      -1.0,
+      -0.5,
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      T::NAN,
+      T::INFINITY,
+      T::NEG_INFINITY,
+    ]) {
+      let expected = Simd::new(value.map(T::sinh));
+      let actual = Simd::new(value).sinh();
+      let tol = expected.abs().fast_max(Simd::splat(1 as T))
+        * Simd::splat(T::EPSILON * 1.0);
+
+      assert!(
+        ((actual - expected).abs().simd_le(tol)
+          | actual.simd_eq(expected)
+          | actual.is_nan() & expected.is_nan())
+        .all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+      );
+    }
+
+    let mut x = 0xfeed_face_u64;
+    let tol = if std::mem::size_of::<T>() == 4 {
+      f32::EPSILON as f64
+    } else {
+      f64::EPSILON
+    };
+    let max_input = if std::mem::size_of::<T>() == 4 { 88.37 } else { 710.0 };
+
+    for _ in 0..2000 {
+      x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+      let u = if std::mem::size_of::<T>() == 4 {
+        f32::from_bits(x as u32) as f64
+      } else {
+        f64::from_bits(x)
+      };
+
+      let v = if u.is_finite() && u.abs() <= max_input { u } else { 0.0 };
+      let t_v = v as T;
+      let expected = Simd::from(T::sinh(t_v));
+      let actual = Simd::from(t_v).sinh();
+
+      let diff = (actual - expected).abs();
+      let max_err =
+        expected.abs().fast_max(Simd::from(1.0 as T)) * Simd::from(tol as T);
+
+      assert!(
+        diff.simd_le(max_err).all(),
+        "sinh({v:e}) actual: {actual:?} expected: {expected:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_cosh() {
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      -2.0,
+      -1.0,
+      -0.5,
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      T::NAN,
+      T::INFINITY,
+      T::NEG_INFINITY,
+    ]) {
+      let expected = Simd::new(value.map(T::cosh));
+      let actual = Simd::new(value).cosh();
+      let tol = expected.abs().fast_max(Simd::splat(1 as T))
+        * Simd::splat(T::EPSILON * 1.0);
+
+      assert!(
+        ((actual - expected).abs().simd_le(tol)
+          | actual.simd_eq(expected)
+          | actual.is_nan() & expected.is_nan())
+        .all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+      );
+    }
+
+    let mut x = 0xbad_cafe_u64;
+    let tol = if std::mem::size_of::<T>() == 4 {
+      f32::EPSILON as f64
+    } else {
+      f64::EPSILON
+    };
+    let max_input = if std::mem::size_of::<T>() == 4 { 88.37 } else { 710.0 };
+
+    for _ in 0..2000 {
+      x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+      let u = if std::mem::size_of::<T>() == 4 {
+        f32::from_bits(x as u32) as f64
+      } else {
+        f64::from_bits(x)
+      };
+
+      let v = if u.is_finite() && u.abs() <= max_input { u } else { 0.0 };
+      let t_v = v as T;
+      let expected = Simd::from(T::cosh(t_v));
+      let actual = Simd::from(t_v).cosh();
+
+      let diff = (actual - expected).abs();
+      let max_err =
+        expected.abs().fast_max(Simd::from(1.0 as T)) * Simd::from(tol as T);
+
+      assert!(
+        diff.simd_le(max_err).all(),
+        "cosh({v:e}) actual: {actual:?} expected: {expected:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_tanh() {
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      -2.0,
+      -1.0,
+      -0.5,
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      T::NAN,
+      T::INFINITY,
+      T::NEG_INFINITY,
+    ]) {
+      let expected = Simd::new(value.map(T::tanh));
+      let actual = Simd::new(value).tanh();
+      let tol = expected.abs().fast_max(Simd::splat(1 as T))
+        * Simd::splat(T::EPSILON * 1.0);
+
+      assert!(
+        ((actual - expected).abs().simd_le(tol)
+          | actual.simd_eq(expected)
+          | actual.is_nan() & expected.is_nan())
+        .all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+      );
+    }
+
+    let mut x = 0x1337_c0de_u64;
+    let tol = if std::mem::size_of::<T>() == 4 {
+      f32::EPSILON as f64
+    } else {
+      f64::EPSILON
+    };
+
+    for _ in 0..2000 {
+      x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+      let u = if std::mem::size_of::<T>() == 4 {
+        f32::from_bits(x as u32) as f64
+      } else {
+        f64::from_bits(x)
+      };
+
+      let v = if u.is_finite() { u } else { 0.0 };
+      let t_v = v as T;
+      let expected = Simd::from(T::tanh(t_v));
+      let actual = Simd::from(t_v).tanh();
+
+      let diff = (actual - expected).abs();
+      let max_err =
+        expected.abs().fast_max(Simd::from(1.0 as T)) * Simd::from(tol as T);
+
+      assert!(
+        diff.simd_le(max_err).all(),
+        "tanh({v:e}) actual: {actual:?} expected: {expected:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_cbrt() {
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      -8.0,
+      -1.0,
+      -0.125,
+      0.0,
+      0.125,
+      1.0,
+      8.0,
+      T::NAN,
+      T::INFINITY,
+      T::NEG_INFINITY,
+    ]) {
+      let expected = Simd::new(value.map(T::cbrt));
+      let actual = Simd::new(value).cbrt();
+      // SLEEF polynomial + 1 Newton step on 1/cbrt + 1 polish on cbrt.
+      // Accumulated roundoff in the scaling (r = e - 3k) and refinement
+      // steps keeps this at 2 ULP worst-case rather than 1 ULP.
+      let tol = expected.abs().fast_max(Simd::splat(1 as T))
+        * Simd::splat(T::EPSILON * 2.0);
+
+      assert!(
+        ((actual - expected).abs().simd_le(tol)
+          | actual.simd_eq(expected)
+          | actual.is_nan() & expected.is_nan())
+        .all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+      );
+    }
+
+    let mut x = 0xcafe_babe_u64;
+    let tol = if std::mem::size_of::<T>() == 4 {
+      f32::EPSILON as f64 * 2.0
+    } else {
+      f64::EPSILON * 2.0
+    };
+
+    for _ in 0..2000 {
+      x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+      let u = if std::mem::size_of::<T>() == 4 {
+        f32::from_bits(x as u32) as f64
+      } else {
+        f64::from_bits(x)
+      };
+
+      let v = if u.is_finite() { u } else { 0.0 };
+      let t_v = v as T;
+      let expected = Simd::from(T::cbrt(t_v));
+      let actual = Simd::from(t_v).cbrt();
+
+      let diff = (actual - expected).abs();
+      let max_err =
+        expected.abs().fast_max(Simd::from(1.0 as T)) * Simd::from(tol as T);
+
+      assert!(
+        diff.simd_le(max_err).all(),
+        "cbrt({v:e}) actual: {actual:?} expected: {expected:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_exp_overflow_boundary() {
+  for_simd_types!(|T: Float, N| {
+    let max_x: T =
+      if std::mem::size_of::<T>() == 4 { 88.723 as T } else { 709.783 as T };
+    let near_max = max_x * (0.999 as T);
+    let over_max = max_x * (1.001 as T);
+
+    for v in [max_x, near_max, over_max, -max_x] {
+      let input = Simd::splat(v);
+      let expected = Simd::splat(T::exp(v));
+      let actual = input.exp();
+      let tol = expected.abs().fast_max(Simd::splat(T::MIN_POSITIVE))
+        * Simd::splat(T::EPSILON * 1.0);
+      assert!(
+        ((actual - expected).abs().simd_le(tol)
+          | actual.simd_eq(expected)
+          | actual.is_nan() & expected.is_nan())
+        .all(),
+        "exp({v:e}) expected: {expected:?} actual: {actual:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_exp_subnormal() {
+  for_simd_types!(|T: Float, N| {
+    let subnormal_input: T =
+      if std::mem::size_of::<T>() == 4 { (-88.0) as T } else { (-710.0) as T };
+    let deeper: T =
+      if std::mem::size_of::<T>() == 4 { (-95.0) as T } else { (-730.0) as T };
+    for v in [subnormal_input, deeper] {
+      let input = Simd::splat(v);
+      let expected = Simd::splat(T::exp(v));
+      let actual = input.exp();
+      let tol = expected.abs().fast_max(Simd::splat(T::MIN_POSITIVE))
+        * Simd::splat(T::EPSILON * 1.0);
+      assert!(
+        (actual - expected).abs().simd_le(tol).all(),
+        "exp({v:e}) = {actual:?} expected {expected:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_math_nan_propagation() {
+  for_simd_types!(|T: Float, N| {
+    let nan = T::NAN;
+    let mut arr = [0.0 as T; N];
+    arr[0] = nan;
+    if N > 1 {
+      arr[1] = 1.0 as T;
+    }
+    let input = Simd::from(arr);
+
+    let result = input.exp().to_array();
+    assert!(result[0].is_nan(), "exp: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "exp: lane 1 finite");
+    }
+
+    let result = input.exp_m1().to_array();
+    assert!(result[0].is_nan(), "exp_m1: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "exp_m1: lane 1 finite");
+    }
+
+    let result = input.ln().to_array();
+    assert!(result[0].is_nan(), "ln: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "ln: lane 1 finite");
+    }
+
+    let result = input.ln_1p().to_array();
+    assert!(result[0].is_nan(), "ln_1p: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "ln_1p: lane 1 finite");
+    }
+
+    let result = input.sinh().to_array();
+    assert!(result[0].is_nan(), "sinh: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "sinh: lane 1 finite");
+    }
+
+    let result = input.cosh().to_array();
+    assert!(result[0].is_nan(), "cosh: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "cosh: lane 1 finite");
+    }
+
+    let result = input.tanh().to_array();
+    assert!(result[0].is_nan(), "tanh: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "tanh: lane 1 finite");
+    }
+
+    let result = input.cbrt().to_array();
+    assert!(result[0].is_nan(), "cbrt: lane 0 NaN");
+    if N > 1 {
+      assert!(!result[1].is_nan(), "cbrt: lane 1 finite");
+    }
+  });
+}
+
+#[test]
+fn test_sign_preservation() {
+  for_simd_types!(|T: Float, N| {
+    let neg_zero = -T::from_bits(0);
+    let input = Simd::splat(neg_zero);
+
+    let result = input.exp_m1().to_array();
+    for &v in result.iter() {
+      assert!(v.is_sign_negative(), "exp_m1(-0.0) should be -0.0, got {v:e}");
+    }
+
+    let result = input.tanh().to_array();
+    for &v in result.iter() {
+      assert!(v.is_sign_negative(), "tanh(-0.0) should be -0.0, got {v:e}");
+    }
+
+    let result = input.cbrt().to_array();
+    for &v in result.iter() {
+      assert!(v.is_sign_negative(), "cbrt(-0.0) should be -0.0, got {v:e}");
+    }
+
+    let result = input.ln_1p().to_array();
+    for &v in result.iter() {
+      assert!(v.is_sign_negative(), "ln_1p(-0.0) should be -0.0, got {v:e}");
+    }
+  });
 }
