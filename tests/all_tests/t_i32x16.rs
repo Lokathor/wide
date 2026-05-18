@@ -602,21 +602,29 @@ fn impl_cmp_for_i32x16() {
 
 #[test]
 fn test_i32x4_move_mask() {
-  let a = i32x16::from([
-    -1, 0, -2, -3,
-    -1, 0, -2, -3,
-    -1, 0, -2, -3,
-    -1, 0, -2, -3,
-  ]);
+  let a =
+    i32x16::from([-1, 0, -2, -3, -1, 0, -2, -3, -1, 0, -2, -3, -1, 0, -2, -3]);
   let expected = 0b1101110111011101;
   let actual = a.to_bitmask();
   assert_eq!(expected, actual);
   //
   let a = i32x16::from([
-    i32::MAX, 0, 2, -3,
-    i32::MAX, 0, 2, -3,
-    i32::MAX, 0, 2, -3,
-    i32::MAX, 0, 2, -3,
+    i32::MAX,
+    0,
+    2,
+    -3,
+    i32::MAX,
+    0,
+    2,
+    -3,
+    i32::MAX,
+    0,
+    2,
+    -3,
+    i32::MAX,
+    0,
+    2,
+    -3,
   ]);
   let expected = 0b1000100010001000;
   let actual = a.to_bitmask();
@@ -664,9 +672,7 @@ fn test_i32x16_none() {
 
 #[test]
 fn impl_i32x16_reduce_add() {
-  let p = i32x16::from([
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-  ]);
+  let p = i32x16::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
   assert_eq!(p.reduce_add(), 136);
 }
 

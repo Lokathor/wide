@@ -47,14 +47,8 @@ where
 {
   (0..I).step_by(2).map(move |offset| {
     std::array::from_fn(|i| {
-      arrays[i]
-        .into_iter()
-        .cycle()
-        .skip(offset)
-        .take(O)
-        .collect::<Vec<T>>()
-        .try_into()
-        .unwrap()
+      let mut iter = arrays[i].into_iter().cycle().skip(offset);
+      std::array::from_fn(|_| iter.next().unwrap())
     })
   })
 }
