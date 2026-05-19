@@ -661,6 +661,7 @@ fn test_shl() {
       // `unbounded_shl/r` depending on target features.
       let right = right.map(|x| x & (T::BITS - 1) as T);
 
+      #[allow(clippy::unnecessary_cast)]
       let expected = Simd::new(std::array::from_fn(|i| {
         left[i].wrapping_shl(right[i] as u32)
       }));
@@ -709,7 +710,7 @@ fn test_shl_scalar() {
           Simd::new(left) << right as u8,
           Simd::new(left) << right as i16,
           Simd::new(left) << right as u16,
-          Simd::new(left) << right as i32,
+          Simd::new(left) << right,
           Simd::new(left) << right as u32,
           Simd::new(left) << right as i64,
           Simd::new(left) << right as u64,
@@ -758,7 +759,7 @@ fn test_shl_scalar() {
           Simd::new(left) << right as u8,
           Simd::new(left) << right as i16,
           Simd::new(left) << right as u16,
-          Simd::new(left) << right as i32,
+          Simd::new(left) << right,
           Simd::new(left) << right as u32,
           Simd::new(left) << right as i64,
           Simd::new(left) << right as u64,
@@ -843,6 +844,7 @@ fn test_shr() {
       // `unbounded_shl/r` depending on target features.
       let right = right.map(|x| x & (T::BITS - 1) as T);
 
+      #[allow(clippy::unnecessary_cast)]
       let expected = Simd::new(std::array::from_fn(|i| {
         left[i].wrapping_shr(right[i] as u32)
       }));
@@ -891,7 +893,7 @@ fn test_shr_scalar() {
           Simd::new(left) >> right as u8,
           Simd::new(left) >> right as i16,
           Simd::new(left) >> right as u16,
-          Simd::new(left) >> right as i32,
+          Simd::new(left) >> right,
           Simd::new(left) >> right as u32,
           Simd::new(left) >> right as i64,
           Simd::new(left) >> right as u64,
@@ -940,7 +942,7 @@ fn test_shr_scalar() {
           Simd::new(left) >> right as u8,
           Simd::new(left) >> right as i16,
           Simd::new(left) >> right as u16,
-          Simd::new(left) >> right as i32,
+          Simd::new(left) >> right,
           Simd::new(left) >> right as u32,
           Simd::new(left) >> right as i64,
           Simd::new(left) >> right as u64,
@@ -2369,9 +2371,9 @@ fn test_simd_align_to() {
 
       assert_eq!(head.len() + body.len() * N + tail.len(), slice.len());
       assert_eq!(head, &slice[..head.len()]);
-      for i in 0..body.len() {
+      for (i, body_item) in body.iter().enumerate() {
         let offset = head.len() + i * N;
-        assert_eq!(body[i].as_array(), &slice[offset..offset + N]);
+        assert_eq!(body_item.as_array(), &slice[offset..offset + N]);
       }
       assert_eq!(tail, &slice[head.len() + body.len() * N..]);
     }
@@ -2388,9 +2390,9 @@ fn test_simd_align_to_mut() {
 
       assert_eq!(head.len() + body.len() * N + tail.len(), slice.len());
       assert_eq!(head, &slice[..head.len()]);
-      for i in 0..body.len() {
+      for (i, body_item) in body.iter().enumerate() {
         let offset = head.len() + i * N;
-        assert_eq!(body[i].as_array(), &slice[offset..offset + N]);
+        assert_eq!(body_item.as_array(), &slice[offset..offset + N]);
       }
       assert_eq!(tail, &slice[head.len() + body.len() * N..]);
     }

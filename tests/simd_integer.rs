@@ -122,7 +122,7 @@ fn test_mul_keep_high() {
   .chain(random_iter())
   {
     let expected = i16x8::new(std::array::from_fn(|i| {
-      (left[i] as i32 * right[i] as i32 >> 16) as i16
+      ((left[i] as i32 * right[i] as i32) >> 16) as i16
     }));
     let actual = i16x8::mul_keep_high(i16x8::new(left), i16x8::new(right));
 
@@ -136,7 +136,7 @@ fn test_mul_keep_high() {
   .chain(random_iter())
   {
     let expected = u16x8::new(std::array::from_fn(|i| {
-      (left[i] as u32 * right[i] as u32 >> 16) as u16
+      ((left[i] as u32 * right[i] as u32) >> 16) as u16
     }));
     let actual = u16x8::mul_keep_high(u16x8::new(left), u16x8::new(right));
 
@@ -150,7 +150,7 @@ fn test_mul_keep_high() {
   .chain(random_iter())
   {
     let expected = u32x4::new(std::array::from_fn(|i| {
-      (left[i] as u64 * right[i] as u64 >> 32) as u32
+      ((left[i] as u64 * right[i] as u64) >> 32) as u32
     }));
     let actual = u32x4::mul_keep_high(u32x4::new(left), u32x4::new(right));
 
@@ -173,7 +173,7 @@ fn test_mul_keep_high() {
   .chain(random_iter())
   {
     let expected = u32x8::new(std::array::from_fn(|i| {
-      (left[i] as u64 * right[i] as u64 >> 32) as u32
+      ((left[i] as u64 * right[i] as u64) >> 32) as u32
     }));
     let actual = u32x8::mul_keep_high(u32x8::new(left), u32x8::new(right));
 
@@ -221,7 +221,7 @@ fn test_mul_keep_high() {
   .chain(random_iter())
   {
     let expected = u32x16::new(std::array::from_fn(|i| {
-      (left[i] as u64 * right[i] as u64 >> 32) as u32
+      ((left[i] as u64 * right[i] as u64) >> 32) as u32
     }));
     let actual = u32x16::mul_keep_high(u32x16::new(left), u32x16::new(right));
 
