@@ -1,4 +1,4 @@
-use wide::{i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, u8x16};
+use wide::{i16x8, i16x16, i16x32, i32x4, i32x8, i32x16};
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
 
