@@ -1093,8 +1093,9 @@ impl u8x16 {
           let high_wide_mul = vreinterpretq_u8_u16(
             vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
           );
-          let low = Self { neon: vtrn1q_u8(low_wide_mul, high_wide_mul) };
-          let high = Self { neon: vtrn2q_u8(low_wide_mul, high_wide_mul) };
+          let low_high = vuzpq_u8(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
 
           let no_overflow = high.simd_eq(Self::ZERO);
           no_overflow.blend(low, Self::MAX)

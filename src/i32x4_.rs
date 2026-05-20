@@ -821,8 +821,9 @@ impl i32x4 {
           let high_wide_mul = vreinterpretq_s32_s64(
             vmull_s32(vget_high_s32(self.neon), vget_high_s32(rhs.neon)),
           );
-          let low = Self { neon: vtrn1q_s32(low_wide_mul, high_wide_mul) };
-          let high = Self { neon: vtrn2q_s32(low_wide_mul, high_wide_mul) };
+          let low_high = vuzpq_s32(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
 
           let no_overflow = high.simd_eq(low.is_negative());
           let limit = Self::MAX ^ (self ^ rhs).is_negative();

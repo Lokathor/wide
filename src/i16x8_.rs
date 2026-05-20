@@ -1127,8 +1127,9 @@ impl i16x8 {
           let high_wide_mul = vreinterpretq_s16_s32(
             vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon)),
           );
-          let low = Self { neon: vtrn1q_s16(low_wide_mul, high_wide_mul) };
-          let high = Self { neon: vtrn2q_s16(low_wide_mul, high_wide_mul) };
+          let low_high = vuzpq_s16(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
 
           let no_overflow = high.simd_eq(low.is_negative());
           let limit = Self::MAX ^ (self ^ rhs).is_negative();

@@ -795,8 +795,9 @@ impl u32x4 {
           let high_wide_mul = vreinterpretq_u32_u64(
             vmull_u32(vget_high_u32(self.neon), vget_high_u32(rhs.neon)),
           );
-          let low = Self { neon: vtrn1q_u32(low_wide_mul, high_wide_mul) };
-          let high = Self { neon: vtrn2q_u32(low_wide_mul, high_wide_mul) };
+          let low_high = vuzpq_u32(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
 
           let no_overflow = high.simd_eq(Self::ZERO);
           no_overflow.blend(low, Self::MAX)
