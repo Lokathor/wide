@@ -2173,6 +2173,29 @@ fn test_min() {
 }
 
 #[test]
+fn test_clamp() {
+  for_simd_types!(|T: Integer, N| {
+    for [value, min, max] in simd_chunks!(
+      [5, 5, 10, 10, 10, 10],
+      [2, 6, 5, 10, 9, 11],
+      [10, 10, 7, 10, 9, 11],
+    )
+    .chain(random_iter())
+    {
+      if (0..N).any(|i| min[i] > max[i]) {
+        continue;
+      }
+
+      let expected =
+        Simd::new(std::array::from_fn(|i| value[i].clamp(min[i], max[i])));
+      let actual = Simd::new(value).clamp(Simd::new(min), Simd::new(max));
+
+      assert_eq!(actual, expected);
+    }
+  });
+}
+
+#[test]
 fn test_reduce_max() {
   for_simd_types!(|T: Signed, N| {
     for value in simd_chunks!([1, 2, T::MIN + 1, T::MIN, 6, -8, -1, 9]) {

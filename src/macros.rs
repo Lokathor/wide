@@ -21,3 +21,17 @@ macro_rules! int_uint_consts {
     }
   };
 }
+
+macro_rules! integer_fn_clamp {
+  () => {
+    /// Restrict each element to a certain interval.
+    ///
+    /// If `min > max`, the result is unspeficied. Consider manually checking
+    /// for that case.
+    #[inline]
+    #[must_use]
+    pub fn clamp(self, min: Self, max: Self) -> Self {
+      self.max(min).min(max)
+    }
+  };
+}

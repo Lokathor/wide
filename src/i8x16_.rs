@@ -1139,6 +1139,8 @@ impl i8x16 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn from_slice_unaligned(input: &[i8]) -> Self {

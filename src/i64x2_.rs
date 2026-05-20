@@ -755,6 +755,8 @@ impl i64x2 {
     self.simd_gt(rhs).blend(self, rhs)
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

@@ -613,6 +613,8 @@ impl i16x16 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
