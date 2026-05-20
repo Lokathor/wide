@@ -543,10 +543,32 @@ impl i32x4 {
     }
   }
 
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s32_u32(vcgtzq_s32(self.neon)) } }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::ZERO)
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s32_u32(vcltzq_s32(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   /// Multiplies corresponding 32 bit lanes and returns the 64 bit result

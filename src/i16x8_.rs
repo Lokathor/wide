@@ -836,10 +836,33 @@ impl i16x8 {
       }
     }
   }
+
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s16_u16(vcgtzq_s16(self.neon)) } }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::zeroed())
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s16_u16(vcltzq_s16(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   /// horizontal add of all the elements of the vector

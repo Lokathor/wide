@@ -859,10 +859,32 @@ impl i8x16 {
     }
   }
 
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s8_u8(vcgtzq_s8(self.neon)) } }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::ZERO)
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s8_u8(vcltzq_s8(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   #[inline]

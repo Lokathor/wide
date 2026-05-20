@@ -385,10 +385,40 @@ impl i8x32 {
     }
   }
 
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated greater-than-zero intrinsics.
+        Self {
+          a: self.a.is_positive(),
+          b: self.b.is_positive(),
+        }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::ZERO)
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated less-than-zero intrinsics.
+        Self {
+          a: self.a.is_negative(),
+          b: self.b.is_negative(),
+        }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   #[inline]

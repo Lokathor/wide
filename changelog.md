@@ -5,6 +5,7 @@
 * Added several functions and trait implementations that previously were only
   implemented for some types inconsistently.
 * Added integer function `clamp`.
+* Added signed integer function `is_positive` and optimized `is_negative`.
 * Fixed slight bug in `f64xN` functions `round` and `round_int`.
 * Fixed `simd_ne` NaN behavior for floats.
 * Fixed bug in `u64x8::simd_lt`.
