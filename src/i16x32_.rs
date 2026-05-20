@@ -503,6 +503,8 @@ impl i16x32 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {

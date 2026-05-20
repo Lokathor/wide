@@ -61,6 +61,20 @@ fn test_unsigned_abs() {
 }
 
 #[test]
+fn test_signum() {
+  for_simd_types!(|T: Signed, N| {
+    for value in simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX])
+      .chain(random_iter())
+    {
+      let expected = Simd::new(value.map(T::signum));
+      let actual = Simd::new(value).signum();
+
+      assert_eq!(actual, expected);
+    }
+  });
+}
+
+#[test]
 fn test_mul_scale_round() {
   // `mul_scale_round` is inconsistently missing from types.
 

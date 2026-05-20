@@ -662,6 +662,8 @@ impl i32x4 {
     }
   }
 
+  signed_fn_signum!();
+
   /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]

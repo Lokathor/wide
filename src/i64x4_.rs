@@ -509,6 +509,8 @@ impl i64x4 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f64x4 {

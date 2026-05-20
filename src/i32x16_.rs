@@ -574,6 +574,8 @@ impl i32x16 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

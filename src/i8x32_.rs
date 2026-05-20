@@ -472,6 +472,8 @@ impl i8x32 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

@@ -1019,6 +1019,8 @@ impl i16x8 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {

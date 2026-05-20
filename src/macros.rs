@@ -35,3 +35,20 @@ macro_rules! integer_fn_clamp {
     }
   };
 }
+
+macro_rules! signed_fn_signum {
+  () => {
+    /// Returns numbers representing the sign of each element.
+    ///
+    /// - `0` if the number is zero
+    /// - `1` if the number is positive
+    /// - `-1` if the number is negative
+    #[inline]
+    #[must_use]
+    pub fn signum(self) -> Self {
+      // Flip signs because the result for true in `is_positive/negative` is
+      // `-1` (all bits set).
+      self.is_negative() - self.is_positive()
+    }
+  };
+}
