@@ -806,8 +806,8 @@ impl u16x8 {
       if #[cfg(target_feature="simd128")] {
         let low_wide_mul = u32x4_extmul_low_u16x8(self.simd, rhs.simd);
         let high_wide_mul = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
-        let low = Self { simd: u16x8_shuffle::<0, 8, 2, 10, 4, 12, 6, 14>(low_wide_mul, high_wide_mul) };
-        let high = Self { simd: u16x8_shuffle::<1, 9, 3, 11, 5, 13, 7, 15>(low_wide_mul, high_wide_mul) };
+        let low = Self { simd: u16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
 
         let no_overflow = high.simd_eq(Self::ZERO);
         no_overflow.blend(low, Self::MAX)
