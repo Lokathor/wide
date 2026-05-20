@@ -72,6 +72,94 @@ fn test_saturating_sub() {
 }
 
 #[test]
+fn test_saturating_mul() {
+  for_simd_types!(|T: Signed, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MIN + 1,
+        T::MIN,
+        2,
+        3,
+        4,
+        5,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        T::MAX / 2,
+        T::MIN / 2,
+      ],
+      [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
+    )
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
+      let actual = Simd::new(left).saturating_mul(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        3,
+        4,
+        5,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+      ],
+      [
+        17,
+        18,
+        9,
+        1,
+        0,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+      ],
+    )
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
+      let actual = Simd::new(left).saturating_mul(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+}
+
+#[test]
 fn test_from_big_truncate() {
   // `from_{big}_truncate` is inconsistently missing from types.
 

@@ -729,6 +729,25 @@ impl i64x8 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+      self_array[2].saturating_mul(rhs_array[2]),
+      self_array[3].saturating_mul(rhs_array[3]),
+      self_array[4].saturating_mul(rhs_array[4]),
+      self_array[5].saturating_mul(rhs_array[5]),
+      self_array[6].saturating_mul(rhs_array[6]),
+      self_array[7].saturating_mul(rhs_array[7]),
+    ])
+  }
 }
 
 impl Not for i64x8 {

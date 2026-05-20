@@ -520,6 +520,45 @@ impl i32x16 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
+
+        let even_wide_mul = mul_i32_wide_m512i(self.avx512, rhs.avx512);
+        let odd_wide_mul = mul_i32_wide_m512i(
+          shuffle_i32_m512i::<0b_00_11_00_01>(self.avx512),
+          shuffle_i32_m512i::<0b_00_11_00_01>(rhs.avx512),
+        );
+
+        let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
+        let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
+        // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
+        let low = Self {
+          avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
+        };
+        let high = Self {
+          avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
+        };
+
+        let no_overflow = high.simd_eq(low.is_negative());
+        let limit = Self::MAX ^ (self ^ rhs).is_negative();
+        no_overflow.blend(low, limit)
+      } else {
+        let [self_a, self_b]: [i32x8; 2] = cast(self);
+        let [rhs_a, rhs_b]: [i32x8; 2] = cast(rhs);
+
+        cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+      }
+    }
+  }
+
   /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]

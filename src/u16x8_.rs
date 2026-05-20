@@ -796,6 +796,51 @@ impl u16x8 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = u32x4_extmul_low_u16x8(self.simd, rhs.simd);
+        let high_wide_mul = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
+        let low = Self { simd: u16x8_shuffle::<0, 8, 2, 10, 4, 12, 6, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: u16x8_shuffle::<1, 9, 3, 11, 5, 13, 7, 15>(low_wide_mul, high_wide_mul) };
+
+        let no_overflow = high.simd_eq(Self::ZERO);
+        no_overflow.blend(low, Self::MAX)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u16_u32(
+            vmull_u16(vget_low_u16(self.neon), vget_low_u16(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u16_u32(
+            vmull_u16(vget_high_u16(self.neon), vget_high_u16(rhs.neon)),
+          );
+          let low = Self { neon: vtrn1q_u16(low_wide_mul, high_wide_mul) };
+          let high = Self { neon: vtrn2q_u16(low_wide_mul, high_wide_mul) };
+
+          let no_overflow = high.simd_eq(Self::ZERO);
+          no_overflow.blend(low, Self::MAX)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+        ])
+      }
+    }
+  }
+
   /// Unpack the lower half of the input and zero expand it to `u16` values.
   #[inline]
   #[must_use]

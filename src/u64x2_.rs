@@ -660,6 +660,19 @@ impl u64x2 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+    ])
+  }
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

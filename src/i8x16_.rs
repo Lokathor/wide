@@ -1405,6 +1405,52 @@ impl i8x16 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_s8_s16(
+            vmull_s8(vget_low_s8(self.neon), vget_low_s8(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_s8_s16(
+            vmull_s8(vget_high_s8(self.neon), vget_high_s8(rhs.neon)),
+          );
+          let low = Self { neon: vtrn1q_s8(low_wide_mul, high_wide_mul) };
+          let high = Self { neon: vtrn2q_s8(low_wide_mul, high_wide_mul) };
+
+          let no_overflow = high.simd_eq(low.is_negative());
+          let limit = Self::MAX ^ (self ^ rhs).is_negative();
+          no_overflow.blend(low, limit)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+          self_array[8].saturating_mul(rhs_array[8]),
+          self_array[9].saturating_mul(rhs_array[9]),
+          self_array[10].saturating_mul(rhs_array[10]),
+          self_array[11].saturating_mul(rhs_array[11]),
+          self_array[12].saturating_mul(rhs_array[12]),
+          self_array[13].saturating_mul(rhs_array[13]),
+          self_array[14].saturating_mul(rhs_array[14]),
+          self_array[15].saturating_mul(rhs_array[15]),
+        ])
+      }
+    }
+  }
+
   /// Transpose matrix of 16x16 `i8` matrix. Currently not accelerated.
   #[must_use]
   #[inline]

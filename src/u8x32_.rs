@@ -498,6 +498,15 @@ impl u8x32 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let [self_a, self_b]: [u8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
+    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  }
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

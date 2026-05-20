@@ -1103,6 +1103,53 @@ impl i16x8 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = i32x4_extmul_low_i16x8(self.simd, rhs.simd);
+        let high_wide_mul = i32x4_extmul_high_i16x8(self.simd, rhs.simd);
+        let low = Self { simd: i16x8_shuffle::<0, 8, 2, 10, 4, 12, 6, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: i16x8_shuffle::<1, 9, 3, 11, 5, 13, 7, 15>(low_wide_mul, high_wide_mul) };
+
+        let no_overflow = high.simd_eq(low.is_negative());
+        let limit = Self::MAX ^ (self ^ rhs).is_negative();
+        no_overflow.blend(low, limit)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_low_s16(self.neon), vget_low_s16(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon)),
+          );
+          let low = Self { neon: vtrn1q_s16(low_wide_mul, high_wide_mul) };
+          let high = Self { neon: vtrn2q_s16(low_wide_mul, high_wide_mul) };
+
+          let no_overflow = high.simd_eq(low.is_negative());
+          let limit = Self::MAX ^ (self ^ rhs).is_negative();
+          no_overflow.blend(low, limit)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+        ])
+      }
+    }
+  }
+
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed
   /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit

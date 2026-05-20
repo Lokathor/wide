@@ -676,6 +676,15 @@ impl i16x16 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let [self_a, self_b]: [i16x8; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i16x8; 2] = cast(rhs);
+    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  }
+
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed
   /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit

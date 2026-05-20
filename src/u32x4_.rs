@@ -758,6 +758,61 @@ impl u32x4 {
     }
   }
 
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let even_wide_mul = mul_widen_u32_odd_m128i(self.sse, rhs.sse);
+        let odd_wide_mul = mul_widen_u32_odd_m128i(
+          shuffle_ai_f32_all_m128i::<0b_00_11_00_01>(self.sse),
+          shuffle_ai_f32_all_m128i::<0b_00_11_00_01>(rhs.sse),
+        );
+
+        let ll_hh_1 = unpack_low_i32_m128i(even_wide_mul, odd_wide_mul);
+        let ll_hh_2 = unpack_high_i32_m128i(even_wide_mul, odd_wide_mul);
+        let low = Self { sse: unpack_low_i64_m128i(ll_hh_1, ll_hh_2) };
+        let high = Self { sse: unpack_high_i64_m128i(ll_hh_1, ll_hh_2) };
+
+        let no_overflow = high.simd_eq(Self::ZERO);
+        no_overflow.blend(low, Self::MAX)
+      } else if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = u64x2_extmul_low_u32x4(self.simd, rhs.simd);
+        let high_wide_mul = u64x2_extmul_high_u32x4(self.simd, rhs.simd);
+        let low = Self { simd: u32x4_shuffle::<0, 4, 2, 6>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: u32x4_shuffle::<1, 5, 3, 7>(low_wide_mul, high_wide_mul) };
+
+        let no_overflow = high.simd_eq(Self::ZERO);
+        no_overflow.blend(low, Self::MAX)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u32_u64(
+            vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u32_u64(
+            vmull_u32(vget_high_u32(self.neon), vget_high_u32(rhs.neon)),
+          );
+          let low = Self { neon: vtrn1q_u32(low_wide_mul, high_wide_mul) };
+          let high = Self { neon: vtrn2q_u32(low_wide_mul, high_wide_mul) };
+
+          let no_overflow = high.simd_eq(Self::ZERO);
+          no_overflow.blend(low, Self::MAX)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+        ])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
