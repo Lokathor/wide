@@ -588,6 +588,10 @@ impl u32x16 {
     }
   }
 
+  integer_fn_saturating_div!([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  ]);
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

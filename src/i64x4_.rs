@@ -651,6 +651,8 @@ impl i64x4 {
     ])
   }
 
+  integer_fn_saturating_div!([0, 1, 2, 3]);
+
   // Sometimes used for `transpose`.
   #[must_use]
   #[inline]

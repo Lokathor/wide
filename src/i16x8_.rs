@@ -1152,6 +1152,8 @@ impl i16x8 {
     }
   }
 
+  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
+
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed
   /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit

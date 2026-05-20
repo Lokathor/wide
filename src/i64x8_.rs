@@ -750,6 +750,8 @@ impl i64x8 {
       self_array[7].saturating_mul(rhs_array[7]),
     ])
   }
+
+  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 }
 
 impl Not for i64x8 {

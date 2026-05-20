@@ -557,6 +557,8 @@ impl u64x8 {
     ])
   }
 
+  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

@@ -815,6 +815,8 @@ impl u32x4 {
     }
   }
 
+  integer_fn_saturating_div!([0, 1, 2, 3]);
+
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {

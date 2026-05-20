@@ -841,4 +841,6 @@ impl i64x2 {
       self_array[1].saturating_mul(rhs_array[1]),
     ])
   }
+
+  integer_fn_saturating_div!([0, 1]);
 }

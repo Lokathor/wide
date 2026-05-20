@@ -5,7 +5,7 @@
 * Added several functions and trait implementations that previously were only
   implemented for some types inconsistently.
 * Added integer `Div` and `Rem` implementations.
-* Added integer functions `clamp` and `saturating_mul`.
+* Added integer functions `clamp`, `saturating_mul` and `saturating_div`.
 * Added signed integer functions `is_positive` and `signum`.
 * Fixed slight bug in `f64xN` functions `round` and `round_int`.
 * Fixed `simd_ne` NaN behavior for floats.
