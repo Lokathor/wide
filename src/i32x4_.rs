@@ -805,8 +805,8 @@ impl i32x4 {
         let limit = Self::MAX ^ (self ^ rhs).is_negative();
         no_overflow.blend(low, limit)
       } else if #[cfg(target_feature="simd128")] {
-        let low_wide_mul = i64x2_extmul_low_u32x4(self.simd, rhs.simd);
-        let high_wide_mul = i64x2_extmul_high_u32x4(self.simd, rhs.simd);
+        let low_wide_mul = i64x2_extmul_low_i32x4(self.simd, rhs.simd);
+        let high_wide_mul = i64x2_extmul_high_i32x4(self.simd, rhs.simd);
         let low = Self { simd: i32x4_shuffle::<0, 2, 4, 6>(low_wide_mul, high_wide_mul) };
         let high = Self { simd: i32x4_shuffle::<1, 3, 5, 7>(low_wide_mul, high_wide_mul) };
 
