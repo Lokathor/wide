@@ -2421,15 +2421,18 @@ fn test_min() {
 #[test]
 fn test_clamp() {
   for_simd_types!(|T: Integer, N| {
-    for [value, min, max] in simd_chunks!(
+    for [value, mut min, mut max] in simd_chunks!(
       [5, 5, 10, 10, 10, 10],
       [2, 6, 5, 10, 9, 11],
       [10, 10, 7, 10, 9, 11],
     )
     .chain(random_iter())
     {
-      if (0..N).any(|i| min[i] > max[i]) {
-        continue;
+      for (min, max) in min.iter_mut().zip(&mut max) {
+        if *min > *max {
+          *min = 5;
+          *max = 6;
+        }
       }
 
       let expected =
