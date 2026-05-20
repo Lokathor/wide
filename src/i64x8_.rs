@@ -80,6 +80,8 @@ impl Mul for i64x8 {
   }
 }
 
+integer_impl_div_rem!(i64, i64x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+
 impl Shr for i64x8 {
   type Output = Self;
 

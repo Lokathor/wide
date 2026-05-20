@@ -123,6 +123,8 @@ impl Mul for u32x8 {
   }
 }
 
+integer_impl_div_rem!(u32, u32x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+
 impl BitAnd for u32x8 {
   type Output = Self;
   #[inline]

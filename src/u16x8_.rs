@@ -143,6 +143,8 @@ impl Mul for u16x8 {
   }
 }
 
+integer_impl_div_rem!(u16, u16x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+
 impl Shl for u16x8 {
   type Output = Self;
 

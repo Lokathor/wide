@@ -72,6 +72,8 @@ impl Mul for i32x8 {
   }
 }
 
+integer_impl_div_rem!(i32, i32x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+
 impl Add<i32> for i32x8 {
   type Output = Self;
   #[inline]

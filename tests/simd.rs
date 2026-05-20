@@ -507,7 +507,52 @@ fn test_div() {
       );
     }
   });
-  // Integer division is missing.
+  for_simd_types!(|T: Integer, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
+      [2, 5, 5, 8, 10, 5, 2, 10],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_div(right[i])));
+      let actual = Simd::new(left) / Simd::new(right);
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
+      [-2, -5, 3, -6, -2, -1, -1, -1],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_div(right[i])));
+      let actual = Simd::new(left) / Simd::new(right);
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
 }
 
 #[test]
@@ -521,7 +566,38 @@ fn test_div_scalar() {
       assert_eq!(actual, expected);
     }
   });
-  // Integer division is missing.
+  for_simd_types!(|T: Integer, N| {
+    for left in simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1])
+      .chain(random_iter())
+    {
+      for right in [2, 5, 5, 8, 10, 5, 2, 10] {
+        let expected =
+          Simd::new(std::array::from_fn(|i| left[i].wrapping_div(right)));
+        let actual = Simd::new(left) / right;
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for left in simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1])
+      .chain(random_iter())
+    {
+      for right in [-2, -5, 3, -6, -2, -1, -1, -1] {
+        let expected =
+          Simd::new(std::array::from_fn(|i| left[i].wrapping_div(right)));
+        let actual = Simd::new(left) / right;
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
 }
 
 #[test]
@@ -535,7 +611,54 @@ fn test_scalar_div() {
       assert_eq!(actual, expected);
     }
   });
-  // Integer division is missing.
+  for_simd_types!(|T: Integer, N| {
+    for left in [2, 5, 5, 8, 10, 5, 2, 10] {
+      let _: T = left;
+      for mut right in
+        simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1])
+          .chain(random_iter())
+      {
+        for right in &mut right {
+          if *right == 0 {
+            *right = 3;
+          }
+        }
+
+        let expected =
+          Simd::new(std::array::from_fn(|i| left.wrapping_div(right[i])));
+        let actual = left / Simd::new(right);
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for left in [-2, -5, 3, -6, -2, -1, -1, -1] {
+      let _: T = left;
+      for mut right in
+        simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1])
+          .chain(random_iter())
+      {
+        for right in &mut right {
+          if *right == 0 {
+            *right = 3;
+          }
+        }
+
+        let expected =
+          Simd::new(std::array::from_fn(|i| left.wrapping_div(right[i])));
+        let actual = left / Simd::new(right);
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
 }
 
 #[test]
@@ -557,7 +680,52 @@ fn test_rem() {
       );
     }
   });
-  // Integer remainder is missing.
+  for_simd_types!(|T: Integer, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
+      [2, 5, 5, 8, 10, 5, 2, 10],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_rem(right[i])));
+      let actual = Simd::new(left) % Simd::new(right);
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
+      [-2, -5, 3, -6, -2, -1, -1, -1],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_rem(right[i])));
+      let actual = Simd::new(left) % Simd::new(right);
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
 }
 
 #[test]
@@ -575,7 +743,38 @@ fn test_rem_scalar() {
       );
     }
   });
-  // Integer remainder is missing.
+  for_simd_types!(|T: Integer, N| {
+    for left in simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1])
+      .chain(random_iter())
+    {
+      for right in [2, 5, 5, 8, 10, 5, 2, 10] {
+        let expected =
+          Simd::new(std::array::from_fn(|i| left[i].wrapping_rem(right)));
+        let actual = Simd::new(left) % right;
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for left in simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1])
+      .chain(random_iter())
+    {
+      for right in [-2, -5, 3, -6, -2, -1, -1, -1] {
+        let expected =
+          Simd::new(std::array::from_fn(|i| left[i].wrapping_rem(right)));
+        let actual = Simd::new(left) % right;
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
 }
 
 #[test]
@@ -593,7 +792,54 @@ fn test_scalar_rem() {
       );
     }
   });
-  // Integer remainder is missing.
+  for_simd_types!(|T: Integer, N| {
+    for left in [2, 5, 5, 8, 10, 5, 2, 10] {
+      let _: T = left;
+      for mut right in
+        simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1])
+          .chain(random_iter())
+      {
+        for right in &mut right {
+          if *right == 0 {
+            *right = 3;
+          }
+        }
+
+        let expected =
+          Simd::new(std::array::from_fn(|i| left.wrapping_rem(right[i])));
+        let actual = left % Simd::new(right);
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for left in [-2, -5, 3, -6, -2, -1, -1, -1] {
+      let _: T = left;
+      for mut right in
+        simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1])
+          .chain(random_iter())
+      {
+        for right in &mut right {
+          if *right == 0 {
+            *right = 3;
+          }
+        }
+
+        let expected =
+          Simd::new(std::array::from_fn(|i| left.wrapping_rem(right[i])));
+        let actual = left % Simd::new(right);
+
+        assert!(
+          actual == expected,
+          "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
+      }
+    }
+  });
 }
 
 #[test]

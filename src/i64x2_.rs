@@ -126,6 +126,8 @@ impl Mul for i64x2 {
   }
 }
 
+integer_impl_div_rem!(i64, i64x2, [0, 1]);
+
 impl Add<i64> for i64x2 {
   type Output = Self;
   #[inline]

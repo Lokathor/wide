@@ -133,6 +133,8 @@ impl Mul for u32x4 {
   }
 }
 
+integer_impl_div_rem!(u32, u32x4, [0, 1, 2, 3]);
+
 impl Add<u32> for u32x4 {
   type Output = Self;
   #[inline]

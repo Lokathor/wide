@@ -386,6 +386,12 @@ impl Mul for u16x16 {
   }
 }
 
+integer_impl_div_rem!(
+  u16,
+  u16x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+
 impl From<u8x16> for u16x16 {
   /// widens and sign extends to u16x16
   #[inline]

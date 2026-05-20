@@ -69,6 +69,12 @@ impl Mul for i32x16 {
   }
 }
 
+integer_impl_div_rem!(
+  i32,
+  i32x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+
 impl Add<i32> for i32x16 {
   type Output = Self;
   #[inline]
