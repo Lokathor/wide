@@ -23,6 +23,13 @@ impl f64x4 {
   const_f64_as_f64x4!(ONE, 1.0);
   const_f64_as_f64x4!(ZERO, 0.0);
   const_f64_as_f64x4!(HALF, 0.5);
+  const_f64_as_f64x4!(EPSILON, f64::EPSILON);
+  const_f64_as_f64x4!(MIN, f64::MIN);
+  const_f64_as_f64x4!(MIN_POSITIVE, f64::MIN_POSITIVE);
+  const_f64_as_f64x4!(MAX, f64::MAX);
+  const_f64_as_f64x4!(NAN, f64::NAN);
+  const_f64_as_f64x4!(INFINITY, f64::INFINITY);
+  const_f64_as_f64x4!(NEG_INFINITY, f64::NEG_INFINITY);
   const_f64_as_f64x4!(E, core::f64::consts::E);
   const_f64_as_f64x4!(FRAC_1_PI, core::f64::consts::FRAC_1_PI);
   const_f64_as_f64x4!(FRAC_2_PI, core::f64::consts::FRAC_2_PI);

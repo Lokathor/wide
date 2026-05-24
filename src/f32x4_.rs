@@ -61,6 +61,13 @@ impl f32x4 {
   const_f32_as_f32x4!(ONE, 1.0);
   const_f32_as_f32x4!(ZERO, 0.0);
   const_f32_as_f32x4!(HALF, 0.5);
+  const_f32_as_f32x4!(EPSILON, f32::EPSILON);
+  const_f32_as_f32x4!(MIN, f32::MIN);
+  const_f32_as_f32x4!(MIN_POSITIVE, f32::MIN_POSITIVE);
+  const_f32_as_f32x4!(MAX, f32::MAX);
+  const_f32_as_f32x4!(NAN, f32::NAN);
+  const_f32_as_f32x4!(INFINITY, f32::INFINITY);
+  const_f32_as_f32x4!(NEG_INFINITY, f32::NEG_INFINITY);
   const_f32_as_f32x4!(E, core::f32::consts::E);
   const_f32_as_f32x4!(FRAC_1_PI, core::f32::consts::FRAC_1_PI);
   const_f32_as_f32x4!(FRAC_2_PI, core::f32::consts::FRAC_2_PI);
