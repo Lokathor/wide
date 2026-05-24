@@ -126,13 +126,20 @@ pub(crate) use for_simd_types;
 /// Improves error messages by specifying which `T` and `N` failed.
 #[doc(hidden)]
 pub fn for_simd_types_helper(f: impl FnOnce() + UnwindSafe, t: &str, n: usize) {
-  match catch_unwind(f) {
-    Ok(_) => {}
-    Err(payload) => {
-      println!();
-      println!("T: {t}");
-      println!("N: {n}");
-      resume_unwind(payload);
+  // For WASM, `catch/resume_unwind` leads to:
+  // "wasm trap: wasm `unreachable` instruction executed"
+  // which hides the actual panic message.
+  if cfg!(target_family = "wasm") {
+    f();
+  } else {
+    match catch_unwind(f) {
+      Ok(_) => {}
+      Err(payload) => {
+        println!();
+        println!("T: {t}");
+        println!("N: {n}");
+        resume_unwind(payload);
+      }
     }
   }
 }
