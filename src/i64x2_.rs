@@ -126,6 +126,8 @@ impl Mul for i64x2 {
   }
 }
 
+integer_impl_div_rem!(i64, i64x2, [0, 1]);
+
 impl Add<i64> for i64x2 {
   type Output = Self;
   #[inline]
@@ -516,10 +518,32 @@ impl i64x2 {
     }
   }
 
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s64_u64(vcgtzq_s64(self.neon)) } }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::ZERO)
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   #[inline]
@@ -606,6 +630,8 @@ impl i64x2 {
       }
     }
   }
+
+  signed_fn_signum!();
 
   #[inline]
   #[must_use]
@@ -755,6 +781,8 @@ impl i64x2 {
     self.simd_gt(rhs).blend(self, rhs)
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -800,4 +828,19 @@ impl i64x2 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+    ])
+  }
+
+  integer_fn_saturating_div!([0, 1]);
 }

@@ -4,11 +4,15 @@
 
 * Added several functions and trait implementations that previously were only
   implemented for some types inconsistently.
+* Added integer `Div` and `Rem` implementations.
+* Added integer functions `clamp`, `saturating_mul` and `saturating_div`.
+* Added signed integer functions `is_positive` and `signum`.
 * Fixed slight bug in `f64xN` functions `round` and `round_int`.
 * Fixed `simd_ne` NaN behavior for floats.
 * Fixed bug in `u64x8::simd_lt`.
 * Fixed bug in `i64x8` and `u64x8` function `to_bitmask`
 * Fixed bugs in `u32x16` functions `any`, `all` and `none`.
+* Optimized signed integer function `is_negative`.
 
 ## 1.4.0
 

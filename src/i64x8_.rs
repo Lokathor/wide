@@ -80,6 +80,8 @@ impl Mul for i64x8 {
   }
 }
 
+integer_impl_div_rem!(i64, i64x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+
 impl Shr for i64x8 {
   type Output = Self;
 
@@ -433,10 +435,40 @@ impl i64x8 {
     }
   }
 
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated greater-than-zero intrinsics.
+        Self {
+          a: self.a.is_positive(),
+          b: self.b.is_positive(),
+        }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::ZERO)
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated less-than-zero intrinsics.
+        Self {
+          a: self.a.is_negative(),
+          b: self.b.is_negative(),
+        }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   #[inline]
@@ -513,6 +545,8 @@ impl i64x8 {
       }
     }
   }
+
+  signed_fn_signum!();
 
   #[inline]
   #[must_use]
@@ -658,6 +692,8 @@ impl i64x8 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -695,6 +731,27 @@ impl i64x8 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+      self_array[2].saturating_mul(rhs_array[2]),
+      self_array[3].saturating_mul(rhs_array[3]),
+      self_array[4].saturating_mul(rhs_array[4]),
+      self_array[5].saturating_mul(rhs_array[5]),
+      self_array[6].saturating_mul(rhs_array[6]),
+      self_array[7].saturating_mul(rhs_array[7]),
+    ])
+  }
+
+  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 }
 
 impl Not for i64x8 {

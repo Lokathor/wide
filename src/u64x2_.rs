@@ -127,6 +127,8 @@ impl Mul for u64x2 {
   }
 }
 
+integer_impl_div_rem!(u64, u64x2, [0, 1]);
+
 impl Add<u64> for u64x2 {
   type Output = Self;
   #[inline]
@@ -618,6 +620,8 @@ impl u64x2 {
     self.simd_gt(rhs).blend(self, rhs)
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -657,6 +661,21 @@ impl u64x2 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+    ])
+  }
+
+  integer_fn_saturating_div!([0, 1]);
 
   #[inline]
   #[must_use]

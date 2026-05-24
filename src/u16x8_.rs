@@ -143,6 +143,8 @@ impl Mul for u16x8 {
   }
 }
 
+integer_impl_div_rem!(u16, u16x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+
 impl Shl for u16x8 {
   type Output = Self;
 
@@ -745,6 +747,8 @@ impl u16x8 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -793,6 +797,54 @@ impl u16x8 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = u32x4_extmul_low_u16x8(self.simd, rhs.simd);
+        let high_wide_mul = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
+        let low = Self { simd: u16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
+
+        let no_overflow = high.simd_eq(Self::ZERO);
+        no_overflow.blend(low, Self::MAX)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u16_u32(
+            vmull_u16(vget_low_u16(self.neon), vget_low_u16(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u16_u32(
+            vmull_u16(vget_high_u16(self.neon), vget_high_u16(rhs.neon)),
+          );
+          let low_high = vuzpq_u16(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let no_overflow = high.simd_eq(Self::ZERO);
+          no_overflow.blend(low, Self::MAX)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+        ])
+      }
+    }
+  }
+
+  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 
   /// Unpack the lower half of the input and zero expand it to `u16` values.
   #[inline]
