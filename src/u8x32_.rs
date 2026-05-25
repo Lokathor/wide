@@ -69,6 +69,15 @@ impl Mul for u8x32 {
   }
 }
 
+integer_impl_div_rem!(
+  u8,
+  u8x32,
+  [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  ],
+);
+
 impl Shl for u8x32 {
   type Output = Self;
 
@@ -476,6 +485,8 @@ impl u8x32 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -504,6 +515,20 @@ impl u8x32 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let [self_a, self_b]: [u8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
+    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  }
+
+  integer_fn_saturating_div!([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  ]);
 
   #[inline]
   #[must_use]

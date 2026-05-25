@@ -72,6 +72,12 @@ impl Mul for i16x16 {
   }
 }
 
+integer_impl_div_rem!(
+  i16,
+  i16x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+
 impl Shl for i16x16 {
   type Output = Self;
 
@@ -529,10 +535,40 @@ impl i16x16 {
     }
   }
 
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated greater-than-zero intrinsics.
+        Self {
+          a: self.a.is_positive(),
+          b: self.b.is_positive(),
+        }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::ZERO)
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated less-than-zero intrinsics.
+        Self {
+          a: self.a.is_negative(),
+          b: self.b.is_negative(),
+        }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   /// horizontal add of all the elements of the vector
@@ -592,6 +628,8 @@ impl i16x16 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -621,6 +659,8 @@ impl i16x16 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -649,6 +689,19 @@ impl i16x16 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let [self_a, self_b]: [i16x8; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i16x8; 2] = cast(rhs);
+    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  }
+
+  integer_fn_saturating_div!([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  ]);
 
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed

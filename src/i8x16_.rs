@@ -170,6 +170,12 @@ impl Mul for i8x16 {
   }
 }
 
+integer_impl_div_rem!(
+  i8,
+  i8x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+
 impl Shl for i8x16 {
   type Output = Self;
 
@@ -867,10 +873,32 @@ impl i8x16 {
     }
   }
 
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s8_u8(vcgtzq_s8(self.neon)) } }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::ZERO)
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s8_u8(vcltzq_s8(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   #[inline]
@@ -1116,6 +1144,8 @@ impl i8x16 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -1146,6 +1176,8 @@ impl i8x16 {
       }
     }
   }
+
+  integer_fn_clamp!();
 
   #[inline]
   #[must_use]
@@ -1386,6 +1418,57 @@ impl i8x16 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_s8_s16(
+            vmull_s8(vget_low_s8(self.neon), vget_low_s8(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_s8_s16(
+            vmull_s8(vget_high_s8(self.neon), vget_high_s8(rhs.neon)),
+          );
+          let low_high = vuzpq_s8(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let no_overflow = high.simd_eq(low.is_negative());
+          let limit = Self::MAX ^ (self ^ rhs).is_negative();
+          no_overflow.blend(low, limit)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+          self_array[8].saturating_mul(rhs_array[8]),
+          self_array[9].saturating_mul(rhs_array[9]),
+          self_array[10].saturating_mul(rhs_array[10]),
+          self_array[11].saturating_mul(rhs_array[11]),
+          self_array[12].saturating_mul(rhs_array[12]),
+          self_array[13].saturating_mul(rhs_array[13]),
+          self_array[14].saturating_mul(rhs_array[14]),
+          self_array[15].saturating_mul(rhs_array[15]),
+        ])
+      }
+    }
+  }
+
+  integer_fn_saturating_div!([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  ]);
 
   /// Transpose matrix of 16x16 `i8` matrix. Currently not accelerated.
   #[must_use]

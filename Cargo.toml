@@ -3,6 +3,7 @@ name = "wide"
 description = "A crate to help you go wide."
 version = "1.4.0"
 authors = ["Lokathor <zefria@gmail.com>"]
+autotests = false
 repository = "https://github.com/Lokathor/wide"
 readme = "README.md"
 keywords = ["simd", "wide", "lokathor"]
@@ -34,6 +35,10 @@ bytemuck = "1.24.0"
 [dev-dependencies]
 bincode = { version = "1.3.3" }
 criterion = { version = "0.7.0", default-features = false }
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
 
 [[bench]]
 name = "fma_benchmarks"

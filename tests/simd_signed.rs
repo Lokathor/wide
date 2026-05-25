@@ -1,6 +1,21 @@
-use wide::{i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, u8x16};
+use wide::{i16x8, i16x16, i16x32, i32x4, i32x8, i32x16};
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
+
+#[test]
+fn test_is_positive() {
+  for_simd_types!(|T: Signed, N| {
+    for value in
+      simd_chunks!([1, -1, 2, 3, -2, -5, 0, 6, 9, -4, 0, T::MIN, T::MAX])
+    {
+      let expected =
+        Simd::new(value.map(|x| if x.is_positive() { !0 } else { 0 }));
+      let actual = Simd::new(value).is_positive();
+
+      assert_eq!(actual, expected);
+    }
+  });
+}
 
 #[test]
 fn test_is_negative() {
@@ -39,6 +54,20 @@ fn test_unsigned_abs() {
     {
       let expected = SimdUnsigned::new(value.map(T::unsigned_abs));
       let actual = Simd::new(value).unsigned_abs();
+
+      assert_eq!(actual, expected);
+    }
+  });
+}
+
+#[test]
+fn test_signum() {
+  for_simd_types!(|T: Signed, N| {
+    for value in simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX])
+      .chain(random_iter())
+    {
+      let expected = Simd::new(value.map(T::signum));
+      let actual = Simd::new(value).signum();
 
       assert_eq!(actual, expected);
     }

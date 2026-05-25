@@ -1507,6 +1507,12 @@ fn test_exp2() {
       1.5,
       2.0,
       10.4,
+      100.5,
+      127.0,
+      -149.0,
+      1000.2,
+      1023.0,
+      -1074.0,
       2000.0,
       T::NAN,
       T::INFINITY,
@@ -1515,8 +1521,12 @@ fn test_exp2() {
       let expected = Simd::new(value.map(T::exp2));
       let actual = Simd::new(value).exp2();
 
+      let tol = if size_of::<T>() == 8 { 1e-12 } else { 1e-7 };
+      let min_tol = if size_of::<T>() == 8 { 5e-324 } else { 1e-45 };
       assert!(
-        ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
+        ((actual - expected)
+          .abs()
+          .simd_le((expected.abs() * tol).max(Simd::splat(min_tol)))
           | actual.simd_eq(expected)
           | actual.is_nan() & expected.is_nan())
         .all(),
@@ -1529,6 +1539,7 @@ fn test_exp2() {
 #[test]
 fn test_ln() {
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for value in simd_chunks!([
       0.1,
       0.5,
@@ -1561,6 +1572,7 @@ fn test_ln() {
 #[test]
 fn test_log2() {
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for value in simd_chunks!([
       0.1,
       0.5,
@@ -1593,6 +1605,7 @@ fn test_log2() {
 #[test]
 fn test_log10() {
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for value in simd_chunks!([
       0.1,
       0.5,
@@ -1640,6 +1653,7 @@ fn test_pow_simd() {
   // )
 
   for_simd_types!(|T: Float, N| {
+    #[expect(clippy::approx_constant)]
     for [value, n] in simd_chunks!(
       [1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, 5.1],
       [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 29.0],
@@ -1676,6 +1690,7 @@ fn test_powf() {
 
   for_simd_types!(|T: Float, N| {
     for value in simd_chunks!([1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3]) {
+      #[expect(clippy::approx_constant)]
       for n in [
         0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 2.7,
         4.0, -3.0, 29.0,

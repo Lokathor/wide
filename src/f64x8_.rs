@@ -365,6 +365,13 @@ impl f64x8 {
   const_f64_as_f64x8!(ONE, 1.0);
   const_f64_as_f64x8!(ZERO, 0.0);
   const_f64_as_f64x8!(HALF, 0.5);
+  const_f64_as_f64x8!(EPSILON, f64::EPSILON);
+  const_f64_as_f64x8!(MIN, f64::MIN);
+  const_f64_as_f64x8!(MIN_POSITIVE, f64::MIN_POSITIVE);
+  const_f64_as_f64x8!(MAX, f64::MAX);
+  const_f64_as_f64x8!(NAN, f64::NAN);
+  const_f64_as_f64x8!(INFINITY, f64::INFINITY);
+  const_f64_as_f64x8!(NEG_INFINITY, f64::NEG_INFINITY);
   const_f64_as_f64x8!(E, core::f64::consts::E);
   const_f64_as_f64x8!(FRAC_1_PI, core::f64::consts::FRAC_1_PI);
   const_f64_as_f64x8!(FRAC_2_PI, core::f64::consts::FRAC_2_PI);

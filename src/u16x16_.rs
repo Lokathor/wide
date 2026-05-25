@@ -406,6 +406,12 @@ impl Mul for u16x16 {
   }
 }
 
+integer_impl_div_rem!(
+  u16,
+  u16x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+
 impl From<u8x16> for u16x16 {
   /// widens and sign extends to u16x16
   #[inline]
@@ -516,6 +522,8 @@ impl u16x16 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -544,6 +552,19 @@ impl u16x16 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let [self_a, self_b]: [u16x8; 2] = cast(self);
+    let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
+    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  }
+
+  integer_fn_saturating_div!([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  ]);
 
   #[inline]
   #[must_use]

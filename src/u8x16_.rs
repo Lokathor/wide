@@ -170,6 +170,12 @@ impl Mul for u8x16 {
   }
 }
 
+integer_impl_div_rem!(
+  u8,
+  u8x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+
 impl Shl for u8x16 {
   type Output = Self;
 
@@ -991,6 +997,8 @@ impl u8x16 {
     }
   }
 
+  integer_fn_clamp!();
+
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -1055,6 +1063,56 @@ impl u8x16 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u8_u16(
+            vmull_u8(vget_low_u8(self.neon), vget_low_u8(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u8_u16(
+            vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
+          );
+          let low_high = vuzpq_u8(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let no_overflow = high.simd_eq(Self::ZERO);
+          no_overflow.blend(low, Self::MAX)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+          self_array[8].saturating_mul(rhs_array[8]),
+          self_array[9].saturating_mul(rhs_array[9]),
+          self_array[10].saturating_mul(rhs_array[10]),
+          self_array[11].saturating_mul(rhs_array[11]),
+          self_array[12].saturating_mul(rhs_array[12]),
+          self_array[13].saturating_mul(rhs_array[13]),
+          self_array[14].saturating_mul(rhs_array[14]),
+          self_array[15].saturating_mul(rhs_array[15]),
+        ])
+      }
+    }
+  }
+
+  integer_fn_saturating_div!([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  ]);
 
   /// Unpack and interleave low lanes of two `u8x16`
   #[inline]

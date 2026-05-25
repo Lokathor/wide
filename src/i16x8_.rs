@@ -143,6 +143,8 @@ impl Mul for i16x8 {
   }
 }
 
+integer_impl_div_rem!(i16, i16x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+
 impl Shl for i16x8 {
   type Output = Self;
 
@@ -844,10 +846,33 @@ impl i16x8 {
       }
     }
   }
+
+  /// Returns true for each positive element and false if it is zero or
+  /// negative.
+  #[inline]
+  #[must_use]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s16_u16(vcgtzq_s16(self.neon)) } }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  /// Returns true for each negative element and false if it is zero or
+  /// positive.
   #[inline]
   #[must_use]
   pub fn is_negative(self) -> Self {
-    self.simd_lt(Self::zeroed())
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s16_u16(vcltzq_s16(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
   }
 
   /// horizontal add of all the elements of the vector
@@ -1004,6 +1029,8 @@ impl i16x8 {
     }
   }
 
+  signed_fn_signum!();
+
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
@@ -1034,6 +1061,8 @@ impl i16x8 {
       }
     }
   }
+
+  integer_fn_clamp!();
 
   #[inline]
   #[must_use]
@@ -1083,6 +1112,56 @@ impl i16x8 {
       }
     }
   }
+
+  /// Lanewise saturating multiply.
+  #[inline]
+  #[must_use]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = i32x4_extmul_low_i16x8(self.simd, rhs.simd);
+        let high_wide_mul = i32x4_extmul_high_i16x8(self.simd, rhs.simd);
+        let low = Self { simd: i16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
+
+        let no_overflow = high.simd_eq(low.is_negative());
+        let limit = Self::MAX ^ (self ^ rhs).is_negative();
+        no_overflow.blend(low, limit)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_low_s16(self.neon), vget_low_s16(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon)),
+          );
+          let low_high = vuzpq_s16(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let no_overflow = high.simd_eq(low.is_negative());
+          let limit = Self::MAX ^ (self ^ rhs).is_negative();
+          no_overflow.blend(low, limit)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+        ])
+      }
+    }
+  }
+
+  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed
