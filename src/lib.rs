@@ -941,31 +941,37 @@ fn test_software_sqrt() {
   assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }
 
+#[deprecated(since = "1.5.0", note = "use inherit function instead")]
 pub trait CmpEq<Rhs = Self> {
   type Output;
   fn simd_eq(self, rhs: Rhs) -> Self::Output;
 }
 
+#[deprecated(since = "1.5.0", note = "use inherit function instead")]
 pub trait CmpGt<Rhs = Self> {
   type Output;
   fn simd_gt(self, rhs: Rhs) -> Self::Output;
 }
 
+#[deprecated(since = "1.5.0", note = "use inherit function instead")]
 pub trait CmpGe<Rhs = Self> {
   type Output;
   fn simd_ge(self, rhs: Rhs) -> Self::Output;
 }
 
+#[deprecated(since = "1.5.0", note = "use inherit function instead")]
 pub trait CmpNe<Rhs = Self> {
   type Output;
   fn simd_ne(self, rhs: Rhs) -> Self::Output;
 }
 
+#[deprecated(since = "1.5.0", note = "use inherit function instead")]
 pub trait CmpLt<Rhs = Self> {
   type Output;
   fn simd_lt(self, rhs: Rhs) -> Self::Output;
 }
 
+#[deprecated(since = "1.5.0", note = "use inherit function instead")]
 pub trait CmpLe<Rhs = Self> {
   type Output;
   fn simd_le(self, rhs: Rhs) -> Self::Output;
@@ -995,6 +1001,7 @@ where
 macro_rules! bulk_impl_const_rhs_op {
   (($op:ident, $method:ident) => [$(($lhs:ty, $rhs:ty)),+ $(,)?]) => {
     $(
+    #[expect(deprecated)]
     impl $op<$rhs> for $lhs {
       type Output = Self;
       #[inline]

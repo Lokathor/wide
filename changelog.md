@@ -4,6 +4,7 @@
 
 * Added several functions and trait implementations that previously were only
   implemented for some types inconsistently.
+* Added inherit `simd_*` comparison functions and deprecated the `Cmp*` traits.
 * Added integer `Div` and `Rem` implementations.
 * Added integer functions `clamp`, `saturating_mul` and `saturating_div`.
 * Added signed integer functions `is_positive` and `signum`.

@@ -272,6 +272,7 @@ impl Shl<i32x8> for i32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpEq for i32x8 {
   type Output = Self;
   #[inline]
@@ -289,6 +290,7 @@ impl CmpEq for i32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for i32x8 {
   type Output = Self;
   #[inline]
@@ -306,6 +308,7 @@ impl CmpGt for i32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for i32x8 {
   type Output = Self;
   #[inline]
@@ -323,6 +326,7 @@ impl CmpLt for i32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for i32x8 {
   type Output = Self;
   #[inline]
@@ -340,6 +344,7 @@ impl CmpNe for i32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for i32x8 {
   type Output = Self;
   #[inline]
@@ -357,6 +362,7 @@ impl CmpLe for i32x8 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for i32x8 {
   type Output = Self;
   #[inline]
@@ -387,6 +393,8 @@ impl i32x8 {
   pub const fn new(array: [i32; 8]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
 
   /// widens and sign extends to `i32x8`
   #[inline]

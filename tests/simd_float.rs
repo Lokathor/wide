@@ -1,6 +1,4 @@
-use wide::{
-  CmpEq, CmpLe, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16,
-};
+use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
 use bytemuck::cast;
 

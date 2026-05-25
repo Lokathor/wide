@@ -272,6 +272,7 @@ macro_rules! impl_shr_t_for_i64x4 {
 }
 impl_shr_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
+#[expect(deprecated)]
 impl CmpEq for i64x4 {
   type Output = Self;
   #[inline]
@@ -289,6 +290,7 @@ impl CmpEq for i64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGt for i64x4 {
   type Output = Self;
   #[inline]
@@ -306,6 +308,7 @@ impl CmpGt for i64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLt for i64x4 {
   type Output = Self;
   #[inline]
@@ -323,6 +326,7 @@ impl CmpLt for i64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpNe for i64x4 {
   type Output = Self;
   #[inline]
@@ -340,6 +344,7 @@ impl CmpNe for i64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpLe for i64x4 {
   type Output = Self;
   #[inline]
@@ -357,6 +362,7 @@ impl CmpLe for i64x4 {
   }
 }
 
+#[expect(deprecated)]
 impl CmpGe for i64x4 {
   type Output = Self;
   #[inline]
@@ -380,6 +386,9 @@ impl i64x4 {
   pub const fn new(array: [i64; 4]) -> Self {
     unsafe { core::mem::transmute(array) }
   }
+
+  simd_comparison_fns!();
+
   #[inline]
   #[must_use]
   pub fn blend(self, t: Self, f: Self) -> Self {
