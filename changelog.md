@@ -1,6 +1,6 @@
 # `wide` Changelog
 
-## Unreleased
+## 1.5.0
 
 * Added several functions and trait implementations that previously were only
   implemented for some types inconsistently.
@@ -8,6 +8,7 @@
 * Added integer `Div` and `Rem` implementations.
 * Added integer functions `clamp`, `saturating_mul` and `saturating_div`.
 * Added signed integer functions `is_positive` and `signum`.
+* Added additional float constants.
 * Fixed slight bug in `f64xN` functions `round` and `round_int`.
 * Fixed `simd_ne` NaN behavior for floats.
 * Fixed bug in `u64x8::simd_lt`.
