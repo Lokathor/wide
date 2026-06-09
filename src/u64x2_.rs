@@ -523,6 +523,22 @@ impl u64x2 {
     cast(i64x2::reduce_add(cast(self)))
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> u64 {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [u64; 2] = cast(self);
+        array[0].wrapping_mul(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_u64(self.neon, 0).wrapping_mul(vgetq_lane_u64(self.neon, 1)) }
+      } else {
+        self.arr[0].wrapping_mul(self.arr[1])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> u64 {

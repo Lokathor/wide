@@ -442,6 +442,14 @@ impl u8x32 {
     cast(i8x32::reduce_add(cast(self)))
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> u8 {
+    let array: [u8x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> u8 {

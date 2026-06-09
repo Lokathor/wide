@@ -645,6 +645,38 @@ impl u32x4 {
     cast(i32x4::reduce_add(cast(self)))
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        let high_64  = unpack_high_i64_m128i(self.sse, self.sse);
+        let reduce_64 = mul_32_m128i(high_64, self.sse);
+        let high_32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(reduce_64);
+        let reduce_32 = mul_32_m128i(reduce_64, high_32);
+        get_i32_from_m128i_s(reduce_32).cast_unsigned()
+      } else if #[cfg(target_feature="simd128")] {
+        let high_64 = u64x2_shuffle::<1, 0>(self.simd);
+        let reduce_64 = u32x4_mul(self.simd, high_64);
+        let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64);
+        let reduce_32 = u32x4_mul(reduce_64, high_32);
+        u32x4_extract_lane::<0>(reduce_32)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let high_64 = vextq_u32::<2>(self.neon, self.neon);
+          let reduce_64 = vmulq_u32(self.neon, high_64);
+          let high_32 = vrev64q_u32(reduce_64);
+          let reduce_32 = vmulq_u32(reduce_64, high_32);
+          vgetq_lane_u32::<0>(reduce_32)
+        }
+      } else {
+        let array = self.to_array();
+        array[0].wrapping_mul(array[1]).wrapping_mul(array[2].wrapping_mul(array[3]))
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> u32 {

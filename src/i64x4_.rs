@@ -460,6 +460,17 @@ impl i64x4 {
     }
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0]
+      .wrapping_mul(array[1])
+      .wrapping_mul(array[2])
+      .wrapping_mul(array[3])
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> i64 {

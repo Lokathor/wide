@@ -446,6 +446,14 @@ impl i8x32 {
     (array[0] + array[1]).reduce_add()
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> i8 {
