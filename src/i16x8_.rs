@@ -921,15 +921,13 @@ impl i16x8 {
         let reduce_16 = mul_i16_keep_low_m128i(reduce_32, high_16);
         extract_i16_as_i32_m128i::<0>(reduce_16) as i16
       } else if #[cfg(target_feature="simd128")] {
-        unsafe {
-          let high_64 = i64x2_shuffle::<1, 0>(self.simd, self.simd);
-          let reduce_64 = i16x8_mul(self.simd, high_64);
-          let high_32 = i32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
-          let reduce_32 = i16x8_mul(reduce_64, high_32);
-          let high_16 = i16x8_shuffle::<1, 0, 0, 0, 0, 0, 0, 0>(reduce_32, reduce_32);
-          let reduce_16 = i16x8_mul(reduce_32, high_16);
-          i16x8_extract_lane::<0>(reduce_16)
-        }
+        let high_64 = i64x2_shuffle::<1, 0>(self.simd, self.simd);
+        let reduce_64 = i16x8_mul(self.simd, high_64);
+        let high_32 = i32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
+        let reduce_32 = i16x8_mul(reduce_64, high_32);
+        let high_16 = i16x8_shuffle::<1, 0, 0, 0, 0, 0, 0, 0>(reduce_32, reduce_32);
+        let reduce_16 = i16x8_mul(reduce_32, high_16);
+        i16x8_extract_lane::<0>(reduce_16)
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           let high_64 = vextq_s16::<4>(self.neon, self.neon);
