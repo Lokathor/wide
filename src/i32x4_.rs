@@ -706,9 +706,9 @@ impl i32x4 {
         let reduce_32 = mul_32_m128i(reduce_64, high_32);
         get_i32_from_m128i_s(reduce_32)
       } else if #[cfg(target_feature="simd128")] {
-        let high_64 = i64x2_shuffle::<1, 0>(self.simd);
+        let high_64 = i64x2_shuffle::<1, 0>(self.simd, self.simd);
         let reduce_64 = i32x4_mul(self.simd, high_64);
-        let high_32 = i32x4_shuffle::<1, 0, 0, 0>(reduce_64);
+        let high_32 = i32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
         let reduce_32 = i32x4_mul(reduce_64, high_32);
         i32x4_extract_lane::<0>(reduce_32)
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
