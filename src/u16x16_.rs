@@ -479,6 +479,14 @@ impl u16x16 {
     cast(i16x16::reduce_add(cast(self)))
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> u16 {
+    let array: [u16x8; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> u16 {

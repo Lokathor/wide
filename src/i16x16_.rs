@@ -580,6 +580,14 @@ impl i16x16 {
     (arr[0] + arr[1]).reduce_add()
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> i16 {
+    let array: [i16x8; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
   /// horizontal min of all the elements of the vector
   #[inline]
   #[must_use]

@@ -407,6 +407,17 @@ impl u64x4 {
     cast(i64x4::reduce_add(cast(self)))
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0]
+      .wrapping_mul(array[1])
+      .wrapping_mul(array[2])
+      .wrapping_mul(array[3])
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> u64 {

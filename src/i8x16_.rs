@@ -959,6 +959,36 @@ impl i8x16 {
     }
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> i8 {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        const HIGH_64: [u8; 16] = [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+        const HIGH_32: [u8; 16] = [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+        const HIGH_16: [u8; 16] = [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const HIGH_8: [u8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+        unsafe {
+          // Use `transmute` instead of `cast` because `int8x16_t` does not
+          // implement `bytemuck::Pod`.
+          let high_64 = vqtbl1q_s8(self.neon, core::mem::transmute(HIGH_64));
+          let reduce_64 = vmulq_s8(self.neon, high_64);
+          let high_32 = vqtbl1q_s8(reduce_64, core::mem::transmute(HIGH_32));
+          let reduce_32 = vmulq_s8(reduce_64, high_32);
+          let high_16 = vqtbl1q_s8(reduce_32, core::mem::transmute(HIGH_16));
+          let reduce_16 = vmulq_s8(reduce_32, high_16);
+          let high_8 = vqtbl1q_s8(reduce_16, core::mem::transmute(HIGH_8));
+          let reduce_8 = vmulq_s8(reduce_16, high_8);
+          vgetq_lane_s8::<0>(reduce_8)
+        }
+      } else {
+        self.to_array().into_iter().reduce(i8::wrapping_mul).unwrap()
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_max(self) -> i8 {

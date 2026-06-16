@@ -633,6 +633,53 @@ impl u16x8 {
     cast(i16x8::reduce_add(cast(self)))
   }
 
+  /// Reducing multiply. Returns the product of the elements of the vector.
+  #[inline]
+  #[must_use]
+  pub fn reduce_mul(self) -> u16 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let high_64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+        let reduce_64 = mul_i16_keep_low_m128i(self.sse, high_64);
+        let high_32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(reduce_64);
+        let reduce_32 = mul_i16_keep_low_m128i(reduce_64, high_32);
+        let high_16 = shr_imm_u32_m128i::<16>(reduce_32);
+        let reduce_16 = mul_i16_keep_low_m128i(reduce_32, high_16);
+        extract_i16_as_i32_m128i::<0>(reduce_16) as u16
+      } else if #[cfg(target_feature="simd128")] {
+        let high_64 = u64x2_shuffle::<1, 0>(self.simd, self.simd);
+        let reduce_64 = u16x8_mul(self.simd, high_64);
+        let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
+        let reduce_32 = u16x8_mul(reduce_64, high_32);
+        let high_16 = u16x8_shuffle::<1, 0, 0, 0, 0, 0, 0, 0>(reduce_32, reduce_32);
+        let reduce_16 = u16x8_mul(reduce_32, high_16);
+        u16x8_extract_lane::<0>(reduce_16)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let high_64 = vextq_u16::<4>(self.neon, self.neon);
+          let reduce_64 = vmulq_u16(self.neon, high_64);
+          let high_32 = vrev64q_u16(reduce_64);
+          let reduce_32 = vmulq_u16(reduce_64, high_32);
+          let high_16 = vrev32q_u16(reduce_32);
+          let reduce_16 = vmulq_u16(reduce_32, high_16);
+          vgetq_lane_u16::<0>(reduce_16)
+        }
+      } else {
+        let array = self.to_array();
+
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut result = array[0];
+        result = result.wrapping_mul(array[1]);
+        result = result.wrapping_mul(array[2]);
+        result = result.wrapping_mul(array[3]);
+        result = result.wrapping_mul(array[4]);
+        result = result.wrapping_mul(array[5]);
+        result = result.wrapping_mul(array[6]);
+        result.wrapping_mul(array[7])
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn reduce_min(self) -> u16 {
