@@ -742,8 +742,8 @@ impl f64x2 {
         // The standard library does not have NaN propagating `min` and `max`
         // functions.
         let mut result = self;
-        result = result.simd_lt(min).blend(min, self);
-        result = result.simd_gt(max).blend(max, self);
+        result = result.simd_lt(min).blend(min, result);
+        result = result.simd_gt(max).blend(max, result);
         result
       }
     }
