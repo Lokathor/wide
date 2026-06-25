@@ -779,8 +779,8 @@ impl f32x4 {
         // The standard library does not have NaN propagating `min` and `max`
         // functions.
         let mut result = self;
-        result = result.simd_lt(min).blend(min, self);
-        result = result.simd_gt(max).blend(max, self);
+        result = result.simd_lt(min).blend(min, result);
+        result = result.simd_gt(max).blend(max, result);
         result
       }
     }
@@ -1714,7 +1714,7 @@ impl f32x4 {
           vaddvq_u32(r) as u32
         }
       } else {
-        (((self.arr[0].to_bits() as i32) < 0) as u32) << 0 |
+        (((self.arr[0].to_bits() as i32) < 0) as u32) |
         (((self.arr[1].to_bits() as i32) < 0) as u32) << 1 |
         (((self.arr[2].to_bits() as i32) < 0) as u32) << 2 |
         (((self.arr[3].to_bits() as i32) < 0) as u32) << 3

@@ -742,8 +742,8 @@ impl f64x2 {
         // The standard library does not have NaN propagating `min` and `max`
         // functions.
         let mut result = self;
-        result = result.simd_lt(min).blend(min, self);
-        result = result.simd_gt(max).blend(max, self);
+        result = result.simd_lt(min).blend(min, result);
+        result = result.simd_gt(max).blend(max, result);
         result
       }
     }
@@ -1816,7 +1816,7 @@ impl f64x2 {
           (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
         }
       } else {
-        (((self.arr[0].to_bits() as i64) < 0) as u32) << 0 |
+        (((self.arr[0].to_bits() as i64) < 0) as u32) |
         (((self.arr[1].to_bits() as i64) < 0) as u32) << 1
       }
     }

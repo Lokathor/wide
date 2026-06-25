@@ -932,7 +932,7 @@ impl i32x4 {
           vaddvq_u32(r) as u32
          }
       } else {
-        ((self.arr[0] < 0) as u32) << 0 |
+        ((self.arr[0] < 0) as u32) |
         ((self.arr[1] < 0) as u32) << 1 |
         ((self.arr[2] < 0) as u32) << 2 |
         ((self.arr[3] < 0) as u32) << 3
