@@ -480,7 +480,7 @@ fn test_scalar_mul() {
       let left = 3 as T;
       let expected =
         Simd::new(std::array::from_fn(|i| left.wrapping_mul(right[i])));
-      let actual = Simd::new(right) * left;
+      let actual = left * Simd::new(right);
 
       assert_eq!(actual, expected);
     }

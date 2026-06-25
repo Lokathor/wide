@@ -194,6 +194,15 @@ impl Sub<u32x8> for u32 {
   }
 }
 
+impl Mul<u32x8> for u32 {
+  type Output = u32x8;
+
+  #[inline]
+  fn mul(self, rhs: u32x8) -> Self::Output {
+    u32x8::splat(self) * rhs
+  }
+}
+
 impl From<u16x8> for u32x8 {
   /// widens and zero extends to u32x8
   #[inline]
