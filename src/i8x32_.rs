@@ -403,9 +403,9 @@ impl i8x32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self {
-          avx2: bitor_m256i(
-            bitand_m256i(t.avx2, self.avx2),
-            bitandnot_m256i(self.avx2, f.avx2),
+          avx: bitor_m256i(
+            bitand_m256i(t.avx, self.avx),
+            bitandnot_m256i(self.avx, f.avx),
           ),
         }
       } else {
