@@ -604,6 +604,16 @@ impl f64x8 {
     cast(out)
   }
 
+  /// Returns the nearest integers to `self`. If a value is half-way between two
+  /// integers, round away from `0.0`.
+  ///
+  /// This function always returns the precise result.
+  ///
+  /// For most targets [`round`] is slower than [`round_ties_even`]. If you
+  /// do not care about the difference, consider using that instead.
+  ///
+  /// [`round`]: Self::round
+  /// [`round_ties_even`]: Self::round_ties_even
   #[inline]
   #[must_use]
   pub fn round(self) -> Self {
