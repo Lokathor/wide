@@ -564,6 +564,15 @@ impl u32x8 {
     }
   }
 
+  /// Lanewise selection.
+  ///
+  /// For each lane this returns `t` where `self` is all ones and `f` where
+  /// `self` is all zeros.
+  ///
+  /// This function assumes `self` is a mask, meaning each lane is either all
+  /// zeros or all ones. For bitwise selection use [`bitselect`].
+  ///
+  /// [`bitselect`]: Self::bitselect
   #[inline]
   #[must_use]
   pub fn select(self, t: Self, f: Self) -> Self {
