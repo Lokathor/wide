@@ -530,8 +530,13 @@ impl f32x4 {
   #[must_use]
   pub fn bitselect(self, t: Self, f: Self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_m128(f.sse, t.sse, self.sse) }
+      if #[cfg(target_feature="sse2")] {
+        Self {
+          sse: bitor_m128(
+            bitand_m128(t.sse, self.sse),
+            bitandnot_m128(self.sse, f.sse),
+          ),
+        }
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{

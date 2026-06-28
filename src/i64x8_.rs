@@ -417,7 +417,12 @@ impl i64x8 {
   pub fn bitselect(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
+        Self {
+          avx512: bitor_m512i(
+            bitand_m512i(t.avx512, self.avx512),
+            bitandnot_m512i(self.avx512, f.avx512),
+          ),
+        }
       } else {
         Self {
           a : self.a.bitselect(t.a, f.a),
