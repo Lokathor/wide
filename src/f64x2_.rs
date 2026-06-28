@@ -816,15 +816,25 @@ impl f64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f64x2_nearest(self.simd) }
       } else {
-        const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
-        const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
+        const_f64_as_f64x2!(HALF_NEXT_DOWN, 0.5_f64.next_down());
+        const_f64_as_f64x2!(BOUNDS_LIMIT, 4503599627370496.0);
 
-        let self_sign = self & SIGN_MASK;
-        let magic_value = MAGIC_VALUE | self_sign;
-        let result = self + magic_value - magic_value;
+        let self_abs = self.abs();
 
-        let bounds_mask = self.abs().simd_le(MAGIC_VALUE);
-        bounds_mask.abs().blend(result, self)
+        let adjusted_self = (self_abs + Self::HALF).to_array();
+        let result_abs = Self::new([
+          adjusted_self[0] as u64 as f64,
+          adjusted_self[1] as u64 as f64,
+        ]);
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cast::<_, i64x2>(self_abs).simd_lt(cast::<_, i64x2>(BOUNDS_LIMIT)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       }
     }
   }

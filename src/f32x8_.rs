@@ -649,10 +649,8 @@ impl f32x8 {
         // `abs` keeps the original sign.
         bounds_mask.abs().blend(result_abs, self)
       } else {
-        Self {
-          a : self.a.round(),
-          b : self.b.round(),
-        }
+        let [a, b] = cast::<f32x8, [f32x4; 2]>(self);
+        cast([a.round(), b.round()])
       }
     }
   }

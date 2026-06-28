@@ -648,10 +648,8 @@ impl f64x4 {
         // `abs` keeps the original sign.
         bounds_mask.abs().blend(result_abs, self)
       } else {
-        Self {
-          a : self.a.round(),
-          b : self.b.round(),
-        }
+        let [a, b] = cast::<f64x4, [f64x2; 2]>(self);
+        cast([a.round(), b.round()])
       }
     }
   }

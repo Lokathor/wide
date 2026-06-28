@@ -876,32 +876,27 @@ impl f32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndnq_f32(self.neon) }}
       } else {
-        // Note(Lokathor): This software fallback is probably very slow compared
-        // to having a hardware option available, even just the sse2 version is
-        // better than this. Oh well.
-        let to_int = f32x4::from(1.0 / f32::EPSILON);
-        let u: u32x4 = cast(self);
-        let e: i32x4 = cast((u >> 23) & u32x4::from(0xff));
-        let mut y: f32x4;
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
 
-        let no_op_magic = i32x4::from(0x7f + 23);
-        let no_op_mask: f32x4 = cast(e.simd_gt(no_op_magic) | e.simd_eq(no_op_magic));
-        let no_op_val: f32x4 = self;
+        let self_abs = self.abs();
 
-        let zero_magic = i32x4::from(0x7f - 1);
-        let zero_mask: f32x4 = cast(e.simd_lt(zero_magic));
-        let zero_val: f32x4 = self * f32x4::from(0.0);
+        let adjusted_self = (self_abs + Self::HALF).to_array();
+        let result_abs = Self::new([
+          adjusted_self[0] as u32 as f32,
+          adjusted_self[1] as u32 as f32,
+          adjusted_self[2] as u32 as f32,
+          adjusted_self[3] as u32 as f32,
+        ]);
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
-        let neg_bit: f32x4 = cast(cast::<u32x4, i32x4>(u).simd_lt(i32x4::default()));
-        let x: f32x4 = neg_bit.blend(-self, self);
-        y = x + to_int - to_int - x;
-        y = y.simd_gt(f32x4::from(0.5)).blend(
-          y + x - f32x4::from(-1.0),
-          y.simd_lt(f32x4::from(-0.5)).blend(y + x + f32x4::from(1.0), y + x),
-        );
-        y = neg_bit.blend(-y, y);
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cast::<_, i32x4>(self_abs).simd_lt(cast::<_, i32x4>(BOUNDS_LIMIT)));
 
-        no_op_mask.blend(no_op_val, zero_mask.blend(zero_val, y))
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       }
     }
   }
