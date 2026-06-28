@@ -833,6 +833,53 @@ impl f32x4 {
 
   #[inline]
   #[must_use]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128::<{round_op!(Nearest)}>(self.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        let mi: m128i = convert_to_i32_m128i_from_m128(self.sse);
+        let f: f32x4 = f32x4 { sse: convert_to_m128_from_i32_m128i(mi) };
+        let i: i32x4 = cast(mi);
+        let mask: f32x4 = cast(i.simd_eq(i32x4::from(0x80000000_u32 as i32)));
+        mask.blend(self, f)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_nearest(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndnq_f32(self.neon) }}
+      } else {
+        // Note(Lokathor): This software fallback is probably very slow compared
+        // to having a hardware option available, even just the sse2 version is
+        // better than this. Oh well.
+        let to_int = f32x4::from(1.0 / f32::EPSILON);
+        let u: u32x4 = cast(self);
+        let e: i32x4 = cast((u >> 23) & u32x4::from(0xff));
+        let mut y: f32x4;
+
+        let no_op_magic = i32x4::from(0x7f + 23);
+        let no_op_mask: f32x4 = cast(e.simd_gt(no_op_magic) | e.simd_eq(no_op_magic));
+        let no_op_val: f32x4 = self;
+
+        let zero_magic = i32x4::from(0x7f - 1);
+        let zero_mask: f32x4 = cast(e.simd_lt(zero_magic));
+        let zero_val: f32x4 = self * f32x4::from(0.0);
+
+        let neg_bit: f32x4 = cast(cast::<u32x4, i32x4>(u).simd_lt(i32x4::default()));
+        let x: f32x4 = neg_bit.blend(-self, self);
+        y = x + to_int - to_int - x;
+        y = y.simd_gt(f32x4::from(0.5)).blend(
+          y + x - f32x4::from(-1.0),
+          y.simd_lt(f32x4::from(-0.5)).blend(y + x + f32x4::from(1.0), y + x),
+        );
+        y = neg_bit.blend(-y, y);
+
+        no_op_mask.blend(no_op_val, zero_mask.blend(zero_val, y))
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {

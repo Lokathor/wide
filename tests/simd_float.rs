@@ -474,6 +474,53 @@ fn test_is_inf() {
 }
 
 #[test]
+fn test_round() {
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      0.0,
+      0.1,
+      0.5,
+      0.7,
+      -0.0,
+      -0.1,
+      -0.5,
+      -0.7,
+      2.0,
+      2.1,
+      2.5,
+      2.7,
+      -2.0,
+      -2.1,
+      -2.5,
+      -2.7,
+      5.0,
+      5.1,
+      5.5,
+      5.7,
+      -5.0,
+      -5.1,
+      -5.5,
+      -5.7,
+      T::MAX,
+      T::MIN,
+      T::NAN,
+      T::INFINITY,
+      T::NEG_INFINITY,
+    ])
+    .chain(random_iter())
+    {
+      let expected = Simd::new(value.map(T::round));
+      let actual = Simd::new(value).round();
+
+      assert!(
+        actual ^ expected == Simd::ZERO,
+        "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}",
+      );
+    }
+  });
+}
+
+#[test]
 fn test_round_ties_even() {
   for_simd_types!(|T: Float, N| {
     for value in simd_chunks!([

@@ -629,6 +629,22 @@ impl f32x8 {
 
   #[inline]
   #[must_use]
+  pub fn round(self) -> Self {
+    pick! {
+      // NOTE: Is there an SSE2 version of this? f32x4 version probably translates but I've not had time to figure it out
+      if #[cfg(target_feature="avx")] {
+        Self { avx: round_m256::<{round_op!(Nearest)}>(self.avx) }
+      } else {
+        Self {
+          a : self.a.round(),
+          b : self.b.round(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_ties_even(self) -> Self {
     pick! {
       // NOTE: Is there an SSE2 version of this? f32x4 version probably translates but I've not had time to figure it out

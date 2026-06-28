@@ -629,6 +629,21 @@ impl f32x16 {
 
   #[inline]
   #[must_use]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Nearest)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.round(),
+          b: self.b.round(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

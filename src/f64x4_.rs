@@ -628,6 +628,21 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: round_m256d::<{round_op!(Nearest)}>(self.avx) }
+      } else {
+        Self {
+          a : self.a.round(),
+          b : self.b.round(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {

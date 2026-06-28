@@ -794,6 +794,28 @@ impl f64x2 {
 
   #[inline]
   #[must_use]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128d::<{round_op!(Nearest)}>(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_nearest(self.simd) }
+      } else {
+        const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
+        const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
+
+        let self_sign = self & SIGN_MASK;
+        let magic_value = MAGIC_VALUE | self_sign;
+        let result = self + magic_value - magic_value;
+
+        let bounds_mask = self.abs().simd_le(MAGIC_VALUE);
+        bounds_mask.abs().blend(result, self)
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
