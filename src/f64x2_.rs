@@ -814,7 +814,22 @@ impl f64x2 {
         // `abs` keeps the original sign.
         bounds_mask.abs().blend(result_abs, self)
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_nearest(self.simd) }
+        const_f64_as_f64x2!(HALF_NEXT_DOWN, 0.5_f64.next_down());
+        const_f64_as_f64x2!(BOUNDS_LIMIT, 4503599627370496.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { simd: f64x2_trunc(adjusted_self.simd) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask = Self { simd: i64x2_lt(self_abs.simd, BOUNDS_LIMIT.simd) };
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else {
         const_f64_as_f64x2!(HALF_NEXT_DOWN, 0.5_f64.next_down());
         const_f64_as_f64x2!(BOUNDS_LIMIT, 4503599627370496.0);

@@ -872,7 +872,22 @@ impl f32x4 {
         // `abs` keeps the original sign.
         bounds_mask.abs().blend(result_abs, self)
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_nearest(self.simd) }
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { simd: f32x4_trunc(adjusted_self.simd) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask = Self { simd: i32x4_lt(self_abs.simd, BOUNDS_LIMIT.simd) };
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndaq_f32(self.neon) }}
       } else {
