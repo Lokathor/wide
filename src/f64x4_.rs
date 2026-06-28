@@ -406,6 +406,21 @@ impl f64x4 {
 
   #[inline]
   #[must_use]
+  pub fn bitselect(self, t: Self, f: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: blend_varying_m256d(f.avx, t.avx, self.avx) }
+      } else {
+        Self {
+          a: self.a.bitselect(t.a, f.a),
+          b: self.b.bitselect(t.b, f.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {

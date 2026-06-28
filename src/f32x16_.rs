@@ -412,6 +412,21 @@ impl f32x16 {
 
   #[inline]
   #[must_use]
+  pub fn bitselect(self, t: Self, f: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: blend_varying_m512(f.avx512, t.avx512, movepi32_mask_m512(self.avx512)) }
+      } else {
+        Self {
+          a: self.a.bitselect(t.a, f.a),
+          b: self.b.bitselect(t.b, f.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

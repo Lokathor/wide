@@ -400,6 +400,21 @@ impl i16x32 {
 
   #[inline]
   #[must_use]
+  pub fn bitselect(self, t: Self, f: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
+      } else {
+        Self {
+          a: self.a.bitselect(t.a, f.a),
+          b: self.b.bitselect(t.b, f.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {

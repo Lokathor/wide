@@ -390,6 +390,21 @@ impl i8x32 {
 
   #[inline]
   #[must_use]
+  pub fn bitselect(self, t: Self, f: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: blend_varying_i8_m256i(f.avx, t.avx, self.avx) }
+      } else {
+        Self {
+          a : self.a.bitselect(t.a, f.a),
+          b : self.b.bitselect(t.b, f.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

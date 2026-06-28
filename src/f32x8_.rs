@@ -410,6 +410,21 @@ impl f32x8 {
 
   #[inline]
   #[must_use]
+  pub fn bitselect(self, t: Self, f: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: blend_varying_m256(f.avx, t.avx, self.avx) }
+      } else {
+        Self {
+          a: self.a.bitselect(t.a, f.a),
+          b: self.b.bitselect(t.b, f.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  #[must_use]
   pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -1915,8 +1930,8 @@ impl f32x8 {
       // Is y odd?
       let y_odd = cast::<_, i32x8>(y.round_int() << 31).round_float();
 
-      let z1 =
-        yi.select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
+      let z1 = yi
+        .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
 
       x_sign.select(z1, z)
     } else {

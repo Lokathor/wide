@@ -2010,6 +2010,53 @@ fn test_simd_ge_scalar() {
 }
 
 #[test]
+fn test_bitselect() {
+  for_simd_types!(|T: Float, N| {
+    for [value, if_true, if_false] in simd_chunks!(
+      [1.45, 1.1, -4.0, 11.0, -41.0, -17.0, 61.0, -1.5],
+      [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
+      [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        T::from_bits(
+          if_true[i].to_bits() & value[i].to_bits()
+            | if_false[i].to_bits() & !value[i].to_bits(),
+        )
+      }));
+      let actual =
+        Simd::new(value).bitselect(Simd::new(if_true), Simd::new(if_false));
+
+      assert!(
+        actual ^ expected == Simd::ZERO,
+        "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n if_true: {if_true:?}\nif_false: {if_false:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Integer, N| {
+    for [value, if_true, if_false] in simd_chunks!(
+      [0, 0, !0, 0, !0, !0, 0, !0],
+      [4, 6, 3, 20, T::MAX, 5, 123, 111],
+      [5, 1, 4, 50, 1, T::MIN, 120, 112],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        if_true[i] & value[i] | if_false[i] & !value[i]
+      }));
+      let actual =
+        Simd::new(value).bitselect(Simd::new(if_true), Simd::new(if_false));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    mask: {value:?}\n if_true: {if_true:?}\nif_false: {if_false:?}",
+      );
+    }
+  });
+}
+
+#[test]
 fn test_select() {
   for_simd_types!(|T: Float, N| {
     for [mask, if_true, if_false] in simd_chunks!(
