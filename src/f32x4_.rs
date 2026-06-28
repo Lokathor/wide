@@ -836,13 +836,41 @@ impl f32x4 {
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128::<{round_op!(Nearest)}>(self.sse) }
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { sse: round_m128::<{round_op!(Zero)}>(adjusted_self.sse) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else if #[cfg(target_feature="sse2")] {
-        let mi: m128i = convert_to_i32_m128i_from_m128(self.sse);
-        let f: f32x4 = f32x4 { sse: convert_to_m128_from_i32_m128i(mi) };
-        let i: i32x4 = cast(mi);
-        let mask: f32x4 = cast(i.simd_eq(i32x4::from(0x80000000_u32 as i32)));
-        mask.blend(self, f)
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self {
+          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(adjusted_self.sse)),
+        };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_nearest(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{

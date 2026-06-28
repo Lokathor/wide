@@ -796,8 +796,23 @@ impl f64x2 {
   #[must_use]
   pub fn round(self) -> Self {
     pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128d::<{round_op!(Nearest)}>(self.sse) }
+      if #[cfg(target_feature="sse4.2")] {
+        const_f64_as_f64x2!(HALF_NEXT_DOWN, 0.5_f64.next_down());
+        const_f64_as_f64x2!(BOUNDS_LIMIT, 4503599627370496.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { sse: round_m128d::<{round_op!(Zero)}>(adjusted_self.sse) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_gt_mask_i64_m128i(cast(BOUNDS_LIMIT), cast(self_abs)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f64x2_nearest(self.simd) }
       } else {

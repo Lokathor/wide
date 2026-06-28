@@ -631,9 +631,23 @@ impl f32x8 {
   #[must_use]
   pub fn round(self) -> Self {
     pick! {
-      // NOTE: Is there an SSE2 version of this? f32x4 version probably translates but I've not had time to figure it out
-      if #[cfg(target_feature="avx")] {
-        Self { avx: round_m256::<{round_op!(Nearest)}>(self.avx) }
+      if #[cfg(target_feature="avx2")] {
+        const_f32_as_f32x8!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x8!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { avx: round_m256::<{round_op!(Zero)}>(adjusted_self.avx) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_gt_mask_i32_m256i(cast(BOUNDS_LIMIT), cast(self_abs)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else {
         Self {
           a : self.a.round(),

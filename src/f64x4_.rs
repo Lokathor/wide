@@ -630,8 +630,23 @@ impl f64x4 {
   #[must_use]
   pub fn round(self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: round_m256d::<{round_op!(Nearest)}>(self.avx) }
+      if #[cfg(target_feature="avx2")] {
+        const_f64_as_f64x4!(HALF_NEXT_DOWN, 0.5_f64.next_down());
+        const_f64_as_f64x4!(BOUNDS_LIMIT, 4503599627370496.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { avx: round_m256d::<{round_op!(Zero)}>(adjusted_self.avx) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_gt_mask_i64_m256i(cast(BOUNDS_LIMIT), cast(self_abs)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else {
         Self {
           a : self.a.round(),

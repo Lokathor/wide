@@ -632,7 +632,25 @@ impl f32x16 {
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(Nearest)}>(self.avx512) }
+        const_f32_as_f32x16!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x16!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { avx512: round_m512::<{round_op!(Zero)}>(adjusted_self.avx512) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(
+          cast(self_abs),
+          cast(BOUNDS_LIMIT),
+        ));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().blend(result_abs, self)
       } else {
         Self {
           a: self.a.round(),
