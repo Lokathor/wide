@@ -623,6 +623,15 @@ impl u32x4 {
     }
   }
 
+  /// Bitwise selection.
+  ///
+  /// For each bit this returns `t` where `self` is `1` and `f` where `self` is
+  /// `0`.
+  ///
+  /// If `self` is a mask, meaning each lane is either all zeros or all ones,
+  /// consider using [`select`] which is faster.
+  ///
+  /// [`select`]: Self::select
   #[inline]
   #[must_use]
   pub fn bitselect(self, t: Self, f: Self) -> Self {
