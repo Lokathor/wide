@@ -479,34 +479,19 @@ fn test_round() {
     for value in simd_chunks!([
       0.0,
       0.1,
+      (0.5 as T).next_down(),
       0.5,
       0.7,
-      -0.0,
-      -0.1,
-      -0.5,
-      -0.7,
-      2.0,
-      2.1,
-      2.5,
-      2.7,
-      -2.0,
-      -2.1,
-      -2.5,
-      -2.7,
-      5.0,
-      5.1,
-      5.5,
-      5.7,
-      -5.0,
-      -5.1,
-      -5.5,
-      -5.7,
+      8388607.0,
+      4503599627370495.0,
       T::MAX,
-      T::MIN,
-      T::NAN,
       T::INFINITY,
-      T::NEG_INFINITY,
+      T::NAN
     ])
+    .flat_map(|x| {
+      [x, x.map(|x| x + 1.0), x.map(|x| x + 2.0), x.map(|x| x + 3.0)]
+    })
+    .flat_map(|x| [x, x.map(|x| -x)])
     .chain(random_iter())
     {
       let expected = Simd::new(value.map(T::round));
@@ -526,34 +511,19 @@ fn test_round_ties_even() {
     for value in simd_chunks!([
       0.0,
       0.1,
+      (0.5 as T).next_down(),
       0.5,
       0.7,
-      -0.0,
-      -0.1,
-      -0.5,
-      -0.7,
-      2.0,
-      2.1,
-      2.5,
-      2.7,
-      -2.0,
-      -2.1,
-      -2.5,
-      -2.7,
-      5.0,
-      5.1,
-      5.5,
-      5.7,
-      -5.0,
-      -5.1,
-      -5.5,
-      -5.7,
+      8388607.0,
+      4503599627370495.0,
       T::MAX,
-      T::MIN,
-      T::NAN,
       T::INFINITY,
-      T::NEG_INFINITY,
+      T::NAN
     ])
+    .flat_map(|x| {
+      [x, x.map(|x| x + 1.0), x.map(|x| x + 2.0), x.map(|x| x + 3.0)]
+    })
+    .flat_map(|x| [x, x.map(|x| -x)])
     .chain(random_iter())
     {
       let expected = Simd::new(value.map(T::round_ties_even));
