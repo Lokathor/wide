@@ -874,7 +874,7 @@ impl f32x4 {
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_nearest(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vrndnq_f32(self.neon) }}
+        unsafe {Self { neon: vrndaq_f32(self.neon) }}
       } else {
         const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
         const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
