@@ -833,7 +833,7 @@ impl f32x4 {
 
   #[inline]
   #[must_use]
-  pub fn round(self) -> Self {
+  pub fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: round_m128::<{round_op!(Nearest)}>(self.sse) }
@@ -1424,7 +1424,7 @@ impl f32x4 {
     let xa = self.abs();
 
     // Find quadrant
-    let y = (xa * TWO_OVER_PI).round();
+    let y = (xa * TWO_OVER_PI).round_ties_even();
     let q: i32x4 = y.round_int();
 
     let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
@@ -1803,7 +1803,7 @@ impl f32x4 {
       return Self::ZERO;
     }
     let max_r = f32x4::from(127.0);
-    let r = (self * Self::LOG2_E).round();
+    let r = (self * Self::LOG2_E).round_ties_even();
     let big = r.simd_gt(max_r);
     let r_safe = big.blend(max_r, r);
     let excess = r - max_r;
@@ -1858,7 +1858,7 @@ impl f32x4 {
     let max_x = f32x4::from(88.723);
     let min_x = f32x4::from(-103.63);
     let max_r = f32x4::from(127.0);
-    let r = (self * Self::LOG2_E).round();
+    let r = (self * Self::LOG2_E).round_ties_even();
     let big = r.simd_gt(max_r);
     let r_safe = big.blend(max_r, r);
     let excess = r - max_r;
@@ -1910,7 +1910,7 @@ impl f32x4 {
       return Self::ZERO;
     }
 
-    let round = self.round();
+    let round = self.round_ties_even();
     let max_r = f32x4::from(127.0);
     let big = round.simd_gt(max_r);
     let r_safe = big.blend(max_r, round);
@@ -2142,20 +2142,20 @@ impl f32x4 {
     let ef = x1.exponent();
     let ef = mask.blend(ef + f32x4::ONE, ef);
 
-    let e1 = (ef * y).round();
+    let e1 = (ef * y).round_ties_even();
     let yr = ef.mul_sub(y, e1);
 
     let lg = f32x4::HALF.mul_neg_add(x2, x) + lg1;
     let x2_err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
     let lg_err = f32x4::HALF.mul_add(x2, lg - x) - lg1;
 
-    let e2 = (lg * y * f32x4::LOG2_E).round();
+    let e2 = (lg * y * f32x4::LOG2_E).round_ties_even();
     let v = lg.mul_sub(y, e2 * ln2f_hi);
     let v = e2.mul_neg_add(ln2f_lo, v);
     let v = v - (lg_err + x2_err).mul_sub(y, yr * f32x4::LN_2);
 
     let x = v;
-    let e3 = (x * f32x4::LOG2_E).round();
+    let e3 = (x * f32x4::LOG2_E).round_ties_even();
     let x = e3.mul_neg_add(f32x4::LN_2, x);
     let x2 = x * x;
     let z = x2.mul_add(
@@ -2196,7 +2196,7 @@ impl f32x4 {
     let x_sign = self.is_sign_negative();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.simd_eq(y.round());
+      let yi = y.simd_eq(y.round_ties_even());
       // Is y odd?
       let y_odd = cast::<_, i32x4>(y.round_int() << 31).round_float();
 

@@ -474,7 +474,7 @@ fn test_is_inf() {
 }
 
 #[test]
-fn test_round() {
+fn test_round_ties_even() {
   for_simd_types!(|T: Float, N| {
     for value in simd_chunks!([
       0.0,
@@ -509,10 +509,8 @@ fn test_round() {
     ])
     .chain(random_iter())
     {
-      // TODO:  Currently `round` actually behaves like `round_ties_even`.
-      // Decide the correct behavior then add documentation.
       let expected = Simd::new(value.map(T::round_ties_even));
-      let actual = Simd::new(value).round();
+      let actual = Simd::new(value).round_ties_even();
 
       assert!(
         actual ^ expected == Simd::ZERO,
