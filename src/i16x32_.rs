@@ -242,7 +242,9 @@ macro_rules! impl_shl_t_for_i16x32 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            let shift = cast(rhs as u16);
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u16 & 15, 0]);
             Self { avx512: shl_all_u16_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -266,7 +268,9 @@ macro_rules! impl_shr_t_for_i16x32 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            let shift = cast(rhs as u16);
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u16 & 15, 0]);
             Self { avx512: shr_all_i16_m512i(self.avx512, shift) }
           } else {
             Self {
