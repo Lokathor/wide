@@ -850,8 +850,10 @@ impl f32x4 {
         // Large value, infinity and NaN need special handling.
         let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
 
-        // `abs` keeps the original sign.
-        bounds_mask.abs().blend(result_abs, self)
+        // `abs` keeps the original sign. `blend` cannot be used here because it
+        // doesn't work as an arbitrary bit-blend.
+        let bounds_mask = bounds_mask.abs();
+        result_abs & bounds_mask | self & !bounds_mask
       } else if #[cfg(target_feature="sse2")] {
         const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
         const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
@@ -869,8 +871,10 @@ impl f32x4 {
         // Large value, infinity and NaN need special handling.
         let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
 
-        // `abs` keeps the original sign.
-        bounds_mask.abs().blend(result_abs, self)
+        // `abs` keeps the original sign. `blend` cannot be used here because it
+        // doesn't work as an arbitrary bit-blend.
+        let bounds_mask = bounds_mask.abs();
+        result_abs & bounds_mask | self & !bounds_mask
       } else if #[cfg(target_feature="simd128")] {
         const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
         const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
@@ -910,8 +914,10 @@ impl f32x4 {
         // Large value, infinity and NaN need special handling.
         let bounds_mask: Self = cast(cast::<_, i32x4>(self_abs).simd_lt(cast::<_, i32x4>(BOUNDS_LIMIT)));
 
-        // `abs` keeps the original sign.
-        bounds_mask.abs().blend(result_abs, self)
+        // `abs` keeps the original sign. `blend` cannot be used here because it
+        // doesn't work as an arbitrary bit-blend.
+        let bounds_mask = bounds_mask.abs();
+        result_abs & bounds_mask | self & !bounds_mask
       }
     }
   }
