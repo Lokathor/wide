@@ -388,14 +388,14 @@ impl u64x4 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: blend_varying_i8_m256i(f.avx2,t.avx2,self.avx2) }
       } else {
         Self {
-          a : self.a.blend(t.a, f.a),
-          b : self.b.blend(t.b, f.b),
+          a : self.a.select(t.a, f.a),
+          b : self.b.select(t.b, f.b),
         }
       }
     }
@@ -482,13 +482,13 @@ impl u64x4 {
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).blend(self, rhs)
+    self.simd_lt(rhs).select(self, rhs)
   }
 
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).blend(self, rhs)
+    self.simd_gt(rhs).select(self, rhs)
   }
 
   integer_fn_clamp!();
@@ -499,7 +499,7 @@ impl u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self + rhs;
-        result.simd_lt(self).blend(Self::MAX, result)
+        result.simd_lt(self).select(Self::MAX, result)
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -515,7 +515,7 @@ impl u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self - rhs;
-        result.simd_gt(self).blend(Self::MIN, result)
+        result.simd_gt(self).select(Self::MIN, result)
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),

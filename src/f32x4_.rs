@@ -528,7 +528,7 @@ impl f32x4 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_m128(f.sse, t.sse, self.sse) }
@@ -561,7 +561,7 @@ impl f32x4 {
   pub fn signum(self) -> Self {
     let result = Self::ONE | self & -Self::ZERO;
 
-    self.is_nan().blend(self, result)
+    self.is_nan().select(self, result)
   }
 
   #[inline]
@@ -652,7 +652,7 @@ impl f32x4 {
         // max_m128 seems to do rhs < self ? self : rhs. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
-        rhs.is_nan().blend(self, Self { sse: max_m128(self.sse, rhs.sse) })
+        rhs.is_nan().select(self, Self { sse: max_m128(self.sse, rhs.sse) })
       } else if #[cfg(target_feature="simd128")] {
         // WASM has two max intrinsics:
         // - max: This propagates NaN, that's the opposite of what we need.
@@ -717,7 +717,7 @@ impl f32x4 {
         // min_m128 seems to do self < rhs ? self : rhs. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
-        rhs.is_nan().blend(self, Self { sse: min_m128(self.sse, rhs.sse) })
+        rhs.is_nan().select(self, Self { sse: min_m128(self.sse, rhs.sse) })
       } else if #[cfg(target_feature="simd128")] {
         // WASM has two min intrinsics:
         // - min: This propagates NaN, that's the opposite of what we need.
@@ -754,7 +754,7 @@ impl f32x4 {
   pub fn clamp(self, min: Self, max: Self) -> Self {
     let is_nan = self.is_nan() | min.is_nan() | max.is_nan();
     let clamped = self.fast_min(max).fast_max(min);
-    is_nan.blend(Self::splat(f32::NAN), clamped)
+    is_nan.select(Self::splat(f32::NAN), clamped)
   }
 
   /// Restrict a value to a certain interval unless it is NaN.
@@ -779,8 +779,8 @@ impl f32x4 {
         // The standard library does not have NaN propagating `min` and `max`
         // functions.
         let mut result = self;
-        result = result.simd_lt(min).blend(min, result);
-        result = result.simd_gt(max).blend(max, result);
+        result = result.simd_lt(min).select(min, result);
+        result = result.simd_gt(max).select(max, result);
         result
       }
     }
@@ -842,7 +842,7 @@ impl f32x4 {
         let f: f32x4 = f32x4 { sse: convert_to_m128_from_i32_m128i(mi) };
         let i: i32x4 = cast(mi);
         let mask: f32x4 = cast(i.simd_eq(i32x4::from(0x80000000_u32 as i32)));
-        mask.blend(self, f)
+        mask.select(self, f)
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_nearest(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -865,15 +865,15 @@ impl f32x4 {
         let zero_val: f32x4 = self * f32x4::from(0.0);
 
         let neg_bit: f32x4 = cast(cast::<u32x4, i32x4>(u).simd_lt(i32x4::default()));
-        let x: f32x4 = neg_bit.blend(-self, self);
+        let x: f32x4 = neg_bit.select(-self, self);
         y = x + to_int - to_int - x;
-        y = y.simd_gt(f32x4::from(0.5)).blend(
+        y = y.simd_gt(f32x4::from(0.5)).select(
           y + x - f32x4::from(-1.0),
-          y.simd_lt(f32x4::from(-0.5)).blend(y + x + f32x4::from(1.0), y + x),
+          y.simd_lt(f32x4::from(-0.5)).select(y + x + f32x4::from(1.0), y + x),
         );
-        y = neg_bit.blend(-y, y);
+        y = neg_bit.select(-y, y);
 
-        no_op_mask.blend(no_op_val, zero_mask.blend(zero_val, y))
+        no_op_mask.select(no_op_val, zero_mask.select(zero_val, y))
       }
     }
   }
@@ -941,7 +941,7 @@ impl f32x4 {
         ));
 
         // Reset the sign bit of the mask to preverse the sign of `self`.
-        bounds_mask.abs().blend(result, self)
+        bounds_mask.abs().select(result, self)
       } else if #[cfg(target_feature="simd128")] {
         Self { simd: f32x4_trunc(self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -960,7 +960,7 @@ impl f32x4 {
         let bounds_mask: Self = cast(cast::<f32x4, i32x4>(self.abs()).simd_lt(i32x4::splat(BOUNDS_LIMIT)));
 
         // Reset the sign bit of the mask to preverse the sign of `self`.
-        bounds_mask.abs().blend(result, self)
+        bounds_mask.abs().select(result, self)
       }
     }
   }
@@ -1176,14 +1176,14 @@ impl f32x4 {
     let q = (self / rhs).trunc();
     (self % rhs)
       .simd_lt(Self::ZERO)
-      .blend(rhs.simd_gt(Self::ZERO).blend(q - Self::ONE, q + Self::ONE), q)
+      .select(rhs.simd_gt(Self::ZERO).select(q - Self::ONE, q + Self::ONE), q)
   }
 
   #[inline]
   #[must_use]
   pub fn rem_euclid(self, rhs: Self) -> Self {
     let r = self % rhs;
-    r.simd_lt(Self::ZERO).blend(r + rhs.abs(), r)
+    r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
   }
 
   #[inline]
@@ -1214,11 +1214,11 @@ impl f32x4 {
 
     let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
     let x2 = xa * xa;
-    let x3 = big.blend(x1, x2);
+    let x3 = big.select(x1, x2);
 
     let xb = x1.sqrt();
 
-    let x4 = big.blend(xb, xa);
+    let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
     let z = z.mul_add(x3 * x4, x4);
@@ -1226,13 +1226,13 @@ impl f32x4 {
     let z1 = z + z;
 
     // acos
-    let z3 = self.simd_lt(f32x4::ZERO).blend(f32x4::PI - z1, z1);
+    let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
     let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
-    let acos = big.blend(z3, z4);
+    let acos = big.select(z3, z4);
 
     // asin
     let z3 = f32x4::FRAC_PI_2 - z1;
-    let asin = big.blend(z3, z);
+    let asin = big.select(z3, z);
     let asin = asin.flip_signs(self);
 
     (asin, acos)
@@ -1253,11 +1253,11 @@ impl f32x4 {
 
     let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
     let x2 = xa * xa;
-    let x3 = big.blend(x1, x2);
+    let x3 = big.select(x1, x2);
 
     let xb = x1.sqrt();
 
-    let x4 = big.blend(xb, xa);
+    let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
     let z = z.mul_add(x3 * x4, x4);
@@ -1266,7 +1266,7 @@ impl f32x4 {
 
     // asin
     let z3 = f32x4::FRAC_PI_2 - z1;
-    let asin = big.blend(z3, z);
+    let asin = big.select(z3, z);
     let asin = asin.flip_signs(self);
 
     asin
@@ -1288,11 +1288,11 @@ impl f32x4 {
 
     let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
     let x2 = xa * xa;
-    let x3 = big.blend(x1, x2);
+    let x3 = big.select(x1, x2);
 
     let xb = x1.sqrt();
 
-    let x4 = big.blend(xb, xa);
+    let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
     let z = z.mul_add(x3 * x4, x4);
@@ -1300,9 +1300,9 @@ impl f32x4 {
     let z1 = z + z;
 
     // acos
-    let z3 = self.simd_lt(f32x4::ZERO).blend(f32x4::PI - z1, z1);
+    let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
     let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
-    let acos = big.blend(z3, z4);
+    let acos = big.select(z3, z4);
 
     acos
   }
@@ -1324,13 +1324,13 @@ impl f32x4 {
     let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
     let notbig = t.simd_le(Self::SQRT_2 + Self::ONE);
 
-    let mut s = notbig.blend(Self::FRAC_PI_4, Self::FRAC_PI_2);
+    let mut s = notbig.select(Self::FRAC_PI_4, Self::FRAC_PI_2);
     s = notsmal & s;
 
     let mut a = notbig & t;
-    a = notsmal.blend(a - Self::ONE, a);
+    a = notsmal.select(a - Self::ONE, a);
     let mut b = notbig & Self::ONE;
-    b = notsmal.blend(b + t, b);
+    b = notsmal.select(b + t, b);
     let z = a / b;
 
     let zz = z * z;
@@ -1340,7 +1340,7 @@ impl f32x4 {
     re = re.mul_add(zz * z, z) + s;
 
     // get sign bit
-    re = (self.is_sign_negative()).blend(-re, re);
+    re = (self.is_sign_negative()).select(-re, re);
 
     re
   }
@@ -1361,15 +1361,15 @@ impl f32x4 {
     let y1 = y.abs();
     let swapxy = y1.simd_gt(x1);
     // swap x and y if y1 > x1
-    let mut x2 = swapxy.blend(y1, x1);
-    let mut y2 = swapxy.blend(x1, y1);
+    let mut x2 = swapxy.select(y1, x1);
+    let mut y2 = swapxy.select(x1, y1);
 
     // check for special case: x and y are both +/- INF
     let both_infinite = x.is_inf() & y.is_inf();
     if both_infinite.any() {
       let minus_one = -Self::ONE;
-      x2 = both_infinite.blend(x2 & minus_one, x2);
-      y2 = both_infinite.blend(y2 & minus_one, y2);
+      x2 = both_infinite.select(x2 & minus_one, x2);
+      y2 = both_infinite.select(y2 & minus_one, y2);
     }
 
     // x = y = 0 will produce NAN. No problem, fixed below
@@ -1379,8 +1379,8 @@ impl f32x4 {
     // medium: z = (t-1.0) / (t+1.0);
     let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
 
-    let a = notsmal.blend(t - Self::ONE, t);
-    let b = notsmal.blend(t + Self::ONE, Self::ONE);
+    let a = notsmal.select(t - Self::ONE, t);
+    let b = notsmal.select(t + Self::ONE, Self::ONE);
     let s = notsmal & Self::FRAC_PI_4;
     let z = a / b;
 
@@ -1391,12 +1391,12 @@ impl f32x4 {
     re = re.mul_add(zz * z, z) + s;
 
     // move back in place
-    re = swapxy.blend(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).simd_eq(Self::ZERO)).blend(Self::ZERO, re);
-    re = (x.is_sign_negative()).blend(Self::PI - re, re);
+    re = swapxy.select(Self::FRAC_PI_2 - re, re);
+    re = ((x | y).simd_eq(Self::ZERO)).select(Self::ZERO, re);
+    re = (x.is_sign_negative()).select(Self::PI - re, re);
 
     // get sign bit
-    re = (y.is_sign_negative()).blend(-re, re);
+    re = (y.is_sign_negative()).select(-re, re);
 
     re
   }
@@ -1438,24 +1438,24 @@ impl f32x4 {
 
     let mut overflow: f32x4 = cast(q.simd_gt(i32x4::from(0x2000000)));
     overflow &= xa.is_finite();
-    s = overflow.blend(f32x4::from(0.0), s);
-    c = overflow.blend(f32x4::from(1.0), c);
+    s = overflow.select(f32x4::from(0.0), s);
+    c = overflow.select(f32x4::from(1.0), c);
 
     // calc sin
-    let mut sin1 = cast::<_, f32x4>(swap).blend(c, s);
+    let mut sin1 = cast::<_, f32x4>(swap).select(c, s);
     let sign_sin: i32x4 = (q << 30) ^ cast::<_, i32x4>(self);
     sin1 = sin1.flip_signs(cast(sign_sin));
 
     // calc cos
-    let mut cos1 = cast::<_, f32x4>(swap).blend(s, c);
+    let mut cos1 = cast::<_, f32x4>(swap).select(s, c);
     let sign_cos: i32x4 = ((q + i32x4::from(1)) & i32x4::from(2)) << 30;
     cos1 ^= cast::<_, f32x4>(sign_cos);
 
     // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
     let finite = self.is_finite();
     let nan = Self::splat(f32::NAN);
-    let sin_final = finite.blend(sin1, nan);
-    let cos_final = finite.blend(cos1, nan);
+    let sin_final = finite.select(sin1, nan);
+    let cos_final = finite.select(cos1, nan);
 
     (sin_final, cos_final)
   }
@@ -1496,7 +1496,7 @@ impl f32x4 {
       let e = a.exp();
       (e - Self::ONE / e) * Self::HALF
     };
-    let result = small.blend(poly, exp_based);
+    let result = small.select(poly, exp_based);
     result.flip_signs(self)
   }
 
@@ -1517,7 +1517,7 @@ impl f32x4 {
       let e = a.exp();
       (e + Self::ONE / e) * Self::HALF
     };
-    small.blend(poly, exp_based)
+    small.select(poly, exp_based)
   }
 
   /// Calculates hyperbolic tangent: `sinh(self)/cosh(self)`.
@@ -1538,8 +1538,8 @@ impl f32x4 {
       let pos = -t / (t + Self::from(2.0));
       pos.flip_signs(self)
     };
-    let result = small.blend(self, exp_based);
-    large.blend(Self::ONE.flip_signs(self), result)
+    let result = small.select(self, exp_based);
+    large.select(Self::ONE.flip_signs(self), result)
   }
 
   /// Calculates the cube root: `self^(1/3)`.
@@ -1555,7 +1555,7 @@ impl f32x4 {
     let nan = self.is_nan();
 
     let tiny = a.simd_lt(Self::from(f32::MIN_POSITIVE));
-    let a_work = tiny.blend(a * Self::from(16777216.0), a);
+    let a_work = tiny.select(a * Self::from(16777216.0), a);
 
     let e = Self::exponent(a_work) + Self::ONE;
     let d = Self::fraction_2(a_work);
@@ -1587,20 +1587,20 @@ impl f32x4 {
     let three = Self::from(3.0);
     let two = Self::from(2.0);
     let neg = e.simd_lt(Self::ZERO);
-    let e_adj = neg.blend(e - two, e);
+    let e_adj = neg.select(e - two, e);
     let k = (e_adj / three).trunc();
     let r = e - three * k;
     const_f32_as_f32x4!(CBRT2, 1.259921);
     const_f32_as_f32x4!(CBRT4, 1.587401);
-    y = r.simd_eq(Self::ONE).blend(y * CBRT2, y);
-    y = r.simd_eq(two).blend(y * CBRT4, y);
+    y = r.simd_eq(Self::ONE).select(y * CBRT2, y);
+    y = r.simd_eq(two).select(y * CBRT4, y);
     y *= Self::vm_pow2n(k);
-    y = tiny.blend(y / Self::from(256.0_f32), y);
+    y = tiny.select(y / Self::from(256.0_f32), y);
 
     let result = y.flip_signs(self);
-    let result = nan.blend(self, result);
-    let result = zero.blend(self, result);
-    let result = inf.blend(self, result);
+    let result = nan.select(self, result);
+    let result = zero.select(self, result);
+    let result = inf.select(self, result);
     result
   }
 
@@ -1764,11 +1764,11 @@ impl f32x4 {
       let valid = self.simd_ge(f32x4::from(-149.0));
       let shift_f = self + f32x4::from(149.0);
       let mut shift_i = shift_f.trunc_int();
-      shift_i = cast::<_, i32x4>(valid).blend(shift_i, i32x4::ZERO);
+      shift_i = cast::<_, i32x4>(valid).select(shift_i, i32x4::ZERO);
       let mantissa = i32x4::ONE << shift_i;
       let sub_result = cast::<_, f32x4>(mantissa);
-      let sub_result = valid.blend(sub_result, f32x4::ZERO);
-      is_sub.blend(sub_result, std_result)
+      let sub_result = valid.select(sub_result, f32x4::ZERO);
+      is_sub.select(sub_result, std_result)
     } else {
       std_result
     }
@@ -1805,9 +1805,9 @@ impl f32x4 {
     let max_r = f32x4::from(127.0);
     let r = (self * Self::LOG2_E).round();
     let big = r.simd_gt(max_r);
-    let r_safe = big.blend(max_r, r);
+    let r_safe = big.select(max_r, r);
     let excess = r - max_r;
-    let excess = big.blend(excess, Self::ZERO);
+    let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
     let x = r.mul_neg_add(LN2D_HI, self);
     let x = r.mul_neg_add(LN2D_LO, x);
@@ -1817,14 +1817,14 @@ impl f32x4 {
     let n2 = Self::vm_pow2n(r_safe);
     let z = (z + Self::ONE) * scale * n2;
     let nan_mask = self.is_nan();
-    let mut result = nan_mask.blend(Self::nan_pow(), z);
+    let mut result = nan_mask.select(Self::nan_pow(), z);
     let pos_overflow = self.simd_gt(max_x) & finite;
-    result = pos_overflow.blend(Self::infinity(), result);
-    result = neg_underflow.blend(Self::ZERO, result);
+    result = pos_overflow.select(Self::infinity(), result);
+    result = neg_underflow.select(Self::ZERO, result);
     let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
-    result = pos_inf.blend(Self::infinity(), result);
+    result = pos_inf.select(Self::infinity(), result);
     let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
-    result = neg_inf.blend(Self::ZERO, result);
+    result = neg_inf.select(Self::ZERO, result);
     result
   }
 
@@ -1860,9 +1860,9 @@ impl f32x4 {
     let max_r = f32x4::from(127.0);
     let r = (self * Self::LOG2_E).round();
     let big = r.simd_gt(max_r);
-    let r_safe = big.blend(max_r, r);
+    let r_safe = big.select(max_r, r);
     let excess = r - max_r;
-    let excess = big.blend(excess, Self::ZERO);
+    let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
     let x = r.mul_neg_add(LN2D_HI, self);
     let x = r.mul_neg_add(LN2D_LO, x);
@@ -1872,20 +1872,20 @@ impl f32x4 {
     let n2 = Self::vm_pow2n(r_safe);
     let exp_val = (z + Self::ONE) * scale * n2;
     let r_is_zero = r.simd_eq(Self::ZERO);
-    let z = r_is_zero.blend(z, exp_val - Self::ONE);
+    let z = r_is_zero.select(z, exp_val - Self::ONE);
     let nan_mask = self.is_nan();
     let finite = self.is_finite();
-    let mut result = nan_mask.blend(Self::nan_pow(), z);
+    let mut result = nan_mask.select(Self::nan_pow(), z);
     let pos_overflow = self.simd_gt(max_x) & finite;
-    result = pos_overflow.blend(Self::infinity(), result);
+    result = pos_overflow.select(Self::infinity(), result);
     let neg_underflow = self.simd_lt(min_x) & finite;
-    result = neg_underflow.blend(-Self::ONE, result);
+    result = neg_underflow.select(-Self::ONE, result);
     let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
-    result = pos_inf.blend(Self::infinity(), result);
+    result = pos_inf.select(Self::infinity(), result);
     let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
-    result = neg_inf.blend(-Self::ONE, result);
+    result = neg_inf.select(-Self::ONE, result);
     let is_zero = self.simd_eq(Self::ZERO);
-    result = is_zero.blend(self, result);
+    result = is_zero.select(self, result);
     result
   }
 
@@ -1913,9 +1913,9 @@ impl f32x4 {
     let round = self.round();
     let max_r = f32x4::from(127.0);
     let big = round.simd_gt(max_r);
-    let r_safe = big.blend(max_r, round);
+    let r_safe = big.select(max_r, round);
     let excess = round - max_r;
-    let excess = big.blend(excess, Self::ZERO);
+    let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
 
     let fract = (self - round) * Self::LN_2;
@@ -1927,14 +1927,14 @@ impl f32x4 {
     let result = fract_exp2 * scale * n2;
 
     let nan_mask = self.is_nan();
-    let mut result = nan_mask.blend(Self::nan_pow(), result);
+    let mut result = nan_mask.select(Self::nan_pow(), result);
     let pos_overflow = self.simd_gt(max_x) & finite;
-    result = pos_overflow.blend(Self::infinity(), result);
-    result = neg_underflow.blend(Self::ZERO, result);
+    result = pos_overflow.select(Self::infinity(), result);
+    result = neg_underflow.select(Self::ZERO, result);
     let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
-    result = pos_inf.blend(Self::infinity(), result);
+    result = pos_inf.select(Self::infinity(), result);
     let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
-    result = neg_inf.blend(Self::ZERO, result);
+    result = neg_inf.select(Self::ZERO, result);
     result
   }
 
@@ -2042,8 +2042,8 @@ impl f32x4 {
     let x = Self::fraction_2(x1);
     let e = Self::exponent(x1);
     let mask = x.simd_gt(Self::SQRT_2 * HALF);
-    let x = (!mask).blend(x + x, x);
-    let fe = mask.blend(e + Self::ONE, e);
+    let x = (!mask).select(x + x, x);
+    let fe = mask.select(e + Self::ONE, e);
     let x = x - Self::ONE;
     let res = polynomial_8!(x, P0, P1, P2, P3, P4, P5, P6, P7, P8);
     let x2 = x * x;
@@ -2058,16 +2058,16 @@ impl f32x4 {
       res
     } else {
       let is_zero = self.is_zero_or_subnormal();
-      let res = underflow.blend(Self::nan_log(), res);
+      let res = underflow.select(Self::nan_log(), res);
       // Note: is_zero_or_subnormal() lumps subnormals (exponent==0) with zero.
       // Both get -Inf here. True subnormal inputs (~1.4e-45..1.175e-38) should
       // produce a finite negative result, but are vanishingly rare in
       // practice.
-      let res = is_zero.blend(-Self::infinity(), res);
-      let res = overflow.blend(self, res);
+      let res = is_zero.select(-Self::infinity(), res);
+      let res = overflow.select(self, res);
       // This must come *after* overflow.blend to overwrite ln(-∞) = -∞ to NaN
       let res = (!self.is_finite() & self.is_sign_negative())
-        .blend(Self::nan_log(), res);
+        .select(Self::nan_log(), res);
       res
     }
   }
@@ -2088,9 +2088,9 @@ impl f32x4 {
     let eq = u.simd_eq(Self::ONE);
     let ln_u = Self::ln(u);
     let correction = self * (ln_u / (u - Self::ONE));
-    let result = eq.blend(self, correction);
+    let result = eq.select(self, correction);
     let over = u.is_inf();
-    over.blend(ln_u, result)
+    over.select(ln_u, result)
   }
 
   #[inline]
@@ -2130,7 +2130,7 @@ impl f32x4 {
     let x = x1.fraction_2();
 
     let mask = x.simd_gt(f32x4::SQRT_2 * f32x4::HALF);
-    let x = (!mask).blend(x + x, x);
+    let x = (!mask).select(x + x, x);
 
     let x = x - f32x4::ONE;
     let x2 = x * x;
@@ -2140,7 +2140,7 @@ impl f32x4 {
     let lg1 = lg1 * x2 * x;
 
     let ef = x1.exponent();
-    let ef = mask.blend(ef + f32x4::ONE, ef);
+    let ef = mask.select(ef + f32x4::ONE, ef);
 
     let e1 = (ef * y).round();
     let yr = ef.mul_sub(y, e1);
@@ -2177,18 +2177,18 @@ impl f32x4 {
 
     // Check for overflow/underflow
     let z = if (overflow | underflow).any() {
-      let z = underflow.blend(f32x4::ZERO, z);
-      overflow.blend(Self::infinity(), z)
+      let z = underflow.select(f32x4::ZERO, z);
+      overflow.select(Self::infinity(), z)
     } else {
       z
     };
 
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
-    let z = x_zero.blend(
-      y.simd_lt(f32x4::ZERO).blend(
+    let z = x_zero.select(
+      y.simd_lt(f32x4::ZERO).select(
         Self::infinity(),
-        y.simd_eq(f32x4::ZERO).blend(f32x4::ONE, f32x4::ZERO),
+        y.simd_eq(f32x4::ZERO).select(f32x4::ONE, f32x4::ZERO),
       ),
       z,
     );
@@ -2200,9 +2200,9 @@ impl f32x4 {
       // Is y odd?
       let y_odd = cast::<_, i32x4>(y.round_int() << 31).round_float();
 
-      let z1 =
-        yi.blend(z | y_odd, self.simd_eq(Self::ZERO).blend(z, Self::nan_pow()));
-      x_sign.blend(z1, z)
+      let z1 = yi
+        .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
+      x_sign.select(z1, z)
     } else {
       z
     };
@@ -2214,7 +2214,7 @@ impl f32x4 {
       return z;
     }
 
-    (self.is_nan() | y.is_nan()).blend(self + y, z)
+    (self.is_nan() | y.is_nan()).select(self + y, z)
   }
 
   #[inline]

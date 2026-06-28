@@ -859,7 +859,7 @@ impl i8x16 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
@@ -1187,7 +1187,7 @@ impl i8x16 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmaxq_s8(self.neon, rhs.neon) }}
       } else {
-        self.simd_lt(rhs).blend(rhs, self)
+        self.simd_lt(rhs).select(rhs, self)
       }
     }
   }
@@ -1202,7 +1202,7 @@ impl i8x16 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_s8(self.neon, rhs.neon) }}
       } else {
-        self.simd_lt(rhs).blend(self, rhs)
+        self.simd_lt(rhs).select(self, rhs)
       }
     }
   }
@@ -1468,7 +1468,7 @@ impl i8x16 {
 
           let no_overflow = high.simd_eq(low.is_negative());
           let limit = Self::MAX ^ (self ^ rhs).is_negative();
-          no_overflow.blend(low, limit)
+          no_overflow.select(low, limit)
         }
       } else {
         let self_array = self.to_array();

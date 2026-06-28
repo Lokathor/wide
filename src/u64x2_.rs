@@ -503,7 +503,7 @@ impl u64x2 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
@@ -618,13 +618,13 @@ impl u64x2 {
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).blend(self, rhs)
+    self.simd_lt(rhs).select(self, rhs)
   }
 
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).blend(self, rhs)
+    self.simd_gt(rhs).select(self, rhs)
   }
 
   integer_fn_clamp!();
@@ -635,7 +635,7 @@ impl u64x2 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self + rhs;
-        result.simd_lt(self).blend(Self::MAX, result)
+        result.simd_lt(self).select(Self::MAX, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_u64(self.neon, rhs.neon) } }
       } else {
@@ -655,7 +655,7 @@ impl u64x2 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self - rhs;
-        result.simd_gt(self).blend(Self::MIN, result)
+        result.simd_gt(self).select(Self::MIN, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_u64(self.neon, rhs.neon) } }
       } else {

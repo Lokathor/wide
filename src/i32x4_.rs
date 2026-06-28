@@ -540,7 +540,7 @@ impl i32x4 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
@@ -753,7 +753,7 @@ impl i32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmaxq_s32(self.neon, rhs.neon) }}
       } else {
-        self.simd_lt(rhs).blend(rhs, self)
+        self.simd_lt(rhs).select(rhs, self)
       }
     }
   }
@@ -768,7 +768,7 @@ impl i32x4 {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_s32(self.neon, rhs.neon) }}
       } else {
-        self.simd_lt(rhs).blend(self, rhs)
+        self.simd_lt(rhs).select(self, rhs)
       }
     }
   }
@@ -784,7 +784,7 @@ impl i32x4 {
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        overflow.select(negative.select(Self::MIN, Self::MAX), result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_s32(self.neon, rhs.neon) } }
       } else {
@@ -809,7 +809,7 @@ impl i32x4 {
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        overflow.select(negative.select(Self::MIN, Self::MAX), result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s32(self.neon, rhs.neon) } }
       } else {
@@ -844,7 +844,7 @@ impl i32x4 {
 
         let no_overflow = high.simd_eq(low.is_negative());
         let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.blend(low, limit)
+        no_overflow.select(low, limit)
       } else if #[cfg(target_feature="simd128")] {
         let low_wide_mul = i64x2_extmul_low_i32x4(self.simd, rhs.simd);
         let high_wide_mul = i64x2_extmul_high_i32x4(self.simd, rhs.simd);
@@ -853,7 +853,7 @@ impl i32x4 {
 
         let no_overflow = high.simd_eq(low.is_negative());
         let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.blend(low, limit)
+        no_overflow.select(low, limit)
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           let low_wide_mul = vreinterpretq_s32_s64(
@@ -868,7 +868,7 @@ impl i32x4 {
 
           let no_overflow = high.simd_eq(low.is_negative());
           let limit = Self::MAX ^ (self ^ rhs).is_negative();
-          no_overflow.blend(low, limit)
+          no_overflow.select(low, limit)
         }
       } else {
         let self_array = self.to_array();

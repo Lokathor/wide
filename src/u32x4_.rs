@@ -625,7 +625,7 @@ impl u32x4 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
@@ -746,7 +746,7 @@ impl u32x4 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self + rhs;
-        result.simd_lt(self).blend(Self::MAX, result)
+        result.simd_lt(self).select(Self::MAX, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_u32(self.neon, rhs.neon) } }
       } else {
@@ -768,7 +768,7 @@ impl u32x4 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self - rhs;
-        result.simd_gt(self).blend(Self::MIN, result)
+        result.simd_gt(self).select(Self::MIN, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_u32(self.neon, rhs.neon) } }
       } else {
@@ -802,7 +802,7 @@ impl u32x4 {
         let high = Self { sse: unpack_high_i64_m128i(ll_hh_1, ll_hh_2) };
 
         let no_overflow = high.simd_eq(Self::ZERO);
-        no_overflow.blend(low, Self::MAX)
+        no_overflow.select(low, Self::MAX)
       } else if #[cfg(target_feature="simd128")] {
         let low_wide_mul = u64x2_extmul_low_u32x4(self.simd, rhs.simd);
         let high_wide_mul = u64x2_extmul_high_u32x4(self.simd, rhs.simd);
@@ -810,7 +810,7 @@ impl u32x4 {
         let high = Self { simd: u32x4_shuffle::<1, 3, 5, 7>(low_wide_mul, high_wide_mul) };
 
         let no_overflow = high.simd_eq(Self::ZERO);
-        no_overflow.blend(low, Self::MAX)
+        no_overflow.select(low, Self::MAX)
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           let low_wide_mul = vreinterpretq_u32_u64(
@@ -824,7 +824,7 @@ impl u32x4 {
           let high = Self { neon: low_high.1 };
 
           let no_overflow = high.simd_eq(Self::ZERO);
-          no_overflow.blend(low, Self::MAX)
+          no_overflow.select(low, Self::MAX)
         }
       } else {
         let self_array = self.to_array();

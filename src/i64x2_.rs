@@ -513,7 +513,7 @@ impl i64x2 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
@@ -797,13 +797,13 @@ impl i64x2 {
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).blend(self, rhs)
+    self.simd_lt(rhs).select(self, rhs)
   }
 
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).blend(self, rhs)
+    self.simd_gt(rhs).select(self, rhs)
   }
 
   integer_fn_clamp!();
@@ -817,7 +817,7 @@ impl i64x2 {
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        overflow.select(negative.select(Self::MIN, Self::MAX), result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_s64(self.neon, rhs.neon) } }
       } else {
@@ -840,7 +840,7 @@ impl i64x2 {
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        overflow.select(negative.select(Self::MIN, Self::MAX), result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s64(self.neon, rhs.neon) } }
       } else {

@@ -384,14 +384,14 @@ impl u64x8 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
       } else {
         Self {
-          a : self.a.blend(t.a, f.a),
-          b : self.b.blend(t.b, f.b),
+          a : self.a.select(t.a, f.a),
+          b : self.b.select(t.b, f.b),
         }
       }
     }
@@ -511,7 +511,7 @@ impl u64x8 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let result = self + rhs;
-        result.simd_lt(self).blend(Self::MAX, result)
+        result.simd_lt(self).select(Self::MAX, result)
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -527,7 +527,7 @@ impl u64x8 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let result = self - rhs;
-        result.simd_gt(self).blend(Self::MIN, result)
+        result.simd_gt(self).select(Self::MIN, result)
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),

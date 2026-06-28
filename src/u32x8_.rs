@@ -537,14 +537,14 @@ impl u32x8 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx2: blend_varying_i8_m256i(f.avx2, t.avx2, self.avx2) }
       } else {
         Self {
-          a : self.a.blend(t.a, f.a),
-          b : self.b.blend(t.b, f.b),
+          a : self.a.select(t.a, f.a),
+          b : self.b.select(t.b, f.b),
         }
       }
     }
@@ -615,7 +615,7 @@ impl u32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self + rhs;
-        result.simd_lt(self).blend(Self::MAX, result)
+        result.simd_lt(self).select(Self::MAX, result)
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -631,7 +631,7 @@ impl u32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self - rhs;
-        result.simd_gt(self).blend(Self::MIN, result)
+        result.simd_gt(self).select(Self::MIN, result)
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),
@@ -659,7 +659,7 @@ impl u32x8 {
         let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
 
         let no_overflow = high.simd_eq(Self::ZERO);
-        no_overflow.blend(low, Self::MAX)
+        no_overflow.select(low, Self::MAX)
       } else {
         let [self_a, self_b]: [u32x4; 2] = cast(self);
         let [rhs_a, rhs_b]: [u32x4; 2] = cast(rhs);

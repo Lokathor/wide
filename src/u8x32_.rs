@@ -423,14 +423,14 @@ impl u8x32 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx: blend_varying_i8_m256i(f.avx, t.avx, self.avx) }
       } else {
         Self {
-          a : self.a.blend(t.a, f.a),
-          b : self.b.blend(t.b, f.b),
+          a : self.a.select(t.a, f.a),
+          b : self.b.select(t.b, f.b),
         }
       }
     }

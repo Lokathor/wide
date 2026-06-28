@@ -397,14 +397,14 @@ impl i32x16 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
       } else {
         Self {
-          a : self.a.blend(t.a, f.a),
-          b : self.b.blend(t.b, f.b),
+          a : self.a.select(t.a, f.a),
+          b : self.b.select(t.b, f.b),
         }
       }
     }
@@ -487,7 +487,7 @@ impl i32x16 {
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        overflow.select(negative.select(Self::MIN, Self::MAX), result)
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -506,7 +506,7 @@ impl i32x16 {
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        overflow.select(negative.select(Self::MIN, Self::MAX), result)
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),
@@ -545,7 +545,7 @@ impl i32x16 {
 
         let no_overflow = high.simd_eq(low.is_negative());
         let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.blend(low, limit)
+        no_overflow.select(low, limit)
       } else {
         let [self_a, self_b]: [i32x8; 2] = cast(self);
         let [rhs_a, rhs_b]: [i32x8; 2] = cast(rhs);

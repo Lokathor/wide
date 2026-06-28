@@ -613,7 +613,7 @@ impl u16x8 {
 
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn select(self, t: Self, f: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
@@ -856,7 +856,7 @@ impl u16x8 {
         let high = Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
 
         let no_overflow = high.simd_eq(Self::ZERO);
-        no_overflow.blend(low, Self::MAX)
+        no_overflow.select(low, Self::MAX)
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           let low_wide_mul = vreinterpretq_u16_u32(
@@ -870,7 +870,7 @@ impl u16x8 {
           let high = Self { neon: low_high.1 };
 
           let no_overflow = high.simd_eq(Self::ZERO);
-          no_overflow.blend(low, Self::MAX)
+          no_overflow.select(low, Self::MAX)
         }
       } else {
         let self_array = self.to_array();
