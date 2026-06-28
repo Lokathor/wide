@@ -632,8 +632,8 @@ impl f64x8 {
 
         // Large value, infinity and NaN need special handling.
         let bounds_mask: Self = cast(cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(
-          cast(BOUNDS_LIMIT),
           cast(self_abs),
+          cast(BOUNDS_LIMIT),
         ));
 
         // `abs` keeps the original sign. `blend` cannot be used here because it
