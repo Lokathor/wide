@@ -6,6 +6,8 @@
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
 
+* Deprecated `blend` and replaced it with `select` and `bitselect`.
+
 ## 1.5.0
 
 * Added several functions and trait implementations that previously were only
