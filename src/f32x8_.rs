@@ -667,6 +667,10 @@ impl f32x8 {
     }
   }
 
+  /// Returns the nearest integers to `self`. Rounds half-way cases to the
+  /// number with an even least significant digit.
+  ///
+  /// This function always returns the precise result.
   #[inline]
   #[must_use]
   pub fn round_ties_even(self) -> Self {
