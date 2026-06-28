@@ -289,7 +289,9 @@ macro_rules! impl_shl_t_for_u64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u64x2_shl(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64)) }}
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64 & 63)) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
@@ -354,7 +356,9 @@ macro_rules! impl_shr_t_for_u64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u64x2_shr(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-(rhs as i64))) }}
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-(rhs as i64 & 63))) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
