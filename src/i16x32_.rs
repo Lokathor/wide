@@ -784,6 +784,8 @@ impl i16x32 {
   pub fn as_mut_array(&mut self) -> &mut [i16; 32] {
     cast_mut(self)
   }
+
+  fn_blend!();
 }
 
 impl Not for i16x32 {

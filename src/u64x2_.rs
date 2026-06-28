@@ -733,4 +733,6 @@ impl u64x2 {
       ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
     ])
   }
+
+  fn_blend!();
 }

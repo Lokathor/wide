@@ -2274,6 +2274,8 @@ impl f64x8 {
       }
     }
   }
+
+  fn_blend!();
 }
 
 impl From<i32x8> for f64x8 {

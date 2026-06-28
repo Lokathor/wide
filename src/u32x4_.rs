@@ -945,4 +945,6 @@ impl u32x4 {
   pub fn as_mut_array(&mut self) -> &mut [u32; 4] {
     cast_mut(self)
   }
+
+  fn_blend!();
 }

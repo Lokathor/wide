@@ -2084,6 +2084,8 @@ impl f32x8 {
     }
   }
 
+  fn_blend!();
+
   /// Returns true for each element if its sign bit is set.
   ///
   /// If the sign bit is set, the result has all bits set, not just the sign

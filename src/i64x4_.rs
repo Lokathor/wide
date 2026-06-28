@@ -780,6 +780,8 @@ impl i64x4 {
       }
     }
   }
+
+  fn_blend!();
 }
 
 impl Not for i64x4 {

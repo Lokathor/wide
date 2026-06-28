@@ -783,6 +783,8 @@ impl i32x16 {
       }
     }
   }
+
+  fn_blend!();
 }
 
 impl Not for i32x16 {

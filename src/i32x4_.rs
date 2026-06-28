@@ -1081,4 +1081,6 @@ impl i32x4 {
   pub fn as_mut_array(&mut self) -> &mut [i32; 4] {
     cast_mut(self)
   }
+
+  fn_blend!();
 }

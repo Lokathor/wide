@@ -601,6 +601,8 @@ impl u64x4 {
       }
     }
   }
+
+  fn_blend!();
 }
 
 impl Not for u64x4 {

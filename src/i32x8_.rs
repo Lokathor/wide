@@ -848,6 +848,8 @@ impl i32x8 {
   pub fn as_mut_array(&mut self) -> &mut [i32; 8] {
     cast_mut(self)
   }
+
+  fn_blend!();
 }
 
 impl Not for i32x8 {

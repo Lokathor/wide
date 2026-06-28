@@ -790,6 +790,8 @@ impl i64x8 {
   }
 
   integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
+
+  fn_blend!();
 }
 
 impl Not for i64x8 {

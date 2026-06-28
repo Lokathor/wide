@@ -2314,6 +2314,8 @@ impl f64x4 {
       }
     }
   }
+
+  fn_blend!();
 }
 
 impl From<i32x4> for f64x4 {

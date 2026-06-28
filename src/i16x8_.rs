@@ -1598,4 +1598,6 @@ impl i16x8 {
   pub fn as_mut_array(&mut self) -> &mut [i16; 8] {
     cast_mut(self)
   }
+
+  fn_blend!();
 }

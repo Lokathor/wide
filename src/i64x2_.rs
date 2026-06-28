@@ -907,4 +907,6 @@ impl i64x2 {
   }
 
   integer_fn_saturating_div!([0, 1]);
+
+  fn_blend!();
 }
