@@ -6,6 +6,8 @@
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
 
+* Added small optimizations to `saturating_add/sub`.
+
 ## 1.5.0
 
 * Added several functions and trait implementations that previously were only
