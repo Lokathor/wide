@@ -555,8 +555,8 @@ impl f32x8 {
 
   /// Restrict a value to a certain interval unless it is NaN.
   ///
-  /// If `self` is NaN, or `min` is NaN, or `max` is NaN, the result is NaN.
-  /// If `min > max`, the result is `min`, since `fast_max(min)` dominates.
+  /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`, the
+  /// result is `min` since `max(min)` dominates.
   #[inline]
   #[must_use]
   pub fn clamp(self, min: Self, max: Self) -> Self {
@@ -567,9 +567,8 @@ impl f32x8 {
 
   /// Restrict a value to a certain interval unless it is NaN.
   ///
-  /// Avoids NaN detection; same speed as the old `clamp` prior to IEEE 754-2019
-  /// compliance. Does not specify any
-  /// behavior if NaNs are involved, and if `min > max` the result is
+  /// If `self` is NaN, the result is NaN.  If `min > max`, the result is `min`
+  /// since `max(min)` dominates. If `min` or `max` are NaN, the result is
   /// unspecified.
   #[inline]
   #[must_use]
