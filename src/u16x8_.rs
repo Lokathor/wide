@@ -376,12 +376,16 @@ macro_rules! impl_shl_t_for_u16x8 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 15, 0]);
             Self { sse: shl_all_u16_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u16x8_shl(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs as i16)) }}
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs as i16 & 15)) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
@@ -411,12 +415,16 @@ macro_rules! impl_shr_t_for_u16x8 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 15, 0]);
             Self { sse: shr_all_u16_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u16x8_shr(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16( -(rhs as i16))) }}
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16( -(rhs as i16 & 15))) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
