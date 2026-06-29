@@ -694,7 +694,7 @@ impl u32x8 {
         let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
         let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
 
-        let overflow = high.simd_ne(low.is_negative());
+        let overflow = high.simd_ne(Self::ZERO);
 
         (low, overflow)
       } else {
