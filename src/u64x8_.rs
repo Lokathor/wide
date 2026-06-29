@@ -240,7 +240,9 @@ impl Shr for u64x8 {
   fn shr(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shr_each_u64_m512i(self.avx512, rhs.avx512) }
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i64_m512i(63));
+        Self { avx512: shr_each_u64_m512i(self.avx512, rhs) }
       } else {
         Self {
           a : self.a.shr(rhs.a),
@@ -258,7 +260,9 @@ impl Shl for u64x8 {
   fn shl(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shl_each_u64_m512i(self.avx512, rhs.avx512) }
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i64_m512i(63));
+        Self { avx512: shl_each_u64_m512i(self.avx512, rhs) }
       } else {
         Self {
           a : self.a.shl(rhs.a),
