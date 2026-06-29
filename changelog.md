@@ -9,6 +9,7 @@
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
 
+* Fixed `clamp` and added guarantees for `fast_clamp`.
 * Added small optimizations to `saturating_add/sub`.
 * Fixed shift operators overflow behavior.
 * Fixed `round` which previously behaved like `round_ties_even`.

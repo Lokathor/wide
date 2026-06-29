@@ -553,21 +553,29 @@ impl f32x16 {
 
   /// Restrict a value to a certain interval unless it is NaN.
   ///
-  /// If `self` is NaN, or `min` is NaN, or `max` is NaN, the result is NaN.
-  /// If `min > max`, the result is `min`, since `fast_max(min)` dominates.
+  /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`, the
+  /// result is `min` since `max(min)` dominates.
   #[inline]
   #[must_use]
   pub fn clamp(self, min: Self, max: Self) -> Self {
-    let is_nan = self.is_nan() | min.is_nan() | max.is_nan();
-    let clamped = self.fast_min(max).fast_max(min);
-    is_nan.blend(Self::splat(f32::NAN), clamped)
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // This works since all bits set is NaN.
+        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
+      } else {
+        // Some targets have better implementations than the above one.
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
   }
 
   /// Restrict a value to a certain interval unless it is NaN.
   ///
-  /// Avoids NaN detection; same speed as the old `clamp` prior to IEEE 754-2019
-  /// compliance. Does not specify any
-  /// behavior if NaNs are involved, and if `min > max` the result is
+  /// If `self` is NaN, the result is NaN.  If `min > max`, the result is `min`
+  /// since `max(min)` dominates. If `min` or `max` are NaN, the result is
   /// unspecified.
   #[inline]
   #[must_use]
@@ -576,7 +584,7 @@ impl f32x16 {
       if #[cfg(target_feature="avx512f")] {
         // For both `min_m512` and `max_m512` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx512: min_m512(max.avx512, max_m512(min.avx512, self.avx512)) }
+        Self { avx512: max_m512(min.avx512, min_m512(max.avx512, self.avx512)) }
       } else {
         Self {
           a: self.a.fast_clamp(min.a, max.a),

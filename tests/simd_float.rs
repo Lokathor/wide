@@ -1,7 +1,5 @@
 use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
-use bytemuck::cast;
-
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
 
 #[test]
@@ -275,55 +273,24 @@ fn test_clamp() {
       [5.0, 10.0, 10.0, T::NAN, T::INFINITY, T::NEG_INFINITY],
       [3.0, 11.0, 5.0, 1.0, -1.0, -1.0],
       [8.0, 14.0, 9.0, 3.0, 1.0, 1.0],
-    ) {
-      let expected =
-        Simd::new(std::array::from_fn(|i| value[i].clamp(min[i], max[i])));
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        if value[i].is_nan() || min[i].is_nan() || max[i].is_nan() {
+          T::NAN
+        } else if min[i] > max[i] {
+          min[i]
+        } else {
+          value[i].clamp(min[i], max[i])
+        }
+      }));
       let actual = Simd::new(value).clamp(Simd::new(min), Simd::new(max));
 
-      assert_eq!(
-        actual ^ expected,
-        Simd::ZERO,
-        "expected: {expected:?}\n  actual: {actual:?}"
+      assert!(
+        (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n     min: {min:?}\n     max: {max:?}"
       );
-    }
-  });
-}
-
-#[test]
-fn test_clamp_nan_bounds() {
-  for_simd_types!(|T: Float, N| {
-    // 1. Test min > max results in min
-    let val = Simd::splat(5.0);
-    let min = Simd::splat(10.0);
-    let max = Simd::splat(2.0);
-    let res = val.clamp(min, max);
-    let res_arr: [T; N] = cast(res);
-    for x in res_arr {
-      assert_eq!(x, 10.0);
-    }
-
-    // 2. Test NaN propagation
-    let nan = Simd::splat(T::NAN);
-    let five = Simd::splat(5.0);
-    let two = Simd::splat(2.0);
-    let ten = Simd::splat(10.0);
-
-    // self is NaN
-    let res_arr: [T; N] = cast(nan.clamp(two, ten));
-    for x in res_arr {
-      assert!(x.is_nan());
-    }
-
-    // min is NaN
-    let res_arr: [T; N] = cast(five.clamp(nan, ten));
-    for x in res_arr {
-      assert!(x.is_nan());
-    }
-
-    // max is NaN
-    let res_arr: [T; N] = cast(five.clamp(two, nan));
-    for x in res_arr {
-      assert!(x.is_nan());
     }
   });
 }
@@ -331,17 +298,36 @@ fn test_clamp_nan_bounds() {
 #[test]
 fn test_fast_clamp() {
   for_simd_types!(|T: Float, N| {
-    for [value, min, max] in
-      simd_chunks!([5.0, 10.0, 10.0], [3.0, 11.0, 5.0], [8.0, 14.0, 9.0],)
+    for [value, mut min, mut max] in simd_chunks!(
+      [5.0, 10.0, 10.0, T::NAN, T::INFINITY, T::NEG_INFINITY],
+      [3.0, 11.0, 5.0, 1.0, -1.0, -1.0],
+      [8.0, 14.0, 9.0, 3.0, 1.0, 1.0],
+    )
+    .chain(random_iter())
     {
-      let expected =
-        Simd::new(std::array::from_fn(|i| value[i].clamp(min[i], max[i])));
+      for i in 0..N {
+        if min[i].is_nan() {
+          min[i] = 0.0;
+        }
+        if max[i].is_nan() {
+          max[i] = 0.0;
+        }
+      }
+
+      let expected = Simd::new(std::array::from_fn(|i| {
+        if value[i].is_nan() {
+          T::NAN
+        } else if min[i] > max[i] {
+          min[i]
+        } else {
+          value[i].clamp(min[i], max[i])
+        }
+      }));
       let actual = Simd::new(value).fast_clamp(Simd::new(min), Simd::new(max));
 
-      assert_eq!(
-        actual ^ expected,
-        Simd::ZERO,
-        "expected: {expected:?}\n  actual: {actual:?}"
+      assert!(
+        (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
+        "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n     min: {min:?}\n     max: {max:?}"
       );
     }
   });
