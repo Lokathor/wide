@@ -450,14 +450,14 @@ impl f32x8 {
   /// [`bitselect`]: Self::bitselect
   #[inline]
   #[must_use]
-  pub fn select(self, t: Self, f: Self) -> Self {
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: blend_varying_m256(f.avx, t.avx, self.avx) }
+        Self { avx: blend_varying_m256(if_false.avx, if_true.avx, self.avx) }
       } else {
         Self {
-          a : self.a.select(t.a, f.a),
-          b : self.b.select(t.b, f.b),
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
         }
       }
     }

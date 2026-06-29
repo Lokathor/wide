@@ -452,14 +452,14 @@ impl f32x16 {
   /// [`bitselect`]: Self::bitselect
   #[inline]
   #[must_use]
-  pub fn select(self, t: Self, f: Self) -> Self {
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_m512(f.avx512, t.avx512, movepi32_mask_m512(self.avx512)) }
+        Self { avx512: blend_varying_m512(if_false.avx512, if_true.avx512, movepi32_mask_m512(self.avx512)) }
       } else {
         Self {
-          a : self.a.select(t.a, f.a),
-          b : self.b.select(t.b, f.b),
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
         }
       }
     }

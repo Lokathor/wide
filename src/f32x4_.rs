@@ -569,16 +569,16 @@ impl f32x4 {
   /// [`bitselect`]: Self::bitselect
   #[inline]
   #[must_use]
-  pub fn select(self, t: Self, f: Self) -> Self {
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_m128(f.sse, t.sse, self.sse) }
+        Self { sse: blend_varying_m128(if_false.sse, if_true.sse, self.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
+        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_f32(vreinterpretq_u32_f32(self.neon), t.neon, f.neon) }}
+        unsafe {Self { neon: vbslq_f32(vreinterpretq_u32_f32(self.neon), if_true.neon, if_false.neon) }}
       } else {
-        generic_bit_blend(self, t, f)
+        generic_bit_blend(self, if_true, if_false)
       }
     }
   }
