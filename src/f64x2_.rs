@@ -715,9 +715,18 @@ impl f64x2 {
   #[inline]
   #[must_use]
   pub fn clamp(self, min: Self, max: Self) -> Self {
-    let is_nan = self.is_nan() | min.is_nan() | max.is_nan();
-    let clamped = self.fast_min(max).fast_max(min);
-    is_nan.blend(Self::splat(f64::NAN), clamped)
+    pick! {
+      if #[cfg(any(
+        target_feature="simd128",
+        all(target_feature="neon",target_arch="aarch64"),
+      ))] {
+        // `fast_clamp` already works.
+        self.fast_clamp(min, max)
+      } else {
+        // This works since all bits set is NaN.
+        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
+      }
+    }
   }
 
   /// Restrict a value to a certain interval unless it is NaN.

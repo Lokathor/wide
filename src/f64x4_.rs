@@ -557,9 +557,18 @@ impl f64x4 {
   #[inline]
   #[must_use]
   pub fn clamp(self, min: Self, max: Self) -> Self {
-    let is_nan = self.is_nan() | min.is_nan() | max.is_nan();
-    let clamped = self.fast_min(max).fast_max(min);
-    is_nan.blend(Self::splat(f64::NAN), clamped)
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // This works since all bits set is NaN.
+        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
+      } else {
+        // Some targets have better implementations than the above one.
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
   }
 
   /// Restrict a value to a certain interval unless it is NaN.
