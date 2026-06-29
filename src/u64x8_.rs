@@ -192,7 +192,7 @@ macro_rules! impl_shl_t_for_u64x8 {
           if #[cfg(target_feature="avx512f")] {
             // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
             #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 63, 0]);
+            let shift = rhs as u64 & 63;
             Self { avx512: shl_all_u64_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -218,7 +218,7 @@ macro_rules! impl_shr_t_for_u64x8 {
           if #[cfg(target_feature="avx512f")] {
             // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
             #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 63, 0]);
+            let shift = rhs as u64 & 63;
             Self { avx512: shr_all_u64_m512i(self.avx512, shift) }
           } else {
             Self {
