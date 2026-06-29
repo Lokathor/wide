@@ -137,3 +137,13 @@ where
     std::array::from_fn(|_| T::random(state))
   }
 }
+
+impl<T0, T1> Random for (T0, T1)
+where
+  T0: Random,
+  T1: Random,
+{
+  fn random(state: &mut u64) -> Self {
+    (T0::random(state), T1::random(state))
+  }
+}
