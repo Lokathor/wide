@@ -560,6 +560,55 @@ impl u64x8 {
 
   unsigned_fn_overflowing_add_sub!();
 
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let result = [
+      self_array[0].overflowing_mul(rhs_array[0]),
+      self_array[1].overflowing_mul(rhs_array[1]),
+      self_array[2].overflowing_mul(rhs_array[2]),
+      self_array[3].overflowing_mul(rhs_array[3]),
+      self_array[4].overflowing_mul(rhs_array[4]),
+      self_array[5].overflowing_mul(rhs_array[5]),
+      self_array[6].overflowing_mul(rhs_array[6]),
+      self_array[7].overflowing_mul(rhs_array[7]),
+    ];
+    (
+      Self::new([
+        result[0].0,
+        result[1].0,
+        result[2].0,
+        result[3].0,
+        result[4].0,
+        result[5].0,
+        result[6].0,
+        result[7].0,
+      ]),
+      Self::new([
+        -(result[0].1 as i64) as u64,
+        -(result[1].1 as i64) as u64,
+        -(result[2].1 as i64) as u64,
+        -(result[3].1 as i64) as u64,
+        -(result[4].1 as i64) as u64,
+        -(result[5].1 as i64) as u64,
+        -(result[6].1 as i64) as u64,
+        -(result[7].1 as i64) as u64,
+      ]),
+    )
+  }
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

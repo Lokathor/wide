@@ -667,6 +667,44 @@ impl i32x8 {
 
   signed_fn_overflowing_add_sub!();
 
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
+        let odd_wide_mul = mul_i64_low_bits_m256i(
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
+        );
+        let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
+        let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
+        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
+        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
+
+        let overflow = high.simd_ne(low.is_negative());
+
+        (low, overflow)
+      } else {
+        let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<i32x8, [i32x4; 2]>(rhs);
+
+        let result_a = self_a.overflowing_mul(rhs_a);
+        let result_b = self_b.overflowing_mul(rhs_b);
+        (
+          cast([result_a.0, result_b.0]),
+          cast([result_a.1, result_b.1]),
+        )
+      }
+    }
+  }
+
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x8 {

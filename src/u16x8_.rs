@@ -894,6 +894,86 @@ impl u16x8 {
 
   unsigned_fn_overflowing_add_sub!();
 
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = u32x4_extmul_low_u16x8(self.simd, rhs.simd);
+        let high_wide_mul = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
+        let low = Self { simd: u16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
+
+        let overflow = high.simd_ne(Self::ZERO);
+
+        (low, overflow)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u16_u32(
+            vmull_u16(vget_low_u16(self.neon), vget_low_u16(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u16_u32(
+            vmull_u16(vget_high_u16(self.neon), vget_high_u16(rhs.neon)),
+          );
+          let low_high = vuzpq_u16(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let overflow = high.simd_ne(Self::ZERO);
+
+          (low, overflow)
+        }
+      } else {
+        // TODO(perf): This implementation looks quite bad. Is there a better
+        // one?
+
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        let widening_mul = cast::<[u32; 8], [[u16; 2]; 8]>([
+          (self_array[0] as u32).wrapping_mul(rhs_array[0] as u32),
+          (self_array[1] as u32).wrapping_mul(rhs_array[1] as u32),
+          (self_array[2] as u32).wrapping_mul(rhs_array[2] as u32),
+          (self_array[3] as u32).wrapping_mul(rhs_array[3] as u32),
+          (self_array[4] as u32).wrapping_mul(rhs_array[4] as u32),
+          (self_array[5] as u32).wrapping_mul(rhs_array[5] as u32),
+          (self_array[6] as u32).wrapping_mul(rhs_array[6] as u32),
+          (self_array[7] as u32).wrapping_mul(rhs_array[7] as u32),
+        ]);
+        let low = Self::new([
+          widening_mul[0][0],
+          widening_mul[1][0],
+          widening_mul[2][0],
+          widening_mul[3][0],
+          widening_mul[4][0],
+          widening_mul[5][0],
+          widening_mul[6][0],
+          widening_mul[7][0],
+        ]);
+        let high = Self::new([
+          widening_mul[0][1],
+          widening_mul[1][1],
+          widening_mul[2][1],
+          widening_mul[3][1],
+          widening_mul[4][1],
+          widening_mul[5][1],
+          widening_mul[6][1],
+          widening_mul[7][1],
+        ]);
+
+        let overflow = high.simd_ne(Self::ZERO);
+
+        (low, overflow)
+      }
+    }
+  }
+
   /// Unpack the lower half of the input and zero expand it to `u16` values.
   #[inline]
   #[must_use]

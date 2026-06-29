@@ -1146,6 +1146,101 @@ impl u8x16 {
 
   unsigned_fn_overflowing_add_sub!();
 
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u8_u16(
+            vmull_u8(vget_low_u8(self.neon), vget_low_u8(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u8_u16(
+            vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
+          );
+          let low_high = vuzpq_u8(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let overflow = high.simd_ne(Self::ZERO);
+
+          (low, overflow)
+        }
+      } else {
+        // TODO(perf): This implementation looks quite bad. Is there a better
+        // one?
+
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        let widening_mul = cast::<[u16; 16], [[u8; 2]; 16]>([
+          (self_array[0] as u16).wrapping_mul(rhs_array[0] as u16),
+          (self_array[1] as u16).wrapping_mul(rhs_array[1] as u16),
+          (self_array[2] as u16).wrapping_mul(rhs_array[2] as u16),
+          (self_array[3] as u16).wrapping_mul(rhs_array[3] as u16),
+          (self_array[4] as u16).wrapping_mul(rhs_array[4] as u16),
+          (self_array[5] as u16).wrapping_mul(rhs_array[5] as u16),
+          (self_array[6] as u16).wrapping_mul(rhs_array[6] as u16),
+          (self_array[7] as u16).wrapping_mul(rhs_array[7] as u16),
+          (self_array[8] as u16).wrapping_mul(rhs_array[8] as u16),
+          (self_array[9] as u16).wrapping_mul(rhs_array[9] as u16),
+          (self_array[10] as u16).wrapping_mul(rhs_array[10] as u16),
+          (self_array[11] as u16).wrapping_mul(rhs_array[11] as u16),
+          (self_array[12] as u16).wrapping_mul(rhs_array[12] as u16),
+          (self_array[13] as u16).wrapping_mul(rhs_array[13] as u16),
+          (self_array[14] as u16).wrapping_mul(rhs_array[14] as u16),
+          (self_array[15] as u16).wrapping_mul(rhs_array[15] as u16),
+        ]);
+        let low = Self::new([
+          widening_mul[0][0],
+          widening_mul[1][0],
+          widening_mul[2][0],
+          widening_mul[3][0],
+          widening_mul[4][0],
+          widening_mul[5][0],
+          widening_mul[6][0],
+          widening_mul[7][0],
+          widening_mul[8][0],
+          widening_mul[9][0],
+          widening_mul[10][0],
+          widening_mul[11][0],
+          widening_mul[12][0],
+          widening_mul[13][0],
+          widening_mul[14][0],
+          widening_mul[15][0],
+        ]);
+        let high = Self::new([
+          widening_mul[0][1],
+          widening_mul[1][1],
+          widening_mul[2][1],
+          widening_mul[3][1],
+          widening_mul[4][1],
+          widening_mul[5][1],
+          widening_mul[6][1],
+          widening_mul[7][1],
+          widening_mul[8][1],
+          widening_mul[9][1],
+          widening_mul[10][1],
+          widening_mul[11][1],
+          widening_mul[12][1],
+          widening_mul[13][1],
+          widening_mul[14][1],
+          widening_mul[15][1],
+        ]);
+
+        let overflow = high.simd_ne(Self::ZERO);
+
+        (low, overflow)
+      }
+    }
+  }
+
   /// Unpack and interleave low lanes of two `u8x16`
   #[inline]
   #[must_use]

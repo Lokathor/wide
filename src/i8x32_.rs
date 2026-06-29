@@ -576,6 +576,26 @@ impl i8x32 {
 
   signed_fn_overflowing_add_sub!();
 
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // x86 has no `_mm256_mul_epi8` intrinsic so there is no `avx2`
+    // optimization.
+
+    let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<i8x32, [i8x16; 2]>(rhs);
+
+    let result_a = self_a.overflowing_mul(rhs_a);
+    let result_b = self_b.overflowing_mul(rhs_b);
+    (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
+  }
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]
