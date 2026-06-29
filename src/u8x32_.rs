@@ -423,11 +423,13 @@ impl u8x32 {
 
   /// Bitwise selection.
   ///
-  /// For each bit this returns `t` where `self` is `1` and `f` where `self` is
-  /// `0`.
+  /// For each bit of `self`:
   ///
-  /// If `self` is a mask, meaning each lane is either all zeros or all ones,
-  /// consider using [`select`] which is faster.
+  /// - If the bit is one, return the corresponding bit of `if_one`
+  /// - If the bit is zero, return the corresponding bit of `if_zero`
+  ///
+  /// If you know `self` is a mask, meaning each lane is either all zeros or all
+  /// ones, consider using [`select`] which is faster.
   ///
   /// [`select`]: Self::select
   #[inline]
