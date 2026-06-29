@@ -634,16 +634,60 @@ impl f64x4 {
     cast(out)
   }
 
+  /// Returns the nearest integers to `self`. If a value is half-way between two
+  /// integers, round away from `0.0`.
+  ///
+  /// This function always returns the precise result.
+  ///
+  /// For most targets [`round`] is slower than [`round_ties_even`]. If you
+  /// do not care about the difference, consider using that instead.
+  ///
+  /// [`round`]: Self::round
+  /// [`round_ties_even`]: Self::round_ties_even
   #[inline]
   #[must_use]
   pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        const_f64_as_f64x4!(HALF_NEXT_DOWN, 0.5_f64.next_down());
+        const_f64_as_f64x4!(BOUNDS_LIMIT, 4503599627370496.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { avx: round_m256d::<{round_op!(Zero)}>(adjusted_self.avx) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_gt_mask_i64_m256i(cast(BOUNDS_LIMIT), cast(self_abs)));
+
+        // `abs` keeps the original sign. `blend` cannot be used here because it
+        // doesn't work as an arbitrary bit-blend.
+        let bounds_mask = bounds_mask.abs();
+        result_abs & bounds_mask | self & !bounds_mask
+      } else {
+        let [a, b] = cast::<f64x4, [f64x2; 2]>(self);
+        cast([a.round(), b.round()])
+      }
+    }
+  }
+
+  /// Returns the nearest integers to `self`. Rounds half-way cases to the
+  /// number with an even least significant digit.
+  ///
+  /// This function always returns the precise result.
+  #[inline]
+  #[must_use]
+  pub fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: round_m256d::<{round_op!(Nearest)}>(self.avx) }
       } else {
         Self {
-          a : self.a.round(),
-          b : self.b.round(),
+          a : self.a.round_ties_even(),
+          b : self.b.round_ties_even(),
         }
       }
     }
@@ -1389,7 +1433,7 @@ impl f64x4 {
 
     let xa = self.abs();
 
-    let y = (xa * TWO_OVER_PI).round();
+    let y = (xa * TWO_OVER_PI).round_ties_even();
     let q = y.round_int();
 
     let x = y.mul_neg_add(DP3, y.mul_neg_add(DP2, y.mul_neg_add(DP1, xa)));
@@ -1716,7 +1760,7 @@ impl f64x4 {
       return Self::ZERO;
     }
     let max_r = f64x4::from(1023.0);
-    let r = (self * Self::LOG2_E).round();
+    let r = (self * Self::LOG2_E).round_ties_even();
     let big = r.simd_gt(max_r);
     let r_safe = big.blend(max_r, r);
     let excess = r - max_r;
@@ -1773,7 +1817,7 @@ impl f64x4 {
     let max_x = f64x4::from(709.783);
     let min_x = f64x4::from(-744.79);
     let max_r = f64x4::from(1023.0);
-    let r = (self * Self::LOG2_E).round();
+    let r = (self * Self::LOG2_E).round_ties_even();
     let big = r.simd_gt(max_r);
     let r_safe = big.blend(max_r, r);
     let excess = r - max_r;
@@ -1830,7 +1874,7 @@ impl f64x4 {
       return Self::ZERO;
     }
 
-    let round = self.round();
+    let round = self.round_ties_even();
     let max_r = f64x4::from(1023.0);
     let big = round.simd_gt(max_r);
     let r_safe = big.blend(max_r, round);
@@ -2103,20 +2147,20 @@ impl f64x4 {
 
     let ef = x1.exponent();
     let ef = mask.blend(ef + f64x4::ONE, ef);
-    let e1 = (ef * y).round();
+    let e1 = (ef * y).round_ties_even();
     let yr = ef.mul_sub(y, e1);
 
     let lg = f64x4::HALF.mul_neg_add(x2, x) + lg1;
     let x2err = (f64x4::HALF * x).mul_sub(x, f64x4::HALF * x2);
     let lg_err = f64x4::HALF.mul_add(x2, lg - x) - lg1;
 
-    let e2 = (lg * y * f64x4::LOG2_E).round();
+    let e2 = (lg * y * f64x4::LOG2_E).round_ties_even();
     let v = lg.mul_sub(y, e2 * ln2d_hi);
     let v = e2.mul_neg_add(ln2d_lo, v);
     let v = v - (lg_err + x2err).mul_sub(y, yr * f64x4::LN_2);
 
     let x = v;
-    let e3 = (x * f64x4::LOG2_E).round();
+    let e3 = (x * f64x4::LOG2_E).round_ties_even();
     let x = e3.mul_neg_add(f64x4::LN_2, x);
     let z =
       polynomial_13!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
@@ -2155,7 +2199,7 @@ impl f64x4 {
 
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.simd_eq(y.round());
+      let yi = y.simd_eq(y.round_ties_even());
       // Is y odd?
       let y_odd = cast::<_, i64x4>(y.round_int() << 63).round_float();
       let z1 =

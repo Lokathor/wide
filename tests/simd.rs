@@ -864,11 +864,6 @@ fn test_shl() {
     )
     .chain(random_iter())
     {
-      // TODO: Decide how shift operators should behave then harden this test.
-      // Currently implementations either behave like `wrapping_shl/r` or
-      // `unbounded_shl/r` depending on target features.
-      let right = right.map(|x| x & (T::BITS - 1) as T);
-
       let expected = Simd::new(std::array::from_fn(|i| {
         left[i].wrapping_shl(right[i] as u32)
       }));
@@ -901,11 +896,6 @@ fn test_shl() {
     )
     .chain(random_iter())
     {
-      // TODO: Decide how shift operators should behave then harden this test.
-      // Currently implementations either behave like `wrapping_shl/r` or
-      // `unbounded_shl/r` depending on target features.
-      let right = right.map(|x| x & (T::BITS - 1) as T);
-
       #[allow(clippy::unnecessary_cast)]
       let expected = Simd::new(std::array::from_fn(|i| {
         left[i].wrapping_shl(right[i] as u32)
@@ -923,7 +913,7 @@ fn test_shl() {
 #[test]
 fn test_shl_scalar() {
   for_simd_types!(|T: Signed, N| {
-    for left in simd_chunks!([
+    for (left, right) in simd_chunks!([
       1,
       2,
       T::MAX - 1,
@@ -938,41 +928,34 @@ fn test_shl_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
+    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
     .chain(random_iter())
     {
-      for right in [1, 0, 3, -2, -6, 100] {
-        // TODO: Decide how shift operators should behave then harden this test.
-        // Currently implementations either behave like `wrapping_shl/r` or
-        // `unbounded_shl/r` depending on target features.
-        let right = right & (T::BITS - 1) as i32;
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_shl(right as u32)));
 
-        let expected = Simd::new(std::array::from_fn(|i| {
-          left[i].wrapping_shl(right as u32)
-        }));
-
-        for actual in [
-          Simd::new(left) << right as i8,
-          Simd::new(left) << right as u8,
-          Simd::new(left) << right as i16,
-          Simd::new(left) << right as u16,
-          Simd::new(left) << right,
-          Simd::new(left) << right as u32,
-          Simd::new(left) << right as i64,
-          Simd::new(left) << right as u64,
-          Simd::new(left) << right as i128,
-          Simd::new(left) << right as u128,
-          // `simd << isize` and `simd << usize` are missing.
-        ] {
-          assert!(
-            actual == expected,
-            "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-          );
-        }
+      for actual in [
+        Simd::new(left) << right as i8,
+        Simd::new(left) << right as u8,
+        Simd::new(left) << right as i16,
+        Simd::new(left) << right as u16,
+        Simd::new(left) << right,
+        Simd::new(left) << right as u32,
+        Simd::new(left) << right as i64,
+        Simd::new(left) << right as u64,
+        Simd::new(left) << right as i128,
+        Simd::new(left) << right as u128,
+        // `simd << isize` and `simd << usize` are missing.
+      ] {
+        assert!(
+          actual == expected,
+          "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
       }
     }
   });
   for_simd_types!(|T: Unsigned, N| {
-    for left in simd_chunks!([
+    for (left, right) in simd_chunks!([
       1,
       2,
       T::MAX - 1,
@@ -987,36 +970,29 @@ fn test_shl_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
+    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
     .chain(random_iter())
     {
-      for right in [1, 0, 3, -2, -6, 100] {
-        // TODO: Decide how shift operators should behave then harden this test.
-        // Currently implementations either behave like `wrapping_shl/r` or
-        // `unbounded_shl/r` depending on target features.
-        let right = right & (T::BITS - 1) as i32;
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_shl(right as u32)));
 
-        let expected = Simd::new(std::array::from_fn(|i| {
-          left[i].wrapping_shl(right as u32)
-        }));
-
-        for actual in [
-          Simd::new(left) << right as i8,
-          Simd::new(left) << right as u8,
-          Simd::new(left) << right as i16,
-          Simd::new(left) << right as u16,
-          Simd::new(left) << right,
-          Simd::new(left) << right as u32,
-          Simd::new(left) << right as i64,
-          Simd::new(left) << right as u64,
-          Simd::new(left) << right as i128,
-          Simd::new(left) << right as u128,
-          // `simd << isize` and `simd << usize` are missing.
-        ] {
-          assert!(
-            actual == expected,
-            "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-          );
-        }
+      for actual in [
+        Simd::new(left) << right as i8,
+        Simd::new(left) << right as u8,
+        Simd::new(left) << right as i16,
+        Simd::new(left) << right as u16,
+        Simd::new(left) << right,
+        Simd::new(left) << right as u32,
+        Simd::new(left) << right as i64,
+        Simd::new(left) << right as u64,
+        Simd::new(left) << right as i128,
+        Simd::new(left) << right as u128,
+        // `simd << isize` and `simd << usize` are missing.
+      ] {
+        assert!(
+          actual == expected,
+          "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
       }
     }
   });
@@ -1047,11 +1023,6 @@ fn test_shr() {
     )
     .chain(random_iter())
     {
-      // TODO: Decide how shift operators should behave then harden this test.
-      // Currently implementations either behave like `wrapping_shl/r` or
-      // `unbounded_shl/r` depending on target features.
-      let right = right.map(|x| x & (T::BITS - 1) as T);
-
       let expected = Simd::new(std::array::from_fn(|i| {
         left[i].wrapping_shr(right[i] as u32)
       }));
@@ -1084,11 +1055,6 @@ fn test_shr() {
     )
     .chain(random_iter())
     {
-      // TODO: Decide how shift operators should behave then harden this test.
-      // Currently implementations either behave like `wrapping_shl/r` or
-      // `unbounded_shl/r` depending on target features.
-      let right = right.map(|x| x & (T::BITS - 1) as T);
-
       #[allow(clippy::unnecessary_cast)]
       let expected = Simd::new(std::array::from_fn(|i| {
         left[i].wrapping_shr(right[i] as u32)
@@ -1106,7 +1072,7 @@ fn test_shr() {
 #[test]
 fn test_shr_scalar() {
   for_simd_types!(|T: Signed, N| {
-    for left in simd_chunks!([
+    for (left, right) in simd_chunks!([
       1,
       2,
       T::MAX - 1,
@@ -1121,41 +1087,34 @@ fn test_shr_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
+    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
     .chain(random_iter())
     {
-      for right in [1, 0, 3, -2, -6, 100] {
-        // TODO: Decide how shift operators should behave then harden this test.
-        // Currently implementations either behave like `wrapping_shl/r` or
-        // `unbounded_shl/r` depending on target features.
-        let right = right & (T::BITS - 1) as i32;
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_shr(right as u32)));
 
-        let expected = Simd::new(std::array::from_fn(|i| {
-          left[i].wrapping_shr(right as u32)
-        }));
-
-        for actual in [
-          Simd::new(left) >> right as i8,
-          Simd::new(left) >> right as u8,
-          Simd::new(left) >> right as i16,
-          Simd::new(left) >> right as u16,
-          Simd::new(left) >> right,
-          Simd::new(left) >> right as u32,
-          Simd::new(left) >> right as i64,
-          Simd::new(left) >> right as u64,
-          Simd::new(left) >> right as i128,
-          Simd::new(left) >> right as u128,
-          // `simd >> isize` and `simd >> usize` are missing.
-        ] {
-          assert!(
-            actual == expected,
-            "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-          );
-        }
+      for actual in [
+        Simd::new(left) >> right as i8,
+        Simd::new(left) >> right as u8,
+        Simd::new(left) >> right as i16,
+        Simd::new(left) >> right as u16,
+        Simd::new(left) >> right,
+        Simd::new(left) >> right as u32,
+        Simd::new(left) >> right as i64,
+        Simd::new(left) >> right as u64,
+        Simd::new(left) >> right as i128,
+        Simd::new(left) >> right as u128,
+        // `simd >> isize` and `simd >> usize` are missing.
+      ] {
+        assert!(
+          actual == expected,
+          "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
       }
     }
   });
   for_simd_types!(|T: Unsigned, N| {
-    for left in simd_chunks!([
+    for (left, right) in simd_chunks!([
       1,
       2,
       T::MAX - 1,
@@ -1170,36 +1129,29 @@ fn test_shr_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
+    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
     .chain(random_iter())
     {
-      for right in [1, 0, 3, -2, -6, 100] {
-        // TODO: Decide how shift operators should behave then harden this test.
-        // Currently implementations either behave like `wrapping_shl/r` or
-        // `unbounded_shl/r` depending on target features.
-        let right = right & (T::BITS - 1) as i32;
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_shr(right as u32)));
 
-        let expected = Simd::new(std::array::from_fn(|i| {
-          left[i].wrapping_shr(right as u32)
-        }));
-
-        for actual in [
-          Simd::new(left) >> right as i8,
-          Simd::new(left) >> right as u8,
-          Simd::new(left) >> right as i16,
-          Simd::new(left) >> right as u16,
-          Simd::new(left) >> right,
-          Simd::new(left) >> right as u32,
-          Simd::new(left) >> right as i64,
-          Simd::new(left) >> right as u64,
-          Simd::new(left) >> right as i128,
-          Simd::new(left) >> right as u128,
-          // `simd >> isize` and `simd >> usize` are missing.
-        ] {
-          assert!(
-            actual == expected,
-            "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-          );
-        }
+      for actual in [
+        Simd::new(left) >> right as i8,
+        Simd::new(left) >> right as u8,
+        Simd::new(left) >> right as i16,
+        Simd::new(left) >> right as u16,
+        Simd::new(left) >> right,
+        Simd::new(left) >> right as u32,
+        Simd::new(left) >> right as i64,
+        Simd::new(left) >> right as u64,
+        Simd::new(left) >> right as i128,
+        Simd::new(left) >> right as u128,
+        // `simd >> isize` and `simd >> usize` are missing.
+      ] {
+        assert!(
+          actual == expected,
+          "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+        );
       }
     }
   });
