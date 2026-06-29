@@ -4,6 +4,8 @@
 
 * Added `reduce_mul` for integers.
 
+* Added overflowing arithmetic for integers.
+
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
 
 ## 1.5.0
