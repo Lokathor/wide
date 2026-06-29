@@ -584,7 +584,7 @@ impl f32x16 {
       if #[cfg(target_feature="avx512f")] {
         // For both `min_m512` and `max_m512` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx512: min_m512(max.avx512, max_m512(min.avx512, self.avx512)) }
+        Self { avx512: max_m512(min.avx512, min_m512(max.avx512, self.avx512)) }
       } else {
         Self {
           a: self.a.fast_clamp(min.a, max.a),

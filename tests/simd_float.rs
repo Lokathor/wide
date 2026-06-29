@@ -277,7 +277,7 @@ fn test_clamp() {
     .chain(random_iter())
     {
       let expected = Simd::new(std::array::from_fn(|i| {
-        if min[i].is_nan() || max[i].is_nan() {
+        if value[i].is_nan() || min[i].is_nan() || max[i].is_nan() {
           T::NAN
         } else if min[i] > max[i] {
           min[i]
@@ -289,7 +289,7 @@ fn test_clamp() {
 
       assert!(
         (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
-        "expected: {expected:?}\n  actual: {actual:?}"
+        "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n     min: {min:?}\n     max: {max:?}"
       );
     }
   });
@@ -315,13 +315,19 @@ fn test_fast_clamp() {
       }
 
       let expected = Simd::new(std::array::from_fn(|i| {
-        if min[i] > max[i] { min[i] } else { value[i].clamp(min[i], max[i]) }
+        if value[i].is_nan() {
+          T::NAN
+        } else if min[i] > max[i] {
+          min[i]
+        } else {
+          value[i].clamp(min[i], max[i])
+        }
       }));
       let actual = Simd::new(value).fast_clamp(Simd::new(min), Simd::new(max));
 
       assert!(
         (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
-        "expected: {expected:?}\n  actual: {actual:?}"
+        "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n     min: {min:?}\n     max: {max:?}"
       );
     }
   });

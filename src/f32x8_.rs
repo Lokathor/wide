@@ -586,7 +586,7 @@ impl f32x8 {
       if #[cfg(target_feature="avx")] {
         // For both `min_m256` and `max_m256` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx: min_m256(max.avx, max_m256(min.avx, self.avx)) }
+        Self { avx: max_m256(min.avx, min_m256(max.avx, self.avx)) }
       } else {
         Self {
           a: self.a.fast_clamp(min.a, max.a),

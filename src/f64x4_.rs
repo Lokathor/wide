@@ -583,7 +583,7 @@ impl f64x4 {
       if #[cfg(target_feature="avx")] {
         // For both `min_m256d` and `max_m256d` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx: min_m256d(max.avx, max_m256d(min.avx, self.avx)) }
+        Self { avx: max_m256d(min.avx, min_m256d(max.avx, self.avx)) }
       } else {
         Self {
           a: self.a.fast_clamp(min.a, max.a),
