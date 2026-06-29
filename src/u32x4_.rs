@@ -657,8 +657,10 @@ impl u32x4 {
 
   /// Lanewise selection.
   ///
-  /// For each lane this returns `t` where `self` is all ones and `f` where
-  /// `self` is all zeros.
+  /// For each lane of `self`:
+  ///
+  /// - If all bits are one, return the corresponding lane of `if_true`
+  /// - If all bits are zero, return the corresponding lane of `if_false`
   ///
   /// This function assumes `self` is a mask, meaning each lane is either all
   /// zeros or all ones. For bitwise selection use [`bitselect`].
