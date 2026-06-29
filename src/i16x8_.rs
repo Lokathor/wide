@@ -1218,6 +1218,90 @@ impl i16x8 {
 
   integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 
+  signed_fn_overflowing_add_sub!();
+
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = i32x4_extmul_low_i16x8(self.simd, rhs.simd);
+        let high_wide_mul = i32x4_extmul_high_i16x8(self.simd, rhs.simd);
+        let low = Self { simd: i16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
+
+        let overflow = high.simd_ne(low.is_negative());
+
+        (low, overflow)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_low_s16(self.neon), vget_low_s16(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon)),
+          );
+          let low_high = vuzpq_s16(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let overflow = high.simd_ne(low.is_negative());
+
+          (low, overflow)
+        }
+      } else {
+        // TODO(perf): This implementation looks quite bad. Is there a better
+        // one?
+
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        let widening_mul = cast::<[i32; 8], [[i16; 2]; 8]>([
+          (self_array[0] as i32).wrapping_mul(rhs_array[0] as i32),
+          (self_array[1] as i32).wrapping_mul(rhs_array[1] as i32),
+          (self_array[2] as i32).wrapping_mul(rhs_array[2] as i32),
+          (self_array[3] as i32).wrapping_mul(rhs_array[3] as i32),
+          (self_array[4] as i32).wrapping_mul(rhs_array[4] as i32),
+          (self_array[5] as i32).wrapping_mul(rhs_array[5] as i32),
+          (self_array[6] as i32).wrapping_mul(rhs_array[6] as i32),
+          (self_array[7] as i32).wrapping_mul(rhs_array[7] as i32),
+        ]);
+        let low = Self::new([
+          widening_mul[0][0],
+          widening_mul[1][0],
+          widening_mul[2][0],
+          widening_mul[3][0],
+          widening_mul[4][0],
+          widening_mul[5][0],
+          widening_mul[6][0],
+          widening_mul[7][0],
+        ]);
+        let high = Self::new([
+          widening_mul[0][1],
+          widening_mul[1][1],
+          widening_mul[2][1],
+          widening_mul[3][1],
+          widening_mul[4][1],
+          widening_mul[5][1],
+          widening_mul[6][1],
+          widening_mul[7][1],
+        ]);
+
+        let overflow = high.simd_ne(low.is_negative());
+
+        (low, overflow)
+      }
+    }
+  }
+
+  signed_fn_overflowing_div_rem!();
+
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed
   /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit

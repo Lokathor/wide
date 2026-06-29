@@ -4,6 +4,7 @@
 
 * Added `reduce_mul` for integers.
 
+* Added overflowing arithmetic for integers.
 * Added float function `round_ties_even`.
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.

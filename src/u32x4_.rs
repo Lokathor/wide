@@ -854,6 +854,83 @@ impl u32x4 {
 
   integer_fn_saturating_div!([0, 1, 2, 3]);
 
+  unsigned_fn_overflowing_add_sub!();
+
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        let even_wide_mul = mul_widen_u32_odd_m128i(self.sse, rhs.sse);
+        let odd_wide_mul = mul_widen_u32_odd_m128i(
+          shuffle_ai_f32_all_m128i::<0b_00_11_00_01>(self.sse),
+          shuffle_ai_f32_all_m128i::<0b_00_11_00_01>(rhs.sse),
+        );
+
+        let ll_hh_1 = unpack_low_i32_m128i(even_wide_mul, odd_wide_mul);
+        let ll_hh_2 = unpack_high_i32_m128i(even_wide_mul, odd_wide_mul);
+        let low = Self { sse: unpack_low_i64_m128i(ll_hh_1, ll_hh_2) };
+        let high = Self { sse: unpack_high_i64_m128i(ll_hh_1, ll_hh_2) };
+
+        let overflow = high.simd_ne(Self::ZERO);
+
+        (low, overflow)
+      } else if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = u64x2_extmul_low_u32x4(self.simd, rhs.simd);
+        let high_wide_mul = u64x2_extmul_high_u32x4(self.simd, rhs.simd);
+        let low = Self { simd: u32x4_shuffle::<0, 2, 4, 6>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: u32x4_shuffle::<1, 3, 5, 7>(low_wide_mul, high_wide_mul) };
+
+        let overflow = high.simd_ne(Self::ZERO);
+
+        (low, overflow)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u32_u64(
+            vmull_u32(vget_low_u32(self.neon), vget_low_u32(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u32_u64(
+            vmull_u32(vget_high_u32(self.neon), vget_high_u32(rhs.neon)),
+          );
+          let low_high = vuzpq_u32(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let overflow = high.simd_ne(Self::ZERO);
+
+          (low, overflow)
+        }
+      } else {
+        // TODO(perf): This implementation looks quite bad. Is there a better
+        // one?
+
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        let widening_mul = cast::<[u64; 4], [[u32; 2]; 4]>([
+          (self_array[0] as u64).wrapping_mul(rhs_array[0] as u64),
+          (self_array[1] as u64).wrapping_mul(rhs_array[1] as u64),
+          (self_array[2] as u64).wrapping_mul(rhs_array[2] as u64),
+          (self_array[3] as u64).wrapping_mul(rhs_array[3] as u64),
+        ]);
+        let low = Self::new([widening_mul[0][0], widening_mul[1][0], widening_mul[2][0], widening_mul[3][0]]);
+        let high = Self::new([widening_mul[0][1], widening_mul[1][1], widening_mul[2][1], widening_mul[3][1]]);
+
+        let overflow = high.simd_ne(Self::ZERO);
+
+        (low, overflow)
+      }
+    }
+  }
+
+  unsigned_fn_overflowing_div_rem!();
+
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {

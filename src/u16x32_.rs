@@ -532,6 +532,30 @@ impl u16x32 {
     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
   ]);
 
+  unsigned_fn_overflowing_add_sub!();
+
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
+    // optimization.
+
+    let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
+
+    let result_a = self_a.overflowing_mul(rhs_a);
+    let result_b = self_b.overflowing_mul(rhs_b);
+    (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
+  }
+
+  unsigned_fn_overflowing_div_rem!();
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]
