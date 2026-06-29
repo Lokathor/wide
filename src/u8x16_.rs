@@ -805,21 +805,21 @@ impl u8x16 {
   /// [`select`]: Self::select
   #[inline]
   #[must_use]
-  pub fn bitselect(self, t: Self, f: Self) -> Self {
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self {
           sse: bitor_m128i(
-            bitand_m128i(t.sse, self.sse),
-            bitandnot_m128i(self.sse, f.sse),
+            bitand_m128i(if_one.sse, self.sse),
+            bitandnot_m128i(self.sse, if_zero.sse),
           ),
         }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
+        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_u8(self.neon, t.neon, f.neon) }}
+        unsafe {Self { neon: vbslq_u8(self.neon, if_one.neon, if_zero.neon) }}
       } else {
-        generic_bit_blend(self, t, f)
+        generic_bit_blend(self, if_one, if_zero)
       }
     }
   }

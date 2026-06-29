@@ -469,19 +469,19 @@ impl u16x16 {
   /// [`select`]: Self::select
   #[inline]
   #[must_use]
-  pub fn bitselect(self, t: Self, f: Self) -> Self {
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self {
           avx2: bitor_m256i(
-            bitand_m256i(t.avx2, self.avx2),
-            bitandnot_m256i(self.avx2, f.avx2),
+            bitand_m256i(if_one.avx2, self.avx2),
+            bitandnot_m256i(self.avx2, if_zero.avx2),
           ),
         }
       } else {
         Self {
-          a: self.a.bitselect(t.a, f.a),
-          b: self.b.bitselect(t.b, f.b),
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
         }
       }
     }

@@ -421,19 +421,19 @@ impl f32x16 {
   /// [`select`]: Self::select
   #[inline]
   #[must_use]
-  pub fn bitselect(self, t: Self, f: Self) -> Self {
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self {
           avx512: bitor_m512(
-            bitand_m512(t.avx512, self.avx512),
-            bitandnot_m512(self.avx512, f.avx512),
+            bitand_m512(if_one.avx512, self.avx512),
+            bitandnot_m512(self.avx512, if_zero.avx512),
           ),
         }
       } else {
         Self {
-          a: self.a.bitselect(t.a, f.a),
-          b: self.b.bitselect(t.b, f.b),
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
         }
       }
     }

@@ -415,19 +415,19 @@ impl f64x4 {
   /// [`select`]: Self::select
   #[inline]
   #[must_use]
-  pub fn bitselect(self, t: Self, f: Self) -> Self {
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self {
           avx: bitor_m256d(
-            bitand_m256d(t.avx, self.avx),
-            bitandnot_m256d(self.avx, f.avx),
+            bitand_m256d(if_one.avx, self.avx),
+            bitandnot_m256d(self.avx, if_zero.avx),
           ),
         }
       } else {
         Self {
-          a: self.a.bitselect(t.a, f.a),
-          b: self.b.bitselect(t.b, f.b),
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
         }
       }
     }

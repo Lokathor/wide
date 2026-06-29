@@ -432,19 +432,19 @@ impl u8x32 {
   /// [`select`]: Self::select
   #[inline]
   #[must_use]
-  pub fn bitselect(self, t: Self, f: Self) -> Self {
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self {
           avx: bitor_m256i(
-            bitand_m256i(t.avx, self.avx),
-            bitandnot_m256i(self.avx, f.avx),
+            bitand_m256i(if_one.avx, self.avx),
+            bitandnot_m256i(self.avx, if_zero.avx),
           ),
         }
       } else {
         Self {
-          a: self.a.bitselect(t.a, f.a),
-          b: self.b.bitselect(t.b, f.b),
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
         }
       }
     }
