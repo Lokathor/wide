@@ -820,8 +820,8 @@ impl i64x2 {
         let result = self + rhs;
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_s64(self.neon, rhs.neon) } }
       } else {
@@ -843,8 +843,8 @@ impl i64x2 {
         let result = self - rhs;
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s64(self.neon, rhs.neon) } }
       } else {
