@@ -574,6 +574,8 @@ impl i8x32 {
     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
   ]);
 
+  signed_fn_overflowing_add_sub!();
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

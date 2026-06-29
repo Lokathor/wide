@@ -868,4 +868,6 @@ impl i64x2 {
   }
 
   integer_fn_saturating_div!([0, 1]);
+
+  signed_fn_overflowing_add_sub!();
 }

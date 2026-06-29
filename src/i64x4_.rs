@@ -673,6 +673,8 @@ impl i64x4 {
 
   integer_fn_saturating_div!([0, 1, 2, 3]);
 
+  signed_fn_overflowing_add_sub!();
+
   // Sometimes used for `transpose`.
   #[must_use]
   #[inline]

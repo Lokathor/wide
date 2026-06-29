@@ -589,6 +589,8 @@ impl i16x32 {
     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
   ]);
 
+  signed_fn_overflowing_add_sub!();
+
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed
   /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit

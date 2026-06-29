@@ -671,6 +671,8 @@ impl u32x8 {
 
   integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 
+  unsigned_fn_overflowing_add_sub!();
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

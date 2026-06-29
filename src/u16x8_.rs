@@ -892,6 +892,8 @@ impl u16x8 {
 
   integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 
+  unsigned_fn_overflowing_add_sub!();
+
   /// Unpack the lower half of the input and zero expand it to `u16` values.
   #[inline]
   #[must_use]

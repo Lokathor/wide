@@ -210,6 +210,86 @@ fn test_saturating_div() {
 }
 
 #[test]
+fn test_overflowing_add() {
+  for_simd_types!(|T: Integer, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MAX - 1, T::MAX - 1, 15, 20, 100, T::MAX - 1, T::MAX / 2],
+      [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
+    )
+    .chain(random_iter())
+    {
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_add(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_add(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MIN / 2, 9],
+      [-17, 18, T::MAX, -2, -20, -100, 10],
+    )
+    .chain(random_iter())
+    {
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_add(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_add(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+}
+
+#[test]
+fn test_overflowing_sub() {
+  for_simd_types!(|T: Integer, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MIN + 1, T::MIN + 1, 15, 20, 100, T::MIN + 1, T::MIN / 2],
+      [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
+    )
+    .chain(random_iter())
+    {
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_sub(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_sub(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, right] in simd_chunks!(
+      [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MAX / 2],
+      [17, -18, T::MIN, 2, 20, -100],
+    )
+    .chain(random_iter())
+    {
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_sub(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_sub(Simd::new(right));
+
+      assert_eq!(expected, actual);
+    }
+  });
+}
+
+#[test]
 fn test_from_big_truncate() {
   // `from_{big}_truncate` is inconsistently missing from types.
 

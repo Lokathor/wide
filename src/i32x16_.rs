@@ -559,6 +559,8 @@ impl i32x16 {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ]);
 
+  signed_fn_overflowing_add_sub!();
+
   /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]

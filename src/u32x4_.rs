@@ -842,6 +842,8 @@ impl u32x4 {
 
   integer_fn_saturating_div!([0, 1, 2, 3]);
 
+  unsigned_fn_overflowing_add_sub!();
+
   #[inline]
   #[must_use]
   pub fn any(self) -> bool {
