@@ -211,7 +211,9 @@ macro_rules! impl_shl_t_for_i64x4 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 63, 0]);
             Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
           } else {
             Self {
@@ -626,8 +628,8 @@ impl i64x4 {
         let result = self + rhs;
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -645,8 +647,8 @@ impl i64x4 {
         let result = self - rhs;
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),

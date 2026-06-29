@@ -217,7 +217,7 @@ impl Shr for i32x16 {
         use core::arch::x86_64::_mm512_srav_epi32;
 
         // Mask `rhs` to 31 to match `wrapping_shr`.
-        let rhs = bitand_m512i(rhs.avx512, set_splat_i16_m512i(31));
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
         // TODO(safe_arch): Add `_mm512_srav_epi32`.
         Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.avx512.0, rhs.0) }) }
       } else {
@@ -239,7 +239,9 @@ macro_rules! impl_shl_t_for_i32x16 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast(rhs as u32);
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = rhs as u32 & 31;
             Self { avx512: shl_all_u32_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -263,7 +265,9 @@ macro_rules! impl_shr_t_for_i32x16 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift = cast(rhs as u32);
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = rhs as u32 & 31;
             Self { avx512: shr_all_i32_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -486,8 +490,8 @@ impl i32x16 {
         let result = self + rhs;
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -505,8 +509,8 @@ impl i32x16 {
         let result = self - rhs;
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),

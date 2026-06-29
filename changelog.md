@@ -5,8 +5,13 @@
 * Added `reduce_mul` for integers.
 
 * Added overflowing arithmetic for integers.
+* Added float function `round_ties_even`.
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
+
+* Added small optimizations to `saturating_add/sub`.
+* Fixed shift operators overflow behavior.
+* Fixed `round` which previously behaved like `round_ties_even`.
 
 ## 1.5.0
 

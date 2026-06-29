@@ -261,12 +261,16 @@ macro_rules! impl_shl_t_for_u32x4 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 31, 0]);
             Self { sse: shl_all_u32_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u32x4_shl(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32(rhs as i32)) }}
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32(rhs as i32 & 31)) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
@@ -292,12 +296,16 @@ macro_rules! impl_shr_t_for_u32x4 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 31, 0]);
             Self { sse: shr_all_u32_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: u32x4_shr(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32( -(rhs as i32))) }}
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32( -(rhs as i32 & 31))) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
@@ -746,7 +754,9 @@ impl u32x4 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self + rhs;
-        result.simd_lt(self).blend(Self::MAX, result)
+        let overflow = result.simd_lt(self);
+        // Return `MAX` (all bits set) if overflow occurs.
+        result | overflow
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_u32(self.neon, rhs.neon) } }
       } else {
@@ -768,7 +778,9 @@ impl u32x4 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self - rhs;
-        result.simd_gt(self).blend(Self::MIN, result)
+        let no_overflow = result.simd_le(self);
+        // Return `0` (no bits set) if overflow occurs.
+        result & no_overflow
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_u32(self.neon, rhs.neon) } }
       } else {

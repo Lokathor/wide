@@ -281,12 +281,16 @@ macro_rules! impl_shl_t_for_i64x2 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 63, 0]);
             Self { sse: shl_all_u64_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: i64x2_shl(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_s64(self.neon, vmovq_n_s64(rhs as i64)) }}
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_s64(self.neon, vmovq_n_s64(rhs as i64 & 63)) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
@@ -816,8 +820,8 @@ impl i64x2 {
         let result = self + rhs;
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_s64(self.neon, rhs.neon) } }
       } else {
@@ -839,8 +843,8 @@ impl i64x2 {
         let result = self - rhs;
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
-
-        overflow.blend(negative.blend(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.blend(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s64(self.neon, rhs.neon) } }
       } else {

@@ -211,7 +211,9 @@ macro_rules! impl_shl_t_for_u64x4 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 63, 0]);
             Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
           } else {
             Self {
@@ -260,7 +262,9 @@ macro_rules! impl_shr_t_for_u64x4 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 63, 0]);
             Self { avx2: shr_all_u64_m256i(self.avx2, shift) }
           } else {
             Self {
@@ -499,7 +503,9 @@ impl u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self + rhs;
-        result.simd_lt(self).blend(Self::MAX, result)
+        let overflow = result.simd_lt(self);
+        // Return `MAX` (all bits set) if overflow occurs.
+        result | overflow
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -515,7 +521,9 @@ impl u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self - rhs;
-        result.simd_gt(self).blend(Self::MIN, result)
+        let no_overflow = result.simd_le(self);
+        // Return `0` (no bits set) if overflow occurs.
+        result & no_overflow
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),
