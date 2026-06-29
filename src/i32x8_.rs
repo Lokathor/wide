@@ -705,6 +705,8 @@ impl i32x8 {
     }
   }
 
+  signed_fn_overflowing_div_rem!();
+
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x8 {

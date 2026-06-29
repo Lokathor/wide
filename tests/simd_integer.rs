@@ -386,6 +386,122 @@ fn test_overflowing_mul() {
 }
 
 #[test]
+fn test_overflowing_div() {
+  for_simd_types!(|T: Integer, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
+      [2, 5, 5, 8, 10, 5, 2, 10],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_div(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_div(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_div(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
+      [-2, -5, 3, -6, -2, -1, -1, -1],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_div(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_div(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_div(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_overflowing_rem() {
+  for_simd_types!(|T: Integer, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
+      [2, 5, 5, 8, 10, 5, 2, 10],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_rem(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_rem(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_rem(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+  for_simd_types!(|T: Signed, N| {
+    for [left, mut right] in simd_chunks!(
+      [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
+      [-2, -5, 3, -6, -2, -1, -1, -1],
+    )
+    .chain(random_iter())
+    {
+      for right in &mut right {
+        if *right == 0 {
+          *right = 3;
+        }
+      }
+
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].overflowing_rem(right[i]).0)),
+        Simd::new(std::array::from_fn(|i| {
+          if left[i].overflowing_rem(right[i]).1 { !0 } else { 0 }
+        })),
+      );
+      let actual = Simd::new(left).overflowing_rem(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+}
+
+#[test]
 fn test_from_big_truncate() {
   // `from_{big}_truncate` is inconsistently missing from types.
 

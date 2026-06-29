@@ -1597,6 +1597,8 @@ impl i8x16 {
     }
   }
 
+  signed_fn_overflowing_div_rem!();
+
   /// Transpose matrix of 16x16 `i8` matrix. Currently not accelerated.
   #[must_use]
   #[inline]

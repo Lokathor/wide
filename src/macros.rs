@@ -251,6 +251,44 @@ macro_rules! signed_fn_overflowing_add_sub {
   };
 }
 
+macro_rules! signed_fn_overflowing_div_rem {
+  () => {
+    /// Returns `self / rhs` and whether an overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The division (returns `self` if an overflow occured)
+    /// - A mask indicating whether an overflow occured
+    ///
+    /// Note that because division has no hardware support, this operation is
+    /// very slow and should be avoided if possible.
+    #[inline]
+    #[must_use]
+    pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
+      // The second field is equivalent to
+      // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+      (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+    }
+
+    /// Returns `self % rhs` and whether an overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The remainder (returns zero if an overflow occured)
+    /// - A mask indicating whether an overflow occured
+    ///
+    /// Note that because division has no hardware support, this operation is
+    /// very slow and should be avoided if possible.
+    #[inline]
+    #[must_use]
+    pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
+      // The second field is equivalent to
+      // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+      (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+    }
+  };
+}
+
 macro_rules! signed_fn_signum {
   () => {
     /// Returns numbers representing the sign of each element.
@@ -298,6 +336,48 @@ macro_rules! unsigned_fn_overflowing_add_sub {
       let overflow = result.simd_gt(self);
 
       (result, overflow)
+    }
+  };
+}
+
+macro_rules! unsigned_fn_overflowing_div_rem {
+  () => {
+    /// Returns `self / rhs` and whether an overflow occured.
+    ///
+    /// Note that for unsigned integers overflow never occurs, so the second
+    /// value is always `false`. This function only exists for consistency with
+    /// signed integers.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The division (returns `self` if an overflow occured)
+    /// - A mask indicating whether an overflow occured (always false)
+    ///
+    /// Note that because division has no hardware support, this operation is
+    /// very slow and should be avoided if possible.
+    #[inline]
+    #[must_use]
+    pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
+      (self / rhs, Self::ZERO)
+    }
+
+    /// Returns `self % rhs` and whether an overflow occured.
+    ///
+    /// Note that for unsigned integers overflow never occurs, so the second
+    /// value is always `false`. This function only exists for consistency with
+    /// signed integers.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The remainder (returns zero if an overflow occured)
+    /// - A mask indicating whether an overflow occured (always false)
+    ///
+    /// Note that because division has no hardware support, this operation is
+    /// very slow and should be avoided if possible.
+    #[inline]
+    #[must_use]
+    pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
+      (self % rhs, Self::ZERO)
     }
   };
 }

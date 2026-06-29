@@ -895,4 +895,6 @@ impl i64x2 {
       Self::new([-(result[0].1 as i64), -(result[1].1 as i64)]),
     )
   }
+
+  signed_fn_overflowing_div_rem!();
 }

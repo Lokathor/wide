@@ -803,6 +803,8 @@ impl i64x8 {
       ]),
     )
   }
+
+  signed_fn_overflowing_div_rem!();
 }
 
 impl Not for i64x8 {

@@ -596,6 +596,8 @@ impl u16x16 {
     (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
   }
 
+  unsigned_fn_overflowing_div_rem!();
+
   #[inline]
   #[must_use]
   #[doc(alias("movemask", "move_mask"))]

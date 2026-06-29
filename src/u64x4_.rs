@@ -576,6 +576,8 @@ impl u64x4 {
     )
   }
 
+  unsigned_fn_overflowing_div_rem!();
+
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

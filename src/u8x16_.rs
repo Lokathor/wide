@@ -1241,6 +1241,8 @@ impl u8x16 {
     }
   }
 
+  unsigned_fn_overflowing_div_rem!();
+
   /// Unpack and interleave low lanes of two `u8x16`
   #[inline]
   #[must_use]

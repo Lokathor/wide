@@ -707,6 +707,8 @@ impl i64x4 {
     )
   }
 
+  signed_fn_overflowing_div_rem!();
+
   // Sometimes used for `transpose`.
   #[must_use]
   #[inline]

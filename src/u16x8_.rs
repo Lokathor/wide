@@ -974,6 +974,8 @@ impl u16x8 {
     }
   }
 
+  unsigned_fn_overflowing_div_rem!();
+
   /// Unpack the lower half of the input and zero expand it to `u16` values.
   #[inline]
   #[must_use]

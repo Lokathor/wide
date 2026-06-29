@@ -609,6 +609,8 @@ impl i32x16 {
     }
   }
 
+  signed_fn_overflowing_div_rem!();
+
   /// horizontal add of all the elements of the vector
   #[inline]
   #[must_use]

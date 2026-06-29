@@ -733,6 +733,8 @@ impl i16x16 {
     (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
   }
 
+  signed_fn_overflowing_div_rem!();
+
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed
   /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
