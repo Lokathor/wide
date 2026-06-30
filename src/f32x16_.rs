@@ -553,21 +553,29 @@ impl f32x16 {
 
   /// Restrict a value to a certain interval unless it is NaN.
   ///
-  /// If `self` is NaN, or `min` is NaN, or `max` is NaN, the result is NaN.
-  /// If `min > max`, the result is `min`, since `fast_max(min)` dominates.
+  /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`, the
+  /// result is `min` since `max(min)` dominates.
   #[inline]
   #[must_use]
   pub fn clamp(self, min: Self, max: Self) -> Self {
-    let is_nan = self.is_nan() | min.is_nan() | max.is_nan();
-    let clamped = self.fast_min(max).fast_max(min);
-    is_nan.blend(Self::splat(f32::NAN), clamped)
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // This works since all bits set is NaN.
+        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
+      } else {
+        // Some targets have better implementations than the above one.
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
   }
 
   /// Restrict a value to a certain interval unless it is NaN.
   ///
-  /// Avoids NaN detection; same speed as the old `clamp` prior to IEEE 754-2019
-  /// compliance. Does not specify any
-  /// behavior if NaNs are involved, and if `min > max` the result is
+  /// If `self` is NaN, the result is NaN.  If `min > max`, the result is `min`
+  /// since `max(min)` dominates. If `min` or `max` are NaN, the result is
   /// unspecified.
   #[inline]
   #[must_use]
@@ -576,7 +584,7 @@ impl f32x16 {
       if #[cfg(target_feature="avx512f")] {
         // For both `min_m512` and `max_m512` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx512: min_m512(max.avx512, max_m512(min.avx512, self.avx512)) }
+        Self { avx512: max_m512(min.avx512, min_m512(max.avx512, self.avx512)) }
       } else {
         Self {
           a: self.a.fast_clamp(min.a, max.a),
@@ -627,16 +635,65 @@ impl f32x16 {
     cast(out)
   }
 
+  /// Returns the nearest integers to `self`. If a value is half-way between two
+  /// integers, round away from `0.0`.
+  ///
+  /// This function always returns the precise result.
+  ///
+  /// For most targets [`round`] is slower than [`round_ties_even`]. If you
+  /// do not care about the difference, consider using that instead.
+  ///
+  /// [`round`]: Self::round
+  /// [`round_ties_even`]: Self::round_ties_even
   #[inline]
   #[must_use]
   pub fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(Nearest)}>(self.avx512) }
+        const_f32_as_f32x16!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x16!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { avx512: round_m512::<{round_op!(Zero)}>(adjusted_self.avx512) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(
+          cast(self_abs),
+          cast(BOUNDS_LIMIT),
+        ));
+
+        // `abs` keeps the original sign. `blend` cannot be used here because it
+        // doesn't work as an arbitrary bit-blend.
+        let bounds_mask = bounds_mask.abs();
+        result_abs & bounds_mask | self & !bounds_mask
       } else {
         Self {
           a: self.a.round(),
           b: self.b.round(),
+        }
+      }
+    }
+  }
+
+  /// Returns the nearest integers to `self`. Rounds half-way cases to the
+  /// number with an even least significant digit.
+  ///
+  /// This function always returns the precise result.
+  #[inline]
+  #[must_use]
+  pub fn round_ties_even(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Nearest)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.round_ties_even(),
+          b: self.b.round_ties_even(),
         }
       }
     }
@@ -1172,7 +1229,7 @@ impl f32x16 {
     let xa = self.abs();
 
     // Find quadrant
-    let y = (xa * TWO_OVER_PI).round();
+    let y = (xa * TWO_OVER_PI).round_ties_even();
     let q: i32x16 = y.round_int();
 
     let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
@@ -1515,7 +1572,7 @@ impl f32x16 {
       return Self::ZERO;
     }
     let max_r = f32x16::from(127.0);
-    let r = (self * Self::LOG2_E).round();
+    let r = (self * Self::LOG2_E).round_ties_even();
     let big = r.simd_gt(max_r);
     let r_safe = big.blend(max_r, r);
     let excess = r - max_r;
@@ -1570,7 +1627,7 @@ impl f32x16 {
     let max_x = f32x16::from(88.723);
     let min_x = f32x16::from(-103.63);
     let max_r = f32x16::from(127.0);
-    let r = (self * Self::LOG2_E).round();
+    let r = (self * Self::LOG2_E).round_ties_even();
     let big = r.simd_gt(max_r);
     let r_safe = big.blend(max_r, r);
     let excess = r - max_r;
@@ -1622,7 +1679,7 @@ impl f32x16 {
       return Self::ZERO;
     }
 
-    let round = self.round();
+    let round = self.round_ties_even();
     let max_r = f32x16::from(127.0);
     let big = round.simd_gt(max_r);
     let r_safe = big.blend(max_r, round);
@@ -1874,20 +1931,20 @@ impl f32x16 {
 
     let ef = x1.exponent();
     let ef = mask.blend(ef + f32x16::ONE, ef);
-    let e1 = (ef * y).round();
+    let e1 = (ef * y).round_ties_even();
     let yr = ef.mul_sub(y, e1);
 
     let lg = f32x16::HALF.mul_neg_add(x2, x) + lg1;
     let x2_err = (f32x16::HALF * x).mul_sub(x, f32x16::HALF * x2);
     let lg_err = f32x16::HALF.mul_add(x2, lg - x) - lg1;
 
-    let e2 = (lg * y * f32x16::LOG2_E).round();
+    let e2 = (lg * y * f32x16::LOG2_E).round_ties_even();
     let v = lg.mul_sub(y, e2 * ln2f_hi);
     let v = e2.mul_neg_add(ln2f_lo, v);
     let v = v - (lg_err + x2_err).mul_sub(y, yr * f32x16::LN_2);
 
     let x = v;
-    let e3 = (x * f32x16::LOG2_E).round();
+    let e3 = (x * f32x16::LOG2_E).round_ties_even();
     let x = e3.mul_neg_add(f32x16::LN_2, x);
     let x2 = x * x;
     let z = x2.mul_add(
@@ -1923,7 +1980,7 @@ impl f32x16 {
     let x_sign = self.is_sign_negative();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.simd_eq(y.round());
+      let yi = y.simd_eq(y.round_ties_even());
 
       // Is y odd? If yes flip the sign of the result.
       let y_odd = cast::<i32x16, f32x16>(y.round_int() << 31);
