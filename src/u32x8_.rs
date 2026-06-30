@@ -240,7 +240,9 @@ macro_rules! impl_shl_t_for_u32x8 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 31, 0]);
             Self { avx2: shl_all_u32_m256i(self.avx2, shift) }
           } else {
             Self {
@@ -264,7 +266,9 @@ macro_rules! impl_shr_t_for_u32x8 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 31, 0]);
             Self { avx2: shr_all_u32_m256i(self.avx2, shift) }
           } else {
             Self {
@@ -657,7 +661,9 @@ impl u32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self + rhs;
-        result.simd_lt(self).select(Self::MAX, result)
+        let overflow = result.simd_lt(self);
+        // Return `MAX` (all bits set) if overflow occurs.
+        result | overflow
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -673,7 +679,9 @@ impl u32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self - rhs;
-        result.simd_gt(self).select(Self::MIN, result)
+        let no_overflow = result.simd_le(self);
+        // Return `0` (no bits set) if overflow occurs.
+        result & no_overflow
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),
@@ -712,6 +720,48 @@ impl u32x8 {
   }
 
   integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
+
+  unsigned_fn_overflowing_add_sub!();
+
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let even_wide_mul = mul_u64_low_bits_m256i(self.avx2, rhs.avx2);
+        let odd_wide_mul = mul_u64_low_bits_m256i(
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
+        );
+        let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
+        let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
+        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
+        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
+
+        let overflow = high.simd_ne(Self::ZERO);
+
+        (low, overflow)
+      } else {
+        let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u32x8, [u32x4; 2]>(rhs);
+
+        let result_a = self_a.overflowing_mul(rhs_a);
+        let result_b = self_b.overflowing_mul(rhs_b);
+        (
+          cast([result_a.0, result_b.0]),
+          cast([result_a.1, result_b.1]),
+        )
+      }
+    }
+  }
+
+  unsigned_fn_overflowing_div_rem!();
 
   #[inline]
   #[must_use]

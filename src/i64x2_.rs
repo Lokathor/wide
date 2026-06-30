@@ -281,12 +281,16 @@ macro_rules! impl_shl_t_for_i64x2 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 63, 0]);
             Self { sse: shl_all_u64_m128i(self.sse, shift) }
           } else if #[cfg(target_feature="simd128")] {
             Self { simd: i64x2_shl(self.simd, rhs as u32) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self { neon: vshlq_s64(self.neon, vmovq_n_s64(rhs as i64)) }}
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            unsafe {Self { neon: vshlq_s64(self.neon, vmovq_n_s64(rhs as i64 & 63)) }}
           } else {
             let u = rhs as u32;
             Self { arr: [
@@ -860,7 +864,8 @@ impl i64x2 {
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.select(negative.select(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_s64(self.neon, rhs.neon) } }
       } else {
@@ -883,7 +888,8 @@ impl i64x2 {
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
 
-        overflow.select(negative.select(Self::MIN, Self::MAX), result)
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s64(self.neon, rhs.neon) } }
       } else {
@@ -911,6 +917,35 @@ impl i64x2 {
   }
 
   integer_fn_saturating_div!([0, 1]);
+
+  signed_fn_overflowing_add_sub!();
+
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let result = [
+      self_array[0].overflowing_mul(rhs_array[0]),
+      self_array[1].overflowing_mul(rhs_array[1]),
+    ];
+    (
+      Self::new([result[0].0, result[1].0]),
+      Self::new([-(result[0].1 as i64), -(result[1].1 as i64)]),
+    )
+  }
+
+  signed_fn_overflowing_div_rem!();
 
   fn_blend!();
 }

@@ -211,7 +211,9 @@ macro_rules! impl_shl_t_for_u64x4 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 63, 0]);
             Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
           } else {
             Self {
@@ -260,7 +262,9 @@ macro_rules! impl_shr_t_for_u64x4 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let shift = cast([rhs as u64, 0]);
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = cast([rhs as u64 & 63, 0]);
             Self { avx2: shr_all_u64_m256i(self.avx2, shift) }
           } else {
             Self {
@@ -541,7 +545,9 @@ impl u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self + rhs;
-        result.simd_lt(self).select(Self::MAX, result)
+        let overflow = result.simd_lt(self);
+        // Return `MAX` (all bits set) if overflow occurs.
+        result | overflow
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -557,7 +563,9 @@ impl u64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self - rhs;
-        result.simd_gt(self).select(Self::MIN, result)
+        let no_overflow = result.simd_le(self);
+        // Return `0` (no bits set) if overflow occurs.
+        result & no_overflow
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),
@@ -583,6 +591,42 @@ impl u64x4 {
   }
 
   integer_fn_saturating_div!([0, 1, 2, 3]);
+
+  unsigned_fn_overflowing_add_sub!();
+
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let result = [
+      self_array[0].overflowing_mul(rhs_array[0]),
+      self_array[1].overflowing_mul(rhs_array[1]),
+      self_array[2].overflowing_mul(rhs_array[2]),
+      self_array[3].overflowing_mul(rhs_array[3]),
+    ];
+    (
+      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
+      Self::new([
+        -(result[0].1 as i64) as u64,
+        -(result[1].1 as i64) as u64,
+        -(result[2].1 as i64) as u64,
+        -(result[3].1 as i64) as u64,
+      ]),
+    )
+  }
+
+  unsigned_fn_overflowing_div_rem!();
 
   #[inline]
   #[must_use]

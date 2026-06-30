@@ -236,7 +236,9 @@ macro_rules! impl_shl_t_for_u16x32 {
       fn shl(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            let shift = cast(rhs as u16);
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = rhs as u16 & 15;
             Self { avx512: shl_all_u16_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -260,7 +262,9 @@ macro_rules! impl_shr_t_for_u16x32 {
       fn shr(self, rhs: $shift_type) -> Self::Output {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            let shift = cast(rhs as u16);
+            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+            #[expect(clippy::suspicious_arithmetic_impl)]
+            let shift = rhs as u16 & 15;
             Self { avx512: shr_all_u16_m512i(self.avx512, shift) }
           } else {
             Self {
@@ -569,6 +573,30 @@ impl u16x32 {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
   ]);
+
+  unsigned_fn_overflowing_add_sub!();
+
+  /// Returns `self * rhs` and whether an overflow occured.
+  ///
+  /// Returns a tuple with:
+  ///
+  /// - The multiplication (returns the wrapped value if an overflow occured)
+  /// - A mask indicating whether an overflow occured
+  #[inline]
+  #[must_use]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
+    // optimization.
+
+    let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
+
+    let result_a = self_a.overflowing_mul(rhs_a);
+    let result_b = self_b.overflowing_mul(rhs_b);
+    (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
+  }
+
+  unsigned_fn_overflowing_div_rem!();
 
   #[inline]
   #[must_use]
