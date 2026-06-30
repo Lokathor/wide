@@ -767,12 +767,6 @@ impl CmpGe for i8x16 {
 }
 
 impl i8x16 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [i8; 16]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// converts `i16` to `i8`, saturating values that are too large

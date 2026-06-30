@@ -411,12 +411,6 @@ impl Not for u16x32 {
 }
 
 impl u16x32 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u16; 32]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

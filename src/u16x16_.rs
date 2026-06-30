@@ -460,12 +460,6 @@ impl From<u8x16> for u16x16 {
 }
 
 impl u16x16 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u16; 16]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

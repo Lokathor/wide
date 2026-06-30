@@ -414,12 +414,6 @@ impl CmpGe for i64x8 {
 }
 
 impl i64x8 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [i64; 8]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

@@ -617,12 +617,6 @@ impl CmpGe for u16x8 {
 }
 
 impl u16x8 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u16; 8]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

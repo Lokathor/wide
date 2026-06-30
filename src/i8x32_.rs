@@ -386,12 +386,6 @@ impl Not for i8x32 {
 }
 
 impl i8x32 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [i8; 32]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

@@ -507,12 +507,6 @@ impl CmpGe for u64x2 {
 }
 
 impl u64x2 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u64; 2]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

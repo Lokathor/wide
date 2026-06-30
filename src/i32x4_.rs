@@ -544,12 +544,6 @@ impl CmpGe for i32x4 {
 }
 
 impl i32x4 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [i32; 4]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

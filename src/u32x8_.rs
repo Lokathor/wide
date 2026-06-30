@@ -512,12 +512,6 @@ impl CmpLe for u32x8 {
 }
 
 impl u32x8 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u32; 8]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the

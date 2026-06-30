@@ -408,12 +408,6 @@ impl CmpNe for f32x16 {
 }
 
 impl f32x16 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [f32; 16]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

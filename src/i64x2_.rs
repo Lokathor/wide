@@ -513,12 +513,6 @@ impl CmpGe for i64x2 {
 }
 
 impl i64x2 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [i64; 2]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

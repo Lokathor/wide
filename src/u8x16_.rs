@@ -792,12 +792,6 @@ impl CmpGt for u8x16 {
 }
 
 impl u8x16 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u8; 16]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

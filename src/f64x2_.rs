@@ -499,12 +499,6 @@ impl CmpLt for f64x2 {
 }
 
 impl f64x2 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [f64; 2]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

@@ -398,12 +398,6 @@ impl f64x8 {
   const_f64_as_f64x8!(SQRT_2, core::f64::consts::SQRT_2);
   const_f64_as_f64x8!(TAU, core::f64::consts::TAU);
 
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [f64; 8]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.

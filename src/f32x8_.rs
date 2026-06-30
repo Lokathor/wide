@@ -406,12 +406,6 @@ impl CmpLt for f32x8 {
 }
 
 impl f32x8 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [f32; 8]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
   simd_comparison_fns!();
 
   /// Bitwise selection.
