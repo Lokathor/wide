@@ -16,6 +16,87 @@ impl_simd! {
   T = u16,
   N = 16,
   Simd = u16x16,
+
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: cmp_eq_mask_i16_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    // no gt, so just reverse to get same answer
+    Self::simd_gt(rhs, self)
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature = "avx2")] {
+        let bias = m256i::from([0x8000u16; 16]);
+        let a_biased = sub_i16_m256i(self.avx2, bias);
+        let b_biased = sub_i16_m256i(rhs.avx2, bias);
+        let mask = cmp_gt_mask_i16_m256i(a_biased, b_biased);
+
+        Self { avx2: mask }
+      } else {
+        Self {
+          a: self.a.simd_gt(rhs.a),
+          b: self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_gt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_lt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
 }
 
 int_uint_consts!(u16, 16, u16x16, 256);
@@ -293,111 +374,6 @@ macro_rules! impl_shr_t_for_u16x16 {
 }
 impl_shr_t_for_u16x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-#[expect(deprecated)]
-impl CmpEq for u16x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_eq_mask_i16_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for u16x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature = "avx2")] {
-        let bias = m256i::from([0x8000u16; 16]);
-        let a_biased = sub_i16_m256i(self.avx2, bias);
-        let b_biased = sub_i16_m256i(rhs.avx2, bias);
-        let mask = cmp_gt_mask_i16_m256i(a_biased, b_biased);
-
-        Self { avx2: mask }
-      } else {
-        Self {
-          a: self.a.simd_gt(rhs.a),
-          b: self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for u16x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    // no gt, so just reverse to get same answer
-    Self::simd_gt(rhs, self)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for u16x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_eq(rhs)
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for u16x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_gt(rhs)
-      } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for u16x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_lt(rhs)
-      } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
-      }
-    }
-  }
-}
-
 impl Mul for u16x16 {
   type Output = Self;
   #[inline]
@@ -460,8 +436,6 @@ impl From<u8x16> for u16x16 {
 }
 
 impl u16x16 {
-  simd_comparison_fns!();
-
   /// Bitwise selection.
   ///
   /// For each bit of `self`:

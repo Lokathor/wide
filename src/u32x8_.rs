@@ -16,6 +16,57 @@ impl_simd! {
   T = u32,
   N = 8,
   Simd = u32x8,
+
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2 ) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    !self.simd_eq(rhs)
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    // lt is just gt the other way around
+    rhs.simd_gt(self)
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // no unsigned gt than so inverting the high bit will get the correct result
+        let highbit = u32x8::splat(1 << 31);
+        Self { avx2: cmp_gt_mask_i32_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2 ) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    self.simd_eq(rhs) | self.simd_lt(rhs)
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    self.simd_eq(rhs) | self.simd_gt(rhs)
+  }
 }
 
 int_uint_consts!(u32, 8, u32x8, 256);
@@ -340,180 +391,7 @@ impl Shl<u32x8> for u32x8 {
   }
 }
 
-#[expect(deprecated)]
-impl CmpEq for u32x8 {
-  type Output = Self;
-  /// Element-wise equality comparison.
-  ///
-  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding elements are equal, or all-zeros (0x00000000) otherwise.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::{u32x8, CmpEq};
-  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
-  /// let mask = a.simd_eq(b);
-  /// let expected = [0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0];
-  /// assert_eq!(mask.to_array(), expected);
-  /// ```
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2 ) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for u32x8 {
-  type Output = Self;
-  /// Element-wise greater-than comparison.
-  ///
-  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding element in `self` is greater than the one in `rhs`,
-  /// or all-zeros (0x00000000) otherwise.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::{u32x8, CmpGt};
-  /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
-  /// let b = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let mask = a.simd_gt(b);
-  /// let expected =
-  ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
-  /// assert_eq!(mask.to_array(), expected);
-  /// ```
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // no unsigned gt than so inverting the high bit will get the correct result
-        let highbit = u32x8::splat(1 << 31);
-        Self { avx2: cmp_gt_mask_i32_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2 ) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for u32x8 {
-  type Output = Self;
-  /// Element-wise less-than comparison.
-  ///
-  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding element in `self` is less than the one in `rhs`,
-  /// or all-zeros (0x00000000) otherwise.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::{u32x8, CmpLt};
-  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let b = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
-  /// let mask = a.simd_lt(b);
-  /// let expected =
-  ///   [0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0];
-  /// assert_eq!(mask.to_array(), expected);
-  /// ```
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    // lt is just gt the other way around
-    rhs.simd_gt(self)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for u32x8 {
-  type Output = Self;
-  /// Element-wise not-equal comparison.
-  ///
-  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding elements are not equal, or all-zeros (0x00000000) otherwise.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::{u32x8, CmpNe};
-  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let b = u32x8::from([1, 0, 3, 0, 5, 0, 7, 0]);
-  /// let mask = a.simd_ne(b);
-  /// let expected = [0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0, 0xFFFFFFFF];
-  /// assert_eq!(mask.to_array(), expected);
-  /// ```
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    !self.simd_eq(rhs)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for u32x8 {
-  type Output = Self;
-  /// Element-wise greater-than-or-equal comparison.
-  ///
-  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding element in `self` is greater than or equal to the one in
-  /// `rhs`, or all-zeros (0x00000000) otherwise.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::{u32x8, CmpGe};
-  /// let a = u32x8::from([5, 4, 3, 2, 10, 9, 8, 7]);
-  /// let b = u32x8::from([5, 2, 3, 4, 5, 6, 8, 8]);
-  /// let mask = a.simd_ge(b);
-  /// let expected = [
-  ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-  ///   0,
-  /// ];
-  /// assert_eq!(mask.to_array(), expected);
-  /// ```
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    self.simd_eq(rhs) | self.simd_gt(rhs)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for u32x8 {
-  type Output = Self;
-  /// Element-wise less-than-or-equal comparison.
-  ///
-  /// Returns a mask where each element is all-ones (0xFFFFFFFF) if the
-  /// corresponding element in `self` is less than or equal to the one in `rhs`,
-  /// or all-zeros (0x00000000) otherwise.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::{u32x8, CmpLe};
-  /// let a = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let b = u32x8::from([1, 4, 3, 2, 10, 9, 7, 7]);
-  /// let mask = a.simd_le(b);
-  /// let expected = [
-  ///   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-  ///   0,
-  /// ];
-  /// assert_eq!(mask.to_array(), expected);
-  /// ```
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    self.simd_eq(rhs) | self.simd_lt(rhs)
-  }
-}
-
 impl u32x8 {
-  simd_comparison_fns!();
-
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
   /// result. Useful for implementing divide constant value (see `t_usefulness`
   /// example)

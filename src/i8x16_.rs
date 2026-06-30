@@ -57,6 +57,198 @@ impl_simd! {
   T = i8,
   N = 16,
   Simd = i8x16,
+
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_eq(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vreinterpretq_s8_u8(vceqq_s8(self.neon, rhs.neon)) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] == rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] == rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] == rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] == rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] == rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] == rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] == rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] == rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] == rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] == rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] == rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] == rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] == rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] == rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] == rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] == rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] != rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] != rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] != rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] != rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] != rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] != rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] != rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] != rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] != rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] != rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] != rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] != rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] != rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] != rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] != rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] != rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_lt_mask_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_lt(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vreinterpretq_s8_u8(vcltq_s8(self.neon, rhs.neon)) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] < rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] < rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] < rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] < rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] < rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] < rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] < rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] < rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] < rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] < rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] < rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] < rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] < rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] < rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] < rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_gt_mask_i8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_gt(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vreinterpretq_s8_u8(vcgtq_s8(self.neon, rhs.neon)) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] > rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] > rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] > rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] > rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] > rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] > rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] > rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] > rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] > rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] > rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] > rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] > rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] > rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] > rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] > rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_le(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] <= rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] <= rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] <= rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] <= rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] <= rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] <= rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] <= rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] <= rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] <= rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] <= rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] <= rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] <= rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] <= rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] <= rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] <= rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] <= rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_ge(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        Self { arr: [
+          if self.arr[0] >= rhs.arr[0] { -1 } else { 0 },
+          if self.arr[1] >= rhs.arr[1] { -1 } else { 0 },
+          if self.arr[2] >= rhs.arr[2] { -1 } else { 0 },
+          if self.arr[3] >= rhs.arr[3] { -1 } else { 0 },
+          if self.arr[4] >= rhs.arr[4] { -1 } else { 0 },
+          if self.arr[5] >= rhs.arr[5] { -1 } else { 0 },
+          if self.arr[6] >= rhs.arr[6] { -1 } else { 0 },
+          if self.arr[7] >= rhs.arr[7] { -1 } else { 0 },
+          if self.arr[8] >= rhs.arr[8] { -1 } else { 0 },
+          if self.arr[9] >= rhs.arr[9] { -1 } else { 0 },
+          if self.arr[10] >= rhs.arr[10] { -1 } else { 0 },
+          if self.arr[11] >= rhs.arr[11] { -1 } else { 0 },
+          if self.arr[12] >= rhs.arr[12] { -1 } else { 0 },
+          if self.arr[13] >= rhs.arr[13] { -1 } else { 0 },
+          if self.arr[14] >= rhs.arr[14] { -1 } else { 0 },
+          if self.arr[15] >= rhs.arr[15] { -1 } else { 0 },
+        ]}
+      }
+    }
+  }
 }
 
 int_uint_consts!(i8, 16, i8x16, 128);
@@ -550,225 +742,7 @@ impl BitXor for i8x16 {
   }
 }
 
-#[expect(deprecated)]
-impl CmpEq for i8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_eq_mask_i8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s8_u8(vceqq_s8(self.neon, rhs.neon)) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] == rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] == rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] == rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] == rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] == rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] == rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] == rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] == rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] == rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] == rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] == rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] == rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] == rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] == rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] == rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] == rhs.arr[15] { -1 } else { 0 },
-        ]}
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for i8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_gt_mask_i8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_gt(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s8_u8(vcgtq_s8(self.neon, rhs.neon)) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] > rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] > rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] > rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] > rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] > rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] > rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] > rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] > rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] > rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] > rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] > rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] > rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] > rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] > rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] > rhs.arr[15] { -1 } else { 0 },
-        ]}
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for i8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_lt_mask_i8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_lt(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s8_u8(vcltq_s8(self.neon, rhs.neon)) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] < rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] < rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] < rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] < rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] < rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] < rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] < rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] < rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] < rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] < rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] < rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] < rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] < rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] < rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] < rhs.arr[15] { -1 } else { 0 },
-        ]}
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for i8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        !self.simd_eq(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_ne(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_eq(rhs)
-      } else {
-        Self { arr: [
-          if self.arr[0] != rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] != rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] != rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] != rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] != rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] != rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] != rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] != rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] != rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] != rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] != rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] != rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] != rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] != rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] != rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] != rhs.arr[15] { -1 } else { 0 },
-        ]}
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for i8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        !self.simd_gt(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_le(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_gt(rhs)
-      } else {
-        Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] <= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] <= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] <= rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] <= rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] <= rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] <= rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] <= rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] <= rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] <= rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] <= rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] <= rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] <= rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] <= rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] <= rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] <= rhs.arr[15] { -1 } else { 0 },
-        ]}
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for i8x16 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        !self.simd_lt(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_ge(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_lt(rhs)
-      } else {
-        Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] >= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] >= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] >= rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] >= rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] >= rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] >= rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] >= rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] >= rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] >= rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] >= rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] >= rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] >= rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] >= rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] >= rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] >= rhs.arr[15] { -1 } else { 0 },
-        ]}
-      }
-    }
-  }
-}
-
 impl i8x16 {
-  simd_comparison_fns!();
-
   /// converts `i16` to `i8`, saturating values that are too large
   #[inline]
   #[must_use]

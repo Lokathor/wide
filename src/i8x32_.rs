@@ -16,6 +16,81 @@ impl_simd! {
   T = i8,
   N = 32,
   Simd = i8x32,
+
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    rhs.simd_gt(self)
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_gt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_lt(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
 }
 
 int_uint_consts!(i8, 32, i8x32, 256);
@@ -269,105 +344,6 @@ impl BitXor for i8x32 {
   }
 }
 
-#[expect(deprecated)]
-impl CmpEq for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    rhs.simd_gt(self)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_eq(rhs)
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_gt(rhs)
-      } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_lt(rhs)
-      } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
-      }
-    }
-  }
-}
-
 impl Not for i8x32 {
   type Output = Self;
   #[inline]
@@ -386,8 +362,6 @@ impl Not for i8x32 {
 }
 
 impl i8x32 {
-  simd_comparison_fns!();
-
   /// Bitwise selection.
   ///
   /// For each bit of `self`:

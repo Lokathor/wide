@@ -60,6 +60,109 @@ impl_simd! {
   T = u64,
   N = 2,
   Simd = u64x2,
+
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_eq(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vceqq_u64(self.neon, rhs.neon) } }
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] == r[0] { -1_i64 } else { 0 },
+          if s[1] == r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] != r[0] { -1_i64 } else { 0 },
+          if s[1] != r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    // lt is just gt the other way around
+    rhs.simd_gt(self)
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.2")] {
+        // no unsigned gt so inverting the high bit will get the correct result
+        let highbit = u64x2::splat(1 << 63);
+        Self { sse: cmp_gt_mask_i64_m128i((self ^ highbit).sse, (rhs ^ highbit).sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vcgtq_u64(self.neon, rhs.neon) }}
+      } else {
+        // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] > r[0] { u64::MAX } else { 0 },
+          if s[1] > r[1] { u64::MAX } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] <= r[0] { -1_i64 } else { 0 },
+          if s[1] <= r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] >= r[0] { -1_i64 } else { 0 },
+          if s[1] >= r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
 }
 
 int_uint_consts!(u64, 2, u64x2, 128);
@@ -379,136 +482,7 @@ macro_rules! impl_shr_t_for_u64x2 {
 }
 impl_shr_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-#[expect(deprecated)]
-impl CmpEq for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u64x2_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vceqq_u64(self.neon, rhs.neon) } }
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] == r[0] { -1_i64 } else { 0 },
-          if s[1] == r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.2")] {
-        // no unsigned gt so inverting the high bit will get the correct result
-        let highbit = u64x2::splat(1 << 63);
-        Self { sse: cmp_gt_mask_i64_m128i((self ^ highbit).sse, (rhs ^ highbit).sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vcgtq_u64(self.neon, rhs.neon) }}
-      } else {
-        // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] > r[0] { u64::MAX } else { 0 },
-          if s[1] > r[1] { u64::MAX } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    // lt is just gt the other way around
-    rhs.simd_gt(self)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_eq(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u64x2_ne(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_eq(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] != r[0] { -1_i64 } else { 0 },
-          if s[1] != r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_gt(rhs)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_gt(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] <= r[0] { -1_i64 } else { 0 },
-          if s[1] <= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_lt(rhs)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_lt(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] >= r[0] { -1_i64 } else { 0 },
-          if s[1] >= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
 impl u64x2 {
-  simd_comparison_fns!();
-
   /// Bitwise selection.
   ///
   /// For each bit of `self`:

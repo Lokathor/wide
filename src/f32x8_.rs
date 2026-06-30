@@ -16,6 +16,90 @@ impl_simd! {
   T = f32,
   N = 8,
   Simd = f32x8,
+
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
 }
 
 macro_rules! const_f32_as_f32x8 {
@@ -297,117 +381,7 @@ impl BitXor for f32x8 {
   }
 }
 
-#[expect(deprecated)]
-impl CmpEq for f32x8 {
-  type Output = Self;
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for f32x8 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for f32x8 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for f32x8 {
-  type Output = Self;
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for f32x8 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for f32x8 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
 impl f32x8 {
-  simd_comparison_fns!();
-
   /// Bitwise selection.
   ///
   /// For each bit of `self`:

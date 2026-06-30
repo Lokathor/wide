@@ -59,6 +59,127 @@ impl_simd! {
   T = i64,
   N = 2,
   Simd = i64x2,
+
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_eq(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vreinterpretq_s64_u64(vceqq_s64(self.neon, rhs.neon)) }}
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] == r[0] { -1_i64 } else { 0 },
+          if s[1] == r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] != r[0] { -1_i64 } else { 0 },
+          if s[1] != r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.2")] {
+        // only has gt, so flip arguments around to get lt
+        Self { sse: cmp_gt_mask_i64_m128i( rhs.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_lt(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vreinterpretq_s64_u64(vcltq_s64(self.neon, rhs.neon)) }}
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] < r[0] { -1_i64 } else { 0 },
+          if s[1] < r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.2")] {
+        Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_gt(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vreinterpretq_s64_u64(vcgtq_s64(self.neon, rhs.neon)) }}
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] > r[0] { -1_i64 } else { 0 },
+          if s[1] > r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_le(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] <= r[0] { -1_i64 } else { 0 },
+          if s[1] <= r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_ge(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        let s: [i64;2] = cast(self);
+        let r: [i64;2] = cast(rhs);
+        cast([
+          if s[0] >= r[0] { -1_i64 } else { 0 },
+          if s[1] >= r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
 }
 
 int_uint_consts!(i64, 2, i64x2, 128);
@@ -367,154 +488,7 @@ macro_rules! impl_shr_t_for_i64x2 {
 
 impl_shr_t_for_i64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
-#[expect(deprecated)]
-impl CmpEq for i64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s64_u64(vceqq_s64(self.neon, rhs.neon)) }}
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] == r[0] { -1_i64 } else { 0 },
-          if s[1] == r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for i64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.2")] {
-        Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_gt(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s64_u64(vcgtq_s64(self.neon, rhs.neon)) }}
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] > r[0] { -1_i64 } else { 0 },
-          if s[1] > r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for i64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.2")] {
-        // only has gt, so flip arguments around to get lt
-        Self { sse: cmp_gt_mask_i64_m128i( rhs.sse, self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_lt(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s64_u64(vcltq_s64(self.neon, rhs.neon)) }}
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] < r[0] { -1_i64 } else { 0 },
-          if s[1] < r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for i64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_eq(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_ne(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_eq(rhs)
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] != r[0] { -1_i64 } else { 0 },
-          if s[1] != r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for i64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_gt(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_le(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_gt(rhs)
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] <= r[0] { -1_i64 } else { 0 },
-          if s[1] <= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for i64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_lt(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_ge(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_lt(rhs)
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] >= r[0] { -1_i64 } else { 0 },
-          if s[1] >= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
 impl i64x2 {
-  simd_comparison_fns!();
-
   /// Bitwise selection.
   ///
   /// For each bit of `self`:
