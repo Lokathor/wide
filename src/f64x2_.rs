@@ -2482,8 +2482,8 @@ impl f64x2 {
     let z = if x_sign.any() {
       // Y into an integer
       let yi = y.simd_eq(y.round_ties_even());
-      // Is y odd?
-      let y_odd = cast::<_, i64x2>(y.round_int() << 63).round_float();
+      // Is y odd? If yes flip the sign of the result.
+      let y_odd = cast::<i64x2, f64x2>(y.round_int() << 63);
 
       let z1 = yi
         .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
