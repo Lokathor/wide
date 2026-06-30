@@ -399,16 +399,58 @@ impl i32x16 {
 
   simd_comparison_fns!();
 
+  /// Bitwise selection.
+  ///
+  /// For each bit of `self`:
+  ///
+  /// - If the bit is one, return the corresponding bit of `if_one`
+  /// - If the bit is zero, return the corresponding bit of `if_zero`
+  ///
+  /// If you know `self` is a mask, meaning each lane is either all zeros or all
+  /// ones, consider using [`select`] which is faster.
+  ///
+  /// [`select`]: Self::select
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(f.avx512,t.avx512,movepi8_mask_m512i(self.avx512)) }
+        Self {
+          avx512: bitor_m512i(
+            bitand_m512i(if_one.avx512, self.avx512),
+            bitandnot_m512i(self.avx512, if_zero.avx512),
+          ),
+        }
       } else {
         Self {
-          a : self.a.blend(t.a, f.a),
-          b : self.b.blend(t.b, f.b),
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
+        }
+      }
+    }
+  }
+
+  /// Lanewise selection.
+  ///
+  /// For each lane of `self`:
+  ///
+  /// - If all bits are one, return the corresponding lane of `if_true`
+  /// - If all bits are zero, return the corresponding lane of `if_false`
+  ///
+  /// This function assumes `self` is a mask, meaning each lane is either all
+  /// zeros or all ones. For bitwise selection use [`bitselect`].
+  ///
+  /// [`bitselect`]: Self::bitselect
+  #[inline]
+  #[must_use]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: blend_varying_i8_m512i(if_false.avx512,if_true.avx512,movepi8_mask_m512i(self.avx512)) }
+      } else {
+        Self {
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
         }
       }
     }
@@ -490,8 +532,9 @@ impl i32x16 {
         let result = self + rhs;
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
+
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.blend(Self::MAX ^ negative, result)
+        overflow.select(Self::MAX ^ negative, result)
       } else {
         Self {
           a: self.a.saturating_add(rhs.a),
@@ -509,8 +552,9 @@ impl i32x16 {
         let result = self - rhs;
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
+
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.blend(Self::MAX ^ negative, result)
+        overflow.select(Self::MAX ^ negative, result)
       } else {
         Self {
           a: self.a.saturating_sub(rhs.a),
@@ -549,7 +593,7 @@ impl i32x16 {
 
         let no_overflow = high.simd_eq(low.is_negative());
         let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.blend(low, limit)
+        no_overflow.select(low, limit)
       } else {
         let [self_a, self_b]: [i32x8; 2] = cast(self);
         let [rhs_a, rhs_b]: [i32x8; 2] = cast(rhs);
@@ -801,6 +845,8 @@ impl i32x16 {
       }
     }
   }
+
+  fn_blend!();
 }
 
 impl Not for i32x16 {

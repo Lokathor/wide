@@ -515,18 +515,61 @@ impl i64x2 {
 
   simd_comparison_fns!();
 
+  /// Bitwise selection.
+  ///
+  /// For each bit of `self`:
+  ///
+  /// - If the bit is one, return the corresponding bit of `if_one`
+  /// - If the bit is zero, return the corresponding bit of `if_zero`
+  ///
+  /// If you know `self` is a mask, meaning each lane is either all zeros or all
+  /// ones, consider using [`select`] which is faster.
+  ///
+  /// [`select`]: Self::select
   #[inline]
   #[must_use]
-  pub fn blend(self, t: Self, f: Self) -> Self {
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self {
+          sse: bitor_m128i(
+            bitand_m128i(if_one.sse, self.sse),
+            bitandnot_m128i(self.sse, if_zero.sse),
+          ),
+        }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vbslq_s64(vreinterpretq_u64_s64(self.neon), if_one.neon, if_zero.neon) }}
+      } else {
+        generic_bit_blend(self, if_one, if_zero)
+      }
+    }
+  }
+
+  /// Lanewise selection.
+  ///
+  /// For each lane of `self`:
+  ///
+  /// - If all bits are one, return the corresponding lane of `if_true`
+  /// - If all bits are zero, return the corresponding lane of `if_false`
+  ///
+  /// This function assumes `self` is a mask, meaning each lane is either all
+  /// zeros or all ones. For bitwise selection use [`bitselect`].
+  ///
+  /// [`bitselect`]: Self::bitselect
+  #[inline]
+  #[must_use]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(f.sse, t.sse, self.sse) }
+        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(t.simd, f.simd, self.simd) }
+        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_s64(vreinterpretq_u64_s64(self.neon), t.neon, f.neon) }}
+        unsafe {Self { neon: vbslq_s64(vreinterpretq_u64_s64(self.neon), if_true.neon, if_false.neon) }}
       } else {
-        generic_bit_blend(self, t, f)
+        generic_bit_blend(self, if_true, if_false)
       }
     }
   }
@@ -801,13 +844,13 @@ impl i64x2 {
   #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).blend(self, rhs)
+    self.simd_lt(rhs).select(self, rhs)
   }
 
   #[inline]
   #[must_use]
   pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).blend(self, rhs)
+    self.simd_gt(rhs).select(self, rhs)
   }
 
   integer_fn_clamp!();
@@ -820,8 +863,9 @@ impl i64x2 {
         let result = self + rhs;
         let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
+
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.blend(Self::MAX ^ negative, result)
+        overflow.select(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqaddq_s64(self.neon, rhs.neon) } }
       } else {
@@ -843,8 +887,9 @@ impl i64x2 {
         let result = self - rhs;
         let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
         let negative = self.is_negative();
+
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.blend(Self::MAX ^ negative, result)
+        overflow.select(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s64(self.neon, rhs.neon) } }
       } else {
@@ -901,4 +946,6 @@ impl i64x2 {
   }
 
   signed_fn_overflowing_div_rem!();
+
+  fn_blend!();
 }

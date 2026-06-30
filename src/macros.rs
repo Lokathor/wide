@@ -186,6 +186,30 @@ macro_rules! int_uint_consts {
   };
 }
 
+macro_rules! fn_blend {
+  () => {
+    /// Lanewise selection. This function has been renamed to [`select`].
+    ///
+    /// For each lane this returns `t` where `self` is all ones and `f` where
+    /// `self` is all zeros.
+    ///
+    /// This function assumes `self` is a mask, meaning each lane is either all
+    /// zeros or all ones. For bitwise selection use [`bitselect`].
+    ///
+    /// [`select`]: Self::select
+    /// [`bitselect`]: Self::bitselect
+    #[deprecated(
+      since = "1.6.0",
+      note = "split into `select` and `bitselect` functions"
+    )]
+    #[inline]
+    #[must_use]
+    pub fn blend(self, t: Self, f: Self) -> Self {
+      self.select(t, f)
+    }
+  };
+}
+
 macro_rules! integer_fn_clamp {
   () => {
     /// Restrict each element to a certain interval.

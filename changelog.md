@@ -9,6 +9,7 @@
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
 
+* Deprecated `blend` and replaced it with `select` and `bitselect`.
 * Fixed bug in `powf`.
 * Fixed `clamp` and added guarantees for `fast_clamp`.
 * Added small optimizations to `saturating_add/sub`.
