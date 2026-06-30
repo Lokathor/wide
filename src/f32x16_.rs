@@ -709,10 +709,8 @@ impl f32x16 {
           cast(BOUNDS_LIMIT),
         ));
 
-        // `abs` keeps the original sign. `blend` cannot be used here because it
-        // doesn't work as an arbitrary bit-blend.
-        let bounds_mask = bounds_mask.abs();
-        result_abs & bounds_mask | self & !bounds_mask
+        // `abs` keeps the original sign.
+        bounds_mask.abs().bitselect(result_abs, self)
       } else {
         Self {
           a: self.a.round(),

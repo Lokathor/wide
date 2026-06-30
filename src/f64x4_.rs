@@ -705,10 +705,8 @@ impl f64x4 {
         // Large value, infinity and NaN need special handling.
         let bounds_mask: Self = cast(cmp_gt_mask_i64_m256i(cast(BOUNDS_LIMIT), cast(self_abs)));
 
-        // `abs` keeps the original sign. `blend` cannot be used here because it
-        // doesn't work as an arbitrary bit-blend.
-        let bounds_mask = bounds_mask.abs();
-        result_abs & bounds_mask | self & !bounds_mask
+        // `abs` keeps the original sign.
+        bounds_mask.abs().bitselect(result_abs, self)
       } else {
         let [a, b] = cast::<f64x4, [f64x2; 2]>(self);
         cast([a.round(), b.round()])
