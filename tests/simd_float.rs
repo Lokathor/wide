@@ -1638,26 +1638,17 @@ fn test_log10() {
 
 #[test]
 fn test_pow_simd() {
-  // TODO: fix `powf` which currently breaks when, possibly among other cases,
-  // `self` is negative and `n` is an odd number. These inputs lead to an
-  // incorrect result:
-  //
-  // simd_chunks!(
-  //  [
-  //    1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0,
-  //    -3.1, -3.0, -4.0, 5.1,
-  //  ],
-  //  [
-  //    0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1,
-  //    2.7, 4.0, -3.0, 29.0,
-  //  ],
-  // )
-
   for_simd_types!(|T: Float, N| {
     #[expect(clippy::approx_constant)]
     for [value, n] in simd_chunks!(
-      [1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, 5.1],
-      [0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 29.0],
+      [
+        1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0,
+        -3.1, -3.0, -4.0, 5.1,
+      ],
+      [
+        0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1,
+        2.7, 4.0, -3.0, 29.0,
+      ],
     ) {
       let expected = Simd::new(std::array::from_fn(|i| value[i].powf(n[i])));
       let actual = pow_simd(Simd::new(value), Simd::new(n));
@@ -1674,27 +1665,15 @@ fn test_pow_simd() {
 
 #[test]
 fn test_powf() {
-  // TODO: fix `powf` which currently breaks when, possibly among other cases,
-  // `self` is negative and `n` is an odd number. These inputs lead to an
-  // incorrect result:
-  //
-  // simd_chunks!(
-  //  [
-  //    1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0,
-  //    -3.1, -3.0, -4.0, 5.1,
-  //  ],
-  //  [
-  //    0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1,
-  //    2.7, 4.0, -3.0, 29.0,
-  //  ],
-  // )
-
   for_simd_types!(|T: Float, N| {
-    for value in simd_chunks!([1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3]) {
+    for value in simd_chunks!([
+      1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0,
+      -3.1, -3.0, -4.0, 5.1,
+    ]) {
       #[expect(clippy::approx_constant)]
       for n in [
-        0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 2.7,
-        4.0, -3.0, 29.0,
+        0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1,
+        2.7, 4.0, -3.0, 29.0,
       ] {
         let expected = Simd::new(std::array::from_fn(|i| value[i].powf(n)));
         let actual = Simd::new(value).powf(n);
