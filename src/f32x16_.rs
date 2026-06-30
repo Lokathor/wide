@@ -12,6 +12,12 @@ pick! {
   }
 }
 
+impl_simd! {
+  T = f32,
+  N = 16,
+  Simd = f32x16,
+}
+
 macro_rules! const_f32_as_f32x16 {
   ($i:ident, $f:expr) => {
     #[allow(non_upper_case_globals)]

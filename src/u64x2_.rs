@@ -56,6 +56,12 @@ pick! {
   }
 }
 
+impl_simd! {
+  T = u64,
+  N = 2,
+  Simd = u64x2,
+}
+
 int_uint_consts!(u64, 2, u64x2, 128);
 
 unsafe impl Zeroable for u64x2 {}

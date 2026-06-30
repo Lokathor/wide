@@ -12,6 +12,12 @@ pick! {
   }
 }
 
+impl_simd! {
+  T = i16,
+  N = 16,
+  Simd = i16x16,
+}
+
 int_uint_consts!(i16, 16, i16x16, 256);
 
 unsafe impl Zeroable for i16x16 {}
