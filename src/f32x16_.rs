@@ -166,6 +166,54 @@ impl_simd! {
       }
     }
   }
+
+  /// Transpose matrix of 16x16 `f32` matrix. Currently not accelerated.
+  #[inline]
+  pub fn transpose(data: [f32x16; 16]) -> [f32x16; 16] {
+    // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,
+    // then try adding an optimized `avx512f` implementation.
+
+    #[inline(always)]
+    fn transpose_column(data: &[f32x16; 16], index: usize) -> f32x16 {
+      f32x16::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+    ]
+  }
 }
 
 macro_rules! const_f32_as_f32x16 {
@@ -1986,55 +2034,6 @@ impl f32x16 {
   #[inline]
   pub fn powf(self, y: f32) -> Self {
     Self::pow_f32x16(self, f32x16::splat(y))
-  }
-
-  /// Transpose matrix of 16x16 `f32` matrix. Currently not accelerated.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [f32x16; 16]) -> [f32x16; 16] {
-    // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,
-    // then try adding an optimized `avx512f` implementation.
-
-    #[inline(always)]
-    fn transpose_column(data: &[f32x16; 16], index: usize) -> f32x16 {
-      f32x16::new([
-        data[0].as_array()[index],
-        data[1].as_array()[index],
-        data[2].as_array()[index],
-        data[3].as_array()[index],
-        data[4].as_array()[index],
-        data[5].as_array()[index],
-        data[6].as_array()[index],
-        data[7].as_array()[index],
-        data[8].as_array()[index],
-        data[9].as_array()[index],
-        data[10].as_array()[index],
-        data[11].as_array()[index],
-        data[12].as_array()[index],
-        data[13].as_array()[index],
-        data[14].as_array()[index],
-        data[15].as_array()[index],
-      ])
-    }
-
-    [
-      transpose_column(&data, 0),
-      transpose_column(&data, 1),
-      transpose_column(&data, 2),
-      transpose_column(&data, 3),
-      transpose_column(&data, 4),
-      transpose_column(&data, 5),
-      transpose_column(&data, 6),
-      transpose_column(&data, 7),
-      transpose_column(&data, 8),
-      transpose_column(&data, 9),
-      transpose_column(&data, 10),
-      transpose_column(&data, 11),
-      transpose_column(&data, 12),
-      transpose_column(&data, 13),
-      transpose_column(&data, 14),
-      transpose_column(&data, 15),
-    ]
   }
 
   #[inline]

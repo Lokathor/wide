@@ -233,6 +233,12 @@ impl_simd! {
       }
     }
   }
+
+  /// Transpose matrix of 4x4 `u32` matrix. Currently only accelerated on SSE.
+  #[inline]
+  pub fn transpose(data: [u32x4; 4]) -> [u32x4; 4] {
+    cast(i32x4::transpose(cast(data)))
+  }
 }
 
 int_uint_consts!(u32, 4, u32x4, 128);
@@ -956,11 +962,4 @@ impl u32x4 {
   }
 
   unsigned_fn_overflowing_div_rem!();
-
-  /// Transpose matrix of 4x4 `u32` matrix. Currently only accelerated on SSE.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [u32x4; 4]) -> [u32x4; 4] {
-    cast(i32x4::transpose(cast(data)))
-  }
 }

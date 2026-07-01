@@ -145,6 +145,12 @@ impl_simd! {
   pub fn all(self) -> bool {
     i16x16::all(cast(self))
   }
+
+  /// Transpose matrix of 16x16 `u16` matrix. Currently not accelerated.
+  #[inline]
+  pub fn transpose(data: [u16x16; 16]) -> [u16x16; 16] {
+    cast(i16x16::transpose(cast(data)))
+  }
 }
 
 int_uint_consts!(u16, 16, u16x16, 256);
@@ -608,11 +614,4 @@ impl u16x16 {
   }
 
   unsigned_fn_overflowing_div_rem!();
-
-  /// Transpose matrix of 16x16 `u16` matrix. Currently not accelerated.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [u16x16; 16]) -> [u16x16; 16] {
-    cast(i16x16::transpose(cast(data)))
-  }
 }

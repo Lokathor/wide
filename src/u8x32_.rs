@@ -154,6 +154,12 @@ impl_simd! {
   pub fn all(self) -> bool {
     i8x32::all(cast(self))
   }
+
+  /// Transpose matrix of 32x32 `u8` matrix. Currently not accelerated.
+  #[inline]
+  pub fn transpose(data: [u8x32; 32]) -> [u8x32; 32] {
+    cast(i8x32::transpose(cast(data)))
+  }
 }
 
 int_uint_consts!(u8, 32, u8x32, 256);
@@ -594,12 +600,5 @@ impl u8x32 {
   #[inline]
   pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
     cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
-  }
-
-  /// Transpose matrix of 32x32 `u8` matrix. Currently not accelerated.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [u8x32; 32]) -> [u8x32; 32] {
-    cast(i8x32::transpose(cast(data)))
   }
 }

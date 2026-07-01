@@ -248,6 +248,12 @@ impl_simd! {
   pub fn all(self) -> bool {
     i16x8::all(cast(self))
   }
+
+  /// Transpose matrix of 8x8 `u16` matrix.
+  #[inline]
+  pub fn transpose(data: [u16x8; 8]) -> [u16x8; 8] {
+    cast(i16x8::transpose(cast(data)))
+  }
 }
 
 int_uint_consts!(u16, 8, u16x8, 128);
@@ -1118,12 +1124,5 @@ impl u16x8 {
         ])
       }
     }
-  }
-
-  /// Transpose matrix of 8x8 `u16` matrix.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [u16x8; 8]) -> [u16x8; 8] {
-    cast(i16x8::transpose(cast(data)))
   }
 }

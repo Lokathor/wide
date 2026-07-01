@@ -127,6 +127,12 @@ impl_simd! {
       }
     }
   }
+
+  /// Transpose matrix of 8x8 `u32` matrix. Currently only accelerated on AVX2.
+  #[inline]
+  pub fn transpose(data: [u32x8; 8]) -> [u32x8; 8] {
+    cast(i32x8::transpose(cast(data)))
+  }
 }
 
 int_uint_consts!(u32, 8, u32x8, 256);
@@ -643,13 +649,6 @@ impl u32x8 {
   }
 
   unsigned_fn_overflowing_div_rem!();
-
-  /// Transpose matrix of 8x8 `u32` matrix. Currently only accelerated on AVX2.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [u32x8; 8]) -> [u32x8; 8] {
-    cast(i32x8::transpose(cast(data)))
-  }
 }
 
 impl Not for u32x8 {

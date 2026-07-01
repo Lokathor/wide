@@ -142,6 +142,12 @@ impl_simd! {
   pub fn all(self) -> bool {
     i64x4::all(cast(self))
   }
+
+  /// Transpose matrix of 4x4 `u64` matrix.
+  #[inline]
+  pub fn transpose(data: [u64x4; 4]) -> [u64x4; 4] {
+    cast(i64x4::transpose(cast(data)))
+  }
 }
 
 int_uint_consts!(u64, 4, u64x4, 256);
@@ -441,13 +447,6 @@ impl u64x4 {
   pub fn reduce_min(self) -> u64 {
     let array: [u64; 4] = cast(self);
     array[0].min(array[1]).min(array[2]).min(array[3])
-  }
-
-  /// Transpose matrix of 4x4 `u64` matrix.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [u64x4; 4]) -> [u64x4; 4] {
-    cast(i64x4::transpose(cast(data)))
   }
 
   #[inline]

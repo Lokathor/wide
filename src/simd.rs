@@ -15,6 +15,7 @@ macro_rules! impl_simd {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
+    $fn_transpose:item
   ) => {
     impl From<[$T; $N]> for $Simd {
       #[inline]
@@ -278,6 +279,9 @@ macro_rules! impl_simd {
       pub fn none(self) -> bool {
         !self.any()
       }
+
+      #[must_use]
+      $fn_transpose
 
       /// Lanewise selection. This function has been renamed to [`select`].
       ///

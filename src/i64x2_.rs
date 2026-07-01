@@ -265,6 +265,23 @@ impl_simd! {
       }
     }
   }
+
+  /// Transpose matrix of 2x2 `i64` matrix.
+  #[inline]
+  pub fn transpose(data: [i64x2; 2]) -> [i64x2; 2] {
+    pick! {
+      if #[cfg(any(
+        target_feature="sse2",
+        all(target_feature="neon",target_arch="aarch64"),
+        target_feature="simd128",
+      ))] {
+        [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
+      } else {
+        let [x, y, z, w]: [i64; 4] = cast(data);
+        cast([x, z, y, w])
+      }
+    }
+  }
 }
 
 int_uint_consts!(i64, 2, i64x2, 128);
@@ -744,23 +761,6 @@ impl i64x2 {
         Self { neon: unsafe { vzip2q_s64(self.neon, b.neon) } }
       } else {
         Self::new([self.as_array()[1], b.as_array()[1]])
-      }
-    }
-  }
-
-  /// Transpose matrix of 2x2 `i64` matrix.
-  #[inline]
-  pub fn transpose(data: [i64x2; 2]) -> [i64x2; 2] {
-    pick! {
-      if #[cfg(any(
-        target_feature="sse2",
-        all(target_feature="neon",target_arch="aarch64"),
-        target_feature="simd128",
-      ))] {
-        [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
-      } else {
-        let [x, y, z, w]: [i64; 4] = cast(data);
-        cast([x, z, y, w])
       }
     }
   }

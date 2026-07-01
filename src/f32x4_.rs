@@ -261,6 +261,52 @@ impl_simd! {
       }
     }
   }
+
+  /// Transpose matrix of 4x4 `f32` matrix. Currently only accelerated on SSE.
+  #[inline]
+  pub fn transpose(data: [f32x4; 4]) -> [f32x4; 4] {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        let mut e0 = data[0];
+        let mut e1 = data[1];
+        let mut e2 = data[2];
+        let mut e3 = data[3];
+
+        transpose_four_m128(&mut e0.sse, &mut e1.sse, &mut e2.sse, &mut e3.sse);
+
+        [e0, e1, e2, e3]
+      } else if #[cfg(any(all(target_feature="neon",target_arch="aarch64"), target_feature="simd128"))] {
+        let a = data[0].unpack_lo(data[2]);
+        let b = data[1].unpack_lo(data[3]);
+        let c = data[0].unpack_hi(data[2]);
+        let d = data[1].unpack_hi(data[3]);
+
+        [
+          a.unpack_lo(b),
+          a.unpack_hi(b),
+          c.unpack_lo(d),
+          c.unpack_hi(d),
+        ]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[f32x4; 4], index: usize) -> f32x4 {
+          f32x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
+      }
+    }
+  }
 }
 
 macro_rules! const_f32_as_f32x4 {
@@ -2358,53 +2404,6 @@ impl f32x4 {
           self.arr[3],
           b.arr[3],
         ]}
-      }
-    }
-  }
-
-  /// Transpose matrix of 4x4 `f32` matrix. Currently only accelerated on SSE.
-  #[must_use]
-  #[inline]
-  pub fn transpose(data: [f32x4; 4]) -> [f32x4; 4] {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        let mut e0 = data[0];
-        let mut e1 = data[1];
-        let mut e2 = data[2];
-        let mut e3 = data[3];
-
-        transpose_four_m128(&mut e0.sse, &mut e1.sse, &mut e2.sse, &mut e3.sse);
-
-        [e0, e1, e2, e3]
-      } else if #[cfg(any(all(target_feature="neon",target_arch="aarch64"), target_feature="simd128"))] {
-        let a = data[0].unpack_lo(data[2]);
-        let b = data[1].unpack_lo(data[3]);
-        let c = data[0].unpack_hi(data[2]);
-        let d = data[1].unpack_hi(data[3]);
-
-        [
-          a.unpack_lo(b),
-          a.unpack_hi(b),
-          c.unpack_lo(d),
-          c.unpack_hi(d),
-        ]
-      } else {
-        #[inline(always)]
-        fn transpose_column(data: &[f32x4; 4], index: usize) -> f32x4 {
-          f32x4::new([
-            data[0].as_array()[index],
-            data[1].as_array()[index],
-            data[2].as_array()[index],
-            data[3].as_array()[index],
-          ])
-        }
-
-        [
-          transpose_column(&data, 0),
-          transpose_column(&data, 1),
-          transpose_column(&data, 2),
-          transpose_column(&data, 3),
-        ]
       }
     }
   }
