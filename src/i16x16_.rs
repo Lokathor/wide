@@ -216,17 +216,26 @@ impl_simd! {
   }
 }
 
-int_uint_consts!(i16, 16, i16x16, 256);
+impl_simd_int! {
+  T = i16,
+  N = 16,
+  Simd = i16x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 
-unsafe impl Zeroable for i16x16 {}
-unsafe impl Pod for i16x16 {}
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: self.avx2.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
 
-impl AlignTo for i16x16 {
-  type Elem = i16;
-}
-
-impl Add for i16x16 {
-  type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -240,10 +249,7 @@ impl Add for i16x16 {
       }
     }
   }
-}
 
-impl Sub for i16x16 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -257,10 +263,7 @@ impl Sub for i16x16 {
       }
     }
   }
-}
 
-impl Mul for i16x16 {
-  type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
@@ -274,22 +277,7 @@ impl Mul for i16x16 {
       }
     }
   }
-}
 
-integer_impl_div_rem!(
-  i16,
-  i16x16,
-  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
-
-impl Shl for i16x16 {
-  type Output = Self;
-
-  /// Shifts lanes by the corresponding lane.
-  ///
-  /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-  /// of the type. (same as `wrapping_shl`)
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
     pick! {
@@ -311,16 +299,24 @@ impl Shl for i16x16 {
       }
     }
   }
-}
 
-impl Shr for i16x16 {
-  type Output = Self;
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 15, 0]);
+        Self { avx2: shl_all_u16_m256i(self.avx2, shift) }
+      } else {
+        Self {
+          a : self.a.shl(rhs),
+          b : self.b.shl(rhs),
+        }
+      }
+    }
+  }
 
-  /// Shifts lanes by the corresponding lane.
-  ///
-  /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-  /// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-  /// of the type. (same as `wrapping_shr`)
   #[inline]
   fn shr(self, rhs: Self) -> Self::Output {
     pick! {
@@ -342,58 +338,24 @@ impl Shr for i16x16 {
       }
     }
   }
-}
 
-impl Add<i16> for i16x16 {
-  type Output = Self;
   #[inline]
-  fn add(self, rhs: i16) -> Self::Output {
-    self.add(Self::splat(rhs))
+  fn shr(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 15, 0]);
+        Self { avx2: shr_all_i16_m256i(self.avx2, shift) }
+      } else {
+        Self {
+          a : self.a.shr(rhs),
+          b : self.b.shr(rhs),
+        }
+      }
+    }
   }
-}
 
-impl Sub<i16> for i16x16 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: i16) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<i16> for i16x16 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: i16) -> Self::Output {
-    self.mul(Self::splat(rhs))
-  }
-}
-
-impl Add<i16x16> for i16 {
-  type Output = i16x16;
-  #[inline]
-  fn add(self, rhs: i16x16) -> Self::Output {
-    i16x16::splat(self).add(rhs)
-  }
-}
-
-impl Sub<i16x16> for i16 {
-  type Output = i16x16;
-  #[inline]
-  fn sub(self, rhs: i16x16) -> Self::Output {
-    i16x16::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<i16x16> for i16 {
-  type Output = i16x16;
-  #[inline]
-  fn mul(self, rhs: i16x16) -> Self::Output {
-    i16x16::splat(self).mul(rhs)
-  }
-}
-
-impl BitAnd for i16x16 {
-  type Output = Self;
   #[inline]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
@@ -407,10 +369,7 @@ impl BitAnd for i16x16 {
       }
     }
   }
-}
 
-impl BitOr for i16x16 {
-  type Output = Self;
   #[inline]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -424,10 +383,7 @@ impl BitOr for i16x16 {
       }
     }
   }
-}
 
-impl BitXor for i16x16 {
-  type Output = Self;
   #[inline]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -443,57 +399,14 @@ impl BitXor for i16x16 {
   }
 }
 
-macro_rules! impl_shl_t_for_i16x16 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for i16x16 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 15, 0]);
-            Self { avx2: shl_all_u16_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shl(rhs),
-              b : self.b.shl(rhs),
-            }
-          }
-       }
-     }
-    })+
-  };
-}
-impl_shl_t_for_i16x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+int_uint_consts!(i16, 16, i16x16, 256);
 
-macro_rules! impl_shr_t_for_i16x16 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for i16x16 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 15, 0]);
-            Self { avx2: shr_all_i16_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shr(rhs),
-              b : self.b.shr(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
+unsafe impl Zeroable for i16x16 {}
+unsafe impl Pod for i16x16 {}
+
+impl AlignTo for i16x16 {
+  type Elem = i16;
 }
-impl_shr_t_for_i16x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 impl From<i8x16> for i16x16 {
   /// widen with sign extend from i8 to i16
@@ -508,23 +421,6 @@ impl From<u8x16> for i16x16 {
   #[inline]
   fn from(i: u8x16) -> Self {
     cast(u16x16::from(i))
-  }
-}
-
-impl Not for i16x16 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
   }
 }
 

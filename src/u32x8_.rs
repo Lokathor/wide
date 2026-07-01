@@ -135,17 +135,26 @@ impl_simd! {
   }
 }
 
-int_uint_consts!(u32, 8, u32x8, 256);
+impl_simd_uint! {
+  T = u32,
+  N = 8,
+  Simd = u32x8,
+  [0, 1, 2, 3, 4, 5, 6, 7],
 
-unsafe impl Zeroable for u32x8 {}
-unsafe impl Pod for u32x8 {}
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: self.avx2.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
 
-impl AlignTo for u32x8 {
-  type Elem = u32;
-}
-
-impl Add for u32x8 {
-  type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -159,10 +168,7 @@ impl Add for u32x8 {
       }
     }
   }
-}
 
-impl Sub for u32x8 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -176,61 +182,7 @@ impl Sub for u32x8 {
       }
     }
   }
-}
 
-impl Add<u32> for u32x8 {
-  type Output = Self;
-  /// Adds a scalar `u32` to each element of the vector.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::u32x8;
-  /// let vec = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let result = vec + 10;
-  /// assert_eq!(result.to_array(), [11, 12, 13, 14, 15, 16, 17, 18]);
-  /// ```
-  #[inline]
-  fn add(self, rhs: u32) -> Self::Output {
-    self + Self::splat(rhs)
-  }
-}
-
-impl Sub<u32> for u32x8 {
-  type Output = Self;
-  /// Subtracts a scalar `u32` from each element of the vector.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::u32x8;
-  /// let vec = u32x8::from([10, 20, 30, 40, 50, 60, 70, 80]);
-  /// let result = vec - 5;
-  /// assert_eq!(result.to_array(), [5, 15, 25, 35, 45, 55, 65, 75]);
-  /// ```
-  #[inline]
-  fn sub(self, rhs: u32) -> Self::Output {
-    self - Self::splat(rhs)
-  }
-}
-
-impl Mul<u32> for u32x8 {
-  type Output = Self;
-  /// Multiplies each element of the vector by a scalar `u32`.
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::u32x8;
-  /// let vec = u32x8::from([1, 2, 3, 4, 5, 6, 7, 8]);
-  /// let result = vec * 3;
-  /// assert_eq!(result.to_array(), [3, 6, 9, 12, 15, 18, 21, 24]);
-  /// ```
-  #[inline]
-  fn mul(self, rhs: u32) -> Self::Output {
-    self * Self::splat(rhs)
-  }
-}
-
-impl Mul for u32x8 {
-  type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
@@ -244,12 +196,73 @@ impl Mul for u32x8 {
       }
     }
   }
-}
 
-integer_impl_div_rem!(u32, u32x8, [0, 1, 2, 3, 4, 5, 6, 7]);
+  #[inline]
+  fn shl(self, rhs: u32x8) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // ensure same behavior as scalar wrapping_shl
+        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
+        Self { avx2: shl_each_u32_m256i(self.avx2, shift_by) }
+      } else {
+        Self {
+          a : self.a.shl(rhs.a),
+          b : self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
 
-impl BitAnd for u32x8 {
-  type Output = Self;
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 31, 0]);
+        Self { avx2: shl_all_u32_m256i(self.avx2, shift) }
+      } else {
+        Self {
+          a : self.a.shl(rhs),
+          b : self.b.shl(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: u32x8) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // ensure same behavior as scalar wrapping_shr
+        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
+        Self { avx2: shr_each_u32_m256i(self.avx2, shift_by ) }
+      } else {
+        Self {
+          a : self.a.shr(rhs.a),
+          b : self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 31, 0]);
+        Self { avx2: shr_all_u32_m256i(self.avx2, shift) }
+      } else {
+        Self {
+          a : self.a.shr(rhs),
+          b : self.b.shr(rhs),
+        }
+      }
+    }
+  }
+
   #[inline]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
@@ -263,10 +276,7 @@ impl BitAnd for u32x8 {
       }
     }
   }
-}
 
-impl BitOr for u32x8 {
-  type Output = Self;
   #[inline]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -280,10 +290,7 @@ impl BitOr for u32x8 {
       }
     }
   }
-}
 
-impl BitXor for u32x8 {
-  type Output = Self;
   #[inline]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -299,31 +306,13 @@ impl BitXor for u32x8 {
   }
 }
 
-impl Add<u32x8> for u32 {
-  type Output = u32x8;
+int_uint_consts!(u32, 8, u32x8, 256);
 
-  #[inline]
-  fn add(self, rhs: u32x8) -> Self::Output {
-    u32x8::splat(self) + rhs
-  }
-}
+unsafe impl Zeroable for u32x8 {}
+unsafe impl Pod for u32x8 {}
 
-impl Sub<u32x8> for u32 {
-  type Output = u32x8;
-
-  #[inline]
-  fn sub(self, rhs: u32x8) -> Self::Output {
-    u32x8::splat(self) - rhs
-  }
-}
-
-impl Mul<u32x8> for u32 {
-  type Output = u32x8;
-
-  #[inline]
-  fn mul(self, rhs: u32x8) -> Self::Output {
-    u32x8::splat(self) * rhs
-  }
+impl AlignTo for u32x8 {
+  type Elem = u32;
 }
 
 impl From<u16x8> for u32x8 {
@@ -349,109 +338,6 @@ impl From<u16x8> for u32x8 {
           u32::from(v.as_array()[6]),
           u32::from(v.as_array()[7]),
         ])
-      }
-    }
-  }
-}
-
-macro_rules! impl_shl_t_for_u32x8 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for u32x8 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 31, 0]);
-            Self { avx2: shl_all_u32_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shl(rhs),
-              b : self.b.shl(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
-}
-impl_shl_t_for_u32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-macro_rules! impl_shr_t_for_u32x8 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for u32x8 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 31, 0]);
-            Self { avx2: shr_all_u32_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shr(rhs),
-              b : self.b.shr(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
-}
-
-impl_shr_t_for_u32x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shr`)
-impl Shr<u32x8> for u32x8 {
-  type Output = Self;
-
-  #[inline]
-  fn shr(self, rhs: u32x8) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // ensure same behavior as scalar wrapping_shr
-        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
-        Self { avx2: shr_each_u32_m256i(self.avx2, shift_by ) }
-      } else {
-        Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shl`)
-impl Shl<u32x8> for u32x8 {
-  type Output = Self;
-
-  #[inline]
-  fn shl(self, rhs: u32x8) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // ensure same behavior as scalar wrapping_shl
-        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
-        Self { avx2: shl_each_u32_m256i(self.avx2, shift_by) }
-      } else {
-        Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
-        }
       }
     }
   }
@@ -649,21 +535,4 @@ impl u32x8 {
   }
 
   unsigned_fn_overflowing_div_rem!();
-}
-
-impl Not for u32x8 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
 }

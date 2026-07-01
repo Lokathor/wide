@@ -210,17 +210,26 @@ impl_simd! {
   }
 }
 
-int_uint_consts!(i64, 4, i64x4, 256);
+impl_simd_int! {
+  T = i64,
+  N = 4,
+  Simd = i64x4,
+  [0, 1, 2, 3],
 
-unsafe impl Zeroable for i64x4 {}
-unsafe impl Pod for i64x4 {}
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: self.avx2.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
 
-impl AlignTo for i64x4 {
-  type Elem = i64;
-}
-
-impl Add for i64x4 {
-  type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -234,10 +243,7 @@ impl Add for i64x4 {
       }
     }
   }
-}
 
-impl Sub for i64x4 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -251,10 +257,7 @@ impl Sub for i64x4 {
       }
     }
   }
-}
 
-impl Mul for i64x4 {
-  type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
@@ -272,116 +275,6 @@ impl Mul for i64x4 {
       }
     }
   }
-}
-
-integer_impl_div_rem!(i64, i64x4, [0, 1, 2, 3]);
-
-impl Add<i64> for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: i64) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<i64> for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: i64) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<i64> for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: i64) -> Self::Output {
-    self.mul(Self::splat(rhs))
-  }
-}
-
-impl Add<i64x4> for i64 {
-  type Output = i64x4;
-  #[inline]
-  fn add(self, rhs: i64x4) -> Self::Output {
-    i64x4::splat(self).add(rhs)
-  }
-}
-
-impl Sub<i64x4> for i64 {
-  type Output = i64x4;
-  #[inline]
-  fn sub(self, rhs: i64x4) -> Self::Output {
-    i64x4::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<i64x4> for i64 {
-  type Output = i64x4;
-  #[inline]
-  fn mul(self, rhs: i64x4) -> Self::Output {
-    i64x4::splat(self).mul(rhs)
-  }
-}
-
-impl BitAnd for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitOr for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx2")] {
-            Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitXor for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shl`)
-impl Shl for i64x4 {
-  type Output = Self;
 
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
@@ -398,41 +291,23 @@ impl Shl for i64x4 {
       }
     }
   }
-}
 
-macro_rules! impl_shl_t_for_i64x4 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for i64x4 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 63, 0]);
-            Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shl(rhs),
-              b : self.b.shl(rhs),
-            }
-          }
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 63, 0]);
+        Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
+      } else {
+        Self {
+          a : self.a.shl(rhs),
+          b : self.b.shl(rhs),
         }
       }
-    })+
-  };
-}
-impl_shl_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shr`)
-impl Shr for i64x4 {
-  type Output = Self;
+    }
+  }
 
   #[inline]
   fn shr(self, rhs: Self) -> Self::Output {
@@ -454,23 +329,65 @@ impl Shr for i64x4 {
       }
     }
   }
+
+  #[inline]
+  fn shr(self, rhs: u32) -> Self::Output {
+    // there is no signed right shift in AVX2
+    let [a,b] : [i64x2; 2] = cast(self);
+    cast([a.shr(rhs), b.shr(rhs)])
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+    if #[cfg(target_feature="avx2")] {
+            Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
+  }
 }
 
-macro_rules! impl_shr_t_for_i64x4 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for i64x4 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-          // there is no signed right shift in AVX2
-          let [a,b] : [i64x2; 2] = cast(self);
-          cast([a.shr(rhs), b.shr(rhs)])
-      }
-    })+
-  };
+int_uint_consts!(i64, 4, i64x4, 256);
+
+unsafe impl Zeroable for i64x4 {}
+unsafe impl Pod for i64x4 {}
+
+impl AlignTo for i64x4 {
+  type Elem = i64;
 }
-impl_shr_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 impl i64x4 {
   /// Returns true for each positive element and false if it is zero or
@@ -744,23 +661,6 @@ impl i64x4 {
         cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
       } else {
         Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
-      }
-    }
-  }
-}
-
-impl Not for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
       }
     }
   }

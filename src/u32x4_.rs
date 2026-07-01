@@ -241,17 +241,17 @@ impl_simd! {
   }
 }
 
-int_uint_consts!(u32, 4, u32x4, 128);
+impl_simd_uint! {
+  T = u32,
+  N = 4,
+  Simd = u32x4,
+  [0, 1, 2, 3],
 
-unsafe impl Zeroable for u32x4 {}
-unsafe impl Pod for u32x4 {}
+  #[inline]
+  fn not(self) -> Self::Output {
+    self ^ cast::<u128, u32x4>(u128::MAX)
+  }
 
-impl AlignTo for u32x4 {
-  type Elem = u32;
-}
-
-impl Add for u32x4 {
-  type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -271,10 +271,7 @@ impl Add for u32x4 {
       }
     }
   }
-}
 
-impl Sub for u32x4 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -294,10 +291,7 @@ impl Sub for u32x4 {
       }
     }
   }
-}
 
-impl Mul for u32x4 {
-  type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
@@ -319,204 +313,58 @@ impl Mul for u32x4 {
       }
     }
   }
-}
 
-integer_impl_div_rem!(u32, u32x4, [0, 1, 2, 3]);
-
-impl Add<u32> for u32x4 {
-  type Output = Self;
   #[inline]
-  fn add(self, rhs: u32) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<u32> for u32x4 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: u32) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<u32> for u32x4 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: u32) -> Self::Output {
-    self.mul(Self::splat(rhs))
-  }
-}
-
-impl Add<u32x4> for u32 {
-  type Output = u32x4;
-  #[inline]
-  fn add(self, rhs: u32x4) -> Self::Output {
-    u32x4::splat(self).add(rhs)
-  }
-}
-
-impl Sub<u32x4> for u32 {
-  type Output = u32x4;
-  #[inline]
-  fn sub(self, rhs: u32x4) -> Self::Output {
-    u32x4::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<u32x4> for u32 {
-  type Output = u32x4;
-  #[inline]
-  fn mul(self, rhs: u32x4) -> Self::Output {
-    u32x4::splat(self).mul(rhs)
-  }
-}
-
-impl BitAnd for u32x4 {
-  type Output = Self;
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u32x4) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitand_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_and(self.simd, rhs.simd) }
+      if #[cfg(target_feature="avx2")] {
+        // mask the shift count to 31 to have same behavior on all platforms
+        let shift_by = bitand_m128i(rhs.sse, set_splat_i32_m128i(31));
+        Self { sse: shl_each_u32_m128i(self.sse, shift_by) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vandq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitand(rhs.arr[0]),
-          self.arr[1].bitand(rhs.arr[1]),
-          self.arr[2].bitand(rhs.arr[2]),
-          self.arr[3].bitand(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-}
-
-impl BitOr for u32x4 {
-  type Output = Self;
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_or(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vorrq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitor(rhs.arr[0]),
-          self.arr[1].bitor(rhs.arr[1]),
-          self.arr[2].bitor(rhs.arr[2]),
-          self.arr[3].bitor(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-}
-
-impl BitXor for u32x4 {
-  type Output = Self;
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_xor(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: veorq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitxor(rhs.arr[0]),
-          self.arr[1].bitxor(rhs.arr[1]),
-          self.arr[2].bitxor(rhs.arr[2]),
-          self.arr[3].bitxor(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-}
-
-macro_rules! impl_shl_t_for_u32x4 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for u32x4 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 31, 0]);
-            Self { sse: shl_all_u32_m128i(self.sse, shift) }
-          } else if #[cfg(target_feature="simd128")] {
-            Self { simd: u32x4_shl(self.simd, rhs as u32) }
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32(rhs as i32 & 31)) }}
-          } else {
-            let u = rhs as u32;
-            Self { arr: [
-              self.arr[0].wrapping_shl(u),
-              self.arr[1].wrapping_shl(u),
-              self.arr[2].wrapping_shl(u),
-              self.arr[3].wrapping_shl(u),
-            ]}
-          }
+        unsafe {
+          // mask the shift count to 31 to have same behavior on all platforms
+          let shift_by = vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31)));
+          Self { neon: vshlq_u32(self.neon, shift_by) }
         }
+      } else {
+        let arr: [u32; 4] = cast(self);
+        let rhs: [u32; 4] = cast(rhs);
+        cast([
+          arr[0].wrapping_shl(rhs[0]),
+          arr[1].wrapping_shl(rhs[1]),
+          arr[2].wrapping_shl(rhs[2]),
+          arr[3].wrapping_shl(rhs[3]),
+        ])
       }
-    })+
-  };
-}
-impl_shl_t_for_u32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+    }
+  }
 
-macro_rules! impl_shr_t_for_u32x4 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for u32x4 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 31, 0]);
-            Self { sse: shr_all_u32_m128i(self.sse, shift) }
-          } else if #[cfg(target_feature="simd128")] {
-            Self { simd: u32x4_shr(self.simd, rhs as u32) }
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32( -(rhs as i32 & 31))) }}
-          } else {
-            let u = rhs as u32;
-            Self { arr: [
-              self.arr[0].wrapping_shr(u),
-              self.arr[1].wrapping_shr(u),
-              self.arr[2].wrapping_shr(u),
-              self.arr[3].wrapping_shr(u),
-            ]}
-          }
-        }
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 31, 0]);
+        Self { sse: shl_all_u32_m128i(self.sse, shift) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_shl(self.simd, rhs) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32(rhs as i32 & 31)) }}
+      } else {
+        Self { arr: [
+          self.arr[0].wrapping_shl(rhs),
+          self.arr[1].wrapping_shl(rhs),
+          self.arr[2].wrapping_shl(rhs),
+          self.arr[3].wrapping_shl(rhs),
+        ]}
       }
-    })+
-  };
-}
-impl_shr_t_for_u32x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
+    }
+  }
 
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shr`)
-impl Shr<u32x4> for u32x4 {
-  type Output = Self;
   #[inline]
   fn shr(self, rhs: u32x4) -> Self::Output {
     pick! {
@@ -543,40 +391,100 @@ impl Shr<u32x4> for u32x4 {
       }
     }
   }
-}
 
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shl`)
-impl Shl<u32x4> for u32x4 {
-  type Output = Self;
   #[inline]
-  fn shl(self, rhs: u32x4) -> Self::Output {
+  fn shr(self, rhs: u32) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 31 to have same behavior on all platforms
-        let shift_by = bitand_m128i(rhs.sse, set_splat_i32_m128i(31));
-        Self { sse: shl_each_u32_m128i(self.sse, shift_by) }
+      if #[cfg(target_feature="sse2")] {
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 31, 0]);
+        Self { sse: shr_all_u32_m128i(self.sse, shift) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_shr(self.simd, rhs) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          // mask the shift count to 31 to have same behavior on all platforms
-          let shift_by = vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31)));
-          Self { neon: vshlq_u32(self.neon, shift_by) }
-        }
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        unsafe {Self { neon: vshlq_u32(self.neon, vmovq_n_s32( -(rhs as i32 & 31))) }}
       } else {
-        let arr: [u32; 4] = cast(self);
-        let rhs: [u32; 4] = cast(rhs);
-        cast([
-          arr[0].wrapping_shl(rhs[0]),
-          arr[1].wrapping_shl(rhs[1]),
-          arr[2].wrapping_shl(rhs[2]),
-          arr[3].wrapping_shl(rhs[3]),
-        ])
+        Self { arr: [
+          self.arr[0].wrapping_shr(rhs),
+          self.arr[1].wrapping_shr(rhs),
+          self.arr[2].wrapping_shr(rhs),
+          self.arr[3].wrapping_shr(rhs),
+        ]}
       }
     }
   }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_and(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vandq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+          self.arr[2].bitand(rhs.arr[2]),
+          self.arr[3].bitand(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_or(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vorrq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitor(rhs.arr[0]),
+          self.arr[1].bitor(rhs.arr[1]),
+          self.arr[2].bitor(rhs.arr[2]),
+          self.arr[3].bitor(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_xor(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: veorq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitxor(rhs.arr[0]),
+          self.arr[1].bitxor(rhs.arr[1]),
+          self.arr[2].bitxor(rhs.arr[2]),
+          self.arr[3].bitxor(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+}
+
+int_uint_consts!(u32, 4, u32x4, 128);
+
+unsafe impl Zeroable for u32x4 {}
+unsafe impl Pod for u32x4 {}
+
+impl AlignTo for u32x4 {
+  type Elem = u32;
 }
 
 impl u32x4 {

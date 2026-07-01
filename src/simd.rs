@@ -305,3 +305,382 @@ macro_rules! impl_simd {
     }
   };
 }
+
+macro_rules! impl_unary_operator {
+  ($Simd:ident, $Op:ident, $op:ident, $impl:item $(, $(#[$doc:meta])*)?) => {
+    impl $Op for $Simd {
+      type Output = Self;
+
+      $($(#[$doc])*)?
+      $impl
+    }
+
+    impl $Op for &$Simd {
+      type Output = $Simd;
+
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op(self) -> Self::Output {
+        (*self).$op()
+      }
+    }
+  }
+}
+
+macro_rules! impl_binary_operator {
+  (
+    $T:ident,
+    $Simd:ident,
+    $Op:ident,
+    $op:ident,
+    $OpAssign:ident,
+    $op_assign:ident,
+    $impl:item
+    $(,
+      $(#[$doc:meta])*,
+      $(#[$doc_scalar:meta])*,
+      $(#[$scalar_doc:meta])*
+    )?
+  ) => {
+    impl $Op for $Simd {
+      type Output = Self;
+
+      $($(#[$doc])*)?
+      $impl
+    }
+
+    impl $Op<$T> for $Simd {
+      type Output = Self;
+
+      $($(#[$doc_scalar])*)?
+      #[inline]
+      fn $op(self, rhs: $T) -> Self::Output {
+        self.$op(Self::splat(rhs))
+      }
+    }
+
+    impl $Op<$Simd> for $T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: $Simd) -> Self::Output {
+        $Simd::splat(self).$op(rhs)
+      }
+    }
+
+    impl $OpAssign for $Simd {
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op_assign(&mut self, rhs: Self) {
+        *self = (*self).$op(rhs);
+      }
+    }
+
+    impl $OpAssign<$T> for $Simd {
+      $($(#[$doc_scalar])*)?
+      #[inline]
+      fn $op_assign(&mut self, rhs: $T) {
+        *self = (*self).$op(Self::splat(rhs));
+      }
+    }
+
+    impl $Op<&Self> for $Simd {
+      type Output = Self;
+
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op(self, rhs: &Self) -> Self::Output {
+        self.$op(*rhs)
+      }
+    }
+
+    impl $Op<&$T> for $Simd {
+      type Output = Self;
+
+      $($(#[$doc_scalar])*)?
+      #[inline]
+      fn $op(self, rhs: &$T) -> Self::Output {
+        self.$op(Self::splat(*rhs))
+      }
+    }
+
+    impl $Op<&$Simd> for $T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: &$Simd) -> Self::Output {
+        $Simd::splat(self).$op(*rhs)
+      }
+    }
+
+    impl $OpAssign<&Self> for $Simd {
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op_assign(&mut self, rhs: &Self) {
+        *self = (*self).$op(*rhs);
+      }
+    }
+
+    impl $OpAssign<&$T> for $Simd {
+      $($(#[$doc_scalar])*)?
+      #[inline]
+      fn $op_assign(&mut self, rhs: &$T) {
+        *self = (*self).$op(Self::splat(*rhs));
+      }
+    }
+
+    impl $Op<$Simd> for &$Simd {
+      type Output = $Simd;
+
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op(self, rhs: $Simd) -> Self::Output {
+        (*self).$op(rhs)
+      }
+    }
+
+    impl $Op<$T> for &$Simd {
+      type Output = $Simd;
+
+      $($(#[$doc_scalar])*)?
+      #[inline]
+      fn $op(self, rhs: $T) -> Self::Output {
+        (*self).$op($Simd::splat(rhs))
+      }
+    }
+
+    impl $Op<$Simd> for &$T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: $Simd) -> Self::Output {
+        $Simd::splat(*self).$op(rhs)
+      }
+    }
+
+    impl $Op<&$Simd> for &$Simd {
+      type Output = $Simd;
+
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op(self, rhs: &$Simd) -> Self::Output {
+        (*self).$op(*rhs)
+      }
+    }
+
+    impl $Op<&$T> for &$Simd {
+      type Output = $Simd;
+
+      $($(#[$doc_scalar])*)?
+      #[inline]
+      fn $op(self, rhs: &$T) -> Self::Output {
+        (*self).$op($Simd::splat(*rhs))
+      }
+    }
+
+    impl $Op<&$Simd> for &$T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: &$Simd) -> Self::Output {
+        $Simd::splat(*self).$op(*rhs)
+      }
+    }
+  }
+}
+
+macro_rules! impl_shift_operator {
+  (
+    $T:ident,
+    $Simd:ident,
+    $Op:ident,
+    $op:ident,
+    $OpAssign:ident,
+    $op_assign:ident,
+    $impl:item,
+    $impl_u32:item
+    $(,
+      $(#[$doc:meta])*,
+      $(#[$doc_scalar:meta])*,
+      $(#[$scalar_doc:meta])*
+    )?
+  ) => {
+    impl $Op for $Simd {
+      type Output = Self;
+
+      $($(#[$doc])*)?
+      $impl
+    }
+
+    impl $Op<$Simd> for $T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: $Simd) -> Self::Output {
+        $Simd::splat(self).$op(rhs)
+      }
+    }
+
+    impl $OpAssign for $Simd {
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op_assign(&mut self, rhs: Self) {
+        *self = (*self).$op(rhs);
+      }
+    }
+
+    impl $Op<&Self> for $Simd {
+      type Output = Self;
+
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op(self, rhs: &Self) -> Self::Output {
+        self.$op(*rhs)
+      }
+    }
+
+    impl $Op<&$Simd> for $T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: &$Simd) -> Self::Output {
+        $Simd::splat(self).$op(*rhs)
+      }
+    }
+
+    impl $OpAssign<&Self> for $Simd {
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op_assign(&mut self, rhs: &Self) {
+        *self = (*self).$op(*rhs);
+      }
+    }
+
+    impl $Op<$Simd> for &$Simd {
+      type Output = $Simd;
+
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op(self, rhs: $Simd) -> Self::Output {
+        (*self).$op(rhs)
+      }
+    }
+
+    impl $Op<$Simd> for &$T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: $Simd) -> Self::Output {
+        $Simd::splat(*self).$op(rhs)
+      }
+    }
+
+    impl $Op<&$Simd> for &$Simd {
+      type Output = $Simd;
+
+      $($(#[$doc])*)?
+      #[inline]
+      fn $op(self, rhs: &$Simd) -> Self::Output {
+        (*self).$op(*rhs)
+      }
+    }
+
+    impl $Op<&$Simd> for &$T {
+      type Output = $Simd;
+
+      $($(#[$scalar_doc])*)?
+      #[inline]
+      fn $op(self, rhs: &$Simd) -> Self::Output {
+        $Simd::splat(*self).$op(*rhs)
+      }
+    }
+
+    macro_rules! impl_scalar {
+      ($T2:ident, $impl_scalar:item) => {
+        impl $Op<$T2> for $Simd {
+          type Output = Self;
+
+          $($(#[$doc_scalar])*)?
+          $impl_scalar
+        }
+
+        impl $OpAssign<$T2> for $Simd {
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op_assign(&mut self, rhs: $T2) {
+            *self = (*self).$op(rhs);
+          }
+        }
+
+        impl $Op<&$T2> for $Simd {
+          type Output = Self;
+
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op(self, rhs: &$T2) -> Self::Output {
+            self.$op(*rhs)
+          }
+        }
+
+        impl $OpAssign<&$T2> for $Simd {
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op_assign(&mut self, rhs: &$T2) {
+            *self = (*self).$op(*rhs);
+          }
+        }
+
+        impl $Op<$T2> for &$Simd {
+          type Output = $Simd;
+
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op(self, rhs: $T2) -> Self::Output {
+            (*self).$op(rhs)
+          }
+        }
+
+        impl $Op<&$T2> for &$Simd {
+          type Output = $Simd;
+
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op(self, rhs: &$T2) -> Self::Output {
+            (*self).$op(*rhs)
+          }
+        }
+      }
+    }
+    impl_scalar!(u32, $impl_u32);
+
+    macro_rules! impl_scalar_with_cast {
+      ($T2:ident) => {
+        impl_scalar!(
+          $T2,
+          #[inline]
+          fn $op(self, rhs: $T2) -> Self::Output {
+            self.$op(rhs as u32)
+          }
+        );
+      }
+    }
+    impl_scalar_with_cast!(i8);
+    impl_scalar_with_cast!(i16);
+    impl_scalar_with_cast!(i32);
+    impl_scalar_with_cast!(i64);
+    impl_scalar_with_cast!(i128);
+    impl_scalar_with_cast!(isize);
+    impl_scalar_with_cast!(u8);
+    impl_scalar_with_cast!(u16);
+    impl_scalar_with_cast!(u64);
+    impl_scalar_with_cast!(u128);
+    impl_scalar_with_cast!(usize);
+  }
+}

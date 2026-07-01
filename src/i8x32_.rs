@@ -238,17 +238,29 @@ impl_simd! {
   }
 }
 
-int_uint_consts!(i8, 32, i8x32, 256);
+impl_simd_int! {
+  T = i8,
+  N = 32,
+  Simd = i8x32,
+  [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+  ],
 
-unsafe impl Zeroable for i8x32 {}
-unsafe impl Pod for i8x32 {}
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: self.avx.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
 
-impl AlignTo for i8x32 {
-  type Elem = i8;
-}
-
-impl Add for i8x32 {
-  type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -262,10 +274,7 @@ impl Add for i8x32 {
       }
     }
   }
-}
 
-impl Sub for i8x32 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -279,10 +288,6 @@ impl Sub for i8x32 {
       }
     }
   }
-}
-
-impl Mul for i8x32 {
-  type Output = Self;
 
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
@@ -293,19 +298,6 @@ impl Mul for i8x32 {
     let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
     cast([self_a * rhs_a, self_b * rhs_b])
   }
-}
-
-integer_impl_div_rem!(
-  i8,
-  i8x32,
-  [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-  ],
-);
-
-impl Shl for i8x32 {
-  type Output = Self;
 
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
@@ -316,10 +308,15 @@ impl Shl for i8x32 {
     let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
     cast([self_a << rhs_a, self_b << rhs_b])
   }
-}
 
-impl Shr for i8x32 {
-  type Output = Self;
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    cast([self_a << rhs, self_b << rhs])
+  }
 
   #[inline]
   fn shr(self, rhs: Self) -> Self::Output {
@@ -330,116 +327,16 @@ impl Shr for i8x32 {
     let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
     cast([self_a >> rhs_a, self_b >> rhs_b])
   }
-}
-
-impl Add<i8> for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: i8) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<i8> for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: i8) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<i8> for i8x32 {
-  type Output = Self;
 
   #[inline]
-  fn mul(self, rhs: i8) -> Self::Output {
-    self * Self::splat(rhs)
+  fn shr(self, rhs: u32) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    cast([self_a >> rhs, self_b >> rhs])
   }
-}
 
-macro_rules! impl_shl_scalar {
-  ($Rhs:ident) => {
-    impl Shl<$Rhs> for i8x32 {
-      type Output = Self;
-
-      /// Shifts all lanes by a uniform value.
-      #[inline]
-      fn shl(self, rhs: $Rhs) -> Self::Output {
-        // For x86, this technically can be done explicitly by converting
-        // to `i16` or `i32` then converting back after multiplication, but that
-        // may not actually be faster than auto-vectorization.
-        let [self_a, self_b]: [i8x16; 2] = cast(self);
-        cast([self_a << rhs, self_b << rhs])
-      }
-    }
-  };
-}
-impl_shl_scalar!(i8);
-impl_shl_scalar!(u8);
-impl_shl_scalar!(i16);
-impl_shl_scalar!(u16);
-impl_shl_scalar!(i32);
-impl_shl_scalar!(u32);
-impl_shl_scalar!(i64);
-impl_shl_scalar!(u64);
-impl_shl_scalar!(i128);
-impl_shl_scalar!(u128);
-
-macro_rules! impl_shr_scalar {
-  ($Rhs:ident) => {
-    impl Shr<$Rhs> for i8x32 {
-      type Output = Self;
-
-      /// Shifts all lanes by a uniform value.
-      #[inline]
-      fn shr(self, rhs: $Rhs) -> Self::Output {
-        // For x86, this technically can be done explicitly by converting
-        // to `i16` or `i32` then converting back after multiplication, but that
-        // may not actually be faster than auto-vectorization.
-        let [self_a, self_b]: [i8x16; 2] = cast(self);
-        cast([self_a >> rhs, self_b >> rhs])
-      }
-    }
-  };
-}
-impl_shr_scalar!(i8);
-impl_shr_scalar!(u8);
-impl_shr_scalar!(i16);
-impl_shr_scalar!(u16);
-impl_shr_scalar!(i32);
-impl_shr_scalar!(u32);
-impl_shr_scalar!(i64);
-impl_shr_scalar!(u64);
-impl_shr_scalar!(i128);
-impl_shr_scalar!(u128);
-
-impl Add<i8x32> for i8 {
-  type Output = i8x32;
-  #[inline]
-  fn add(self, rhs: i8x32) -> Self::Output {
-    i8x32::splat(self).add(rhs)
-  }
-}
-
-impl Sub<i8x32> for i8 {
-  type Output = i8x32;
-  #[inline]
-  fn sub(self, rhs: i8x32) -> Self::Output {
-    i8x32::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<i8x32> for i8 {
-  type Output = i8x32;
-
-  #[inline]
-  fn mul(self, rhs: i8x32) -> Self::Output {
-    i8x32::splat(self) * rhs
-  }
-}
-
-impl BitAnd for i8x32 {
-  type Output = Self;
   #[inline]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
@@ -453,10 +350,7 @@ impl BitAnd for i8x32 {
       }
     }
   }
-}
 
-impl BitOr for i8x32 {
-  type Output = Self;
   #[inline]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -470,10 +364,7 @@ impl BitOr for i8x32 {
       }
     }
   }
-}
 
-impl BitXor for i8x32 {
-  type Output = Self;
   #[inline]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -489,21 +380,13 @@ impl BitXor for i8x32 {
   }
 }
 
-impl Not for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: self.avx.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
+int_uint_consts!(i8, 32, i8x32, 256);
+
+unsafe impl Zeroable for i8x32 {}
+unsafe impl Pod for i8x32 {}
+
+impl AlignTo for i8x32 {
+  type Elem = i8;
 }
 
 impl i8x32 {

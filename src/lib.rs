@@ -69,6 +69,10 @@ mod macros;
 mod simd;
 #[macro_use]
 mod simd_float;
+#[macro_use]
+mod simd_int;
+#[macro_use]
+mod simd_uint;
 
 macro_rules! pick {
   ($(if #[cfg($($test:meta),*)] {
@@ -312,132 +316,6 @@ where
   T: Copy + BitXor<Output = T> + BitAnd<Output = T>,
 {
   n ^ ((n ^ y) & mask)
-}
-
-/// given `type.op(type)` and type is `Copy`, impls `type.op(&type)`
-macro_rules! bulk_impl_op_ref_self_for {
-  ($(($op:ident, $method:ident) => [$($t:ty),+]),+ $(,)?) => {
-    $( // do each trait/list matching given
-      $( // do the current trait for each type in its list.
-        impl $op<&Self> for $t {
-          type Output = Self;
-          #[inline]
-          fn $method(self, rhs: &Self) -> Self::Output {
-            self.$method(*rhs)
-          }
-        }
-      )+
-    )+
-  };
-}
-
-bulk_impl_op_ref_self_for! {
-  (Add, add) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (Sub, sub) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (Mul, mul) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (Div, div) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2],
-  (BitAnd, bitand) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (BitOr, bitor) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (BitXor, bitxor) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-}
-
-/// given `type.op(rhs)` and type is Copy, impls `type.op_assign(rhs)`
-macro_rules! bulk_impl_op_assign_for {
-  ($(($op:ident<$rhs:ty>, $method:ident, $method_assign:ident) => [$($t:ty),+]),+ $(,)?) => {
-    $( // do each trait/list matching given
-      $( // do the current trait for each type in its list.
-        impl $op<$rhs> for $t {
-          #[inline]
-          fn $method_assign(&mut self, rhs: $rhs) {
-            *self = self.$method(rhs);
-          }
-        }
-      )+
-    )+
-  };
-}
-
-// Note: remember to update bulk_impl_op_ref_self_for first or this will give
-// weird errors!
-bulk_impl_op_assign_for! {
-  (AddAssign<Self>, add, add_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (AddAssign<&Self>, add, add_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (SubAssign<Self>, sub, sub_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (SubAssign<&Self>, sub, sub_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (MulAssign<Self>, mul, mul_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (MulAssign<&Self>, mul, mul_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (DivAssign<Self>, div, div_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2],
-  (DivAssign<&Self>, div, div_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2],
-  (BitAndAssign<Self>, bitand, bitand_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, u16x16, u16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (BitAndAssign<&Self>, bitand, bitand_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, u16x16, u16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (BitOrAssign<Self>, bitor, bitor_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, u16x16, u16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (BitOrAssign<&Self>, bitor, bitor_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, u16x16, u16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (BitXorAssign<Self>, bitxor, bitxor_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, u16x16, u16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-  (BitXorAssign<&Self>, bitxor, bitxor_assign) => [f32x16, f32x8, f32x4, f64x8, f64x4, f64x2, i8x32, i8x16, i16x8, i16x16, i16x32, u16x16, u16x32, i32x8, i32x4, i32x16, i64x2, i64x4, i64x8, u8x32, u8x16, u16x8, u32x8, u32x4, u32x16, u64x4, u64x2, u64x8],
-}
-
-macro_rules! impl_integer_neg {
-  ($($t:ty),+ $(,)?) => {
-    $(
-      impl Neg for $t {
-        type Output = Self;
-        #[inline(always)]
-        fn neg(self) -> Self::Output {
-          Self::default() - self
-        }
-      }
-      impl Neg for &'_ $t {
-        type Output = $t;
-        #[inline(always)]
-        fn neg(self) -> Self::Output {
-          <$t>::default() - *self
-        }
-      }
-    )+
-  };
-}
-
-impl_integer_neg! {
-  i8x32, i8x16, i16x8, i16x16, i16x32, i32x8, i32x4, i32x16, i64x4, i64x2, i64x8, u8x32, u8x16, u16x8, u16x16, u16x32, u32x8, u32x4, u32x16, u64x2, u64x4, u64x8
-}
-
-// only works for 128 bit values
-macro_rules! impl_simple_not {
-  ($($t:ty),+ $(,)?) => {
-    $(
-      impl Not for $t {
-        type Output = Self;
-        #[inline]
-        fn not(self) -> Self::Output {
-          self ^ cast::<u128, $t>(u128::MAX)
-        }
-      }
-    )+
-  };
-}
-
-impl_simple_not! {
-  f32x4, i8x16, i16x8, i32x4, i64x2, u8x16, u16x8, u32x4, u64x2,
-}
-
-macro_rules! impl_not_ref {
-  ($($t:ty),+ $(,)?) => {
-    $(
-      impl Not for &'_ $t {
-        type Output = $t;
-        #[inline]
-        fn not(self) -> Self::Output {
-          !*self
-        }
-      }
-    )+
-  };
-}
-
-impl_not_ref! {
-  f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i16x8, i16x16, i16x32, i32x4, i32x8,
-  i32x16, i64x2, i64x4, i64x8, u8x16, u8x32, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2,
-  u64x4, u64x8,
 }
 
 macro_rules! impl_simple_sum {

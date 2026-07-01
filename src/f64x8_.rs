@@ -213,6 +213,140 @@ impl_simd_float! {
   UnsignedT = u64,
 
   #[inline]
+  fn neg(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512d(self.avx512, Self::splat(-0.0).avx512) }
+      } else {
+        Self {
+          a : self.a.neg(),
+          b : self.b.neg(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn not(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512d(self.avx512, set_splat_m512d(f64::from_bits(u64::MAX))) }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn add(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: add_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.add(rhs.a),
+          b : self.b.add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: sub_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.sub(rhs.a),
+          b : self.b.sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: mul_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
+      }
+    }
+  }
+
+  #[inline]
+  fn div(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: div_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self { a: self.a.div(rhs.a), b: self.b.div(rhs.b) }
+      }
+    }
+  }
+
+  #[inline]
+  fn rem(self, rhs: Self) -> Self::Output {
+    Self::new([
+      self.to_array()[0] % rhs.to_array()[0],
+      self.to_array()[1] % rhs.to_array()[1],
+      self.to_array()[2] % rhs.to_array()[2],
+      self.to_array()[3] % rhs.to_array()[3],
+      self.to_array()[4] % rhs.to_array()[4],
+      self.to_array()[5] % rhs.to_array()[5],
+      self.to_array()[6] % rhs.to_array()[6],
+      self.to_array()[7] % rhs.to_array()[7],
+    ])
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitand_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+    if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitor_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> f64 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -1731,233 +1865,6 @@ impl AlignTo for f64x8 {
   type Elem = f64;
 }
 
-impl Add for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: add_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl Sub for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: sub_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl Mul for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: mul_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
-      }
-    }
-  }
-}
-
-impl Div for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn div(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: div_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self { a: self.a.div(rhs.a), b: self.b.div(rhs.b) }
-      }
-    }
-  }
-}
-
-impl Rem for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn rem(self, rhs: Self) -> Self::Output {
-    Self::new([
-      self.to_array()[0] % rhs.to_array()[0],
-      self.to_array()[1] % rhs.to_array()[1],
-      self.to_array()[2] % rhs.to_array()[2],
-      self.to_array()[3] % rhs.to_array()[3],
-      self.to_array()[4] % rhs.to_array()[4],
-      self.to_array()[5] % rhs.to_array()[5],
-      self.to_array()[6] % rhs.to_array()[6],
-      self.to_array()[7] % rhs.to_array()[7],
-    ])
-  }
-}
-
-impl Neg for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn neg(self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512d(self.avx512, Self::splat(-0.0).avx512) }
-      } else {
-        Self {
-          a : self.a.neg(),
-          b : self.b.neg(),
-        }
-      }
-    }
-  }
-}
-
-impl Add<f64> for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: f64) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<f64> for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: f64) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<f64> for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: f64) -> Self::Output {
-    self.mul(Self::splat(rhs))
-  }
-}
-
-impl Div<f64> for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn div(self, rhs: f64) -> Self::Output {
-    self.div(Self::splat(rhs))
-  }
-}
-
-impl Rem<f64> for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn rem(self, rhs: f64) -> Self::Output {
-    self.rem(Self::splat(rhs))
-  }
-}
-
-impl Add<f64x8> for f64 {
-  type Output = f64x8;
-  #[inline]
-  fn add(self, rhs: f64x8) -> Self::Output {
-    f64x8::splat(self).add(rhs)
-  }
-}
-
-impl Sub<f64x8> for f64 {
-  type Output = f64x8;
-  #[inline]
-  fn sub(self, rhs: f64x8) -> Self::Output {
-    f64x8::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<f64x8> for f64 {
-  type Output = f64x8;
-  #[inline]
-  fn mul(self, rhs: f64x8) -> Self::Output {
-    f64x8::splat(self).mul(rhs)
-  }
-}
-
-impl Div<f64x8> for f64 {
-  type Output = f64x8;
-  #[inline]
-  fn div(self, rhs: f64x8) -> Self::Output {
-    f64x8::splat(self).div(rhs)
-  }
-}
-
-impl Rem<f64x8> for f64 {
-  type Output = f64x8;
-  #[inline]
-  fn rem(self, rhs: f64x8) -> Self::Output {
-    f64x8::splat(self).rem(rhs)
-  }
-}
-
-impl BitAnd for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitand_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitOr for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitor_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitXor for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
 impl f64x8 {
   #[inline]
   fn vm_pow2n(self) -> Self {
@@ -2048,22 +1955,5 @@ impl From<i32x8> for f64x8 {
   #[inline]
   fn from(v: i32x8) -> Self {
     Self::from_i32x8(v)
-  }
-}
-
-impl Not for f64x8 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512d(self.avx512, set_splat_m512d(f64::from_bits(u64::MAX))) }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
   }
 }

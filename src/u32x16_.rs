@@ -156,17 +156,26 @@ impl_simd! {
   }
 }
 
-int_uint_consts!(u32, 16, u32x16, 512);
+impl_simd_uint! {
+  T = u32,
+  N = 16,
+  Simd = u32x16,
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 
-unsafe impl Zeroable for u32x16 {}
-unsafe impl Pod for u32x16 {}
+  #[inline]
+  fn not(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512i(self.avx512, set_splat_i32_m512i(-1)) }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
 
-impl AlignTo for u32x16 {
-  type Elem = u32;
-}
-
-impl Add for u32x16 {
-  type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -180,10 +189,7 @@ impl Add for u32x16 {
       }
     }
   }
-}
 
-impl Sub for u32x16 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -197,59 +203,7 @@ impl Sub for u32x16 {
       }
     }
   }
-}
 
-impl Add<u32> for u32x16 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: u32) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<u32> for u32x16 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: u32) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<u32> for u32x16 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: u32) -> Self::Output {
-    self * Self::splat(rhs)
-  }
-}
-
-impl Add<u32x16> for u32 {
-  type Output = u32x16;
-  #[inline]
-  fn add(self, rhs: u32x16) -> Self::Output {
-    u32x16::splat(self).add(rhs)
-  }
-}
-
-impl Sub<u32x16> for u32 {
-  type Output = u32x16;
-  #[inline]
-  fn sub(self, rhs: u32x16) -> Self::Output {
-    u32x16::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<u32x16> for u32 {
-  type Output = u32x16;
-
-  #[inline]
-  fn mul(self, rhs: u32x16) -> Self::Output {
-    u32x16::splat(self) * rhs
-  }
-}
-
-impl Mul for u32x16 {
-  type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
@@ -263,16 +217,71 @@ impl Mul for u32x16 {
       }
     }
   }
-}
 
-integer_impl_div_rem!(
-  u32,
-  u32x16,
-  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
+  #[inline]
+  fn shl(self, rhs: u32x16) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
+        Self { avx512: shl_each_u32_m512i(self.avx512, shift_by) }
+      } else {
+        Self {
+          a : self.a.shl(rhs.a),
+          b : self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
 
-impl BitAnd for u32x16 {
-  type Output = Self;
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = rhs & 31;
+        Self { avx512: shl_all_u32_m512i(self.avx512, shift) }
+      } else {
+        Self {
+          a : self.a.shl(rhs),
+          b : self.b.shl(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: u32x16) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
+        Self { avx512: shr_each_u32_m512i(self.avx512, shift_by ) }
+      } else {
+        Self {
+          a : self.a.shr(rhs.a),
+          b : self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = rhs & 31;
+        Self { avx512: shr_all_u32_m512i(self.avx512, shift) }
+      } else {
+        Self {
+          a : self.a.shr(rhs),
+          b : self.b.shr(rhs),
+        }
+      }
+    }
+  }
+
   #[inline]
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
@@ -286,10 +295,7 @@ impl BitAnd for u32x16 {
       }
     }
   }
-}
 
-impl BitOr for u32x16 {
-  type Output = Self;
   #[inline]
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -303,10 +309,7 @@ impl BitOr for u32x16 {
       }
     }
   }
-}
 
-impl BitXor for u32x16 {
-  type Output = Self;
   #[inline]
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
@@ -320,6 +323,15 @@ impl BitXor for u32x16 {
       }
     }
   }
+}
+
+int_uint_consts!(u32, 16, u32x16, 512);
+
+unsafe impl Zeroable for u32x16 {}
+unsafe impl Pod for u32x16 {}
+
+impl AlignTo for u32x16 {
+  type Elem = u32;
 }
 
 impl From<u16x16> for u32x16 {
@@ -366,106 +378,6 @@ impl From<u16x16> for u32x16 {
           arr[8] as u32,  arr[9] as u32,  arr[10] as u32, arr[11] as u32,
           arr[12] as u32, arr[13] as u32, arr[14] as u32, arr[15] as u32,
         ])
-      }
-    }
-  }
-}
-
-macro_rules! impl_shl_t_for_u32x16 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for u32x16 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = rhs as u32 & 31;
-            Self { avx512: shl_all_u32_m512i(self.avx512, shift) }
-          } else {
-            Self {
-              a : self.a.shl(rhs),
-              b : self.b.shl(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
-}
-impl_shl_t_for_u32x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-macro_rules! impl_shr_t_for_u32x16 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for u32x16 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = rhs as u32 & 31;
-            Self { avx512: shr_all_u32_m512i(self.avx512, shift) }
-          } else {
-            Self {
-              a : self.a.shr(rhs),
-              b : self.b.shr(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
-}
-impl_shr_t_for_u32x16!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shr`)
-impl Shr<u32x16> for u32x16 {
-  type Output = Self;
-
-  #[inline]
-  fn shr(self, rhs: u32x16) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
-        Self { avx512: shr_each_u32_m512i(self.avx512, shift_by ) }
-      } else {
-        Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shl`)
-impl Shl<u32x16> for u32x16 {
-  type Output = Self;
-
-  #[inline]
-  fn shl(self, rhs: u32x16) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        let shift_by = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
-        Self { avx512: shl_each_u32_m512i(self.avx512, shift_by) }
-      } else {
-        Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
-        }
       }
     }
   }
@@ -693,23 +605,6 @@ impl u32x16 {
         Self {
           a: self.a.mul_keep_high(rhs.a),
           b: self.b.mul_keep_high(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl Not for u32x16 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.avx512, set_splat_i32_m512i(-1)) }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
         }
       }
     }

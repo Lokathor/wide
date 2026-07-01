@@ -156,17 +156,26 @@ impl_simd! {
   }
 }
 
-int_uint_consts!(u64, 8, u64x8, 512);
+impl_simd_uint! {
+  T = u64,
+  N = 8,
+  Simd = u64x8,
+  [0, 1, 2, 3, 4, 5, 6, 7],
 
-unsafe impl Zeroable for u64x8 {}
-unsafe impl Pod for u64x8 {}
+  #[inline]
+  fn not(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512i(self.avx512, set_splat_i64_m512i(-1)) }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
 
-impl AlignTo for u64x8 {
-  type Elem = u64;
-}
-
-impl Add for u64x8 {
-  type Output = Self;
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -180,10 +189,7 @@ impl Add for u64x8 {
       }
     }
   }
-}
 
-impl Sub for u64x8 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -197,10 +203,7 @@ impl Sub for u64x8 {
       }
     }
   }
-}
 
-impl Mul for u64x8 {
-  type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
@@ -222,183 +225,6 @@ impl Mul for u64x8 {
       }
     }
   }
-}
-
-integer_impl_div_rem!(u64, u64x8, [0, 1, 2, 3, 4, 5, 6, 7]);
-
-impl Add<u64> for u64x8 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: u64) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<u64> for u64x8 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: u64) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<u64> for u64x8 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: u64) -> Self::Output {
-    self.mul(Self::splat(rhs))
-  }
-}
-
-impl Add<u64x8> for u64 {
-  type Output = u64x8;
-  #[inline]
-  fn add(self, rhs: u64x8) -> Self::Output {
-    u64x8::splat(self).add(rhs)
-  }
-}
-
-impl Sub<u64x8> for u64 {
-  type Output = u64x8;
-  #[inline]
-  fn sub(self, rhs: u64x8) -> Self::Output {
-    u64x8::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<u64x8> for u64 {
-  type Output = u64x8;
-  #[inline]
-  fn mul(self, rhs: u64x8) -> Self::Output {
-    u64x8::splat(self).mul(rhs)
-  }
-}
-
-impl BitAnd for u64x8 {
-  type Output = Self;
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitand_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitOr for u64x8 {
-  type Output = Self;
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitor_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitXor for u64x8 {
-  type Output = Self;
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-macro_rules! impl_shl_t_for_u64x8 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for u64x8 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = rhs as u64 & 63;
-            Self { avx512: shl_all_u64_m512i(self.avx512, shift) }
-          } else {
-            Self {
-              a : self.a.shl(rhs),
-              b : self.b.shl(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
-}
-impl_shl_t_for_u64x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-macro_rules! impl_shr_t_for_u64x8 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for u64x8 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = rhs as u64 & 63;
-            Self { avx512: shr_all_u64_m512i(self.avx512, shift) }
-          } else {
-            Self {
-              a : self.a.shr(rhs),
-              b : self.b.shr(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
-}
-impl_shr_t_for_u64x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-impl Shr for u64x8 {
-  type Output = Self;
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        let rhs = bitand_m512i(rhs.avx512, set_splat_i64_m512i(63));
-        Self { avx512: shr_each_u64_m512i(self.avx512, rhs) }
-      } else {
-        Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl Shl for u64x8 {
-  type Output = Self;
 
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
@@ -415,6 +241,107 @@ impl Shl for u64x8 {
       }
     }
   }
+
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = rhs as u64 & 63;
+        Self { avx512: shl_all_u64_m512i(self.avx512, shift) }
+      } else {
+        Self {
+          a : self.a.shl(rhs),
+          b : self.b.shl(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        let rhs = bitand_m512i(rhs.avx512, set_splat_i64_m512i(63));
+        Self { avx512: shr_each_u64_m512i(self.avx512, rhs) }
+      } else {
+        Self {
+          a : self.a.shr(rhs.a),
+          b : self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = rhs as u64 & 63;
+        Self { avx512: shr_all_u64_m512i(self.avx512, shift) }
+      } else {
+        Self {
+          a : self.a.shr(rhs),
+          b : self.b.shr(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitand_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+    if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitor_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
+  }
+}
+
+int_uint_consts!(u64, 8, u64x8, 512);
+
+unsafe impl Zeroable for u64x8 {}
+unsafe impl Pod for u64x8 {}
+
+impl AlignTo for u64x8 {
+  type Elem = u64;
 }
 
 impl u64x8 {
@@ -610,23 +537,6 @@ impl u64x8 {
         Self {
           a: self.a.mul_keep_high(rhs.a),
           b: self.b.mul_keep_high(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl Not for u64x8 {
-  type Output = Self;
-  #[inline]
-  fn not(self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.avx512, set_splat_i64_m512i(-1)) }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
         }
       }
     }

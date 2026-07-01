@@ -5,6 +5,16 @@ macro_rules! impl_simd_float {
     Simd = $Simd:ident,
     UnsignedT = $UnsignedT:ident,
 
+    $fn_neg:item
+    $fn_not:item
+    $fn_add:item
+    $fn_sub:item
+    $fn_mul:item
+    $fn_div:item
+    $fn_rem:item
+    $fn_bitand:item
+    $fn_bitor:item
+    $fn_bitxor:item
     $fn_reduce_add:item
     $fn_reduce_mul:item
     $fn_is_nan:item
@@ -53,6 +63,42 @@ macro_rules! impl_simd_float {
     $fn_cosh:item
     $fn_tanh:item
   ) => {
+    impl_unary_operator!($Simd, Neg, neg, $fn_neg);
+    impl_unary_operator!($Simd, Not, not, $fn_not);
+
+    impl_binary_operator!($T, $Simd, Add, add, AddAssign, add_assign, $fn_add);
+    impl_binary_operator!($T, $Simd, Sub, sub, SubAssign, sub_assign, $fn_sub);
+    impl_binary_operator!($T, $Simd, Mul, mul, MulAssign, mul_assign, $fn_mul);
+    impl_binary_operator!($T, $Simd, Div, div, DivAssign, div_assign, $fn_div);
+    impl_binary_operator!($T, $Simd, Rem, rem, RemAssign, rem_assign, $fn_rem);
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      BitAnd,
+      bitand,
+      BitAndAssign,
+      bitand_assign,
+      $fn_bitand
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      BitOr,
+      bitor,
+      BitOrAssign,
+      bitor_assign,
+      $fn_bitor
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      BitXor,
+      bitxor,
+      BitXorAssign,
+      bitxor_assign,
+      $fn_bitxor
+    );
+
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
       pub const HALF: Self = Self::splat(0.5);
