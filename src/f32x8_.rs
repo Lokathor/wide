@@ -245,6 +245,58 @@ impl_simd_float! {
   T = f32,
   N = 8,
   Simd = f32x8,
+
+  #[inline]
+  pub fn is_nan(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.avx, self.avx) }
+      } else {
+        Self {
+          a : self.a.is_nan(),
+          b : self.b.is_nan(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_inf(self) -> Self {
+    let shifted_inf = u32x8::from(0xFF000000);
+    let u: u32x8 = cast(self);
+    let shift_u = u << 1_u64;
+    let out = (shift_u).simd_eq(shifted_inf);
+    cast(out)
+  }
+
+  #[inline]
+  pub fn is_finite(self) -> Self {
+    let shifted_exp_mask = u32x8::from(0xFF000000);
+    let u: u32x8 = cast(self);
+    let shift_u = u << 1_u64;
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
+    cast(out)
+  }
+
+  #[inline]
+  pub fn is_sign_positive(self) -> Self {
+    const SIGN_MASK: u32x8 = u32x8::splat((-0.0_f32).to_bits());
+
+    let bits = cast::<f32x8, u32x8>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(u32x8::ZERO);
+    cast::<u32x8, f32x8>(result)
+  }
+
+  #[inline]
+  pub fn is_sign_negative(self) -> Self {
+    const SIGN_MASK: u32x8 = u32x8::splat((-0.0_f32).to_bits());
+
+    let bits = cast::<f32x8, u32x8>(self);
+    let sign = bits & SIGN_MASK;
+    let result = sign.simd_eq(SIGN_MASK);
+    cast::<u32x8, f32x8>(result)
+  }
 }
 
 macro_rules! const_f32_as_f32x8 {
@@ -673,39 +725,6 @@ impl f32x8 {
   #[must_use]
   pub fn midpoint(self, other: Self) -> Self {
     (self + other) * 0.5
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn is_nan(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.avx, self.avx) }
-      } else {
-        Self {
-          a : self.a.is_nan(),
-          b : self.b.is_nan(),
-        }
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn is_finite(self) -> Self {
-    let shifted_exp_mask = u32x8::from(0xFF000000);
-    let u: u32x8 = cast(self);
-    let shift_u = u << 1_u64;
-    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
-    cast(out)
-  }
-  #[inline]
-  #[must_use]
-  pub fn is_inf(self) -> Self {
-    let shifted_inf = u32x8::from(0xFF000000);
-    let u: u32x8 = cast(self);
-    let shift_u = u << 1_u64;
-    let out = (shift_u).simd_eq(shifted_inf);
-    cast(out)
   }
 
   /// Returns the nearest integers to `self`. If a value is half-way between two
@@ -1751,32 +1770,6 @@ impl f32x8 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f32x8>(i32x8::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
-  }
-
-  /// Returns true for each element if it has a positive sign, including `+0.0`,
-  /// `NaN`s with positive sign bit and positive infinity.
-  #[inline]
-  #[must_use]
-  pub fn is_sign_positive(self) -> Self {
-    const SIGN_MASK: u32x8 = u32x8::splat((-0.0_f32).to_bits());
-
-    let bits = cast::<f32x8, u32x8>(self);
-    let sign = bits & SIGN_MASK;
-    let result = sign.simd_eq(u32x8::ZERO);
-    cast::<u32x8, f32x8>(result)
-  }
-
-  /// Returns true for each element if it has a negative sign, including `-0.0`,
-  /// `NaN`s with negative sign bit and negative infinity.
-  #[inline]
-  #[must_use]
-  pub fn is_sign_negative(self) -> Self {
-    const SIGN_MASK: u32x8 = u32x8::splat((-0.0_f32).to_bits());
-
-    let bits = cast::<f32x8, u32x8>(self);
-    let sign = bits & SIGN_MASK;
-    let result = sign.simd_eq(SIGN_MASK);
-    cast::<u32x8, f32x8>(result)
   }
 
   /// horizontal add of all the elements of the vector

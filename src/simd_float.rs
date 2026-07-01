@@ -3,6 +3,12 @@ macro_rules! impl_simd_float {
     T = $T:ident,
     N = $N:literal,
     Simd = $Simd:ident,
+
+    $fn_is_nan:item
+    $fn_is_inf:item
+    $fn_is_finite:item
+    $fn_is_sign_positive:item
+    $fn_is_sign_negative:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -36,6 +42,25 @@ macro_rules! impl_simd_float {
       pub const PI: Self = Self::splat(core::$T::consts::PI);
       pub const SQRT_2: Self = Self::splat(core::$T::consts::SQRT_2);
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
+
+      #[must_use]
+      $fn_is_nan
+
+      #[must_use]
+      $fn_is_inf
+
+      #[must_use]
+      $fn_is_finite
+
+      /// Returns true for each element if it has a positive sign, including `+0.0`,
+      /// `NaN`s with positive sign bit and positive infinity.
+      #[must_use]
+      $fn_is_sign_positive
+
+      /// Returns true for each element if it has a negative sign, including `-0.0`,
+      /// `NaN`s with negative sign bit and negative infinity.
+      #[must_use]
+      $fn_is_sign_negative
     }
   };
 }

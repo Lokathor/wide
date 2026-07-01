@@ -269,6 +269,82 @@ impl_simd_float! {
   T = f64,
   N = 2,
   Simd = f64x2,
+
+  #[inline]
+  pub fn is_nan(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: cmp_unord_mask_m128d(self.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_ne(self.simd, self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.neon, self.neon)) }.not() }
+      } else {
+        Self { arr: [
+          if self.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_inf(self) -> Self {
+    let shifted_inf = u64x2::from(0xFFE0000000000000);
+    let u: u64x2 = cast(self);
+    let shift_u = u << 1_u64;
+    let out = (shift_u).simd_eq(shifted_inf);
+    cast(out)
+  }
+
+  #[inline]
+  pub fn is_finite(self) -> Self {
+    let shifted_exp_mask = u64x2::from(0xFFE0000000000000);
+    let u: u64x2 = cast(self);
+    let shift_u = u << 1_u64;
+    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
+    cast(out)
+  }
+
+  #[inline]
+  pub fn is_sign_positive(self) -> Self {
+    pick! {
+      // Integer equality is slow without `sse4.1`.
+      if #[cfg(any(target_feature = "sse4.1", not(target_feature = "sse2")))] {
+        const SIGN_MASK: u64x2 = u64x2::splat((-0.0_f64).to_bits());
+
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits & SIGN_MASK;
+        let result = sign.simd_eq(u64x2::ZERO);
+        cast::<u64x2, f64x2>(result)
+      } else {
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits >> 63;
+        let sign = cast::<u64x2, f64x2>(sign);
+        sign.simd_eq(f64x2::ZERO)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_sign_negative(self) -> Self {
+    pick! {
+      // Integer equality is slow without `sse4.1`.
+      if #[cfg(any(target_feature = "sse4.1", not(target_feature = "sse2")))] {
+        const SIGN_MASK: u64x2 = u64x2::splat((-0.0_f64).to_bits());
+
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits & SIGN_MASK;
+        let result = sign.simd_eq(SIGN_MASK);
+        cast::<u64x2, f64x2>(result)
+      } else {
+        let bits = cast::<f64x2, u64x2>(self);
+        let sign = bits >> 63;
+        let sign = cast::<u64x2, f64x2>(sign);
+        sign.simd_ne(f64x2::ZERO)
+      }
+    }
+  }
 }
 
 macro_rules! const_f64_as_f64x2 {
@@ -790,43 +866,6 @@ impl f64x2 {
   #[must_use]
   pub fn midpoint(self, other: Self) -> Self {
     (self + other) * 0.5
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn is_nan(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_unord_mask_m128d(self.sse, self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_ne(self.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.neon, self.neon)) }.not() }
-      } else {
-        Self { arr: [
-          if self.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn is_finite(self) -> Self {
-    let shifted_exp_mask = u64x2::from(0xFFE0000000000000);
-    let u: u64x2 = cast(self);
-    let shift_u = u << 1_u64;
-    let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
-    cast(out)
-  }
-  #[inline]
-  #[must_use]
-  pub fn is_inf(self) -> Self {
-    let shifted_inf = u64x2::from(0xFFE0000000000000);
-    let u: u64x2 = cast(self);
-    let shift_u = u << 1_u64;
-    let out = (shift_u).simd_eq(shifted_inf);
-    cast(out)
   }
 
   /// Returns the nearest integers to `self`. If a value is half-way between two
@@ -2152,52 +2191,6 @@ impl f64x2 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
-  }
-
-  /// Returns true for each element if it has a positive sign, including `+0.0`,
-  /// `NaN`s with positive sign bit and positive infinity.
-  #[inline]
-  #[must_use]
-  pub fn is_sign_positive(self) -> Self {
-    pick! {
-      // Integer equality is slow without `sse4.1`.
-      if #[cfg(any(target_feature = "sse4.1", not(target_feature = "sse2")))] {
-        const SIGN_MASK: u64x2 = u64x2::splat((-0.0_f64).to_bits());
-
-        let bits = cast::<f64x2, u64x2>(self);
-        let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(u64x2::ZERO);
-        cast::<u64x2, f64x2>(result)
-      } else {
-        let bits = cast::<f64x2, u64x2>(self);
-        let sign = bits >> 63;
-        let sign = cast::<u64x2, f64x2>(sign);
-        sign.simd_eq(f64x2::ZERO)
-      }
-    }
-  }
-
-  /// Returns true for each element if it has a negative sign, including `-0.0`,
-  /// `NaN`s with negative sign bit and negative infinity.
-  #[inline]
-  #[must_use]
-  pub fn is_sign_negative(self) -> Self {
-    pick! {
-      // Integer equality is slow without `sse4.1`.
-      if #[cfg(any(target_feature = "sse4.1", not(target_feature = "sse2")))] {
-        const SIGN_MASK: u64x2 = u64x2::splat((-0.0_f64).to_bits());
-
-        let bits = cast::<f64x2, u64x2>(self);
-        let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(SIGN_MASK);
-        cast::<u64x2, f64x2>(result)
-      } else {
-        let bits = cast::<f64x2, u64x2>(self);
-        let sign = bits >> 63;
-        let sign = cast::<u64x2, f64x2>(sign);
-        sign.simd_ne(f64x2::ZERO)
-      }
-    }
   }
 
   /// horizontal add of all the elements of the vector
