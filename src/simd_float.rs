@@ -3,6 +3,7 @@ macro_rules! impl_simd_float {
     T = $T:ident,
     N = $N:literal,
     Simd = $Simd:ident,
+    UnsignedT = $UnsignedT:ident,
 
     $fn_is_nan:item
     $fn_is_inf:item
@@ -17,6 +18,7 @@ macro_rules! impl_simd_float {
     $fn_fast_min:item
     $fn_clamp:item
     $fn_fast_clamp:item
+    $fn_abs:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -134,6 +136,30 @@ macro_rules! impl_simd_float {
       /// result is unspecified.
       #[must_use]
       $fn_fast_clamp
+
+      #[must_use]
+      $fn_abs
+
+      #[inline]
+      #[must_use]
+      pub fn signum(self) -> Self {
+        let result = Self::ONE | self & -Self::ZERO;
+
+        self.is_nan().select(self, result)
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn copysign(self, sign: Self) -> Self {
+        let magnitude_mask = Self::from($T::from_bits($UnsignedT::MAX >> 1));
+        (self & magnitude_mask) | (sign & Self::from(-0.0))
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn flip_signs(self, signs: Self) -> Self {
+        self ^ (signs & Self::from(-0.0))
+      }
     }
   };
 }

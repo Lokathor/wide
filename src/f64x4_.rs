@@ -209,6 +209,7 @@ impl_simd_float! {
   T = f64,
   N = 4,
   Simd = f64x4,
+  UnsignedT = u64,
 
   #[inline]
   pub fn is_nan(self) -> Self {
@@ -365,6 +366,21 @@ impl_simd_float! {
         Self {
           a: self.a.fast_clamp(min.a, max.a),
           b: self.b.fast_clamp(min.b, max.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        let non_sign_bits = f64x4::from(f64::from_bits(i64::MAX as u64));
+        self & non_sign_bits
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
         }
       }
     }
@@ -615,30 +631,6 @@ impl BitXor for f64x4 {
 }
 
 impl f64x4 {
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        let non_sign_bits = f64x4::from(f64::from_bits(i64::MAX as u64));
-        self & non_sign_bits
-      } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn signum(self) -> Self {
-    let result = Self::ONE | self & -Self::ZERO;
-
-    self.is_nan().select(self, result)
-  }
-
   #[inline]
   #[must_use]
   pub fn floor(self) -> Self {
@@ -1022,19 +1014,6 @@ impl f64x4 {
   pub fn rem_euclid(self, rhs: Self) -> Self {
     let r = self % rhs;
     r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn copysign(self, sign: Self) -> Self {
-    let magnitude_mask = Self::from(f64::from_bits(u64::MAX >> 1));
-    (self & magnitude_mask) | (sign & Self::from(-0.0))
   }
 
   #[inline]

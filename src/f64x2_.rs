@@ -269,6 +269,7 @@ impl_simd_float! {
   T = f64,
   N = 2,
   Simd = f64x2,
+  UnsignedT = u64,
 
   #[inline]
   pub fn is_nan(self) -> Self {
@@ -500,6 +501,20 @@ impl_simd_float! {
         result = result.simd_gt(max).select(max, result);
         result = result.simd_lt(min).select(min, result);
         result
+      }
+    }
+  }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f64x2_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vabsq_f64(self.neon) }}
+      } else {
+        let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
+        self & non_sign_bits
       }
     }
   }
@@ -779,29 +794,6 @@ impl BitXor for f64x2 {
 }
 
 impl f64x2 {
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_abs(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vabsq_f64(self.neon) }}
-      } else {
-        let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
-        self & non_sign_bits
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn signum(self) -> Self {
-    let result = Self::ONE | self & -Self::ZERO;
-
-    self.is_nan().select(self, result)
-  }
-
   #[inline]
   #[must_use]
   pub fn floor(self) -> Self {
@@ -1248,19 +1240,6 @@ impl f64x2 {
   pub fn rem_euclid(self, rhs: Self) -> Self {
     let r = self % rhs;
     r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn copysign(self, sign: Self) -> Self {
-    let magnitude_mask = Self::from(f64::from_bits(u64::MAX >> 1));
-    (self & magnitude_mask) | (sign & Self::from(-0.0))
   }
 
   #[inline]

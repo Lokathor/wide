@@ -220,6 +220,7 @@ impl_simd_float! {
   T = f32,
   N = 16,
   Simd = f32x16,
+  UnsignedT = u32,
 
   #[inline]
   pub fn is_nan(self) -> Self {
@@ -396,6 +397,21 @@ impl_simd_float! {
         Self {
           a: self.a.fast_clamp(min.a, max.a),
           b: self.b.fast_clamp(min.b, max.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let non_sign_bits = f32x16::from(f32::from_bits(i32::MAX as u32));
+        self & non_sign_bits
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
         }
       }
     }
@@ -652,30 +668,6 @@ impl BitXor for f32x16 {
 }
 
 impl f32x16 {
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        let non_sign_bits = f32x16::from(f32::from_bits(i32::MAX as u32));
-        self & non_sign_bits
-      } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn signum(self) -> Self {
-    let result = Self::ONE | self & -Self::ZERO;
-
-    self.is_nan().select(self, result)
-  }
-
   #[inline]
   #[must_use]
   pub fn floor(self) -> Self {
@@ -1057,19 +1049,6 @@ impl f32x16 {
   pub fn rem_euclid(self, rhs: Self) -> Self {
     let r = self % rhs;
     r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn flip_signs(self, signs: Self) -> Self {
-    self ^ (signs & Self::from(-0.0))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn copysign(self, sign: Self) -> Self {
-    let magnitude_mask = Self::from(f32::from_bits(u32::MAX >> 1));
-    (self & magnitude_mask) | (sign & Self::from(-0.0))
   }
 
   #[inline]
