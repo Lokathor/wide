@@ -165,6 +165,41 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self {
+          sse: bitor_m128i(
+            bitand_m128i(if_one.sse, self.sse),
+            bitandnot_m128i(self.sse, if_zero.sse),
+          ),
+        }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vbslq_u32(self.neon, if_one.neon, if_zero.neon) }}
+      } else {
+        generic_bit_blend(self, if_one, if_zero)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vbslq_u32(self.neon, if_true.neon, if_false.neon) }}
+      } else {
+        generic_bit_blend(self, if_true, if_false)
+      }
+    }
+  }
 }
 
 int_uint_consts!(u32, 4, u32x4, 128);
@@ -605,65 +640,6 @@ impl u32x4 {
     }
   }
 
-  /// Bitwise selection.
-  ///
-  /// For each bit of `self`:
-  ///
-  /// - If the bit is one, return the corresponding bit of `if_one`
-  /// - If the bit is zero, return the corresponding bit of `if_zero`
-  ///
-  /// If you know `self` is a mask, meaning each lane is either all zeros or all
-  /// ones, consider using [`select`] which is faster.
-  ///
-  /// [`select`]: Self::select
-  #[inline]
-  #[must_use]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.sse, self.sse),
-            bitandnot_m128i(self.sse, if_zero.sse),
-          ),
-        }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_u32(self.neon, if_one.neon, if_zero.neon) }}
-      } else {
-        generic_bit_blend(self, if_one, if_zero)
-      }
-    }
-  }
-
-  /// Lanewise selection.
-  ///
-  /// For each lane of `self`:
-  ///
-  /// - If all bits are one, return the corresponding lane of `if_true`
-  /// - If all bits are zero, return the corresponding lane of `if_false`
-  ///
-  /// This function assumes `self` is a mask, meaning each lane is either all
-  /// zeros or all ones. For bitwise selection use [`bitselect`].
-  ///
-  /// [`bitselect`]: Self::bitselect
-  #[inline]
-  #[must_use]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_u32(self.neon, if_true.neon, if_false.neon) }}
-      } else {
-        generic_bit_blend(self, if_true, if_false)
-      }
-    }
-  }
-
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> u32 {
@@ -997,6 +973,4 @@ impl u32x4 {
   pub fn to_bitmask(self) -> u32 {
     i32x4::to_bitmask(cast(self))
   }
-
-  fn_blend!();
 }

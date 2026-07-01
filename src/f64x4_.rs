@@ -100,6 +100,39 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self {
+          avx: bitor_m256d(
+            bitand_m256d(if_one.avx, self.avx),
+            bitandnot_m256d(self.avx, if_zero.avx),
+          ),
+        }
+      } else {
+        Self {
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: blend_varying_m256d(if_false.avx, if_true.avx, self.avx) }
+      } else {
+        Self {
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
+        }
+      }
+    }
+  }
 }
 
 macro_rules! const_f64_as_f64x4 {
@@ -378,63 +411,6 @@ impl BitXor for f64x4 {
 }
 
 impl f64x4 {
-  /// Bitwise selection.
-  ///
-  /// For each bit of `self`:
-  ///
-  /// - If the bit is one, return the corresponding bit of `if_one`
-  /// - If the bit is zero, return the corresponding bit of `if_zero`
-  ///
-  /// If you know `self` is a mask, meaning each lane is either all zeros or all
-  /// ones, consider using [`select`] which is faster.
-  ///
-  /// [`select`]: Self::select
-  #[inline]
-  #[must_use]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self {
-          avx: bitor_m256d(
-            bitand_m256d(if_one.avx, self.avx),
-            bitandnot_m256d(self.avx, if_zero.avx),
-          ),
-        }
-      } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  /// Lanewise selection.
-  ///
-  /// For each lane of `self`:
-  ///
-  /// - If all bits are one, return the corresponding lane of `if_true`
-  /// - If all bits are zero, return the corresponding lane of `if_false`
-  ///
-  /// This function assumes `self` is a mask, meaning each lane is either all
-  /// zeros or all ones. For bitwise selection use [`bitselect`].
-  ///
-  /// [`bitselect`]: Self::bitselect
-  #[inline]
-  #[must_use]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: blend_varying_m256d(if_false.avx, if_true.avx, self.avx) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -2328,8 +2304,6 @@ impl f64x4 {
       }
     }
   }
-
-  fn_blend!();
 }
 
 impl From<i32x4> for f64x4 {

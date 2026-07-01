@@ -100,6 +100,39 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self {
+          avx512: bitor_m512i(
+            bitand_m512i(if_one.avx512, self.avx512),
+            bitandnot_m512i(self.avx512, if_zero.avx512),
+          ),
+        }
+      } else {
+        Self {
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: blend_varying_i8_m512i(if_false.avx512,if_true.avx512,movepi8_mask_m512i(self.avx512)) }
+      } else {
+        Self {
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
+        }
+      }
+    }
+  }
 }
 
 int_uint_consts!(u32, 16, u32x16, 512);
@@ -418,63 +451,6 @@ impl Shl<u32x16> for u32x16 {
 }
 
 impl u32x16 {
-  /// Bitwise selection.
-  ///
-  /// For each bit of `self`:
-  ///
-  /// - If the bit is one, return the corresponding bit of `if_one`
-  /// - If the bit is zero, return the corresponding bit of `if_zero`
-  ///
-  /// If you know `self` is a mask, meaning each lane is either all zeros or all
-  /// ones, consider using [`select`] which is faster.
-  ///
-  /// [`select`]: Self::select
-  #[inline]
-  #[must_use]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self {
-          avx512: bitor_m512i(
-            bitand_m512i(if_one.avx512, self.avx512),
-            bitandnot_m512i(self.avx512, if_zero.avx512),
-          ),
-        }
-      } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  /// Lanewise selection.
-  ///
-  /// For each lane of `self`:
-  ///
-  /// - If all bits are one, return the corresponding lane of `if_true`
-  /// - If all bits are zero, return the corresponding lane of `if_false`
-  ///
-  /// This function assumes `self` is a mask, meaning each lane is either all
-  /// zeros or all ones. For bitwise selection use [`bitselect`].
-  ///
-  /// [`bitselect`]: Self::bitselect
-  #[inline]
-  #[must_use]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(if_false.avx512,if_true.avx512,movepi8_mask_m512i(self.avx512)) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
   #[inline]
   #[must_use]
   pub fn reduce_add(self) -> u32 {
@@ -732,8 +708,6 @@ impl u32x16 {
   pub fn transpose(data: [u32x16; 16]) -> [u32x16; 16] {
     cast(i32x16::transpose(cast(data)))
   }
-
-  fn_blend!();
 }
 
 impl Not for u32x16 {

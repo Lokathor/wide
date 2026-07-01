@@ -10,6 +10,8 @@ macro_rules! impl_simd {
     $fn_simd_gt:item
     $fn_simd_le:item
     $fn_simd_ge:item
+    $fn_bitselect:item
+    $fn_select:item
   ) => {
     impl From<[$T; $N]> for $Simd {
       #[inline]
@@ -228,6 +230,54 @@ macro_rules! impl_simd {
         Self: CmpGe<Rhs>,
       {
         CmpGe::simd_ge(self, other)
+      }
+
+      /// Bitwise selection.
+      ///
+      /// For each bit of `self`:
+      ///
+      /// - If the bit is one, return the corresponding bit of `if_one`
+      /// - If the bit is zero, return the corresponding bit of `if_zero`
+      ///
+      /// If you know `self` is a mask, meaning each lane is either all zeros or all
+      /// ones, consider using [`select`] which is faster.
+      ///
+      /// [`select`]: Self::select
+      #[must_use]
+      $fn_bitselect
+
+      /// Lanewise selection.
+      ///
+      /// For each lane of `self`:
+      ///
+      /// - If all bits are one, return the corresponding lane of `if_true`
+      /// - If all bits are zero, return the corresponding lane of `if_false`
+      ///
+      /// This function assumes `self` is a mask, meaning each lane is either all
+      /// zeros or all ones. For bitwise selection use [`bitselect`].
+      ///
+      /// [`bitselect`]: Self::bitselect
+      #[must_use]
+      $fn_select
+
+      /// Lanewise selection. This function has been renamed to [`select`].
+      ///
+      /// For each lane this returns `t` where `self` is all ones and `f` where
+      /// `self` is all zeros.
+      ///
+      /// This function assumes `self` is a mask, meaning each lane is either all
+      /// zeros or all ones. For bitwise selection use [`bitselect`].
+      ///
+      /// [`select`]: Self::select
+      /// [`bitselect`]: Self::bitselect
+      #[deprecated(
+        since = "1.6.0",
+        note = "split into `select` and `bitselect` functions"
+      )]
+      #[inline]
+      #[must_use]
+      pub fn blend(self, t: Self, f: Self) -> Self {
+        self.select(t, f)
       }
     }
   };
