@@ -67,6 +67,8 @@ use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 mod macros;
 #[macro_use]
 mod simd;
+#[macro_use]
+mod simd_float;
 
 macro_rules! pick {
   ($(if #[cfg($($test:meta),*)] {

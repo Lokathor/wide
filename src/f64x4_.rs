@@ -205,43 +205,17 @@ impl_simd! {
   }
 }
 
+impl_simd_float! {
+  T = f64,
+  N = 4,
+  Simd = f64x4,
+}
+
 macro_rules! const_f64_as_f64x4 {
   ($i:ident, $f:expr) => {
     #[allow(non_upper_case_globals)]
     pub const $i: f64x4 = f64x4::new([$f; 4]);
   };
-}
-
-impl f64x4 {
-  const_f64_as_f64x4!(ONE, 1.0);
-  const_f64_as_f64x4!(ZERO, 0.0);
-  const_f64_as_f64x4!(HALF, 0.5);
-  const_f64_as_f64x4!(EPSILON, f64::EPSILON);
-  const_f64_as_f64x4!(MIN, f64::MIN);
-  const_f64_as_f64x4!(MIN_POSITIVE, f64::MIN_POSITIVE);
-  const_f64_as_f64x4!(MAX, f64::MAX);
-  const_f64_as_f64x4!(NAN, f64::NAN);
-  const_f64_as_f64x4!(INFINITY, f64::INFINITY);
-  const_f64_as_f64x4!(NEG_INFINITY, f64::NEG_INFINITY);
-  const_f64_as_f64x4!(E, core::f64::consts::E);
-  const_f64_as_f64x4!(FRAC_1_PI, core::f64::consts::FRAC_1_PI);
-  const_f64_as_f64x4!(FRAC_2_PI, core::f64::consts::FRAC_2_PI);
-  const_f64_as_f64x4!(FRAC_2_SQRT_PI, core::f64::consts::FRAC_2_SQRT_PI);
-  const_f64_as_f64x4!(FRAC_1_SQRT_2, core::f64::consts::FRAC_1_SQRT_2);
-  const_f64_as_f64x4!(FRAC_PI_2, core::f64::consts::FRAC_PI_2);
-  const_f64_as_f64x4!(FRAC_PI_3, core::f64::consts::FRAC_PI_3);
-  const_f64_as_f64x4!(FRAC_PI_4, core::f64::consts::FRAC_PI_4);
-  const_f64_as_f64x4!(FRAC_PI_6, core::f64::consts::FRAC_PI_6);
-  const_f64_as_f64x4!(FRAC_PI_8, core::f64::consts::FRAC_PI_8);
-  const_f64_as_f64x4!(LN_2, core::f64::consts::LN_2);
-  const_f64_as_f64x4!(LN_10, core::f64::consts::LN_10);
-  const_f64_as_f64x4!(LOG2_E, core::f64::consts::LOG2_E);
-  const_f64_as_f64x4!(LOG10_E, core::f64::consts::LOG10_E);
-  const_f64_as_f64x4!(LOG10_2, core::f64::consts::LOG10_2);
-  const_f64_as_f64x4!(LOG2_10, core::f64::consts::LOG2_10);
-  const_f64_as_f64x4!(PI, core::f64::consts::PI);
-  const_f64_as_f64x4!(SQRT_2, core::f64::consts::SQRT_2);
-  const_f64_as_f64x4!(TAU, core::f64::consts::TAU);
 }
 
 unsafe impl Zeroable for f64x4 {}
