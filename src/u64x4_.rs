@@ -127,6 +127,21 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i64x4::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    i64x4::any(cast(self))
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    i64x4::all(cast(self))
+  }
 }
 
 int_uint_consts!(u64, 4, u64x4, 256);
@@ -426,31 +441,6 @@ impl u64x4 {
   pub fn reduce_min(self) -> u64 {
     let array: [u64; 4] = cast(self);
     array[0].min(array[1]).min(array[2]).min(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i64x4::to_bitmask(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    i64x4::any(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    i64x4::all(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   /// Transpose matrix of 4x4 `u64` matrix.

@@ -236,6 +236,75 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i( pack_i16_to_i8_m128i(self.sse,self.sse)) as u32) & 0xff
+      } else if #[cfg(target_feature="simd128")] {
+        i16x8_bitmask(self.simd) as u32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s16(self.neon, vdupq_n_s16(0));
+
+          // select the right bit out of each lane
+          let selectbit : uint16x8_t = core::mem::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
+          let r = vandq_u16(masked, selectbit);
+
+          // horizontally add the 16-bit lanes
+          vaddvq_u16(r) as u32
+         }
+       } else {
+        ((self.arr[0] < 0) as u32) |
+        ((self.arr[1] < 0) as u32) << 1 |
+        ((self.arr[2] < 0) as u32) << 2 |
+        ((self.arr[3] < 0) as u32) << 3 |
+        ((self.arr[4] < 0) as u32) << 4 |
+        ((self.arr[5] < 0) as u32) << 5 |
+        ((self.arr[6] < 0) as u32) << 6 |
+        ((self.arr[7] < 0) as u32) << 7
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1010101010101010) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u16x8_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vminvq_s16(self.neon) < 0
+        }
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x8000800080008000) != 0
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1010101010101010) == 0b1010101010101010
+      } else if #[cfg(target_feature="simd128")] {
+        u16x8_bitmask(self.simd) == 0b11111111
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vmaxvq_s16(self.neon) < 0
+        }
+      } else {
+        let v : [u64;2] = cast(self);
+        (v[0] & v[1] & 0x8000800080008000) == 0x8000800080008000
+      }
+    }
+  }
 }
 
 int_uint_consts!(i16, 8, i16x8, 128);
@@ -631,85 +700,6 @@ macro_rules! impl_shr_t_for_i16x8 {
 impl_shr_t_for_i16x8!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 impl i16x8 {
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i( pack_i16_to_i8_m128i(self.sse,self.sse)) as u32) & 0xff
-      } else if #[cfg(target_feature="simd128")] {
-        i16x8_bitmask(self.simd) as u32
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe
-        {
-          // set all to 1 if top bit is set, else 0
-          let masked = vcltq_s16(self.neon, vdupq_n_s16(0));
-
-          // select the right bit out of each lane
-          let selectbit : uint16x8_t = core::mem::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
-          let r = vandq_u16(masked, selectbit);
-
-          // horizontally add the 16-bit lanes
-          vaddvq_u16(r) as u32
-         }
-       } else {
-        ((self.arr[0] < 0) as u32) |
-        ((self.arr[1] < 0) as u32) << 1 |
-        ((self.arr[2] < 0) as u32) << 2 |
-        ((self.arr[3] < 0) as u32) << 3 |
-        ((self.arr[4] < 0) as u32) << 4 |
-        ((self.arr[5] < 0) as u32) << 5 |
-        ((self.arr[6] < 0) as u32) << 6 |
-        ((self.arr[7] < 0) as u32) << 7
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1010101010101010) != 0
-      } else if #[cfg(target_feature="simd128")] {
-        u16x8_bitmask(self.simd) != 0
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          vminvq_s16(self.neon) < 0
-        }
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] | v[1]) & 0x8000800080008000) != 0
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1010101010101010) == 0b1010101010101010
-      } else if #[cfg(target_feature="simd128")] {
-        u16x8_bitmask(self.simd) == 0b11111111
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          vmaxvq_s16(self.neon) < 0
-        }
-      } else {
-        let v : [u64;2] = cast(self);
-        (v[0] & v[1] & 0x8000800080008000) == 0x8000800080008000
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
-
   /// Unpack the lower half of the input and expand it to `i16` values.
   #[inline]
   #[must_use]

@@ -284,6 +284,87 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) as u32
+      } else if #[cfg(target_feature="simd128")] {
+        i8x16_bitmask(self.simd) as u32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s8(self.neon, vdupq_n_s8(0));
+
+          // select the right bit out of each lane
+          let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+          let out = vandq_u8(masked, selectbit);
+
+          // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
+          let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+          let r = vqtbl1q_u8(out, table);
+
+          // horizontally add the 16-bit lanes
+          vaddvq_u16(vreinterpretq_u16_u8(r)) as u32
+        }
+       } else {
+        ((self.arr[0] < 0) as u32) |
+        ((self.arr[1] < 0) as u32) << 1 |
+        ((self.arr[2] < 0) as u32) << 2 |
+        ((self.arr[3] < 0) as u32) << 3 |
+        ((self.arr[4] < 0) as u32) << 4 |
+        ((self.arr[5] < 0) as u32) << 5 |
+        ((self.arr[6] < 0) as u32) << 6 |
+        ((self.arr[7] < 0) as u32) << 7 |
+        ((self.arr[8] < 0) as u32) << 8 |
+        ((self.arr[9] < 0) as u32) << 9 |
+        ((self.arr[10] < 0) as u32) << 10 |
+        ((self.arr[11] < 0) as u32) << 11 |
+        ((self.arr[12] < 0) as u32) << 12 |
+        ((self.arr[13] < 0) as u32) << 13 |
+        ((self.arr[14] < 0) as u32) << 14 |
+        ((self.arr[15] < 0) as u32) << 15
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vminvq_s8(self.neon) < 0
+        }
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x8080808080808080) != 0
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) == 0b1111_1111_1111_1111
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) == 0b1111_1111_1111_1111
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vmaxvq_s8(self.neon) < 0
+        }
+      } else {
+        let v : [u64;2] = cast(self);
+        (v[0] & v[1] & 0x8080808080808080) == 0x8080808080808080
+      }
+    }
+  }
 }
 
 int_uint_consts!(i8, 16, i8x16, 128);
@@ -1221,90 +1302,6 @@ impl i8x16 {
     }
   }
 
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        move_mask_i8_m128i(self.sse) as u32
-      } else if #[cfg(target_feature="simd128")] {
-        i8x16_bitmask(self.simd) as u32
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe
-        {
-          // set all to 1 if top bit is set, else 0
-          let masked = vcltq_s8(self.neon, vdupq_n_s8(0));
-
-          // select the right bit out of each lane
-          let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
-          let out = vandq_u8(masked, selectbit);
-
-          // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
-          let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
-          let r = vqtbl1q_u8(out, table);
-
-          // horizontally add the 16-bit lanes
-          vaddvq_u16(vreinterpretq_u16_u8(r)) as u32
-        }
-       } else {
-        ((self.arr[0] < 0) as u32) |
-        ((self.arr[1] < 0) as u32) << 1 |
-        ((self.arr[2] < 0) as u32) << 2 |
-        ((self.arr[3] < 0) as u32) << 3 |
-        ((self.arr[4] < 0) as u32) << 4 |
-        ((self.arr[5] < 0) as u32) << 5 |
-        ((self.arr[6] < 0) as u32) << 6 |
-        ((self.arr[7] < 0) as u32) << 7 |
-        ((self.arr[8] < 0) as u32) << 8 |
-        ((self.arr[9] < 0) as u32) << 9 |
-        ((self.arr[10] < 0) as u32) << 10 |
-        ((self.arr[11] < 0) as u32) << 11 |
-        ((self.arr[12] < 0) as u32) << 12 |
-        ((self.arr[13] < 0) as u32) << 13 |
-        ((self.arr[14] < 0) as u32) << 14 |
-        ((self.arr[15] < 0) as u32) << 15
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        move_mask_i8_m128i(self.sse) != 0
-      } else if #[cfg(target_feature="simd128")] {
-        u8x16_bitmask(self.simd) != 0
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          vminvq_s8(self.neon) < 0
-        }
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] | v[1]) & 0x8080808080808080) != 0
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        move_mask_i8_m128i(self.sse) == 0b1111_1111_1111_1111
-      } else if #[cfg(target_feature="simd128")] {
-        u8x16_bitmask(self.simd) == 0b1111_1111_1111_1111
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe {
-          vmaxvq_s8(self.neon) < 0
-        }
-      } else {
-        let v : [u64;2] = cast(self);
-        (v[0] & v[1] & 0x8080808080808080) == 0x8080808080808080
-      }
-    }
-  }
-
   /// Returns a new vector where each element is based on the index values in
   /// `rhs`.
   ///
@@ -1369,12 +1366,6 @@ impl i8x16 {
         Self::new(out)
       }
     }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   #[inline]

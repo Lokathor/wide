@@ -200,6 +200,39 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i32x4::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) != 0
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x8000000080000000) != 0
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) == 0b1000100010001000
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) == 0b1111
+      } else {
+        let v : [u64;2] = cast(self);
+        (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
+      }
+    }
+  }
 }
 
 int_uint_consts!(u32, 4, u32x4, 128);
@@ -924,53 +957,10 @@ impl u32x4 {
 
   unsigned_fn_overflowing_div_rem!();
 
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) != 0
-      } else if #[cfg(target_feature="simd128")] {
-        u32x4_bitmask(self.simd) != 0
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] | v[1]) & 0x8000000080000000) != 0
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) == 0b1000100010001000
-      } else if #[cfg(target_feature="simd128")] {
-        u32x4_bitmask(self.simd) == 0b1111
-      } else {
-        let v : [u64;2] = cast(self);
-        (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
-
   /// Transpose matrix of 4x4 `u32` matrix. Currently only accelerated on SSE.
   #[must_use]
   #[inline]
   pub fn transpose(data: [u32x4; 4]) -> [u32x4; 4] {
     cast(i32x4::transpose(cast(data)))
-  }
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i32x4::to_bitmask(cast(self))
   }
 }

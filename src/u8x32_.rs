@@ -139,6 +139,21 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i8x32::to_bitmask(cast(self)) as u32
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    i8x32::any(cast(self))
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    i8x32::all(cast(self))
+  }
 }
 
 int_uint_consts!(u8, 32, u8x32, 256);
@@ -554,25 +569,6 @@ impl u8x32 {
 
   unsigned_fn_overflowing_div_rem!();
 
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i8x32::to_bitmask(cast(self)) as u32
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    i8x32::any(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    i8x32::all(cast(self))
-  }
-
   /// Returns a new vector with lanes selected from the lanes of the first input
   /// vector a specified in the second input vector `rhs`.
   /// The indices i in range `[0, 15]` select the i-th element of `self`. For
@@ -598,12 +594,6 @@ impl u8x32 {
   #[inline]
   pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
     cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   /// Transpose matrix of 32x32 `u8` matrix. Currently not accelerated.

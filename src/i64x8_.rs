@@ -133,6 +133,46 @@ impl_simd! {
       }
     }
   }
+
+  /// returns the bit mask for each high bit set in the vector with the lowest
+  /// lane being the lowest bit
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        // use f64 move_mask since it is the same size as i64
+        movepi64_mask_m512d(cast(self.avx512)) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
+      }
+    }
+  }
+
+  /// true if any high bits are set for any value in the vector
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(cast(self.avx512)) != 0
+      } else {
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a | b).any()
+      }
+    }
+  }
+
+  /// true if all high bits are set for every value in the vector
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
+      } else {
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a & b).all()
+      }
+    }
+  }
 }
 
 int_uint_consts!(i64, 8, i64x8, 512);
@@ -558,57 +598,6 @@ impl i64x8 {
       arr[6] as f64,
       arr[7] as f64,
     ])
-  }
-
-  /// returns the bit mask for each high bit set in the vector with the lowest
-  /// lane being the lowest bit
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx512dq")] {
-        // use f64 move_mask since it is the same size as i64
-        movepi64_mask_m512d(cast(self.avx512)) as u32
-      } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
-      }
-    }
-  }
-
-  /// true if any high bits are set for any value in the vector
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi64_mask_m512d(cast(self.avx512)) != 0
-      } else {
-        let [a, b]: [i64x4; 2] = cast(self);
-        (a | b).any()
-      }
-    }
-  }
-
-  /// true if all high bits are set for every value in the vector
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
-      } else {
-        let [a, b]: [i64x4; 2] = cast(self);
-        (a & b).all()
-      }
-    }
-  }
-
-  /// true if no high bits are set for any values of the vector
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   /// Transpose matrix of 8x8 `i64` matrix. Currently not accelerated.

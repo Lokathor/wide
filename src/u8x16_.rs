@@ -304,6 +304,21 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i8x16::to_bitmask(cast(self)) as u32
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    i8x16::any(cast(self))
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    i8x16::all(cast(self))
+  }
 }
 
 int_uint_consts!(u8, 16, u8x16, 128);
@@ -1364,31 +1379,6 @@ impl u8x16 {
   #[inline]
   pub fn swizzle_relaxed(self, rhs: u8x16) -> u8x16 {
     cast(i8x16::swizzle_relaxed(cast(self), cast(rhs)))
-  }
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i8x16::to_bitmask(cast(self)) as u32
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    i8x16::any(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    i8x16::all(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    i8x16::none(cast(self))
   }
 
   /// Transpose matrix of 16x16 `u8` matrix. Currently not accelerated.

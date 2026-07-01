@@ -133,6 +133,39 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi32_mask_m512(self.avx512) as u32
+      } else {
+        (self.b.to_bitmask() << 8) | self.a.to_bitmask()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi32_mask_m512(self.avx512) != 0
+      } else {
+        self.a.any() || self.b.any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi32_mask_m512(self.avx512) == !0_u16
+      } else {
+        self.a.all() && self.b.all()
+      }
+    }
+  }
 }
 
 macro_rules! const_f32_as_f32x16 {
@@ -1464,49 +1497,6 @@ impl f32x16 {
         }
       }
     }
-  }
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi32_mask_m512(self.avx512) as u32
-      } else {
-        (self.b.to_bitmask() << 8) | self.a.to_bitmask()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi32_mask_m512(self.avx512) != 0
-      } else {
-        self.a.any() || self.b.any()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi32_mask_m512(self.avx512) == !0_u16
-      } else {
-        self.a.all() && self.b.all()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   #[inline]

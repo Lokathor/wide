@@ -130,6 +130,21 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i16x16::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    i16x16::any(cast(self))
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    i16x16::all(cast(self))
+  }
 }
 
 int_uint_consts!(u16, 16, u16x16, 256);
@@ -593,31 +608,6 @@ impl u16x16 {
   }
 
   unsigned_fn_overflowing_div_rem!();
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i16x16::to_bitmask(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    i16x16::any(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    i16x16::all(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
 
   /// Transpose matrix of 16x16 `u16` matrix. Currently not accelerated.
   #[must_use]

@@ -133,6 +133,44 @@ impl_simd! {
       }
     }
   }
+
+  /// returns the bit mask for each high bit set in the vector with the lowest
+  /// lane being the lowest bit
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // use f64 move_mask since it is the same size as i64
+        move_mask_m256d(cast(self.avx2)) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 2)
+      }
+    }
+  }
+
+  /// true if any high bits are set for any value in the vector
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256d(cast(self.avx2)) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  /// true if all high bits are set for every value in the vector
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256d(cast(self.avx2)) == 0b1111
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
 }
 
 int_uint_consts!(i64, 4, i64x4, 256);
@@ -532,55 +570,6 @@ impl i64x4 {
   pub fn round_float(self) -> f64x4 {
     let arr: [i64; 4] = cast(self);
     cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
-  }
-
-  /// returns the bit mask for each high bit set in the vector with the lowest
-  /// lane being the lowest bit
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m256d(cast(self.avx2)) as u32
-      } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 2)
-      }
-    }
-  }
-
-  /// true if any high bits are set for any value in the vector
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_m256d(cast(self.avx2)) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
-  }
-
-  /// true if all high bits are set for every value in the vector
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_m256d(cast(self.avx2)) == 0b1111
-      } else {
-        (self.a & self.b).all()
-      }
-    }
-  }
-
-  /// true if no high bits are set for any values of the vector
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   #[inline]

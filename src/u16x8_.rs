@@ -233,6 +233,21 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i16x8::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    i16x8::any(cast(self))
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    i16x8::all(cast(self))
+  }
 }
 
 int_uint_consts!(u16, 8, u16x8, 128);
@@ -1103,31 +1118,6 @@ impl u16x8 {
         ])
       }
     }
-  }
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i16x8::to_bitmask(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    i16x8::any(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    i16x8::all(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   /// Transpose matrix of 8x8 `u16` matrix.

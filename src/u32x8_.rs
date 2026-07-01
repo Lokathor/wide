@@ -100,6 +100,33 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i32x8::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) == 0b10001000100010001000100010001000
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
 }
 
 int_uint_consts!(u32, 8, u32x8, 256);
@@ -616,43 +643,6 @@ impl u32x8 {
   }
 
   unsigned_fn_overflowing_div_rem!();
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i32x8::to_bitmask(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) == 0b10001000100010001000100010001000
-      } else {
-        (self.a & self.b).all()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
 
   /// Transpose matrix of 8x8 `u32` matrix. Currently only accelerated on AVX2.
   #[must_use]

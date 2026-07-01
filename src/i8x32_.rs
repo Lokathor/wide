@@ -124,6 +124,39 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 16)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_i8_m256i(self.avx) == -1
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
 }
 
 int_uint_consts!(i8, 32, i8x32, 256);
@@ -589,49 +622,6 @@ impl i8x32 {
   }
 
   signed_fn_overflowing_div_rem!();
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) as u32
-      } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 16)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) == -1
-      } else {
-        (self.a & self.b).all()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
 
   /// Returns a new vector with lanes selected from the lanes of the first input
   /// vector a specified in the second input vector `rhs`.

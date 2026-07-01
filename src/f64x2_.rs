@@ -202,6 +202,50 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_m128d(self.sse) as u32
+      } else if #[cfg(target_feature="simd128")] {
+        u64x2_bitmask(self.simd) as u32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          let e = vreinterpretq_u64_f64(self.neon);
+
+          (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
+        }
+      } else {
+        (((self.arr[0].to_bits() as i64) < 0) as u32) |
+        (((self.arr[1].to_bits() as i64) < 0) as u32) << 1
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        v128_any_true(self.simd)
+      } else {
+        self.to_bitmask() != 0
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        u64x2_all_true(self.simd)
+      } else {
+        // two lanes
+        self.to_bitmask() == 0b11
+      }
+    }
+  }
 }
 
 macro_rules! const_f64_as_f64x2 {
@@ -1876,56 +1920,6 @@ impl f64x2 {
         ]}
       }
     }
-  }
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        move_mask_m128d(self.sse) as u32
-      } else if #[cfg(target_feature="simd128")] {
-        u64x2_bitmask(self.simd) as u32
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe
-        {
-          let e = vreinterpretq_u64_f64(self.neon);
-
-          (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
-        }
-      } else {
-        (((self.arr[0].to_bits() as i64) < 0) as u32) |
-        (((self.arr[1].to_bits() as i64) < 0) as u32) << 1
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        v128_any_true(self.simd)
-      } else {
-        self.to_bitmask() != 0
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        u64x2_all_true(self.simd)
-      } else {
-        // two lanes
-        self.to_bitmask() == 0b11
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   #[inline]

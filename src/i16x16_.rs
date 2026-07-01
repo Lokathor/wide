@@ -133,6 +133,40 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+          let [a,b] = cast::<_,[m128i;2]>(self);
+          move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
+        } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
 }
 
 int_uint_consts!(i16, 16, i16x16, 256);
@@ -448,48 +482,6 @@ impl Not for i16x16 {
 }
 
 impl i16x16 {
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-          let [a,b] = cast::<_,[m128i;2]>(self);
-          move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
-        } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
-      } else {
-        (self.a & self.b).all()
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
-
   /// widens and sign extends to i16x16
   #[inline]
   #[must_use]

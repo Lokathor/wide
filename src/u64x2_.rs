@@ -198,6 +198,21 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i64x2::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    i64x2::any(cast(self))
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    i64x2::all(cast(self))
+  }
 }
 
 int_uint_consts!(u64, 2, u64x2, 128);
@@ -568,31 +583,6 @@ impl u64x2 {
         self.arr[0].min(self.arr[1])
       }
     }
-  }
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i64x2::to_bitmask(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    i64x2::any(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    i64x2::all(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   /// Transpose matrix of 2x2 `u64` matrix.

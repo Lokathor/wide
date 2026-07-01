@@ -12,6 +12,9 @@ macro_rules! impl_simd {
     $fn_simd_ge:item
     $fn_bitselect:item
     $fn_select:item
+    $fn_to_bitmask:item
+    $fn_any:item
+    $fn_all:item
   ) => {
     impl From<[$T; $N]> for $Simd {
       #[inline]
@@ -259,6 +262,22 @@ macro_rules! impl_simd {
       /// [`bitselect`]: Self::bitselect
       #[must_use]
       $fn_select
+
+      #[must_use]
+      #[doc(alias("movemask", "move_mask"))]
+      $fn_to_bitmask
+
+      #[must_use]
+      $fn_any
+
+      #[must_use]
+      $fn_all
+
+      #[inline]
+      #[must_use]
+      pub fn none(self) -> bool {
+        !self.any()
+      }
 
       /// Lanewise selection. This function has been renamed to [`select`].
       ///

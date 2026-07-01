@@ -133,6 +133,39 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) as u32
+      } else {
+        (self.b.to_bitmask() << 2) | self.a.to_bitmask()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) != 0
+      } else {
+        self.a.any() || self.b.any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) == 0b1111
+      } else {
+        self.a.all() && self.b.all()
+      }
+    }
+  }
 }
 
 macro_rules! const_f64_as_f64x4 {
@@ -1655,45 +1688,6 @@ impl f64x4 {
         }
       }
     }
-  }
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) as u32
-      } else {
-        (self.b.to_bitmask() << 2) | self.a.to_bitmask()
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) != 0
-      } else {
-        self.a.any() || self.b.any()
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) == 0b1111
-      } else {
-        self.a.all() && self.b.all()
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   #[inline]

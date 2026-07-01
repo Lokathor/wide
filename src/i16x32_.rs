@@ -133,6 +133,40 @@ impl_simd! {
       }
     }
   }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        // use f16 move_mask since it is the same size as i16
+        movepi16_mask_m512i(self.avx512) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 16)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi16_mask_m512i(self.avx512) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi16_mask_m512i(self.avx512) == 0xFFFFFFFF
+      } else {
+        (self.a & self.b).all()
+      }
+    }
+  }
 }
 
 int_uint_consts!(i16, 32, i16x32, 512);
@@ -626,50 +660,6 @@ impl i16x32 {
         }
       }
     }
-  }
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        // use f16 move_mask since it is the same size as i16
-        movepi16_mask_m512i(self.avx512) as u32
-      } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 16)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        movepi16_mask_m512i(self.avx512) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        movepi16_mask_m512i(self.avx512) == 0xFFFFFFFF
-      } else {
-        (self.a & self.b).all()
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
   }
 
   /// Transpose matrix of 32x32 `i16` matrix. Currently not accelerated.
