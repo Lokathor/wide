@@ -11,6 +11,20 @@ macro_rules! impl_simd {
     $fn_simd_le:item
     $fn_simd_ge:item
   ) => {
+    impl From<[$T; $N]> for $Simd {
+      #[inline]
+      fn from(arr: [$T; $N]) -> Self {
+        Self::new(arr)
+      }
+    }
+
+    impl From<$Simd> for [$T; $N] {
+      #[inline]
+      fn from(simd: $Simd) -> Self {
+        simd.to_array()
+      }
+    }
+
     impl From<$T> for $Simd {
       /// Splats the single value given across all lanes.
       #[inline]
@@ -132,6 +146,24 @@ macro_rules! impl_simd {
       #[must_use]
       pub const fn splat(elem: $T) -> Self {
         unsafe { core::mem::transmute::<[$T; $N], $Simd>([elem; $N]) }
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn to_array(self) -> [$T; $N] {
+        cast(self)
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn as_array(&self) -> &[$T; $N] {
+        cast_ref(self)
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn as_mut_array(&mut self) -> &mut [$T; $N] {
+        cast_mut(self)
       }
 
       /// Test if each element is equal to the corresponding element in `other`.

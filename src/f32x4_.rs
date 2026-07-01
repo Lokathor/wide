@@ -2440,21 +2440,6 @@ impl f32x4 {
   }
 
   #[inline]
-  pub fn to_array(self) -> [f32; 4] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[f32; 4] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [f32; 4] {
-    cast_mut(self)
-  }
-
-  #[inline]
   pub fn from_i32x4(v: i32x4) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {

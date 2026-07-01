@@ -791,21 +791,6 @@ impl i32x16 {
   }
 
   #[inline]
-  pub fn to_array(self) -> [i32; 16] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[i32; 16] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [i32; 16] {
-    cast_mut(self)
-  }
-
-  #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x16 {
     pick! {

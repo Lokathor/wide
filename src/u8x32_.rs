@@ -637,20 +637,5 @@ impl u8x32 {
     cast(i8x32::transpose(cast(data)))
   }
 
-  #[inline]
-  pub fn to_array(self) -> [u8; 32] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[u8; 32] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [u8; 32] {
-    cast_mut(self)
-  }
-
   fn_blend!();
 }

@@ -668,21 +668,6 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn to_array(self) -> [i64; 8] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[i64; 8] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [i64; 8] {
-    cast_mut(self)
-  }
-
-  #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {

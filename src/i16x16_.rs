@@ -866,20 +866,5 @@ impl i16x16 {
     ]
   }
 
-  #[inline]
-  pub fn to_array(self) -> [i16; 16] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[i16; 16] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [i16; 16] {
-    cast_mut(self)
-  }
-
   fn_blend!();
 }

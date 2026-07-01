@@ -650,20 +650,5 @@ impl u16x16 {
     cast(i16x16::transpose(cast(data)))
   }
 
-  #[inline]
-  pub fn to_array(self) -> [u16; 16] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[u16; 16] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [u16; 16] {
-    cast_mut(self)
-  }
-
   fn_blend!();
 }

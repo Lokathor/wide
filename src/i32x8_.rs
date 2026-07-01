@@ -860,21 +860,6 @@ impl i32x8 {
     }
   }
 
-  #[inline]
-  pub fn to_array(self) -> [i32; 8] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[i32; 8] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [i32; 8] {
-    cast_mut(self)
-  }
-
   fn_blend!();
 }
 

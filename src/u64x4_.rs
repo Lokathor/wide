@@ -485,21 +485,6 @@ impl u64x4 {
   }
 
   #[inline]
-  pub fn to_array(self) -> [u64; 4] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[u64; 4] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [u64; 4] {
-    cast_mut(self)
-  }
-
-  #[inline]
   #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     self.simd_lt(rhs).select(self, rhs)

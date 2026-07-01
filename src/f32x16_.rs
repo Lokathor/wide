@@ -2072,24 +2072,6 @@ impl f32x16 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn to_array(self) -> [f32; 16] {
-    cast(self)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn as_array(&self) -> &[f32; 16] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn as_mut_array(&mut self) -> &mut [f32; 16] {
-    cast_mut(self)
-  }
-
-  #[inline]
   pub fn from_i32x16(v: i32x16) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

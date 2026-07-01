@@ -2272,24 +2272,6 @@ impl f64x8 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn to_array(self) -> [f64; 8] {
-    cast(self)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn as_array(&self) -> &[f64; 8] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn as_mut_array(&mut self) -> &mut [f64; 8] {
-    cast_mut(self)
-  }
-
-  #[inline]
   pub fn from_i32x8(v: i32x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

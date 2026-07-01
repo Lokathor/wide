@@ -2535,21 +2535,6 @@ impl f64x2 {
     }
   }
 
-  #[inline]
-  pub fn to_array(self) -> [f64; 2] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[f64; 2] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [f64; 2] {
-    cast_mut(self)
-  }
-
   /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the
   /// higher two `i32` lanes)
   #[inline]

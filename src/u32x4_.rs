@@ -998,20 +998,5 @@ impl u32x4 {
     i32x4::to_bitmask(cast(self))
   }
 
-  #[inline]
-  pub fn to_array(self) -> [u32; 4] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[u32; 4] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [u32; 4] {
-    cast_mut(self)
-  }
-
   fn_blend!();
 }

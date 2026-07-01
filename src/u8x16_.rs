@@ -1422,20 +1422,5 @@ impl u8x16 {
     cast(i8x16::transpose(cast(data)))
   }
 
-  #[inline]
-  pub fn to_array(self) -> [u8; 16] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[u8; 16] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [u8; 16] {
-    cast_mut(self)
-  }
-
   fn_blend!();
 }

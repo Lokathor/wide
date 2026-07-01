@@ -1131,20 +1131,5 @@ impl i32x4 {
     }
   }
 
-  #[inline]
-  pub fn to_array(self) -> [i32; 4] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[i32; 4] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [i32; 4] {
-    cast_mut(self)
-  }
-
   fn_blend!();
 }
