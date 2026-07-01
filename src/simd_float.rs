@@ -114,6 +114,12 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_fast_min
 
+      #[inline]
+      #[must_use]
+      pub fn midpoint(self, other: Self) -> Self {
+        (self + other) * 0.5
+      }
+
       /// Restrict a value to a certain interval unless it is NaN.
       ///
       /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`,

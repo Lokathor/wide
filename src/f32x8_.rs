@@ -723,12 +723,6 @@ impl f32x8 {
     }
   }
 
-  #[inline]
-  #[must_use]
-  pub fn midpoint(self, other: Self) -> Self {
-    (self + other) * 0.5
-  }
-
   /// Returns the nearest integers to `self`. If a value is half-way between two
   /// integers, round away from `0.0`.
   ///
