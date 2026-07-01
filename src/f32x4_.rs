@@ -887,6 +887,136 @@ impl_simd_float! {
       }
     }
   }
+
+  ///
+  /// # Platform-specific behavior
+  /// - On `x86`/`x86_64` with FMA: Uses `vfmadd` (single rounding, best
+  ///   accuracy)
+  /// - On ARM64 with NEON: Uses `vfmaq_f32` (single rounding, best accuracy)
+  /// - Without FMA support: Uses `(self * m) + a` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x4;
+  /// let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  /// let b = f32x4::from([5.0, 6.0, 7.0, 8.0]);
+  /// let c = f32x4::from([9.0, 10.0, 11.0, 12.0]);
+  ///
+  /// let result = a.mul_add(b, c);
+  ///
+  /// let expected = f32x4::from([14.0, 22.0, 32.0, 44.0]);
+  /// assert_eq!(result, expected);
+  /// ```
+  #[inline]
+  pub fn mul_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_add_m128(self.sse, m.sse, a.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vfmaq_f32(a.neon, self.neon, m.neon) } }
+      } else {
+        (self * m) + a
+      }
+    }
+  }
+
+  ///
+  /// # Platform-specific behavior
+  /// - On `x86`/`x86_64` with FMA: Uses `vfmsub` (single rounding, best
+  ///   accuracy)
+  /// - On ARM64 with NEON: Uses `vfmaq_f32(-s, self, m)` (single rounding, best
+  ///   accuracy)
+  /// - Without FMA support: Uses `(self * m) - s` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x4;
+  /// let a = f32x4::from([10.0, 20.0, 30.0, 40.0]);
+  /// let b = f32x4::from([2.0, 3.0, 4.0, 5.0]);
+  /// let c = f32x4::from([5.0, 10.0, 15.0, 20.0]);
+  ///
+  /// let result = a.mul_sub(b, c);
+  ///
+  /// let expected = f32x4::from([15.0, 50.0, 105.0, 180.0]);
+  /// assert_eq!(result, expected);
+  /// ```
+  #[inline]
+  pub fn mul_sub(self, m: Self, s: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_sub_m128(self.sse, m.sse, s.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vfmaq_f32(vnegq_f32(s.neon), self.neon, m.neon) } }
+      } else {
+        (self * m) - s
+      }
+    }
+  }
+
+  ///
+  /// # Platform-specific behavior
+  /// - On `x86`/`x86_64` with FMA: Uses `vfnmadd` (single rounding, best
+  ///   accuracy)
+  /// - On ARM64 with NEON: Uses `vfmsq_f32` (single rounding, best accuracy)
+  /// - Without FMA support: Uses `a - (self * m)` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x4;
+  /// let a = f32x4::from([3.0, 4.0, 5.0, 6.0]);
+  /// let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  /// let c = f32x4::from([10.0, 20.0, 30.0, 40.0]);
+  ///
+  /// let result = a.mul_neg_add(b, c);
+  ///
+  /// let expected = f32x4::from([4.0, 12.0, 20.0, 28.0]);
+  /// assert_eq!(result, expected);
+  /// ```
+  #[inline]
+  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_neg_add_m128(self.sse, m.sse, a.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vfmsq_f32(a.neon, self.neon, m.neon) } }
+      } else {
+        a - (self * m)
+      }
+    }
+  }
+
+  ///
+  /// # Platform-specific behavior
+  /// - On `x86`/`x86_64` with FMA: Uses `vfnmsub` (single rounding, best
+  ///   accuracy)
+  /// - On ARM64 with NEON: Uses `-(vfmaq_f32(s, self, m))` (single rounding,
+  ///   best accuracy)
+  /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
+  ///
+  /// # Examples
+  /// ```
+  /// # use wide::f32x4;
+  /// let a = f32x4::from([3.0, 4.0, 5.0, 6.0]);
+  /// let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
+  /// let c = f32x4::from([1.0, 2.0, 3.0, 4.0]);
+  ///
+  /// let result = a.mul_neg_sub(b, c);
+  ///
+  /// let expected = f32x4::from([-7.0, -10.0, -13.0, -16.0]);
+  /// assert_eq!(result, expected);
+  /// ```
+  #[inline]
+  pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
+        Self { sse: fused_mul_neg_sub_m128(self.sse, m.sse, s.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vnegq_f32(vfmaq_f32(s.neon, self.neon, m.neon)) } }
+      } else {
+        -(self * m) - s
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for f32x4 {}
@@ -1174,160 +1304,6 @@ impl BitXor for f32x4 {
 }
 
 impl f32x4 {
-  /// Performs a multiply-add operation: `self * m + a`
-  ///
-  /// When hardware FMA support is available, this computes the result with a
-  /// single rounding operation. Without FMA support, it falls back to separate
-  /// multiply and add operations with two roundings.
-  ///
-  /// # Platform-specific behavior
-  /// - On `x86`/`x86_64` with FMA: Uses `vfmadd` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `vfmaq_f32` (single rounding, best accuracy)
-  /// - Without FMA support: Uses `(self * m) + a` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
-  /// let b = f32x4::from([5.0, 6.0, 7.0, 8.0]);
-  /// let c = f32x4::from([9.0, 10.0, 11.0, 12.0]);
-  ///
-  /// let result = a.mul_add(b, c);
-  ///
-  /// let expected = f32x4::from([14.0, 22.0, 32.0, 44.0]);
-  /// assert_eq!(result, expected);
-  /// ```
-  #[inline]
-  #[must_use]
-  pub fn mul_add(self, m: Self, a: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_add_m128(self.sse, m.sse, a.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f32(a.neon, self.neon, m.neon) } }
-      } else {
-        (self * m) + a
-      }
-    }
-  }
-
-  /// Performs a multiply-subtract operation: `self * m - s`
-  ///
-  /// When hardware FMA support is available, this computes the result with a
-  /// single rounding operation. Without FMA support, it falls back to separate
-  /// multiply and subtract operations with two roundings.
-  ///
-  /// # Platform-specific behavior
-  /// - On `x86`/`x86_64` with FMA: Uses `vfmsub` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `vfmaq_f32(-s, self, m)` (single rounding, best
-  ///   accuracy)
-  /// - Without FMA support: Uses `(self * m) - s` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([10.0, 20.0, 30.0, 40.0]);
-  /// let b = f32x4::from([2.0, 3.0, 4.0, 5.0]);
-  /// let c = f32x4::from([5.0, 10.0, 15.0, 20.0]);
-  ///
-  /// let result = a.mul_sub(b, c);
-  ///
-  /// let expected = f32x4::from([15.0, 50.0, 105.0, 180.0]);
-  /// assert_eq!(result, expected);
-  /// ```
-  #[inline]
-  #[must_use]
-  pub fn mul_sub(self, m: Self, s: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_sub_m128(self.sse, m.sse, s.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f32(vnegq_f32(s.neon), self.neon, m.neon) } }
-      } else {
-        (self * m) - s
-      }
-    }
-  }
-
-  /// Performs a negative multiply-add operation: `a - (self * m)`
-  ///
-  /// When hardware FMA support is available, this computes the result with a
-  /// single rounding operation. Without FMA support, it falls back to separate
-  /// operations with two roundings.
-  ///
-  /// # Platform-specific behavior
-  /// - On `x86`/`x86_64` with FMA: Uses `vfnmadd` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `vfmsq_f32` (single rounding, best accuracy)
-  /// - Without FMA support: Uses `a - (self * m)` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([3.0, 4.0, 5.0, 6.0]);
-  /// let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
-  /// let c = f32x4::from([10.0, 20.0, 30.0, 40.0]);
-  ///
-  /// let result = a.mul_neg_add(b, c);
-  ///
-  /// let expected = f32x4::from([4.0, 12.0, 20.0, 28.0]);
-  /// assert_eq!(result, expected);
-  /// ```
-  #[inline]
-  #[must_use]
-  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_neg_add_m128(self.sse, m.sse, a.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmsq_f32(a.neon, self.neon, m.neon) } }
-      } else {
-        a - (self * m)
-      }
-    }
-  }
-
-  /// Performs a negative multiply-subtract operation: `-(self * m) - s`
-  ///
-  /// When hardware FMA support is available, this computes the result with a
-  /// single rounding operation. Without FMA support, it falls back to separate
-  /// operations with two roundings.
-  ///
-  /// # Platform-specific behavior
-  /// - On `x86`/`x86_64` with FMA: Uses `vfnmsub` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `-(vfmaq_f32(s, self, m))` (single rounding,
-  ///   best accuracy)
-  /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([3.0, 4.0, 5.0, 6.0]);
-  /// let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
-  /// let c = f32x4::from([1.0, 2.0, 3.0, 4.0]);
-  ///
-  /// let result = a.mul_neg_sub(b, c);
-  ///
-  /// let expected = f32x4::from([-7.0, -10.0, -13.0, -16.0]);
-  /// assert_eq!(result, expected);
-  /// ```
-  #[inline]
-  #[must_use]
-  pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_neg_sub_m128(self.sse, m.sse, s.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vnegq_f32(vfmaq_f32(s.neon, self.neon, m.neon)) } }
-      } else {
-        -(self * m) - s
-      }
-    }
-  }
-
   #[inline]
   #[must_use]
   pub fn div_euclid(self, rhs: Self) -> Self {
