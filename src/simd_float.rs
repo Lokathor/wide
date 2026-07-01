@@ -35,6 +35,10 @@ macro_rules! impl_simd_float {
     $fn_pow_simd:item
     $fn_powf:item
     $fn_sqrt:item
+    $fn_exp:item
+    $fn_exp2:item
+    $fn_ln:item
+    $fn_cbrt:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -292,6 +296,33 @@ macro_rules! impl_simd_float {
 
       #[must_use]
       $fn_sqrt
+
+      #[must_use]
+      $fn_exp
+
+      /// Returns `2^self`.
+      #[must_use]
+      $fn_exp2
+
+      /// Natural log (ln(x))
+      #[must_use]
+      $fn_ln
+
+      #[inline]
+      #[must_use]
+      pub fn log2(self) -> Self {
+        Self::ln(self) * Self::LOG2_E
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn log10(self) -> Self {
+        Self::ln(self) * Self::LOG10_E
+      }
+
+      /// Calculates the cube root: `self^(1/3)`.
+      #[must_use]
+      $fn_cbrt
     }
   };
 }

@@ -846,6 +846,233 @@ impl_simd_float! {
       }
     }
   }
+
+  /// Calculate the exponent of a packed `f64x8`
+  #[inline]
+  pub fn exp(self) -> Self {
+    const_f64_as_f64x8!(P2, 1.0 / 2.0);
+    const_f64_as_f64x8!(P3, 1.0 / 6.0);
+    const_f64_as_f64x8!(P4, 1.0 / 24.0);
+    const_f64_as_f64x8!(P5, 1.0 / 120.0);
+    const_f64_as_f64x8!(P6, 1.0 / 720.0);
+    const_f64_as_f64x8!(P7, 1.0 / 5040.0);
+    const_f64_as_f64x8!(P8, 1.0 / 40320.0);
+    const_f64_as_f64x8!(P9, 1.0 / 362880.0);
+    const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
+    const_f64_as_f64x8!(P11, 1.0 / 39916800.0);
+    const_f64_as_f64x8!(P12, 1.0 / 479001600.0);
+    const_f64_as_f64x8!(P13, 1.0 / 6227020800.0);
+    // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
+    // following fdlibm's approach (Sun Microsystems, https://www.netlib.org/fdlibm/ e_exp.c).
+    // Values chosen so LN2D_HI + LN2D_LO = ln(2) to full f64 precision.
+    const_f64_as_f64x8!(LN2D_HI, 0.693145751953125);
+    const_f64_as_f64x8!(LN2D_LO, 1.42860682030941723212E-6);
+    let max_x = f64x8::from(709.783);
+    let min_x = f64x8::from(-744.79);
+    let finite = self.is_finite();
+    // x < min_x: e^x underflows to 0 -- skip the entire pipeline
+    let neg_underflow = self.simd_lt(min_x) & finite;
+    if neg_underflow.all() {
+      return Self::ZERO;
+    }
+    let max_r = f64x8::from(1023.0);
+    let r = (self * Self::LOG2_E).round_ties_even();
+    let big = r.simd_gt(max_r);
+    let r_safe = big.select(max_r, r);
+    let excess = r - max_r;
+    let excess = big.select(excess, Self::ZERO);
+    let scale = Self::vm_pow2n(excess);
+    let x = r.mul_neg_add(LN2D_HI, self);
+    let x = r.mul_neg_add(LN2D_LO, x);
+    let z =
+      polynomial_13!(x, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13);
+    let n2 = Self::vm_pow2n(r_safe);
+    let z = (z + Self::ONE) * scale * n2;
+    let nan_mask = self.is_nan();
+    let mut result = nan_mask.select(Self::nan_pow(), z);
+    let pos_overflow = self.simd_gt(max_x) & finite;
+    result = pos_overflow.select(Self::infinity(), result);
+    result = neg_underflow.select(Self::ZERO, result);
+    let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
+    result = pos_inf.select(Self::infinity(), result);
+    let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
+    result = neg_inf.select(Self::ZERO, result);
+    result
+  }
+
+  #[inline]
+  pub fn exp2(self) -> Self {
+    const_f64_as_f64x8!(P2, 1.0 / 2.0);
+    const_f64_as_f64x8!(P3, 1.0 / 6.0);
+    const_f64_as_f64x8!(P4, 1.0 / 24.0);
+    const_f64_as_f64x8!(P5, 1.0 / 120.0);
+    const_f64_as_f64x8!(P6, 1.0 / 720.0);
+    const_f64_as_f64x8!(P7, 1.0 / 5040.0);
+    const_f64_as_f64x8!(P8, 1.0 / 40320.0);
+    const_f64_as_f64x8!(P9, 1.0 / 362880.0);
+    const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
+
+    // max_x = log2(f64::MAX) ≈ 1023.9999999999999
+    // min_x = log2(f64::MIN_POSITIVE) - 52 ≈ -1022 - 52 = -1074
+    let max_x = f64x8::from(1023.9999999999999);
+    let min_x = f64x8::from(-1074.5);
+    let finite = self.is_finite();
+    let neg_underflow = self.simd_lt(min_x) & finite;
+    if neg_underflow.all() {
+      return Self::ZERO;
+    }
+
+    let round = self.round_ties_even();
+    let max_r = f64x8::from(1023.0);
+    let big = round.simd_gt(max_r);
+    let r_safe = big.select(max_r, round);
+    let excess = round - max_r;
+    let excess = big.select(excess, Self::ZERO);
+    let scale = Self::vm_pow2n(excess);
+
+    let fract = (self - round) * Self::LN_2;
+    let fract_partial_exp2 =
+      polynomial_8!(fract, P2, P3, P4, P5, P6, P7, P8, P9, P10);
+    let fract2 = fract * fract;
+    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+
+    let n2 = Self::vm_pow2n(r_safe);
+    let result = fract_exp2 * scale * n2;
+
+    let nan_mask = self.is_nan();
+    let mut result = nan_mask.select(Self::nan_pow(), result);
+    let pos_overflow = self.simd_gt(max_x) & finite;
+    result = pos_overflow.select(Self::infinity(), result);
+    result = neg_underflow.select(Self::ZERO, result);
+    let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
+    result = pos_inf.select(Self::infinity(), result);
+    let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
+    result = neg_inf.select(Self::ZERO, result);
+    result
+  }
+
+  #[inline]
+  pub fn ln(self) -> Self {
+    const_f64_as_f64x8!(HALF, 0.5);
+    const_f64_as_f64x8!(P0, 7.70838733755885391666E0);
+    const_f64_as_f64x8!(P1, 1.79368678507819816313E1);
+    const_f64_as_f64x8!(P2, 1.44989225341610930846E1);
+    const_f64_as_f64x8!(P3, 4.70579119878881725854E0);
+    const_f64_as_f64x8!(P4, 4.97494994976747001425E-1);
+    const_f64_as_f64x8!(P5, 1.01875663804580931796E-4);
+
+    const_f64_as_f64x8!(Q0, 2.31251620126765340583E1);
+    const_f64_as_f64x8!(Q1, 7.11544750618563894466E1);
+    const_f64_as_f64x8!(Q2, 8.29875266912776603211E1);
+    const_f64_as_f64x8!(Q3, 4.52279145837532221105E1);
+    const_f64_as_f64x8!(Q4, 1.12873587189167450590E1);
+    // LN2F_HI/LO from fdlibm (Freely Distributable LIBM)
+    // Sun Microsystems, Inc. https://www.netlib.org/fdlibm/
+    // e_log.c: bit-exact double-double decomposition of ln(2) for f64.
+    // Replaced the original f32-literals (0.693359375, -2.12194440e-4)
+    // which had ~10 significant digits, causing ~630 ULP error in f64 ln.
+    const_f64_as_f64x8!(LN2F_HI, f64::from_bits(0x3FE62E42FEE00000));
+    const_f64_as_f64x8!(LN2F_LO, f64::from_bits(0x3DEA39EF35793C76));
+    const_f64_as_f64x8!(VM_SQRT2, 1.414213562373095048801);
+    const_f64_as_f64x8!(VM_SMALLEST_NORMAL, 2.2250738585072014E-308);
+
+    let x1 = self;
+    let x = Self::fraction_2(x1);
+    let e = Self::exponent(x1);
+    let mask = x.simd_gt(VM_SQRT2 * HALF);
+    let x = (!mask).select(x + x, x);
+    let fe = mask.select(e + Self::ONE, e);
+    let x = x - Self::ONE;
+    let px = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
+    let x2 = x * x;
+    let px = x2 * x * px;
+    let qx = polynomial_5n!(x, Q0, Q1, Q2, Q3, Q4);
+    let res = px / qx;
+    let res = fe.mul_add(LN2F_LO, res);
+    let res = res + x2.mul_neg_add(HALF, x);
+    let res = fe.mul_add(LN2F_HI, res);
+    let overflow = !self.is_finite();
+    let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
+    let mask = overflow | underflow;
+    if !mask.any() {
+      res
+    } else {
+      let is_zero = self.is_zero_or_subnormal();
+      let res = underflow.select(Self::nan_log(), res);
+      // Note: is_zero_or_subnormal() lumps subnormals (exponent==0) with zero.
+      // Both get -Inf here. True subnormal inputs (~5e-324..2.225e-308) should
+      // produce a finite negative result, but are vanishingly rare in
+      // practice.
+      let res = is_zero.select(-Self::infinity(), res);
+      let res = overflow.select(self, res);
+      // This must come *after* overflow.blend to overwrite ln(-∞) = -∞ to NaN
+      let res = (!self.is_finite() & self.is_sign_negative())
+        .select(Self::nan_log(), res);
+      res
+    }
+  }
+
+  #[inline]
+  pub fn cbrt(self) -> Self {
+    let a = self.abs();
+    let zero = a.simd_eq(Self::ZERO);
+    if zero.all() {
+      return self; // preserves -0.0
+    }
+    let inf = a.is_inf();
+    let nan = self.is_nan();
+
+    const SUBN_SCALE: f64 = 1.8014398509481984e16;
+    const SUBN_CBRT: f64 = 262144.0;
+    let tiny = a.simd_lt(Self::from(f64::MIN_POSITIVE));
+    let a = tiny.select(a * Self::from(SUBN_SCALE), a);
+
+    let e = Self::exponent(a) + Self::ONE;
+    let d = Self::fraction_2(a);
+
+    // C0..C5 from SLEEF's minimax polynomial for 1/cbrt(d) on [0.5, 1.0)
+    // Naoki Shibata et al., "SLEEF: A Portable Vectorized Library of C99
+    // Mathematical Functions", https://sleef.org / https://github.com/shibatch/sleef
+    // Licensed under the Boost Software License 1.0.
+    const_f64_as_f64x8!(C0, 2.2307275302496609725722);
+    const_f64_as_f64x8!(C1, -3.85841935510444988821632);
+    const_f64_as_f64x8!(C2, 6.03990368989458747961407);
+    const_f64_as_f64x8!(C3, -5.73353060922947843636166);
+    const_f64_as_f64x8!(C4, 2.96155103020039511818595);
+    const_f64_as_f64x8!(C5, -0.640245898480692909870982);
+    let mut x = polynomial_5!(d, C0, C1, C2, C3, C4, C5);
+
+    // Newton for 1/cbrt: x = x - (d * x^4 - x) / 3.
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    x = x - d.mul_add(x4, -x) * Self::from(1.0 / 3.0);
+
+    // cbrt(d) = d * x^2, then polish
+    let mut y = (d * x) * x;
+    let yx = y * x;
+    let t = Self::from(2.0 / 3.0);
+    y = y - t * y * (yx - Self::ONE);
+
+    // Scale by 2^(e/3) = 2^k * 2^(r/3)
+    let three = Self::from(3.0);
+    let two = Self::from(2.0);
+    let neg = e.simd_lt(Self::ZERO);
+    let e_adj = neg.select(e - two, e);
+    let k = (e_adj / three).trunc();
+    let r = e - three * k;
+    const_f64_as_f64x8!(CBRT2, 1.2599210498948732);
+    const_f64_as_f64x8!(CBRT4, 1.5874010519681994);
+    y = r.simd_eq(Self::ONE).select(y * CBRT2, y);
+    y = r.simd_eq(two).select(y * CBRT4, y);
+    y *= Self::vm_pow2n(k);
+    y = tiny.select(y / Self::from(SUBN_CBRT), y);
+
+    let result = y.flip_signs(self);
+    let result = nan.select(self, result);
+    let result = zero.select(self, result);
+    let result = inf.select(self, result);
+    result
+  }
 }
 
 unsafe impl Zeroable for f64x8 {}
@@ -1637,70 +1864,6 @@ impl f64x8 {
     large.select(Self::ONE.flip_signs(self), result)
   }
 
-  /// Calculates the cube root: `self^(1/3)`.
-  #[inline]
-  #[must_use]
-  pub fn cbrt(self) -> Self {
-    let a = self.abs();
-    let zero = a.simd_eq(Self::ZERO);
-    if zero.all() {
-      return self; // preserves -0.0
-    }
-    let inf = a.is_inf();
-    let nan = self.is_nan();
-
-    const SUBN_SCALE: f64 = 1.8014398509481984e16;
-    const SUBN_CBRT: f64 = 262144.0;
-    let tiny = a.simd_lt(Self::from(f64::MIN_POSITIVE));
-    let a = tiny.select(a * Self::from(SUBN_SCALE), a);
-
-    let e = Self::exponent(a) + Self::ONE;
-    let d = Self::fraction_2(a);
-
-    // C0..C5 from SLEEF's minimax polynomial for 1/cbrt(d) on [0.5, 1.0)
-    // Naoki Shibata et al., "SLEEF: A Portable Vectorized Library of C99
-    // Mathematical Functions", https://sleef.org / https://github.com/shibatch/sleef
-    // Licensed under the Boost Software License 1.0.
-    const_f64_as_f64x8!(C0, 2.2307275302496609725722);
-    const_f64_as_f64x8!(C1, -3.85841935510444988821632);
-    const_f64_as_f64x8!(C2, 6.03990368989458747961407);
-    const_f64_as_f64x8!(C3, -5.73353060922947843636166);
-    const_f64_as_f64x8!(C4, 2.96155103020039511818595);
-    const_f64_as_f64x8!(C5, -0.640245898480692909870982);
-    let mut x = polynomial_5!(d, C0, C1, C2, C3, C4, C5);
-
-    // Newton for 1/cbrt: x = x - (d * x^4 - x) / 3.
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    x = x - d.mul_add(x4, -x) * Self::from(1.0 / 3.0);
-
-    // cbrt(d) = d * x^2, then polish
-    let mut y = (d * x) * x;
-    let yx = y * x;
-    let t = Self::from(2.0 / 3.0);
-    y = y - t * y * (yx - Self::ONE);
-
-    // Scale by 2^(e/3) = 2^k * 2^(r/3)
-    let three = Self::from(3.0);
-    let two = Self::from(2.0);
-    let neg = e.simd_lt(Self::ZERO);
-    let e_adj = neg.select(e - two, e);
-    let k = (e_adj / three).trunc();
-    let r = e - three * k;
-    const_f64_as_f64x8!(CBRT2, 1.2599210498948732);
-    const_f64_as_f64x8!(CBRT4, 1.5874010519681994);
-    y = r.simd_eq(Self::ONE).select(y * CBRT2, y);
-    y = r.simd_eq(two).select(y * CBRT4, y);
-    y *= Self::vm_pow2n(k);
-    y = tiny.select(y / Self::from(SUBN_CBRT), y);
-
-    let result = y.flip_signs(self);
-    let result = nan.select(self, result);
-    let result = zero.select(self, result);
-    let result = inf.select(self, result);
-    result
-  }
-
   #[inline]
   fn vm_pow2n(self) -> Self {
     const_f64_as_f64x8!(pow2_52, 4503599627370496.0);
@@ -1723,60 +1886,6 @@ impl f64x8 {
     } else {
       std_result
     }
-  }
-
-  /// Calculate the exponent of a packed `f64x8`
-  #[inline]
-  #[must_use]
-  pub fn exp(self) -> Self {
-    const_f64_as_f64x8!(P2, 1.0 / 2.0);
-    const_f64_as_f64x8!(P3, 1.0 / 6.0);
-    const_f64_as_f64x8!(P4, 1.0 / 24.0);
-    const_f64_as_f64x8!(P5, 1.0 / 120.0);
-    const_f64_as_f64x8!(P6, 1.0 / 720.0);
-    const_f64_as_f64x8!(P7, 1.0 / 5040.0);
-    const_f64_as_f64x8!(P8, 1.0 / 40320.0);
-    const_f64_as_f64x8!(P9, 1.0 / 362880.0);
-    const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
-    const_f64_as_f64x8!(P11, 1.0 / 39916800.0);
-    const_f64_as_f64x8!(P12, 1.0 / 479001600.0);
-    const_f64_as_f64x8!(P13, 1.0 / 6227020800.0);
-    // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
-    // following fdlibm's approach (Sun Microsystems, https://www.netlib.org/fdlibm/ e_exp.c).
-    // Values chosen so LN2D_HI + LN2D_LO = ln(2) to full f64 precision.
-    const_f64_as_f64x8!(LN2D_HI, 0.693145751953125);
-    const_f64_as_f64x8!(LN2D_LO, 1.42860682030941723212E-6);
-    let max_x = f64x8::from(709.783);
-    let min_x = f64x8::from(-744.79);
-    let finite = self.is_finite();
-    // x < min_x: e^x underflows to 0 -- skip the entire pipeline
-    let neg_underflow = self.simd_lt(min_x) & finite;
-    if neg_underflow.all() {
-      return Self::ZERO;
-    }
-    let max_r = f64x8::from(1023.0);
-    let r = (self * Self::LOG2_E).round_ties_even();
-    let big = r.simd_gt(max_r);
-    let r_safe = big.select(max_r, r);
-    let excess = r - max_r;
-    let excess = big.select(excess, Self::ZERO);
-    let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
-    let z =
-      polynomial_13!(x, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13);
-    let n2 = Self::vm_pow2n(r_safe);
-    let z = (z + Self::ONE) * scale * n2;
-    let nan_mask = self.is_nan();
-    let mut result = nan_mask.select(Self::nan_pow(), z);
-    let pos_overflow = self.simd_gt(max_x) & finite;
-    result = pos_overflow.select(Self::infinity(), result);
-    result = neg_underflow.select(Self::ZERO, result);
-    let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
-    result = pos_inf.select(Self::infinity(), result);
-    let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
-    result = neg_inf.select(Self::ZERO, result);
-    result
   }
 
   /// Calculate `e^self - 1` for each lane.
@@ -1842,59 +1951,6 @@ impl f64x8 {
     result = neg_inf.select(-Self::ONE, result);
     let is_zero = self.simd_eq(Self::ZERO);
     result = is_zero.select(self, result);
-    result
-  }
-
-  /// Returns `2^self`.
-  #[inline]
-  #[must_use]
-  pub fn exp2(self) -> Self {
-    const_f64_as_f64x8!(P2, 1.0 / 2.0);
-    const_f64_as_f64x8!(P3, 1.0 / 6.0);
-    const_f64_as_f64x8!(P4, 1.0 / 24.0);
-    const_f64_as_f64x8!(P5, 1.0 / 120.0);
-    const_f64_as_f64x8!(P6, 1.0 / 720.0);
-    const_f64_as_f64x8!(P7, 1.0 / 5040.0);
-    const_f64_as_f64x8!(P8, 1.0 / 40320.0);
-    const_f64_as_f64x8!(P9, 1.0 / 362880.0);
-    const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
-
-    // max_x = log2(f64::MAX) ≈ 1023.9999999999999
-    // min_x = log2(f64::MIN_POSITIVE) - 52 ≈ -1022 - 52 = -1074
-    let max_x = f64x8::from(1023.9999999999999);
-    let min_x = f64x8::from(-1074.5);
-    let finite = self.is_finite();
-    let neg_underflow = self.simd_lt(min_x) & finite;
-    if neg_underflow.all() {
-      return Self::ZERO;
-    }
-
-    let round = self.round_ties_even();
-    let max_r = f64x8::from(1023.0);
-    let big = round.simd_gt(max_r);
-    let r_safe = big.select(max_r, round);
-    let excess = round - max_r;
-    let excess = big.select(excess, Self::ZERO);
-    let scale = Self::vm_pow2n(excess);
-
-    let fract = (self - round) * Self::LN_2;
-    let fract_partial_exp2 =
-      polynomial_8!(fract, P2, P3, P4, P5, P6, P7, P8, P9, P10);
-    let fract2 = fract * fract;
-    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
-
-    let n2 = Self::vm_pow2n(r_safe);
-    let result = fract_exp2 * scale * n2;
-
-    let nan_mask = self.is_nan();
-    let mut result = nan_mask.select(Self::nan_pow(), result);
-    let pos_overflow = self.simd_gt(max_x) & finite;
-    result = pos_overflow.select(Self::infinity(), result);
-    result = neg_underflow.select(Self::ZERO, result);
-    let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
-    result = pos_inf.select(Self::infinity(), result);
-    let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
-    result = neg_inf.select(Self::ZERO, result);
     result
   }
 
@@ -1978,69 +2034,6 @@ impl f64x8 {
     }
   }
 
-  /// Natural log (ln(x))
-  #[inline]
-  #[must_use]
-  pub fn ln(self) -> Self {
-    const_f64_as_f64x8!(HALF, 0.5);
-    const_f64_as_f64x8!(P0, 7.70838733755885391666E0);
-    const_f64_as_f64x8!(P1, 1.79368678507819816313E1);
-    const_f64_as_f64x8!(P2, 1.44989225341610930846E1);
-    const_f64_as_f64x8!(P3, 4.70579119878881725854E0);
-    const_f64_as_f64x8!(P4, 4.97494994976747001425E-1);
-    const_f64_as_f64x8!(P5, 1.01875663804580931796E-4);
-
-    const_f64_as_f64x8!(Q0, 2.31251620126765340583E1);
-    const_f64_as_f64x8!(Q1, 7.11544750618563894466E1);
-    const_f64_as_f64x8!(Q2, 8.29875266912776603211E1);
-    const_f64_as_f64x8!(Q3, 4.52279145837532221105E1);
-    const_f64_as_f64x8!(Q4, 1.12873587189167450590E1);
-    // LN2F_HI/LO from fdlibm (Freely Distributable LIBM)
-    // Sun Microsystems, Inc. https://www.netlib.org/fdlibm/
-    // e_log.c: bit-exact double-double decomposition of ln(2) for f64.
-    // Replaced the original f32-literals (0.693359375, -2.12194440e-4)
-    // which had ~10 significant digits, causing ~630 ULP error in f64 ln.
-    const_f64_as_f64x8!(LN2F_HI, f64::from_bits(0x3FE62E42FEE00000));
-    const_f64_as_f64x8!(LN2F_LO, f64::from_bits(0x3DEA39EF35793C76));
-    const_f64_as_f64x8!(VM_SQRT2, 1.414213562373095048801);
-    const_f64_as_f64x8!(VM_SMALLEST_NORMAL, 2.2250738585072014E-308);
-
-    let x1 = self;
-    let x = Self::fraction_2(x1);
-    let e = Self::exponent(x1);
-    let mask = x.simd_gt(VM_SQRT2 * HALF);
-    let x = (!mask).select(x + x, x);
-    let fe = mask.select(e + Self::ONE, e);
-    let x = x - Self::ONE;
-    let px = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
-    let x2 = x * x;
-    let px = x2 * x * px;
-    let qx = polynomial_5n!(x, Q0, Q1, Q2, Q3, Q4);
-    let res = px / qx;
-    let res = fe.mul_add(LN2F_LO, res);
-    let res = res + x2.mul_neg_add(HALF, x);
-    let res = fe.mul_add(LN2F_HI, res);
-    let overflow = !self.is_finite();
-    let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
-    let mask = overflow | underflow;
-    if !mask.any() {
-      res
-    } else {
-      let is_zero = self.is_zero_or_subnormal();
-      let res = underflow.select(Self::nan_log(), res);
-      // Note: is_zero_or_subnormal() lumps subnormals (exponent==0) with zero.
-      // Both get -Inf here. True subnormal inputs (~5e-324..2.225e-308) should
-      // produce a finite negative result, but are vanishingly rare in
-      // practice.
-      let res = is_zero.select(-Self::infinity(), res);
-      let res = overflow.select(self, res);
-      // This must come *after* overflow.blend to overwrite ln(-∞) = -∞ to NaN
-      let res = (!self.is_finite() & self.is_sign_negative())
-        .select(Self::nan_log(), res);
-      res
-    }
-  }
-
   /// Calculate `ln(1 + self)` for each lane.
   /// Accurate even for very small values.
   #[inline]
@@ -2060,17 +2053,6 @@ impl f64x8 {
     let result = eq.select(self, correction);
     let over = u.is_inf();
     over.select(ln_u, result)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn log2(self) -> Self {
-    Self::ln(self) * Self::LOG2_E
-  }
-  #[inline]
-  #[must_use]
-  pub fn log10(self) -> Self {
-    Self::ln(self) * Self::LOG10_E
   }
 
   #[inline]
