@@ -45,6 +45,8 @@ macro_rules! impl_simd_float {
     $fn_atan2:item
     $fn_sin_cos:item
     $fn_asin_acos:item
+    $fn_exp_m1:item
+    $fn_ln_1p:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -368,6 +370,16 @@ macro_rules! impl_simd_float {
 
       #[must_use]
       $fn_asin_acos
+
+      /// Calculate `e^self - 1` for each lane. Accurate even for very small
+      /// values.
+      #[must_use]
+      $fn_exp_m1
+
+      /// Calculate `ln(1 + self)` for each lane. Accurate even for very small
+      /// values.
+      #[must_use]
+      $fn_ln_1p
     }
   };
 }

@@ -1630,6 +1630,82 @@ impl_simd_float! {
 
     (asin, acos)
   }
+
+  #[inline]
+  pub fn exp_m1(self) -> Self {
+    // x < -17.329: e^x < 2⁻²⁵, exp_m1(x) = -1.0 exactly (mantissa exhaustion)
+    // IEEE simd_lt returns false for NaN, so NaN lanes can't reach here.
+    // -inf is < -17.329, and exp_m1(-inf) = -1.0, also correct.
+    if self.simd_lt(f32x4::from(-17.329)).all() {
+      return f32x4::from(-1.0);
+    }
+    const_f32_as_f32x4!(P0, 1.0 / 2.0);
+    const_f32_as_f32x4!(P1, 1.0 / 6.0);
+    const_f32_as_f32x4!(P2, 1.0 / 24.0);
+    const_f32_as_f32x4!(P3, 1.0 / 120.0);
+    const_f32_as_f32x4!(P4, 1.0 / 720.0);
+    const_f32_as_f32x4!(P5, 1.0 / 5040.0);
+    // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
+    // following the approach from fdlibm's e_exp.c (Sun Microsystems,
+    // https://www.netlib.org/fdlibm/). The f32 split uses f32-precision constants
+    // (0.693359375, -2.12194440e-4) summing to ln(2) with single-precision
+    // accuracy; the f64 variants use a full f64 double-double
+    // decomposition.
+    const_f32_as_f32x4!(LN2D_HI, 0.693359375);
+    const_f32_as_f32x4!(LN2D_LO, -2.12194440e-4);
+    // max_x = ln(f32::MAX) ≈ 88.7229, max_r = 127 (IEEE max normal exponent)
+    // min_x = -149.5 ln(2) ≈ -103.63: min r for vm_pow2n subnormal
+    let max_x = f32x4::from(88.723);
+    let min_x = f32x4::from(-103.63);
+    let max_r = f32x4::from(127.0);
+    let r = (self * Self::LOG2_E).round_ties_even();
+    let big = r.simd_gt(max_r);
+    let r_safe = big.select(max_r, r);
+    let excess = r - max_r;
+    let excess = big.select(excess, Self::ZERO);
+    let scale = Self::vm_pow2n(excess);
+    let x = r.mul_neg_add(LN2D_HI, self);
+    let x = r.mul_neg_add(LN2D_LO, x);
+    let z = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
+    let x2 = x * x;
+    let z = z.mul_add(x2, x);
+    let n2 = Self::vm_pow2n(r_safe);
+    let exp_val = (z + Self::ONE) * scale * n2;
+    let r_is_zero = r.simd_eq(Self::ZERO);
+    let z = r_is_zero.select(z, exp_val - Self::ONE);
+    let nan_mask = self.is_nan();
+    let finite = self.is_finite();
+    let mut result = nan_mask.select(Self::nan_pow(), z);
+    let pos_overflow = self.simd_gt(max_x) & finite;
+    result = pos_overflow.select(Self::infinity(), result);
+    let neg_underflow = self.simd_lt(min_x) & finite;
+    result = neg_underflow.select(-Self::ONE, result);
+    let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
+    result = pos_inf.select(Self::infinity(), result);
+    let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
+    result = neg_inf.select(-Self::ONE, result);
+    let is_zero = self.simd_eq(Self::ZERO);
+    result = is_zero.select(self, result);
+    result
+  }
+
+  #[inline]
+  pub fn ln_1p(self) -> Self {
+    // Based on the identity ln(1+x) = x·ln(1+x)/((1+x)-1), i.e. x·ln(u)/(u-1)
+    // where u = 1+x. From MUSL libc (Rich Felker et al., https://musl.libc.org) src/math/log1pf.c
+    // and fdlibm (Sun Microsystems, https://www.netlib.org/fdlibm/) s_log1p.c.
+    // When 1+x rounds to 1 exactly (subnormal x), return x directly.
+    // When 1+x overflows (+inf), return ln(u) without correction.
+    // Mathematically exact: compensates for the rounding loss in 1+x without
+    // needing a series threshold.
+    let u = self + Self::ONE;
+    let eq = u.simd_eq(Self::ONE);
+    let ln_u = Self::ln(u);
+    let correction = self * (ln_u / (u - Self::ONE));
+    let result = eq.select(self, correction);
+    let over = u.is_inf();
+    over.select(ln_u, result)
+  }
 }
 
 unsafe impl Zeroable for f32x4 {}
@@ -2004,67 +2080,6 @@ impl f32x4 {
     }
   }
 
-  /// Calculate `e^self - 1` for each lane.
-  /// Accurate even for very small values.
-  #[inline]
-  #[must_use]
-  pub fn exp_m1(self) -> Self {
-    // x < -17.329: e^x < 2⁻²⁵, exp_m1(x) = -1.0 exactly (mantissa exhaustion)
-    // IEEE simd_lt returns false for NaN, so NaN lanes can't reach here.
-    // -inf is < -17.329, and exp_m1(-inf) = -1.0, also correct.
-    if self.simd_lt(f32x4::from(-17.329)).all() {
-      return f32x4::from(-1.0);
-    }
-    const_f32_as_f32x4!(P0, 1.0 / 2.0);
-    const_f32_as_f32x4!(P1, 1.0 / 6.0);
-    const_f32_as_f32x4!(P2, 1.0 / 24.0);
-    const_f32_as_f32x4!(P3, 1.0 / 120.0);
-    const_f32_as_f32x4!(P4, 1.0 / 720.0);
-    const_f32_as_f32x4!(P5, 1.0 / 5040.0);
-    // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
-    // following the approach from fdlibm's e_exp.c (Sun Microsystems,
-    // https://www.netlib.org/fdlibm/). The f32 split uses f32-precision constants
-    // (0.693359375, -2.12194440e-4) summing to ln(2) with single-precision
-    // accuracy; the f64 variants use a full f64 double-double
-    // decomposition.
-    const_f32_as_f32x4!(LN2D_HI, 0.693359375);
-    const_f32_as_f32x4!(LN2D_LO, -2.12194440e-4);
-    // max_x = ln(f32::MAX) ≈ 88.7229, max_r = 127 (IEEE max normal exponent)
-    // min_x = -149.5 ln(2) ≈ -103.63: min r for vm_pow2n subnormal
-    let max_x = f32x4::from(88.723);
-    let min_x = f32x4::from(-103.63);
-    let max_r = f32x4::from(127.0);
-    let r = (self * Self::LOG2_E).round_ties_even();
-    let big = r.simd_gt(max_r);
-    let r_safe = big.select(max_r, r);
-    let excess = r - max_r;
-    let excess = big.select(excess, Self::ZERO);
-    let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
-    let z = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
-    let x2 = x * x;
-    let z = z.mul_add(x2, x);
-    let n2 = Self::vm_pow2n(r_safe);
-    let exp_val = (z + Self::ONE) * scale * n2;
-    let r_is_zero = r.simd_eq(Self::ZERO);
-    let z = r_is_zero.select(z, exp_val - Self::ONE);
-    let nan_mask = self.is_nan();
-    let finite = self.is_finite();
-    let mut result = nan_mask.select(Self::nan_pow(), z);
-    let pos_overflow = self.simd_gt(max_x) & finite;
-    result = pos_overflow.select(Self::infinity(), result);
-    let neg_underflow = self.simd_lt(min_x) & finite;
-    result = neg_underflow.select(-Self::ONE, result);
-    let pos_inf = !finite & !self.is_sign_negative() & !nan_mask;
-    result = pos_inf.select(Self::infinity(), result);
-    let neg_inf = !finite & self.is_sign_negative() & !nan_mask;
-    result = neg_inf.select(-Self::ONE, result);
-    let is_zero = self.simd_eq(Self::ZERO);
-    result = is_zero.select(self, result);
-    result
-  }
-
   #[inline]
   fn exponent(self) -> f32x4 {
     const_f32_as_f32x4!(pow2_23, 8388608.0);
@@ -2119,27 +2134,6 @@ impl f32x4 {
   pub fn reduce_mul(self) -> f32 {
     let arr: [f32; 4] = cast(self);
     arr.iter().product()
-  }
-
-  /// Calculate `ln(1 + self)` for each lane.
-  /// Accurate even for very small values.
-  #[inline]
-  #[must_use]
-  pub fn ln_1p(self) -> Self {
-    // Based on the identity ln(1+x) = x·ln(1+x)/((1+x)-1), i.e. x·ln(u)/(u-1)
-    // where u = 1+x. From MUSL libc (Rich Felker et al., https://musl.libc.org) src/math/log1pf.c
-    // and fdlibm (Sun Microsystems, https://www.netlib.org/fdlibm/) s_log1p.c.
-    // When 1+x rounds to 1 exactly (subnormal x), return x directly.
-    // When 1+x overflows (+inf), return ln(u) without correction.
-    // Mathematically exact: compensates for the rounding loss in 1+x without
-    // needing a series threshold.
-    let u = self + Self::ONE;
-    let eq = u.simd_eq(Self::ONE);
-    let ln_u = Self::ln(u);
-    let correction = self * (ln_u / (u - Self::ONE));
-    let result = eq.select(self, correction);
-    let over = u.is_inf();
-    over.select(ln_u, result)
   }
 
   #[must_use]
