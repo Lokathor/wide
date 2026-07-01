@@ -269,6 +269,94 @@ impl_simd_float! {
     // The closest is `_mm512_rsqrt14_pd` which has relative error.
     Self::ONE / self.sqrt()
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        rhs.is_nan().select(self, Self { avx512: max_m512d(self.avx512, rhs.avx512) })
+      } else {
+        Self {
+          a: self.a.max(rhs.a),
+          b: self.b.max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: max_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.fast_max(rhs.a),
+          b : self.b.fast_max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        rhs.is_nan().select(self, Self { avx512: min_m512d(self.avx512, rhs.avx512) })
+      } else {
+        Self {
+          a: self.a.min(rhs.a),
+          b: self.b.min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: min_m512d(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.fast_min(rhs.a),
+          b : self.b.fast_min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // This works since all bits set is NaN.
+        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
+      } else {
+        // Some targets have better implementations than the above one.
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // For both `min_m512d` and `max_m512d` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { avx512: max_m512d(min.avx512, min_m512d(max.avx512, self.avx512)) }
+      } else {
+        Self {
+          a: self.a.fast_clamp(min.a, max.a),
+          b: self.b.fast_clamp(min.b, max.b),
+        }
+      }
+    }
+  }
 }
 
 macro_rules! const_f64_as_f64x8 {
@@ -561,109 +649,6 @@ impl f64x8 {
         Self {
           a : self.a.ceil(),
           b : self.b.ceil(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn fast_max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: max_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.fast_max(rhs.a),
-          b : self.b.fast_max(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        rhs.is_nan().select(self, Self { avx512: max_m512d(self.avx512, rhs.avx512) })
-      } else {
-        Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn fast_min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: min_m512d(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.fast_min(rhs.a),
-          b : self.b.fast_min(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        rhs.is_nan().select(self, Self { avx512: min_m512d(self.avx512, rhs.avx512) })
-      } else {
-        Self {
-          a: self.a.min(rhs.a),
-          b: self.b.min(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Restrict a value to a certain interval unless it is NaN.
-  ///
-  /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`, the
-  /// result is `min` since `max(min)` dominates.
-  #[inline]
-  #[must_use]
-  pub fn clamp(self, min: Self, max: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // This works since all bits set is NaN.
-        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
-      } else {
-        // Some targets have better implementations than the above one.
-        Self {
-          a: self.a.clamp(min.a, max.a),
-          b: self.b.clamp(min.b, max.b),
-        }
-      }
-    }
-  }
-
-  /// Restrict a value to a certain interval unless it is NaN.
-  ///
-  /// If `self` is NaN, the result is NaN.  If `min > max`, the result is `min`
-  /// since `max(min)` dominates. If `min` or `max` are NaN, the result is
-  /// unspecified.
-  #[inline]
-  #[must_use]
-  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // For both `min_m512d` and `max_m512d` if any input is NaN, `rhs` gets
-        // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx512: max_m512d(min.avx512, min_m512d(max.avx512, self.avx512)) }
-      } else {
-        Self {
-          a: self.a.fast_clamp(min.a, max.a),
-          b: self.b.fast_clamp(min.b, max.b),
         }
       }
     }

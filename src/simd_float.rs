@@ -11,6 +11,12 @@ macro_rules! impl_simd_float {
     $fn_is_sign_negative:item
     $fn_recip:item
     $fn_recip_sqrt:item
+    $fn_max:item
+    $fn_fast_max:item
+    $fn_min:item
+    $fn_fast_min:item
+    $fn_clamp:item
+    $fn_fast_clamp:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -83,6 +89,45 @@ macro_rules! impl_simd_float {
         const DEG_TO_RAD_RATIO: $Simd = $Simd::splat(core::$T::consts::PI / 180.0);
         self * DEG_TO_RAD_RATIO
       }
+
+      /// Calculates the lanewise maximum of both vectors. If either lane is
+      /// NaN, the other lane gets chosen. Use `fast_max` for a faster
+      /// implementation that doesn't handle NaNs.
+      #[must_use]
+      $fn_max
+
+      /// Calculates the lanewise maximum of both vectors. This is a faster
+      /// implementation than `max`, but it doesn't specify any behavior if NaNs
+      /// are involved.
+      #[must_use]
+      $fn_fast_max
+
+      /// Calculates the lanewise minimum of both vectors. If either lane is
+      /// NaN, the other lane gets chosen. Use `fast_min` for a faster
+      /// implementation that doesn't handle NaNs.
+      #[must_use]
+      $fn_min
+
+      /// Calculates the lanewise minimum of both vectors. This is a faster
+      /// implementation than `min`, but it doesn't specify any behavior if NaNs
+      /// are involved.
+      #[must_use]
+      $fn_fast_min
+
+      /// Restrict a value to a certain interval unless it is NaN.
+      ///
+      /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`,
+      /// the result is `min` since `max(min)` dominates.
+      #[must_use]
+      $fn_clamp
+
+      /// Restrict a value to a certain interval unless it is NaN.
+      ///
+      /// If `self` is NaN, the result is NaN.  If `min > max`, the result is
+      /// `min` since `max(min)` dominates. If `min` or `max` are NaN, the
+      /// result is unspecified.
+      #[must_use]
+      $fn_fast_clamp
     }
   };
 }

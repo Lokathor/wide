@@ -418,6 +418,158 @@ impl_simd_float! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        // max_m128 seems to do rhs < self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().select(self, Self { sse: max_m128(self.sse, rhs.sse) })
+      } else if #[cfg(target_feature="simd128")] {
+        // WASM has two max intrinsics:
+        // - max: This propagates NaN, that's the opposite of what we need.
+        // - pmax: This is defined as self < rhs ? rhs : self, which basically
+        //   chooses self if either is NaN.
+        //
+        // pmax is what we want, but we need to specifically check self for NaN.
+        Self {
+          simd: v128_bitselect(
+            rhs.simd,
+            f32x4_pmax(self.simd, rhs.simd),
+            f32x4_ne(self.simd, self.simd), // NaN check
+          )
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmaxnmq_f32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].max(rhs.arr[0]),
+          self.arr[1].max(rhs.arr[1]),
+          self.arr[2].max(rhs.arr[2]),
+          self.arr[3].max(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: max_m128(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: f32x4_pmax(self.simd, rhs.simd),
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmaxq_f32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
+          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
+          if self.arr[2] < rhs.arr[2] { rhs.arr[2] } else { self.arr[2] },
+          if self.arr[3] < rhs.arr[3] { rhs.arr[3] } else { self.arr[3] },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        // min_m128 seems to do self < rhs ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().select(self, Self { sse: min_m128(self.sse, rhs.sse) })
+      } else if #[cfg(target_feature="simd128")] {
+        // WASM has two min intrinsics:
+        // - min: This propagates NaN, that's the opposite of what we need.
+        // - pmin: This is defined as rhs < self ? rhs : self, which basically
+        //   chooses self if either is NaN.
+        //
+        // pmin is what we want, but we need to specifically check self for NaN.
+        Self {
+          simd: v128_bitselect(
+            rhs.simd,
+            f32x4_pmin(self.simd, rhs.simd),
+            f32x4_ne(self.simd, self.simd), // NaN check
+          )
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vminnmq_f32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].min(rhs.arr[0]),
+          self.arr[1].min(rhs.arr[1]),
+          self.arr[2].min(rhs.arr[2]),
+          self.arr[3].min(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: min_m128(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: f32x4_pmin(self.simd, rhs.simd),
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vminq_f32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
+          if self.arr[1] < rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
+          if self.arr[2] < rhs.arr[2] { self.arr[2] } else { rhs.arr[2] },
+          if self.arr[3] < rhs.arr[3] { self.arr[3] } else { rhs.arr[3] },
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(any(
+        target_feature="simd128",
+        all(target_feature="neon",target_arch="aarch64"),
+      ))] {
+        // `fast_clamp` already works.
+        self.fast_clamp(min, max)
+      } else {
+        // This works since all bits set is NaN.
+        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        // For both `min_m128` and `max_m128` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { sse: max_m128(min.sse, min_m128(max.sse, self.sse)) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_max(f32x4_min(self.simd, max.simd), min.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vmaxq_f32(vminq_f32(self.neon, max.neon), min.neon) } }
+      } else {
+        // The standard library does not have NaN propagating `min` and `max`
+        // functions.
+        let mut result = self;
+        result = result.simd_gt(max).select(max, result);
+        result = result.simd_lt(min).select(min, result);
+        result
+      }
+    }
+  }
 }
 
 macro_rules! const_f32_as_f32x4 {
@@ -782,185 +934,6 @@ impl f32x4 {
           if base[2] > rounded[2] { rounded[2] + 1.0 } else { rounded[2] },
           if base[3] > rounded[3] { rounded[3] + 1.0 } else { rounded[3] },
         ])
-      }
-    }
-  }
-
-  /// Calculates the lanewise maximum of both vectors. This is a faster
-  /// implementation than `max`, but it doesn't specify any behavior if NaNs are
-  /// involved.
-  #[inline]
-  #[must_use]
-  pub fn fast_max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        Self { sse: max_m128(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: f32x4_pmax(self.simd, rhs.simd),
-        }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_f32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
-          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
-          if self.arr[2] < rhs.arr[2] { rhs.arr[2] } else { self.arr[2] },
-          if self.arr[3] < rhs.arr[3] { rhs.arr[3] } else { self.arr[3] },
-        ]}
-      }
-    }
-  }
-
-  /// Calculates the lanewise maximum of both vectors. If either lane is NaN,
-  /// the other lane gets chosen. Use `fast_max` for a faster implementation
-  /// that doesn't handle NaNs.
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        // max_m128 seems to do rhs < self ? self : rhs. So if there's any NaN
-        // involved, it chooses rhs, so we need to specifically check rhs for
-        // NaN.
-        rhs.is_nan().select(self, Self { sse: max_m128(self.sse, rhs.sse) })
-      } else if #[cfg(target_feature="simd128")] {
-        // WASM has two max intrinsics:
-        // - max: This propagates NaN, that's the opposite of what we need.
-        // - pmax: This is defined as self < rhs ? rhs : self, which basically
-        //   chooses self if either is NaN.
-        //
-        // pmax is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd: v128_bitselect(
-            rhs.simd,
-            f32x4_pmax(self.simd, rhs.simd),
-            f32x4_ne(self.simd, self.simd), // NaN check
-          )
-        }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxnmq_f32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].max(rhs.arr[0]),
-          self.arr[1].max(rhs.arr[1]),
-          self.arr[2].max(rhs.arr[2]),
-          self.arr[3].max(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-
-  /// Calculates the lanewise minimum of both vectors. This is a faster
-  /// implementation than `min`, but it doesn't specify any behavior if NaNs are
-  /// involved.
-  #[inline]
-  #[must_use]
-  pub fn fast_min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        Self { sse: min_m128(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: f32x4_pmin(self.simd, rhs.simd),
-        }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminq_f32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
-          if self.arr[1] < rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
-          if self.arr[2] < rhs.arr[2] { self.arr[2] } else { rhs.arr[2] },
-          if self.arr[3] < rhs.arr[3] { self.arr[3] } else { rhs.arr[3] },
-        ]}
-      }
-    }
-  }
-
-  /// Calculates the lanewise minimum of both vectors. If either lane is NaN,
-  /// the other lane gets chosen. Use `fast_min` for a faster implementation
-  /// that doesn't handle NaNs.
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        // min_m128 seems to do self < rhs ? self : rhs. So if there's any NaN
-        // involved, it chooses rhs, so we need to specifically check rhs for
-        // NaN.
-        rhs.is_nan().select(self, Self { sse: min_m128(self.sse, rhs.sse) })
-      } else if #[cfg(target_feature="simd128")] {
-        // WASM has two min intrinsics:
-        // - min: This propagates NaN, that's the opposite of what we need.
-        // - pmin: This is defined as rhs < self ? rhs : self, which basically
-        //   chooses self if either is NaN.
-        //
-        // pmin is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd: v128_bitselect(
-            rhs.simd,
-            f32x4_pmin(self.simd, rhs.simd),
-            f32x4_ne(self.simd, self.simd), // NaN check
-          )
-        }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminnmq_f32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].min(rhs.arr[0]),
-          self.arr[1].min(rhs.arr[1]),
-          self.arr[2].min(rhs.arr[2]),
-          self.arr[3].min(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-
-  /// Restrict a value to a certain interval unless it is NaN.
-  ///
-  /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`, the
-  /// result is `min` since `max(min)` dominates.
-  #[inline]
-  #[must_use]
-  pub fn clamp(self, min: Self, max: Self) -> Self {
-    pick! {
-      if #[cfg(any(
-        target_feature="simd128",
-        all(target_feature="neon",target_arch="aarch64"),
-      ))] {
-        // `fast_clamp` already works.
-        self.fast_clamp(min, max)
-      } else {
-        // This works since all bits set is NaN.
-        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
-      }
-    }
-  }
-
-  /// Restrict a value to a certain interval unless it is NaN.
-  ///
-  /// If `self` is NaN, the result is NaN.  If `min > max`, the result is `min`
-  /// since `max(min)` dominates. If `min` or `max` are NaN, the result is
-  /// unspecified.
-  #[inline]
-  #[must_use]
-  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        // For both `min_m128` and `max_m128` if any input is NaN, `rhs` gets
-        // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { sse: max_m128(min.sse, min_m128(max.sse, self.sse)) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_max(f32x4_min(self.simd, max.simd), min.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vmaxq_f32(vminq_f32(self.neon, max.neon), min.neon) } }
-      } else {
-        // The standard library does not have NaN propagating `min` and `max`
-        // functions.
-        let mut result = self;
-        result = result.simd_gt(max).select(max, result);
-        result = result.simd_lt(min).select(min, result);
-        result
       }
     }
   }

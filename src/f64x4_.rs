@@ -275,6 +275,100 @@ impl_simd_float! {
     // The closest is `_mm256_rsqrt14_pd` which has relative error.
     Self::ONE / self.sqrt()
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // max_m256d seems to do rhs < self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().select(self, Self { avx: max_m256d(self.avx, rhs.avx) })
+      } else {
+        Self {
+          a : self.a.max(rhs.a),
+          b : self.b.max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: max_m256d(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.fast_max(rhs.a),
+          b : self.b.fast_max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // min_m256d seems to do rhs < self ? self : rhs. So if there's any NaN
+        // involved, it chooses rhs, so we need to specifically check rhs for
+        // NaN.
+        rhs.is_nan().select(self, Self { avx: min_m256d(self.avx, rhs.avx) })
+      } else {
+        Self {
+          a : self.a.min(rhs.a),
+          b : self.b.min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: min_m256d(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.fast_min(rhs.a),
+          b : self.b.fast_min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // This works since all bits set is NaN.
+        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
+      } else {
+        // Some targets have better implementations than the above one.
+        Self {
+          a: self.a.clamp(min.a, max.a),
+          b: self.b.clamp(min.b, max.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // For both `min_m256d` and `max_m256d` if any input is NaN, `rhs` gets
+        // chosen. For `self` to be chosen, `self` must be the second argument.
+        Self { avx: max_m256d(min.avx, min_m256d(max.avx, self.avx)) }
+      } else {
+        Self {
+          a: self.a.fast_clamp(min.a, max.a),
+          b: self.b.fast_clamp(min.b, max.b),
+        }
+      }
+    }
+  }
 }
 
 macro_rules! const_f64_as_f64x4 {
@@ -569,127 +663,6 @@ impl f64x4 {
         Self {
           a : self.a.ceil(),
           b : self.b.ceil(),
-        }
-      }
-    }
-  }
-
-  /// Calculates the lanewise maximum of both vectors. This is a faster
-  /// implementation than `max`, but it doesn't specify any behavior if NaNs are
-  /// involved.
-  #[inline]
-  #[must_use]
-  pub fn fast_max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: max_m256d(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.fast_max(rhs.a),
-          b : self.b.fast_max(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Calculates the lanewise maximum of both vectors. If either lane is NaN,
-  /// the other lane gets chosen. Use `fast_max` for a faster implementation
-  /// that doesn't handle NaNs.
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // max_m256d seems to do rhs < self ? self : rhs. So if there's any NaN
-        // involved, it chooses rhs, so we need to specifically check rhs for
-        // NaN.
-        rhs.is_nan().select(self, Self { avx: max_m256d(self.avx, rhs.avx) })
-      } else {
-        Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Calculates the lanewise minimum of both vectors. This is a faster
-  /// implementation than `min`, but it doesn't specify any behavior if NaNs are
-  /// involved.
-  #[inline]
-  #[must_use]
-  pub fn fast_min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: min_m256d(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.fast_min(rhs.a),
-          b : self.b.fast_min(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Calculates the lanewise minimum of both vectors. If either lane is NaN,
-  /// the other lane gets chosen. Use `fast_min` for a faster implementation
-  /// that doesn't handle NaNs.
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // min_m256d seems to do rhs < self ? self : rhs. So if there's any NaN
-        // involved, it chooses rhs, so we need to specifically check rhs for
-        // NaN.
-        rhs.is_nan().select(self, Self { avx: min_m256d(self.avx, rhs.avx) })
-      } else {
-        Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Restrict a value to a certain interval unless it is NaN.
-  ///
-  /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`, the
-  /// result is `min` since `max(min)` dominates.
-  #[inline]
-  #[must_use]
-  pub fn clamp(self, min: Self, max: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // This works since all bits set is NaN.
-        self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
-      } else {
-        // Some targets have better implementations than the above one.
-        Self {
-          a: self.a.clamp(min.a, max.a),
-          b: self.b.clamp(min.b, max.b),
-        }
-      }
-    }
-  }
-
-  /// Restrict a value to a certain interval unless it is NaN.
-  ///
-  /// If `self` is NaN, the result is NaN.  If `min > max`, the result is `min`
-  /// since `max(min)` dominates. If `min` or `max` are NaN, the result is
-  /// unspecified.
-  #[inline]
-  #[must_use]
-  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // For both `min_m256d` and `max_m256d` if any input is NaN, `rhs` gets
-        // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx: max_m256d(min.avx, min_m256d(max.avx, self.avx)) }
-      } else {
-        Self {
-          a: self.a.fast_clamp(min.a, max.a),
-          b: self.b.fast_clamp(min.b, max.b),
         }
       }
     }
