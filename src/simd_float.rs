@@ -32,6 +32,9 @@ macro_rules! impl_simd_float {
     $fn_mul_sub:item
     $fn_mul_neg_add:item
     $fn_mul_neg_sub:item
+    $fn_pow_simd:item
+    $fn_powf:item
+    $fn_sqrt:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -280,6 +283,15 @@ macro_rules! impl_simd_float {
         let r = self % rhs;
         r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
       }
+
+      #[must_use]
+      $fn_pow_simd
+
+      #[must_use]
+      $fn_powf
+
+      #[must_use]
+      $fn_sqrt
     }
   };
 }

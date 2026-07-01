@@ -703,6 +703,144 @@ impl_simd_float! {
        }
     }
   }
+
+  #[inline]
+  pub fn pow_f64x4(self, y: Self) -> Self {
+    const_f64_as_f64x4!(ln2d_hi, 0.693145751953125);
+    const_f64_as_f64x4!(ln2d_lo, 1.42860682030941723212E-6);
+    const_f64_as_f64x4!(P0log, 2.0039553499201281259648E1);
+    const_f64_as_f64x4!(P1log, 5.7112963590585538103336E1);
+    const_f64_as_f64x4!(P2log, 6.0949667980987787057556E1);
+    const_f64_as_f64x4!(P3log, 2.9911919328553073277375E1);
+    const_f64_as_f64x4!(P4log, 6.5787325942061044846969E0);
+    const_f64_as_f64x4!(P5log, 4.9854102823193375972212E-1);
+    const_f64_as_f64x4!(P6log, 4.5270000862445199635215E-5);
+    const_f64_as_f64x4!(Q0log, 6.0118660497603843919306E1);
+    const_f64_as_f64x4!(Q1log, 2.1642788614495947685003E2);
+    const_f64_as_f64x4!(Q2log, 3.0909872225312059774938E2);
+    const_f64_as_f64x4!(Q3log, 2.2176239823732856465394E2);
+    const_f64_as_f64x4!(Q4log, 8.3047565967967209469434E1);
+    const_f64_as_f64x4!(Q5log, 1.5062909083469192043167E1);
+
+    // Taylor expansion constants
+    const_f64_as_f64x4!(p2, 1.0 / 2.0); // coefficients for Taylor expansion of exp
+    const_f64_as_f64x4!(p3, 1.0 / 6.0);
+    const_f64_as_f64x4!(p4, 1.0 / 24.0);
+    const_f64_as_f64x4!(p5, 1.0 / 120.0);
+    const_f64_as_f64x4!(p6, 1.0 / 720.0);
+    const_f64_as_f64x4!(p7, 1.0 / 5040.0);
+    const_f64_as_f64x4!(p8, 1.0 / 40320.0);
+    const_f64_as_f64x4!(p9, 1.0 / 362880.0);
+    const_f64_as_f64x4!(p10, 1.0 / 3628800.0);
+    const_f64_as_f64x4!(p11, 1.0 / 39916800.0);
+    const_f64_as_f64x4!(p12, 1.0 / 479001600.0);
+    const_f64_as_f64x4!(p13, 1.0 / 6227020800.0);
+
+    let x1 = self.abs();
+    let x = x1.fraction_2();
+    let mask = x.simd_gt(f64x4::SQRT_2 * f64x4::HALF);
+    let x = (!mask).select(x + x, x);
+    let x = x - f64x4::ONE;
+    let x2 = x * x;
+    let px = polynomial_6!(x, P0log, P1log, P2log, P3log, P4log, P5log, P6log);
+    let px = px * x * x2;
+    let qx = polynomial_6n!(x, Q0log, Q1log, Q2log, Q3log, Q4log, Q5log);
+    let lg1 = px / qx;
+
+    let ef = x1.exponent();
+    let ef = mask.select(ef + f64x4::ONE, ef);
+    let e1 = (ef * y).round_ties_even();
+    let yr = ef.mul_sub(y, e1);
+
+    let lg = f64x4::HALF.mul_neg_add(x2, x) + lg1;
+    let x2err = (f64x4::HALF * x).mul_sub(x, f64x4::HALF * x2);
+    let lg_err = f64x4::HALF.mul_add(x2, lg - x) - lg1;
+
+    let e2 = (lg * y * f64x4::LOG2_E).round_ties_even();
+    let v = lg.mul_sub(y, e2 * ln2d_hi);
+    let v = e2.mul_neg_add(ln2d_lo, v);
+    let v = v - (lg_err + x2err).mul_sub(y, yr * f64x4::LN_2);
+
+    let x = v;
+    let e3 = (x * f64x4::LOG2_E).round_ties_even();
+    let x = e3.mul_neg_add(f64x4::LN_2, x);
+    let z =
+      polynomial_13!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
+        + f64x4::ONE;
+    let ee = e1 + e2 + e3;
+    let ei = cast::<_, i64x4>(ee.round_int());
+    let ej = cast::<_, i64x4>(ei + (cast::<_, i64x4>(z) >> 52));
+
+    let overflow = cast::<_, f64x4>(!ej.simd_lt(i64x4::splat(0x07FF)))
+      | ee.simd_gt(f64x4::splat(3000.0));
+    let underflow = cast::<_, f64x4>(!ej.simd_gt(i64x4::splat(0x000)))
+      | ee.simd_lt(f64x4::splat(-3000.0));
+
+    // Add exponent by integer addition
+    let z = cast::<_, f64x4>(cast::<_, i64x4>(z) + (ei << 52));
+
+    // Check for overflow/underflow
+    let z = if (overflow | underflow).any() {
+      let z = underflow.select(f64x4::ZERO, z);
+      overflow.select(Self::infinity(), z)
+    } else {
+      z
+    };
+
+    // Check for self == 0
+    let x_zero = self.is_zero_or_subnormal();
+    let z = x_zero.select(
+      y.simd_lt(f64x4::ZERO).select(
+        Self::infinity(),
+        y.simd_eq(f64x4::ZERO).select(f64x4::ONE, f64x4::ZERO),
+      ),
+      z,
+    );
+
+    let x_sign = self.is_sign_negative();
+
+    let z = if x_sign.any() {
+      // Y into an integer
+      let yi = y.simd_eq(y.round_ties_even());
+      // Is y odd? If yes flip the sign of the result.
+      let y_odd = cast::<i64x4, f64x4>(y.round_int() << 63);
+
+      let z1 = yi
+        .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
+      x_sign.select(z1, z)
+    } else {
+      z
+    };
+
+    let x_finite = self.is_finite();
+    let y_finite = y.is_finite();
+    let e_finite = ee.is_finite();
+
+    if (x_finite & y_finite & (e_finite | x_zero)).all() {
+      return z;
+    }
+
+    (self.is_nan() | y.is_nan()).select(self + y, z)
+  }
+
+  #[inline]
+  pub fn powf(self, y: f64) -> Self {
+    Self::pow_f64x4(self, f64x4::splat(y))
+  }
+
+  #[inline]
+  pub fn sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: sqrt_m256d(self.avx) }
+      } else {
+        Self {
+          a : self.a.sqrt(),
+          b : self.b.sqrt(),
+        }
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for f64x4 {}
@@ -1561,21 +1699,6 @@ impl f64x4 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn sqrt(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: sqrt_m256d(self.avx) }
-      } else {
-        Self {
-          a : self.a.sqrt(),
-          b : self.b.sqrt(),
-        }
-      }
-    }
-  }
-
-  #[inline]
   fn vm_pow2n(self) -> Self {
     const_f64_as_f64x4!(pow2_52, 4503599627370496.0);
     const_f64_as_f64x4!(bias, 1023.0);
@@ -1942,130 +2065,6 @@ impl f64x4 {
   #[must_use]
   pub fn log10(self) -> Self {
     Self::ln(self) * Self::LOG10_E
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn pow_f64x4(self, y: Self) -> Self {
-    const_f64_as_f64x4!(ln2d_hi, 0.693145751953125);
-    const_f64_as_f64x4!(ln2d_lo, 1.42860682030941723212E-6);
-    const_f64_as_f64x4!(P0log, 2.0039553499201281259648E1);
-    const_f64_as_f64x4!(P1log, 5.7112963590585538103336E1);
-    const_f64_as_f64x4!(P2log, 6.0949667980987787057556E1);
-    const_f64_as_f64x4!(P3log, 2.9911919328553073277375E1);
-    const_f64_as_f64x4!(P4log, 6.5787325942061044846969E0);
-    const_f64_as_f64x4!(P5log, 4.9854102823193375972212E-1);
-    const_f64_as_f64x4!(P6log, 4.5270000862445199635215E-5);
-    const_f64_as_f64x4!(Q0log, 6.0118660497603843919306E1);
-    const_f64_as_f64x4!(Q1log, 2.1642788614495947685003E2);
-    const_f64_as_f64x4!(Q2log, 3.0909872225312059774938E2);
-    const_f64_as_f64x4!(Q3log, 2.2176239823732856465394E2);
-    const_f64_as_f64x4!(Q4log, 8.3047565967967209469434E1);
-    const_f64_as_f64x4!(Q5log, 1.5062909083469192043167E1);
-
-    // Taylor expansion constants
-    const_f64_as_f64x4!(p2, 1.0 / 2.0); // coefficients for Taylor expansion of exp
-    const_f64_as_f64x4!(p3, 1.0 / 6.0);
-    const_f64_as_f64x4!(p4, 1.0 / 24.0);
-    const_f64_as_f64x4!(p5, 1.0 / 120.0);
-    const_f64_as_f64x4!(p6, 1.0 / 720.0);
-    const_f64_as_f64x4!(p7, 1.0 / 5040.0);
-    const_f64_as_f64x4!(p8, 1.0 / 40320.0);
-    const_f64_as_f64x4!(p9, 1.0 / 362880.0);
-    const_f64_as_f64x4!(p10, 1.0 / 3628800.0);
-    const_f64_as_f64x4!(p11, 1.0 / 39916800.0);
-    const_f64_as_f64x4!(p12, 1.0 / 479001600.0);
-    const_f64_as_f64x4!(p13, 1.0 / 6227020800.0);
-
-    let x1 = self.abs();
-    let x = x1.fraction_2();
-    let mask = x.simd_gt(f64x4::SQRT_2 * f64x4::HALF);
-    let x = (!mask).select(x + x, x);
-    let x = x - f64x4::ONE;
-    let x2 = x * x;
-    let px = polynomial_6!(x, P0log, P1log, P2log, P3log, P4log, P5log, P6log);
-    let px = px * x * x2;
-    let qx = polynomial_6n!(x, Q0log, Q1log, Q2log, Q3log, Q4log, Q5log);
-    let lg1 = px / qx;
-
-    let ef = x1.exponent();
-    let ef = mask.select(ef + f64x4::ONE, ef);
-    let e1 = (ef * y).round_ties_even();
-    let yr = ef.mul_sub(y, e1);
-
-    let lg = f64x4::HALF.mul_neg_add(x2, x) + lg1;
-    let x2err = (f64x4::HALF * x).mul_sub(x, f64x4::HALF * x2);
-    let lg_err = f64x4::HALF.mul_add(x2, lg - x) - lg1;
-
-    let e2 = (lg * y * f64x4::LOG2_E).round_ties_even();
-    let v = lg.mul_sub(y, e2 * ln2d_hi);
-    let v = e2.mul_neg_add(ln2d_lo, v);
-    let v = v - (lg_err + x2err).mul_sub(y, yr * f64x4::LN_2);
-
-    let x = v;
-    let e3 = (x * f64x4::LOG2_E).round_ties_even();
-    let x = e3.mul_neg_add(f64x4::LN_2, x);
-    let z =
-      polynomial_13!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
-        + f64x4::ONE;
-    let ee = e1 + e2 + e3;
-    let ei = cast::<_, i64x4>(ee.round_int());
-    let ej = cast::<_, i64x4>(ei + (cast::<_, i64x4>(z) >> 52));
-
-    let overflow = cast::<_, f64x4>(!ej.simd_lt(i64x4::splat(0x07FF)))
-      | ee.simd_gt(f64x4::splat(3000.0));
-    let underflow = cast::<_, f64x4>(!ej.simd_gt(i64x4::splat(0x000)))
-      | ee.simd_lt(f64x4::splat(-3000.0));
-
-    // Add exponent by integer addition
-    let z = cast::<_, f64x4>(cast::<_, i64x4>(z) + (ei << 52));
-
-    // Check for overflow/underflow
-    let z = if (overflow | underflow).any() {
-      let z = underflow.select(f64x4::ZERO, z);
-      overflow.select(Self::infinity(), z)
-    } else {
-      z
-    };
-
-    // Check for self == 0
-    let x_zero = self.is_zero_or_subnormal();
-    let z = x_zero.select(
-      y.simd_lt(f64x4::ZERO).select(
-        Self::infinity(),
-        y.simd_eq(f64x4::ZERO).select(f64x4::ONE, f64x4::ZERO),
-      ),
-      z,
-    );
-
-    let x_sign = self.is_sign_negative();
-
-    let z = if x_sign.any() {
-      // Y into an integer
-      let yi = y.simd_eq(y.round_ties_even());
-      // Is y odd? If yes flip the sign of the result.
-      let y_odd = cast::<i64x4, f64x4>(y.round_int() << 63);
-
-      let z1 = yi
-        .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
-      x_sign.select(z1, z)
-    } else {
-      z
-    };
-
-    let x_finite = self.is_finite();
-    let y_finite = y.is_finite();
-    let e_finite = ee.is_finite();
-
-    if (x_finite & y_finite & (e_finite | x_zero)).all() {
-      return z;
-    }
-
-    (self.is_nan() | y.is_nan()).select(self + y, z)
-  }
-  #[inline]
-  pub fn powf(self, y: f64) -> Self {
-    Self::pow_f64x4(self, f64x4::splat(y))
   }
 
   // Sometimes used for `transpose`.

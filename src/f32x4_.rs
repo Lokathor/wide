@@ -1017,6 +1017,150 @@ impl_simd_float! {
       }
     }
   }
+
+  #[inline]
+  pub fn pow_f32x4(self, y: f32x4) -> Self {
+    const_f32_as_f32x4!(ln2f_hi, 0.693359375);
+    const_f32_as_f32x4!(ln2f_lo, -2.12194440e-4);
+    const_f32_as_f32x4!(P0logf, 3.3333331174E-1);
+    const_f32_as_f32x4!(P1logf, -2.4999993993E-1);
+    const_f32_as_f32x4!(P2logf, 2.0000714765E-1);
+    const_f32_as_f32x4!(P3logf, -1.6668057665E-1);
+    const_f32_as_f32x4!(P4logf, 1.4249322787E-1);
+    const_f32_as_f32x4!(P5logf, -1.2420140846E-1);
+    const_f32_as_f32x4!(P6logf, 1.1676998740E-1);
+    const_f32_as_f32x4!(P7logf, -1.1514610310E-1);
+    const_f32_as_f32x4!(P8logf, 7.0376836292E-2);
+
+    const_f32_as_f32x4!(p2expf, 1.0 / 2.0); // coefficients for Taylor expansion of exp
+    const_f32_as_f32x4!(p3expf, 1.0 / 6.0);
+    const_f32_as_f32x4!(p4expf, 1.0 / 24.0);
+    const_f32_as_f32x4!(p5expf, 1.0 / 120.0);
+    const_f32_as_f32x4!(p6expf, 1.0 / 720.0);
+    const_f32_as_f32x4!(p7expf, 1.0 / 5040.0);
+
+    let x1 = self.abs();
+    let x = x1.fraction_2();
+
+    let mask = x.simd_gt(f32x4::SQRT_2 * f32x4::HALF);
+    let x = (!mask).select(x + x, x);
+
+    let x = x - f32x4::ONE;
+    let x2 = x * x;
+    let lg1 = polynomial_8!(
+      x, P0logf, P1logf, P2logf, P3logf, P4logf, P5logf, P6logf, P7logf, P8logf
+    );
+    let lg1 = lg1 * x2 * x;
+
+    let ef = x1.exponent();
+    let ef = mask.select(ef + f32x4::ONE, ef);
+
+    let e1 = (ef * y).round_ties_even();
+    let yr = ef.mul_sub(y, e1);
+
+    let lg = f32x4::HALF.mul_neg_add(x2, x) + lg1;
+    let x2_err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
+    let lg_err = f32x4::HALF.mul_add(x2, lg - x) - lg1;
+
+    let e2 = (lg * y * f32x4::LOG2_E).round_ties_even();
+    let v = lg.mul_sub(y, e2 * ln2f_hi);
+    let v = e2.mul_neg_add(ln2f_lo, v);
+    let v = v - (lg_err + x2_err).mul_sub(y, yr * f32x4::LN_2);
+
+    let x = v;
+    let e3 = (x * f32x4::LOG2_E).round_ties_even();
+    let x = e3.mul_neg_add(f32x4::LN_2, x);
+    let x2 = x * x;
+    let z = x2.mul_add(
+      polynomial_5!(x, p2expf, p3expf, p4expf, p5expf, p6expf, p7expf),
+      x + f32x4::ONE,
+    );
+
+    let ee = e1 + e2 + e3;
+    let ei = cast::<_, i32x4>(ee.round_int());
+    let ej = cast::<_, i32x4>(ei + (cast::<_, i32x4>(z) >> 23));
+
+    let overflow = cast::<_, f32x4>(ej.simd_gt(i32x4::splat(0x0FF)))
+      | (ee.simd_gt(f32x4::splat(300.0)));
+    let underflow = cast::<_, f32x4>(ej.simd_lt(i32x4::splat(0x000)))
+      | (ee.simd_lt(f32x4::splat(-300.0)));
+
+    // Add exponent by integer addition
+    let z = cast::<_, f32x4>(cast::<_, i32x4>(z) + (ei << 23));
+
+    // Check for overflow/underflow
+    let z = if (overflow | underflow).any() {
+      let z = underflow.select(f32x4::ZERO, z);
+      overflow.select(Self::infinity(), z)
+    } else {
+      z
+    };
+
+    // Check for self == 0
+    let x_zero = self.is_zero_or_subnormal();
+    let z = x_zero.select(
+      y.simd_lt(f32x4::ZERO).select(
+        Self::infinity(),
+        y.simd_eq(f32x4::ZERO).select(f32x4::ONE, f32x4::ZERO),
+      ),
+      z,
+    );
+
+    let x_sign = self.is_sign_negative();
+    let z = if x_sign.any() {
+      // Y into an integer
+      let yi = y.simd_eq(y.round_ties_even());
+      // Is y odd? If yes flip the sign of the result.
+      let y_odd = cast::<i32x4, f32x4>(y.round_int() << 31);
+
+      let z1 = yi
+        .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
+      x_sign.select(z1, z)
+    } else {
+      z
+    };
+
+    let x_finite = self.is_finite();
+    let y_finite = y.is_finite();
+    let e_finite = ee.is_finite();
+    if (x_finite & y_finite & (e_finite | x_zero)).all() {
+      return z;
+    }
+
+    (self.is_nan() | y.is_nan()).select(self + y, z)
+  }
+
+  #[inline]
+  pub fn powf(self, y: f32) -> Self {
+    Self::pow_f32x4(self, f32x4::splat(y))
+  }
+
+  #[inline]
+  pub fn sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: sqrt_m128(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_sqrt(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vsqrtq_f32(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        Self { arr: [
+          self.arr[0].sqrt(),
+          self.arr[1].sqrt(),
+          self.arr[2].sqrt(),
+          self.arr[3].sqrt(),
+        ]}
+      } else {
+        Self { arr: [
+          software_sqrt(self.arr[0] as f64) as f32,
+          software_sqrt(self.arr[1] as f64) as f32,
+          software_sqrt(self.arr[2] as f64) as f32,
+          software_sqrt(self.arr[3] as f64) as f32,
+        ]}
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for f32x4 {}
@@ -1710,34 +1854,6 @@ impl f32x4 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn sqrt(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        Self { sse: sqrt_m128(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_sqrt(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vsqrtq_f32(self.neon) }}
-      } else if #[cfg(feature="std")] {
-        Self { arr: [
-          self.arr[0].sqrt(),
-          self.arr[1].sqrt(),
-          self.arr[2].sqrt(),
-          self.arr[3].sqrt(),
-        ]}
-      } else {
-        Self { arr: [
-          software_sqrt(self.arr[0] as f64) as f32,
-          software_sqrt(self.arr[1] as f64) as f32,
-          software_sqrt(self.arr[2] as f64) as f32,
-          software_sqrt(self.arr[3] as f64) as f32,
-        ]}
-      }
-    }
-  }
-
-  #[inline]
   fn vm_pow2n(self) -> Self {
     const_f32_as_f32x4!(pow2_23, 8388608.0);
     const_f32_as_f32x4!(bias, 127.0);
@@ -2063,124 +2179,6 @@ impl f32x4 {
   #[must_use]
   pub fn log10(self) -> Self {
     Self::ln(self) * Self::LOG10_E
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn pow_f32x4(self, y: f32x4) -> Self {
-    const_f32_as_f32x4!(ln2f_hi, 0.693359375);
-    const_f32_as_f32x4!(ln2f_lo, -2.12194440e-4);
-    const_f32_as_f32x4!(P0logf, 3.3333331174E-1);
-    const_f32_as_f32x4!(P1logf, -2.4999993993E-1);
-    const_f32_as_f32x4!(P2logf, 2.0000714765E-1);
-    const_f32_as_f32x4!(P3logf, -1.6668057665E-1);
-    const_f32_as_f32x4!(P4logf, 1.4249322787E-1);
-    const_f32_as_f32x4!(P5logf, -1.2420140846E-1);
-    const_f32_as_f32x4!(P6logf, 1.1676998740E-1);
-    const_f32_as_f32x4!(P7logf, -1.1514610310E-1);
-    const_f32_as_f32x4!(P8logf, 7.0376836292E-2);
-
-    const_f32_as_f32x4!(p2expf, 1.0 / 2.0); // coefficients for Taylor expansion of exp
-    const_f32_as_f32x4!(p3expf, 1.0 / 6.0);
-    const_f32_as_f32x4!(p4expf, 1.0 / 24.0);
-    const_f32_as_f32x4!(p5expf, 1.0 / 120.0);
-    const_f32_as_f32x4!(p6expf, 1.0 / 720.0);
-    const_f32_as_f32x4!(p7expf, 1.0 / 5040.0);
-
-    let x1 = self.abs();
-    let x = x1.fraction_2();
-
-    let mask = x.simd_gt(f32x4::SQRT_2 * f32x4::HALF);
-    let x = (!mask).select(x + x, x);
-
-    let x = x - f32x4::ONE;
-    let x2 = x * x;
-    let lg1 = polynomial_8!(
-      x, P0logf, P1logf, P2logf, P3logf, P4logf, P5logf, P6logf, P7logf, P8logf
-    );
-    let lg1 = lg1 * x2 * x;
-
-    let ef = x1.exponent();
-    let ef = mask.select(ef + f32x4::ONE, ef);
-
-    let e1 = (ef * y).round_ties_even();
-    let yr = ef.mul_sub(y, e1);
-
-    let lg = f32x4::HALF.mul_neg_add(x2, x) + lg1;
-    let x2_err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
-    let lg_err = f32x4::HALF.mul_add(x2, lg - x) - lg1;
-
-    let e2 = (lg * y * f32x4::LOG2_E).round_ties_even();
-    let v = lg.mul_sub(y, e2 * ln2f_hi);
-    let v = e2.mul_neg_add(ln2f_lo, v);
-    let v = v - (lg_err + x2_err).mul_sub(y, yr * f32x4::LN_2);
-
-    let x = v;
-    let e3 = (x * f32x4::LOG2_E).round_ties_even();
-    let x = e3.mul_neg_add(f32x4::LN_2, x);
-    let x2 = x * x;
-    let z = x2.mul_add(
-      polynomial_5!(x, p2expf, p3expf, p4expf, p5expf, p6expf, p7expf),
-      x + f32x4::ONE,
-    );
-
-    let ee = e1 + e2 + e3;
-    let ei = cast::<_, i32x4>(ee.round_int());
-    let ej = cast::<_, i32x4>(ei + (cast::<_, i32x4>(z) >> 23));
-
-    let overflow = cast::<_, f32x4>(ej.simd_gt(i32x4::splat(0x0FF)))
-      | (ee.simd_gt(f32x4::splat(300.0)));
-    let underflow = cast::<_, f32x4>(ej.simd_lt(i32x4::splat(0x000)))
-      | (ee.simd_lt(f32x4::splat(-300.0)));
-
-    // Add exponent by integer addition
-    let z = cast::<_, f32x4>(cast::<_, i32x4>(z) + (ei << 23));
-
-    // Check for overflow/underflow
-    let z = if (overflow | underflow).any() {
-      let z = underflow.select(f32x4::ZERO, z);
-      overflow.select(Self::infinity(), z)
-    } else {
-      z
-    };
-
-    // Check for self == 0
-    let x_zero = self.is_zero_or_subnormal();
-    let z = x_zero.select(
-      y.simd_lt(f32x4::ZERO).select(
-        Self::infinity(),
-        y.simd_eq(f32x4::ZERO).select(f32x4::ONE, f32x4::ZERO),
-      ),
-      z,
-    );
-
-    let x_sign = self.is_sign_negative();
-    let z = if x_sign.any() {
-      // Y into an integer
-      let yi = y.simd_eq(y.round_ties_even());
-      // Is y odd? If yes flip the sign of the result.
-      let y_odd = cast::<i32x4, f32x4>(y.round_int() << 31);
-
-      let z1 = yi
-        .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
-      x_sign.select(z1, z)
-    } else {
-      z
-    };
-
-    let x_finite = self.is_finite();
-    let y_finite = y.is_finite();
-    let e_finite = ee.is_finite();
-    if (x_finite & y_finite & (e_finite | x_zero)).all() {
-      return z;
-    }
-
-    (self.is_nan() | y.is_nan()).select(self + y, z)
-  }
-
-  #[inline]
-  pub fn powf(self, y: f32) -> Self {
-    Self::pow_f32x4(self, f32x4::splat(y))
   }
 
   #[must_use]
