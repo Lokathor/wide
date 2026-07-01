@@ -219,6 +219,40 @@ impl_simd_float! {
   UnsignedT = u64,
 
   #[inline]
+  pub fn reduce_add(self) -> f64 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
+        let lo = cast_to_m128d_from_m256d(self.avx);
+        let hi = extract_m128d_from_m256d::<1>(self.avx);
+        let lo = add_m128d(lo,hi);
+        let hi64 = unpack_high_m128d(lo,lo);
+        let sum = add_m128d_s(lo,hi64);
+        get_f64_from_m128d_s(sum)
+      } else {
+        self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f64 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
+        let lo = cast_to_m128d_from_m256d(self.avx);
+        let hi = extract_m128d_from_m256d::<1>(self.avx);
+        let lo = mul_m128d(lo,hi);
+        let hi64 = unpack_high_m128d(lo,lo);
+        let product = mul_m128d_s(lo,hi64);
+        get_f64_from_m128d_s(product)
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
+  #[inline]
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -1979,43 +2013,6 @@ impl f64x4 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
-  }
-
-  /// horizontal add of all the elements of the vector
-  #[inline]
-  pub fn reduce_add(self) -> f64 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-        let lo = cast_to_m128d_from_m256d(self.avx);
-        let hi = extract_m128d_from_m256d::<1>(self.avx);
-        let lo = add_m128d(lo,hi);
-        let hi64 = unpack_high_m128d(lo,lo);
-        let sum = add_m128d_s(lo,hi64);
-        get_f64_from_m128d_s(sum)
-      } else {
-        self.a.reduce_add() + self.b.reduce_add()
-      }
-    }
-  }
-
-  /// horizontal multiplication of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> f64 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-        let lo = cast_to_m128d_from_m256d(self.avx);
-        let hi = extract_m128d_from_m256d::<1>(self.avx);
-        let lo = mul_m128d(lo,hi);
-        let hi64 = unpack_high_m128d(lo,lo);
-        let product = mul_m128d_s(lo,hi64);
-        get_f64_from_m128d_s(product)
-      } else {
-        self.a.reduce_mul() * self.b.reduce_mul()
-      }
-    }
   }
 
   // Sometimes used for `transpose`.

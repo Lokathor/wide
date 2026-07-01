@@ -230,6 +230,35 @@ impl_simd_float! {
   UnsignedT = u32,
 
   #[inline]
+  pub fn reduce_add(self) -> f32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")]{
+        reduce_add_m512(self.avx512)
+      } else {
+        self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
+        // safe.
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_reduce_mul_ps;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_reduce_mul_ps;
+
+        unsafe { _mm512_reduce_mul_ps(self.avx512.0) }
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
+  #[inline]
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature = "avx512f")] {
@@ -1764,39 +1793,6 @@ impl f32x16 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f32x16>(i32x16::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
-  }
-
-  /// horizontal add of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> f32 {
-    pick! {
-      if #[cfg(target_feature="avx512f")]{
-        reduce_add_m512(self.avx512)
-      } else {
-        self.a.reduce_add() + self.b.reduce_add()
-      }
-    }
-  }
-
-  /// horizontal multiplication of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> f32 {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
-        // safe.
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm512_reduce_mul_ps;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm512_reduce_mul_ps;
-
-        unsafe { _mm512_reduce_mul_ps(self.avx512.0) }
-      } else {
-        self.a.reduce_mul() * self.b.reduce_mul()
-      }
-    }
   }
 
   #[inline]

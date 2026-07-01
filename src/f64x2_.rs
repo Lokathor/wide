@@ -279,6 +279,29 @@ impl_simd_float! {
   UnsignedT = u64,
 
   #[inline]
+  pub fn reduce_add(self) -> f64 {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        let a = add_horizontal_m128d(self.sse, self.sse);
+        a.to_array()[0]
+      } else if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let a: [f64;2] = cast(self);
+        a.iter().sum()
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_f64(self.neon,0) + vgetq_lane_f64(self.neon,1) }
+      } else {
+        self.arr.iter().sum()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f64 {
+    let arr: [f64; 2] = cast(self);
+    arr.iter().product()
+  }
+
+  #[inline]
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -2215,33 +2238,6 @@ impl f64x2 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
-  }
-
-  /// horizontal add of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> f64 {
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        let a = add_horizontal_m128d(self.sse, self.sse);
-        a.to_array()[0]
-      } else if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let a: [f64;2] = cast(self);
-        a.iter().sum()
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_f64(self.neon,0) + vgetq_lane_f64(self.neon,1) }
-      } else {
-        self.arr.iter().sum()
-      }
-    }
-  }
-
-  /// horizontal multiplication of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> f64 {
-    let arr: [f64; 2] = cast(self);
-    arr.iter().product()
   }
 
   // Sometimes used for `transpose`.

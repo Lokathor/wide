@@ -323,6 +323,18 @@ impl_simd_float! {
   UnsignedT = u32,
 
   #[inline]
+  pub fn reduce_add(self) -> f32 {
+    let arr: [f32; 4] = cast(self);
+    arr.iter().sum()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f32 {
+    let arr: [f32; 4] = cast(self);
+    arr.iter().product()
+  }
+
+  #[inline]
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
@@ -2112,22 +2124,6 @@ impl f32x4 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
-  }
-
-  /// horizontal add of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> f32 {
-    let arr: [f32; 4] = cast(self);
-    arr.iter().sum()
-  }
-
-  /// horizontal multiplication of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> f32 {
-    let arr: [f32; 4] = cast(self);
-    arr.iter().product()
   }
 
   #[must_use]

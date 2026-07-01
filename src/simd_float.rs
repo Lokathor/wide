@@ -5,6 +5,8 @@ macro_rules! impl_simd_float {
     Simd = $Simd:ident,
     UnsignedT = $UnsignedT:ident,
 
+    $fn_reduce_add:item
+    $fn_reduce_mul:item
     $fn_is_nan:item
     $fn_is_inf:item
     $fn_is_finite:item
@@ -83,6 +85,14 @@ macro_rules! impl_simd_float {
       pub const PI: Self = Self::splat(core::$T::consts::PI);
       pub const SQRT_2: Self = Self::splat(core::$T::consts::SQRT_2);
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
+
+      /// horizontal add of all the elements of the vector
+      #[must_use]
+      $fn_reduce_add
+
+      /// horizontal multiplication of all the elements of the vector
+      #[must_use]
+      $fn_reduce_mul
 
       #[must_use]
       $fn_is_nan
