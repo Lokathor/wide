@@ -12,6 +12,13 @@ pick! {
   }
 }
 
+macro_rules! const_f32_as_f32x16 {
+  ($i:ident, $f:expr) => {
+    #[allow(non_upper_case_globals)]
+    pub const $i: f32x16 = f32x16::new([$f; 16]);
+  };
+}
+
 impl_simd! {
   T = f32,
   N = 16,
@@ -416,13 +423,160 @@ impl_simd_float! {
       }
     }
   }
-}
 
-macro_rules! const_f32_as_f32x16 {
-  ($i:ident, $f:expr) => {
-    #[allow(non_upper_case_globals)]
-    pub const $i: f32x16 = f32x16::new([$f; 16]);
-  };
+  #[inline]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(NegInf)}>(self.avx512) }
+      } else {
+        Self {
+          a : self.a.floor(),
+          b : self.b.floor(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn ceil(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(PosInf)}>(self.avx512) }
+      } else {
+        Self {
+          a : self.a.ceil(),
+          b : self.b.ceil(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        const_f32_as_f32x16!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x16!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { avx512: round_m512::<{round_op!(Zero)}>(adjusted_self.avx512) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(
+          cast(self_abs),
+          cast(BOUNDS_LIMIT),
+        ));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().bitselect(result_abs, self)
+      } else {
+        Self {
+          a: self.a.round(),
+          b: self.b.round(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn round_int(self) -> i32x16 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x16 = cast(self.simd_ge(Self::splat(2147483648.0)));
+        let cast: i32x16 = cast(convert_to_i32_m512i_from_m512(non_nan.avx512));
+        flip_to_max ^ cast
+      } else {
+        i32x16 {
+          a: self.a.round_int(),
+          b: self.b.round_int(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_round_int(self) -> i32x16 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        cast(convert_to_i32_m512i_from_m512(self.avx512))
+      } else {
+        i32x16 {
+          a: self.a.fast_round_int(),
+          b: self.b.fast_round_int(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn round_ties_even(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Nearest)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.round_ties_even(),
+          b: self.b.round_ties_even(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: round_m512::<{round_op!(Zero)}>(self.avx512) }
+      } else {
+        Self {
+          a: self.a.trunc(),
+          b: self.b.trunc(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn trunc_int(self) -> i32x16 {
+    pick! {
+        if #[cfg(target_feature="avx512f")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x16 = cast(self.simd_ge(Self::splat(2147483648.0)));
+        let cast: i32x16 = cast(convert_truncate_m512_i32_m512i(non_nan.avx512));
+        flip_to_max ^ cast
+      } else {
+        cast([
+          self.a.trunc_int(),
+          self.b.trunc_int(),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_trunc_int(self) -> i32x16 {
+    pick! {
+      if #[cfg(all(target_feature="avx512f"))] {
+        cast(convert_truncate_m512_i32_m512i(self.avx512))
+      } else {
+        cast([
+          self.a.fast_trunc_int(),
+          self.b.fast_trunc_int(),
+        ])
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for f32x16 {}
@@ -668,201 +822,6 @@ impl BitXor for f32x16 {
 }
 
 impl f32x16 {
-  #[inline]
-  #[must_use]
-  pub fn floor(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(NegInf)}>(self.avx512) }
-      } else {
-        Self {
-          a : self.a.floor(),
-          b : self.b.floor(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn ceil(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(PosInf)}>(self.avx512) }
-      } else {
-        Self {
-          a : self.a.ceil(),
-          b : self.b.ceil(),
-        }
-      }
-    }
-  }
-
-  /// Returns the nearest integers to `self`. If a value is half-way between two
-  /// integers, round away from `0.0`.
-  ///
-  /// This function always returns the precise result.
-  ///
-  /// For most targets [`round`] is slower than [`round_ties_even`]. If you
-  /// do not care about the difference, consider using that instead.
-  ///
-  /// [`round`]: Self::round
-  /// [`round_ties_even`]: Self::round_ties_even
-  #[inline]
-  #[must_use]
-  pub fn round(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        const_f32_as_f32x16!(HALF_NEXT_DOWN, 0.5_f32.next_down());
-        const_f32_as_f32x16!(BOUNDS_LIMIT, 8388608.0);
-
-        let self_abs = self.abs();
-
-        let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self { avx512: round_m512::<{round_op!(Zero)}>(adjusted_self.avx512) };
-        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
-        // `1.0`. This resets the result back to `0.0`.
-        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
-
-        // Large value, infinity and NaN need special handling.
-        let bounds_mask: Self = cast(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(
-          cast(self_abs),
-          cast(BOUNDS_LIMIT),
-        ));
-
-        // `abs` keeps the original sign.
-        bounds_mask.abs().bitselect(result_abs, self)
-      } else {
-        Self {
-          a: self.a.round(),
-          b: self.b.round(),
-        }
-      }
-    }
-  }
-
-  /// Returns the nearest integers to `self`. Rounds half-way cases to the
-  /// number with an even least significant digit.
-  ///
-  /// This function always returns the precise result.
-  #[inline]
-  #[must_use]
-  pub fn round_ties_even(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(Nearest)}>(self.avx512) }
-      } else {
-        Self {
-          a: self.a.round_ties_even(),
-          b: self.b.round_ties_even(),
-        }
-      }
-    }
-  }
-
-  /// Rounds each lane into an integer. This is a faster implementation than
-  /// `round_int`, but it doesn't handle out of range values or NaNs. For those
-  /// values you get implementation defined behavior.
-  #[inline]
-  #[must_use]
-  pub fn fast_round_int(self) -> i32x16 {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        cast(convert_to_i32_m512i_from_m512(self.avx512))
-      } else {
-        i32x16 {
-          a: self.a.fast_round_int(),
-          b: self.b.fast_round_int(),
-        }
-      }
-    }
-  }
-
-  /// Rounds each lane into an integer. This saturates out of range values and
-  /// turns NaNs into 0. Use `fast_round_int` for a faster implementation that
-  /// doesn't handle out of range values or NaNs.
-  #[inline]
-  #[must_use]
-  pub fn round_int(self) -> i32x16 {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.simd_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x16 = cast(self.simd_ge(Self::splat(2147483648.0)));
-        let cast: i32x16 = cast(convert_to_i32_m512i_from_m512(non_nan.avx512));
-        flip_to_max ^ cast
-      } else {
-        i32x16 {
-          a: self.a.round_int(),
-          b: self.b.round_int(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn trunc(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: round_m512::<{round_op!(Zero)}>(self.avx512) }
-      } else {
-        Self {
-          a: self.a.trunc(),
-          b: self.b.trunc(),
-        }
-      }
-    }
-  }
-
-  /// Truncates each lane into an integer. This is a faster implementation than
-  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
-  /// values you get implementation defined behavior.
-  #[inline]
-  #[must_use]
-  pub fn fast_trunc_int(self) -> i32x16 {
-    pick! {
-      if #[cfg(all(target_feature="avx512f"))] {
-        cast(convert_truncate_m512_i32_m512i(self.avx512))
-      } else {
-        cast([
-          self.a.fast_trunc_int(),
-          self.b.fast_trunc_int(),
-        ])
-      }
-    }
-  }
-
-  /// Truncates each lane into an integer. This saturates out of range values
-  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
-  /// that doesn't handle out of range values or NaNs.
-  #[inline]
-  #[must_use]
-  pub fn trunc_int(self) -> i32x16 {
-    pick! {
-        if #[cfg(target_feature="avx512f")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.simd_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x16 = cast(self.simd_ge(Self::splat(2147483648.0)));
-        let cast: i32x16 = cast(convert_truncate_m512_i32_m512i(non_nan.avx512));
-        flip_to_max ^ cast
-      } else {
-        cast([
-          self.a.trunc_int(),
-          self.b.trunc_int(),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn fract(self) -> Self {
-    self - self.trunc()
-  }
-
   /// Performs a multiply-add operation: `self * m + a`
   ///
   /// When hardware FMA support is available, this computes the result with a

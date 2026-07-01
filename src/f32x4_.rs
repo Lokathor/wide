@@ -50,6 +50,13 @@ pick! {
   }
 }
 
+macro_rules! const_f32_as_f32x4 {
+  ($i:ident, $f:expr) => {
+    #[allow(non_upper_case_globals)]
+    pub const $i: f32x4 = f32x4::new([$f; 4]);
+  };
+}
+
 impl_simd! {
   T = f32,
   N = 4,
@@ -585,13 +592,301 @@ impl_simd_float! {
       }
     }
   }
-}
 
-macro_rules! const_f32_as_f32x4 {
-  ($i:ident, $f:expr) => {
-    #[allow(non_upper_case_globals)]
-    pub const $i: f32x4 = f32x4::new([$f; 4]);
-  };
+  #[inline]
+  pub fn floor(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_floor(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: floor_m128(self.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndmq_f32(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f32; 4] = cast(self);
+        cast(base.map(|val| val.floor()))
+      } else {
+        let base: [f32; 4] = cast(self);
+        let rounded: [f32; 4] = cast(self.round());
+        cast([
+          if base[0] < rounded[0] { rounded[0] - 1.0 } else { rounded[0] },
+          if base[1] < rounded[1] { rounded[1] - 1.0 } else { rounded[1] },
+          if base[2] < rounded[2] { rounded[2] - 1.0 } else { rounded[2] },
+          if base[3] < rounded[3] { rounded[3] - 1.0 } else { rounded[3] },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn ceil(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_ceil(self.simd) }
+      } else if #[cfg(target_feature="sse4.1")] {
+        Self { sse: ceil_m128(self.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndpq_f32(self.neon) }}
+      } else if #[cfg(feature="std")] {
+        let base: [f32; 4] = cast(self);
+        cast(base.map(|val| val.ceil()))
+      } else {
+        let base: [f32; 4] = cast(self);
+        let rounded: [f32; 4] = cast(self.round());
+        cast([
+          if base[0] > rounded[0] { rounded[0] + 1.0 } else { rounded[0] },
+          if base[1] > rounded[1] { rounded[1] + 1.0 } else { rounded[1] },
+          if base[2] > rounded[2] { rounded[2] + 1.0 } else { rounded[2] },
+          if base[3] > rounded[3] { rounded[3] + 1.0 } else { rounded[3] },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn round(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { sse: round_m128::<{round_op!(Zero)}>(adjusted_self.sse) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().bitselect(result_abs, self)
+      } else if #[cfg(target_feature="sse2")] {
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self {
+          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(adjusted_self.sse)),
+        };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().bitselect(result_abs, self)
+      } else if #[cfg(target_feature="simd128")] {
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = self_abs + Self::HALF;
+        let result_abs = Self { simd: f32x4_trunc(adjusted_self.simd) };
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask = Self { simd: i32x4_lt(self_abs.simd, BOUNDS_LIMIT.simd) };
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().bitselect(result_abs, self)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndaq_f32(self.neon) }}
+      } else {
+        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
+
+        let self_abs = self.abs();
+
+        let adjusted_self = (self_abs + Self::HALF).to_array();
+        let result_abs = Self::new([
+          adjusted_self[0] as u32 as f32,
+          adjusted_self[1] as u32 as f32,
+          adjusted_self[2] as u32 as f32,
+          adjusted_self[3] as u32 as f32,
+        ]);
+        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
+        // `1.0`. This resets the result back to `0.0`.
+        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
+
+        // Large value, infinity and NaN need special handling.
+        let bounds_mask: Self = cast(cast::<_, i32x4>(self_abs).simd_lt(cast::<_, i32x4>(BOUNDS_LIMIT)));
+
+        // `abs` keeps the original sign.
+        bounds_mask.abs().bitselect(result_abs, self)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn round_int(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
+        let cast: i32x4 = cast(convert_to_i32_m128i_from_m128(non_nan.sse));
+        flip_to_max ^ cast
+      } else if #[cfg(target_feature="simd128")] {
+        cast(Self { simd: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd)) })
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        cast(unsafe {Self { neon: vreinterpretq_f32_s32(vcvtnq_s32_f32(self.neon)) }})
+      } else {
+        let rounded: [f32; 4] = cast(self.round());
+        cast([
+          rounded[0] as i32,
+          rounded[1] as i32,
+          rounded[2] as i32,
+          rounded[3] as i32,
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_round_int(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        cast(convert_to_i32_m128i_from_m128(self.sse))
+      } else {
+        self.round_int()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn round_ties_even(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128::<{round_op!(Nearest)}>(self.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        let mi: m128i = convert_to_i32_m128i_from_m128(self.sse);
+        let f: f32x4 = f32x4 { sse: convert_to_m128_from_i32_m128i(mi) };
+        let i: i32x4 = cast(mi);
+        let mask: f32x4 = cast(i.simd_eq(i32x4::from(0x80000000_u32 as i32)));
+        mask.select(self, f)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_nearest(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vrndnq_f32(self.neon) }}
+      } else {
+        // Note(Lokathor): This software fallback is probably very slow compared
+        // to having a hardware option available, even just the sse2 version is
+        // better than this. Oh well.
+        let to_int = f32x4::from(1.0 / f32::EPSILON);
+        let u: u32x4 = cast(self);
+        let e: i32x4 = cast((u >> 23) & u32x4::from(0xff));
+        let mut y: f32x4;
+
+        let no_op_magic = i32x4::from(0x7f + 23);
+        let no_op_mask: f32x4 = cast(e.simd_gt(no_op_magic) | e.simd_eq(no_op_magic));
+        let no_op_val: f32x4 = self;
+
+        let zero_magic = i32x4::from(0x7f - 1);
+        let zero_mask: f32x4 = cast(e.simd_lt(zero_magic));
+        let zero_val: f32x4 = self * f32x4::from(0.0);
+
+        let neg_bit: f32x4 = cast(cast::<u32x4, i32x4>(u).simd_lt(i32x4::default()));
+        let x: f32x4 = neg_bit.select(-self, self);
+        y = x + to_int - to_int - x;
+        y = y.simd_gt(f32x4::from(0.5)).select(
+          y + x - f32x4::from(-1.0),
+          y.simd_lt(f32x4::from(-0.5)).select(y + x + f32x4::from(1.0), y + x),
+        );
+        y = neg_bit.select(-y, y);
+
+        no_op_mask.select(no_op_val, zero_mask.select(zero_val, y))
+      }
+    }
+  }
+
+  #[inline]
+  pub fn trunc(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: round_m128::<{round_op!(Zero)}>(self.sse) }
+      } else if #[cfg(target_feature="sse2")] {
+        // Ported from https://docs.rs/glam/latest/glam/f32/struct.Vec4.html#method.trunc
+        // Based on https://github.com/microsoft/DirectXMath `XMVectorTruncate`
+        let result: Self = cast(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.sse)));
+
+        // Out of range values are either already round, infinite or NaN.
+        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(
+            cast(self.abs()),
+            set_splat_i32_m128i(8388608_f32.to_bits() as i32),
+        ));
+
+        // Reset the sign bit of the mask to preverse the sign of `self`.
+        bounds_mask.abs().select(result, self)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_trunc(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vrndq_f32(self.neon) } }
+      } else {
+        let array: [f32; 4] = cast(self);
+        let result: Self = cast([
+          array[0] as i32 as f32,
+          array[1] as i32 as f32,
+          array[2] as i32 as f32,
+          array[3] as i32 as f32,
+        ]);
+
+        // Out of range values are either already round, infinite or NaN.
+        const BOUNDS_LIMIT: i32 = 8388608_f32.to_bits() as i32;
+        let bounds_mask: Self = cast(cast::<f32x4, i32x4>(self.abs()).simd_lt(i32x4::splat(BOUNDS_LIMIT)));
+
+        // Reset the sign bit of the mask to preverse the sign of `self`.
+        bounds_mask.abs().select(result, self)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn trunc_int(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
+        let non_nan_mask = self.simd_eq(self);
+        let non_nan = self & non_nan_mask;
+        let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
+        let cast: i32x4 = cast(truncate_m128_to_m128i(non_nan.sse));
+        flip_to_max ^ cast
+      } else if #[cfg(target_feature="simd128")] {
+        cast(Self { simd: i32x4_trunc_sat_f32x4(self.simd) })
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        cast(unsafe {Self { neon: vreinterpretq_f32_s32(vcvtq_s32_f32(self.neon)) }})
+      } else {
+        let n: [f32;4] = cast(self);
+        cast([
+          n[0] as i32,
+          n[1] as i32,
+          n[2] as i32,
+          n[3] as i32,
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn fast_trunc_int(self) -> i32x4 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        cast(truncate_m128_to_m128i(self.sse))
+      } else {
+        self.trunc_int()
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for f32x4 {}
@@ -879,341 +1174,6 @@ impl BitXor for f32x4 {
 }
 
 impl f32x4 {
-  #[inline]
-  #[must_use]
-  pub fn floor(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_floor(self.simd) }
-      } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: floor_m128(self.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vrndmq_f32(self.neon) }}
-      } else if #[cfg(feature="std")] {
-        let base: [f32; 4] = cast(self);
-        cast(base.map(|val| val.floor()))
-      } else {
-        let base: [f32; 4] = cast(self);
-        let rounded: [f32; 4] = cast(self.round());
-        cast([
-          if base[0] < rounded[0] { rounded[0] - 1.0 } else { rounded[0] },
-          if base[1] < rounded[1] { rounded[1] - 1.0 } else { rounded[1] },
-          if base[2] < rounded[2] { rounded[2] - 1.0 } else { rounded[2] },
-          if base[3] < rounded[3] { rounded[3] - 1.0 } else { rounded[3] },
-        ])
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn ceil(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_ceil(self.simd) }
-      } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: ceil_m128(self.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vrndpq_f32(self.neon) }}
-      } else if #[cfg(feature="std")] {
-        let base: [f32; 4] = cast(self);
-        cast(base.map(|val| val.ceil()))
-      } else {
-        let base: [f32; 4] = cast(self);
-        let rounded: [f32; 4] = cast(self.round());
-        cast([
-          if base[0] > rounded[0] { rounded[0] + 1.0 } else { rounded[0] },
-          if base[1] > rounded[1] { rounded[1] + 1.0 } else { rounded[1] },
-          if base[2] > rounded[2] { rounded[2] + 1.0 } else { rounded[2] },
-          if base[3] > rounded[3] { rounded[3] + 1.0 } else { rounded[3] },
-        ])
-      }
-    }
-  }
-
-  /// Returns the nearest integers to `self`. If a value is half-way between two
-  /// integers, round away from `0.0`.
-  ///
-  /// This function always returns the precise result.
-  ///
-  /// For most targets [`round`] is slower than [`round_ties_even`]. If you
-  /// do not care about the difference, consider using that instead.
-  ///
-  /// [`round`]: Self::round
-  /// [`round_ties_even`]: Self::round_ties_even
-  #[inline]
-  #[must_use]
-  pub fn round(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
-        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
-
-        let self_abs = self.abs();
-
-        let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self { sse: round_m128::<{round_op!(Zero)}>(adjusted_self.sse) };
-        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
-        // `1.0`. This resets the result back to `0.0`.
-        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
-
-        // Large value, infinity and NaN need special handling.
-        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
-
-        // `abs` keeps the original sign.
-        bounds_mask.abs().bitselect(result_abs, self)
-      } else if #[cfg(target_feature="sse2")] {
-        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
-        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
-
-        let self_abs = self.abs();
-
-        let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self {
-          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(adjusted_self.sse)),
-        };
-        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
-        // `1.0`. This resets the result back to `0.0`.
-        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
-
-        // Large value, infinity and NaN need special handling.
-        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
-
-        // `abs` keeps the original sign.
-        bounds_mask.abs().bitselect(result_abs, self)
-      } else if #[cfg(target_feature="simd128")] {
-        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
-        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
-
-        let self_abs = self.abs();
-
-        let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self { simd: f32x4_trunc(adjusted_self.simd) };
-        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
-        // `1.0`. This resets the result back to `0.0`.
-        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
-
-        // Large value, infinity and NaN need special handling.
-        let bounds_mask = Self { simd: i32x4_lt(self_abs.simd, BOUNDS_LIMIT.simd) };
-
-        // `abs` keeps the original sign.
-        bounds_mask.abs().bitselect(result_abs, self)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vrndaq_f32(self.neon) }}
-      } else {
-        const_f32_as_f32x4!(HALF_NEXT_DOWN, 0.5_f32.next_down());
-        const_f32_as_f32x4!(BOUNDS_LIMIT, 8388608.0);
-
-        let self_abs = self.abs();
-
-        let adjusted_self = (self_abs + Self::HALF).to_array();
-        let result_abs = Self::new([
-          adjusted_self[0] as u32 as f32,
-          adjusted_self[1] as u32 as f32,
-          adjusted_self[2] as u32 as f32,
-          adjusted_self[3] as u32 as f32,
-        ]);
-        // The addition breaks for `0.5.next_down()` which incorrectly rounds to
-        // `1.0`. This resets the result back to `0.0`.
-        let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
-
-        // Large value, infinity and NaN need special handling.
-        let bounds_mask: Self = cast(cast::<_, i32x4>(self_abs).simd_lt(cast::<_, i32x4>(BOUNDS_LIMIT)));
-
-        // `abs` keeps the original sign.
-        bounds_mask.abs().bitselect(result_abs, self)
-      }
-    }
-  }
-
-  /// Returns the nearest integers to `self`. Rounds half-way cases to the
-  /// number with an even least significant digit.
-  ///
-  /// This function always returns the precise result.
-  #[inline]
-  #[must_use]
-  pub fn round_ties_even(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128::<{round_op!(Nearest)}>(self.sse) }
-      } else if #[cfg(target_feature="sse2")] {
-        let mi: m128i = convert_to_i32_m128i_from_m128(self.sse);
-        let f: f32x4 = f32x4 { sse: convert_to_m128_from_i32_m128i(mi) };
-        let i: i32x4 = cast(mi);
-        let mask: f32x4 = cast(i.simd_eq(i32x4::from(0x80000000_u32 as i32)));
-        mask.select(self, f)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_nearest(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vrndnq_f32(self.neon) }}
-      } else {
-        // Note(Lokathor): This software fallback is probably very slow compared
-        // to having a hardware option available, even just the sse2 version is
-        // better than this. Oh well.
-        let to_int = f32x4::from(1.0 / f32::EPSILON);
-        let u: u32x4 = cast(self);
-        let e: i32x4 = cast((u >> 23) & u32x4::from(0xff));
-        let mut y: f32x4;
-
-        let no_op_magic = i32x4::from(0x7f + 23);
-        let no_op_mask: f32x4 = cast(e.simd_gt(no_op_magic) | e.simd_eq(no_op_magic));
-        let no_op_val: f32x4 = self;
-
-        let zero_magic = i32x4::from(0x7f - 1);
-        let zero_mask: f32x4 = cast(e.simd_lt(zero_magic));
-        let zero_val: f32x4 = self * f32x4::from(0.0);
-
-        let neg_bit: f32x4 = cast(cast::<u32x4, i32x4>(u).simd_lt(i32x4::default()));
-        let x: f32x4 = neg_bit.select(-self, self);
-        y = x + to_int - to_int - x;
-        y = y.simd_gt(f32x4::from(0.5)).select(
-          y + x - f32x4::from(-1.0),
-          y.simd_lt(f32x4::from(-0.5)).select(y + x + f32x4::from(1.0), y + x),
-        );
-        y = neg_bit.select(-y, y);
-
-        no_op_mask.select(no_op_val, zero_mask.select(zero_val, y))
-      }
-    }
-  }
-
-  /// Rounds each lane into an integer. This is a faster implementation than
-  /// `round_int`, but it doesn't handle out of range values or NaNs. For those
-  /// values you get implementation defined behavior.
-  #[inline]
-  #[must_use]
-  pub fn fast_round_int(self) -> i32x4 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        cast(convert_to_i32_m128i_from_m128(self.sse))
-      } else {
-        self.round_int()
-      }
-    }
-  }
-
-  /// Rounds each lane into an integer. This saturates out of range values and
-  /// turns NaNs into 0. Use `fast_round_int` for a faster implementation that
-  /// doesn't handle out of range values or NaNs.
-  #[inline]
-  #[must_use]
-  pub fn round_int(self) -> i32x4 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.simd_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
-        let cast: i32x4 = cast(convert_to_i32_m128i_from_m128(non_nan.sse));
-        flip_to_max ^ cast
-      } else if #[cfg(target_feature="simd128")] {
-        cast(Self { simd: i32x4_trunc_sat_f32x4(f32x4_nearest(self.simd)) })
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        cast(unsafe {Self { neon: vreinterpretq_f32_s32(vcvtnq_s32_f32(self.neon)) }})
-      } else {
-        let rounded: [f32; 4] = cast(self.round());
-        cast([
-          rounded[0] as i32,
-          rounded[1] as i32,
-          rounded[2] as i32,
-          rounded[3] as i32,
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn trunc(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128::<{round_op!(Zero)}>(self.sse) }
-      } else if #[cfg(target_feature="sse2")] {
-        // Ported from https://docs.rs/glam/latest/glam/f32/struct.Vec4.html#method.trunc
-        // Based on https://github.com/microsoft/DirectXMath `XMVectorTruncate`
-        let result: Self = cast(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.sse)));
-
-        // Out of range values are either already round, infinite or NaN.
-        let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(
-            cast(self.abs()),
-            set_splat_i32_m128i(8388608_f32.to_bits() as i32),
-        ));
-
-        // Reset the sign bit of the mask to preverse the sign of `self`.
-        bounds_mask.abs().select(result, self)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_trunc(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vrndq_f32(self.neon) } }
-      } else {
-        let array: [f32; 4] = cast(self);
-        let result: Self = cast([
-          array[0] as i32 as f32,
-          array[1] as i32 as f32,
-          array[2] as i32 as f32,
-          array[3] as i32 as f32,
-        ]);
-
-        // Out of range values are either already round, infinite or NaN.
-        const BOUNDS_LIMIT: i32 = 8388608_f32.to_bits() as i32;
-        let bounds_mask: Self = cast(cast::<f32x4, i32x4>(self.abs()).simd_lt(i32x4::splat(BOUNDS_LIMIT)));
-
-        // Reset the sign bit of the mask to preverse the sign of `self`.
-        bounds_mask.abs().select(result, self)
-      }
-    }
-  }
-
-  /// Truncates each lane into an integer. This is a faster implementation than
-  /// `trunc_int`, but it doesn't handle out of range values or NaNs. For those
-  /// values you get implementation defined behavior.
-  #[inline]
-  #[must_use]
-  pub fn fast_trunc_int(self) -> i32x4 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        cast(truncate_m128_to_m128i(self.sse))
-      } else {
-        self.trunc_int()
-      }
-    }
-  }
-
-  /// Truncates each lane into an integer. This saturates out of range values
-  /// and turns NaNs into 0. Use `fast_trunc_int` for a faster implementation
-  /// that doesn't handle out of range values or NaNs.
-  #[inline]
-  #[must_use]
-  pub fn trunc_int(self) -> i32x4 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
-        let non_nan_mask = self.simd_eq(self);
-        let non_nan = self & non_nan_mask;
-        let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
-        let cast: i32x4 = cast(truncate_m128_to_m128i(non_nan.sse));
-        flip_to_max ^ cast
-      } else if #[cfg(target_feature="simd128")] {
-        cast(Self { simd: i32x4_trunc_sat_f32x4(self.simd) })
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        cast(unsafe {Self { neon: vreinterpretq_f32_s32(vcvtq_s32_f32(self.neon)) }})
-      } else {
-        let n: [f32;4] = cast(self);
-        cast([
-          n[0] as i32,
-          n[1] as i32,
-          n[2] as i32,
-          n[3] as i32,
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn fract(self) -> Self {
-    self - self.trunc()
-  }
-
   /// Performs a multiply-add operation: `self * m + a`
   ///
   /// When hardware FMA support is available, this computes the result with a

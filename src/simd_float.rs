@@ -19,6 +19,15 @@ macro_rules! impl_simd_float {
     $fn_clamp:item
     $fn_fast_clamp:item
     $fn_abs:item
+    $fn_floor:item
+    $fn_ceil:item
+    $fn_round:item
+    $fn_round_int:item
+    $fn_fast_round_int:item
+    $fn_round_ties_even:item
+    $fn_trunc:item
+    $fn_trunc_int:item
+    $fn_fast_trunc_int:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -159,6 +168,65 @@ macro_rules! impl_simd_float {
       #[must_use]
       pub fn flip_signs(self, signs: Self) -> Self {
         self ^ (signs & Self::from(-0.0))
+      }
+
+      #[must_use]
+      $fn_floor
+
+      #[must_use]
+      $fn_ceil
+
+      /// Returns the nearest integers to `self`. If a value is half-way between
+      /// two integers, round away from `0.0`.
+      ///
+      /// This function always returns the precise result.
+      ///
+      /// For most targets [`round`] is slower than [`round_ties_even`]. If you
+      /// do not care about the difference, consider using that instead.
+      ///
+      /// [`round`]: Self::round
+      /// [`round_ties_even`]: Self::round_ties_even
+      #[must_use]
+      $fn_round
+
+      /// Rounds each lane into an integer. This saturates out of range values
+      /// and turns NaNs into 0. Use `fast_round_int` for a faster
+      /// implementation that doesn't handle out of range values or NaNs.
+      #[must_use]
+      $fn_round_int
+
+      /// Rounds each lane into an integer. This is a faster implementation than
+      /// `round_int`, but it doesn't handle out of range values or NaNs. For
+      /// those values you get implementation defined behavior.
+      #[must_use]
+      $fn_fast_round_int
+
+      /// Returns the nearest integers to `self`. Rounds half-way cases to the
+      /// number with an even least significant digit.
+      ///
+      /// This function always returns the precise result.
+      #[must_use]
+      $fn_round_ties_even
+
+      #[must_use]
+      $fn_trunc
+
+      /// Truncates each lane into an integer. This saturates out of range
+      /// values and turns NaNs into 0. Use `fast_trunc_int` for a faster
+      /// implementation that doesn't handle out of range values or NaNs.
+      #[must_use]
+      $fn_trunc_int
+
+      /// Truncates each lane into an integer. This is a faster implementation
+      /// than `trunc_int`, but it doesn't handle out of range values or NaNs.
+      /// For those values you get implementation defined behavior.
+      #[must_use]
+      $fn_fast_trunc_int
+
+      #[inline]
+      #[must_use]
+      pub fn fract(self) -> Self {
+        self - self.trunc()
       }
     }
   };
