@@ -39,6 +39,12 @@ macro_rules! impl_simd_float {
     $fn_exp2:item
     $fn_ln:item
     $fn_cbrt:item
+    $fn_asin:item
+    $fn_acos:item
+    $fn_atan:item
+    $fn_atan2:item
+    $fn_sin_cos:item
+    $fn_asin_acos:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -323,6 +329,45 @@ macro_rules! impl_simd_float {
       /// Calculates the cube root: `self^(1/3)`.
       #[must_use]
       $fn_cbrt
+
+      #[inline]
+      #[must_use]
+      pub fn sin(self) -> Self {
+        let (s, _) = self.sin_cos();
+        s
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn cos(self) -> Self {
+        let (_, c) = self.sin_cos();
+        c
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn tan(self) -> Self {
+        let (s, c) = self.sin_cos();
+        s / c
+      }
+
+      #[must_use]
+      $fn_asin
+
+      #[must_use]
+      $fn_acos
+
+      #[must_use]
+      $fn_atan
+
+      #[must_use]
+      $fn_atan2
+
+      #[must_use]
+      $fn_sin_cos
+
+      #[must_use]
+      $fn_asin_acos
     }
   };
 }

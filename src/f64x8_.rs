@@ -1073,6 +1073,471 @@ impl_simd_float! {
     let result = inf.select(self, result);
     result
   }
+
+  #[inline]
+  pub fn asin(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
+    const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
+    const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
+    const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
+    const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
+
+    const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
+    const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
+    const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
+    const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
+
+    const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
+    const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
+    const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
+    const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
+    const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
+    const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
+
+    const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
+    const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
+    const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
+    const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
+    const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
+
+    let xa = self.abs();
+
+    let big = xa.simd_ge(f64x8::splat(0.625));
+
+    let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
+
+    let x2 = x1 * x1;
+    let x3 = x2 * x1;
+    let x4 = x2 * x2;
+    let x5 = x4 * x1;
+
+    let do_big = big.any();
+    let do_small = !big.all();
+
+    let mut rx = f64x8::default();
+    let mut sx = f64x8::default();
+    let mut px = f64x8::default();
+    let mut qx = f64x8::default();
+
+    if do_big {
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+    }
+    if do_small {
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
+    };
+
+    let vx = big.select(rx, px);
+    let wx = big.select(sx, qx);
+
+    let y1 = vx / wx * x1;
+
+    let mut z1 = f64x8::default();
+    let mut z2 = f64x8::default();
+    if do_big {
+      let xb = (x1 + x1).sqrt();
+      z1 = xb.mul_add(y1, xb);
+    }
+
+    if do_small {
+      z2 = xa.mul_add(y1, xa);
+    }
+
+    // asin
+    let z3 = f64x8::FRAC_PI_2 - z1;
+    let asin = big.select(z3, z2);
+    let asin = asin.flip_signs(self);
+
+    asin
+  }
+
+  #[inline]
+  pub fn acos(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
+    const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
+    const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
+    const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
+    const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
+
+    const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
+    const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
+    const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
+    const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
+
+    const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
+    const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
+    const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
+    const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
+    const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
+    const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
+
+    const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
+    const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
+    const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
+    const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
+    const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
+
+    let xa = self.abs();
+
+    let big = xa.simd_ge(f64x8::splat(0.625));
+
+    let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
+
+    let x2 = x1 * x1;
+    let x3 = x2 * x1;
+    let x4 = x2 * x2;
+    let x5 = x4 * x1;
+
+    let do_big = big.any();
+    let do_small = !big.all();
+
+    let mut rx = f64x8::default();
+    let mut sx = f64x8::default();
+    let mut px = f64x8::default();
+    let mut qx = f64x8::default();
+
+    if do_big {
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+    }
+    if do_small {
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
+    };
+
+    let vx = big.select(rx, px);
+    let wx = big.select(sx, qx);
+
+    let y1 = vx / wx * x1;
+
+    let mut z1 = f64x8::default();
+    let mut z2 = f64x8::default();
+    if do_big {
+      let xb = (x1 + x1).sqrt();
+      z1 = xb.mul_add(y1, xb);
+    }
+
+    if do_small {
+      z2 = xa.mul_add(y1, xa);
+    }
+
+    // acos
+    let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
+    let z4 = f64x8::FRAC_PI_2 - z2.flip_signs(self);
+    let acos = big.select(z3, z4);
+
+    acos
+  }
+
+  #[inline]
+  pub fn atan(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
+    const_f64_as_f64x8!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
+    const_f64_as_f64x8!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
+
+    const_f64_as_f64x8!(P4atan, -8.750608600031904122785E-1);
+    const_f64_as_f64x8!(P3atan, -1.615753718733365076637E1);
+    const_f64_as_f64x8!(P2atan, -7.500855792314704667340E1);
+    const_f64_as_f64x8!(P1atan, -1.228866684490136173410E2);
+    const_f64_as_f64x8!(P0atan, -6.485021904942025371773E1);
+
+    const_f64_as_f64x8!(Q4atan, 2.485846490142306297962E1);
+    const_f64_as_f64x8!(Q3atan, 1.650270098316988542046E2);
+    const_f64_as_f64x8!(Q2atan, 4.328810604912902668951E2);
+    const_f64_as_f64x8!(Q1atan, 4.853903996359136964868E2);
+    const_f64_as_f64x8!(Q0atan, 1.945506571482613964425E2);
+
+    let t = self.abs();
+
+    // small:  t < 0.66
+    // medium: t <= t <= 2.4142 (1+sqrt(2))
+    // big:    t > 2.4142
+    let notbig = t.simd_le(T3PO8);
+    let notsmal = t.simd_ge(Self::splat(0.66));
+
+    let mut s = notbig.select(Self::FRAC_PI_4, Self::FRAC_PI_2);
+    s = notsmal & s;
+    let mut fac = notbig.select(MORE_BITS_O2, MORE_BITS);
+    fac = notsmal & fac;
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    // big:    z = -1.0 / t;
+    let mut a = notbig & t;
+    a = notsmal.select(a - Self::ONE, a);
+    let mut b = notbig & Self::ONE;
+    b = notsmal.select(b + t, b);
+    let z = a / b;
+
+    let zz = z * z;
+
+    let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
+    let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
+
+    let mut re = (px / qx).mul_add(z * zz, z);
+    re += s + fac;
+
+    // get sign bit
+    re = (self.is_sign_negative()).select(-re, re);
+
+    re
+  }
+
+  #[inline]
+  pub fn atan2(self, x: Self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
+    const_f64_as_f64x8!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
+    const_f64_as_f64x8!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
+
+    const_f64_as_f64x8!(P4atan, -8.750608600031904122785E-1);
+    const_f64_as_f64x8!(P3atan, -1.615753718733365076637E1);
+    const_f64_as_f64x8!(P2atan, -7.500855792314704667340E1);
+    const_f64_as_f64x8!(P1atan, -1.228866684490136173410E2);
+    const_f64_as_f64x8!(P0atan, -6.485021904942025371773E1);
+
+    const_f64_as_f64x8!(Q4atan, 2.485846490142306297962E1);
+    const_f64_as_f64x8!(Q3atan, 1.650270098316988542046E2);
+    const_f64_as_f64x8!(Q2atan, 4.328810604912902668951E2);
+    const_f64_as_f64x8!(Q1atan, 4.853903996359136964868E2);
+    const_f64_as_f64x8!(Q0atan, 1.945506571482613964425E2);
+
+    let y = self;
+
+    // move in first octant
+    let x1 = x.abs();
+    let y1 = y.abs();
+    let swapxy = y1.simd_gt(x1);
+    // swap x and y if y1 > x1
+    let mut x2 = swapxy.select(y1, x1);
+    let mut y2 = swapxy.select(x1, y1);
+
+    // check for special case: x and y are both +/- INF
+    let both_infinite = x.is_inf() & y.is_inf();
+    if both_infinite.any() {
+      let minus_one = -Self::ONE;
+      x2 = both_infinite.select(x2 & minus_one, x2);
+      y2 = both_infinite.select(y2 & minus_one, y2);
+    }
+
+    // x = y = 0 gives NAN here
+    let t = y2 / x2;
+
+    // small:  t < 0.66
+    // medium: t <= t <= 2.4142 (1+sqrt(2))
+    // big:    t > 2.4142
+    let notbig = t.simd_le(T3PO8);
+    let notsmal = t.simd_ge(Self::splat(0.66));
+
+    let mut s = notbig.select(Self::FRAC_PI_4, Self::FRAC_PI_2);
+    s = notsmal & s;
+    let mut fac = notbig.select(MORE_BITS_O2, MORE_BITS);
+    fac = notsmal & fac;
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    // big:    z = -1.0 / t;
+    let mut a = notbig & t;
+    a = notsmal.select(a - Self::ONE, a);
+    let mut b = notbig & Self::ONE;
+    b = notsmal.select(b + t, b);
+    let z = a / b;
+
+    let zz = z * z;
+
+    let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
+    let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
+
+    let mut re = (px / qx).mul_add(z * zz, z);
+    re += s + fac;
+
+    // move back in place
+    re = swapxy.select(Self::FRAC_PI_2 - re, re);
+    re = ((x | y).simd_eq(Self::ZERO)).select(Self::ZERO, re);
+    re = (x.is_sign_negative()).select(Self::PI - re, re);
+
+    // get sign bit
+    re = (y.is_sign_negative()).select(-re, re);
+
+    re
+  }
+
+  #[inline]
+  pub fn sin_cos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+
+    const_f64_as_f64x8!(P0sin, -1.66666666666666307295E-1);
+    const_f64_as_f64x8!(P1sin, 8.33333333332211858878E-3);
+    const_f64_as_f64x8!(P2sin, -1.98412698295895385996E-4);
+    const_f64_as_f64x8!(P3sin, 2.75573136213857245213E-6);
+    const_f64_as_f64x8!(P4sin, -2.50507477628578072866E-8);
+    const_f64_as_f64x8!(P5sin, 1.58962301576546568060E-10);
+
+    const_f64_as_f64x8!(P0cos, 4.16666666666665929218E-2);
+    const_f64_as_f64x8!(P1cos, -1.38888888888730564116E-3);
+    const_f64_as_f64x8!(P2cos, 2.48015872888517045348E-5);
+    const_f64_as_f64x8!(P3cos, -2.75573141792967388112E-7);
+    const_f64_as_f64x8!(P4cos, 2.08757008419747316778E-9);
+    const_f64_as_f64x8!(P5cos, -1.13585365213876817300E-11);
+
+    const_f64_as_f64x8!(DP1, 7.853981554508209228515625E-1 * 2.);
+    const_f64_as_f64x8!(DP2, 7.94662735614792836714E-9 * 2.);
+    const_f64_as_f64x8!(DP3, 3.06161699786838294307E-17 * 2.);
+
+    const_f64_as_f64x8!(TWO_OVER_PI, 2.0 / core::f64::consts::PI);
+
+    let xa = self.abs();
+
+    let y = (xa * TWO_OVER_PI).round_ties_even();
+    let q = y.round_int();
+
+    let x = y.mul_neg_add(DP3, y.mul_neg_add(DP2, y.mul_neg_add(DP1, xa)));
+
+    let x2 = x * x;
+    let mut s = polynomial_5!(x2, P0sin, P1sin, P2sin, P3sin, P4sin, P5sin);
+    let mut c = polynomial_5!(x2, P0cos, P1cos, P2cos, P3cos, P4cos, P5cos);
+    s = (x * x2).mul_add(s, x);
+    c =
+      (x2 * x2).mul_add(c, x2.mul_neg_add(f64x8::from(0.5), f64x8::from(1.0)));
+
+    let swap = !((q & i64x8::from(1)).simd_eq(i64x8::from(0)));
+
+    let mut overflow: f64x8 = cast(q.simd_gt(i64x8::from(0x80000000000000)));
+    overflow &= xa.is_finite();
+    s = overflow.select(f64x8::from(0.0), s);
+    c = overflow.select(f64x8::from(1.0), c);
+
+    // calc sin
+    let mut sin1 = cast::<_, f64x8>(swap).select(c, s);
+    let sign_sin: i64x8 = (q << 62) ^ cast::<_, i64x8>(self);
+    sin1 = sin1.flip_signs(cast(sign_sin));
+
+    // calc cos
+    let mut cos1 = cast::<_, f64x8>(swap).select(s, c);
+    let sign_cos: i64x8 = ((q + i64x8::from(1)) & i64x8::from(2)) << 62;
+    cos1 ^= cast::<_, f64x8>(sign_cos);
+
+    // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
+    let finite = self.is_finite();
+    let nan = Self::splat(f64::NAN);
+    let sin_final = finite.select(sin1, nan);
+    let cos_final = finite.select(cos1, nan);
+
+    (sin_final, cos_final)
+  }
+
+  #[inline]
+  pub fn asin_acos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
+    const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
+    const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
+    const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
+    const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
+
+    const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
+    const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
+    const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
+    const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
+
+    const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
+    const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
+    const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
+    const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
+    const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
+    const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
+
+    const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
+    const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
+    const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
+    const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
+    const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
+
+    let xa = self.abs();
+
+    let big = xa.simd_ge(f64x8::splat(0.625));
+
+    let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
+
+    let x2 = x1 * x1;
+    let x3 = x2 * x1;
+    let x4 = x2 * x2;
+    let x5 = x4 * x1;
+
+    let do_big = big.any();
+    let do_small = !big.all();
+
+    let mut rx = f64x8::default();
+    let mut sx = f64x8::default();
+    let mut px = f64x8::default();
+    let mut qx = f64x8::default();
+
+    if do_big {
+      rx = x3.mul_add(R3asin, x2 * R2asin)
+        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      sx =
+        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+    }
+
+    if do_small {
+      px = x3.mul_add(P3asin, P0asin)
+        + x4.mul_add(P4asin, x1 * P1asin)
+        + x5.mul_add(P5asin, x2 * P2asin);
+      qx = x4.mul_add(Q4asin, x5)
+        + x3.mul_add(Q3asin, x1 * Q1asin)
+        + x2.mul_add(Q2asin, Q0asin);
+    };
+
+    let vx = big.select(rx, px);
+    let wx = big.select(sx, qx);
+
+    let y1 = vx / wx * x1;
+
+    let mut z1 = f64x8::default();
+    let mut z2 = f64x8::default();
+    if do_big {
+      let xb = (x1 + x1).sqrt();
+      z1 = xb.mul_add(y1, xb);
+    }
+
+    if do_small {
+      z2 = xa.mul_add(y1, xa);
+    }
+
+    // asin
+    let z3 = f64x8::FRAC_PI_2 - z1;
+    let asin = big.select(z3, z2);
+    let asin = asin.flip_signs(self);
+
+    // acos
+    let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
+    let z4 = f64x8::FRAC_PI_2 - z2.flip_signs(self);
+    let acos = big.select(z3, z4);
+
+    (asin, acos)
+  }
 }
 
 unsafe impl Zeroable for f64x8 {}
@@ -1310,490 +1775,6 @@ impl BitXor for f64x8 {
 }
 
 impl f64x8 {
-  #[inline]
-  pub fn asin_acos(self) -> (Self, Self) {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
-    const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
-    const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
-    const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
-    const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
-
-    const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
-    const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
-    const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
-    const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
-
-    const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
-    const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
-    const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
-    const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
-    const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
-    const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
-
-    const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
-    const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
-    const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
-    const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
-    const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
-
-    let xa = self.abs();
-
-    let big = xa.simd_ge(f64x8::splat(0.625));
-
-    let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
-
-    let x2 = x1 * x1;
-    let x3 = x2 * x1;
-    let x4 = x2 * x2;
-    let x5 = x4 * x1;
-
-    let do_big = big.any();
-    let do_small = !big.all();
-
-    let mut rx = f64x8::default();
-    let mut sx = f64x8::default();
-    let mut px = f64x8::default();
-    let mut qx = f64x8::default();
-
-    if do_big {
-      rx = x3.mul_add(R3asin, x2 * R2asin)
-        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx =
-        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
-    }
-
-    if do_small {
-      px = x3.mul_add(P3asin, P0asin)
-        + x4.mul_add(P4asin, x1 * P1asin)
-        + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5)
-        + x3.mul_add(Q3asin, x1 * Q1asin)
-        + x2.mul_add(Q2asin, Q0asin);
-    };
-
-    let vx = big.select(rx, px);
-    let wx = big.select(sx, qx);
-
-    let y1 = vx / wx * x1;
-
-    let mut z1 = f64x8::default();
-    let mut z2 = f64x8::default();
-    if do_big {
-      let xb = (x1 + x1).sqrt();
-      z1 = xb.mul_add(y1, xb);
-    }
-
-    if do_small {
-      z2 = xa.mul_add(y1, xa);
-    }
-
-    // asin
-    let z3 = f64x8::FRAC_PI_2 - z1;
-    let asin = big.select(z3, z2);
-    let asin = asin.flip_signs(self);
-
-    // acos
-    let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
-    let z4 = f64x8::FRAC_PI_2 - z2.flip_signs(self);
-    let acos = big.select(z3, z4);
-
-    (asin, acos)
-  }
-
-  #[inline]
-  pub fn acos(self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
-    const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
-    const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
-    const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
-    const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
-
-    const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
-    const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
-    const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
-    const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
-
-    const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
-    const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
-    const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
-    const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
-    const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
-    const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
-
-    const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
-    const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
-    const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
-    const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
-    const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
-
-    let xa = self.abs();
-
-    let big = xa.simd_ge(f64x8::splat(0.625));
-
-    let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
-
-    let x2 = x1 * x1;
-    let x3 = x2 * x1;
-    let x4 = x2 * x2;
-    let x5 = x4 * x1;
-
-    let do_big = big.any();
-    let do_small = !big.all();
-
-    let mut rx = f64x8::default();
-    let mut sx = f64x8::default();
-    let mut px = f64x8::default();
-    let mut qx = f64x8::default();
-
-    if do_big {
-      rx = x3.mul_add(R3asin, x2 * R2asin)
-        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx =
-        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
-    }
-    if do_small {
-      px = x3.mul_add(P3asin, P0asin)
-        + x4.mul_add(P4asin, x1 * P1asin)
-        + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5)
-        + x3.mul_add(Q3asin, x1 * Q1asin)
-        + x2.mul_add(Q2asin, Q0asin);
-    };
-
-    let vx = big.select(rx, px);
-    let wx = big.select(sx, qx);
-
-    let y1 = vx / wx * x1;
-
-    let mut z1 = f64x8::default();
-    let mut z2 = f64x8::default();
-    if do_big {
-      let xb = (x1 + x1).sqrt();
-      z1 = xb.mul_add(y1, xb);
-    }
-
-    if do_small {
-      z2 = xa.mul_add(y1, xa);
-    }
-
-    // acos
-    let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
-    let z4 = f64x8::FRAC_PI_2 - z2.flip_signs(self);
-    let acos = big.select(z3, z4);
-
-    acos
-  }
-  #[inline]
-  #[must_use]
-  pub fn asin(self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
-    const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
-    const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
-    const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
-    const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
-
-    const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
-    const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
-    const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
-    const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
-
-    const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
-    const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
-    const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
-    const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
-    const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
-    const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
-
-    const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
-    const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
-    const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
-    const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
-    const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
-
-    let xa = self.abs();
-
-    let big = xa.simd_ge(f64x8::splat(0.625));
-
-    let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
-
-    let x2 = x1 * x1;
-    let x3 = x2 * x1;
-    let x4 = x2 * x2;
-    let x5 = x4 * x1;
-
-    let do_big = big.any();
-    let do_small = !big.all();
-
-    let mut rx = f64x8::default();
-    let mut sx = f64x8::default();
-    let mut px = f64x8::default();
-    let mut qx = f64x8::default();
-
-    if do_big {
-      rx = x3.mul_add(R3asin, x2 * R2asin)
-        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
-      sx =
-        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
-    }
-    if do_small {
-      px = x3.mul_add(P3asin, P0asin)
-        + x4.mul_add(P4asin, x1 * P1asin)
-        + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5)
-        + x3.mul_add(Q3asin, x1 * Q1asin)
-        + x2.mul_add(Q2asin, Q0asin);
-    };
-
-    let vx = big.select(rx, px);
-    let wx = big.select(sx, qx);
-
-    let y1 = vx / wx * x1;
-
-    let mut z1 = f64x8::default();
-    let mut z2 = f64x8::default();
-    if do_big {
-      let xb = (x1 + x1).sqrt();
-      z1 = xb.mul_add(y1, xb);
-    }
-
-    if do_small {
-      z2 = xa.mul_add(y1, xa);
-    }
-
-    // asin
-    let z3 = f64x8::FRAC_PI_2 - z1;
-    let asin = big.select(z3, z2);
-    let asin = asin.flip_signs(self);
-
-    asin
-  }
-
-  #[inline]
-  pub fn atan(self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
-    const_f64_as_f64x8!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
-    const_f64_as_f64x8!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
-
-    const_f64_as_f64x8!(P4atan, -8.750608600031904122785E-1);
-    const_f64_as_f64x8!(P3atan, -1.615753718733365076637E1);
-    const_f64_as_f64x8!(P2atan, -7.500855792314704667340E1);
-    const_f64_as_f64x8!(P1atan, -1.228866684490136173410E2);
-    const_f64_as_f64x8!(P0atan, -6.485021904942025371773E1);
-
-    const_f64_as_f64x8!(Q4atan, 2.485846490142306297962E1);
-    const_f64_as_f64x8!(Q3atan, 1.650270098316988542046E2);
-    const_f64_as_f64x8!(Q2atan, 4.328810604912902668951E2);
-    const_f64_as_f64x8!(Q1atan, 4.853903996359136964868E2);
-    const_f64_as_f64x8!(Q0atan, 1.945506571482613964425E2);
-
-    let t = self.abs();
-
-    // small:  t < 0.66
-    // medium: t <= t <= 2.4142 (1+sqrt(2))
-    // big:    t > 2.4142
-    let notbig = t.simd_le(T3PO8);
-    let notsmal = t.simd_ge(Self::splat(0.66));
-
-    let mut s = notbig.select(Self::FRAC_PI_4, Self::FRAC_PI_2);
-    s = notsmal & s;
-    let mut fac = notbig.select(MORE_BITS_O2, MORE_BITS);
-    fac = notsmal & fac;
-
-    // small:  z = t / 1.0;
-    // medium: z = (t-1.0) / (t+1.0);
-    // big:    z = -1.0 / t;
-    let mut a = notbig & t;
-    a = notsmal.select(a - Self::ONE, a);
-    let mut b = notbig & Self::ONE;
-    b = notsmal.select(b + t, b);
-    let z = a / b;
-
-    let zz = z * z;
-
-    let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
-    let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
-
-    let mut re = (px / qx).mul_add(z * zz, z);
-    re += s + fac;
-
-    // get sign bit
-    re = (self.is_sign_negative()).select(-re, re);
-
-    re
-  }
-
-  #[inline]
-  pub fn atan2(self, x: Self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
-    const_f64_as_f64x8!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
-    const_f64_as_f64x8!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
-
-    const_f64_as_f64x8!(P4atan, -8.750608600031904122785E-1);
-    const_f64_as_f64x8!(P3atan, -1.615753718733365076637E1);
-    const_f64_as_f64x8!(P2atan, -7.500855792314704667340E1);
-    const_f64_as_f64x8!(P1atan, -1.228866684490136173410E2);
-    const_f64_as_f64x8!(P0atan, -6.485021904942025371773E1);
-
-    const_f64_as_f64x8!(Q4atan, 2.485846490142306297962E1);
-    const_f64_as_f64x8!(Q3atan, 1.650270098316988542046E2);
-    const_f64_as_f64x8!(Q2atan, 4.328810604912902668951E2);
-    const_f64_as_f64x8!(Q1atan, 4.853903996359136964868E2);
-    const_f64_as_f64x8!(Q0atan, 1.945506571482613964425E2);
-
-    let y = self;
-
-    // move in first octant
-    let x1 = x.abs();
-    let y1 = y.abs();
-    let swapxy = y1.simd_gt(x1);
-    // swap x and y if y1 > x1
-    let mut x2 = swapxy.select(y1, x1);
-    let mut y2 = swapxy.select(x1, y1);
-
-    // check for special case: x and y are both +/- INF
-    let both_infinite = x.is_inf() & y.is_inf();
-    if both_infinite.any() {
-      let minus_one = -Self::ONE;
-      x2 = both_infinite.select(x2 & minus_one, x2);
-      y2 = both_infinite.select(y2 & minus_one, y2);
-    }
-
-    // x = y = 0 gives NAN here
-    let t = y2 / x2;
-
-    // small:  t < 0.66
-    // medium: t <= t <= 2.4142 (1+sqrt(2))
-    // big:    t > 2.4142
-    let notbig = t.simd_le(T3PO8);
-    let notsmal = t.simd_ge(Self::splat(0.66));
-
-    let mut s = notbig.select(Self::FRAC_PI_4, Self::FRAC_PI_2);
-    s = notsmal & s;
-    let mut fac = notbig.select(MORE_BITS_O2, MORE_BITS);
-    fac = notsmal & fac;
-
-    // small:  z = t / 1.0;
-    // medium: z = (t-1.0) / (t+1.0);
-    // big:    z = -1.0 / t;
-    let mut a = notbig & t;
-    a = notsmal.select(a - Self::ONE, a);
-    let mut b = notbig & Self::ONE;
-    b = notsmal.select(b + t, b);
-    let z = a / b;
-
-    let zz = z * z;
-
-    let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
-    let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
-
-    let mut re = (px / qx).mul_add(z * zz, z);
-    re += s + fac;
-
-    // move back in place
-    re = swapxy.select(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).simd_eq(Self::ZERO)).select(Self::ZERO, re);
-    re = (x.is_sign_negative()).select(Self::PI - re, re);
-
-    // get sign bit
-    re = (y.is_sign_negative()).select(-re, re);
-
-    re
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn sin_cos(self) -> (Self, Self) {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-
-    const_f64_as_f64x8!(P0sin, -1.66666666666666307295E-1);
-    const_f64_as_f64x8!(P1sin, 8.33333333332211858878E-3);
-    const_f64_as_f64x8!(P2sin, -1.98412698295895385996E-4);
-    const_f64_as_f64x8!(P3sin, 2.75573136213857245213E-6);
-    const_f64_as_f64x8!(P4sin, -2.50507477628578072866E-8);
-    const_f64_as_f64x8!(P5sin, 1.58962301576546568060E-10);
-
-    const_f64_as_f64x8!(P0cos, 4.16666666666665929218E-2);
-    const_f64_as_f64x8!(P1cos, -1.38888888888730564116E-3);
-    const_f64_as_f64x8!(P2cos, 2.48015872888517045348E-5);
-    const_f64_as_f64x8!(P3cos, -2.75573141792967388112E-7);
-    const_f64_as_f64x8!(P4cos, 2.08757008419747316778E-9);
-    const_f64_as_f64x8!(P5cos, -1.13585365213876817300E-11);
-
-    const_f64_as_f64x8!(DP1, 7.853981554508209228515625E-1 * 2.);
-    const_f64_as_f64x8!(DP2, 7.94662735614792836714E-9 * 2.);
-    const_f64_as_f64x8!(DP3, 3.06161699786838294307E-17 * 2.);
-
-    const_f64_as_f64x8!(TWO_OVER_PI, 2.0 / core::f64::consts::PI);
-
-    let xa = self.abs();
-
-    let y = (xa * TWO_OVER_PI).round_ties_even();
-    let q = y.round_int();
-
-    let x = y.mul_neg_add(DP3, y.mul_neg_add(DP2, y.mul_neg_add(DP1, xa)));
-
-    let x2 = x * x;
-    let mut s = polynomial_5!(x2, P0sin, P1sin, P2sin, P3sin, P4sin, P5sin);
-    let mut c = polynomial_5!(x2, P0cos, P1cos, P2cos, P3cos, P4cos, P5cos);
-    s = (x * x2).mul_add(s, x);
-    c =
-      (x2 * x2).mul_add(c, x2.mul_neg_add(f64x8::from(0.5), f64x8::from(1.0)));
-
-    let swap = !((q & i64x8::from(1)).simd_eq(i64x8::from(0)));
-
-    let mut overflow: f64x8 = cast(q.simd_gt(i64x8::from(0x80000000000000)));
-    overflow &= xa.is_finite();
-    s = overflow.select(f64x8::from(0.0), s);
-    c = overflow.select(f64x8::from(1.0), c);
-
-    // calc sin
-    let mut sin1 = cast::<_, f64x8>(swap).select(c, s);
-    let sign_sin: i64x8 = (q << 62) ^ cast::<_, i64x8>(self);
-    sin1 = sin1.flip_signs(cast(sign_sin));
-
-    // calc cos
-    let mut cos1 = cast::<_, f64x8>(swap).select(s, c);
-    let sign_cos: i64x8 = ((q + i64x8::from(1)) & i64x8::from(2)) << 62;
-    cos1 ^= cast::<_, f64x8>(sign_cos);
-
-    // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
-    let finite = self.is_finite();
-    let nan = Self::splat(f64::NAN);
-    let sin_final = finite.select(sin1, nan);
-    let cos_final = finite.select(cos1, nan);
-
-    (sin_final, cos_final)
-  }
-  #[inline]
-  #[must_use]
-  pub fn sin(self) -> Self {
-    let (s, _) = self.sin_cos();
-    s
-  }
-  #[inline]
-  #[must_use]
-  pub fn cos(self) -> Self {
-    let (_, c) = self.sin_cos();
-    c
-  }
-  #[inline]
-  #[must_use]
-  pub fn tan(self) -> Self {
-    let (s, c) = self.sin_cos();
-    s / c
-  }
-
   /// Calculates hyperbolic sine: `(e^self - e^(-self))/2`.
   #[inline]
   #[must_use]

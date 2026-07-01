@@ -1371,6 +1371,265 @@ impl_simd_float! {
     let result = inf.select(self, result);
     result
   }
+
+  #[inline]
+  pub fn asin(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
+    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
+    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
+    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
+    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
+
+    let xa = self.abs();
+    let big = xa.simd_ge(f32x4::splat(0.5));
+
+    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
+    let x2 = xa * xa;
+    let x3 = big.select(x1, x2);
+
+    let xb = x1.sqrt();
+
+    let x4 = big.select(xb, xa);
+
+    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = z.mul_add(x3 * x4, x4);
+
+    let z1 = z + z;
+
+    // asin
+    let z3 = f32x4::FRAC_PI_2 - z1;
+    let asin = big.select(z3, z);
+    let asin = asin.flip_signs(self);
+
+    asin
+  }
+
+  #[inline]
+  pub fn acos(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
+    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
+    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
+    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
+    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
+
+    let xa = self.abs();
+    let big = xa.simd_ge(f32x4::splat(0.5));
+
+    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
+    let x2 = xa * xa;
+    let x3 = big.select(x1, x2);
+
+    let xb = x1.sqrt();
+
+    let x4 = big.select(xb, xa);
+
+    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = z.mul_add(x3 * x4, x4);
+
+    let z1 = z + z;
+
+    // acos
+    let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
+    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
+    let acos = big.select(z3, z4);
+
+    acos
+  }
+
+  #[inline]
+  pub fn atan(self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P3atanf, 8.05374449538E-2);
+    const_f32_as_f32x4!(P2atanf, -1.38776856032E-1);
+    const_f32_as_f32x4!(P1atanf, 1.99777106478E-1);
+    const_f32_as_f32x4!(P0atanf, -3.33329491539E-1);
+
+    let t = self.abs();
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    // big:    z = -1.0 / t;
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
+    let notbig = t.simd_le(Self::SQRT_2 + Self::ONE);
+
+    let mut s = notbig.select(Self::FRAC_PI_4, Self::FRAC_PI_2);
+    s = notsmal & s;
+
+    let mut a = notbig & t;
+    a = notsmal.select(a - Self::ONE, a);
+    let mut b = notbig & Self::ONE;
+    b = notsmal.select(b + t, b);
+    let z = a / b;
+
+    let zz = z * z;
+
+    // Taylor expansion
+    let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
+    re = re.mul_add(zz * z, z) + s;
+
+    // get sign bit
+    re = (self.is_sign_negative()).select(-re, re);
+
+    re
+  }
+
+  #[inline]
+  pub fn atan2(self, x: Self) -> Self {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P3atanf, 8.05374449538E-2);
+    const_f32_as_f32x4!(P2atanf, -1.38776856032E-1);
+    const_f32_as_f32x4!(P1atanf, 1.99777106478E-1);
+    const_f32_as_f32x4!(P0atanf, -3.33329491539E-1);
+
+    let y = self;
+
+    // move in first octant
+    let x1 = x.abs();
+    let y1 = y.abs();
+    let swapxy = y1.simd_gt(x1);
+    // swap x and y if y1 > x1
+    let mut x2 = swapxy.select(y1, x1);
+    let mut y2 = swapxy.select(x1, y1);
+
+    // check for special case: x and y are both +/- INF
+    let both_infinite = x.is_inf() & y.is_inf();
+    if both_infinite.any() {
+      let minus_one = -Self::ONE;
+      x2 = both_infinite.select(x2 & minus_one, x2);
+      y2 = both_infinite.select(y2 & minus_one, y2);
+    }
+
+    // x = y = 0 will produce NAN. No problem, fixed below
+    let t = y2 / x2;
+
+    // small:  z = t / 1.0;
+    // medium: z = (t-1.0) / (t+1.0);
+    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
+
+    let a = notsmal.select(t - Self::ONE, t);
+    let b = notsmal.select(t + Self::ONE, Self::ONE);
+    let s = notsmal & Self::FRAC_PI_4;
+    let z = a / b;
+
+    let zz = z * z;
+
+    // Taylor expansion
+    let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
+    re = re.mul_add(zz * z, z) + s;
+
+    // move back in place
+    re = swapxy.select(Self::FRAC_PI_2 - re, re);
+    re = ((x | y).simd_eq(Self::ZERO)).select(Self::ZERO, re);
+    re = (x.is_sign_negative()).select(Self::PI - re, re);
+
+    // get sign bit
+    re = (y.is_sign_negative()).select(-re, re);
+
+    re
+  }
+
+  #[inline]
+  pub fn sin_cos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+
+    const_f32_as_f32x4!(DP1F, 0.78515625_f32 * 2.0);
+    const_f32_as_f32x4!(DP2F, 2.4187564849853515625E-4_f32 * 2.0);
+    const_f32_as_f32x4!(DP3F, 3.77489497744594108E-8_f32 * 2.0);
+
+    const_f32_as_f32x4!(P0sinf, -1.6666654611E-1);
+    const_f32_as_f32x4!(P1sinf, 8.3321608736E-3);
+    const_f32_as_f32x4!(P2sinf, -1.9515295891E-4);
+
+    const_f32_as_f32x4!(P0cosf, 4.166664568298827E-2);
+    const_f32_as_f32x4!(P1cosf, -1.388731625493765E-3);
+    const_f32_as_f32x4!(P2cosf, 2.443315711809948E-5);
+
+    const_f32_as_f32x4!(TWO_OVER_PI, 2.0 / core::f32::consts::PI);
+
+    let xa = self.abs();
+
+    // Find quadrant
+    let y = (xa * TWO_OVER_PI).round_ties_even();
+    let q: i32x4 = y.round_int();
+
+    let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
+
+    let x2 = x * x;
+    let mut s = polynomial_2!(x2, P0sinf, P1sinf, P2sinf) * (x * x2) + x;
+    let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
+      + f32x4::from(0.5).mul_neg_add(x2, f32x4::from(1.0));
+
+    let swap = !(q & i32x4::from(1)).simd_eq(i32x4::from(0));
+
+    let mut overflow: f32x4 = cast(q.simd_gt(i32x4::from(0x2000000)));
+    overflow &= xa.is_finite();
+    s = overflow.select(f32x4::from(0.0), s);
+    c = overflow.select(f32x4::from(1.0), c);
+
+    // calc sin
+    let mut sin1 = cast::<_, f32x4>(swap).select(c, s);
+    let sign_sin: i32x4 = (q << 30) ^ cast::<_, i32x4>(self);
+    sin1 = sin1.flip_signs(cast(sign_sin));
+
+    // calc cos
+    let mut cos1 = cast::<_, f32x4>(swap).select(s, c);
+    let sign_cos: i32x4 = ((q + i32x4::from(1)) & i32x4::from(2)) << 30;
+    cos1 ^= cast::<_, f32x4>(sign_cos);
+
+    // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
+    let finite = self.is_finite();
+    let nan = Self::splat(f32::NAN);
+    let sin_final = finite.select(sin1, nan);
+    let cos_final = finite.select(cos1, nan);
+
+    (sin_final, cos_final)
+  }
+
+  #[inline]
+  pub fn asin_acos(self) -> (Self, Self) {
+    // Based on the Agner Fog "vector class library":
+    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
+    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
+    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
+    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
+    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
+    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
+
+    let xa = self.abs();
+    let big = xa.simd_ge(f32x4::splat(0.5));
+
+    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
+    let x2 = xa * xa;
+    let x3 = big.select(x1, x2);
+
+    let xb = x1.sqrt();
+
+    let x4 = big.select(xb, xa);
+
+    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
+    let z = z.mul_add(x3 * x4, x4);
+
+    let z1 = z + z;
+
+    // acos
+    let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
+    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
+    let acos = big.select(z3, z4);
+
+    // asin
+    let z3 = f32x4::FRAC_PI_2 - z1;
+    let asin = big.select(z3, z);
+    let asin = asin.flip_signs(self);
+
+    (asin, acos)
+  }
 }
 
 unsafe impl Zeroable for f32x4 {}
@@ -1658,286 +1917,6 @@ impl BitXor for f32x4 {
 }
 
 impl f32x4 {
-  #[inline]
-  pub fn asin_acos(self) -> (Self, Self) {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
-    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
-    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
-    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
-    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
-
-    let xa = self.abs();
-    let big = xa.simd_ge(f32x4::splat(0.5));
-
-    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
-    let x2 = xa * xa;
-    let x3 = big.select(x1, x2);
-
-    let xb = x1.sqrt();
-
-    let x4 = big.select(xb, xa);
-
-    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
-
-    let z1 = z + z;
-
-    // acos
-    let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
-    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
-    let acos = big.select(z3, z4);
-
-    // asin
-    let z3 = f32x4::FRAC_PI_2 - z1;
-    let asin = big.select(z3, z);
-    let asin = asin.flip_signs(self);
-
-    (asin, acos)
-  }
-
-  #[inline]
-  pub fn asin(self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
-    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
-    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
-    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
-    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
-
-    let xa = self.abs();
-    let big = xa.simd_ge(f32x4::splat(0.5));
-
-    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
-    let x2 = xa * xa;
-    let x3 = big.select(x1, x2);
-
-    let xb = x1.sqrt();
-
-    let x4 = big.select(xb, xa);
-
-    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
-
-    let z1 = z + z;
-
-    // asin
-    let z3 = f32x4::FRAC_PI_2 - z1;
-    let asin = big.select(z3, z);
-    let asin = asin.flip_signs(self);
-
-    asin
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn acos(self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f32_as_f32x4!(P4asinf, 4.2163199048E-2);
-    const_f32_as_f32x4!(P3asinf, 2.4181311049E-2);
-    const_f32_as_f32x4!(P2asinf, 4.5470025998E-2);
-    const_f32_as_f32x4!(P1asinf, 7.4953002686E-2);
-    const_f32_as_f32x4!(P0asinf, 1.6666752422E-1);
-
-    let xa = self.abs();
-    let big = xa.simd_ge(f32x4::splat(0.5));
-
-    let x1 = f32x4::splat(0.5) * (f32x4::ONE - xa);
-    let x2 = xa * xa;
-    let x3 = big.select(x1, x2);
-
-    let xb = x1.sqrt();
-
-    let x4 = big.select(xb, xa);
-
-    let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
-
-    let z1 = z + z;
-
-    // acos
-    let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
-    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
-    let acos = big.select(z3, z4);
-
-    acos
-  }
-
-  #[inline]
-  pub fn atan(self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f32_as_f32x4!(P3atanf, 8.05374449538E-2);
-    const_f32_as_f32x4!(P2atanf, -1.38776856032E-1);
-    const_f32_as_f32x4!(P1atanf, 1.99777106478E-1);
-    const_f32_as_f32x4!(P0atanf, -3.33329491539E-1);
-
-    let t = self.abs();
-
-    // small:  z = t / 1.0;
-    // medium: z = (t-1.0) / (t+1.0);
-    // big:    z = -1.0 / t;
-    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
-    let notbig = t.simd_le(Self::SQRT_2 + Self::ONE);
-
-    let mut s = notbig.select(Self::FRAC_PI_4, Self::FRAC_PI_2);
-    s = notsmal & s;
-
-    let mut a = notbig & t;
-    a = notsmal.select(a - Self::ONE, a);
-    let mut b = notbig & Self::ONE;
-    b = notsmal.select(b + t, b);
-    let z = a / b;
-
-    let zz = z * z;
-
-    // Taylor expansion
-    let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
-    re = re.mul_add(zz * z, z) + s;
-
-    // get sign bit
-    re = (self.is_sign_negative()).select(-re, re);
-
-    re
-  }
-
-  #[inline]
-  pub fn atan2(self, x: Self) -> Self {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-    const_f32_as_f32x4!(P3atanf, 8.05374449538E-2);
-    const_f32_as_f32x4!(P2atanf, -1.38776856032E-1);
-    const_f32_as_f32x4!(P1atanf, 1.99777106478E-1);
-    const_f32_as_f32x4!(P0atanf, -3.33329491539E-1);
-
-    let y = self;
-
-    // move in first octant
-    let x1 = x.abs();
-    let y1 = y.abs();
-    let swapxy = y1.simd_gt(x1);
-    // swap x and y if y1 > x1
-    let mut x2 = swapxy.select(y1, x1);
-    let mut y2 = swapxy.select(x1, y1);
-
-    // check for special case: x and y are both +/- INF
-    let both_infinite = x.is_inf() & y.is_inf();
-    if both_infinite.any() {
-      let minus_one = -Self::ONE;
-      x2 = both_infinite.select(x2 & minus_one, x2);
-      y2 = both_infinite.select(y2 & minus_one, y2);
-    }
-
-    // x = y = 0 will produce NAN. No problem, fixed below
-    let t = y2 / x2;
-
-    // small:  z = t / 1.0;
-    // medium: z = (t-1.0) / (t+1.0);
-    let notsmal = t.simd_ge(Self::SQRT_2 - Self::ONE);
-
-    let a = notsmal.select(t - Self::ONE, t);
-    let b = notsmal.select(t + Self::ONE, Self::ONE);
-    let s = notsmal & Self::FRAC_PI_4;
-    let z = a / b;
-
-    let zz = z * z;
-
-    // Taylor expansion
-    let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
-    re = re.mul_add(zz * z, z) + s;
-
-    // move back in place
-    re = swapxy.select(Self::FRAC_PI_2 - re, re);
-    re = ((x | y).simd_eq(Self::ZERO)).select(Self::ZERO, re);
-    re = (x.is_sign_negative()).select(Self::PI - re, re);
-
-    // get sign bit
-    re = (y.is_sign_negative()).select(-re, re);
-
-    re
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn sin_cos(self) -> (Self, Self) {
-    // Based on the Agner Fog "vector class library":
-    // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-
-    const_f32_as_f32x4!(DP1F, 0.78515625_f32 * 2.0);
-    const_f32_as_f32x4!(DP2F, 2.4187564849853515625E-4_f32 * 2.0);
-    const_f32_as_f32x4!(DP3F, 3.77489497744594108E-8_f32 * 2.0);
-
-    const_f32_as_f32x4!(P0sinf, -1.6666654611E-1);
-    const_f32_as_f32x4!(P1sinf, 8.3321608736E-3);
-    const_f32_as_f32x4!(P2sinf, -1.9515295891E-4);
-
-    const_f32_as_f32x4!(P0cosf, 4.166664568298827E-2);
-    const_f32_as_f32x4!(P1cosf, -1.388731625493765E-3);
-    const_f32_as_f32x4!(P2cosf, 2.443315711809948E-5);
-
-    const_f32_as_f32x4!(TWO_OVER_PI, 2.0 / core::f32::consts::PI);
-
-    let xa = self.abs();
-
-    // Find quadrant
-    let y = (xa * TWO_OVER_PI).round_ties_even();
-    let q: i32x4 = y.round_int();
-
-    let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
-
-    let x2 = x * x;
-    let mut s = polynomial_2!(x2, P0sinf, P1sinf, P2sinf) * (x * x2) + x;
-    let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
-      + f32x4::from(0.5).mul_neg_add(x2, f32x4::from(1.0));
-
-    let swap = !(q & i32x4::from(1)).simd_eq(i32x4::from(0));
-
-    let mut overflow: f32x4 = cast(q.simd_gt(i32x4::from(0x2000000)));
-    overflow &= xa.is_finite();
-    s = overflow.select(f32x4::from(0.0), s);
-    c = overflow.select(f32x4::from(1.0), c);
-
-    // calc sin
-    let mut sin1 = cast::<_, f32x4>(swap).select(c, s);
-    let sign_sin: i32x4 = (q << 30) ^ cast::<_, i32x4>(self);
-    sin1 = sin1.flip_signs(cast(sign_sin));
-
-    // calc cos
-    let mut cos1 = cast::<_, f32x4>(swap).select(s, c);
-    let sign_cos: i32x4 = ((q + i32x4::from(1)) & i32x4::from(2)) << 30;
-    cos1 ^= cast::<_, f32x4>(sign_cos);
-
-    // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
-    let finite = self.is_finite();
-    let nan = Self::splat(f32::NAN);
-    let sin_final = finite.select(sin1, nan);
-    let cos_final = finite.select(cos1, nan);
-
-    (sin_final, cos_final)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn sin(self) -> Self {
-    let (s, _) = self.sin_cos();
-    s
-  }
-  #[inline]
-  #[must_use]
-  pub fn cos(self) -> Self {
-    let (_, c) = self.sin_cos();
-    c
-  }
-  #[inline]
-  #[must_use]
-  pub fn tan(self) -> Self {
-    let (s, c) = self.sin_cos();
-    s / c
-  }
-
   /// Calculates hyperbolic sine: `(e^self - e^(-self))/2`.
   #[inline]
   #[must_use]
