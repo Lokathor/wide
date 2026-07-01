@@ -297,6 +297,34 @@ impl_simd_float! {
     let result = sign.simd_eq(SIGN_MASK);
     cast::<u32x8, f32x8>(result)
   }
+
+  #[inline]
+  pub fn recip(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: reciprocal_m256(self.avx) }
+      } else {
+        Self {
+          a : self.a.recip(),
+          b : self.b.recip(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn recip_sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: reciprocal_sqrt_m256(self.avx) }
+      } else {
+        Self {
+          a : self.a.recip_sqrt(),
+          b : self.b.recip_sqrt(),
+        }
+      }
+    }
+  }
 }
 
 macro_rules! const_f32_as_f32x8 {
@@ -1501,34 +1529,7 @@ impl f32x8 {
     const_f32_as_f32x8!(DEG_TO_RAD_RATIO, core::f32::consts::PI / 180.0_f32);
     self * DEG_TO_RAD_RATIO
   }
-  #[inline]
-  #[must_use]
-  pub fn recip(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: reciprocal_m256(self.avx) }
-      } else {
-        Self {
-          a : self.a.recip(),
-          b : self.b.recip(),
-        }
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn recip_sqrt(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: reciprocal_sqrt_m256(self.avx) }
-      } else {
-        Self {
-          a : self.a.recip_sqrt(),
-          b : self.b.recip_sqrt(),
-        }
-      }
-    }
-  }
+
   #[inline]
   #[must_use]
   pub fn sqrt(self) -> Self {

@@ -371,6 +371,53 @@ impl_simd_float! {
     let result = sign.simd_eq(SIGN_MASK);
     cast::<u32x4, f32x4>(result)
   }
+
+  #[inline]
+  pub fn recip(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: reciprocal_m128(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_div(f32x4_splat(1.0), self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vdivq_f32(vdupq_n_f32(1.0), self.neon) }}
+      } else {
+        Self { arr: [
+          1.0 / self.arr[0],
+          1.0 / self.arr[1],
+          1.0 / self.arr[2],
+          1.0 / self.arr[3],
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn recip_sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: reciprocal_sqrt_m128(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: f32x4_div(f32x4_splat(1.0), f32x4_sqrt(self.simd)) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vdivq_f32(vdupq_n_f32(1.0), vsqrtq_f32(self.neon)) }}
+      } else if #[cfg(feature="std")] {
+        Self { arr: [
+          1.0 / self.arr[0].sqrt(),
+          1.0 / self.arr[1].sqrt(),
+          1.0 / self.arr[2].sqrt(),
+          1.0 / self.arr[3].sqrt(),
+        ]}
+      } else {
+        Self { arr: [
+          1.0 / software_sqrt(self.arr[0] as f64) as f32,
+          1.0 / software_sqrt(self.arr[1] as f64) as f32,
+          1.0 / software_sqrt(self.arr[2] as f64) as f32,
+          1.0 / software_sqrt(self.arr[3] as f64) as f32,
+        ]}
+      }
+    }
+  }
 }
 
 macro_rules! const_f32_as_f32x4 {
@@ -1808,53 +1855,7 @@ impl f32x4 {
     const_f32_as_f32x4!(DEG_TO_RAD_RATIO, core::f32::consts::PI / 180.0_f32);
     self * DEG_TO_RAD_RATIO
   }
-  #[inline]
-  #[must_use]
-  pub fn recip(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        Self { sse: reciprocal_m128(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_div(f32x4_splat(1.0), self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vdivq_f32(vdupq_n_f32(1.0), self.neon) }}
-      } else {
-        Self { arr: [
-          1.0 / self.arr[0],
-          1.0 / self.arr[1],
-          1.0 / self.arr[2],
-          1.0 / self.arr[3],
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn recip_sqrt(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        Self { sse: reciprocal_sqrt_m128(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_div(f32x4_splat(1.0), f32x4_sqrt(self.simd)) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vdivq_f32(vdupq_n_f32(1.0), vsqrtq_f32(self.neon)) }}
-      } else if #[cfg(feature="std")] {
-        Self { arr: [
-          1.0 / self.arr[0].sqrt(),
-          1.0 / self.arr[1].sqrt(),
-          1.0 / self.arr[2].sqrt(),
-          1.0 / self.arr[3].sqrt(),
-        ]}
-      } else {
-        Self { arr: [
-          1.0 / software_sqrt(self.arr[0] as f64) as f32,
-          1.0 / software_sqrt(self.arr[1] as f64) as f32,
-          1.0 / software_sqrt(self.arr[2] as f64) as f32,
-          1.0 / software_sqrt(self.arr[3] as f64) as f32,
-        ]}
-      }
-    }
-  }
+
   #[inline]
   #[must_use]
   pub fn sqrt(self) -> Self {

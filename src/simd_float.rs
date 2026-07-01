@@ -9,6 +9,8 @@ macro_rules! impl_simd_float {
     $fn_is_finite:item
     $fn_is_sign_positive:item
     $fn_is_sign_negative:item
+    $fn_recip:item
+    $fn_recip_sqrt:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -61,6 +63,12 @@ macro_rules! impl_simd_float {
       /// `NaN`s with negative sign bit and negative infinity.
       #[must_use]
       $fn_is_sign_negative
+
+      #[must_use]
+      $fn_recip
+
+      #[must_use]
+      $fn_recip_sqrt
     }
   };
 }

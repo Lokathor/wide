@@ -272,6 +272,40 @@ impl_simd_float! {
     let result = sign.simd_eq(SIGN_MASK);
     cast::<u32x16, f32x16>(result)
   }
+
+  #[inline]
+  pub fn recip(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO: Add `_mm512_rcp14_ps` to `safe_arch`, looks like it is missing,
+        // then consider updating this implementation if the relative error is
+        // acceptable.
+        1.0 / self
+      } else {
+        Self {
+          a : self.a.recip(),
+          b : self.b.recip(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn recip_sqrt(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO: Add `_mm512_rsqrt14_ps` to `safe_arch`, looks like it is
+        // missing, then consider updating this implementation if the relative
+        // error is acceptable.
+        self.sqrt().recip()
+      } else {
+        Self {
+          a : self.a.recip_sqrt(),
+          b : self.b.recip_sqrt(),
+        }
+      }
+    }
+  }
 }
 
 macro_rules! const_f32_as_f32x16 {
@@ -1485,42 +1519,6 @@ impl f32x16 {
   pub fn to_radians(self) -> Self {
     const_f32_as_f32x16!(DEG_TO_RAD_RATIO, core::f32::consts::PI / 180.0_f32);
     self * DEG_TO_RAD_RATIO
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn recip(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // TODO: Add `_mm512_rcp14_ps` to `safe_arch`, looks like it is missing,
-        // then consider updating this implementation if the relative error is
-        // acceptable.
-        1.0 / self
-      } else {
-        Self {
-          a : self.a.recip(),
-          b : self.b.recip(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn recip_sqrt(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // TODO: Add `_mm512_rsqrt14_ps` to `safe_arch`, looks like it is
-        // missing, then consider updating this implementation if the relative
-        // error is acceptable.
-        self.sqrt().recip()
-      } else {
-        Self {
-          a : self.a.recip_sqrt(),
-          b : self.b.recip_sqrt(),
-        }
-      }
-    }
   }
 
   #[inline]
