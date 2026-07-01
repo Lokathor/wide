@@ -946,22 +946,6 @@ impl BitXor for f64x8 {
 
 impl f64x8 {
   #[inline]
-  #[must_use]
-  pub fn div_euclid(self, rhs: Self) -> Self {
-    let q = (self / rhs).trunc();
-    (self % rhs)
-      .simd_lt(Self::ZERO)
-      .select(rhs.simd_gt(Self::ZERO).select(q - Self::ONE, q + Self::ONE), q)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn rem_euclid(self, rhs: Self) -> Self {
-    let r = self % rhs;
-    r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
-  }
-
-  #[inline]
   pub fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h

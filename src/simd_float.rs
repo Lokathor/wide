@@ -264,6 +264,22 @@ macro_rules! impl_simd_float {
       /// separate operations with two roundings.
       #[must_use]
       $fn_mul_neg_sub
+
+      #[inline]
+      #[must_use]
+      pub fn div_euclid(self, rhs: Self) -> Self {
+        let q = (self / rhs).trunc();
+        (self % rhs)
+          .simd_lt(Self::ZERO)
+          .select(rhs.simd_gt(Self::ZERO).select(q - Self::ONE, q + Self::ONE), q)
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn rem_euclid(self, rhs: Self) -> Self {
+        let r = self % rhs;
+        r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
+      }
     }
   };
 }
