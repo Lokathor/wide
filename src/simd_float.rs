@@ -69,6 +69,20 @@ macro_rules! impl_simd_float {
 
       #[must_use]
       $fn_recip_sqrt
+
+      #[inline]
+      #[must_use]
+      pub fn to_degrees(self) -> Self {
+        const RAD_TO_DEG_RATIO: $Simd = $Simd::splat(180.0 / core::$T::consts::PI);
+        self * RAD_TO_DEG_RATIO
+      }
+
+      #[inline]
+      #[must_use]
+      pub fn to_radians(self) -> Self {
+        const DEG_TO_RAD_RATIO: $Simd = $Simd::splat(core::$T::consts::PI / 180.0);
+        self * DEG_TO_RAD_RATIO
+      }
     }
   };
 }

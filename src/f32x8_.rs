@@ -1519,19 +1519,6 @@ impl f32x8 {
 
   #[inline]
   #[must_use]
-  pub fn to_degrees(self) -> Self {
-    const_f32_as_f32x8!(RAD_TO_DEG_RATIO, 180.0_f32 / core::f32::consts::PI);
-    self * RAD_TO_DEG_RATIO
-  }
-  #[inline]
-  #[must_use]
-  pub fn to_radians(self) -> Self {
-    const_f32_as_f32x8!(DEG_TO_RAD_RATIO, core::f32::consts::PI / 180.0_f32);
-    self * DEG_TO_RAD_RATIO
-  }
-
-  #[inline]
-  #[must_use]
   pub fn sqrt(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
