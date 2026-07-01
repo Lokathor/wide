@@ -47,6 +47,9 @@ macro_rules! impl_simd_float {
     $fn_asin_acos:item
     $fn_exp_m1:item
     $fn_ln_1p:item
+    $fn_sinh:item
+    $fn_cosh:item
+    $fn_tanh:item
   ) => {
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
@@ -380,6 +383,18 @@ macro_rules! impl_simd_float {
       /// values.
       #[must_use]
       $fn_ln_1p
+
+      /// Calculates hyperbolic sine: `(e^self - e^(-self))/2`.
+      #[must_use]
+      $fn_sinh
+
+      /// Calculates hyperbolic cosine: `(e^self + e^(-self))/2`.
+      #[must_use]
+      $fn_cosh
+
+      /// Calculates hyperbolic tangent: `sinh(self)/cosh(self)`.
+      #[must_use]
+      $fn_tanh
     }
   };
 }

@@ -1619,6 +1619,70 @@ impl_simd_float! {
     let over = u.is_inf();
     over.select(ln_u, result)
   }
+
+  #[inline]
+  pub fn sinh(self) -> Self {
+    const_f64_as_f64x8!(P0, 1.0);
+    const_f64_as_f64x8!(P1, 1.0 / 6.0);
+    const_f64_as_f64x8!(P2, 1.0 / 120.0);
+    const_f64_as_f64x8!(P3, 1.0 / 5040.0);
+    const_f64_as_f64x8!(P4, 1.0 / 362880.0);
+    const_f64_as_f64x8!(P5, 1.0 / 39916800.0);
+    const_f64_as_f64x8!(P6, 1.0 / 6227020800.0);
+    let a = self.abs();
+    // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
+    let small = a.simd_lt(f64x8::from(0.5));
+    let t = a * a;
+    let poly = a * polynomial_6!(t, P0, P1, P2, P3, P4, P5, P6);
+    let exp_based = {
+      let e = a.exp();
+      (e - Self::ONE / e) * Self::HALF
+    };
+    let result = small.select(poly, exp_based);
+    result.flip_signs(self)
+  }
+
+  #[inline]
+  pub fn cosh(self) -> Self {
+    const_f64_as_f64x8!(P0, 1.0);
+    const_f64_as_f64x8!(P1, 1.0 / 2.0);
+    const_f64_as_f64x8!(P2, 1.0 / 24.0);
+    const_f64_as_f64x8!(P3, 1.0 / 720.0);
+    const_f64_as_f64x8!(P4, 1.0 / 40320.0);
+    const_f64_as_f64x8!(P5, 1.0 / 3628800.0);
+    const_f64_as_f64x8!(P6, 1.0 / 479001600.0);
+    const_f64_as_f64x8!(P7, 1.0 / 87178291200.0);
+    let a = self.abs();
+    // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
+    let small = a.simd_lt(f64x8::from(0.5));
+    let t = a * a;
+    let poly = polynomial_7!(t, P0, P1, P2, P3, P4, P5, P6, P7);
+    let exp_based = {
+      let e = a.exp();
+      (e + Self::ONE / e) * Self::HALF
+    };
+    small.select(poly, exp_based)
+  }
+
+  #[inline]
+  pub fn tanh(self) -> Self {
+    // |x| < 5e-8: tanh(x) ≈ x, error x³/3 < 16·ULP(x)
+    // bound: x² < 48·2⁻⁵² → x < 1.03e-7; 5e-8 has 2× margin
+    // |x| > 19.062: tanh(x) = ±1 to f64 precision (e⁻²ˣ < 2⁻⁵⁴)
+    let a = self.abs();
+    let large = a.simd_gt(f64x8::from(19.062));
+    if large.all() {
+      return Self::ONE.flip_signs(self);
+    }
+    let small = a.simd_lt(f64x8::from(5e-8));
+    let exp_based = {
+      let t = (Self::from(-2.0) * a).exp_m1();
+      let pos = -t / (t + Self::from(2.0));
+      pos.flip_signs(self)
+    };
+    let result = small.select(self, exp_based);
+    large.select(Self::ONE.flip_signs(self), result)
+  }
 }
 
 unsafe impl Zeroable for f64x8 {}
@@ -1856,76 +1920,6 @@ impl BitXor for f64x8 {
 }
 
 impl f64x8 {
-  /// Calculates hyperbolic sine: `(e^self - e^(-self))/2`.
-  #[inline]
-  #[must_use]
-  pub fn sinh(self) -> Self {
-    const_f64_as_f64x8!(P0, 1.0);
-    const_f64_as_f64x8!(P1, 1.0 / 6.0);
-    const_f64_as_f64x8!(P2, 1.0 / 120.0);
-    const_f64_as_f64x8!(P3, 1.0 / 5040.0);
-    const_f64_as_f64x8!(P4, 1.0 / 362880.0);
-    const_f64_as_f64x8!(P5, 1.0 / 39916800.0);
-    const_f64_as_f64x8!(P6, 1.0 / 6227020800.0);
-    let a = self.abs();
-    // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
-    let small = a.simd_lt(f64x8::from(0.5));
-    let t = a * a;
-    let poly = a * polynomial_6!(t, P0, P1, P2, P3, P4, P5, P6);
-    let exp_based = {
-      let e = a.exp();
-      (e - Self::ONE / e) * Self::HALF
-    };
-    let result = small.select(poly, exp_based);
-    result.flip_signs(self)
-  }
-
-  /// Calculates hyperbolic cosine: `(e^self + e^(-self))/2`.
-  #[inline]
-  #[must_use]
-  pub fn cosh(self) -> Self {
-    const_f64_as_f64x8!(P0, 1.0);
-    const_f64_as_f64x8!(P1, 1.0 / 2.0);
-    const_f64_as_f64x8!(P2, 1.0 / 24.0);
-    const_f64_as_f64x8!(P3, 1.0 / 720.0);
-    const_f64_as_f64x8!(P4, 1.0 / 40320.0);
-    const_f64_as_f64x8!(P5, 1.0 / 3628800.0);
-    const_f64_as_f64x8!(P6, 1.0 / 479001600.0);
-    const_f64_as_f64x8!(P7, 1.0 / 87178291200.0);
-    let a = self.abs();
-    // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
-    let small = a.simd_lt(f64x8::from(0.5));
-    let t = a * a;
-    let poly = polynomial_7!(t, P0, P1, P2, P3, P4, P5, P6, P7);
-    let exp_based = {
-      let e = a.exp();
-      (e + Self::ONE / e) * Self::HALF
-    };
-    small.select(poly, exp_based)
-  }
-
-  /// Calculates hyperbolic tangent: `sinh(self)/cosh(self)`.
-  #[inline]
-  #[must_use]
-  pub fn tanh(self) -> Self {
-    // |x| < 5e-8: tanh(x) ≈ x, error x³/3 < 16·ULP(x)
-    // bound: x² < 48·2⁻⁵² → x < 1.03e-7; 5e-8 has 2× margin
-    // |x| > 19.062: tanh(x) = ±1 to f64 precision (e⁻²ˣ < 2⁻⁵⁴)
-    let a = self.abs();
-    let large = a.simd_gt(f64x8::from(19.062));
-    if large.all() {
-      return Self::ONE.flip_signs(self);
-    }
-    let small = a.simd_lt(f64x8::from(5e-8));
-    let exp_based = {
-      let t = (Self::from(-2.0) * a).exp_m1();
-      let pos = -t / (t + Self::from(2.0));
-      pos.flip_signs(self)
-    };
-    let result = small.select(self, exp_based);
-    large.select(Self::ONE.flip_signs(self), result)
-  }
-
   #[inline]
   fn vm_pow2n(self) -> Self {
     const_f64_as_f64x8!(pow2_52, 4503599627370496.0);
