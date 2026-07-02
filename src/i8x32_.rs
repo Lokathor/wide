@@ -378,6 +378,58 @@ impl_simd_int! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: max_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.max(rhs.a),
+          b : self.b.max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: min_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.min(rhs.a),
+          b : self.b.min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
 }
 
 unsafe impl Zeroable for i8x32 {}
@@ -426,35 +478,6 @@ impl i8x32 {
 
   #[inline]
   #[must_use]
-  pub fn reduce_add(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    array[0].max(array[1]).reduce_max()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    array[0].min(array[1]).reduce_min()
-  }
-
-  #[inline]
-  #[must_use]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -484,37 +507,6 @@ impl i8x32 {
   }
 
   signed_fn_signum!();
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: max_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
-        }
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: min_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
-        }
-      }
-    }
-  }
-
-  integer_fn_clamp!();
 
   #[inline]
   #[must_use]

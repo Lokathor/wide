@@ -476,6 +476,99 @@ impl_simd_uint! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: max_u32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_max(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmaxq_u32(self.neon, rhs.neon) }}
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmaxq_u16(self.neon, rhs.neon) }}
+      } else {
+        let arr: [u32; 4] = cast(self);
+        let rhs: [u32; 4] = cast(rhs);
+        cast([
+          arr[0].max(rhs[0]),
+          arr[1].max(rhs[1]),
+          arr[2].max(rhs[2]),
+          arr[3].max(rhs[3]),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: min_u32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_min(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vminq_u32(self.neon, rhs.neon) }}
+      } else {
+        let arr: [u32; 4] = cast(self);
+        let rhs: [u32; 4] = cast(rhs);
+        cast([
+          arr[0].min(rhs[0]),
+          arr[1].min(rhs[1]),
+          arr[2].min(rhs[2]),
+          arr[3].min(rhs[3]),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> u32 {
+    cast(i32x4::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        let high_64  = unpack_high_i64_m128i(self.sse, self.sse);
+        let reduce_64 = mul_32_m128i(high_64, self.sse);
+        let high_32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(reduce_64);
+        let reduce_32 = mul_32_m128i(reduce_64, high_32);
+        get_i32_from_m128i_s(reduce_32).cast_unsigned()
+      } else if #[cfg(target_feature="simd128")] {
+        let high_64 = u64x2_shuffle::<1, 0>(self.simd, self.simd);
+        let reduce_64 = u32x4_mul(self.simd, high_64);
+        let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
+        let reduce_32 = u32x4_mul(reduce_64, high_32);
+        u32x4_extract_lane::<0>(reduce_32)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let high_64 = vextq_u32::<2>(self.neon, self.neon);
+          let reduce_64 = vmulq_u32(self.neon, high_64);
+          let high_32 = vrev64q_u32(reduce_64);
+          let reduce_32 = vmulq_u32(reduce_64, high_32);
+          vgetq_lane_u32::<0>(reduce_32)
+        }
+      } else {
+        let array = self.to_array();
+        array[0].wrapping_mul(array[1]).wrapping_mul(array[2].wrapping_mul(array[3]))
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> u32 {
+    let arr: [u32; 4] = cast(self);
+    arr[0].max(arr[1]).max(arr[2].max(arr[3]))
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> u32 {
+    let arr: [u32; 4] = cast(self);
+    arr[0].min(arr[1]).min(arr[2].min(arr[3]))
+  }
 }
 
 unsafe impl Zeroable for u32x4 {}
@@ -584,107 +677,6 @@ impl u32x4 {
       }
     }
   }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> u32 {
-    cast(i32x4::reduce_add(cast(self)))
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        let high_64  = unpack_high_i64_m128i(self.sse, self.sse);
-        let reduce_64 = mul_32_m128i(high_64, self.sse);
-        let high_32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(reduce_64);
-        let reduce_32 = mul_32_m128i(reduce_64, high_32);
-        get_i32_from_m128i_s(reduce_32).cast_unsigned()
-      } else if #[cfg(target_feature="simd128")] {
-        let high_64 = u64x2_shuffle::<1, 0>(self.simd, self.simd);
-        let reduce_64 = u32x4_mul(self.simd, high_64);
-        let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
-        let reduce_32 = u32x4_mul(reduce_64, high_32);
-        u32x4_extract_lane::<0>(reduce_32)
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          let high_64 = vextq_u32::<2>(self.neon, self.neon);
-          let reduce_64 = vmulq_u32(self.neon, high_64);
-          let high_32 = vrev64q_u32(reduce_64);
-          let reduce_32 = vmulq_u32(reduce_64, high_32);
-          vgetq_lane_u32::<0>(reduce_32)
-        }
-      } else {
-        let array = self.to_array();
-        array[0].wrapping_mul(array[1]).wrapping_mul(array[2].wrapping_mul(array[3]))
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> u32 {
-    let arr: [u32; 4] = cast(self);
-    arr[0].max(arr[1]).max(arr[2].max(arr[3]))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> u32 {
-    let arr: [u32; 4] = cast(self);
-    arr[0].min(arr[1]).min(arr[2].min(arr[3]))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: max_u32_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_max(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_u32(self.neon, rhs.neon) }}
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_u16(self.neon, rhs.neon) }}
-      } else {
-        let arr: [u32; 4] = cast(self);
-        let rhs: [u32; 4] = cast(rhs);
-        cast([
-          arr[0].max(rhs[0]),
-          arr[1].max(rhs[1]),
-          arr[2].max(rhs[2]),
-          arr[3].max(rhs[3]),
-        ])
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: min_u32_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_min(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminq_u32(self.neon, rhs.neon) }}
-      } else {
-        let arr: [u32; 4] = cast(self);
-        let rhs: [u32; 4] = cast(rhs);
-        cast([
-          arr[0].min(rhs[0]),
-          arr[1].min(rhs[1]),
-          arr[2].min(rhs[2]),
-          arr[3].min(rhs[3]),
-        ])
-      }
-    }
-  }
-
-  integer_fn_clamp!();
 
   #[inline]
   #[must_use]

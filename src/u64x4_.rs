@@ -323,6 +323,43 @@ impl_simd_uint! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> u64 {
+    cast(i64x4::reduce_add(cast(self)))
+  }
+
+
+  #[inline]
+  pub fn reduce_mul(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0]
+      .wrapping_mul(array[1])
+      .wrapping_mul(array[2])
+      .wrapping_mul(array[3])
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0].max(array[1]).max(array[2]).max(array[3])
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0].min(array[1]).min(array[2]).min(array[3])
+  }
 }
 
 unsafe impl Zeroable for u64x4 {}
@@ -333,51 +370,6 @@ impl AlignTo for u64x4 {
 }
 
 impl u64x4 {
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> u64 {
-    cast(i64x4::reduce_add(cast(self)))
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> u64 {
-    let array: [u64; 4] = cast(self);
-    array[0]
-      .wrapping_mul(array[1])
-      .wrapping_mul(array[2])
-      .wrapping_mul(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> u64 {
-    let array: [u64; 4] = cast(self);
-    array[0].max(array[1]).max(array[2]).max(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> u64 {
-    let array: [u64; 4] = cast(self);
-    array[0].min(array[1]).min(array[2]).min(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).select(self, rhs)
-  }
-
-  integer_fn_clamp!();
-
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

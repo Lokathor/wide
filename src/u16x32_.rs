@@ -325,46 +325,22 @@ impl_simd_uint! {
       }
     }
   }
-}
 
-unsafe impl Zeroable for u16x32 {}
-unsafe impl Pod for u16x32 {}
-
-impl AlignTo for u16x32 {
-  type Elem = u16;
-}
-
-impl u16x32 {
   #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> u16 {
-    cast(i16x32::reduce_add(cast(self)))
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> u16 {
-    let array: [u16x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: max_u16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.max(rhs.a),
+          b: self.b.max(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> u16 {
-    let array: [u16x16; 2] = cast(self);
-    array[0].max(array[1]).reduce_max()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> u16 {
-    let array: [u16x16; 2] = cast(self);
-    array[0].min(array[1]).reduce_min()
-  }
-
-  #[inline]
-  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
@@ -379,22 +355,37 @@ impl u16x32 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: max_u16_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
-        }
-      }
-    }
+  pub fn reduce_add(self) -> u16 {
+    cast(i16x32::reduce_add(cast(self)))
   }
 
-  integer_fn_clamp!();
+  #[inline]
+  pub fn reduce_mul(self) -> u16 {
+    let array: [u16x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
 
+  #[inline]
+  pub fn reduce_max(self) -> u16 {
+    let array: [u16x16; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> u16 {
+    let array: [u16x16; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+}
+
+unsafe impl Zeroable for u16x32 {}
+unsafe impl Pod for u16x32 {}
+
+impl AlignTo for u16x32 {
+  type Elem = u16;
+}
+
+impl u16x32 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

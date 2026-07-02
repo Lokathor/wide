@@ -423,6 +423,58 @@ impl_simd_int! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: max_i16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.max(rhs.a),
+          b: self.b.max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: min_i16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.min(rhs.a),
+          b: self.b.min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> i16 {
+    let arr: [i16x16; 2] = cast(self);
+    (arr[0] + arr[1]).reduce_add()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> i16 {
+    let array: [i16x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> i16 {
+    let arr: [i16x16; 2] = cast(self);
+    arr[0].max(arr[1]).reduce_max()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> i16 {
+    let arr: [i16x16; 2] = cast(self);
+    arr[0].min(arr[1]).reduce_min()
+  }
 }
 
 unsafe impl Zeroable for i16x32 {}
@@ -469,38 +521,6 @@ impl i16x32 {
     }
   }
 
-  /// horizontal add of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> i16 {
-    let arr: [i16x16; 2] = cast(self);
-    (arr[0] + arr[1]).reduce_add()
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> i16 {
-    let array: [i16x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
-
-  /// horizontal min of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> i16 {
-    let arr: [i16x16; 2] = cast(self);
-    arr[0].min(arr[1]).reduce_min()
-  }
-
-  /// horizontal max of all the elements of the vector
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> i16 {
-    let arr: [i16x16; 2] = cast(self);
-    arr[0].max(arr[1]).reduce_max()
-  }
-
   #[inline]
   #[must_use]
   pub fn abs(self) -> Self {
@@ -532,38 +552,6 @@ impl i16x32 {
   }
 
   signed_fn_signum!();
-
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: min_i16_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a: self.a.min(rhs.a),
-          b: self.b.min(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: max_i16_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
-        }
-      }
-    }
-  }
-
-  integer_fn_clamp!();
 
   #[inline]
   #[must_use]

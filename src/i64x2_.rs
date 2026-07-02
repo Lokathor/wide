@@ -484,6 +484,72 @@ impl_simd_int! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> i64 {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [i64; 2] = cast(self);
+        array[0].wrapping_add(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_s64(self.neon, 0).wrapping_add(vgetq_lane_s64(self.neon, 1)) }
+      } else {
+        self.arr[0].wrapping_add(self.arr[1])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> i64 {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [i64; 2] = cast(self);
+        array[0].wrapping_mul(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_s64(self.neon, 0).wrapping_mul(vgetq_lane_s64(self.neon, 1)) }
+      } else {
+        self.arr[0].wrapping_mul(self.arr[1])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> i64 {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [i64; 2] = cast(self);
+        array[0].max(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_s64(self.neon, 0).max(vgetq_lane_s64(self.neon, 1)) }
+      } else {
+        self.arr[0].max(self.arr[1])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> i64 {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [i64; 2] = cast(self);
+        array[0].min(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_s64(self.neon, 0).min(vgetq_lane_s64(self.neon, 1)) }
+      } else {
+        self.arr[0].min(self.arr[1])
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for i64x2 {}
@@ -518,67 +584,6 @@ impl i64x2 {
         Self { neon: unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.neon)) } }
       } else {
         self.simd_lt(Self::ZERO)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> i64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [i64; 2] = cast(self);
-        array[0].wrapping_add(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).wrapping_add(vgetq_lane_s64(self.neon, 1)) }
-      } else {
-        self.arr[0].wrapping_add(self.arr[1])
-      }
-    }
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> i64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [i64; 2] = cast(self);
-        array[0].wrapping_mul(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).wrapping_mul(vgetq_lane_s64(self.neon, 1)) }
-      } else {
-        self.arr[0].wrapping_mul(self.arr[1])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> i64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [i64; 2] = cast(self);
-        array[0].max(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).max(vgetq_lane_s64(self.neon, 1)) }
-      } else {
-        self.arr[0].max(self.arr[1])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> i64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [i64; 2] = cast(self);
-        array[0].min(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).min(vgetq_lane_s64(self.neon, 1)) }
-      } else {
-        self.arr[0].min(self.arr[1])
       }
     }
   }
@@ -667,20 +672,6 @@ impl i64x2 {
       }
     }
   }
-
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).select(self, rhs)
-  }
-
-  integer_fn_clamp!();
 
   #[inline]
   #[must_use]

@@ -433,25 +433,24 @@ impl_simd_uint! {
       }
     }
   }
-}
 
-unsafe impl Zeroable for u64x2 {}
-unsafe impl Pod for u64x2 {}
-
-impl AlignTo for u64x2 {
-  type Elem = u64;
-}
-
-impl u64x2 {
   #[inline]
-  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).select(self, rhs)
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u64 {
     cast(i64x2::reduce_add(cast(self)))
   }
 
-  /// Reducing multiply. Returns the product of the elements of the vector.
+
   #[inline]
-  #[must_use]
   pub fn reduce_mul(self) -> u64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -466,7 +465,6 @@ impl u64x2 {
   }
 
   #[inline]
-  #[must_use]
   pub fn reduce_max(self) -> u64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -481,7 +479,6 @@ impl u64x2 {
   }
 
   #[inline]
-  #[must_use]
   pub fn reduce_min(self) -> u64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -494,21 +491,16 @@ impl u64x2 {
       }
     }
   }
+}
 
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).select(self, rhs)
-  }
+unsafe impl Zeroable for u64x2 {}
+unsafe impl Pod for u64x2 {}
 
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).select(self, rhs)
-  }
+impl AlignTo for u64x2 {
+  type Elem = u64;
+}
 
-  integer_fn_clamp!();
-
+impl u64x2 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

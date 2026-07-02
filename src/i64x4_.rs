@@ -378,6 +378,56 @@ impl_simd_int! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> i64 {
+    pick! {
+      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
+        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
+        let xz_yw = add_i64_m256i(zwxx, self.avx2);
+        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
+        let sum = add_i64_m256i(xz_yw, yw_xz);
+        extract_i64_from_m256i::<0>(sum)
+      } else {
+        let array: [i64; 4] = cast(self);
+        array[0]
+          .wrapping_add(array[1])
+          .wrapping_add(array[2])
+          .wrapping_add(array[3])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0]
+      .wrapping_mul(array[1])
+      .wrapping_mul(array[2])
+      .wrapping_mul(array[3])
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0].max(array[1]).max(array[2]).max(array[3])
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0].min(array[1]).min(array[2]).min(array[3])
+  }
 }
 
 unsafe impl Zeroable for i64x4 {}
@@ -422,51 +472,6 @@ impl i64x4 {
         self.simd_lt(Self::ZERO)
       }
     }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> i64 {
-    pick! {
-      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
-        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
-        let xz_yw = add_i64_m256i(zwxx, self.avx2);
-        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
-        let sum = add_i64_m256i(xz_yw, yw_xz);
-        extract_i64_from_m256i::<0>(sum)
-      } else {
-        let array: [i64; 4] = cast(self);
-        array[0]
-          .wrapping_add(array[1])
-          .wrapping_add(array[2])
-          .wrapping_add(array[3])
-      }
-    }
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> i64 {
-    let array: [i64; 4] = cast(self);
-    array[0]
-      .wrapping_mul(array[1])
-      .wrapping_mul(array[2])
-      .wrapping_mul(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> i64 {
-    let array: [i64; 4] = cast(self);
-    array[0].max(array[1]).max(array[2]).max(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> i64 {
-    let array: [i64; 4] = cast(self);
-    array[0].min(array[1]).min(array[2]).min(array[3])
   }
 
   #[inline]
@@ -523,20 +528,6 @@ impl i64x4 {
     let arr: [i64; 4] = cast(self);
     cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
   }
-
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).select(self, rhs)
-  }
-
-  integer_fn_clamp!();
 
   #[inline]
   #[must_use]

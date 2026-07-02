@@ -543,25 +543,65 @@ impl_simd_uint! {
       }
     }
   }
-}
 
-unsafe impl Zeroable for u16x8 {}
-unsafe impl Pod for u16x8 {}
-
-impl AlignTo for u16x8 {
-  type Elem = u16;
-}
-
-impl u16x8 {
   #[inline]
-  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: max_u16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_max(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmaxq_u16(self.neon, rhs.neon) }}
+      } else {
+        let arr: [u16; 8] = cast(self);
+        let rhs: [u16; 8] = cast(rhs);
+        cast([
+          arr[0].max(rhs[0]),
+          arr[1].max(rhs[1]),
+          arr[2].max(rhs[2]),
+          arr[3].max(rhs[3]),
+          arr[4].max(rhs[4]),
+          arr[5].max(rhs[5]),
+          arr[6].max(rhs[6]),
+          arr[7].max(rhs[7]),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: min_u16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u16x8_min(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vminq_u16(self.neon, rhs.neon) }}
+      } else {
+        let arr: [u16; 8] = cast(self);
+        let rhs: [u16; 8] = cast(rhs);
+        cast([
+          arr[0].min(rhs[0]),
+          arr[1].min(rhs[1]),
+          arr[2].min(rhs[2]),
+          arr[3].min(rhs[3]),
+          arr[4].min(rhs[4]),
+          arr[5].min(rhs[5]),
+          arr[6].min(rhs[6]),
+          arr[7].min(rhs[7]),
+        ])
+      }
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u16 {
     cast(i16x8::reduce_add(cast(self)))
   }
 
-  /// Reducing multiply. Returns the product of the elements of the vector.
   #[inline]
-  #[must_use]
   pub fn reduce_mul(self) -> u16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -607,37 +647,6 @@ impl u16x8 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> u16 {
-    pick! {
-      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
-        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
-        let sum64 = min_u16_m128i(self.sse, hi64);
-        let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
-        let sum32 = min_u16_m128i(sum64, hi32);
-        let lo16 = shr_imm_u32_m128i::<16>(sum32);
-        let sum16 = min_u16_m128i(sum32, lo16);
-        extract_i16_as_i32_m128i::<0>(sum16) as u16
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vminvq_u16(self.neon) }
-      } else {
-        let arr: [u16; 8] = cast(self);
-
-        // most boring implementation possible so optimizer doesn't overthink this
-        let mut r = arr[0];
-        r = r.min(arr[1]);
-        r = r.min(arr[2]);
-        r = r.min(arr[3]);
-        r = r.min(arr[4]);
-        r = r.min(arr[5]);
-        r = r.min(arr[6]);
-        r.min(arr[7])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
   pub fn reduce_max(self) -> u16 {
     pick! {
       if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
@@ -667,60 +676,43 @@ impl u16x8 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
+  pub fn reduce_min(self) -> u16 {
     pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: max_u16_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_max(self.simd, rhs.simd) }
+      if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+        let sum64 = min_u16_m128i(self.sse, hi64);
+        let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+        let sum32 = min_u16_m128i(sum64, hi32);
+        let lo16 = shr_imm_u32_m128i::<16>(sum32);
+        let sum16 = min_u16_m128i(sum32, lo16);
+        extract_i16_as_i32_m128i::<0>(sum16) as u16
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_u16(self.neon, rhs.neon) }}
+        unsafe { vminvq_u16(self.neon) }
       } else {
         let arr: [u16; 8] = cast(self);
-        let rhs: [u16; 8] = cast(rhs);
-        cast([
-          arr[0].max(rhs[0]),
-          arr[1].max(rhs[1]),
-          arr[2].max(rhs[2]),
-          arr[3].max(rhs[3]),
-          arr[4].max(rhs[4]),
-          arr[5].max(rhs[5]),
-          arr[6].max(rhs[6]),
-          arr[7].max(rhs[7]),
-        ])
+
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.min(arr[1]);
+        r = r.min(arr[2]);
+        r = r.min(arr[3]);
+        r = r.min(arr[4]);
+        r = r.min(arr[5]);
+        r = r.min(arr[6]);
+        r.min(arr[7])
       }
     }
   }
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: min_u16_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_min(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminq_u16(self.neon, rhs.neon) }}
-      } else {
-        let arr: [u16; 8] = cast(self);
-        let rhs: [u16; 8] = cast(rhs);
-        cast([
-          arr[0].min(rhs[0]),
-          arr[1].min(rhs[1]),
-          arr[2].min(rhs[2]),
-          arr[3].min(rhs[3]),
-          arr[4].min(rhs[4]),
-          arr[5].min(rhs[5]),
-          arr[6].min(rhs[6]),
-          arr[7].min(rhs[7]),
-        ])
-      }
-    }
-  }
+}
 
-  integer_fn_clamp!();
+unsafe impl Zeroable for u16x8 {}
+unsafe impl Pod for u16x8 {}
 
+impl AlignTo for u16x8 {
+  type Elem = u16;
+}
+
+impl u16x8 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

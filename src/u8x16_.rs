@@ -683,25 +683,77 @@ impl_simd_uint! {
       }
     }
   }
-}
 
-unsafe impl Zeroable for u8x16 {}
-unsafe impl Pod for u8x16 {}
-
-impl AlignTo for u8x16 {
-  type Elem = u8;
-}
-
-impl u8x16 {
   #[inline]
-  #[must_use]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: max_u8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u8x16_max(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmaxq_u8(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].max(rhs.arr[0]),
+          self.arr[1].max(rhs.arr[1]),
+          self.arr[2].max(rhs.arr[2]),
+          self.arr[3].max(rhs.arr[3]),
+          self.arr[4].max(rhs.arr[4]),
+          self.arr[5].max(rhs.arr[5]),
+          self.arr[6].max(rhs.arr[6]),
+          self.arr[7].max(rhs.arr[7]),
+          self.arr[8].max(rhs.arr[8]),
+          self.arr[9].max(rhs.arr[9]),
+          self.arr[10].max(rhs.arr[10]),
+          self.arr[11].max(rhs.arr[11]),
+          self.arr[12].max(rhs.arr[12]),
+          self.arr[13].max(rhs.arr[13]),
+          self.arr[14].max(rhs.arr[14]),
+          self.arr[15].max(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: min_u8_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u8x16_min(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vminq_u8(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].min(rhs.arr[0]),
+          self.arr[1].min(rhs.arr[1]),
+          self.arr[2].min(rhs.arr[2]),
+          self.arr[3].min(rhs.arr[3]),
+          self.arr[4].min(rhs.arr[4]),
+          self.arr[5].min(rhs.arr[5]),
+          self.arr[6].min(rhs.arr[6]),
+          self.arr[7].min(rhs.arr[7]),
+          self.arr[8].min(rhs.arr[8]),
+          self.arr[9].min(rhs.arr[9]),
+          self.arr[10].min(rhs.arr[10]),
+          self.arr[11].min(rhs.arr[11]),
+          self.arr[12].min(rhs.arr[12]),
+          self.arr[13].min(rhs.arr[13]),
+          self.arr[14].min(rhs.arr[14]),
+          self.arr[15].min(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u8 {
     cast(i8x16::reduce_add(cast(self)))
   }
 
-  /// Reducing multiply. Returns the product of the elements of the vector.
   #[inline]
-  #[must_use]
   pub fn reduce_mul(self) -> u8 {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
@@ -730,7 +782,6 @@ impl u8x16 {
   }
 
   #[inline]
-  #[must_use]
   pub fn reduce_max(self) -> u8 {
     #[allow(dead_code)]
     const SHUFFLE_1: [i8; 16] =
@@ -788,7 +839,6 @@ impl u8x16 {
   }
 
   #[inline]
-  #[must_use]
   pub fn reduce_min(self) -> u8 {
     #[allow(dead_code)]
     const SHUFFLE_1: [i8; 16] =
@@ -844,74 +894,16 @@ impl u8x16 {
       }
     }
   }
+}
 
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: max_u8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u8x16_max(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_u8(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].max(rhs.arr[0]),
-          self.arr[1].max(rhs.arr[1]),
-          self.arr[2].max(rhs.arr[2]),
-          self.arr[3].max(rhs.arr[3]),
-          self.arr[4].max(rhs.arr[4]),
-          self.arr[5].max(rhs.arr[5]),
-          self.arr[6].max(rhs.arr[6]),
-          self.arr[7].max(rhs.arr[7]),
-          self.arr[8].max(rhs.arr[8]),
-          self.arr[9].max(rhs.arr[9]),
-          self.arr[10].max(rhs.arr[10]),
-          self.arr[11].max(rhs.arr[11]),
-          self.arr[12].max(rhs.arr[12]),
-          self.arr[13].max(rhs.arr[13]),
-          self.arr[14].max(rhs.arr[14]),
-          self.arr[15].max(rhs.arr[15]),
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: min_u8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u8x16_min(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminq_u8(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].min(rhs.arr[0]),
-          self.arr[1].min(rhs.arr[1]),
-          self.arr[2].min(rhs.arr[2]),
-          self.arr[3].min(rhs.arr[3]),
-          self.arr[4].min(rhs.arr[4]),
-          self.arr[5].min(rhs.arr[5]),
-          self.arr[6].min(rhs.arr[6]),
-          self.arr[7].min(rhs.arr[7]),
-          self.arr[8].min(rhs.arr[8]),
-          self.arr[9].min(rhs.arr[9]),
-          self.arr[10].min(rhs.arr[10]),
-          self.arr[11].min(rhs.arr[11]),
-          self.arr[12].min(rhs.arr[12]),
-          self.arr[13].min(rhs.arr[13]),
-          self.arr[14].min(rhs.arr[14]),
-          self.arr[15].min(rhs.arr[15]),
-        ]}
-      }
-    }
-  }
+unsafe impl Zeroable for u8x16 {}
+unsafe impl Pod for u8x16 {}
 
-  integer_fn_clamp!();
+impl AlignTo for u8x16 {
+  type Elem = u8;
+}
 
+impl u8x16 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

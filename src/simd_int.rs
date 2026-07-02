@@ -16,6 +16,12 @@ macro_rules! impl_simd_int {
     $fn_bitand:item
     $fn_bitor:item
     $fn_bitxor:item
+    $fn_max:item
+    $fn_min:item
+    $fn_reduce_add:item
+    $fn_reduce_mul:item
+    $fn_reduce_max:item
+    $fn_reduce_min:item
   ) => {
     impl_unary_operator!(
       $Simd,
@@ -182,6 +188,38 @@ macro_rules! impl_simd_int {
 
       /// The size of this SIMD vector in bits.
       pub const BITS: u16 = $N;
+
+      #[must_use]
+      $fn_max
+
+      #[must_use]
+      $fn_min
+
+      /// Restrict each element to a certain interval.
+      ///
+      /// If `min > max`, the result is unspeficied. Consider manually checking
+      /// for that case.
+      #[inline]
+      #[must_use]
+      pub fn clamp(self, min: Self, max: Self) -> Self {
+        self.max(min).min(max)
+      }
+
+      /// horizontal add of all the elements of the vector
+      #[must_use]
+      $fn_reduce_add
+
+      /// Reducing multiply. Returns the product of the elements of the vector.
+      #[must_use]
+      $fn_reduce_mul
+
+      /// horizontal max of all the elements of the vector
+      #[must_use]
+      $fn_reduce_max
+
+      /// horizontal min of all the elements of the vector
+      #[must_use]
+      $fn_reduce_min
     }
   };
 }

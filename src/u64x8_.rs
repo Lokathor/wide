@@ -333,47 +333,22 @@ impl_simd_uint! {
       }
     }
   }
-}
 
-unsafe impl Zeroable for u64x8 {}
-unsafe impl Pod for u64x8 {}
-
-impl AlignTo for u64x8 {
-  type Elem = u64;
-}
-
-impl u64x8 {
   #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> u64 {
-    let array: [u64x4; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> u64 {
-    let array: [u64x4; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: max_u64_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.max(rhs.a),
+          b: self.b.max(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> u64 {
-    let array: [u64x4; 2] = cast(self);
-    array[0].max(array[1]).reduce_max()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> u64 {
-    let array: [u64x4; 2] = cast(self);
-    array[0].min(array[1]).reduce_min()
-  }
-
-  #[inline]
-  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -388,22 +363,39 @@ impl u64x8 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: max_u64_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
-        }
-      }
-    }
+  pub fn reduce_add(self) -> u64 {
+    let array: [u64x4; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
   }
 
-  integer_fn_clamp!();
 
+  #[inline]
+  pub fn reduce_mul(self) -> u64 {
+    let array: [u64x4; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> u64 {
+    let array: [u64x4; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> u64 {
+    let array: [u64x4; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+}
+
+unsafe impl Zeroable for u64x8 {}
+unsafe impl Pod for u64x8 {}
+
+impl AlignTo for u64x8 {
+  type Elem = u64;
+}
+
+impl u64x8 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

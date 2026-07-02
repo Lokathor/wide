@@ -304,6 +304,57 @@ impl_simd_uint! {
       }
     }
   }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: max_u32_m256i(self.avx2, rhs.avx2 ) }
+      } else {
+        Self {
+          a : self.a.max(rhs.a),
+          b : self.b.max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: min_u32_m256i(self.avx2, rhs.avx2 ) }
+      } else {
+        Self {
+          a : self.a.min(rhs.a),
+          b : self.b.min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> u32 {
+    cast(i32x8::reduce_add(cast(self)))
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> u32 {
+    let array: [u32x4; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> u32 {
+    let array: [u32x4; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> u32 {
+    let array: [u32x4; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
 }
 
 unsafe impl Zeroable for u32x8 {}
@@ -366,65 +417,6 @@ impl u32x8 {
       }
     }
   }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> u32 {
-    cast(i32x8::reduce_add(cast(self)))
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> u32 {
-    let array: [u32x4; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> u32 {
-    let array: [u32x4; 2] = cast(self);
-    array[0].max(array[1]).reduce_max()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> u32 {
-    let array: [u32x4; 2] = cast(self);
-    array[0].min(array[1]).reduce_min()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_u32_m256i(self.avx2, rhs.avx2 ) }
-      } else {
-        Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
-        }
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: min_u32_m256i(self.avx2, rhs.avx2 ) }
-      } else {
-        Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
-        }
-      }
-    }
-  }
-
-  integer_fn_clamp!();
 
   #[inline]
   #[must_use]

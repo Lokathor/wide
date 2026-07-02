@@ -302,46 +302,8 @@ impl_simd_uint! {
       }
     }
   }
-}
-
-unsafe impl Zeroable for u8x32 {}
-unsafe impl Pod for u8x32 {}
-
-impl AlignTo for u8x32 {
-  type Elem = u8;
-}
-
-impl u8x32 {
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> u8 {
-    cast(i8x32::reduce_add(cast(self)))
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> u8 {
-    let array: [u8x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
 
   #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> u8 {
-    let array: [u8x16; 2] = cast(self);
-    array[0].max(array[1]).reduce_max()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> u8 {
-    let array: [u8x16; 2] = cast(self);
-    array[0].min(array[1]).reduce_min()
-  }
-
-  #[inline]
-  #[must_use]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -354,8 +316,8 @@ impl u8x32 {
       }
     }
   }
+
   #[inline]
-  #[must_use]
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -369,8 +331,38 @@ impl u8x32 {
     }
   }
 
-  integer_fn_clamp!();
+  #[inline]
+  pub fn reduce_add(self) -> u8 {
+    cast(i8x32::reduce_add(cast(self)))
+  }
 
+  #[inline]
+  pub fn reduce_mul(self) -> u8 {
+    let array: [u8x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> u8 {
+    let array: [u8x16; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> u8 {
+    let array: [u8x16; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+}
+
+unsafe impl Zeroable for u8x32 {}
+unsafe impl Pod for u8x32 {}
+
+impl AlignTo for u8x32 {
+  type Elem = u8;
+}
+
+impl u8x32 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
