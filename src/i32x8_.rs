@@ -246,6 +246,7 @@ impl_simd_int! {
   T = i32,
   N = 8,
   Simd = i32x8,
+  UnsignedSimd = u32x8,
   [0, 1, 2, 3, 4, 5, 6, 7],
 
   #[inline]
@@ -463,6 +464,50 @@ impl_simd_int! {
     let arr: [i32x4; 2] = cast(self);
     arr[0].min(arr[1]).reduce_min()
   }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: abs_i32_m256i(self.avx2) }
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated greater-than-zero intrinsics.
+        Self {
+          a: self.a.is_positive(),
+          b: self.b.is_positive(),
+        }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_negative(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated less-than-zero intrinsics.
+        Self {
+          a: self.a.is_negative(),
+          b: self.b.is_negative(),
+        }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for i32x8 {}
@@ -533,74 +578,6 @@ impl i32x8 {
       }
     }
   }
-
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
-  #[inline]
-  #[must_use]
-  pub fn is_positive(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
-        }
-      } else {
-        self.simd_gt(Self::ZERO)
-      }
-    }
-  }
-
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
-  #[inline]
-  #[must_use]
-  pub fn is_negative(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated less-than-zero intrinsics.
-        Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
-        }
-      } else {
-        self.simd_lt(Self::ZERO)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: abs_i32_m256i(self.avx2) }
-      } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u32x8 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        u32x8 { avx2: abs_i32_m256i(self.avx2) }
-      } else {
-        u32x8 {
-          a : self.a.unsigned_abs(),
-          b : self.b.unsigned_abs(),
-        }
-      }
-    }
-  }
-
-  signed_fn_signum!();
 
   #[inline]
   #[must_use]

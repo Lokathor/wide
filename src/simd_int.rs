@@ -3,6 +3,7 @@ macro_rules! impl_simd_int {
     T = $T:ident,
     N = $N:literal,
     Simd = $Simd:ident,
+    UnsignedSimd = $UnsignedSimd:ident,
     [$($index:literal),* $(,)?],
 
     $fn_not:item
@@ -22,6 +23,9 @@ macro_rules! impl_simd_int {
     $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
+    $fn_abs:item
+    $fn_is_positive:item
+    $fn_is_negative:item
   ) => {
     impl_unary_operator!(
       $Simd,
@@ -220,6 +224,38 @@ macro_rules! impl_simd_int {
       /// horizontal min of all the elements of the vector
       #[must_use]
       $fn_reduce_min
+
+      #[inline]
+      #[must_use]
+      pub fn unsigned_abs(self) -> $UnsignedSimd {
+        cast::<$Simd, $UnsignedSimd>(self.abs())
+      }
+
+      #[must_use]
+      $fn_abs
+
+      /// Returns numbers representing the sign of each element.
+      ///
+      /// - `0` if the number is zero
+      /// - `1` if the number is positive
+      /// - `-1` if the number is negative
+      #[inline]
+      #[must_use]
+      pub fn signum(self) -> Self {
+        // Flip signs because the result for true in `is_positive/negative` is
+        // `-1` (all bits set).
+        self.is_negative() - self.is_positive()
+      }
+
+      /// Returns true for each positive element and false if it is zero or
+      /// negative.
+      #[must_use]
+      $fn_is_positive
+
+      /// Returns true for each negative element and false if it is zero or
+      /// positive.
+      #[must_use]
+      $fn_is_negative
     }
   };
 }

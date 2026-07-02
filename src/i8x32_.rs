@@ -242,6 +242,7 @@ impl_simd_int! {
   T = i8,
   N = 32,
   Simd = i8x32,
+  UnsignedSimd = u8x32,
   [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -430,54 +431,8 @@ impl_simd_int! {
     let array: [i8x16; 2] = cast(self);
     array[0].min(array[1]).reduce_min()
   }
-}
-
-unsafe impl Zeroable for i8x32 {}
-unsafe impl Pod for i8x32 {}
-
-impl AlignTo for i8x32 {
-  type Elem = i8;
-}
-
-impl i8x32 {
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
-  #[inline]
-  #[must_use]
-  pub fn is_positive(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
-        }
-      } else {
-        self.simd_gt(Self::ZERO)
-      }
-    }
-  }
-
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
-  #[inline]
-  #[must_use]
-  pub fn is_negative(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated less-than-zero intrinsics.
-        Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
-        }
-      } else {
-        self.simd_lt(Self::ZERO)
-      }
-    }
-  }
 
   #[inline]
-  #[must_use]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -492,22 +447,44 @@ impl i8x32 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u8x32 {
+  pub fn is_positive(self) -> Self {
     pick! {
-      if #[cfg(target_feature="avx2")] {
-        u8x32 { avx: abs_i8_m256i(self.avx) }
-      } else {
-        u8x32 {
-          a : self.a.unsigned_abs(),
-          b : self.b.unsigned_abs(),
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated greater-than-zero intrinsics.
+        Self {
+          a: self.a.is_positive(),
+          b: self.b.is_positive(),
         }
+      } else {
+        self.simd_gt(Self::ZERO)
       }
     }
   }
 
-  signed_fn_signum!();
+  #[inline]
+  pub fn is_negative(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated less-than-zero intrinsics.
+        Self {
+          a: self.a.is_negative(),
+          b: self.b.is_negative(),
+        }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
+  }
+}
 
+unsafe impl Zeroable for i8x32 {}
+unsafe impl Pod for i8x32 {}
+
+impl AlignTo for i8x32 {
+  type Elem = i8;
+}
+
+impl i8x32 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {

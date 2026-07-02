@@ -221,6 +221,7 @@ impl_simd_int! {
   T = i32,
   N = 16,
   Simd = i32x16,
+  UnsignedSimd = u32x16,
   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 
   #[inline]
@@ -441,20 +442,22 @@ impl_simd_int! {
     let arr: [i32x8; 2] = cast(self);
     arr[0].min(arr[1]).reduce_min()
   }
-}
 
-unsafe impl Zeroable for i32x16 {}
-unsafe impl Pod for i32x16 {}
-
-impl AlignTo for i32x16 {
-  type Elem = i32;
-}
-
-impl i32x16 {
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
   #[inline]
-  #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: abs_i32_m512i(self.avx512) }
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn is_positive(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
@@ -469,10 +472,7 @@ impl i32x16 {
     }
   }
 
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
   #[inline]
-  #[must_use]
   pub fn is_negative(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
@@ -486,7 +486,16 @@ impl i32x16 {
       }
     }
   }
+}
 
+unsafe impl Zeroable for i32x16 {}
+unsafe impl Pod for i32x16 {}
+
+impl AlignTo for i32x16 {
+  type Elem = i32;
+}
+
+impl i32x16 {
   #[inline]
   #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
@@ -621,38 +630,6 @@ impl i32x16 {
   }
 
   signed_fn_overflowing_div_rem!();
-
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: abs_i32_m512i(self.avx512) }
-      } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u32x16 {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        u32x16 { avx512: abs_i32_m512i(self.avx512) }
-      } else {
-        u32x16 {
-          a : self.a.unsigned_abs(),
-          b : self.b.unsigned_abs(),
-        }
-      }
-    }
-  }
-
-  signed_fn_signum!();
 
   #[inline]
   #[must_use]

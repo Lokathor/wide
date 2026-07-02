@@ -288,6 +288,7 @@ impl_simd_int! {
   T = i64,
   N = 2,
   Simd = i64x2,
+  UnsignedSimd = u64x2,
   [0, 1],
 
   #[inline]
@@ -550,46 +551,8 @@ impl_simd_int! {
       }
     }
   }
-}
-
-unsafe impl Zeroable for i64x2 {}
-unsafe impl Pod for i64x2 {}
-
-impl AlignTo for i64x2 {
-  type Elem = i64;
-}
-
-impl i64x2 {
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
-  #[inline]
-  #[must_use]
-  pub fn is_positive(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vreinterpretq_s64_u64(vcgtzq_s64(self.neon)) } }
-      } else {
-        self.simd_gt(Self::ZERO)
-      }
-    }
-  }
-
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
-  #[inline]
-  #[must_use]
-  pub fn is_negative(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.neon)) } }
-      } else {
-        self.simd_lt(Self::ZERO)
-      }
-    }
-  }
 
   #[inline]
-  #[must_use]
   pub fn abs(self) -> Self {
     pick! {
       // x86 doesn't have this builtin
@@ -609,27 +572,36 @@ impl i64x2 {
   }
 
   #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u64x2 {
+  pub fn is_positive(self) -> Self {
     pick! {
-      // x86 doesn't have this builtin
-      if #[cfg(target_feature="simd128")] {
-        u64x2 { simd: i64x2_abs(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {u64x2 { neon: vreinterpretq_u64_s64(vabsq_s64(self.neon)) }}
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s64_u64(vcgtzq_s64(self.neon)) } }
       } else {
-        let arr: [i64; 2] = cast(self);
-        cast(
-          [
-            arr[0].unsigned_abs(),
-            arr[1].unsigned_abs(),
-          ])
+        self.simd_gt(Self::ZERO)
       }
     }
   }
 
-  signed_fn_signum!();
+  #[inline]
+  pub fn is_negative(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
+  }
+}
 
+unsafe impl Zeroable for i64x2 {}
+unsafe impl Pod for i64x2 {}
+
+impl AlignTo for i64x2 {
+  type Elem = i64;
+}
+
+impl i64x2 {
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f64x2 {

@@ -327,6 +327,7 @@ impl_simd_int! {
   T = i32,
   N = 4,
   Simd = i32x4,
+  UnsignedSimd = u32x4,
   [0, 1, 2, 3],
 
   #[inline]
@@ -647,20 +648,29 @@ impl_simd_int! {
     let arr: [i32; 4] = cast(self);
     arr[0].min(arr[1]).min(arr[2].min(arr[3]))
   }
-}
 
-unsafe impl Zeroable for i32x4 {}
-unsafe impl Pod for i32x4 {}
-
-impl AlignTo for i32x4 {
-  type Elem = i32;
-}
-
-impl i32x4 {
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
   #[inline]
-  #[must_use]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: abs_i32_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i32x4_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vabsq_s32(self.neon) }}
+      } else {
+        let arr: [i32; 4] = cast(self);
+        cast([
+          arr[0].wrapping_abs(),
+          arr[1].wrapping_abs(),
+          arr[2].wrapping_abs(),
+          arr[3].wrapping_abs(),
+        ])
+      }
+    }
+  }
+
+  #[inline]
   pub fn is_positive(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
@@ -671,10 +681,7 @@ impl i32x4 {
     }
   }
 
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
   #[inline]
-  #[must_use]
   pub fn is_negative(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
@@ -684,7 +691,16 @@ impl i32x4 {
       }
     }
   }
+}
 
+unsafe impl Zeroable for i32x4 {}
+unsafe impl Pod for i32x4 {}
+
+impl AlignTo for i32x4 {
+  type Elem = i32;
+}
+
+impl i32x4 {
   /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
   /// on the corresponding lanes.
   ///
@@ -731,52 +747,6 @@ impl i32x4 {
       }
     }
   }
-
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        Self { sse: abs_i32_m128i(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i32x4_abs(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vabsq_s32(self.neon) }}
-      } else {
-        let arr: [i32; 4] = cast(self);
-        cast([
-          arr[0].wrapping_abs(),
-          arr[1].wrapping_abs(),
-          arr[2].wrapping_abs(),
-          arr[3].wrapping_abs(),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u32x4 {
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        u32x4 { sse: abs_i32_m128i(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        u32x4 { simd: i32x4_abs(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {u32x4 { neon: vreinterpretq_u32_s32(vabsq_s32(self.neon)) }}
-      } else {
-        let arr: [i32; 4] = cast(self);
-        cast([
-          arr[0].unsigned_abs(),
-          arr[1].unsigned_abs(),
-          arr[2].unsigned_abs(),
-          arr[3].unsigned_abs(),
-        ])
-      }
-    }
-  }
-
-  signed_fn_signum!();
 
   #[inline]
   #[must_use]

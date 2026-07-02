@@ -418,6 +418,7 @@ impl_simd_int! {
   T = i8,
   N = 16,
   Simd = i8x16,
+  UnsignedSimd = u8x16,
   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 
   #[inline]
@@ -999,6 +1000,61 @@ impl_simd_int! {
       }
     }
   }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: abs_i8_m128i(self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_abs(self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vabsq_s8(self.neon) }}
+      } else {
+        let arr: [i8; 16] = cast(self);
+        cast([
+          arr[0].wrapping_abs(),
+          arr[1].wrapping_abs(),
+          arr[2].wrapping_abs(),
+          arr[3].wrapping_abs(),
+          arr[4].wrapping_abs(),
+          arr[5].wrapping_abs(),
+          arr[6].wrapping_abs(),
+          arr[7].wrapping_abs(),
+          arr[8].wrapping_abs(),
+          arr[9].wrapping_abs(),
+          arr[10].wrapping_abs(),
+          arr[11].wrapping_abs(),
+          arr[12].wrapping_abs(),
+          arr[13].wrapping_abs(),
+          arr[14].wrapping_abs(),
+          arr[15].wrapping_abs(),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s8_u8(vcgtzq_s8(self.neon)) } }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_negative(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vreinterpretq_s8_u8(vcltzq_s8(self.neon)) } }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
+  }
 }
 
 unsafe impl Zeroable for i8x16 {}
@@ -1096,105 +1152,6 @@ impl i8x16 {
       }
     }
   }
-
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
-  #[inline]
-  #[must_use]
-  pub fn is_positive(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vreinterpretq_s8_u8(vcgtzq_s8(self.neon)) } }
-      } else {
-        self.simd_gt(Self::ZERO)
-      }
-    }
-  }
-
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
-  #[inline]
-  #[must_use]
-  pub fn is_negative(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vreinterpretq_s8_u8(vcltzq_s8(self.neon)) } }
-      } else {
-        self.simd_lt(Self::ZERO)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        Self { sse: abs_i8_m128i(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_abs(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vabsq_s8(self.neon) }}
-      } else {
-        let arr: [i8; 16] = cast(self);
-        cast([
-          arr[0].wrapping_abs(),
-          arr[1].wrapping_abs(),
-          arr[2].wrapping_abs(),
-          arr[3].wrapping_abs(),
-          arr[4].wrapping_abs(),
-          arr[5].wrapping_abs(),
-          arr[6].wrapping_abs(),
-          arr[7].wrapping_abs(),
-          arr[8].wrapping_abs(),
-          arr[9].wrapping_abs(),
-          arr[10].wrapping_abs(),
-          arr[11].wrapping_abs(),
-          arr[12].wrapping_abs(),
-          arr[13].wrapping_abs(),
-          arr[14].wrapping_abs(),
-          arr[15].wrapping_abs(),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u8x16 {
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        u8x16 { sse: abs_i8_m128i(self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        u8x16 { simd: i8x16_abs(self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { u8x16 { neon: vreinterpretq_u8_s8(vabsq_s8(self.neon)) }}
-      } else {
-        let arr: [i8; 16] = cast(self);
-        cast(
-          [
-            arr[0].unsigned_abs(),
-            arr[1].unsigned_abs(),
-            arr[2].unsigned_abs(),
-            arr[3].unsigned_abs(),
-            arr[4].unsigned_abs(),
-            arr[5].unsigned_abs(),
-            arr[6].unsigned_abs(),
-            arr[7].unsigned_abs(),
-            arr[8].unsigned_abs(),
-            arr[9].unsigned_abs(),
-            arr[10].unsigned_abs(),
-            arr[11].unsigned_abs(),
-            arr[12].unsigned_abs(),
-            arr[13].unsigned_abs(),
-            arr[14].unsigned_abs(),
-            arr[15].unsigned_abs(),
-            ])
-      }
-    }
-  }
-
-  signed_fn_signum!();
 
   #[inline]
   #[must_use]
