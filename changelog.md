@@ -16,6 +16,8 @@
 * Fixed shift operators overflow behavior.
 * Fixed `round` which previously behaved like `round_ties_even`.
 * Fixed `UpperExp` formatting for floats.
+* Added missing `#[must_use]` annotations
+* Updated documenattion.
 
 ## 1.5.0
 
