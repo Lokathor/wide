@@ -99,6 +99,34 @@ macro_rules! impl_simd_float {
       $fn_bitxor
     );
 
+    impl<Rhs> core::iter::Sum<Rhs> for $Simd
+    where
+      $Simd: AddAssign<Rhs>,
+    {
+      #[inline]
+      fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::zeroed();
+        for val in iter {
+          total += val;
+        }
+        total
+      }
+    }
+
+    impl<Rhs> core::iter::Product<Rhs> for $Simd
+    where
+      $Simd: MulAssign<Rhs>,
+    {
+      #[inline]
+      fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::from(1.0);
+        for val in iter {
+          total *= val;
+        }
+        total
+      }
+    }
+
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
       pub const HALF: Self = Self::splat(0.5);
