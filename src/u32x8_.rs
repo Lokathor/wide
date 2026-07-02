@@ -13,9 +13,11 @@ pick! {
 }
 
 impl_simd! {
-  T = u32,
-  N = 8,
-  Simd = u32x8,
+  unsafe {
+    T = u32,
+    N = 8,
+    Simd = u32x8,
+  }
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -136,10 +138,12 @@ impl_simd! {
 }
 
 impl_simd_uint! {
-  T = u32,
-  N = 8,
-  Simd = u32x8,
-  [0, 1, 2, 3, 4, 5, 6, 7],
+  unsafe {
+    T = u32,
+    N = 8,
+    Simd = u32x8,
+    [0, 1, 2, 3, 4, 5, 6, 7],
+  }
 
   #[inline]
   fn not(self) -> Self {

@@ -13,9 +13,11 @@ pick! {
 }
 
 impl_simd! {
-  T = i64,
-  N = 8,
-  Simd = i64x8,
+  unsafe {
+    T = i64,
+    N = 8,
+    Simd = i64x8,
+  }
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -207,11 +209,13 @@ impl_simd! {
 }
 
 impl_simd_int! {
-  T = i64,
-  N = 8,
-  Simd = i64x8,
-  UnsignedSimd = u64x8,
-  [0, 1, 2, 3, 4, 5, 6, 7],
+  unsafe {
+    T = i64,
+    N = 8,
+    Simd = i64x8,
+    UnsignedSimd = u64x8,
+    [0, 1, 2, 3, 4, 5, 6, 7],
+  }
 
   #[inline]
   fn not(self) -> Self::Output {

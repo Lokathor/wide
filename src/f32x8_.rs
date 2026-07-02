@@ -20,9 +20,11 @@ macro_rules! const_f32_as_f32x8 {
 }
 
 impl_simd! {
-  T = f32,
-  N = 8,
-  Simd = f32x8,
+  unsafe {
+    T = f32,
+    N = 8,
+    Simd = f32x8,
+  }
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -249,10 +251,12 @@ impl_simd! {
 }
 
 impl_simd_float! {
-  T = f32,
-  N = 8,
-  Simd = f32x8,
-  UnsignedT = u32,
+  unsafe {
+    T = f32,
+    N = 8,
+    Simd = f32x8,
+    UnsignedT = u32,
+  }
 
   #[inline]
   fn neg(self) -> Self::Output {

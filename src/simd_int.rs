@@ -1,10 +1,18 @@
 macro_rules! impl_simd_int {
   (
-    T = $T:ident,
-    N = $N:literal,
-    Simd = $Simd:ident,
-    UnsignedSimd = $UnsignedSimd:ident,
-    [$($index:literal),* $(,)?],
+    // SAFETY: The contents of this macro assume that:
+    //
+    // - `T` implements `Pod`
+    // - `Pod` can be implemented for `Simd`
+    // - `size_of::<Simd>()` is `size_of::<T>() * N`
+    // - `align_of::<Simd>()` is `size_of::<Simd>()`
+    unsafe {
+      T = $T:ident,
+      N = $N:literal,
+      Simd = $Simd:ident,
+      UnsignedSimd = $UnsignedSimd:ident,
+      [$($index:literal),* $(,)?],
+    }
 
     $fn_not:item
     $fn_add:item

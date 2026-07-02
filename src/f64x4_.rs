@@ -20,9 +20,11 @@ macro_rules! const_f64_as_f64x4 {
 }
 
 impl_simd! {
-  T = f64,
-  N = 4,
-  Simd = f64x4,
+  unsafe {
+    T = f64,
+    N = 4,
+    Simd = f64x4,
+  }
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -213,10 +215,12 @@ impl_simd! {
 }
 
 impl_simd_float! {
-  T = f64,
-  N = 4,
-  Simd = f64x4,
-  UnsignedT = u64,
+  unsafe {
+    T = f64,
+    N = 4,
+    Simd = f64x4,
+    UnsignedT = u64,
+  }
 
   #[inline]
   fn neg(self) -> Self::Output {

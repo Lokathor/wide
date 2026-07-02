@@ -13,9 +13,11 @@ pick! {
 }
 
 impl_simd! {
-  T = i16,
-  N = 16,
-  Simd = i16x16,
+  unsafe {
+    T = i16,
+    N = 16,
+    Simd = i16x16,
+  }
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -217,11 +219,13 @@ impl_simd! {
 }
 
 impl_simd_int! {
-  T = i16,
-  N = 16,
-  Simd = i16x16,
-  UnsignedSimd = u16x16,
-  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  unsafe {
+    T = i16,
+    N = 16,
+    Simd = i16x16,
+    UnsignedSimd = u16x16,
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  }
 
   #[inline]
   fn not(self) -> Self {
