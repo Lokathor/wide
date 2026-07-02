@@ -1626,9 +1626,6 @@ impl_simd_float! {
   }
 }
 
-unsafe impl Zeroable for f32x16 {}
-unsafe impl Pod for f32x16 {}
-
 impl AlignTo for f32x16 {
   type Elem = f32;
 }

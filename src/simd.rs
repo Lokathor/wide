@@ -303,6 +303,20 @@ macro_rules! impl_simd {
         self.select(t, f)
       }
     }
+
+    mod bytemuck {
+      use bytemuck::{Pod, Zeroable};
+
+      use crate::$Simd;
+
+      // SAFETY: All SIMD types in this library contain fully initialized memory
+      // and accept all bits patterns.
+      unsafe impl Zeroable for $Simd {}
+
+      // SAFETY: All SIMD types in this library contain fully initialized memory
+      // and accept all bits patterns.
+      unsafe impl Pod for $Simd {}
+    }
   };
 }
 

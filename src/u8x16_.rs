@@ -1092,9 +1092,6 @@ impl_simd_uint! {
   }
 }
 
-unsafe impl Zeroable for u8x16 {}
-unsafe impl Pod for u8x16 {}
-
 impl AlignTo for u8x16 {
   type Elem = u8;
 }

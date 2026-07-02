@@ -606,9 +606,6 @@ impl_simd_int! {
   }
 }
 
-unsafe impl Zeroable for i32x8 {}
-unsafe impl Pod for i32x8 {}
-
 impl AlignTo for i32x8 {
   type Elem = i32;
 }

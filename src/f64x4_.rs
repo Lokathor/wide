@@ -1850,9 +1850,6 @@ impl_simd_float! {
   }
 }
 
-unsafe impl Zeroable for f64x4 {}
-unsafe impl Pod for f64x4 {}
-
 impl AlignTo for f64x4 {
   type Elem = f64;
 }
