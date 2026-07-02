@@ -455,6 +455,19 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // x86 has no `_mm256_mul_epi16` intrinsic so there is no `avx2`
+    // optimization.
+
+    let [self_a, self_b] = cast::<i16x16, [i16x8; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<i16x16, [i16x8; 2]>(rhs);
+
+    let result_a = self_a.overflowing_mul(rhs_a);
+    let result_b = self_b.overflowing_mul(rhs_b);
+    (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
+  }
+
+  #[inline]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -605,30 +618,6 @@ impl i16x16 {
   integer_fn_saturating_div!([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ]);
-
-  signed_fn_overflowing_add_sub!();
-
-  /// Returns `self * rhs` and whether an overflow occured.
-  ///
-  /// Returns a tuple with:
-  ///
-  /// - The multiplication (returns the wrapped value if an overflow occured)
-  /// - A mask indicating whether an overflow occured
-  #[inline]
-  #[must_use]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
-    // x86 has no `_mm256_mul_epi16` intrinsic so there is no `avx2`
-    // optimization.
-
-    let [self_a, self_b] = cast::<i16x16, [i16x8; 2]>(self);
-    let [rhs_a, rhs_b] = cast::<i16x16, [i16x8; 2]>(rhs);
-
-    let result_a = self_a.overflowing_mul(rhs_a);
-    let result_b = self_b.overflowing_mul(rhs_b);
-    (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
-  }
-
-  signed_fn_overflowing_div_rem!();
 
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed

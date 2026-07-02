@@ -431,6 +431,31 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let result = [
+      self_array[0].overflowing_mul(rhs_array[0]),
+      self_array[1].overflowing_mul(rhs_array[1]),
+      self_array[2].overflowing_mul(rhs_array[2]),
+      self_array[3].overflowing_mul(rhs_array[3]),
+    ];
+    (
+      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
+      Self::new([
+        -(result[0].1 as i64),
+        -(result[1].1 as i64),
+        -(result[2].1 as i64),
+        -(result[3].1 as i64),
+      ]),
+    )
+  }
+
+  #[inline]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -554,42 +579,6 @@ impl i64x4 {
   }
 
   integer_fn_saturating_div!([0, 1, 2, 3]);
-
-  signed_fn_overflowing_add_sub!();
-
-  /// Returns `self * rhs` and whether an overflow occured.
-  ///
-  /// Returns a tuple with:
-  ///
-  /// - The multiplication (returns the wrapped value if an overflow occured)
-  /// - A mask indicating whether an overflow occured
-  #[inline]
-  #[must_use]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
-    // TODO(perf): This implementation looks quite bad. Is there a better
-    // one?
-
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    let result = [
-      self_array[0].overflowing_mul(rhs_array[0]),
-      self_array[1].overflowing_mul(rhs_array[1]),
-      self_array[2].overflowing_mul(rhs_array[2]),
-      self_array[3].overflowing_mul(rhs_array[3]),
-    ];
-    (
-      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
-      Self::new([
-        -(result[0].1 as i64),
-        -(result[1].1 as i64),
-        -(result[2].1 as i64),
-        -(result[3].1 as i64),
-      ]),
-    )
-  }
-
-  signed_fn_overflowing_div_rem!();
 
   // Sometimes used for `transpose`.
   #[must_use]

@@ -23,6 +23,7 @@ macro_rules! impl_simd_int {
     $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
+    $fn_overflowing_mul:item
     $fn_abs:item
     $fn_is_positive:item
     $fn_is_negative:item
@@ -229,6 +230,80 @@ macro_rules! impl_simd_int {
       #[must_use]
       pub fn unsigned_abs(self) -> $UnsignedSimd {
         cast::<$Simd, $UnsignedSimd>(self.abs())
+      }
+
+      /// Returns `self + rhs` and whether an overflow occured.
+      ///
+      /// Returns a tuple with:
+      ///
+      /// - The addition (returns the wrapped value if an overflow occured)
+      /// - A mask indicating whether an overflow occured
+      #[inline]
+      #[must_use]
+      pub fn overflowing_add(self, rhs: Self) -> (Self, Self) {
+        let result = self + rhs;
+        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+
+        (result, overflow)
+      }
+
+      /// Returns `self - rhs` and whether an overflow occured.
+      ///
+      /// Returns a tuple with:
+      ///
+      /// - The subtraction (returns the wrapped value if an overflow occured)
+      /// - A mask indicating whether an overflow occured
+      #[inline]
+      #[must_use]
+      pub fn overflowing_sub(self, rhs: Self) -> (Self, Self) {
+        let result = self - rhs;
+        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+
+        (result, overflow)
+      }
+
+      /// Returns `self * rhs` and whether an overflow occured.
+      ///
+      /// Returns a tuple with:
+      ///
+      /// - The multiplication (returns the wrapped value if an overflow
+      ///   occured)
+      /// - A mask indicating whether an overflow occured
+      #[must_use]
+      $fn_overflowing_mul
+
+      /// Returns `self / rhs` and whether an overflow occured.
+      ///
+      /// Returns a tuple with:
+      ///
+      /// - The division (returns `self` if an overflow occured)
+      /// - A mask indicating whether an overflow occured
+      ///
+      /// Note that because division has no hardware support, this operation is
+      /// very slow and should be avoided if possible.
+      #[inline]
+      #[must_use]
+      pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
+        // The second field is equivalent to
+        // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+        (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+      }
+
+      /// Returns `self % rhs` and whether an overflow occured.
+      ///
+      /// Returns a tuple with:
+      ///
+      /// - The remainder (returns zero if an overflow occured)
+      /// - A mask indicating whether an overflow occured
+      ///
+      /// Note that because division has no hardware support, this operation is
+      /// very slow and should be avoided if possible.
+      #[inline]
+      #[must_use]
+      pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
+        // The second field is equivalent to
+        // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+        (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
       }
 
       #[must_use]
