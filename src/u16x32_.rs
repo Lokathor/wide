@@ -327,8 +327,6 @@ impl_simd_uint! {
   }
 }
 
-int_uint_consts!(u16, 32, u16x32, 512);
-
 unsafe impl Zeroable for u16x32 {}
 unsafe impl Pod for u16x32 {}
 

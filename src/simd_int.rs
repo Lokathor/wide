@@ -170,5 +170,18 @@ macro_rules! impl_simd_int {
       bitxor_assign,
       $fn_bitxor
     );
+
+    impl $Simd {
+      pub const ONE: Self = Self::splat(1);
+      pub const ZERO: Self = Self::splat(0);
+      pub const MAX: Self = Self::splat($T::MAX);
+      pub const MIN: Self = Self::splat($T::MIN);
+
+      /// The number of lanes in this SIMD vector.
+      pub const LANES: u16 = $N;
+
+      /// The size of this SIMD vector in bits.
+      pub const BITS: u16 = $N;
+    }
   };
 }

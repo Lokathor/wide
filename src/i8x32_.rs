@@ -380,8 +380,6 @@ impl_simd_int! {
   }
 }
 
-int_uint_consts!(i8, 32, i8x32, 256);
-
 unsafe impl Zeroable for i8x32 {}
 unsafe impl Pod for i8x32 {}
 
