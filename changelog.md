@@ -15,6 +15,7 @@
 * Added small optimizations to `saturating_add/sub`.
 * Fixed shift operators overflow behavior.
 * Fixed `round` which previously behaved like `round_ties_even`.
+* Fixed `UpperExp` formatting for floats.
 
 ## 1.5.0
 

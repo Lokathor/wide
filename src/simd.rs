@@ -39,6 +39,28 @@ macro_rules! impl_simd {
       }
     }
 
+    macro_rules! impl_formatting_trait {
+      ($Trait:path) => {
+        impl $Trait for $Simd {
+          #[allow(clippy::missing_inline_in_public_items)]
+          fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+            write!(f, "(")?;
+            for (i, x) in self.to_array().iter().enumerate() {
+              if i > 0 {
+                write!(f, ", ")?;
+              }
+              <$T as $Trait>::fmt(x, f)?;
+            }
+            write!(f, ")")
+          }
+        }
+      }
+    }
+    impl_formatting_trait!(core::fmt::Debug);
+    impl_formatting_trait!(core::fmt::Display);
+    impl_formatting_trait!(core::fmt::LowerExp);
+    impl_formatting_trait!(core::fmt::UpperExp);
+
     #[expect(deprecated)]
     impl CmpEq for $Simd {
       type Output = Self;
