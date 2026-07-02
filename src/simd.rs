@@ -317,6 +317,38 @@ macro_rules! impl_simd {
       // and accept all bits patterns.
       unsafe impl Pod for $Simd {}
     }
+
+    #[cfg(feature = "serde")]
+    mod serde {
+      use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
+
+      use crate::$Simd;
+
+      impl Serialize for $Simd {
+        #[inline]
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+          S: serde_core::Serializer,
+        {
+          let array = self.as_array();
+          let mut seq = serializer.serialize_tuple($N)?;
+          for e in array {
+            seq.serialize_element(e)?;
+          }
+          seq.end()
+        }
+      }
+
+      impl<'de> Deserialize<'de> for $Simd {
+        #[inline]
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+          D: serde_core::Deserializer<'de>,
+        {
+          Ok(<[$T; $N]>::deserialize(deserializer)?.into())
+        }
+      }
+    }
   };
 }
 

@@ -60,9 +60,6 @@ use bytemuck::*;
 // Re-export so that users don't need to add a bytemuck dependency of their own
 pub use bytemuck;
 
-#[cfg(feature = "serde")]
-use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
-
 #[macro_use]
 mod simd;
 #[macro_use]
@@ -826,63 +823,3 @@ where
     pod_align_to_mut(slice)
   }
 }
-
-macro_rules! impl_serde {
-  ($i:ident, [$t:ty; $len:expr]) => {
-    #[cfg(feature = "serde")]
-    impl Serialize for $i {
-      #[inline]
-      fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-      where
-        S: serde_core::Serializer,
-      {
-        let array = self.as_array();
-        let mut seq = serializer.serialize_tuple($len)?;
-        for e in array {
-          seq.serialize_element(e)?;
-        }
-        seq.end()
-      }
-    }
-
-    #[cfg(feature = "serde")]
-    impl<'de> Deserialize<'de> for $i {
-      #[inline]
-      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where
-        D: serde_core::Deserializer<'de>,
-      {
-        Ok(<[$t; $len]>::deserialize(deserializer)?.into())
-      }
-    }
-  };
-}
-
-impl_serde!(f32x8, [f32; 8]);
-impl_serde!(f32x4, [f32; 4]);
-impl_serde!(f64x4, [f64; 4]);
-impl_serde!(f64x2, [f64; 2]);
-impl_serde!(i8x16, [i8; 16]);
-impl_serde!(i16x16, [i16; 16]);
-impl_serde!(i8x32, [i8; 32]);
-impl_serde!(i16x8, [i16; 8]);
-impl_serde!(i32x4, [i32; 4]);
-impl_serde!(i32x8, [i32; 8]);
-impl_serde!(i64x2, [i64; 2]);
-impl_serde!(i64x4, [i64; 4]);
-impl_serde!(u8x16, [u8; 16]);
-impl_serde!(u8x32, [u8; 32]);
-impl_serde!(u16x8, [u16; 8]);
-impl_serde!(u16x16, [u16; 16]);
-impl_serde!(u32x4, [u32; 4]);
-impl_serde!(u32x8, [u32; 8]);
-impl_serde!(u64x2, [u64; 2]);
-impl_serde!(u64x4, [u64; 4]);
-impl_serde!(u64x8, [u64; 8]);
-impl_serde!(i64x8, [i64; 8]);
-impl_serde!(i16x32, [i16; 32]);
-impl_serde!(u16x32, [u16; 32]);
-impl_serde!(i32x16, [i32; 16]);
-impl_serde!(u32x16, [u32; 16]);
-impl_serde!(f32x16, [f32; 16]);
-impl_serde!(f64x8, [f64; 8]);
