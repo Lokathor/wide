@@ -466,6 +466,71 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self + rhs;
+        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
+      } else {
+        Self {
+          a: self.a.saturating_add(rhs.a),
+          b: self.b.saturating_add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self - rhs;
+        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
+      } else {
+        Self {
+          a: self.a.saturating_sub(rhs.a),
+          b: self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
+        let odd_wide_mul = mul_i64_low_bits_m256i(
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
+        );
+
+        let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
+        let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
+        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
+        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
+
+        let no_overflow = high.simd_eq(low.is_negative());
+        let limit = Self::MAX ^ (self ^ rhs).is_negative();
+        no_overflow.select(low, limit)
+      } else {
+        let [self_a, self_b]: [i32x4; 2] = cast(self);
+        let [rhs_a, rhs_b]: [i32x4; 2] = cast(rhs);
+
+        cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+      }
+    }
+  }
+
+  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -609,77 +674,6 @@ impl i32x8 {
       }
     }
   }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let result = self + rhs;
-        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
-        let negative = self.is_negative();
-
-        // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.select(Self::MAX ^ negative, result)
-      } else {
-        Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let result = self - rhs;
-        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
-        let negative = self.is_negative();
-
-        // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.select(Self::MAX ^ negative, result)
-      } else {
-        Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Lanewise saturating multiply.
-  #[inline]
-  #[must_use]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
-        let odd_wide_mul = mul_i64_low_bits_m256i(
-          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
-          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
-        );
-
-        let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
-        let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
-        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
-        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
-
-        let no_overflow = high.simd_eq(low.is_negative());
-        let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.select(low, limit)
-      } else {
-        let [self_a, self_b]: [i32x4; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i32x4; 2] = cast(rhs);
-
-        cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
-      }
-    }
-  }
-
-  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 
   #[inline]
   #[must_use]

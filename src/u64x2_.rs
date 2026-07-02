@@ -493,6 +493,59 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self + rhs;
+        let overflow = result.simd_lt(self);
+        // Return `MAX` (all bits set) if overflow occurs.
+        result | overflow
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqaddq_u64(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_add(rhs.arr[0]),
+            self.arr[1].saturating_add(rhs.arr[1]),
+          ],
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let result = self - rhs;
+        let no_overflow = result.simd_le(self);
+        // Return `0` (no bits set) if overflow occurs.
+        result & no_overflow
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqsubq_u64(self.neon, rhs.neon) } }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].saturating_sub(rhs.arr[0]),
+            self.arr[1].saturating_sub(rhs.arr[1]),
+          ],
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+    ])
+  }
+
+  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one?
@@ -519,65 +572,6 @@ impl AlignTo for u64x2 {
 }
 
 impl u64x2 {
-  #[inline]
-  #[must_use]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let result = self + rhs;
-        let overflow = result.simd_lt(self);
-        // Return `MAX` (all bits set) if overflow occurs.
-        result | overflow
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vqaddq_u64(self.neon, rhs.neon) } }
-      } else {
-        Self {
-          arr: [
-            self.arr[0].saturating_add(rhs.arr[0]),
-            self.arr[1].saturating_add(rhs.arr[1]),
-          ],
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let result = self - rhs;
-        let no_overflow = result.simd_le(self);
-        // Return `0` (no bits set) if overflow occurs.
-        result & no_overflow
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vqsubq_u64(self.neon, rhs.neon) } }
-      } else {
-        Self {
-          arr: [
-            self.arr[0].saturating_sub(rhs.arr[0]),
-            self.arr[1].saturating_sub(rhs.arr[1]),
-          ],
-        }
-      }
-    }
-  }
-
-  /// Lanewise saturating multiply.
-  #[inline]
-  #[must_use]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    Self::new([
-      self_array[0].saturating_mul(rhs_array[0]),
-      self_array[1].saturating_mul(rhs_array[1]),
-    ])
-  }
-
-  integer_fn_saturating_div!([0, 1]);
-
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

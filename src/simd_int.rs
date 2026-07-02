@@ -23,6 +23,9 @@ macro_rules! impl_simd_int {
     $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
+    $fn_saturating_add:item
+    $fn_saturating_sub:item
+    $fn_saturating_mul:item
     $fn_overflowing_mul:item
     $fn_abs:item
     $fn_is_positive:item
@@ -225,6 +228,29 @@ macro_rules! impl_simd_int {
       /// horizontal min of all the elements of the vector
       #[must_use]
       $fn_reduce_min
+
+      #[must_use]
+      $fn_saturating_add
+
+      #[must_use]
+      $fn_saturating_sub
+
+      /// Lanewise saturating multiply.
+      #[must_use]
+      $fn_saturating_mul
+
+      /// Lanewise saturating divide.
+      ///
+      /// Note that because division has no hardware support, this operation is
+      /// very slow and should be avoided if possible.
+      #[inline]
+      #[must_use]
+      pub fn saturating_div(self, rhs: Self) -> Self {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([$(self_array[$index].saturating_div(rhs_array[$index])),*])
+      }
 
       #[inline]
       #[must_use]

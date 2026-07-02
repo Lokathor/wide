@@ -64,8 +64,6 @@ pub use bytemuck;
 use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
 #[macro_use]
-mod macros;
-#[macro_use]
 mod simd;
 #[macro_use]
 mod simd_float;

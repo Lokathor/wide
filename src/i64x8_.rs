@@ -464,6 +464,61 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let result = self + rhs;
+        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
+      } else {
+        Self {
+          a: self.a.saturating_add(rhs.a),
+          b: self.b.saturating_add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let result = self - rhs;
+        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
+      } else {
+        Self {
+          a: self.a.saturating_sub(rhs.a),
+          b: self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+      self_array[2].saturating_mul(rhs_array[2]),
+      self_array[3].saturating_mul(rhs_array[3]),
+      self_array[4].saturating_mul(rhs_array[4]),
+      self_array[5].saturating_mul(rhs_array[5]),
+      self_array[6].saturating_mul(rhs_array[6]),
+      self_array[7].saturating_mul(rhs_array[7]),
+    ])
+  }
+
+  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one?
@@ -585,65 +640,4 @@ impl i64x8 {
       arr[7] as f64,
     ])
   }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        let result = self + rhs;
-        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
-        let negative = self.is_negative();
-
-        // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.select(Self::MAX ^ negative, result)
-      } else {
-        Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        let result = self - rhs;
-        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
-        let negative = self.is_negative();
-
-        // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.select(Self::MAX ^ negative, result)
-      } else {
-        Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Lanewise saturating multiply.
-  #[inline]
-  #[must_use]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    Self::new([
-      self_array[0].saturating_mul(rhs_array[0]),
-      self_array[1].saturating_mul(rhs_array[1]),
-      self_array[2].saturating_mul(rhs_array[2]),
-      self_array[3].saturating_mul(rhs_array[3]),
-      self_array[4].saturating_mul(rhs_array[4]),
-      self_array[5].saturating_mul(rhs_array[5]),
-      self_array[6].saturating_mul(rhs_array[6]),
-      self_array[7].saturating_mul(rhs_array[7]),
-    ])
-  }
-
-  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 }

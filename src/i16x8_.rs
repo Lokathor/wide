@@ -894,6 +894,100 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: add_saturating_i16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i16x8_add_sat(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_add(rhs.arr[0]),
+          self.arr[1].saturating_add(rhs.arr[1]),
+          self.arr[2].saturating_add(rhs.arr[2]),
+          self.arr[3].saturating_add(rhs.arr[3]),
+          self.arr[4].saturating_add(rhs.arr[4]),
+          self.arr[5].saturating_add(rhs.arr[5]),
+          self.arr[6].saturating_add(rhs.arr[6]),
+          self.arr[7].saturating_add(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: sub_saturating_i16_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i16x8_sub_sat(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vqsubq_s16(self.neon, rhs.neon) } }
+      } else {
+        Self { arr: [
+          self.arr[0].saturating_sub(rhs.arr[0]),
+          self.arr[1].saturating_sub(rhs.arr[1]),
+          self.arr[2].saturating_sub(rhs.arr[2]),
+          self.arr[3].saturating_sub(rhs.arr[3]),
+          self.arr[4].saturating_sub(rhs.arr[4]),
+          self.arr[5].saturating_sub(rhs.arr[5]),
+          self.arr[6].saturating_sub(rhs.arr[6]),
+          self.arr[7].saturating_sub(rhs.arr[7]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        let low_wide_mul = i32x4_extmul_low_i16x8(self.simd, rhs.simd);
+        let high_wide_mul = i32x4_extmul_high_i16x8(self.simd, rhs.simd);
+        let low = Self { simd: i16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
+        let high = Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
+
+        let no_overflow = high.simd_eq(low.is_negative());
+        let limit = Self::MAX ^ (self ^ rhs).is_negative();
+        no_overflow.select(low, limit)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_low_s16(self.neon), vget_low_s16(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_s16_s32(
+            vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon)),
+          );
+          let low_high = vuzpq_s16(low_wide_mul, high_wide_mul);
+          let low = Self { neon: low_high.0 };
+          let high = Self { neon: low_high.1 };
+
+          let no_overflow = high.simd_eq(low.is_negative());
+          let limit = Self::MAX ^ (self ^ rhs).is_negative();
+          no_overflow.select(low, limit)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].saturating_mul(rhs_array[0]),
+          self_array[1].saturating_mul(rhs_array[1]),
+          self_array[2].saturating_mul(rhs_array[2]),
+          self_array[3].saturating_mul(rhs_array[3]),
+          self_array[4].saturating_mul(rhs_array[4]),
+          self_array[5].saturating_mul(rhs_array[5]),
+          self_array[6].saturating_mul(rhs_array[6]),
+          self_array[7].saturating_mul(rhs_array[7]),
+        ])
+      }
+    }
+  }
+
+  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="simd128")] {
@@ -1163,105 +1257,6 @@ impl i16x8 {
       }
     }
   }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: add_saturating_i16_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i16x8_add_sat(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vqaddq_s16(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].saturating_add(rhs.arr[0]),
-          self.arr[1].saturating_add(rhs.arr[1]),
-          self.arr[2].saturating_add(rhs.arr[2]),
-          self.arr[3].saturating_add(rhs.arr[3]),
-          self.arr[4].saturating_add(rhs.arr[4]),
-          self.arr[5].saturating_add(rhs.arr[5]),
-          self.arr[6].saturating_add(rhs.arr[6]),
-          self.arr[7].saturating_add(rhs.arr[7]),
-        ]}
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: sub_saturating_i16_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i16x8_sub_sat(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vqsubq_s16(self.neon, rhs.neon) } }
-      } else {
-        Self { arr: [
-          self.arr[0].saturating_sub(rhs.arr[0]),
-          self.arr[1].saturating_sub(rhs.arr[1]),
-          self.arr[2].saturating_sub(rhs.arr[2]),
-          self.arr[3].saturating_sub(rhs.arr[3]),
-          self.arr[4].saturating_sub(rhs.arr[4]),
-          self.arr[5].saturating_sub(rhs.arr[5]),
-          self.arr[6].saturating_sub(rhs.arr[6]),
-          self.arr[7].saturating_sub(rhs.arr[7]),
-        ]}
-      }
-    }
-  }
-
-  /// Lanewise saturating multiply.
-  #[inline]
-  #[must_use]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        let low_wide_mul = i32x4_extmul_low_i16x8(self.simd, rhs.simd);
-        let high_wide_mul = i32x4_extmul_high_i16x8(self.simd, rhs.simd);
-        let low = Self { simd: i16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
-        let high = Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
-
-        let no_overflow = high.simd_eq(low.is_negative());
-        let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.select(low, limit)
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          let low_wide_mul = vreinterpretq_s16_s32(
-            vmull_s16(vget_low_s16(self.neon), vget_low_s16(rhs.neon)),
-          );
-          let high_wide_mul = vreinterpretq_s16_s32(
-            vmull_s16(vget_high_s16(self.neon), vget_high_s16(rhs.neon)),
-          );
-          let low_high = vuzpq_s16(low_wide_mul, high_wide_mul);
-          let low = Self { neon: low_high.0 };
-          let high = Self { neon: low_high.1 };
-
-          let no_overflow = high.simd_eq(low.is_negative());
-          let limit = Self::MAX ^ (self ^ rhs).is_negative();
-          no_overflow.select(low, limit)
-        }
-      } else {
-        let self_array = self.to_array();
-        let rhs_array = rhs.to_array();
-
-        Self::new([
-          self_array[0].saturating_mul(rhs_array[0]),
-          self_array[1].saturating_mul(rhs_array[1]),
-          self_array[2].saturating_mul(rhs_array[2]),
-          self_array[3].saturating_mul(rhs_array[3]),
-          self_array[4].saturating_mul(rhs_array[4]),
-          self_array[5].saturating_mul(rhs_array[5]),
-          self_array[6].saturating_mul(rhs_array[6]),
-          self_array[7].saturating_mul(rhs_array[7]),
-        ])
-      }
-    }
-  }
-
-  integer_fn_saturating_div!([0, 1, 2, 3, 4, 5, 6, 7]);
 
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed

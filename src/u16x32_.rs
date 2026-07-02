@@ -378,6 +378,41 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: add_saturating_u16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.saturating_add(rhs.a),
+          b: self.b.saturating_add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: sub_saturating_u16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.saturating_sub(rhs.a),
+          b: self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let [self_a, self_b]: [u16x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
+    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  }
+
+  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
     // optimization.
@@ -396,50 +431,4 @@ unsafe impl Pod for u16x32 {}
 
 impl AlignTo for u16x32 {
   type Elem = u16;
-}
-
-impl u16x32 {
-  #[inline]
-  #[must_use]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: add_saturating_u16_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: sub_saturating_u16_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Lanewise saturating multiply.
-  #[inline]
-  #[must_use]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let [self_a, self_b]: [u16x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
-    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
-  }
-
-  integer_fn_saturating_div!([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-  ]);
 }
