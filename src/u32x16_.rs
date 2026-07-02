@@ -488,10 +488,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u32x16 {
-  type Elem = u32;
-}
-
 impl From<u16x16> for u32x16 {
   /// Widens and zero-extends each u16 lane to u32
   #[inline]

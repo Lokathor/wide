@@ -606,10 +606,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i32x8 {
-  type Elem = i32;
-}
-
 impl From<i16x8> for i32x8 {
   #[inline]
   fn from(value: i16x8) -> Self {

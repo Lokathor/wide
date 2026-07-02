@@ -865,10 +865,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i32x4 {
-  type Elem = i32;
-}
-
 impl i32x4 {
   /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
   /// on the corresponding lanes.

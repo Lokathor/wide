@@ -870,10 +870,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u16x8 {
-  type Elem = u16;
-}
-
 impl u16x8 {
   /// Unpack the lower half of the input and zero expand it to `u16` values.
   #[inline]

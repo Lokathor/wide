@@ -604,10 +604,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i32x16 {
-  type Elem = i32;
-}
-
 impl i32x16 {
   #[inline]
   #[must_use]

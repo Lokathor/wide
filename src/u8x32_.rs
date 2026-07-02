@@ -403,10 +403,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u8x32 {
-  type Elem = u8;
-}
-
 impl u8x32 {
   /// Returns a new vector with lanes selected from the lanes of the first input
   /// vector a specified in the second input vector `rhs`.

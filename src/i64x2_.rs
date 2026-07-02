@@ -669,10 +669,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i64x2 {
-  type Elem = i64;
-}
-
 impl i64x2 {
   #[inline]
   #[must_use]

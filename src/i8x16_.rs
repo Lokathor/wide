@@ -1254,10 +1254,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i8x16 {
-  type Elem = i8;
-}
-
 impl i8x16 {
   /// converts `i16` to `i8`, saturating values that are too large
   #[inline]

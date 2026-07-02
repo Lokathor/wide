@@ -425,7 +425,3 @@ impl_simd_uint! {
     (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
   }
 }
-
-impl AlignTo for u16x32 {
-  type Elem = u16;
-}

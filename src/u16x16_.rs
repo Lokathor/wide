@@ -436,10 +436,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u16x16 {
-  type Elem = u16;
-}
-
 impl From<u8x16> for u16x16 {
   /// widens and sign extends to u16x16
   #[inline]

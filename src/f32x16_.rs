@@ -1626,10 +1626,6 @@ impl_simd_float! {
   }
 }
 
-impl AlignTo for f32x16 {
-  type Elem = f32;
-}
-
 impl f32x16 {
   #[inline]
   fn vm_pow2n(self) -> Self {

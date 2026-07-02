@@ -1858,10 +1858,6 @@ impl_simd_float! {
   }
 }
 
-impl AlignTo for f64x8 {
-  type Elem = f64;
-}
-
 impl f64x8 {
   #[inline]
   fn vm_pow2n(self) -> Self {

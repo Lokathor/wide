@@ -141,6 +141,10 @@ macro_rules! impl_simd {
       }
     }
 
+    impl AlignTo for $Simd {
+      type Elem = $T;
+    }
+
     impl $Simd {
       #[inline]
       #[must_use]

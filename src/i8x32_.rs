@@ -525,10 +525,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i8x32 {
-  type Elem = i8;
-}
-
 impl i8x32 {
   /// Returns a new vector with lanes selected from the lanes of the first input
   /// vector a specified in the second input vector `rhs`.

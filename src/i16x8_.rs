@@ -1112,10 +1112,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i16x8 {
-  type Elem = i16;
-}
-
 impl i16x8 {
   /// Unpack the lower half of the input and expand it to `i16` values.
   #[inline]

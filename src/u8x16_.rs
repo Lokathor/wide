@@ -1092,10 +1092,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u8x16 {
-  type Elem = u8;
-}
-
 impl u8x16 {
   /// Unpack and interleave low lanes of two `u8x16`
   #[inline]

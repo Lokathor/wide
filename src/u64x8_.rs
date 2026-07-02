@@ -481,10 +481,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u64x8 {
-  type Elem = u64;
-}
-
 impl u64x8 {
   #[inline]
   #[must_use]

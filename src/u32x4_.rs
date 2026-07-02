@@ -737,10 +737,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u32x4 {
-  type Elem = u32;
-}
-
 impl u32x4 {
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
   /// result. Useful for implementing divide constant value (see `t_usefulness`

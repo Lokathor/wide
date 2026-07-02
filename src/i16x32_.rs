@@ -570,10 +570,6 @@ impl_simd_int! {
   }
 }
 
-impl AlignTo for i16x32 {
-  type Elem = i16;
-}
-
 impl i16x32 {
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed

@@ -448,10 +448,6 @@ impl_simd_uint! {
   }
 }
 
-impl AlignTo for u32x8 {
-  type Elem = u32;
-}
-
 impl From<u16x8> for u32x8 {
   /// widens and zero extends to u32x8
   #[inline]
