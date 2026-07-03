@@ -58,6 +58,22 @@
 //! assert_eq(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
 //! ```
 //!
+//! ## Wrapping semantics
+//!
+//! SIMD vectors of integers treat operators as wrapping, as if [`Wrapping<T>`]
+//! was used. Thus, SIMD vectors do not implement `wrapping_*` functions,
+//! because that is the default behavior. This means there are no overflow
+//! checks, even in debug builds.
+//!
+//! The reason for this is that for most applications where SIMD is appropriate,
+//! it is "not a bug" to wrap, and even debug builds are unlikely to tolerate
+//! the loss of performance.
+//!
+//! This is also true for things like [`f32x4::clamp`]. Even though
+//! [`f32::clamp`] panics for invalid inputs, the SIMD version does not, because
+//! it may be used with per-element branching, where invalid elements get
+//! discarded later by [`select`].
+//!
 //! ## Casting
 //!
 //! The SIMD types implement the [`bytemuck::Pod`] trait, which means that it
@@ -75,6 +91,7 @@
 //!     SIMD `sqrt` isn't available.
 //!
 //! [`select`]: f32x4::select
+//! [`Wrapping<T>`]: core::num::Wrapping
 
 // Note(Lokathor): Due to standard library magic, the std-only methods for f32
 // and f64 will automatically be available simply by declaring this.
