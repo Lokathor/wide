@@ -19,7 +19,7 @@
 //! instructions to complete the task. In the worst case, the code just becomes
 //! totally scalar (though the math is still correct, at least).
 //!
-//! ## Masks
+//! # Masks
 //!
 //! SIMD vector masks are per-element booleans, and are represented by SIMD
 //! vectors where each element's value in bits is either all zeros (`false`) or
@@ -58,7 +58,7 @@
 //! assert_eq(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
 //! ```
 //!
-//! ## Wrapping semantics
+//! # Wrapping semantics
 //!
 //! SIMD vectors of integers treat operators as wrapping, as if [`Wrapping<T>`]
 //! was used. Thus, SIMD vectors do not implement `wrapping_*` functions,
@@ -74,7 +74,7 @@
 //! it may be used with per-element branching, where invalid elements get
 //! discarded later by [`select`].
 //!
-//! ## Casting
+//! # Casting
 //!
 //! The SIMD types implement the [`bytemuck::Pod`] trait, which means that it
 //! is possible to do bitwise casts between SIMD types of the same size with
@@ -84,7 +84,7 @@
 //! This typically does not have much, if any, runtime overhead in optimized
 //! builds.
 //!
-//! ## Crate Features
+//! # Feature flags
 //!
 //! * `std`: This causes the feature to link to `std`.
 //!   * Currently this just improves the performance of `sqrt` when an explicit
