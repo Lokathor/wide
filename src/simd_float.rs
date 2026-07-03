@@ -713,9 +713,25 @@ macro_rules! impl_simd_float {
         r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
       }
 
+      /// Raises each element of the number `self` to the corresponding element
+      /// of the floating point power `n`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_pow_simd
 
+      /// Raises each element of the number `self` to the scalar floating point
+      /// power `n`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_powf
 
@@ -727,33 +743,79 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_sqrt
 
+      /// Returns `e^(self)`, (the exponential function) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_exp
 
-      /// Returns `2^self`.
+      /// Returns `2^(self)` for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_exp2
 
-      /// Natural log (ln(x))
+      /// Returns the natural logarithm of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_ln
 
+      /// Returns the base 2 logarithm of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn log2(self) -> Self {
         Self::ln(self) * Self::LOG2_E
       }
 
+      /// Returns the base 10 logarithm of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn log10(self) -> Self {
         Self::ln(self) * Self::LOG10_E
       }
 
-      /// Calculates the cube root: `self^(1/3)`.
+      /// Returns the cube root of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_cbrt
 
+      /// Computes the sine of a number (in radians) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn sin(self) -> Self {
@@ -761,6 +823,13 @@ macro_rules! impl_simd_float {
         s
       }
 
+      /// Computes the cosine of a number (in radians) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn cos(self) -> Self {
@@ -768,6 +837,13 @@ macro_rules! impl_simd_float {
         c
       }
 
+      /// Computes the tangent of a number (in radians) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn tan(self) -> Self {
@@ -775,43 +851,133 @@ macro_rules! impl_simd_float {
         s / c
       }
 
+      /// Computes the arcsine of a number for each input element. Return value
+      /// is in radians in the range [-pi/2, pi/2] or NaN if the number is
+      /// outside the range [-1, 1].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_asin
 
+      /// Computes the arccosine of a number for each input element. Return
+      /// value is in radians in the range [0, pi] or NaN if the number is
+      /// outside the range [-1, 1].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_acos
 
+      /// Computes the arctangent of a number for each input element. Return
+      /// value is in radians in the range [-pi/2, pi/2].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_atan
 
+      /// Computes the four quadrant arctangent of each element of `self` (`y`)
+      /// and the corresponding element of `other` (`x`) in radians.
+      ///
+      /// | `x`     | `y`     | Piecewise Definition | Range         |
+      /// |---------|---------|----------------------|---------------|
+      /// | `>= +0` | `>= +0` | `arctan(y/x)`        | `[+0, +pi/2]` |
+      /// | `>= +0` | `<= -0` | `arctan(y/x)`        | `[-pi/2, -0]` |
+      /// | `<= -0` | `>= +0` | `arctan(y/x) + pi`   | `[+pi/2, +pi]`|
+      /// | `<= -0` | `<= -0` | `arctan(y/x) - pi`   | `[-pi, -pi/2]`|
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_atan2
 
+      /// Simultaneously computes the sine and cosine of a number `x` for each
+      /// input element. Returns `(sin(x), cos(x))`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_sin_cos
 
+      /// Simultaneously computes the arcsine and arccosine of a number `x` for
+      /// each input element. Returns `(asin(x), acos(x))`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_asin_acos
 
-      /// Calculate `e^self - 1` for each lane. Accurate even for very small
-      /// values.
+      /// Returns `e^(self) - 1` for each input element in a way that is
+      /// accurate even if a number is close to zero.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_exp_m1
 
-      /// Calculate `ln(1 + self)` for each lane. Accurate even for very small
-      /// values.
+      /// Returns `ln(1+n)` (natural logarithm) for each input element more
+      /// accurately than if the operations were performed separately.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_ln_1p
 
-      /// Calculates hyperbolic sine: `(e^self - e^(-self))/2`.
+      /// Returns the hyperbolic sine (`(e^self - e^(-self))/2`) for each input
+      /// element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_sinh
 
-      /// Calculates hyperbolic cosine: `(e^self + e^(-self))/2`.
+      /// Returns the hyperbolic cosine (`(e^self + e^(-self))/2`) for each
+      /// input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_cosh
 
-      /// Calculates hyperbolic tangent: `sinh(self)/cosh(self)`.
+      /// Returns the hyperbolic tangent (`sinh(self)/cosh(self)`) for each
+      /// input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_tanh
     }
