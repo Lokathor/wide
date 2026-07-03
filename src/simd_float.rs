@@ -312,22 +312,37 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_reduce_mul
 
+      /// Returns a [mask] that checks if each element is NaN.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_nan
 
+      /// Returns a [mask] that checks if each element is infinity (either
+      /// positive or negative).
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_inf
 
+      /// Returns a [mask] that checks if each element is neither infinite nor
+      /// NaN.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_finite
 
-      /// Returns true for each element if it has a positive sign, including `+0.0`,
-      /// `NaN`s with positive sign bit and positive infinity.
+      /// Returns a [mask] that checks if each element has a positive sign,
+      /// including `+0.0`, NaNs with positive sign bit and positive infinity.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_sign_positive
 
-      /// Returns true for each element if it has a negative sign, including `-0.0`,
-      /// `NaN`s with negative sign bit and negative infinity.
+      /// Returns a [mask] that checks if each element has a negative sign,
+      /// including `-0.0`, NaNs with negative sign bit and negative infinity.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_sign_negative
 

@@ -215,7 +215,10 @@ macro_rules! impl_simd {
         cast_mut(self)
       }
 
-      /// Test if each element is equal to the corresponding element in `other`.
+      /// Returns a [mask] that checks if each element of `self` is equal to the
+      /// corresponding element of `other`.
+      ///
+      /// [mask]: crate#masks
       #[inline]
       #[expect(deprecated)]
       pub fn simd_eq<Rhs>(self, other: Rhs) -> <Self as CmpEq<Rhs>>::Output
@@ -225,8 +228,10 @@ macro_rules! impl_simd {
         CmpEq::simd_eq(self, other)
       }
 
-      /// Test if each element is not equal to the corresponding element in
-      /// `other`.
+      /// Returns a [mask] that checks if each element of `self` is not equal to
+      /// the corresponding element of `other`.
+      ///
+      /// [mask]: crate#masks
       #[inline]
       #[expect(deprecated)]
       pub fn simd_ne<Rhs>(self, other: Rhs) -> <Self as CmpNe<Rhs>>::Output
@@ -236,7 +241,10 @@ macro_rules! impl_simd {
         CmpNe::simd_ne(self, other)
       }
 
-      /// Test if each element is less than the corresponding element in `other`.
+      /// Returns a [mask] that checks if each element of `self` is less than
+      /// the corresponding element of `other`.
+      ///
+      /// [mask]: crate#masks
       #[inline]
       #[expect(deprecated)]
       pub fn simd_lt<Rhs>(self, other: Rhs) -> <Self as CmpLt<Rhs>>::Output
@@ -246,8 +254,10 @@ macro_rules! impl_simd {
         CmpLt::simd_lt(self, other)
       }
 
-      /// Test if each element is greater than the corresponding element in
-      /// `other`.
+      /// Returns a [mask] that checks if each element of `self` is greater than
+      /// the corresponding element of `other`.
+      ///
+      /// [mask]: crate#masks
       #[inline]
       #[expect(deprecated)]
       pub fn simd_gt<Rhs>(self, other: Rhs) -> <Self as CmpGt<Rhs>>::Output
@@ -257,8 +267,10 @@ macro_rules! impl_simd {
         CmpGt::simd_gt(self, other)
       }
 
-      /// Test if each element is less than or equal to the corresponding element
-      /// in `other`.
+      /// Returns a [mask] that checks if each element of `self` is less than or
+      /// equal to the corresponding element of `other`.
+      ///
+      /// [mask]: crate#masks
       #[inline]
       #[expect(deprecated)]
       pub fn simd_le<Rhs>(self, other: Rhs) -> <Self as CmpLe<Rhs>>::Output
@@ -268,8 +280,10 @@ macro_rules! impl_simd {
         CmpLe::simd_le(self, other)
       }
 
-      /// Test if each element is greater than or equal to the corresponding
-      /// element in `other`.
+      /// Returns a [mask] that checks if each element of `self` is greater than
+      /// or equal to the corresponding element of `other`.
+      ///
+      /// [mask]: crate#masks
       #[inline]
       #[expect(deprecated)]
       pub fn simd_ge<Rhs>(self, other: Rhs) -> <Self as CmpGe<Rhs>>::Output
@@ -286,23 +300,25 @@ macro_rules! impl_simd {
       /// - If the bit is one, return the corresponding bit of `if_one`
       /// - If the bit is zero, return the corresponding bit of `if_zero`
       ///
-      /// If you know `self` is a mask, meaning each lane is either all zeros or all
-      /// ones, consider using [`select`] which is faster.
+      /// If you know `self` is a [mask], meaning each element is either all
+      /// zeros or all ones, consider using [`select`] which is faster.
       ///
+      /// [mask]: crate#masks
       /// [`select`]: Self::select
       #[must_use]
       $fn_bitselect
 
-      /// Lanewise selection.
+      /// Elementwise selection.
       ///
-      /// For each lane of `self`:
+      /// For each element of `self`:
       ///
-      /// - If all bits are one, return the corresponding lane of `if_true`
-      /// - If all bits are zero, return the corresponding lane of `if_false`
+      /// - If all bits are one, return the corresponding element of `if_true`
+      /// - If all bits are zero, return the corresponding element of `if_false`
       ///
-      /// This function assumes `self` is a mask, meaning each lane is either all
-      /// zeros or all ones. For bitwise selection use [`bitselect`].
+      /// This function assumes `self` is a [mask], meaning each element is
+      /// either all zeros or all ones. For bitwise selection use [`bitselect`].
       ///
+      /// [mask]: crate#masks
       /// [`bitselect`]: Self::bitselect
       #[must_use]
       $fn_select
@@ -327,14 +343,21 @@ macro_rules! impl_simd {
       #[must_use]
       $fn_transpose
 
-      /// Lanewise selection. This function has been renamed to [`select`].
+      /// Elementwise selection.
       ///
-      /// For each lane this returns `t` where `self` is all ones and `f` where
-      /// `self` is all zeros.
+      /// For each element of `self`:
       ///
-      /// This function assumes `self` is a mask, meaning each lane is either all
-      /// zeros or all ones. For bitwise selection use [`bitselect`].
+      /// - If all bits are one, return the corresponding element of `if_true`
+      /// - If all bits are zero, return the corresponding element of `if_false`
       ///
+      /// Originally this function did not specify whether it supported per-bit
+      /// selection, or if it assumed `self` is a [mask], meaning each element
+      /// is either all zeros or all ones (for better performance). Because of
+      /// this, [`blend`] has been split into two new functions: [`select`] and
+      /// [`bitselect`].
+      ///
+      /// [mask]: crate#masks
+      /// [`blend`]: Self::blend
       /// [`select`]: Self::select
       /// [`bitselect`]: Self::bitselect
       #[deprecated(
@@ -343,8 +366,8 @@ macro_rules! impl_simd {
       )]
       #[inline]
       #[must_use]
-      pub fn blend(self, t: Self, f: Self) -> Self {
-        self.select(t, f)
+      pub fn blend(self, if_true: Self, if_false: Self) -> Self {
+        self.select(if_true, if_false)
       }
     }
 

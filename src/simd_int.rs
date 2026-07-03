@@ -470,13 +470,17 @@ macro_rules! impl_simd_int {
         self.is_negative() - self.is_positive()
       }
 
-      /// Returns true for each positive element and false if it is zero or
-      /// negative.
+      /// Returns a [mask] that is true for each positive element, and false if
+      /// it is zero or negative.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_positive
 
-      /// Returns true for each negative element and false if it is zero or
-      /// positive.
+      /// Returns a [mask] that is true for each negative element, and false if
+      /// it is zero or positive.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_negative
     }
