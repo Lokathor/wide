@@ -386,27 +386,59 @@ macro_rules! impl_simd_float {
         self * DEG_TO_RAD_RATIO
       }
 
-      /// Calculates the lanewise maximum of both vectors. If either lane is
-      /// NaN, the other lane gets chosen. Use `fast_max` for a faster
-      /// implementation that doesn't handle NaNs.
+      /// Returns the maximum between each element of `self` and the
+      /// corresponding element of `other`, ignoring NaN.
+      ///
+      /// For each lane, if exactly one of the arguments is NaN, then the other
+      /// argument is returned. If both arguments are NaN, the return value is
+      /// NaN. If the inputs compare equal (such as for the case of `+0.0` and
+      /// `-0.0`), either input may be returned non-deterministically.
+      ///
+      /// See [`fast_max`] for a faster variant that does not handle NaNs.
+      ///
+      /// [`fast_max`]: Self::fast_max
       #[must_use]
       $fn_max
 
-      /// Calculates the lanewise maximum of both vectors. This is a faster
-      /// implementation than `max`, but it doesn't specify any behavior if NaNs
-      /// are involved.
+      /// Returns the maximum between each element of `self` and the
+      /// corresponding element of `other`, not specifying behavior for NaNs.
+      ///
+      /// For each lane, if both arguments are NaN, the return value is NaN. If
+      /// the inputs compare equal (such as for the case of `+0.0` and `-0.0`),
+      /// or if exactly one of the arguments is NaN, either input may be
+      /// returned non-deterministically.
+      ///
+      /// See [`max`] for a slower variant that does handle NaNs.
+      ///
+      /// [`max`]: Self::max
       #[must_use]
       $fn_fast_max
 
-      /// Calculates the lanewise minimum of both vectors. If either lane is
-      /// NaN, the other lane gets chosen. Use `fast_min` for a faster
-      /// implementation that doesn't handle NaNs.
+      /// Returns the minimum between each element of `self` and the
+      /// corresponding element of `other`, ignoring NaN.
+      ///
+      /// For each lane, if exactly one of the arguments is NaN, then the other
+      /// argument is returned. If both arguments are NaN, the return value is
+      /// NaN. If the inputs compare equal (such as for the case of `+0.0` and
+      /// `-0.0`), either input may be returned non-deterministically.
+      ///
+      /// See [`fast_min`] for a faster variant that does not handle NaNs.
+      ///
+      /// [`fast_min`]: Self::fast_min
       #[must_use]
       $fn_min
 
-      /// Calculates the lanewise minimum of both vectors. This is a faster
-      /// implementation than `min`, but it doesn't specify any behavior if NaNs
-      /// are involved.
+      /// Returns the minimum between each element of `self` and the
+      /// corresponding element of `other`, not specifying behavior for NaNs.
+      ///
+      /// For each lane, if both arguments are NaN, the return value is NaN. If
+      /// the inputs compare equal (such as for the case of `+0.0` and `-0.0`),
+      /// or if exactly one of the arguments is NaN, either input may be
+      /// returned non-deterministically.
+      ///
+      /// See [`min`] for a slower variant that does handle NaNs.
+      ///
+      /// [`min`]: Self::min
       #[must_use]
       $fn_fast_min
 
@@ -418,16 +450,29 @@ macro_rules! impl_simd_float {
 
       /// Restrict a value to a certain interval unless it is NaN.
       ///
-      /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`,
-      /// the result is `min` since `max(min)` dominates.
+      /// If `self`, `min` or `max` are NaN, the result is NaN. If `min > max`,
+      /// the result is `min`. If inputs compare equal (such as for the case of
+      /// `+0.0` and `-0.0`), either input may be returned
+      /// non-deterministically.
+      ///
+      /// See [`fast_clamp`] for a faster variant that does not handle `min` or
+      /// `max` being NaN.
+      ///
+      /// [`fast_clamp`]: Self::fast_clamp
       #[must_use]
       $fn_clamp
 
       /// Restrict a value to a certain interval unless it is NaN.
       ///
-      /// If `self` is NaN, the result is NaN.  If `min > max`, the result is
-      /// `min` since `max(min)` dominates. If `min` or `max` are NaN, the
-      /// result is unspecified.
+      /// If `self` is NaN, the result is NaN. If `min > max`, the result is
+      /// `min`. If inputs compare equal (such as for the case of
+      /// `+0.0` and `-0.0`), or if `min` or `max` are NaN, any input may be
+      /// returned non-deterministically.
+      ///
+      /// See [`clamp`] for a slower variant that also handles `min` or `max`
+      /// being NaN.
+      ///
+      /// [`clamp`]: Self::clamp
       #[must_use]
       $fn_fast_clamp
 
