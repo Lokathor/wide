@@ -442,6 +442,20 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_fast_min
 
+      /// Calculates the midpoint (average) between `self` and `other`.
+      ///
+      /// This returns NaN when *either* argument is NaN or if a combination of
+      /// +inf and -inf is provided as arguments.
+      ///
+      /// This function currently returns a less precise result than
+      #[doc = concat!("[`", stringify!($T), "::midpoint`]")]
+      /// in order to gain performance, but this may change in the future.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn midpoint(self, other: Self) -> Self {
