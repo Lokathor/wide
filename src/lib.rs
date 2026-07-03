@@ -353,6 +353,10 @@ where
 macro_rules! from_array {
   ($ty:ty,$dst:ty,$dst_wide:ident,32) => {
     impl From<&[$ty]> for $dst_wide {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
       #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
@@ -397,6 +401,10 @@ macro_rules! from_array {
   };
   ($ty:ty,$dst:ty,$dst_wide:ident,16) => {
     impl From<&[$ty]> for $dst_wide {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
       #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
@@ -425,6 +433,10 @@ macro_rules! from_array {
   };
   ($ty:ty,$dst:ty,$dst_wide:ident,8) => {
     impl From<&[$ty]> for $dst_wide {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
       #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
@@ -446,6 +458,10 @@ macro_rules! from_array {
   };
   ($ty:ty,$dst:ty,$dst_wide:ident,4) => {
     impl From<&[$ty]> for $dst_wide {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
       #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
@@ -462,6 +478,10 @@ macro_rules! from_array {
   };
   ($ty:ty,$dst:ty,$dst_wide:ident,2) => {
     impl From<&[$ty]> for $dst_wide {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
       #[inline]
       fn from(src: &[$ty]) -> $dst_wide {
         match src.len() {
