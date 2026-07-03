@@ -573,35 +573,43 @@ macro_rules! impl_simd_float {
         self - self.trunc()
       }
 
-      /// Performs a multiply-add operation: `self * m + a`
+      /// Fused multiply-add. Computes `(self * a) + b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate multiply and add operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_add
 
-      /// Performs a multiply-subtract operation: `self * m - s`
+      /// Fused multiply-sub. Computes `(self * a) - b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate multiply and subtract operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_sub
 
-      /// Performs a negative multiply-add operation: `a - (self * m)`
+      /// Fused multiply-negate-add. Computes `-(self * a) + b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_neg_add
 
-      /// Performs a negative multiply-subtract operation: `-(self * m) - s`
+      /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_neg_sub
 
