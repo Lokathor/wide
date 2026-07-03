@@ -67,20 +67,32 @@ macro_rules! impl_simd_int {
 
             Self::new([$(self_array[$index].wrapping_div(rhs_array[$index])),*])
         },
-        /// Lanewise divide.
+        /// Divides each element of `left` by the corresponding element `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
         ,
-        /// Lanewise divide.
+        /// Divides each element of `left` by the scalar `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if `right` is zero.
         ,
-        /// Lanewise divide.
+        /// Divides the scalar `left` by each element of `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
     );
     impl_binary_operator!(
         $T,
@@ -96,20 +108,35 @@ macro_rules! impl_simd_int {
 
             Self::new([$(self_array[$index].wrapping_rem(rhs_array[$index])),*])
         },
-        /// Lanewise remainder.
+        /// Returns the remainder of each element of `left` divided by the
+        /// corresponding element `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
         ,
-        /// Lanewise remainder.
+        /// Returns the remainder of each element of `left` divided by the
+        /// scalar `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if `right` is zero.
         ,
-        /// Lanewise remainder.
+        /// Returns the remainder of the scalar `left` divided by each element
+        /// of `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
     );
     impl_shift_operator!(
       $T,
@@ -120,23 +147,24 @@ macro_rules! impl_simd_int {
       shl_assign,
       $fn_shl,
       $fn_shl_u32,
-      /// Shifts lanes by the corresponding lane.
+      /// Shifts left each element of `left` by the corresponding element of
+      /// `right`.
       ///
-      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shl`)
+      /// This operation behaves like [`wrapping_shl`].
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
       ,
-      /// Shifts all lanes by the value given.
+      /// Shifts left each element of `left` by the scalar `right`.
       ///
-      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shl`)
+      /// This operation behaves like [`wrapping_shl`].
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
       ,
-      /// Shifts the same value by each lane, returning a SIMD type.
+      /// Shifts left the scalar `left` by each element of `right`.
       ///
-      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shl`)
+      /// This operation behaves like [`wrapping_shl`].
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
     );
     impl_shift_operator!(
       $T,
@@ -147,23 +175,24 @@ macro_rules! impl_simd_int {
       shr_assign,
       $fn_shr,
       $fn_shr_u32,
-      /// Shifts each lane individually.
+      /// Shifts right each element of `left` by the corresponding element of
+      /// `right`.
       ///
-      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes
-      /// any high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shr`)
+      /// This operation behaves like [`wrapping_shr`].
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
       ,
-      /// Shifts all lanes by the value given.
+      /// Shifts right each element of `left` by the scalar `right`.
       ///
-      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes
-      /// any high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shr`)
+      /// This operation behaves like [`wrapping_shr`].
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
       ,
-      /// Shifts the same value by each lane, returning a SIMD type.
+      /// Shifts right the scalar `left` by each element of `right`.
       ///
-      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes
-      /// any high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shr`)
+      /// This operation behaves like [`wrapping_shr`].
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
     );
     impl_binary_operator!(
       $T,
