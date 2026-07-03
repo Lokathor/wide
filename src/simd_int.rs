@@ -342,6 +342,8 @@ macro_rules! impl_simd_int {
         Self::new([$(self_array[$index].saturating_div(rhs_array[$index])),*])
       }
 
+      /// Computes the absolute value of each input element, returned as an
+      /// unsigned integer in order to avoid wrapping.
       #[inline]
       #[must_use]
       pub fn unsigned_abs(self) -> $UnsignedSimd {
@@ -422,14 +424,15 @@ macro_rules! impl_simd_int {
         (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
       }
 
+      /// Returns the absolute value of each input element.
       #[must_use]
       $fn_abs
 
       /// Returns numbers representing the sign of each element.
       ///
-      /// - `0` if the number is zero
-      /// - `1` if the number is positive
-      /// - `-1` if the number is negative
+      /// - `0` if the element is zero
+      /// - `1` if the element is positive
+      /// - `-1` if the element is negative
       #[inline]
       #[must_use]
       pub fn signum(self) -> Self {
