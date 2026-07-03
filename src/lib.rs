@@ -19,6 +19,45 @@
 //! instructions to complete the task. In the worst case, the code just becomes
 //! totally scalar (though the math is still correct, at least).
 //!
+//! ## Masks
+//!
+//! SIMD vector masks are per-element booleans, and are represented by SIMD
+//! vectors where each element's value in bits is either all zeros (`false`) or
+//! all ones (`true`).
+//!
+//! SIMD versions of functions that regularly return `bool` return masks. For
+//! example, [`f32::is_sign_positive`] returns `bool`, and
+//! [`f32x4::is_sign_positive`] returns an [`f32x4`] that represents a mask.
+//! The [`select`] method can be used to perform a per-element `if` statement
+//! over a mask. For example, for this simple scalar code:
+//!
+//! ```
+//! let x = 1.0;
+//!
+//! let result = if x.is_sign_positive() {
+//!     5.0
+//! } else {
+//!     3.0
+//! };
+//!
+//! assert_eq(result, 5.0);
+//! ```
+//!
+//! This is the SIMD version:
+//!
+//! ```
+//! # use wide::f32x4;
+//! #
+//! let x = f32x4::new([1.0, -1.0, -1.0, 1.0]);
+//!
+//! let result = x.is_sign_positive().select(
+//!     f32x4::splat(5.0),
+//!     f32x4::splat(3.0),
+//! );
+//!
+//! assert_eq(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
+//! ```
+//!
 //! ## Casting
 //!
 //! The SIMD types implement the [`bytemuck::Pod`] trait, which means that it
@@ -34,6 +73,8 @@
 //! * `std`: This causes the feature to link to `std`.
 //!   * Currently this just improves the performance of `sqrt` when an explicit
 //!     SIMD `sqrt` isn't available.
+//!
+//! [`select`]: f32x4::select
 
 // Note(Lokathor): Due to standard library magic, the std-only methods for f32
 // and f64 will automatically be available simply by declaring this.
