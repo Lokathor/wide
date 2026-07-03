@@ -32,7 +32,7 @@
 //! over a mask. For example, for this simple scalar code:
 //!
 //! ```
-//! let x = 1.0;
+//! let x = 1.0_f32;
 //!
 //! let result = if x.is_sign_positive() {
 //!     5.0
@@ -40,7 +40,7 @@
 //!     3.0
 //! };
 //!
-//! assert_eq(result, 5.0);
+//! assert_eq!(result, 5.0);
 //! ```
 //!
 //! This is the SIMD version:
@@ -55,7 +55,7 @@
 //!     f32x4::splat(3.0),
 //! );
 //!
-//! assert_eq(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
+//! assert_eq!(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
 //! ```
 //!
 //! # Wrapping semantics
