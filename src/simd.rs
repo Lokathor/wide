@@ -26,6 +26,7 @@ macro_rules! impl_simd {
     $fn_transpose:item
   ) => {
     impl From<[$T; $N]> for $Simd {
+      /// Converts an array to a SIMD vector.
       #[inline]
       fn from(arr: [$T; $N]) -> Self {
         Self::new(arr)
@@ -33,6 +34,7 @@ macro_rules! impl_simd {
     }
 
     impl From<$Simd> for [$T; $N] {
+      /// Converts a SIMD vector to an array.
       #[inline]
       fn from(simd: $Simd) -> Self {
         simd.to_array()
@@ -40,7 +42,8 @@ macro_rules! impl_simd {
     }
 
     impl From<$T> for $Simd {
-      /// Splats the single value given across all lanes.
+      /// Converts a single value to a SIMD vector by setting all elements to
+      /// that value.
       #[inline]
       fn from(elem: $T) -> Self {
         Self::splat(elem)
@@ -176,30 +179,35 @@ macro_rules! impl_simd {
     }
 
     impl $Simd {
+      /// Converts an array to a SIMD vector.
       #[inline]
       #[must_use]
       pub const fn new(array: [$T; $N]) -> Self {
         unsafe { core::mem::transmute::<[$T; $N], $Simd>(array) }
       }
 
+      /// Constructs a new SIMD vector with all elements set to the given value.
       #[inline]
       #[must_use]
       pub const fn splat(elem: $T) -> Self {
         unsafe { core::mem::transmute::<[$T; $N], $Simd>([elem; $N]) }
       }
 
+      /// Converts a SIMD vector to an array.
       #[inline]
       #[must_use]
       pub fn to_array(self) -> [$T; $N] {
         cast(self)
       }
 
+      /// Returns an array reference containing the entire SIMD vector.
       #[inline]
       #[must_use]
       pub fn as_array(&self) -> &[$T; $N] {
         cast_ref(self)
       }
 
+      /// Returns a mutable array reference containing the entire SIMD vector.
       #[inline]
       #[must_use]
       pub fn as_mut_array(&mut self) -> &mut [$T; $N] {
