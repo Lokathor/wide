@@ -621,6 +621,8 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i64x8`], or only for
+/// particular types inconsistently.
 impl i64x8 {
   #[inline]
   #[must_use]

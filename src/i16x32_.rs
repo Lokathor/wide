@@ -574,6 +574,8 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i16x32`], or only for
+/// particular types inconsistently.
 impl i16x32 {
   /// Calculates partial dot product.
   /// Multiplies packed signed 16-bit integers, producing intermediate signed

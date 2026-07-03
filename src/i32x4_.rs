@@ -869,6 +869,8 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i32x4`], or only for
+/// particular types inconsistently.
 impl i32x4 {
   /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
   /// on the corresponding lanes.

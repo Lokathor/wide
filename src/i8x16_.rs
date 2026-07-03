@@ -1258,6 +1258,8 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i8x16`], or only for
+/// particular types inconsistently.
 impl i8x16 {
   /// converts `i16` to `i8`, saturating values that are too large
   #[inline]

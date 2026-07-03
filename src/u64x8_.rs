@@ -485,6 +485,8 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u64x8`], or only for
+/// particular types inconsistently.
 impl u64x8 {
   #[inline]
   #[must_use]

@@ -874,6 +874,8 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u16x8`], or only for
+/// particular types inconsistently.
 impl u16x8 {
   /// Unpack the lower half of the input and zero expand it to `u16` values.
   #[inline]

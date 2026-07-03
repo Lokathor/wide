@@ -1956,6 +1956,8 @@ impl_simd_float! {
   }
 }
 
+/// The following functionality exists only for [`f32x4`], or only for
+/// particular types inconsistently.
 impl f32x4 {
   #[inline]
   fn vm_pow2n(self) -> Self {

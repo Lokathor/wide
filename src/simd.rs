@@ -178,6 +178,7 @@ macro_rules! impl_simd {
       type Elem = $T;
     }
 
+    /// The following functionality exists for all SIMD vectors.
     impl $Simd {
       /// Converts an array to a SIMD vector.
       #[inline]

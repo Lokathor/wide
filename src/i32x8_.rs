@@ -617,6 +617,8 @@ impl From<i16x8> for i32x8 {
   }
 }
 
+/// The following functionality exists only for [`i32x8`], or only for
+/// particular types inconsistently.
 impl i32x8 {
   /// widens and sign extends to `i32x8`
   #[inline]

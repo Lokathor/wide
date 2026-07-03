@@ -1862,6 +1862,8 @@ impl_simd_float! {
   }
 }
 
+/// The following functionality exists only for [`f64x8`], or only for
+/// particular types inconsistently.
 impl f64x8 {
   #[inline]
   fn vm_pow2n(self) -> Self {

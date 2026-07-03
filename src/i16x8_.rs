@@ -1116,6 +1116,8 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i16x8`], or only for
+/// particular types inconsistently.
 impl i16x8 {
   /// Unpack the lower half of the input and expand it to `i16` values.
   #[inline]

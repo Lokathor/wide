@@ -1096,6 +1096,8 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u8x16`], or only for
+/// particular types inconsistently.
 impl u8x16 {
   /// Unpack and interleave low lanes of two `u8x16`
   #[inline]

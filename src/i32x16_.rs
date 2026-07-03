@@ -608,6 +608,8 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i32x16`], or only for
+/// particular types inconsistently.
 impl i32x16 {
   #[inline]
   #[must_use]

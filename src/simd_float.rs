@@ -157,6 +157,7 @@ macro_rules! impl_simd_float {
     impl_formatting_trait!(core::fmt::Octal);
     impl_formatting_trait!(core::fmt::UpperHex);
 
+    /// The following functionality exists for all SIMD vectors of floats.
     impl $Simd {
       pub const ONE: Self = Self::splat(1.0);
       pub const HALF: Self = Self::splat(0.5);

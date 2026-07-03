@@ -541,6 +541,8 @@ impl From<u16x16> for u32x16 {
   }
 }
 
+/// The following functionality exists only for [`u32x16`], or only for
+/// particular types inconsistently.
 impl u32x16 {
   #[inline]
   #[must_use]

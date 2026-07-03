@@ -407,6 +407,8 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u8x32`], or only for
+/// particular types inconsistently.
 impl u8x32 {
   /// Returns a new vector with lanes selected from the lanes of the first input
   /// vector a specified in the second input vector `rhs`.

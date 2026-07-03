@@ -741,6 +741,8 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u32x4`], or only for
+/// particular types inconsistently.
 impl u32x4 {
   /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
   /// result. Useful for implementing divide constant value (see `t_usefulness`
