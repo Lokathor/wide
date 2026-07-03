@@ -159,36 +159,133 @@ macro_rules! impl_simd_float {
 
     /// The following functionality exists for all SIMD vectors of floats.
     impl $Simd {
+      /// A SIMD vector with all elements set to `1.0`.
       pub const ONE: Self = Self::splat(1.0);
+
+      /// A SIMD vector with all elements set to `0.5`.
       pub const HALF: Self = Self::splat(0.5);
+
+      /// A SIMD vector with all elements set to `0.0`.
       pub const ZERO: Self = Self::splat(0.0);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::EPSILON`].")]
       pub const EPSILON: Self = Self::splat($T::EPSILON);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
       pub const MIN: Self = Self::splat($T::MIN);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN_POSITIVE`].")]
       pub const MIN_POSITIVE: Self = Self::splat($T::MIN_POSITIVE);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
       pub const MAX: Self = Self::splat($T::MAX);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::NAN`].")]
       pub const NAN: Self = Self::splat($T::NAN);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::INFINITY`].")]
       pub const INFINITY: Self = Self::splat($T::INFINITY);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::NEG_INFINITY`].")]
       pub const NEG_INFINITY: Self = Self::splat($T::NEG_INFINITY);
+
+      /// A SIMD vector with all elements set to [Euler's number (e)].
+      ///
+      #[doc = concat!("[Euler's number (e)]: core::", stringify!($T), "::consts::E")]
       pub const E: Self = Self::splat(core::$T::consts::E);
+
+      /// A SIMD vector with all elements set to [1/π].
+      ///
+      #[doc = concat!("[1/π]: core::", stringify!($T), "::consts::FRAC_1_PI")]
       pub const FRAC_1_PI: Self = Self::splat(core::$T::consts::FRAC_1_PI);
+
+      /// A SIMD vector with all elements set to [2/π].
+      ///
+      #[doc = concat!("[2/π]: core::", stringify!($T), "::consts::FRAC_2_PI")]
       pub const FRAC_2_PI: Self = Self::splat(core::$T::consts::FRAC_2_PI);
+
+      /// A SIMD vector with all elements set to [2/sqrt(π)].
+      ///
+      #[doc = concat!("[2/sqrt(π)]: core::", stringify!($T), "::consts::FRAC_2_SQRT_PI")]
       pub const FRAC_2_SQRT_PI: Self =
         Self::splat(core::$T::consts::FRAC_2_SQRT_PI);
+
+      /// A SIMD vector with all elements set to [1/sqrt(2)].
+      ///
+      #[doc = concat!("[1/sqrt(2)]: core::", stringify!($T), "::consts::FRAC_1_SQRT_2")]
       pub const FRAC_1_SQRT_2: Self =
         Self::splat(core::$T::consts::FRAC_1_SQRT_2);
+
+      /// A SIMD vector with all elements set to [π/2].
+      ///
+      #[doc = concat!("[π/2]: core::", stringify!($T), "::consts::FRAC_PI_2")]
       pub const FRAC_PI_2: Self = Self::splat(core::$T::consts::FRAC_PI_2);
+
+      /// A SIMD vector with all elements set to [π/3].
+      ///
+      #[doc = concat!("[π/3]: core::", stringify!($T), "::consts::FRAC_PI_3")]
       pub const FRAC_PI_3: Self = Self::splat(core::$T::consts::FRAC_PI_3);
+
+      /// A SIMD vector with all elements set to [π/4].
+      ///
+      #[doc = concat!("[π/4]: core::", stringify!($T), "::consts::FRAC_PI_4")]
       pub const FRAC_PI_4: Self = Self::splat(core::$T::consts::FRAC_PI_4);
+
+      /// A SIMD vector with all elements set to [π/6].
+      ///
+      #[doc = concat!("[π/6]: core::", stringify!($T), "::consts::FRAC_PI_6")]
       pub const FRAC_PI_6: Self = Self::splat(core::$T::consts::FRAC_PI_6);
+
+      /// A SIMD vector with all elements set to [π/8].
+      ///
+      #[doc = concat!("[π/8]: core::", stringify!($T), "::consts::FRAC_PI_8")]
       pub const FRAC_PI_8: Self = Self::splat(core::$T::consts::FRAC_PI_8);
+
+      /// A SIMD vector with all elements set to [ln(2)].
+      ///
+      #[doc = concat!("[ln(2)]: core::", stringify!($T), "::consts::LN_2")]
       pub const LN_2: Self = Self::splat(core::$T::consts::LN_2);
+
+      /// A SIMD vector with all elements set to [ln(10)].
+      ///
+      #[doc = concat!("[ln(10)]: core::", stringify!($T), "::consts::LN_10")]
       pub const LN_10: Self = Self::splat(core::$T::consts::LN_10);
+
+      /// A SIMD vector with all elements set to [log<sub>2</sub>(e)].
+      ///
+      #[doc = concat!("[log<sub>2</sub>(e)]: core::", stringify!($T), "::consts::LOG2_E")]
       pub const LOG2_E: Self = Self::splat(core::$T::consts::LOG2_E);
+
+      /// A SIMD vector with all elements set to [log<sub>10</sub>(e)].
+      ///
+      #[doc = concat!("[log<sub>10</sub>(e)]: core::", stringify!($T), "::consts::LOG10_E")]
       pub const LOG10_E: Self = Self::splat(core::$T::consts::LOG10_E);
+
+      /// A SIMD vector with all elements set to [log<sub>10</sub>(2)].
+      ///
+      #[doc = concat!("[log<sub>10</sub>(2)]: core::", stringify!($T), "::consts::LOG10_2")]
       pub const LOG10_2: Self = Self::splat(core::$T::consts::LOG10_2);
+
+      /// A SIMD vector with all elements set to [log<sub>2</sub>(10)].
+      ///
+      #[doc = concat!("[log<sub>2</sub>(10)]: core::", stringify!($T), "::consts::LOG2_10")]
       pub const LOG2_10: Self = Self::splat(core::$T::consts::LOG2_10);
+
+      /// A SIMD vector with all elements set to [Archimedes’ constant (π)].
+      ///
+      #[doc = concat!("[Archimedes’ constant (π)]: core::", stringify!($T), "::consts::PI")]
       pub const PI: Self = Self::splat(core::$T::consts::PI);
+
+      /// A SIMD vector with all elements set to [sqrt(2)].
+      ///
+      #[doc = concat!("[sqrt(2)]: core::", stringify!($T), "::consts::SQRT_2")]
       pub const SQRT_2: Self = Self::splat(core::$T::consts::SQRT_2);
+
+      /// A SIMD vector with all elements set to [the full circle constant (τ)].
+      ///
+      /// Equal to 2π.
+      ///
+      #[doc = concat!("[the full circle constant (τ)]: core::", stringify!($T), "::consts::TAU")]
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
 
       /// horizontal add of all the elements of the vector

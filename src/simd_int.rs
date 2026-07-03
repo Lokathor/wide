@@ -246,12 +246,19 @@ macro_rules! impl_simd_int {
     /// The following functionality exists for all SIMD vectors of signed
     /// integers.
     impl $Simd {
+      /// A SIMD vector with all elements set to `1`.
       pub const ONE: Self = Self::splat(1);
+
+      /// A SIMD vector with all elements set to `0`.
       pub const ZERO: Self = Self::splat(0);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
       pub const MAX: Self = Self::splat($T::MAX);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
       pub const MIN: Self = Self::splat($T::MIN);
 
-      /// The number of lanes in this SIMD vector.
+      /// The number of elements in this SIMD vector.
       pub const LANES: u16 = $N;
 
       /// The size of this SIMD vector in bits.
