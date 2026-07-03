@@ -331,12 +331,40 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_is_sign_negative
 
+      /// Returns the reciprocal (inverse) of a number, `1/x`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
+      ///
+      #[doc = concat!(
+        "To compute the reciprocal deterministically, use `",
+        stringify!($Simd),
+        "::ONE / x`."
+      )]
       #[must_use]
       $fn_recip
 
+      /// Returns the square root of the reciprocal (inverse) of a number,
+      /// `sqrt(1/x)`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_recip_sqrt
 
+      /// Converts radians to degrees.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn to_degrees(self) -> Self {
@@ -344,6 +372,13 @@ macro_rules! impl_simd_float {
         self * RAD_TO_DEG_RATIO
       }
 
+      /// Converts degrees to radians.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn to_radians(self) -> Self {
