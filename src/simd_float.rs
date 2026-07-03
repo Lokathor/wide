@@ -719,6 +719,11 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_powf
 
+      /// Returns the square root of a number for each input element.
+      ///
+      /// Returns NaN if `self` is a negative number other than `-0.0`.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_sqrt
 
