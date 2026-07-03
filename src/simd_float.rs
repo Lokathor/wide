@@ -672,6 +672,17 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_mul_neg_sub
 
+      /// Calculates Euclidean division, the matching function for
+      /// [`rem_euclid`].
+      ///
+      /// This computes the integer `n` such that
+      /// `self = n * rhs + self.rem_euclid(rhs)`. In other words, the result is
+      /// `self / rhs` rounded to the integer `n` such that `self >= n * rhs`.
+      ///
+      /// This function is not guaranteed to exactly match
+      #[doc = concat!("[`", stringify!($T), "::div_euclid`].")]
+      ///
+      /// [`rem_euclid`]: Self::rem_euclid
       #[inline]
       #[must_use]
       pub fn div_euclid(self, rhs: Self) -> Self {
@@ -681,6 +692,20 @@ macro_rules! impl_simd_float {
           .select(rhs.simd_gt(Self::ZERO).select(q - Self::ONE, q + Self::ONE), q)
       }
 
+      /// Calculates the least nonnegative remainder of `self` when divided by
+      /// `rhs`.
+      ///
+      /// In particular, the return value `r` satisfies `0.0 <= r < rhs.abs()` in
+      /// most cases. However, due to a floating point round-off error it can
+      /// result in `r == rhs.abs()`, violating the mathematical definition, if
+      /// `self` is much smaller than `rhs.abs()` in magnitude and `self < 0.0`.
+      /// This result is not an element of the function's codomain, but it is the
+      /// closest floating point number in the real numbers and thus fulfills the
+      /// property `self == self.div_euclid(rhs) * rhs + self.rem_euclid(rhs)`
+      /// approximately.
+      ///
+      /// This function is not guaranteed to exactly match
+      #[doc = concat!("[`", stringify!($T), "::rem_euclid`].")]
       #[inline]
       #[must_use]
       pub fn rem_euclid(self, rhs: Self) -> Self {
