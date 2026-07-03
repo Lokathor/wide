@@ -260,15 +260,20 @@ macro_rules! impl_simd_uint {
       /// The size of this SIMD vector in bits.
       pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
 
+      /// Returns the maximum between each element of `self` and the
+      /// corresponding element of `other`.
       #[must_use]
       $fn_max
 
+      /// Returns the minimum between each element of `self` and the
+      /// corresponding element of `other`.
       #[must_use]
       $fn_min
 
-      /// Restrict each element to a certain interval.
+      /// Clamps each element of `self` between the corresponding elements of
+      /// `min` and `max`.
       ///
-      /// If `min > max`, the result is unspeficied. Consider manually checking
+      /// If `min > max`, the result is unspecified. Consider manually checking
       /// for that case.
       #[inline]
       #[must_use]
