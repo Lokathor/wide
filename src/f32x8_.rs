@@ -2,10 +2,22 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="avx")] {
+    /// A SIMD vector with eight elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
     pub struct f32x8 { pub(crate) avx: m256 }
   } else {
+    /// A SIMD vector with eight elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
     pub struct f32x8 { pub(crate) a : f32x4, pub(crate) b : f32x4 }
