@@ -256,7 +256,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 2x2 `f64` matrix.
+  ///
+  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [f64x2; 2]) -> [f64x2; 2] {
     pick! {

@@ -145,7 +145,8 @@ impl_simd! {
     i64x4::all(cast(self))
   }
 
-  /// Transpose matrix of 4x4 `u64` matrix.
+  ///
+  /// Currently this function is only accelerated on `avx2`.
   #[inline]
   pub fn transpose(data: [u64x4; 4]) -> [u64x4; 4] {
     cast(i64x4::transpose(cast(data)))

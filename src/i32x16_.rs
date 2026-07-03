@@ -171,7 +171,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 16x16 `i32` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [i32x16; 16]) -> [i32x16; 16] {
     // Can this be optimized?

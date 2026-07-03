@@ -151,7 +151,8 @@ impl_simd! {
     i16x32::all(cast(self))
   }
 
-  /// Transpose matrix of 32x32 `u16` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [u16x32; 32]) -> [u16x32; 32] {
     cast(i16x32::transpose(cast(data)))

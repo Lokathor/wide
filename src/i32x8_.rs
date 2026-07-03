@@ -170,7 +170,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 8x8 `i32` matrix. Currently only accelerated on AVX2.
+  ///
+  /// Currently this function is only accelerated on `avx2`.
   #[inline]
   pub fn transpose(data: [i32x8; 8]) -> [i32x8; 8] {
     pick! {

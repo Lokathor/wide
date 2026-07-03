@@ -285,7 +285,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 4x4 `i32` matrix. Currently only accelerated on SSE.
+  ///
+  /// Currently this function is only accelerated on `sse`.
   #[inline]
   pub fn transpose(data: [i32x4; 4]) -> [i32x4; 4] {
     pick! {

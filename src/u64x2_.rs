@@ -216,7 +216,8 @@ impl_simd! {
     i64x2::all(cast(self))
   }
 
-  /// Transpose matrix of 2x2 `u64` matrix.
+  ///
+  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [u64x2; 2]) -> [u64x2; 2] {
     cast(i64x2::transpose(cast(data)))

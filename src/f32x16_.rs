@@ -176,7 +176,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 16x16 `f32` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [f32x16; 16]) -> [f32x16; 16] {
     // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,

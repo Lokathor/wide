@@ -323,6 +323,7 @@ macro_rules! impl_simd {
         !self.any()
       }
 
+      /// Transposes an array of SIMD vectors interpreted as a square matrix.
       #[must_use]
       $fn_transpose
 

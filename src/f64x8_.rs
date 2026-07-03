@@ -176,7 +176,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 8x8 `f64` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [f64x8; 8]) -> [f64x8; 8] {
     // Can this be optimized?

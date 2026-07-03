@@ -268,7 +268,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 2x2 `i64` matrix.
+  ///
+  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [i64x2; 2]) -> [i64x2; 2] {
     pick! {

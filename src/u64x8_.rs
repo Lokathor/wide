@@ -151,7 +151,8 @@ impl_simd! {
     i64x8::all(cast(self))
   }
 
-  /// Transpose matrix of 8x8 `u64` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [u64x8; 8]) -> [u64x8; 8] {
     cast(i64x8::transpose(cast(data)))

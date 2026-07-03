@@ -174,7 +174,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 4x4 `i64` matrix.
+  ///
+  /// Currently this function is only accelerated on `avx2`.
   #[inline]
   pub fn transpose(data: [i64x4; 4]) -> [i64x4; 4] {
     pick! {

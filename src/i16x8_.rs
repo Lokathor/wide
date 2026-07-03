@@ -308,7 +308,8 @@ impl_simd! {
     }
   }
 
-  /// transpose matrix of 8x8 i16 matrix
+  ///
+  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [i16x8; 8]) -> [i16x8; 8] {
     pick! {
