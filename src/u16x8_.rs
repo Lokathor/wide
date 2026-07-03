@@ -878,7 +878,8 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u16x8`], or only for
 /// particular types inconsistently.
 impl u16x8 {
-  /// Unpack the lower half of the input and zero expand it to `u16` values.
+  /// Converts the lower eight elements of `u` from [`u8`] to [`u16`], dropping
+  /// the higher eight elements.
   #[inline]
   #[must_use]
   pub fn from_u8x16_low(u: u8x16) -> Self {
@@ -901,7 +902,8 @@ impl u16x8 {
     }
   }
 
-  /// Unpack the upper half of the input and zero expand it to `u16` values.
+  /// Converts the higher eight elements of `u` from [`u8`] to [`u16`], dropping
+  /// the lower eight elements.
   #[inline]
   #[must_use]
   pub fn from_u8x16_high(u: u8x16) -> Self {
@@ -924,7 +926,8 @@ impl u16x8 {
     }
   }
 
-  /// multiplies two u16x8 and returns the result as a widened u32x8
+  /// Widening integer multiplication. Computes `self * rhs`, returning a wider
+  /// integer type in order to avoid overflowing.
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> u32x8 {
@@ -968,7 +971,8 @@ impl u16x8 {
     }
   }
 
-  /// Multiples two `u16x8` and return the high part of intermediate `u32x8`
+  /// Computes `self * rhs`, producing intermediate 32-bit integers, then
+  /// returns their high 16-bit parts.
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

@@ -1882,6 +1882,7 @@ impl f64x8 {
     cast::<_, f64x8>(i64x8::splat(0x7FF8000000000000 | 0x101 << 29))
   }
 
+  /// Converts each element from [`i32`] to [`f64`].
   #[inline]
   pub fn from_i32x8(v: i32x8) -> Self {
     pick! {

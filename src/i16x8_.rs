@@ -1120,7 +1120,8 @@ impl_simd_int! {
 /// The following functionality exists only for [`i16x8`], or only for
 /// particular types inconsistently.
 impl i16x8 {
-  /// Unpack the lower half of the input and expand it to `i16` values.
+  /// Converts the lower eight elements of `u` from [`u8`] to [`i16`], dropping
+  /// the higher eight elements.
   #[inline]
   #[must_use]
   pub fn from_u8x16_low(u: u8x16) -> Self {
@@ -1143,7 +1144,8 @@ impl i16x8 {
     }
   }
 
-  /// Unpack the upper half of the input and expand it to `i16` values.
+  /// Converts the higher eight elements of `u` from [`u8`] to [`i16`], dropping
+  /// the lower eight elements.
   #[inline]
   #[must_use]
   pub fn from_u8x16_high(u: u8x16) -> Self {
@@ -1166,7 +1168,8 @@ impl i16x8 {
     }
   }
 
-  /// returns low `i16` of `i32`, saturating values that are too large
+  /// Converts each element from [`i32`] to [`i16`], saturating out of range
+  /// values.
   #[inline]
   #[must_use]
   pub fn from_i32x8_saturate(v: i32x8) -> Self {
@@ -1211,7 +1214,10 @@ impl i16x8 {
     }
   }
 
-  /// returns low `i16` of `i32`, truncating the upper bits if they are set
+  /// Converts each element from [`i32`] to [`i16`], truncating out of range
+  /// values (behaves like [`as`] casting).
+  ///
+  /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
   #[inline]
   #[must_use]
   pub fn from_i32x8_truncate(v: i32x8) -> Self {
@@ -1239,6 +1245,11 @@ impl i16x8 {
     }
   }
 
+  /// Converts a slice to a SIMD vector, ignoring elements beyond the first 8.
+  ///
+  /// # Panics
+  ///
+  /// Panics if `input` has less than 8 elements.
   #[inline]
   #[must_use]
   pub fn from_slice_unaligned(input: &[i16]) -> Self {
@@ -1258,10 +1269,11 @@ impl i16x8 {
     }
   }
 
-  /// Calculates partial dot product.
-  /// Multiplies packed signed 16-bit integers, producing intermediate signed
-  /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
-  /// integers.
+  /// Partially computes the dot product.
+  ///
+  /// First this multiplies the input 16-bit integers, producing intermediate
+  /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
+  /// four 32-bit integers.
   #[inline]
   #[must_use]
   pub fn dot(self, rhs: Self) -> i32x4 {
@@ -1331,7 +1343,8 @@ impl i16x8 {
     }
   }
 
-  /// Multiples two `i16x8` and return the high part of intermediate `i32x8`
+  /// Computes `self * rhs`, producing intermediate 32-bit integers, then
+  /// returns their high 16-bit parts.
   #[inline]
   #[must_use]
   pub fn mul_keep_high(lhs: Self, rhs: Self) -> Self {
@@ -1369,7 +1382,8 @@ impl i16x8 {
     }
   }
 
-  /// multiplies two `i16x8` and returns the result as a widened `i32x8`
+  /// Widening integer multiplication. Computes `self * rhs`, returning a wider
+  /// integer type in order to avoid overflowing.
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i32x8 {

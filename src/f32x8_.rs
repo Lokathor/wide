@@ -1672,6 +1672,7 @@ impl f32x8 {
     cast::<_, f32x8>(i32x8::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
 
+  /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   pub fn from_i32x8(v: i32x8) -> Self {
     pick! {
@@ -1692,11 +1693,14 @@ impl f32x8 {
     }
   }
 
-  /// Returns true for each element if its sign bit is set.
+  /// Returns a [mask] that checks if each element has a negative sign,
+  /// including `-0.0`, NaNs with negative sign bit and negative infinity.
   ///
-  /// If the sign bit is set, the result has all bits set, not just the sign
-  /// bit. This has been renamed to [`is_sign_negative`].
+  /// Note that this function has a misleading name. If the sign bit is set, the
+  /// result has all bits set, not just the sign bit. This function has been
+  /// renamed to [`is_sign_negative`].
   ///
+  /// [mask]: crate#masks
   /// [`is_sign_negative`]: Self::is_sign_negative
   #[inline]
   #[must_use]

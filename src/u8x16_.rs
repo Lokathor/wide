@@ -1100,7 +1100,8 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u8x16`], or only for
 /// particular types inconsistently.
 impl u8x16 {
-  /// Unpack and interleave low lanes of two `u8x16`
+  /// Returns `[lhs[0], rhs[0], lhs[1], rhs[1], ...]`, taking the first 8
+  /// elements of each input and dropping their last 8 elements.
   #[inline]
   #[must_use]
   pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
@@ -1130,7 +1131,8 @@ impl u8x16 {
     }
   }
 
-  /// Unpack and interleave high lanes of two `u8x16`
+  /// Returns `[lhs[8], rhs[8], lhs[9], rhs[9], ...]`, taking the last 8
+  /// elements of each input and dropping their first 8 elements.
   #[inline]
   #[must_use]
   pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
@@ -1160,7 +1162,8 @@ impl u8x16 {
     }
   }
 
-  /// Pack and saturate two `i16x8` to `u8x16`
+  /// Treats two [`i16x8`] values as a single [`i16x16`] value, then converts
+  /// each element from [`i16`] to [`u8`], saturating out of range values.
   #[inline]
   #[must_use]
   pub fn narrow_i16x8(lhs: i16x8, rhs: i16x8) -> Self {

@@ -2139,8 +2139,8 @@ impl f64x2 {
     }
   }
 
-  /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the
-  /// higher two `i32` lanes)
+  /// Converts the lower two elements of `v` from [`i32`] to [`f64`], dropping
+  /// the higher two elements.
   #[inline]
   pub fn from_i32x4_lower2(v: i32x4) -> Self {
     pick! {

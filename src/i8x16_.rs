@@ -1262,7 +1262,8 @@ impl_simd_int! {
 /// The following functionality exists only for [`i8x16`], or only for
 /// particular types inconsistently.
 impl i8x16 {
-  /// converts `i16` to `i8`, saturating values that are too large
+  /// Converts each element from [`i16`] to [`i8`], saturating out of range
+  /// values.
   #[inline]
   #[must_use]
   pub fn from_i16x16_saturate(v: i16x16) -> i8x16 {
@@ -1315,7 +1316,10 @@ impl i8x16 {
     }
   }
 
-  /// converts `i16` to `i8`, truncating the upper bits if they are set
+  /// Converts each element from [`i16`] to [`i8`], truncating out of range
+  /// values (behaves like [`as`] casting).
+  ///
+  /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
   #[inline]
   #[must_use]
   pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
@@ -1350,6 +1354,11 @@ impl i8x16 {
     }
   }
 
+  /// Converts a slice to a SIMD vector, ignoring elements beyond the first 16.
+  ///
+  /// # Panics
+  ///
+  /// Panics if `input` has less than 16 elements.
   #[inline]
   #[must_use]
   pub fn from_slice_unaligned(input: &[i8]) -> Self {

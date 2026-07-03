@@ -745,9 +745,8 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u32x4`], or only for
 /// particular types inconsistently.
 impl u32x4 {
-  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
-  /// result. Useful for implementing divide constant value (see `t_usefulness`
-  /// example)
+  /// Computes `self * rhs`, producing intermediate 64-bit integers, then
+  /// returns their high 32-bit parts.
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
@@ -796,11 +795,8 @@ impl u32x4 {
     }
   }
 
-  /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
-  /// on the corresponding lanes.
-  ///
-  /// Effectively does two multiplies on 128 bit platforms, but is easier
-  /// to use than wrapping `mul_widen_u32_odd_m128i` individually.
+  /// Widening integer multiplication. Computes `self * rhs`, returning a wider
+  /// integer type in order to avoid overflowing.
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> u64x4 {

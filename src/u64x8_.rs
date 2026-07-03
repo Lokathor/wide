@@ -489,6 +489,11 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u64x8`], or only for
 /// particular types inconsistently.
 impl u64x8 {
+  /// Computes `self * rhs`, producing intermediate 128-bit integers, then
+  /// returns their high 64-bit parts.
+  ///
+  /// Note that this operation has no hardware support, is very slow and should
+  /// be avoided if possible.
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

@@ -545,6 +545,8 @@ impl From<u16x16> for u32x16 {
 /// The following functionality exists only for [`u32x16`], or only for
 /// particular types inconsistently.
 impl u32x16 {
+  /// Computes `self * rhs`, producing intermediate 64-bit integers, then
+  /// returns their high 32-bit parts.
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {

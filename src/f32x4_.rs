@@ -1976,6 +1976,7 @@ impl f32x4 {
     cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
 
+  /// Returns `[self[0], b[0], self[1], b[1]]`.
   #[must_use]
   #[inline]
   pub fn unpack_lo(self, b: Self) -> Self {
@@ -1999,6 +2000,7 @@ impl f32x4 {
     }
   }
 
+  /// Returns `[self[2], b[2], self[3], b[3]]`.
   #[must_use]
   #[inline]
   pub fn unpack_hi(self, b: Self) -> Self {
@@ -2022,6 +2024,7 @@ impl f32x4 {
     }
   }
 
+  /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   pub fn from_i32x4(v: i32x4) -> Self {
     pick! {
@@ -2042,11 +2045,14 @@ impl f32x4 {
     }
   }
 
-  /// Returns true for each element if its sign bit is set.
+  /// Returns a [mask] that checks if each element has a negative sign,
+  /// including `-0.0`, NaNs with negative sign bit and negative infinity.
   ///
-  /// If the sign bit is set, the result has all bits set, not just the sign
-  /// bit. This has been renamed to [`is_sign_negative`].
+  /// Note that this function has a misleading name. If the sign bit is set, the
+  /// result has all bits set, not just the sign bit. This function has been
+  /// renamed to [`is_sign_negative`].
   ///
+  /// [mask]: crate#masks
   /// [`is_sign_negative`]: Self::is_sign_negative
   #[inline]
   #[must_use]

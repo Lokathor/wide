@@ -612,6 +612,7 @@ impl_simd_int! {
 /// The following functionality exists only for [`i32x16`], or only for
 /// particular types inconsistently.
 impl i32x16 {
+  /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x16 {

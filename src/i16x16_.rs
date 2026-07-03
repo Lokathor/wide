@@ -571,7 +571,7 @@ impl From<u8x16> for i16x16 {
 /// The following functionality exists only for [`i16x16`], or only for
 /// particular types inconsistently.
 impl i16x16 {
-  /// widens and sign extends to i16x16
+  /// Converts each element from [`i8`] to [`i16`].
   #[inline]
   #[must_use]
   pub fn from_i8x16(v: i8x16) -> Self {
@@ -612,10 +612,11 @@ impl i16x16 {
     }
   }
 
-  /// Calculates partial dot product.
-  /// Multiplies packed signed 16-bit integers, producing intermediate signed
-  /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
-  /// integers.
+  /// Partially computes the dot product.
+  ///
+  /// First this multiplies the input 16-bit integers, producing intermediate
+  /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
+  /// eight 32-bit integers.
   #[inline]
   #[must_use]
   pub fn dot(self, rhs: Self) -> i32x8 {

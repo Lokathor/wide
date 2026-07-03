@@ -625,6 +625,7 @@ impl_simd_int! {
 /// The following functionality exists only for [`i64x8`], or only for
 /// particular types inconsistently.
 impl i64x8 {
+  /// Converts each element from [`i64`] to [`f64`].
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f64x8 {

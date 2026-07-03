@@ -873,11 +873,8 @@ impl_simd_int! {
 /// The following functionality exists only for [`i32x4`], or only for
 /// particular types inconsistently.
 impl i32x4 {
-  /// Multiplies corresponding 32 bit lanes and returns the 64 bit result
-  /// on the corresponding lanes.
-  ///
-  /// Effectively does two multiplies on 128 bit platforms, but is easier
-  /// to use than wrapping `mul_widen_i32_odd_m128i` individually.
+  /// Widening integer multiplication. Computes `self * rhs`, returning a wider
+  /// integer type in order to avoid overflowing.
   #[inline]
   #[must_use]
   pub fn mul_widen(self, rhs: Self) -> i64x4 {
@@ -920,6 +917,7 @@ impl i32x4 {
     }
   }
 
+  /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x4 {

@@ -1910,6 +1910,7 @@ impl f64x4 {
     }
   }
 
+  /// Converts each element from [`i32`] to [`f64`].
   #[inline]
   pub fn from_i32x4(v: i32x4) -> Self {
     pick! {

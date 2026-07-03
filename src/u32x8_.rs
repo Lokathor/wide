@@ -484,9 +484,8 @@ impl From<u16x8> for u32x8 {
 /// The following functionality exists only for [`u32x8`], or only for
 /// particular types inconsistently.
 impl u32x8 {
-  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
-  /// result. Useful for implementing divide constant value (see `t_usefulness`
-  /// example)
+  /// Computes `self * rhs`, producing intermediate 64-bit integers, then
+  /// returns their high 32-bit parts.
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: u32x8) -> u32x8 {

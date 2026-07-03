@@ -621,7 +621,7 @@ impl From<i16x8> for i32x8 {
 /// The following functionality exists only for [`i32x8`], or only for
 /// particular types inconsistently.
 impl i32x8 {
-  /// widens and sign extends to `i32x8`
+  /// Converts each element from [`i16`] to [`i32`].
   #[inline]
   #[must_use]
   pub fn from_i16x8(v: i16x8) -> Self {
@@ -648,7 +648,7 @@ impl i32x8 {
     }
   }
 
-  /// widens and zero extends to `i32x8`
+  /// Converts each element from [`u16`] to [`i32`].
   #[inline]
   #[must_use]
   pub fn from_u16x8(v: u16x8) -> Self {
@@ -675,6 +675,7 @@ impl i32x8 {
     }
   }
 
+  /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f32x8 {
