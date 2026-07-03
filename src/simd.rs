@@ -323,16 +323,24 @@ macro_rules! impl_simd {
       #[must_use]
       $fn_select
 
+      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
+      /// mask or guarantee that the high bit of each element is used.
       #[must_use]
       #[doc(alias("movemask", "move_mask"))]
       $fn_to_bitmask
 
+      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
+      /// mask or guarantee that the high bit of each element is used.
       #[must_use]
       $fn_any
 
+      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
+      /// mask or guarantee that the high bit of each element is used.
       #[must_use]
       $fn_all
 
+      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
+      /// mask or guarantee that the high bit of each element is used.
       #[inline]
       #[must_use]
       pub fn none(self) -> bool {
