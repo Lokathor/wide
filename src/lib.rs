@@ -689,39 +689,141 @@ fn test_software_sqrt() {
   assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }
 
-#[deprecated(since = "1.5.0", note = "use inherit function instead")]
+/// A deprecated trait for the [`simd_eq`] function.
+///
+/// [`simd_eq`]: f32x4::simd_eq
+#[deprecated(
+  since = "1.5.0",
+  note = "use the inherent function `simd_eq` instead"
+)]
 pub trait CmpEq<Rhs = Self> {
+  /// The type returned by [`simd_eq`].
+  ///
+  /// [`simd_eq`]: Self::simd_eq
   type Output;
+
+  /// Returns a [mask] that checks if each element of `self` is equal to the
+  /// corresponding element of `rhs`.
+  ///
+  /// This is a method of the deprecated [`CmpEq`] trait. Use the inherent
+  /// function instead.
+  ///
+  /// [mask]: crate#masks
   fn simd_eq(self, rhs: Rhs) -> Self::Output;
 }
 
-#[deprecated(since = "1.5.0", note = "use inherit function instead")]
+/// A deprecated trait for the [`simd_gt`] function.
+///
+/// [`simd_gt`]: f32x4::simd_gt
+#[deprecated(
+  since = "1.5.0",
+  note = "use the inherent function `simd_gt` instead"
+)]
 pub trait CmpGt<Rhs = Self> {
+  /// The type returned by [`simd_gt`].
+  ///
+  /// [`simd_gt`]: Self::simd_gt
   type Output;
+
+  /// Returns a [mask] that checks if each element of `self` is greater than the
+  /// corresponding element of `rhs`.
+  ///
+  /// This is a method of the deprecated [`CmpGt`] trait. Use the inherent
+  /// function instead.
+  ///
+  /// [mask]: crate#masks
   fn simd_gt(self, rhs: Rhs) -> Self::Output;
 }
 
-#[deprecated(since = "1.5.0", note = "use inherit function instead")]
+/// A deprecated trait for the [`simd_ge`] function.
+///
+/// [`simd_ge`]: f32x4::simd_ge
+#[deprecated(
+  since = "1.5.0",
+  note = "use the inherent function `simd_ge` instead"
+)]
 pub trait CmpGe<Rhs = Self> {
+  /// The type returned by [`simd_ge`].
+  ///
+  /// [`simd_ge`]: Self::simd_ge
   type Output;
+
+  /// Returns a [mask] that checks if each element of `self` is greater than or
+  /// equal to the corresponding element of `rhs`.
+  ///
+  /// This is a method of the deprecated [`CmpGe`] trait. Use the inherent
+  /// function instead.
+  ///
+  /// [mask]: crate#masks
   fn simd_ge(self, rhs: Rhs) -> Self::Output;
 }
 
-#[deprecated(since = "1.5.0", note = "use inherit function instead")]
+/// A deprecated trait for the [`simd_ne`] function.
+///
+/// [`simd_ne`]: f32x4::simd_ne
+#[deprecated(
+  since = "1.5.0",
+  note = "use the inherent function `simd_ne` instead"
+)]
 pub trait CmpNe<Rhs = Self> {
+  /// The type returned by [`simd_ne`].
+  ///
+  /// [`simd_ne`]: Self::simd_ne
   type Output;
+
+  /// Returns a [mask] that checks if each element of `self` is not equal to the
+  /// corresponding element of `rhs`.
+  ///
+  /// This is a method of the deprecated [`CmpNe`] trait. Use the inherent
+  /// function instead.
+  ///
+  /// [mask]: crate#masks
   fn simd_ne(self, rhs: Rhs) -> Self::Output;
 }
 
-#[deprecated(since = "1.5.0", note = "use inherit function instead")]
+/// A deprecated trait for the [`simd_lt`] function.
+///
+/// [`simd_lt`]: f32x4::simd_lt
+#[deprecated(
+  since = "1.5.0",
+  note = "use the inherent function `simd_lt` instead"
+)]
 pub trait CmpLt<Rhs = Self> {
+  /// The type returned by [`simd_lt`].
+  ///
+  /// [`simd_lt`]: Self::simd_lt
   type Output;
+
+  /// Returns a [mask] that checks if each element of `self` is less than the
+  /// corresponding element of `rhs`.
+  ///
+  /// This is a method of the deprecated [`CmpLt`] trait. Use the inherent
+  /// function instead.
+  ///
+  /// [mask]: crate#masks
   fn simd_lt(self, rhs: Rhs) -> Self::Output;
 }
 
-#[deprecated(since = "1.5.0", note = "use inherit function instead")]
+/// A deprecated trait for the [`simd_le`] function.
+///
+/// [`simd_le`]: f32x4::simd_le
+#[deprecated(
+  since = "1.5.0",
+  note = "use the inherent function `simd_le` instead"
+)]
 pub trait CmpLe<Rhs = Self> {
+  /// The type returned by [`simd_le`].
+  ///
+  /// [`simd_le`]: Self::simd_le
   type Output;
+
+  /// Returns a [mask] that checks if each element of `self` is less than or
+  /// equal to the corresponding element of `rhs`.
+  ///
+  /// This is a method of the deprecated [`CmpLe`] trait. Use the inherent
+  /// function instead.
+  ///
+  /// [mask]: crate#masks
   fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
 pub trait AlignTo
