@@ -534,59 +534,98 @@ macro_rules! impl_simd_float {
         self ^ (sign & Self::from(-0.0))
       }
 
+      /// Returns the largest integer less than or equal to each input element.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_floor
 
+      /// Returns the smallest integer greater than or equal to each input
+      /// element.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_ceil
 
-      /// Returns the nearest integers to `self`. If a value is half-way between
-      /// two integers, round away from `0.0`.
+      /// Returns the nearest integer to each input element. If a value is
+      /// half-way between two integers, round away from `0.0`.
       ///
       /// This function always returns the precise result.
       ///
-      /// For most targets [`round`] is slower than [`round_ties_even`]. If you
-      /// do not care about the difference, consider using that instead.
+      /// For most targets architectures, [`round`] is slower than
+      /// [`round_ties_even`]. If you do not care about the difference, consider
+      /// using that instead.
       ///
       /// [`round`]: Self::round
       /// [`round_ties_even`]: Self::round_ties_even
       #[must_use]
       $fn_round
 
-      /// Rounds each lane into an integer. This saturates out of range values
-      /// and turns NaNs into 0. Use `fast_round_int` for a faster
-      /// implementation that doesn't handle out of range values or NaNs.
+      /// Returns the nearest integer to each input element.
+      ///
+      /// The result for values half-way between two integers is currently not
+      /// specified.
+      ///
+      /// This saturates out of range values and turns NaNs to `0`. See
+      /// [`fast_round_int`] for a faster variant that does not handle out of
+      /// range values or NaNs.
+      ///
+      /// [`fast_round_int`]: Self::fast_round_int
       #[must_use]
       $fn_round_int
 
-      /// Rounds each lane into an integer. This is a faster implementation than
-      /// `round_int`, but it doesn't handle out of range values or NaNs. For
-      /// those values you get implementation defined behavior.
+      /// Returns the nearest integer to each input element.
+      ///
+      /// The result for values half-way between two integers is currently not
+      /// specified.
+      ///
+      /// This function does not handle out of range values or NaNs. See
+      /// [`round_int`] for a slower variant that does handle out of range
+      /// values and NaNs.
+      ///
+      /// [`round_int`]: Self::round_int
       #[must_use]
       $fn_fast_round_int
 
-      /// Returns the nearest integers to `self`. Rounds half-way cases to the
-      /// number with an even least significant digit.
+      /// Returns the nearest integer to each input element. Rounds half-way
+      /// cases to the number with an even least significant digit.
       ///
       /// This function always returns the precise result.
       #[must_use]
       $fn_round_ties_even
 
+      /// Returns the integer part of each input element. This means that
+      /// non-integer numbers are always truncated towards zero.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_trunc
 
-      /// Truncates each lane into an integer. This saturates out of range
-      /// values and turns NaNs into 0. Use `fast_trunc_int` for a faster
-      /// implementation that doesn't handle out of range values or NaNs.
+      /// Returns the integer part of each input element. This means that
+      /// non-integer numbers are always truncated towards zero.
+      ///
+      /// This saturates out of range values and turns NaNs to `0`. See
+      /// [`fast_trunc_int`] for a faster variant that does not handle out of
+      /// range values or NaNs.
+      ///
+      /// [`fast_trunc_int`]: Self::fast_trunc_int
       #[must_use]
       $fn_trunc_int
 
-      /// Truncates each lane into an integer. This is a faster implementation
-      /// than `trunc_int`, but it doesn't handle out of range values or NaNs.
-      /// For those values you get implementation defined behavior.
+      /// Returns the integer part of each input element. This means that
+      /// non-integer numbers are always truncated towards zero.
+      ///
+      /// This function does not handle out of range values or NaNs. See
+      /// [`trunc_int`] for a slower variant that does handle out of range
+      /// values and NaNs.
+      ///
+      /// [`trunc_int`]: Self::trunc_int
       #[must_use]
       $fn_fast_trunc_int
 
+      /// Returns the fractional part of each input element.
+      ///
+      /// This function always returns the precise result.
       #[inline]
       #[must_use]
       pub fn fract(self) -> Self {
