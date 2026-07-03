@@ -826,13 +826,21 @@ pub trait CmpLe<Rhs = Self> {
   /// [mask]: crate#masks
   fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
+
+/// A trait for SIMD variants of [`align_to`] functions.
+///
+/// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
 pub trait AlignTo
 where
   Self: Pod + Default + PartialEq + From<Self::Elem>,
   Self::Elem: Pod + Default + PartialEq,
 {
+  /// The element type of this SIMD vector.
   type Elem;
 
+  /// A SIMD variant of [`align_to`].
+  ///
+  /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
   #[inline]
   fn simd_align_to(
     slice: &[Self::Elem],
@@ -840,6 +848,9 @@ where
     pod_align_to(slice)
   }
 
+  /// A SIMD variant of [`align_to_mut`].
+  ///
+  /// [`align_to_mut`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to_mut
   #[inline]
   fn simd_align_to_mut(
     slice: &mut [Self::Elem],
