@@ -276,19 +276,27 @@ macro_rules! impl_simd_uint {
         self.max(min).min(max)
       }
 
-      /// horizontal add of all the elements of the vector
+      /// Reducing addition. Returns the sum of the vector's elements.
+      ///
+      /// Equivalent to `self[0] + self[1] + ...`.
       #[must_use]
       $fn_reduce_add
 
-      /// Reducing multiply. Returns the product of the elements of the vector.
+      /// Reducing multiplication. Returns the product of the vector's elements.
+      ///
+      /// Equivalent to `self[0] * self[1] * ...`.
       #[must_use]
       $fn_reduce_mul
 
-      /// horizontal max of all the elements of the vector
+      /// Reducing maximum. Returns the maximum of the vector's elements.
+      ///
+      /// Equivalent to `self[0].max(self[1].max(...))`.
       #[must_use]
       $fn_reduce_max
 
-      /// horizontal min of all the elements of the vector
+      /// Reducing minimum. Returns the minimum of the vector's elements.
+      ///
+      /// Equivalent to `self[0].min(self[1].min(...))`.
       #[must_use]
       $fn_reduce_min
 
