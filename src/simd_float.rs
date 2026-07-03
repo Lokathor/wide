@@ -490,9 +490,17 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_fast_clamp
 
+      /// Computes the absolute value of `self`.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_abs
 
+      /// Returns numbers that represents the signs of each element.
+      ///
+      /// - `1.0` if the element is positive, `+0.0` or `INFINITY`
+      /// - `-1.0` if the element is negative, `-0.0` or `NEG_INFINITY`
+      /// - NaN if the element is NaN
       #[inline]
       #[must_use]
       pub fn signum(self) -> Self {
@@ -501,6 +509,12 @@ macro_rules! impl_simd_float {
         self.is_nan().select(self, result)
       }
 
+      /// Returns numbers composed of the magnitudes of `self` and the signs of
+      /// `sign`.
+      ///
+      /// Equal to `self` if the sign of `self` and `sign` are the same,
+      /// otherwise equal to `-self`. Even if `self` or `sign` are NaN, the
+      /// result is the exact bit pattern of `self` with the sign bit of `sign`.
       #[inline]
       #[must_use]
       pub fn copysign(self, sign: Self) -> Self {
@@ -508,10 +522,16 @@ macro_rules! impl_simd_float {
         (self & magnitude_mask) | (sign & Self::from(-0.0))
       }
 
+      /// Flips the sign of `self` based on the sign of `sign`.
+      ///
+      /// If `sign` has a positive sign, the result is `self`. If `sign` has a
+      /// negative sign, the result is `-self`. Even if `self` or `sign` are
+      /// NaN, the result is the exact bit pattern of `self` with a sign flipped
+      /// based on the sign bit of `sign`.
       #[inline]
       #[must_use]
-      pub fn flip_signs(self, signs: Self) -> Self {
-        self ^ (signs & Self::from(-0.0))
+      pub fn flip_signs(self, sign: Self) -> Self {
+        self ^ (sign & Self::from(-0.0))
       }
 
       #[must_use]
