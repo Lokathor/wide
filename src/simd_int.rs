@@ -309,20 +309,30 @@ macro_rules! impl_simd_int {
       #[must_use]
       $fn_reduce_min
 
+      /// Saturating integer addition. Computes `self + rhs`, saturating at the
+      /// numeric bounds instead of overflowing.
       #[must_use]
       $fn_saturating_add
 
+      /// Saturating integer subtraction. Computes `self - rhs`, saturating at
+      /// the numeric bounds instead of overflowing.
       #[must_use]
       $fn_saturating_sub
 
-      /// Lanewise saturating multiply.
+      /// Saturating integer multiplication. Computes `self * rhs`, saturating
+      /// at the numeric bounds instead of overflowing.
       #[must_use]
       $fn_saturating_mul
 
-      /// Lanewise saturating divide.
+      /// Saturating integer division. Computes `self / rhs`, saturating at the
+      /// numeric bounds instead of overflowing.
       ///
       /// Note that because division has no hardware support, this operation is
       /// very slow and should be avoided if possible.
+      ///
+      /// # Panics
+      ///
+      /// Panics if any element of `rhs` is zero.
       #[inline]
       #[must_use]
       pub fn saturating_div(self, rhs: Self) -> Self {
