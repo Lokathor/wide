@@ -288,11 +288,27 @@ macro_rules! impl_simd_float {
       #[doc = concat!("[the full circle constant (τ)]: core::", stringify!($T), "::consts::TAU")]
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
 
-      /// horizontal add of all the elements of the vector
+      /// Reducing addition. Returns the sum of the vector's elements.
+      ///
+      /// Equivalent to `self[0] + self[1] + ...`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of addition is non-deterministic. This means it varies by
+      /// platform, version, and can even differ within the same execution from
+      /// one invocation to the next.
       #[must_use]
       $fn_reduce_add
 
-      /// horizontal multiplication of all the elements of the vector
+      /// Reducing multiplication. Returns the product of the vector's elements.
+      ///
+      /// Equivalent to `self[0] * self[1] * ...`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of multiplication is non-deterministic. This means it varies
+      /// by platform, version, and can even differ within the same execution
+      /// from one invocation to the next.
       #[must_use]
       $fn_reduce_mul
 
