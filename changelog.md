@@ -9,12 +9,16 @@
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
 
+* Added support for shifting SIMD vectors by values of `isize` and `usize`.
 * Deprecated `blend` and replaced it with `select` and `bitselect`.
 * Fixed bug in `powf`.
 * Fixed `clamp` and added guarantees for `fast_clamp`.
 * Added small optimizations to `saturating_add/sub`.
 * Fixed shift operators overflow behavior.
 * Fixed `round` which previously behaved like `round_ties_even`.
+* Fixed `UpperExp` formatting for floats.
+* Added missing `#[must_use]` annotations
+* Updated documenattion.
 
 ## 1.5.0
 

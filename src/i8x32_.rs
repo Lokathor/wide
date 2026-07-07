@@ -12,260 +12,13 @@ pick! {
   }
 }
 
-int_uint_consts!(i8, 32, i8x32, 256);
-
-unsafe impl Zeroable for i8x32 {}
-unsafe impl Pod for i8x32 {}
-
-impl AlignTo for i8x32 {
-  type Elem = i8;
-}
-
-impl Add for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: add_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
+impl_simd! {
+  unsafe {
+    T = i8,
+    N = 32,
+    Simd = i8x32,
   }
-}
 
-impl Sub for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: sub_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl Mul for i8x32 {
-  type Output = Self;
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `i16`
-    // then converting back after multiplication, but that may not actually be
-    // faster than auto-vectorization.
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a * rhs_a, self_b * rhs_b])
-  }
-}
-
-integer_impl_div_rem!(
-  i8,
-  i8x32,
-  [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-  ],
-);
-
-impl Shl for i8x32 {
-  type Output = Self;
-
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `i16`
-    // or `i32` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a << rhs_a, self_b << rhs_b])
-  }
-}
-
-impl Shr for i8x32 {
-  type Output = Self;
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `i16`
-    // or `i32` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a >> rhs_a, self_b >> rhs_b])
-  }
-}
-
-impl Add<i8> for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: i8) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<i8> for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: i8) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<i8> for i8x32 {
-  type Output = Self;
-
-  #[inline]
-  fn mul(self, rhs: i8) -> Self::Output {
-    self * Self::splat(rhs)
-  }
-}
-
-macro_rules! impl_shl_scalar {
-  ($Rhs:ident) => {
-    impl Shl<$Rhs> for i8x32 {
-      type Output = Self;
-
-      /// Shifts all lanes by a uniform value.
-      #[inline]
-      fn shl(self, rhs: $Rhs) -> Self::Output {
-        // For x86, this technically can be done explicitly by converting
-        // to `i16` or `i32` then converting back after multiplication, but that
-        // may not actually be faster than auto-vectorization.
-        let [self_a, self_b]: [i8x16; 2] = cast(self);
-        cast([self_a << rhs, self_b << rhs])
-      }
-    }
-  };
-}
-impl_shl_scalar!(i8);
-impl_shl_scalar!(u8);
-impl_shl_scalar!(i16);
-impl_shl_scalar!(u16);
-impl_shl_scalar!(i32);
-impl_shl_scalar!(u32);
-impl_shl_scalar!(i64);
-impl_shl_scalar!(u64);
-impl_shl_scalar!(i128);
-impl_shl_scalar!(u128);
-
-macro_rules! impl_shr_scalar {
-  ($Rhs:ident) => {
-    impl Shr<$Rhs> for i8x32 {
-      type Output = Self;
-
-      /// Shifts all lanes by a uniform value.
-      #[inline]
-      fn shr(self, rhs: $Rhs) -> Self::Output {
-        // For x86, this technically can be done explicitly by converting
-        // to `i16` or `i32` then converting back after multiplication, but that
-        // may not actually be faster than auto-vectorization.
-        let [self_a, self_b]: [i8x16; 2] = cast(self);
-        cast([self_a >> rhs, self_b >> rhs])
-      }
-    }
-  };
-}
-impl_shr_scalar!(i8);
-impl_shr_scalar!(u8);
-impl_shr_scalar!(i16);
-impl_shr_scalar!(u16);
-impl_shr_scalar!(i32);
-impl_shr_scalar!(u32);
-impl_shr_scalar!(i64);
-impl_shr_scalar!(u64);
-impl_shr_scalar!(i128);
-impl_shr_scalar!(u128);
-
-impl Add<i8x32> for i8 {
-  type Output = i8x32;
-  #[inline]
-  fn add(self, rhs: i8x32) -> Self::Output {
-    i8x32::splat(self).add(rhs)
-  }
-}
-
-impl Sub<i8x32> for i8 {
-  type Output = i8x32;
-  #[inline]
-  fn sub(self, rhs: i8x32) -> Self::Output {
-    i8x32::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<i8x32> for i8 {
-  type Output = i8x32;
-
-  #[inline]
-  fn mul(self, rhs: i8x32) -> Self::Output {
-    i8x32::splat(self) * rhs
-  }
-}
-
-impl BitAnd for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-          Self { avx : bitand_m256i(self.avx,rhs.avx) }
-      } else {
-          Self {
-            a : self.a.bitand(rhs.a),
-            b : self.b.bitand(rhs.b),
-          }
-      }
-    }
-  }
-}
-
-impl BitOr for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : bitor_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitXor for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : bitxor_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpEq for i8x32 {
-  type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
@@ -279,38 +32,7 @@ impl CmpEq for i8x32 {
       }
     }
   }
-}
 
-#[expect(deprecated)]
-impl CmpGt for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for i8x32 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    rhs.simd_gt(self)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for i8x32 {
-  type Output = Self;
   #[inline]
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
@@ -324,11 +46,26 @@ impl CmpNe for i8x32 {
       }
     }
   }
-}
 
-#[expect(deprecated)]
-impl CmpLe for i8x32 {
-  type Output = Self;
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    rhs.simd_gt(self)
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
   #[inline]
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
@@ -342,11 +79,7 @@ impl CmpLe for i8x32 {
       }
     }
   }
-}
 
-#[expect(deprecated)]
-impl CmpGe for i8x32 {
-  type Output = Self;
   #[inline]
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
@@ -360,47 +93,8 @@ impl CmpGe for i8x32 {
       }
     }
   }
-}
 
-impl Not for i8x32 {
-  type Output = Self;
   #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: self.avx.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
-}
-
-impl i8x32 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [i8; 32]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
-  simd_comparison_fns!();
-
-  /// Bitwise selection.
-  ///
-  /// For each bit of `self`:
-  ///
-  /// - If the bit is one, return the corresponding bit of `if_one`
-  /// - If the bit is zero, return the corresponding bit of `if_zero`
-  ///
-  /// If you know `self` is a mask, meaning each lane is either all zeros or all
-  /// ones, consider using [`select`] which is faster.
-  ///
-  /// [`select`]: Self::select
-  #[inline]
-  #[must_use]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -419,19 +113,7 @@ impl i8x32 {
     }
   }
 
-  /// Lanewise selection.
-  ///
-  /// For each lane of `self`:
-  ///
-  /// - If all bits are one, return the corresponding lane of `if_true`
-  /// - If all bits are zero, return the corresponding lane of `if_false`
-  ///
-  /// This function assumes `self` is a mask, meaning each lane is either all
-  /// zeros or all ones. For bitwise selection use [`bitselect`].
-  ///
-  /// [`bitselect`]: Self::bitselect
   #[inline]
-  #[must_use]
   pub fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -445,204 +127,7 @@ impl i8x32 {
     }
   }
 
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
   #[inline]
-  #[must_use]
-  pub fn is_positive(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
-        }
-      } else {
-        self.simd_gt(Self::ZERO)
-      }
-    }
-  }
-
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
-  #[inline]
-  #[must_use]
-  pub fn is_negative(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated less-than-zero intrinsics.
-        Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
-        }
-      } else {
-        self.simd_lt(Self::ZERO)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    array[0].max(array[1]).reduce_max()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    array[0].min(array[1]).reduce_min()
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: abs_i8_m256i(self.avx) }
-      } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u8x32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        u8x32 { avx: abs_i8_m256i(self.avx) }
-      } else {
-        u8x32 {
-          a : self.a.unsigned_abs(),
-          b : self.b.unsigned_abs(),
-        }
-      }
-    }
-  }
-
-  signed_fn_signum!();
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: max_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
-        }
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: min_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
-        }
-      }
-    }
-  }
-
-  integer_fn_clamp!();
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: add_saturating_i8_m256i(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.saturating_add(rhs.a),
-          b : self.b.saturating_add(rhs.b),
-        }
-      }
-    }
-  }
-  #[inline]
-  #[must_use]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: sub_saturating_i8_m256i(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.saturating_sub(rhs.a),
-          b : self.b.saturating_sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Lanewise saturating multiply.
-  #[inline]
-  #[must_use]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
-  }
-
-  integer_fn_saturating_div!([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-  ]);
-
-  signed_fn_overflowing_add_sub!();
-
-  /// Returns `self * rhs` and whether an overflow occured.
-  ///
-  /// Returns a tuple with:
-  ///
-  /// - The multiplication (returns the wrapped value if an overflow occured)
-  /// - A mask indicating whether an overflow occured
-  #[inline]
-  #[must_use]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
-    // x86 has no `_mm256_mul_epi8` intrinsic so there is no `avx2`
-    // optimization.
-
-    let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
-    let [rhs_a, rhs_b] = cast::<i8x32, [i8x16; 2]>(rhs);
-
-    let result_a = self_a.overflowing_mul(rhs_a);
-    let result_b = self_b.overflowing_mul(rhs_b);
-    (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
-  }
-
-  signed_fn_overflowing_div_rem!();
-
-  #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -654,7 +139,6 @@ impl i8x32 {
   }
 
   #[inline]
-  #[must_use]
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -666,7 +150,6 @@ impl i8x32 {
   }
 
   #[inline]
-  #[must_use]
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -677,59 +160,7 @@ impl i8x32 {
     }
   }
 
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
-
-  /// Returns a new vector with lanes selected from the lanes of the first input
-  /// vector a specified in the second input vector `rhs`.
-  /// The indices i in range `[0, 15]` select the i-th element of `self`. For
-  /// indices outside of the range the resulting lane is `0`.
-  ///
-  /// This note that is the equivalent of two parallel swizzle operations on the
-  /// two halves of the vector, and the indexes each refer to the
-  /// corresponding half.
-  #[inline]
-  pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.saturating_add(i8x32::splat(0x60)).avx) }
-      } else {
-          Self {
-            a : self.a.swizzle(rhs.a),
-            b : self.b.swizzle(rhs.b),
-          }
-      }
-    }
-  }
-
-  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
-  /// the high bit of any element of `rhs` is set (negative) then the
-  /// corresponding output lane is guaranteed to be zero. Otherwise if the
-  /// element of `rhs` is within the range `[32, 127]` then the output lane is
-  /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
-  ///
-  /// This is the equivalent to two parallel swizzle operations on the two
-  /// halves of the vector, and the indexes each refer to their corresponding
-  /// half.
-  #[inline]
-  pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.swizzle_relaxed(rhs.a),
-          b : self.b.swizzle_relaxed(rhs.b),
-        }
-      }
-    }
-  }
-
   /// Transpose matrix of 32x32 `i8` matrix. Currently not accelerated.
-  #[must_use]
   #[inline]
   pub fn transpose(data: [i8x32; 32]) -> [i8x32; 32] {
     // Can this be optimized?
@@ -807,21 +238,340 @@ impl i8x32 {
       transpose_column(&data, 31),
     ]
   }
+}
 
-  #[inline]
-  pub fn to_array(self) -> [i8; 32] {
-    cast(self)
+impl_simd_int! {
+  unsafe {
+    T = i8,
+    N = 32,
+    Simd = i8x32,
+    UnsignedSimd = u8x32,
+    [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+    ],
   }
 
   #[inline]
-  pub fn as_array(&self) -> &[i8; 32] {
-    cast_ref(self)
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: self.avx.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
   }
 
   #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [i8; 32] {
-    cast_mut(self)
+  fn add(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: add_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.add(rhs.a),
+          b : self.b.add(rhs.b),
+        }
+      }
+    }
   }
 
-  fn_blend!();
+  #[inline]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: sub_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.sub(rhs.a),
+          b : self.b.sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // then converting back after multiplication, but that may not actually be
+    // faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a * rhs_a, self_b * rhs_b])
+  }
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // or `i32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a << rhs_a, self_b << rhs_b])
+  }
+
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    cast([self_a << rhs, self_b << rhs])
+  }
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // or `i32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a >> rhs_a, self_b >> rhs_b])
+  }
+
+  #[inline]
+  fn shr(self, rhs: u32) -> Self::Output {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    cast([self_a >> rhs, self_b >> rhs])
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+          Self { avx : bitand_m256i(self.avx,rhs.avx) }
+      } else {
+          Self {
+            a : self.a.bitand(rhs.a),
+            b : self.b.bitand(rhs.b),
+          }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : bitor_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : bitxor_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: max_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.max(rhs.a),
+          b : self.b.max(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: min_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.min(rhs.a),
+          b : self.b.min(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].max(array[1]).reduce_max()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> i8 {
+    let array: [i8x16; 2] = cast(self);
+    array[0].min(array[1]).reduce_min()
+  }
+
+  #[inline]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: add_saturating_i8_m256i(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.saturating_add(rhs.a),
+          b : self.b.saturating_add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: sub_saturating_i8_m256i(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.saturating_sub(rhs.a),
+          b : self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let [self_a, self_b]: [i8x16; 2] = cast(self);
+    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  }
+
+  #[inline]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // x86 has no `_mm256_mul_epi8` intrinsic so there is no `avx2`
+    // optimization.
+
+    let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<i8x32, [i8x16; 2]>(rhs);
+
+    let result_a = self_a.overflowing_mul(rhs_a);
+    let result_b = self_b.overflowing_mul(rhs_b);
+    (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
+  }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: abs_i8_m256i(self.avx) }
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated greater-than-zero intrinsics.
+        Self {
+          a: self.a.is_positive(),
+          b: self.b.is_positive(),
+        }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_negative(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated less-than-zero intrinsics.
+        Self {
+          a: self.a.is_negative(),
+          b: self.b.is_negative(),
+        }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
+  }
+}
+
+impl i8x32 {
+  /// Returns a new vector with lanes selected from the lanes of the first input
+  /// vector a specified in the second input vector `rhs`.
+  /// The indices i in range `[0, 15]` select the i-th element of `self`. For
+  /// indices outside of the range the resulting lane is `0`.
+  ///
+  /// This note that is the equivalent of two parallel swizzle operations on the
+  /// two halves of the vector, and the indexes each refer to the
+  /// corresponding half.
+  #[inline]
+  pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.saturating_add(i8x32::splat(0x60)).avx) }
+      } else {
+          Self {
+            a : self.a.swizzle(rhs.a),
+            b : self.b.swizzle(rhs.b),
+          }
+      }
+    }
+  }
+
+  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
+  /// the high bit of any element of `rhs` is set (negative) then the
+  /// corresponding output lane is guaranteed to be zero. Otherwise if the
+  /// element of `rhs` is within the range `[32, 127]` then the output lane is
+  /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
+  ///
+  /// This is the equivalent to two parallel swizzle operations on the two
+  /// halves of the vector, and the indexes each refer to their corresponding
+  /// half.
+  #[inline]
+  pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.swizzle_relaxed(rhs.a),
+          b : self.b.swizzle_relaxed(rhs.b),
+        }
+      }
+    }
+  }
 }

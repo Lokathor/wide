@@ -56,17 +56,186 @@ pick! {
   }
 }
 
-int_uint_consts!(u64, 2, u64x2, 128);
+impl_simd! {
+  unsafe {
+    T = u64,
+    N = 2,
+    Simd = u64x2,
+  }
 
-unsafe impl Zeroable for u64x2 {}
-unsafe impl Pod for u64x2 {}
+  #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_eq(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vceqq_u64(self.neon, rhs.neon) } }
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] == r[0] { -1_i64 } else { 0 },
+          if s[1] == r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
 
-impl AlignTo for u64x2 {
-  type Elem = u64;
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_eq(rhs)
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_ne(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_eq(rhs)
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] != r[0] { -1_i64 } else { 0 },
+          if s[1] != r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    // lt is just gt the other way around
+    rhs.simd_gt(self)
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.2")] {
+        // no unsigned gt so inverting the high bit will get the correct result
+        let highbit = u64x2::splat(1 << 63);
+        Self { sse: cmp_gt_mask_i64_m128i((self ^ highbit).sse, (rhs ^ highbit).sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vcgtq_u64(self.neon, rhs.neon) }}
+      } else {
+        // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] > r[0] { u64::MAX } else { 0 },
+          if s[1] > r[1] { u64::MAX } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_gt(rhs)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_gt(rhs)
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] <= r[0] { -1_i64 } else { 0 },
+          if s[1] <= r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        !self.simd_lt(rhs)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        !self.simd_lt(rhs)
+      } else {
+        let s: [u64;2] = cast(self);
+        let r: [u64;2] = cast(rhs);
+        cast([
+          if s[0] >= r[0] { -1_i64 } else { 0 },
+          if s[1] >= r[1] { -1_i64 } else { 0 },
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self {
+          sse: bitor_m128i(
+            bitand_m128i(if_one.sse, self.sse),
+            bitandnot_m128i(self.sse, if_zero.sse),
+          ),
+        }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vbslq_u64(self.neon, if_one.neon, if_zero.neon) }}
+      } else {
+        generic_bit_blend(self, if_one, if_zero)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vbslq_u64(self.neon, if_true.neon, if_false.neon) }}
+      } else {
+        generic_bit_blend(self, if_true, if_false)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    i64x2::to_bitmask(cast(self))
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    i64x2::any(cast(self))
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    i64x2::all(cast(self))
+  }
+
+  /// Transpose matrix of 2x2 `u64` matrix.
+  #[inline]
+  pub fn transpose(data: [u64x2; 2]) -> [u64x2; 2] {
+    cast(i64x2::transpose(cast(data)))
+  }
 }
 
-impl Add for u64x2 {
-  type Output = Self;
+impl_simd_uint! {
+  unsafe {
+    T = u64,
+    N = 2,
+    Simd = u64x2,
+    [0, 1],
+  }
+
+  #[inline]
+  fn not(self) -> Self::Output {
+    self ^ cast::<u128, u64x2>(u128::MAX)
+  }
+
   #[inline]
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
@@ -84,10 +253,7 @@ impl Add for u64x2 {
       }
     }
   }
-}
 
-impl Sub for u64x2 {
-  type Output = Self;
   #[inline]
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
@@ -105,13 +271,10 @@ impl Sub for u64x2 {
       }
     }
   }
-}
 
-//we should try to implement this on sse2
-impl Mul for u64x2 {
-  type Output = Self;
   #[inline]
   fn mul(self, rhs: Self) -> Self::Output {
+    //we should try to implement this on sse2
     pick! {
       if #[cfg(target_feature="simd128")] {
         Self { simd: u64x2_mul(self.simd, rhs.simd) }
@@ -125,128 +288,6 @@ impl Mul for u64x2 {
       }
     }
   }
-}
-
-integer_impl_div_rem!(u64, u64x2, [0, 1]);
-
-impl Add<u64> for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: u64) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<u64> for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: u64) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<u64> for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: u64) -> Self::Output {
-    self.mul(Self::splat(rhs))
-  }
-}
-
-impl Add<u64x2> for u64 {
-  type Output = u64x2;
-  #[inline]
-  fn add(self, rhs: u64x2) -> Self::Output {
-    u64x2::splat(self).add(rhs)
-  }
-}
-
-impl Sub<u64x2> for u64 {
-  type Output = u64x2;
-  #[inline]
-  fn sub(self, rhs: u64x2) -> Self::Output {
-    u64x2::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<u64x2> for u64 {
-  type Output = u64x2;
-  #[inline]
-  fn mul(self, rhs: u64x2) -> Self::Output {
-    u64x2::splat(self).mul(rhs)
-  }
-}
-
-impl BitAnd for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitand_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_and(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vandq_u64(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitand(rhs.arr[0]),
-          self.arr[1].bitand(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-}
-
-impl BitOr for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_or(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vorrq_u64(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitor(rhs.arr[0]),
-          self.arr[1].bitor(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-}
-
-impl BitXor for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_xor(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: veorq_u64(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitxor(rhs.arr[0]),
-          self.arr[1].bitxor(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-}
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shl`)
-impl Shl for u64x2 {
-  type Output = Self;
 
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
@@ -271,48 +312,29 @@ impl Shl for u64x2 {
       }
     }
   }
-}
 
-macro_rules! impl_shl_t_for_u64x2 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for u64x2 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 63, 0]);
-            Self { sse: shl_all_u64_m128i(self.sse, shift) }
-          } else if #[cfg(target_feature="simd128")] {
-            Self { simd: u64x2_shl(self.simd, rhs as u32) }
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64 & 63)) }}
-          } else {
-            let u = rhs as u32;
-            Self { arr: [
-              self.arr[0].wrapping_shl(u),
-              self.arr[1].wrapping_shl(u),
-            ]}
-          }
-        }
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 63, 0]);
+        Self { sse: shl_all_u64_m128i(self.sse, shift) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u64x2_shl(self.simd, rhs) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64 & 63)) }}
+      } else {
+        Self { arr: [
+          self.arr[0].wrapping_shl(rhs),
+          self.arr[1].wrapping_shl(rhs),
+        ]}
       }
-    })+
-  };
-}
-impl_shl_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shr`)
-impl Shr for u64x2 {
-  type Output = Self;
+    }
+  }
 
   #[inline]
   fn shr(self, rhs: Self) -> Self::Output {
@@ -338,245 +360,101 @@ impl Shr for u64x2 {
       }
     }
   }
-}
 
-macro_rules! impl_shr_t_for_u64x2 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for u64x2 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 63, 0]);
-            Self { sse: shr_all_u64_m128i(self.sse, shift) }
-          } else if #[cfg(target_feature="simd128")] {
-            Self { simd: u64x2_shr(self.simd, rhs as u32) }
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-(rhs as i64 & 63))) }}
-          } else {
-            let u = rhs as u32;
-            Self { arr: [
-              self.arr[0].wrapping_shr(u),
-              self.arr[1].wrapping_shr(u),
-            ]}
-          }
-        }
-      }
-    })+
-  };
-}
-impl_shr_t_for_u64x2!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-#[expect(deprecated)]
-impl CmpEq for u64x2 {
-  type Output = Self;
   #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u64x2_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vceqq_u64(self.neon, rhs.neon) } }
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] == r[0] { -1_i64 } else { 0 },
-          if s[1] == r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGt for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.2")] {
-        // no unsigned gt so inverting the high bit will get the correct result
-        let highbit = u64x2::splat(1 << 63);
-        Self { sse: cmp_gt_mask_i64_m128i((self ^ highbit).sse, (rhs ^ highbit).sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vcgtq_u64(self.neon, rhs.neon) }}
-      } else {
-        // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] > r[0] { u64::MAX } else { 0 },
-          if s[1] > r[1] { u64::MAX } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    // lt is just gt the other way around
-    rhs.simd_gt(self)
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_eq(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u64x2_ne(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_eq(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] != r[0] { -1_i64 } else { 0 },
-          if s[1] != r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLe for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_gt(rhs)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_gt(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] <= r[0] { -1_i64 } else { 0 },
-          if s[1] <= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpGe for u64x2 {
-  type Output = Self;
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_lt(rhs)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_lt(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] >= r[0] { -1_i64 } else { 0 },
-          if s[1] >= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-}
-
-impl u64x2 {
-  #[inline]
-  #[must_use]
-  pub const fn new(array: [u64; 2]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
-  simd_comparison_fns!();
-
-  /// Bitwise selection.
-  ///
-  /// For each bit of `self`:
-  ///
-  /// - If the bit is one, return the corresponding bit of `if_one`
-  /// - If the bit is zero, return the corresponding bit of `if_zero`
-  ///
-  /// If you know `self` is a mask, meaning each lane is either all zeros or all
-  /// ones, consider using [`select`] which is faster.
-  ///
-  /// [`select`]: Self::select
-  #[inline]
-  #[must_use]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+  fn shr(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.sse, self.sse),
-            bitandnot_m128i(self.sse, if_zero.sse),
-          ),
-        }
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 63, 0]);
+        Self { sse: shr_all_u64_m128i(self.sse, shift) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
+        Self { simd: u64x2_shr(self.simd, rhs) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_u64(self.neon, if_one.neon, if_zero.neon) }}
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        unsafe {Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-(rhs as i64 & 63))) }}
       } else {
-        generic_bit_blend(self, if_one, if_zero)
+        Self { arr: [
+          self.arr[0].wrapping_shr(rhs),
+          self.arr[1].wrapping_shr(rhs),
+        ]}
       }
     }
   }
 
-  /// Lanewise selection.
-  ///
-  /// For each lane of `self`:
-  ///
-  /// - If all bits are one, return the corresponding lane of `if_true`
-  /// - If all bits are zero, return the corresponding lane of `if_false`
-  ///
-  /// This function assumes `self` is a mask, meaning each lane is either all
-  /// zeros or all ones. For bitwise selection use [`bitselect`].
-  ///
-  /// [`bitselect`]: Self::bitselect
   #[inline]
-  #[must_use]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+  fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitand_m128i(self.sse, rhs.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
+        Self { simd: v128_and(self.simd, rhs.simd) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_u64(self.neon, if_true.neon, if_false.neon) }}
+        unsafe {Self { neon: vandq_u64(self.neon, rhs.neon) }}
       } else {
-        generic_bit_blend(self, if_true, if_false)
+        Self { arr: [
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+        ]}
       }
     }
   }
 
   #[inline]
-  #[must_use]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_or(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vorrq_u64(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitor(rhs.arr[0]),
+          self.arr[1].bitor(rhs.arr[1]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_xor(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: veorq_u64(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitxor(rhs.arr[0]),
+          self.arr[1].bitxor(rhs.arr[1]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).select(self, rhs)
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u64 {
     cast(i64x2::reduce_add(cast(self)))
   }
 
-  /// Reducing multiply. Returns the product of the elements of the vector.
+
   #[inline]
-  #[must_use]
   pub fn reduce_mul(self) -> u64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -591,7 +469,6 @@ impl u64x2 {
   }
 
   #[inline]
-  #[must_use]
   pub fn reduce_max(self) -> u64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -606,7 +483,6 @@ impl u64x2 {
   }
 
   #[inline]
-  #[must_use]
   pub fn reduce_min(self) -> u64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -621,67 +497,6 @@ impl u64x2 {
   }
 
   #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
-  pub fn to_bitmask(self) -> u32 {
-    i64x2::to_bitmask(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn any(self) -> bool {
-    i64x2::any(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn all(self) -> bool {
-    i64x2::all(cast(self))
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
-
-  /// Transpose matrix of 2x2 `u64` matrix.
-  #[inline]
-  pub fn transpose(data: [u64x2; 2]) -> [u64x2; 2] {
-    cast(i64x2::transpose(cast(data)))
-  }
-
-  #[inline]
-  pub fn to_array(self) -> [u64; 2] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[u64; 2] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [u64; 2] {
-    cast_mut(self)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).select(self, rhs)
-  }
-
-  integer_fn_clamp!();
-
-  #[inline]
-  #[must_use]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -703,7 +518,6 @@ impl u64x2 {
   }
 
   #[inline]
-  #[must_use]
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
@@ -724,9 +538,7 @@ impl u64x2 {
     }
   }
 
-  /// Lanewise saturating multiply.
   #[inline]
-  #[must_use]
   pub fn saturating_mul(self, rhs: Self) -> Self {
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
@@ -737,18 +549,7 @@ impl u64x2 {
     ])
   }
 
-  integer_fn_saturating_div!([0, 1]);
-
-  unsigned_fn_overflowing_add_sub!();
-
-  /// Returns `self * rhs` and whether an overflow occured.
-  ///
-  /// Returns a tuple with:
-  ///
-  /// - The multiplication (returns the wrapped value if an overflow occured)
-  /// - A mask indicating whether an overflow occured
   #[inline]
-  #[must_use]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one?
@@ -765,9 +566,9 @@ impl u64x2 {
       Self::new([-(result[0].1 as i64) as u64, -(result[1].1 as i64) as u64]),
     )
   }
+}
 
-  unsigned_fn_overflowing_div_rem!();
-
+impl u64x2 {
   #[inline]
   #[must_use]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
@@ -778,6 +579,4 @@ impl u64x2 {
       ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
     ])
   }
-
-  fn_blend!();
 }

@@ -12,271 +12,13 @@ pick! {
   }
 }
 
-int_uint_consts!(i64, 4, i64x4, 256);
-
-unsafe impl Zeroable for i64x4 {}
-unsafe impl Pod for i64x4 {}
-
-impl AlignTo for i64x4 {
-  type Elem = i64;
-}
-
-impl Add for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
+impl_simd! {
+  unsafe {
+    T = i64,
+    N = 4,
+    Simd = i64x4,
   }
-}
 
-impl Sub for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl Mul for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let arr1: [i64; 4] = cast(self);
-        let arr2: [i64; 4] = cast(rhs);
-        cast([
-          arr1[0].wrapping_mul(arr2[0]),
-          arr1[1].wrapping_mul(arr2[1]),
-          arr1[2].wrapping_mul(arr2[2]),
-          arr1[3].wrapping_mul(arr2[3]),
-        ])
-      } else {
-        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
-      }
-    }
-  }
-}
-
-integer_impl_div_rem!(i64, i64x4, [0, 1, 2, 3]);
-
-impl Add<i64> for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn add(self, rhs: i64) -> Self::Output {
-    self.add(Self::splat(rhs))
-  }
-}
-
-impl Sub<i64> for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn sub(self, rhs: i64) -> Self::Output {
-    self.sub(Self::splat(rhs))
-  }
-}
-
-impl Mul<i64> for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn mul(self, rhs: i64) -> Self::Output {
-    self.mul(Self::splat(rhs))
-  }
-}
-
-impl Add<i64x4> for i64 {
-  type Output = i64x4;
-  #[inline]
-  fn add(self, rhs: i64x4) -> Self::Output {
-    i64x4::splat(self).add(rhs)
-  }
-}
-
-impl Sub<i64x4> for i64 {
-  type Output = i64x4;
-  #[inline]
-  fn sub(self, rhs: i64x4) -> Self::Output {
-    i64x4::splat(self).sub(rhs)
-  }
-}
-
-impl Mul<i64x4> for i64 {
-  type Output = i64x4;
-  #[inline]
-  fn mul(self, rhs: i64x4) -> Self::Output {
-    i64x4::splat(self).mul(rhs)
-  }
-}
-
-impl BitAnd for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitOr for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx2")] {
-            Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-impl BitXor for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shl`)
-impl Shl for i64x4 {
-  type Output = Self;
-
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & Self::splat(63);
-        Self { avx2: shl_each_u64_m256i(self.avx2, shift_by.avx2) }
-      } else {
-        Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-macro_rules! impl_shl_t_for_i64x4 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shl<$shift_type> for i64x4 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shl(self, rhs: $shift_type) -> Self::Output {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-            #[expect(clippy::suspicious_arithmetic_impl)]
-            let shift = cast([rhs as u64 & 63, 0]);
-            Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
-          } else {
-            Self {
-              a : self.a.shl(rhs),
-              b : self.b.shl(rhs),
-            }
-          }
-        }
-      }
-    })+
-  };
-}
-impl_shl_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-/// Shifts lanes by the corresponding lane.
-///
-/// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes any
-/// high-order bits of `rhs` that would cause the shift to exceed the bitwidth
-/// of the type. (same as `wrapping_shr`)
-impl Shr for i64x4 {
-  type Output = Self;
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let arr: [i64; 4] = cast(self);
-        let rhs: [i64; 4] = cast(rhs);
-        cast([
-          arr[0].wrapping_shr(rhs[0] as u32),
-          arr[1].wrapping_shr(rhs[1] as u32),
-          arr[2].wrapping_shr(rhs[2] as u32),
-          arr[3].wrapping_shr(rhs[3] as u32),
-        ])
-      } else {
-        Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-macro_rules! impl_shr_t_for_i64x4 {
-  ($($shift_type:ty),+ $(,)?) => {
-    $(impl Shr<$shift_type> for i64x4 {
-      type Output = Self;
-      /// Shifts all lanes by the value given.
-      #[inline]
-      fn shr(self, rhs: $shift_type) -> Self::Output {
-          // there is no signed right shift in AVX2
-          let [a,b] : [i64x2; 2] = cast(self);
-          cast([a.shr(rhs), b.shr(rhs)])
-      }
-    })+
-  };
-}
-impl_shr_t_for_i64x4!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
-
-#[expect(deprecated)]
-impl CmpEq for i64x4 {
-  type Output = Self;
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
@@ -290,47 +32,7 @@ impl CmpEq for i64x4 {
       }
     }
   }
-}
 
-#[expect(deprecated)]
-impl CmpGt for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpLt for i64x4 {
-  type Output = Self;
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
-      } else {
-        Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
-        }
-      }
-    }
-  }
-}
-
-#[expect(deprecated)]
-impl CmpNe for i64x4 {
-  type Output = Self;
   #[inline]
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
@@ -344,11 +46,35 @@ impl CmpNe for i64x4 {
       }
     }
   }
-}
 
-#[expect(deprecated)]
-impl CmpLe for i64x4 {
-  type Output = Self;
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
+      } else {
+        Self {
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
   #[inline]
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
@@ -362,11 +88,7 @@ impl CmpLe for i64x4 {
       }
     }
   }
-}
 
-#[expect(deprecated)]
-impl CmpGe for i64x4 {
-  type Output = Self;
   #[inline]
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
@@ -380,30 +102,8 @@ impl CmpGe for i64x4 {
       }
     }
   }
-}
 
-impl i64x4 {
   #[inline]
-  #[must_use]
-  pub const fn new(array: [i64; 4]) -> Self {
-    unsafe { core::mem::transmute(array) }
-  }
-
-  simd_comparison_fns!();
-
-  /// Bitwise selection.
-  ///
-  /// For each bit of `self`:
-  ///
-  /// - If the bit is one, return the corresponding bit of `if_one`
-  /// - If the bit is zero, return the corresponding bit of `if_zero`
-  ///
-  /// If you know `self` is a mask, meaning each lane is either all zeros or all
-  /// ones, consider using [`select`] which is faster.
-  ///
-  /// [`select`]: Self::select
-  #[inline]
-  #[must_use]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -422,19 +122,7 @@ impl i64x4 {
     }
   }
 
-  /// Lanewise selection.
-  ///
-  /// For each lane of `self`:
-  ///
-  /// - If all bits are one, return the corresponding lane of `if_true`
-  /// - If all bits are zero, return the corresponding lane of `if_false`
-  ///
-  /// This function assumes `self` is a mask, meaning each lane is either all
-  /// zeros or all ones. For bitwise selection use [`bitselect`].
-  ///
-  /// [`bitselect`]: Self::bitselect
   #[inline]
-  #[must_use]
   pub fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -448,147 +136,9 @@ impl i64x4 {
     }
   }
 
-  /// Returns true for each positive element and false if it is zero or
-  /// negative.
-  #[inline]
-  #[must_use]
-  pub fn is_positive(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
-        }
-      } else {
-        self.simd_gt(Self::ZERO)
-      }
-    }
-  }
-
-  /// Returns true for each negative element and false if it is zero or
-  /// positive.
-  #[inline]
-  #[must_use]
-  pub fn is_negative(self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // `neon` has dedicated less-than-zero intrinsics.
-        Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
-        }
-      } else {
-        self.simd_lt(Self::ZERO)
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_add(self) -> i64 {
-    pick! {
-      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
-        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
-        let xz_yw = add_i64_m256i(zwxx, self.avx2);
-        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
-        let sum = add_i64_m256i(xz_yw, yw_xz);
-        extract_i64_from_m256i::<0>(sum)
-      } else {
-        let array: [i64; 4] = cast(self);
-        array[0]
-          .wrapping_add(array[1])
-          .wrapping_add(array[2])
-          .wrapping_add(array[3])
-      }
-    }
-  }
-
-  /// Reducing multiply. Returns the product of the elements of the vector.
-  #[inline]
-  #[must_use]
-  pub fn reduce_mul(self) -> i64 {
-    let array: [i64; 4] = cast(self);
-    array[0]
-      .wrapping_mul(array[1])
-      .wrapping_mul(array[2])
-      .wrapping_mul(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_max(self) -> i64 {
-    let array: [i64; 4] = cast(self);
-    array[0].max(array[1]).max(array[2]).max(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn reduce_min(self) -> i64 {
-    let array: [i64; 4] = cast(self);
-    array[0].min(array[1]).min(array[2]).min(array[3])
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn abs(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // avx x86 doesn't have this builtin
-        let arr: [i64; 4] = cast(self);
-        cast(
-          [
-            arr[0].wrapping_abs(),
-            arr[1].wrapping_abs(),
-            arr[2].wrapping_abs(),
-            arr[3].wrapping_abs(),
-          ])
-      } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn unsigned_abs(self) -> u64x4 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // avx x86 doesn't have this builtin
-        let arr: [i64; 4] = cast(self);
-        cast(
-          [
-            arr[0].unsigned_abs(),
-            arr[1].unsigned_abs(),
-            arr[2].unsigned_abs(),
-            arr[3].unsigned_abs(),
-          ])
-      } else {
-        u64x4 {
-          a : self.a.unsigned_abs(),
-          b : self.b.unsigned_abs(),
-        }
-      }
-    }
-  }
-
-  signed_fn_signum!();
-
-  #[inline]
-  #[must_use]
-  pub fn round_float(self) -> f64x4 {
-    let arr: [i64; 4] = cast(self);
-    cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
-  }
-
   /// returns the bit mask for each high bit set in the vector with the lowest
   /// lane being the lowest bit
   #[inline]
-  #[must_use]
-  #[doc(alias("movemask", "move_mask"))]
   pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -602,7 +152,6 @@ impl i64x4 {
 
   /// true if any high bits are set for any value in the vector
   #[inline]
-  #[must_use]
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -615,7 +164,6 @@ impl i64x4 {
 
   /// true if all high bits are set for every value in the vector
   #[inline]
-  #[must_use]
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -626,169 +174,7 @@ impl i64x4 {
     }
   }
 
-  /// true if no high bits are set for any values of the vector
-  #[inline]
-  #[must_use]
-  pub fn none(self) -> bool {
-    !self.any()
-  }
-
-  #[inline]
-  pub fn to_array(self) -> [i64; 4] {
-    cast(self)
-  }
-
-  #[inline]
-  pub fn as_array(&self) -> &[i64; 4] {
-    cast_ref(self)
-  }
-
-  #[inline]
-  pub fn as_mut_array(&mut self) -> &mut [i64; 4] {
-    cast_mut(self)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).select(self, rhs)
-  }
-
-  integer_fn_clamp!();
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let result = self + rhs;
-        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
-        let negative = self.is_negative();
-
-        // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.select(Self::MAX ^ negative, result)
-      } else {
-        Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  #[must_use]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let result = self - rhs;
-        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
-        let negative = self.is_negative();
-
-        // If overflow occurs return `MAX` if positive or `MIN` if negative.
-        overflow.select(Self::MAX ^ negative, result)
-      } else {
-        Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  /// Lanewise saturating multiply.
-  #[inline]
-  #[must_use]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    Self::new([
-      self_array[0].saturating_mul(rhs_array[0]),
-      self_array[1].saturating_mul(rhs_array[1]),
-      self_array[2].saturating_mul(rhs_array[2]),
-      self_array[3].saturating_mul(rhs_array[3]),
-    ])
-  }
-
-  integer_fn_saturating_div!([0, 1, 2, 3]);
-
-  signed_fn_overflowing_add_sub!();
-
-  /// Returns `self * rhs` and whether an overflow occured.
-  ///
-  /// Returns a tuple with:
-  ///
-  /// - The multiplication (returns the wrapped value if an overflow occured)
-  /// - A mask indicating whether an overflow occured
-  #[inline]
-  #[must_use]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
-    // TODO(perf): This implementation looks quite bad. Is there a better
-    // one?
-
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    let result = [
-      self_array[0].overflowing_mul(rhs_array[0]),
-      self_array[1].overflowing_mul(rhs_array[1]),
-      self_array[2].overflowing_mul(rhs_array[2]),
-      self_array[3].overflowing_mul(rhs_array[3]),
-    ];
-    (
-      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
-      Self::new([
-        -(result[0].1 as i64),
-        -(result[1].1 as i64),
-        -(result[2].1 as i64),
-        -(result[3].1 as i64),
-      ]),
-    )
-  }
-
-  signed_fn_overflowing_div_rem!();
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let [aa, _]: [i64x2; 2] = cast(self);
-        let [ba, _]: [i64x2; 2] = cast(b);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
-      } else {
-        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
-      }
-    }
-  }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let [_, ab]: [i64x2; 2] = cast(self);
-        let [_, bb]: [i64x2; 2] = cast(b);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
-      } else {
-        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
-      }
-    }
-  }
-
   /// Transpose matrix of 4x4 `i64` matrix.
-  #[must_use]
   #[inline]
   pub fn transpose(data: [i64x4; 4]) -> [i64x4; 4] {
     pick! {
@@ -824,12 +210,17 @@ impl i64x4 {
       }
     }
   }
-
-  fn_blend!();
 }
 
-impl Not for i64x4 {
-  type Output = Self;
+impl_simd_int! {
+  unsafe {
+    T = i64,
+    N = 4,
+    Simd = i64x4,
+    UnsignedSimd = u64x4,
+    [0, 1, 2, 3],
+  }
+
   #[inline]
   fn not(self) -> Self {
     pick! {
@@ -840,6 +231,374 @@ impl Not for i64x4 {
           a : self.a.not(),
           b : self.b.not(),
         }
+      }
+    }
+  }
+
+  #[inline]
+  fn add(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: add_i64_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.add(rhs.a),
+          b : self.b.add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: sub_i64_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.sub(rhs.a),
+          b : self.b.sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let arr1: [i64; 4] = cast(self);
+        let arr2: [i64; 4] = cast(rhs);
+        cast([
+          arr1[0].wrapping_mul(arr2[0]),
+          arr1[1].wrapping_mul(arr2[1]),
+          arr1[2].wrapping_mul(arr2[2]),
+          arr1[3].wrapping_mul(arr2[3]),
+        ])
+      } else {
+        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
+      }
+    }
+  }
+
+  #[inline]
+  fn shl(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // mask the shift count to 63 to have same behavior on all platforms
+        let shift_by = rhs & Self::splat(63);
+        Self { avx2: shl_each_u64_m256i(self.avx2, shift_by.avx2) }
+      } else {
+        Self {
+          a : self.a.shl(rhs.a),
+          b : self.b.shl(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shl(self, rhs: u32) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        let shift = cast([rhs as u64 & 63, 0]);
+        Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
+      } else {
+        Self {
+          a : self.a.shl(rhs),
+          b : self.b.shl(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let arr: [i64; 4] = cast(self);
+        let rhs: [i64; 4] = cast(rhs);
+        cast([
+          arr[0].wrapping_shr(rhs[0] as u32),
+          arr[1].wrapping_shr(rhs[1] as u32),
+          arr[2].wrapping_shr(rhs[2] as u32),
+          arr[3].wrapping_shr(rhs[3] as u32),
+        ])
+      } else {
+        Self {
+          a : self.a.shr(rhs.a),
+          b : self.b.shr(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn shr(self, rhs: u32) -> Self::Output {
+    // there is no signed right shift in AVX2
+    let [a,b] : [i64x2; 2] = cast(self);
+    cast([a.shr(rhs), b.shr(rhs)])
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+    if #[cfg(target_feature="avx2")] {
+            Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn max(self, rhs: Self) -> Self {
+    self.simd_gt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn min(self, rhs: Self) -> Self {
+    self.simd_lt(rhs).select(self, rhs)
+  }
+
+  #[inline]
+  pub fn reduce_add(self) -> i64 {
+    pick! {
+      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
+        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
+        let xz_yw = add_i64_m256i(zwxx, self.avx2);
+        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
+        let sum = add_i64_m256i(xz_yw, yw_xz);
+        extract_i64_from_m256i::<0>(sum)
+      } else {
+        let array: [i64; 4] = cast(self);
+        array[0]
+          .wrapping_add(array[1])
+          .wrapping_add(array[2])
+          .wrapping_add(array[3])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0]
+      .wrapping_mul(array[1])
+      .wrapping_mul(array[2])
+      .wrapping_mul(array[3])
+  }
+
+  #[inline]
+  pub fn reduce_max(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0].max(array[1]).max(array[2]).max(array[3])
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> i64 {
+    let array: [i64; 4] = cast(self);
+    array[0].min(array[1]).min(array[2]).min(array[3])
+  }
+
+  #[inline]
+  pub fn saturating_add(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self + rhs;
+        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
+      } else {
+        Self {
+          a: self.a.saturating_add(rhs.a),
+          b: self.b.saturating_add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_sub(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let result = self - rhs;
+        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+        let negative = self.is_negative();
+
+        // If overflow occurs return `MAX` if positive or `MIN` if negative.
+        overflow.select(Self::MAX ^ negative, result)
+      } else {
+        Self {
+          a: self.a.saturating_sub(rhs.a),
+          b: self.b.saturating_sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn saturating_mul(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      self_array[0].saturating_mul(rhs_array[0]),
+      self_array[1].saturating_mul(rhs_array[1]),
+      self_array[2].saturating_mul(rhs_array[2]),
+      self_array[3].saturating_mul(rhs_array[3]),
+    ])
+  }
+
+  #[inline]
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let result = [
+      self_array[0].overflowing_mul(rhs_array[0]),
+      self_array[1].overflowing_mul(rhs_array[1]),
+      self_array[2].overflowing_mul(rhs_array[2]),
+      self_array[3].overflowing_mul(rhs_array[3]),
+    ];
+    (
+      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
+      Self::new([
+        -(result[0].1 as i64),
+        -(result[1].1 as i64),
+        -(result[2].1 as i64),
+        -(result[3].1 as i64),
+      ]),
+    )
+  }
+
+  #[inline]
+  pub fn abs(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // avx x86 doesn't have this builtin
+        let arr: [i64; 4] = cast(self);
+        cast(
+          [
+            arr[0].wrapping_abs(),
+            arr[1].wrapping_abs(),
+            arr[2].wrapping_abs(),
+            arr[3].wrapping_abs(),
+          ])
+      } else {
+        Self {
+          a : self.a.abs(),
+          b : self.b.abs(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_positive(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated greater-than-zero intrinsics.
+        Self {
+          a: self.a.is_positive(),
+          b: self.b.is_positive(),
+        }
+      } else {
+        self.simd_gt(Self::ZERO)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn is_negative(self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // `neon` has dedicated less-than-zero intrinsics.
+        Self {
+          a: self.a.is_negative(),
+          b: self.b.is_negative(),
+        }
+      } else {
+        self.simd_lt(Self::ZERO)
+      }
+    }
+  }
+}
+
+impl i64x4 {
+  #[inline]
+  #[must_use]
+  pub fn round_float(self) -> f64x4 {
+    let arr: [i64; 4] = cast(self);
+    cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let [aa, _]: [i64x2; 2] = cast(self);
+        let [ba, _]: [i64x2; 2] = cast(b);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
+      }
+    }
+  }
+
+  // Sometimes used for `transpose`.
+  #[must_use]
+  #[inline]
+  #[allow(dead_code)]
+  pub(crate) fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let [_, ab]: [i64x2; 2] = cast(self);
+        let [_, bb]: [i64x2; 2] = cast(b);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
       }
     }
   }
