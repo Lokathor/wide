@@ -2669,6 +2669,25 @@ fn test_from_slice_unaligned() {
 }
 
 #[test]
+fn test_from_slice() {
+  for_simd_types!(|T, N| {
+    for len in 0..=N + 3 {
+      let vec = Vec::from_iter((0..len).map(|i| i as T));
+      let slice = vec.as_slice();
+
+      if slice.len() > N {
+        // This is what should happen here, but there is no way to test it.
+        // assert_panic!(Simd::from(slice));
+      } else {
+        let result = Simd::from(slice);
+        assert_eq!(&result.as_array()[..slice.len()], slice);
+        assert!(result.as_array()[slice.len()..].iter().all(|x| *x == 0 as T));
+      }
+    }
+  });
+}
+
+#[test]
 fn test_simd_align_to() {
   for_simd_types!(|T, N| {
     let array = std::array::from_fn::<T, 100, _>(|i| i as T);
