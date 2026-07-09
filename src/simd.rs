@@ -47,6 +47,43 @@ macro_rules! impl_simd {
       }
     }
 
+    impl From<&[$T]> for $Simd {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
+      #[inline]
+      fn from(value: &[$T]) -> Self {
+        assert!(
+          value.len() <= $N,
+          concat!(
+            "slice has more elements than `",
+            stringify!($Simd),
+            "` can store",
+          ),
+        );
+
+        // SAFETY: `$Simd` accepts all bit-patterns, including all zeros.
+        let mut result = unsafe { core::mem::zeroed::<$Simd>() };
+
+        // SAFETY: `value` is valid for its own length, and `result` is valid
+        // because its length is checked to be less than or equal to
+        // `value.len()`. Both pointers are properly aligned because they
+        // originate from a slice of `$T`. The regions of memory do not overlap
+        // because they originate from a shared reference and a mutable
+        // reference.
+        unsafe {
+          core::ptr::copy_nonoverlapping::<$T>(
+            value.as_ptr(),
+            result.as_mut_array().as_mut_ptr(),
+            value.len()
+          );
+        }
+
+        result
+      }
+    }
+
     macro_rules! impl_formatting_trait {
       ($Trait:path) => {
         impl $Trait for $Simd {
