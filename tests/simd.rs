@@ -7,7 +7,7 @@ use wide::{
   u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
-use crate::utils::{for_simd_types, random_iter, simd_chunks};
+use crate::utils::{assert_panic, for_simd_types, random_iter, simd_chunks};
 
 #[test]
 fn test_size() {
@@ -2666,6 +2666,24 @@ fn test_from_slice_unaligned() {
   let expected = i16x8::new([1, 2, 3, 4, 5, 6, 7, 8]);
   let actual = i16x8::from_slice_unaligned(&slice[1..9]);
   assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_from_slice() {
+  for_simd_types!(|T, N| {
+    for len in 0..=N + 3 {
+      let vec = Vec::from_iter((0..len).map(|i| i as T));
+      let slice = vec.as_slice();
+
+      if slice.len() > N {
+        assert_panic!(Simd::from(slice));
+      } else {
+        let result = Simd::from(slice);
+        assert_eq!(&result.as_array()[..slice.len()], slice);
+        assert!(result.as_array()[slice.len()..].iter().all(|x| *x == 0 as T));
+      }
+    }
+  });
 }
 
 #[test]
