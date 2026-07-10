@@ -166,6 +166,8 @@ impl_simd_uint! {
     T = u32,
     N = 16,
     Simd = u32x16,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
   }
 
@@ -417,7 +419,18 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let overflow = high.simd_ne(Self::ZERO);
+    (low, overflow)
+  }
+
+  optional_fn_widening_mul {
+    // Cannot have `widening_mul` because there is no `u64x16` type.
+  }
+
+  #[inline]
+  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
         #[cfg(target_arch = "x86")]
@@ -434,62 +447,58 @@ impl_simd_uint! {
         let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
         // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
-        let low = Self {
-          avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        };
-        let high = Self {
-          avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        };
-
-        let no_overflow = high.simd_eq(Self::ZERO);
-        no_overflow.select(low, Self::MAX)
+        (
+          Self {
+            avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
+          },
+          Self {
+            avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
+          },
+        )
       } else {
-        let [self_a, self_b]: [u32x8; 2] = cast(self);
-        let [rhs_a, rhs_b]: [u32x8; 2] = cast(rhs);
+        let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u32x16, [u32x8; 2]>(rhs);
 
-        cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+        let result_a = self_a.mul_keep_low_high(rhs_a);
+        let result_b = self_b.mul_keep_low_high(rhs_b);
+        (
+          cast([result_a.0, result_b.0]),
+          cast([result_a.1, result_b.1]),
+        )
       }
     }
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
     pick! {
-      if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
+      if #[cfg(target_feature="avx512f")] {
+        let alo = extract_m256i32_from_m512i::<0>(self.avx512);
+        let ahi = extract_m256i32_from_m512i::<1>(self.avx512);
+        let blo = extract_m256i32_from_m512i::<0>(rhs.avx512);
+        let bhi = extract_m256i32_from_m512i::<1>(rhs.avx512);
 
-        let even_wide_mul = mul_u32_wide_m512i(self.avx512, rhs.avx512);
-        let odd_wide_mul = mul_u32_wide_m512i(
-          shuffle_i32_m512i::<0b_00_11_00_01>(self.avx512),
-          shuffle_i32_m512i::<0b_00_11_00_01>(rhs.avx512),
-        );
-
-        let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
-        let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
-        // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
-        let low = Self {
-          avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
+        let lo_res: m256i = {
+          let a8 = u32x8 { avx2: alo };
+          let b8 = u32x8 { avx2: blo };
+          a8.mul_keep_high(b8).avx2
         };
-        let high = Self {
-          avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
+        let hi_res: m256i = {
+          let a8 = u32x8 { avx2: ahi };
+          let b8 = u32x8 { avx2: bhi };
+          a8.mul_keep_high(b8).avx2
         };
 
-        let overflow = high.simd_ne(Self::ZERO);
+        let zero = zeroed_m512i();
+        let with_lo = insert_m256i32_to_m512i::<0>(zero, lo_res);
+        let combined = insert_m256i32_to_m512i::<1>(with_lo, hi_res);
 
-        (low, overflow)
+        Self { avx512: combined }
       } else {
-        let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
-        let [rhs_a, rhs_b] = cast::<u32x16, [u32x8; 2]>(rhs);
-
-        let result_a = self_a.overflowing_mul(rhs_a);
-        let result_b = self_b.overflowing_mul(rhs_b);
-        (
-          cast([result_a.0, result_b.0]),
-          cast([result_a.1, result_b.1]),
-        )
+        Self {
+          a: self.a.mul_keep_high(rhs.a),
+          b: self.b.mul_keep_high(rhs.b),
+        }
       }
     }
   }
@@ -539,43 +548,6 @@ impl From<u16x16> for u32x16 {
           arr[8] as u32,  arr[9] as u32,  arr[10] as u32, arr[11] as u32,
           arr[12] as u32, arr[13] as u32, arr[14] as u32, arr[15] as u32,
         ])
-      }
-    }
-  }
-}
-
-impl u32x16 {
-  #[inline]
-  #[must_use]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        let alo = extract_m256i32_from_m512i::<0>(self.avx512);
-        let ahi = extract_m256i32_from_m512i::<1>(self.avx512);
-        let blo = extract_m256i32_from_m512i::<0>(rhs.avx512);
-        let bhi = extract_m256i32_from_m512i::<1>(rhs.avx512);
-
-        let lo_res: m256i = {
-          let a8 = u32x8 { avx2: alo };
-          let b8 = u32x8 { avx2: blo };
-          a8.mul_keep_high(b8).avx2
-        };
-        let hi_res: m256i = {
-          let a8 = u32x8 { avx2: ahi };
-          let b8 = u32x8 { avx2: bhi };
-          a8.mul_keep_high(b8).avx2
-        };
-
-        let zero = zeroed_m512i();
-        let with_lo = insert_m256i32_to_m512i::<0>(zero, lo_res);
-        let combined = insert_m256i32_to_m512i::<1>(with_lo, hi_res);
-
-        Self { avx512: combined }
-      } else {
-        Self {
-          a: self.a.mul_keep_high(rhs.a),
-          b: self.b.mul_keep_high(rhs.b),
-        }
       }
     }
   }

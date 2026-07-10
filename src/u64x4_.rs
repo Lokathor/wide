@@ -160,6 +160,8 @@ impl_simd_uint! {
     T = u64,
     N = 4,
     Simd = u64x4,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
     [0, 1, 2, 3],
   }
 
@@ -403,22 +405,10 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    Self::new([
-      self_array[0].saturating_mul(rhs_array[0]),
-      self_array[1].saturating_mul(rhs_array[1]),
-      self_array[2].saturating_mul(rhs_array[2]),
-      self_array[3].saturating_mul(rhs_array[3]),
-    ])
-  }
-
-  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
-    // one?
+    // one? This intentionally avoids `mul_keep_low_high` because getting the
+    // high bits of 64-bit multiplication could be slow.
 
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
@@ -439,11 +429,43 @@ impl_simd_uint! {
       ]),
     )
   }
-}
 
-impl u64x4 {
+  optional_fn_widening_mul {
+    // Cannot have `widening_mul` because there is no `u128x4` type.
+  }
+
   #[inline]
-  #[must_use]
+  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let widening_mul = [
+      (self_array[0] as u128).wrapping_mul(rhs_array[0] as u128),
+      (self_array[1] as u128).wrapping_mul(rhs_array[1] as u128),
+      (self_array[2] as u128).wrapping_mul(rhs_array[2] as u128),
+      (self_array[3] as u128).wrapping_mul(rhs_array[3] as u128),
+    ];
+
+    (
+      Self::new([
+        widening_mul[0] as u64,
+        widening_mul[1] as u64,
+        widening_mul[2] as u64,
+        widening_mul[3] as u64,
+      ]),
+      Self::new([
+        (widening_mul[0] >> 64) as u64,
+        (widening_mul[1] >> 64) as u64,
+        (widening_mul[2] >> 64) as u64,
+        (widening_mul[3] >> 64) as u64,
+      ]),
+    )
+  }
+
+  #[inline]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

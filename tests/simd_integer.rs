@@ -1,8 +1,6 @@
-use std::iter::once;
-
 use wide::{
   f32x4, f32x8, f32x16, i8x16, i8x32, i16x8, i16x16, i32x4, i32x8, i32x16,
-  i64x4, u8x16, u16x8, u32x4, u32x8, u32x16, u64x4,
+  u8x16, u16x8,
 };
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
@@ -502,6 +500,288 @@ fn test_overflowing_rem() {
 }
 
 #[test]
+fn test_widening_mul() {
+  for_simd_types!(|T: Signed, N, DoubleSizedSimd| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MIN + 1,
+        T::MIN,
+        2,
+        3,
+        4,
+        5,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        T::MAX / 2,
+        T::MIN / 2,
+      ],
+      [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
+    )
+    .chain(random_iter())
+    {
+      let expected = DoubleSizedSimd::new(std::array::from_fn(|i| {
+        (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
+      }));
+      let actual = Simd::new(left).widening_mul(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N, DoubleSizedSimd| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        3,
+        4,
+        5,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+      ],
+      [
+        17,
+        18,
+        9,
+        1,
+        0,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+      ],
+    )
+    .chain(random_iter())
+    {
+      let expected = DoubleSizedSimd::new(std::array::from_fn(|i| {
+        (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
+      }));
+      let actual = Simd::new(left).widening_mul(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_mul_keep_low_high() {
+  for_simd_types!(|T: Signed, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MIN + 1,
+        T::MIN,
+        2,
+        3,
+        4,
+        5,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        T::MAX / 2,
+        T::MIN / 2,
+      ],
+      [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
+    )
+    .chain(random_iter())
+    {
+      let expected = (
+        SimdUnsigned::new(std::array::from_fn(|i| {
+          left[i].wrapping_mul(right[i]).cast_unsigned()
+        })),
+        Simd::new(std::array::from_fn(|i| {
+          ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT)
+            >> T::BITS) as T
+        })),
+      );
+      let actual = Simd::new(left).mul_keep_low_high(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        3,
+        4,
+        5,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+      ],
+      [
+        17,
+        18,
+        9,
+        1,
+        0,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+      ],
+    )
+    .chain(random_iter())
+    {
+      let expected = (
+        Simd::new(std::array::from_fn(|i| left[i].wrapping_mul(right[i]))),
+        Simd::new(std::array::from_fn(|i| {
+          ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT)
+            >> T::BITS) as T
+        })),
+      );
+      let actual = Simd::new(left).mul_keep_low_high(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_mul_keep_high() {
+  for_simd_types!(|T: Signed, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MIN + 1,
+        T::MIN,
+        2,
+        3,
+        4,
+        5,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        T::MAX / 2,
+        T::MIN / 2,
+      ],
+      [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT)
+          >> T::BITS) as T
+      }));
+      let actual = Simd::new(left).mul_keep_high(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        3,
+        4,
+        5,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+      ],
+      [
+        17,
+        18,
+        9,
+        1,
+        0,
+        3,
+        4,
+        3,
+        2,
+        2,
+        1,
+        T::MAX / 4,
+        T::MAX / 3,
+        T::MAX / 2,
+        T::MAX - 1,
+        T::MAX,
+        T::MAX,
+      ],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT)
+          >> T::BITS) as T
+      }));
+      let actual = Simd::new(left).mul_keep_high(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
+      );
+    }
+  });
+}
+
+#[test]
 fn test_from_big_truncate() {
   // `from_{big}_truncate` is inconsistently missing from types.
 
@@ -539,177 +819,6 @@ fn test_from_big_saturate() {
   let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, -32768, 32767]);
   let actual = i16x8::from_i32x8_saturate(value);
   assert_eq!(actual, expected);
-}
-
-#[test]
-fn test_mul_keep_high() {
-  // `mul_keep_high` is inconsistently missing from types.
-
-  for [left, right] in once([
-    [i16::MAX, 200, 300, 4568, -1, -2, -3, -4],
-    [i16::MIN, 600, 700, 8910, -15, -26, -37, 48],
-  ])
-  .chain(random_iter())
-  {
-    let expected = i16x8::new(std::array::from_fn(|i| {
-      ((left[i] as i32 * right[i] as i32) >> 16) as i16
-    }));
-    let actual = i16x8::mul_keep_high(i16x8::new(left), i16x8::new(right));
-
-    assert_eq!(actual, expected);
-  }
-
-  for [left, right] in once([
-    [u16::MAX, 200, 300, 4568, 1, 2, 3, 200],
-    [u16::MAX, 600, 700, 8910, 15, 26, 37, 600],
-  ])
-  .chain(random_iter())
-  {
-    let expected = u16x8::new(std::array::from_fn(|i| {
-      ((left[i] as u32 * right[i] as u32) >> 16) as u16
-    }));
-    let actual = u16x8::mul_keep_high(u16x8::new(left), u16x8::new(right));
-
-    assert_eq!(actual, expected);
-  }
-
-  for [left, right] in once([
-    [1, 2 * 10000000, 3 * 1000000, u32::MAX],
-    [5, 6 * 100, 7 * 1000000, u32::MAX],
-  ])
-  .chain(random_iter())
-  {
-    let expected = u32x4::new(std::array::from_fn(|i| {
-      ((left[i] as u64 * right[i] as u64) >> 32) as u32
-    }));
-    let actual = u32x4::mul_keep_high(u32x4::new(left), u32x4::new(right));
-
-    assert_eq!(actual, expected);
-  }
-
-  for [left, right] in once([
-    [
-      1,
-      2 * 10000000,
-      3 * 1000000,
-      u32::MAX,
-      1,
-      2 * 10000000,
-      3 * 1000000,
-      u32::MAX,
-    ],
-    [5, 6 * 100, 7 * 1000000, u32::MAX, 5, 6 * 100, 7 * 1000000, u32::MAX],
-  ])
-  .chain(random_iter())
-  {
-    let expected = u32x8::new(std::array::from_fn(|i| {
-      ((left[i] as u64 * right[i] as u64) >> 32) as u32
-    }));
-    let actual = u32x8::mul_keep_high(u32x8::new(left), u32x8::new(right));
-
-    assert_eq!(actual, expected);
-  }
-
-  for [left, right] in once([
-    [
-      1,
-      2 * 10000000,
-      3 * 1000000,
-      u32::MAX,
-      1,
-      2 * 10000000,
-      3 * 1000000,
-      u32::MAX,
-      1,
-      2 * 10000000,
-      3 * 1000000,
-      u32::MAX,
-      1,
-      2 * 10000000,
-      3 * 1000000,
-      u32::MAX,
-    ],
-    [
-      5,
-      6 * 100,
-      7 * 1000000,
-      u32::MAX,
-      5,
-      6 * 100,
-      7 * 1000000,
-      u32::MAX,
-      5,
-      6 * 100,
-      7 * 1000000,
-      u32::MAX,
-      5,
-      6 * 100,
-      7 * 1000000,
-      u32::MAX,
-    ],
-  ])
-  .chain(random_iter())
-  {
-    let expected = u32x16::new(std::array::from_fn(|i| {
-      ((left[i] as u64 * right[i] as u64) >> 32) as u32
-    }));
-    let actual = u32x16::mul_keep_high(u32x16::new(left), u32x16::new(right));
-
-    assert_eq!(actual, expected);
-  }
-}
-
-#[test]
-fn test_mul_widen() {
-  // `mul_widen` is inconsistently missing from types.
-
-  for [left, right] in once([
-    [1, 2, 3, 4, 5, 6, i16::MIN, i16::MAX],
-    [17, -18, 190, -20, 21, -22, i16::MAX, i16::MAX],
-  ])
-  .chain(random_iter())
-  {
-    let expected =
-      i32x8::new(std::array::from_fn(|i| left[i] as i32 * right[i] as i32));
-    let actual = i16x8::new(left).mul_widen(i16x8::new(right));
-
-    assert_eq!(actual, expected);
-  }
-
-  for [left, right] in
-    once([[1, 2, 3 * -1000000, i32::MAX], [5, 6, 7 * -1000000, i32::MIN]])
-      .chain(random_iter())
-  {
-    let expected =
-      i64x4::new(std::array::from_fn(|i| left[i] as i64 * right[i] as i64));
-    let actual = i32x4::new(left).mul_widen(i32x4::new(right));
-
-    assert_eq!(actual, expected);
-  }
-
-  for [left, right] in once([
-    [1, 2, 3, 4, 5, 6, i16::MAX as u16, u16::MAX],
-    [17, 18, 190, 20, 21, 22, i16::MAX as u16, u16::MAX],
-  ])
-  .chain(random_iter())
-  {
-    let expected =
-      u32x8::new(std::array::from_fn(|i| left[i] as u32 * right[i] as u32));
-    let actual = u16x8::new(left).mul_widen(u16x8::new(right));
-
-    assert_eq!(actual, expected);
-  }
-
-  for [left, right] in
-    once([[1, 2, 3 * 1000000, u32::MAX], [5, 6, 7 * 1000000, u32::MAX]])
-      .chain(random_iter())
-  {
-    let expected =
-      u64x4::new(std::array::from_fn(|i| left[i] as u64 * right[i] as u64));
-    let actual = u32x4::new(left).mul_widen(u32x4::new(right));
-
-    assert_eq!(actual, expected);
-  }
 }
 
 #[test]

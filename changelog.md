@@ -4,6 +4,7 @@
 
 * Added conversions between `wide` types and native intrinsics SIMD types.
 * Added `reduce_mul` for integers.
+* Added integer functions `reduce_mul` and `mul_keep_low_high`.
 
 * Added overflowing arithmetic for integers.
 * Added float function `round_ties_even`.
@@ -18,6 +19,9 @@
 * Fixed shift operators overflow behavior.
 * Fixed `round` which previously behaved like `round_ties_even`.
 * Fixed `UpperExp` formatting for floats.
+* Renamed integer function `mul_widen` to `widening_mul` and added it for
+  remaining types.
+* Added integer function `mul_keep_high` for remaining types.
 * Added missing `#[must_use]` annotations
 * Updated documenattion.
 
