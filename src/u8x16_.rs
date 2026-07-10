@@ -334,6 +334,8 @@ impl_simd_uint! {
     T = u8,
     N = 16,
     Simd = u8x16,
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
   }
 
@@ -964,51 +966,56 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          let low_wide_mul = vreinterpretq_u8_u16(
-            vmull_u8(vget_low_u8(self.neon), vget_low_u8(rhs.neon)),
-          );
-          let high_wide_mul = vreinterpretq_u8_u16(
-            vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
-          );
-          let low_high = vuzpq_u8(low_wide_mul, high_wide_mul);
-          let low = Self { neon: low_high.0 };
-          let high = Self { neon: low_high.1 };
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let overflow = high.simd_ne(Self::ZERO);
+    (low, overflow)
+  }
 
-          let no_overflow = high.simd_eq(Self::ZERO);
-          no_overflow.select(low, Self::MAX)
+  optional_fn_widening_mul {
+    #[inline]
+    pub fn widening_mul(self, rhs: Self) -> u16x16 {
+      pick! {
+        if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+          unsafe {
+            let low_wide_mul = vreinterpretq_u8_u16(
+              vmull_u8(vget_low_u8(self.neon), vget_low_u8(rhs.neon)),
+            );
+            let high_wide_mul = vreinterpretq_u8_u16(
+              vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
+            );
+
+            cast([low_wide_mul, high_wide_mul])
+          }
+        } else {
+          let self_array = self.to_array();
+          let rhs_array = rhs.to_array();
+
+          u16x16::new([
+            (self_array[0] as u16).wrapping_mul(rhs_array[0] as u16),
+            (self_array[1] as u16).wrapping_mul(rhs_array[1] as u16),
+            (self_array[2] as u16).wrapping_mul(rhs_array[2] as u16),
+            (self_array[3] as u16).wrapping_mul(rhs_array[3] as u16),
+            (self_array[4] as u16).wrapping_mul(rhs_array[4] as u16),
+            (self_array[5] as u16).wrapping_mul(rhs_array[5] as u16),
+            (self_array[6] as u16).wrapping_mul(rhs_array[6] as u16),
+            (self_array[7] as u16).wrapping_mul(rhs_array[7] as u16),
+            (self_array[8] as u16).wrapping_mul(rhs_array[8] as u16),
+            (self_array[9] as u16).wrapping_mul(rhs_array[9] as u16),
+            (self_array[10] as u16).wrapping_mul(rhs_array[10] as u16),
+            (self_array[11] as u16).wrapping_mul(rhs_array[11] as u16),
+            (self_array[12] as u16).wrapping_mul(rhs_array[12] as u16),
+            (self_array[13] as u16).wrapping_mul(rhs_array[13] as u16),
+            (self_array[14] as u16).wrapping_mul(rhs_array[14] as u16),
+            (self_array[15] as u16).wrapping_mul(rhs_array[15] as u16),
+          ])
         }
-      } else {
-        let self_array = self.to_array();
-        let rhs_array = rhs.to_array();
-
-        Self::new([
-          self_array[0].saturating_mul(rhs_array[0]),
-          self_array[1].saturating_mul(rhs_array[1]),
-          self_array[2].saturating_mul(rhs_array[2]),
-          self_array[3].saturating_mul(rhs_array[3]),
-          self_array[4].saturating_mul(rhs_array[4]),
-          self_array[5].saturating_mul(rhs_array[5]),
-          self_array[6].saturating_mul(rhs_array[6]),
-          self_array[7].saturating_mul(rhs_array[7]),
-          self_array[8].saturating_mul(rhs_array[8]),
-          self_array[9].saturating_mul(rhs_array[9]),
-          self_array[10].saturating_mul(rhs_array[10]),
-          self_array[11].saturating_mul(rhs_array[11]),
-          self_array[12].saturating_mul(rhs_array[12]),
-          self_array[13].saturating_mul(rhs_array[13]),
-          self_array[14].saturating_mul(rhs_array[14]),
-          self_array[15].saturating_mul(rhs_array[15]),
-        ])
       }
     }
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
@@ -1019,12 +1026,10 @@ impl_simd_uint! {
             vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
           );
           let low_high = vuzpq_u8(low_wide_mul, high_wide_mul);
-          let low = Self { neon: low_high.0 };
-          let high = Self { neon: low_high.1 };
-
-          let overflow = high.simd_ne(Self::ZERO);
-
-          (low, overflow)
+          (
+            Self { neon: low_high.0 },
+            Self { neon: low_high.1 },
+          )
         }
       } else {
         // TODO(perf): This implementation looks quite bad. Is there a better
@@ -1033,7 +1038,7 @@ impl_simd_uint! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        let widening_mul = cast::<[u16; 16], [[u8; 2]; 16]>([
+        let widening_mul = [
           (self_array[0] as u16).wrapping_mul(rhs_array[0] as u16),
           (self_array[1] as u16).wrapping_mul(rhs_array[1] as u16),
           (self_array[2] as u16).wrapping_mul(rhs_array[2] as u16),
@@ -1050,47 +1055,85 @@ impl_simd_uint! {
           (self_array[13] as u16).wrapping_mul(rhs_array[13] as u16),
           (self_array[14] as u16).wrapping_mul(rhs_array[14] as u16),
           (self_array[15] as u16).wrapping_mul(rhs_array[15] as u16),
-        ]);
-        let low = Self::new([
-          widening_mul[0][0],
-          widening_mul[1][0],
-          widening_mul[2][0],
-          widening_mul[3][0],
-          widening_mul[4][0],
-          widening_mul[5][0],
-          widening_mul[6][0],
-          widening_mul[7][0],
-          widening_mul[8][0],
-          widening_mul[9][0],
-          widening_mul[10][0],
-          widening_mul[11][0],
-          widening_mul[12][0],
-          widening_mul[13][0],
-          widening_mul[14][0],
-          widening_mul[15][0],
-        ]);
-        let high = Self::new([
-          widening_mul[0][1],
-          widening_mul[1][1],
-          widening_mul[2][1],
-          widening_mul[3][1],
-          widening_mul[4][1],
-          widening_mul[5][1],
-          widening_mul[6][1],
-          widening_mul[7][1],
-          widening_mul[8][1],
-          widening_mul[9][1],
-          widening_mul[10][1],
-          widening_mul[11][1],
-          widening_mul[12][1],
-          widening_mul[13][1],
-          widening_mul[14][1],
-          widening_mul[15][1],
-        ]);
+        ];
 
-        let overflow = high.simd_ne(Self::ZERO);
+        (
+          Self::new([
+            widening_mul[0] as u8,
+            widening_mul[1] as u8,
+            widening_mul[2] as u8,
+            widening_mul[3] as u8,
+            widening_mul[4] as u8,
+            widening_mul[5] as u8,
+            widening_mul[6] as u8,
+            widening_mul[7] as u8,
+            widening_mul[8] as u8,
+            widening_mul[9] as u8,
+            widening_mul[10] as u8,
+            widening_mul[11] as u8,
+            widening_mul[12] as u8,
+            widening_mul[13] as u8,
+            widening_mul[14] as u8,
+            widening_mul[15] as u8,
+          ]),
+          Self::new([
+            (widening_mul[0] >> 8) as u8,
+            (widening_mul[1] >> 8) as u8,
+            (widening_mul[2] >> 8) as u8,
+            (widening_mul[3] >> 8) as u8,
+            (widening_mul[4] >> 8) as u8,
+            (widening_mul[5] >> 8) as u8,
+            (widening_mul[6] >> 8) as u8,
+            (widening_mul[7] >> 8) as u8,
+            (widening_mul[8] >> 8) as u8,
+            (widening_mul[9] >> 8) as u8,
+            (widening_mul[10] >> 8) as u8,
+            (widening_mul[11] >> 8) as u8,
+            (widening_mul[12] >> 8) as u8,
+            (widening_mul[13] >> 8) as u8,
+            (widening_mul[14] >> 8) as u8,
+            (widening_mul[15] >> 8) as u8,
+          ]),
+        )
+      }
+    }
+  }
 
-        (low, overflow)
+  #[inline]
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let low_wide_mul = vreinterpretq_u8_u16(
+            vmull_u8(vget_low_u8(self.neon), vget_low_u8(rhs.neon)),
+          );
+          let high_wide_mul = vreinterpretq_u8_u16(
+            vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
+          );
+          Self { neon: vuzpq_u8(low_wide_mul, high_wide_mul).1 }
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          ((self_array[0] as u16).wrapping_mul(rhs_array[0] as u16) >> 8) as u8,
+          ((self_array[1] as u16).wrapping_mul(rhs_array[1] as u16) >> 8) as u8,
+          ((self_array[2] as u16).wrapping_mul(rhs_array[2] as u16) >> 8) as u8,
+          ((self_array[3] as u16).wrapping_mul(rhs_array[3] as u16) >> 8) as u8,
+          ((self_array[4] as u16).wrapping_mul(rhs_array[4] as u16) >> 8) as u8,
+          ((self_array[5] as u16).wrapping_mul(rhs_array[5] as u16) >> 8) as u8,
+          ((self_array[6] as u16).wrapping_mul(rhs_array[6] as u16) >> 8) as u8,
+          ((self_array[7] as u16).wrapping_mul(rhs_array[7] as u16) >> 8) as u8,
+          ((self_array[8] as u16).wrapping_mul(rhs_array[8] as u16) >> 8) as u8,
+          ((self_array[9] as u16).wrapping_mul(rhs_array[9] as u16) >> 8) as u8,
+          ((self_array[10] as u16).wrapping_mul(rhs_array[10] as u16) >> 8) as u8,
+          ((self_array[11] as u16).wrapping_mul(rhs_array[11] as u16) >> 8) as u8,
+          ((self_array[12] as u16).wrapping_mul(rhs_array[12] as u16) >> 8) as u8,
+          ((self_array[13] as u16).wrapping_mul(rhs_array[13] as u16) >> 8) as u8,
+          ((self_array[14] as u16).wrapping_mul(rhs_array[14] as u16) >> 8) as u8,
+          ((self_array[15] as u16).wrapping_mul(rhs_array[15] as u16) >> 8) as u8,
+        ])
       }
     }
   }

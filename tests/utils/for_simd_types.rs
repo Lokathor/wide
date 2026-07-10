@@ -59,30 +59,56 @@ macro_rules! for_simd_types {
     for_simd_types!(|T: Unsigned, N| $expr);
   };
   (|T: Signed, N| $expr:expr) => {
-    for_simd_types!(signed!(i8, 16, i8x16, u8, u8x16, $expr));
-    for_simd_types!(signed!(i8, 32, i8x32, u8, u8x32, $expr));
-    for_simd_types!(signed!(i16, 8, i16x8, u16, u16x8, $expr));
-    for_simd_types!(signed!(i16, 16, i16x16, u16, u16x16, $expr));
-    for_simd_types!(signed!(i16, 32, i16x32, u16, u16x32, $expr));
-    for_simd_types!(signed!(i32, 4, i32x4, u32, u32x4, $expr));
-    for_simd_types!(signed!(i32, 8, i32x8, u32, u32x8, $expr));
-    for_simd_types!(signed!(i32, 16, i32x16, u32, u32x16, $expr));
-    for_simd_types!(signed!(i64, 2, i64x2, u64, u64x2, $expr));
-    for_simd_types!(signed!(i64, 4, i64x4, u64, u64x4, $expr));
-    for_simd_types!(signed!(i64, 8, i64x8, u64, u64x8, $expr));
+    for_simd_types!(signed!(i8, 16, i8x16, u8, u8x16, i16, (), $expr));
+    for_simd_types!(signed!(i8, 32, i8x32, u8, u8x32, i16, (), $expr));
+    for_simd_types!(signed!(i16, 8, i16x8, u16, u16x8, i32, (), $expr));
+    for_simd_types!(signed!(i16, 16, i16x16, u16, u16x16, i32, (), $expr));
+    for_simd_types!(signed!(i16, 32, i16x32, u16, u16x32, i32, (), $expr));
+    for_simd_types!(signed!(i32, 4, i32x4, u32, u32x4, i64, (), $expr));
+    for_simd_types!(signed!(i32, 8, i32x8, u32, u32x8, i64, (), $expr));
+    for_simd_types!(signed!(i32, 16, i32x16, u32, u32x16, i64, (), $expr));
+    for_simd_types!(signed!(i64, 2, i64x2, u64, u64x2, i128, (), $expr));
+    for_simd_types!(signed!(i64, 4, i64x4, u64, u64x4, i128, (), $expr));
+    for_simd_types!(signed!(i64, 8, i64x8, u64, u64x8, i128, (), $expr));
+  };
+  (|T: Signed, N, DoubleSizedSimd| $expr:expr) => {
+    for_simd_types!(signed!(i8, 16, i8x16, u8, u8x16, i16, (i16x16), $expr));
+    for_simd_types!(signed!(i8, 32, i8x32, u8, u8x32, i16, (i16x32), $expr));
+    for_simd_types!(signed!(i16, 8, i16x8, u16, u16x8, i32, (i32x8), $expr));
+    for_simd_types!(signed!(i16, 16, i16x16, u16, u16x16, i32, (i32x16), $expr));
+    // for_simd_types!(signed!(i16, 32, i16x32, u16, u16x32, i32, (i32x32), $expr));
+    for_simd_types!(signed!(i32, 4, i32x4, u32, u32x4, i64, (i64x4), $expr));
+    for_simd_types!(signed!(i32, 8, i32x8, u32, u32x8, i64, (i64x8), $expr));
+    // for_simd_types!(signed!(i32, 16, i32x16, u32, u32x16, i64, (i64x16), $expr));
+    // for_simd_types!(signed!(i64, 2, i64x2, u64, u64x2, i128, (i128x2), $expr));
+    // for_simd_types!(signed!(i64, 4, i64x4, u64, u64x4, i128, (i128x4), $expr));
+    // for_simd_types!(signed!(i64, 8, i64x8, u64, u64x8, i128, (i128x8), $expr));
   };
   (|T: Unsigned, N| $expr:expr) => {
-    for_simd_types!(unsigned!(u8, 16, u8x16, $expr));
-    for_simd_types!(unsigned!(u8, 32, u8x32, $expr));
-    for_simd_types!(unsigned!(u16, 8, u16x8, $expr));
-    for_simd_types!(unsigned!(u16, 16, u16x16, $expr));
-    for_simd_types!(unsigned!(u16, 32, u16x32, $expr));
-    for_simd_types!(unsigned!(u32, 4, u32x4, $expr));
-    for_simd_types!(unsigned!(u32, 8, u32x8, $expr));
-    for_simd_types!(unsigned!(u32, 16, u32x16, $expr));
-    for_simd_types!(unsigned!(u64, 2, u64x2, $expr));
-    for_simd_types!(unsigned!(u64, 4, u64x4, $expr));
-    for_simd_types!(unsigned!(u64, 8, u64x8, $expr));
+    for_simd_types!(unsigned!(u8, 16, u8x16, u16, (), $expr));
+    for_simd_types!(unsigned!(u8, 32, u8x32, u16, (), $expr));
+    for_simd_types!(unsigned!(u16, 8, u16x8, u32, (), $expr));
+    for_simd_types!(unsigned!(u16, 16, u16x16, u32, (), $expr));
+    for_simd_types!(unsigned!(u16, 32, u16x32, u32, (), $expr));
+    for_simd_types!(unsigned!(u32, 4, u32x4, u64, (), $expr));
+    for_simd_types!(unsigned!(u32, 8, u32x8, u64, (), $expr));
+    for_simd_types!(unsigned!(u32, 16, u32x16, u64, (), $expr));
+    for_simd_types!(unsigned!(u64, 2, u64x2, u128, (), $expr));
+    for_simd_types!(unsigned!(u64, 4, u64x4, u128, (), $expr));
+    for_simd_types!(unsigned!(u64, 8, u64x8, u128, (), $expr));
+  };
+  (|T: Unsigned, N, DoubleSizedSimd| $expr:expr) => {
+    for_simd_types!(unsigned!(u8, 16, u8x16, u16, (u16x16), $expr));
+    for_simd_types!(unsigned!(u8, 32, u8x32, u16, (u16x32), $expr));
+    for_simd_types!(unsigned!(u16, 8, u16x8, u32, (u32x8), $expr));
+    for_simd_types!(unsigned!(u16, 16, u16x16, u32, (u32x16), $expr));
+    // for_simd_types!(unsigned!(u16, 32, u16x32, u32, (u32x32), $expr));
+    for_simd_types!(unsigned!(u32, 4, u32x4, u64, (u64x4), $expr));
+    for_simd_types!(unsigned!(u32, 8, u32x8, u64, (u64x8), $expr));
+    // for_simd_types!(unsigned!(u32, 16, u32x16, u64, (u64x16), $expr));
+    // for_simd_types!(unsigned!(u64, 2, u64x2, u128, (u128x2), $expr));
+    // for_simd_types!(unsigned!(u64, 4, u64x4, u128, (u128x4), $expr));
+    // for_simd_types!(unsigned!(u64, 8, u64x8, u128, (u128x8), $expr));
   };
   (float!($T:ident, $N:literal, $Simd:ident, $Signed:ident, $SimdSigned:ident, $pow_simd:ident, $expr:expr)) => {{
     type Simd = wide::$Simd;
@@ -100,7 +126,16 @@ macro_rules! for_simd_types {
     const pow_simd: fn(Simd, Simd) -> Simd = Simd::$pow_simd;
     $crate::utils::for_simd_types_helper(|| $expr, stringify!($T), $N);
   }};
-  (signed!($T:ident, $N:literal, $Simd:ident, $Unsigned:ident, $SimdUnsigned:ident, $expr:expr)) => {{
+  (signed!(
+    $T:ident,
+    $N:literal,
+    $Simd:ident,
+    $Unsigned:ident,
+    $SimdUnsigned:ident,
+    $DoubleSizedT:ident,
+    ($($DoubleSizedSimd:ident)?),
+    $expr:expr
+  )) => {{
     type Simd = wide::$Simd;
     #[allow(dead_code)]
     type T = $T;
@@ -110,14 +145,33 @@ macro_rules! for_simd_types {
     type Unsigned = $Unsigned;
     #[allow(dead_code)]
     type SimdUnsigned = wide::$SimdUnsigned;
+    #[allow(dead_code)]
+    type DoubleSizedT = $DoubleSizedT;
+    $(
+      #[allow(dead_code)]
+      type DoubleSizedSimd = wide::$DoubleSizedSimd;
+    )?
     $crate::utils::for_simd_types_helper(|| $expr, stringify!($T), $N);
   }};
-  (unsigned!($T:ident, $N:literal, $Simd:ident, $expr:expr)) => {{
+  (unsigned!(
+    $T:ident,
+    $N:literal,
+    $Simd:ident,
+    $DoubleSizedT:ident,
+    ($($DoubleSizedSimd:ident)?),
+    $expr:expr
+  )) => {{
     type Simd = wide::$Simd;
     #[allow(dead_code)]
     type T = $T;
     #[allow(dead_code)]
     const N: usize = $N;
+    #[allow(dead_code)]
+    type DoubleSizedT = $DoubleSizedT;
+    $(
+      #[allow(dead_code)]
+      type DoubleSizedSimd = wide::$DoubleSizedSimd;
+    )?
     $crate::utils::for_simd_types_helper(|| $expr, stringify!($T), $N);
   }};
 }

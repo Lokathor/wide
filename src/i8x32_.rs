@@ -246,6 +246,8 @@ impl_simd_int! {
     N = 32,
     Simd = i8x32,
     UnsignedSimd = u8x32,
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
     [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -465,23 +467,49 @@ impl_simd_int! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let low = cast::<u8x32, i8x32>(low);
+
+    let overflow = high.simd_ne(low.is_negative());
+    (low, overflow)
+  }
+
+  optional_fn_widening_mul {
+    #[inline]
+    pub fn widening_mul(self, rhs: Self) -> i16x32 {
+      // x86 has no `_mm256_mul_epi8` intrinsic so there is no `avx2`
+      // optimization.
+
+      let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
+      let [rhs_a, rhs_b] = cast::<i8x32, [i8x16; 2]>(rhs);
+
+      cast([self_a.widening_mul(rhs_a), self_b.widening_mul(rhs_b)])
+    }
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_low_high(self, rhs: Self) -> (u8x32, i8x32) {
     // x86 has no `_mm256_mul_epi8` intrinsic so there is no `avx2`
     // optimization.
 
     let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
     let [rhs_a, rhs_b] = cast::<i8x32, [i8x16; 2]>(rhs);
 
-    let result_a = self_a.overflowing_mul(rhs_a);
-    let result_b = self_b.overflowing_mul(rhs_b);
+    let result_a = self_a.mul_keep_low_high(rhs_a);
+    let result_b = self_b.mul_keep_low_high(rhs_b);
     (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
+  }
+
+  #[inline]
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
+    // x86 has no `_mm256_mul_epi8` intrinsic so there is no `avx2`
+    // optimization.
+
+    let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<i8x32, [i8x16; 2]>(rhs);
+
+    cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
   }
 
   #[inline]
