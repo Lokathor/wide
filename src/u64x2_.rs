@@ -228,6 +228,8 @@ impl_simd_uint! {
     T = u64,
     N = 2,
     Simd = u64x2,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
     [0, 1],
   }
 
@@ -539,20 +541,10 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    Self::new([
-      self_array[0].saturating_mul(rhs_array[0]),
-      self_array[1].saturating_mul(rhs_array[1]),
-    ])
-  }
-
-  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
-    // one?
+    // one? This intentionally avoids `mul_keep_low_high` because getting the
+    // high bits of 64-bit multiplication could be slow.
 
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
@@ -566,11 +558,37 @@ impl_simd_uint! {
       Self::new([-(result[0].1 as i64) as u64, -(result[1].1 as i64) as u64]),
     )
   }
-}
 
-impl u64x2 {
+  optional_fn_widening_mul {
+    // Cannot have `widening_mul` because there is no `u128x2` type.
+  }
+
   #[inline]
-  #[must_use]
+  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let widening_mul = [
+      (self_array[0] as u128).wrapping_mul(rhs_array[0] as u128),
+      (self_array[1] as u128).wrapping_mul(rhs_array[1] as u128),
+    ];
+
+    (
+      Self::new([
+        widening_mul[0] as u64,
+        widening_mul[1] as u64,
+      ]),
+      Self::new([
+        (widening_mul[0] >> 64) as u64,
+        (widening_mul[1] >> 64) as u64,
+      ]),
+    )
+  }
+
+  #[inline]
   pub fn mul_keep_high(self, rhs: Self) -> Self {
     let arr1: [u64; 2] = cast(self);
     let arr2: [u64; 2] = cast(rhs);

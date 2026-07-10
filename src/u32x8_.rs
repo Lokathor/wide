@@ -142,6 +142,8 @@ impl_simd_uint! {
     T = u32,
     N = 8,
     Simd = u32x8,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
     [0, 1, 2, 3, 4, 5, 6, 7],
   }
 
@@ -395,33 +397,40 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let even_wide_mul = mul_u64_low_bits_m256i(self.avx2, rhs.avx2);
-        let odd_wide_mul = mul_u64_low_bits_m256i(
-          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
-          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
-        );
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let overflow = high.simd_ne(Self::ZERO);
+    (low, overflow)
+  }
 
-        let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
-        let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
-        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
-        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
+  optional_fn_widening_mul {
+    #[inline]
+    pub fn widening_mul(self, rhs: Self) -> u64x8 {
+      pick! {
+        if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
+          const SHUFFLE_INDICES: m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).avx512;
 
-        let no_overflow = high.simd_eq(Self::ZERO);
-        no_overflow.select(low, Self::MAX)
-      } else {
-        let [self_a, self_b]: [u32x4; 2] = cast(self);
-        let [rhs_a, rhs_b]: [u32x4; 2] = cast(rhs);
+          let even_wide_mul = mul_u64_low_bits_m256i(self.avx2, rhs.avx2);
+          let odd_wide_mul = mul_u64_low_bits_m256i(
+            shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
+            shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
+          );
+          let even_then_odd = cast::<[m256i; 2], m512i>([even_wide_mul, odd_wide_mul]);
+          u64x8 {
+            avx512: permute_i64_m512i(SHUFFLE_INDICES, even_then_odd),
+          }
+        } else {
+          let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);
+          let [rhs_a, rhs_b] = cast::<u32x8, [u32x4; 2]>(rhs);
 
-        cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+          cast([self_a.widening_mul(rhs_a), self_b.widening_mul(rhs_b)])
+        }
       }
     }
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let even_wide_mul = mul_u64_low_bits_m256i(self.avx2, rhs.avx2);
@@ -431,22 +440,41 @@ impl_simd_uint! {
         );
         let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
-        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
-        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
-
-        let overflow = high.simd_ne(Self::ZERO);
-
-        (low, overflow)
+        (
+          Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) },
+          Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) },
+        )
       } else {
         let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u32x8, [u32x4; 2]>(rhs);
 
-        let result_a = self_a.overflowing_mul(rhs_a);
-        let result_b = self_b.overflowing_mul(rhs_b);
+        let result_a = self_a.mul_keep_low_high(rhs_a);
+        let result_b = self_b.mul_keep_low_high(rhs_b);
         (
           cast([result_a.0, result_b.0]),
           cast([result_a.1, result_b.1]),
         )
+      }
+    }
+  }
+
+  #[inline]
+  pub fn mul_keep_high(self, rhs: u32x8) -> u32x8 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a : [u32;8]= cast(self);
+        let b : [u32;8]= cast(rhs);
+
+        // let the compiler shuffle the values around, it does the right thing
+        let r1 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
+        let r2 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
+
+        cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
+      } else {
+        Self {
+          a : self.a.mul_keep_high(rhs.a),
+          b : self.b.mul_keep_high(rhs.b),
+        }
       }
     }
   }
@@ -475,33 +503,6 @@ impl From<u16x8> for u32x8 {
           u32::from(v.as_array()[6]),
           u32::from(v.as_array()[7]),
         ])
-      }
-    }
-  }
-}
-
-impl u32x8 {
-  /// Multiplies 32x32 bit to 64 bit and then only keeps the high 32 bits of the
-  /// result. Useful for implementing divide constant value (see `t_usefulness`
-  /// example)
-  #[inline]
-  #[must_use]
-  pub fn mul_keep_high(self, rhs: u32x8) -> u32x8 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let a : [u32;8]= cast(self);
-        let b : [u32;8]= cast(rhs);
-
-        // let the compiler shuffle the values around, it does the right thing
-        let r1 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
-        let r2 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
-
-        cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
-      } else {
-        Self {
-          a : self.a.mul_keep_high(rhs.a),
-          b : self.b.mul_keep_high(rhs.b),
-        }
       }
     }
   }

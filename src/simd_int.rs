@@ -11,6 +11,8 @@ macro_rules! impl_simd_int {
       N = $N:literal,
       Simd = $Simd:ident,
       UnsignedSimd = $UnsignedSimd:ident,
+      T_BITS = $T_BITS:literal,
+      T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
     }
 
@@ -33,8 +35,10 @@ macro_rules! impl_simd_int {
     $fn_reduce_min:item
     $fn_saturating_add:item
     $fn_saturating_sub:item
-    $fn_saturating_mul:item
     $fn_overflowing_mul:item
+    optional_fn_widening_mul { $($fn_widening_mul:item)? }
+    $fn_mul_keep_low_high:item
+    $fn_mul_keep_high:item
     $fn_abs:item
     $fn_is_positive:item
     $fn_is_negative:item
@@ -294,8 +298,13 @@ macro_rules! impl_simd_int {
       $fn_saturating_sub
 
       /// Lanewise saturating multiply.
+      #[inline]
       #[must_use]
-      $fn_saturating_mul
+      pub fn saturating_mul(self, rhs: Self) -> Self {
+        let (result, overflow) = self.overflowing_mul(rhs);
+        let limit = Self::MAX ^ (self ^ rhs).is_negative();
+        overflow.select(limit, result)
+      }
 
       /// Lanewise saturating divide.
       ///
@@ -389,6 +398,53 @@ macro_rules! impl_simd_int {
         // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
         (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
       }
+
+      $(
+        /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
+        /// vector of a larger integer type.
+        ///
+        /// The returned value is always exact and can never overflow.
+        ///
+        /// This function is different from [`mul_keep_low_high`], which returns
+        /// two seperate SIMD vectors for low and high parts, instead of a
+        /// single SIMD vector of a larger integer type. Also note that while
+        /// [`mul_keep_low_high`] exists for all types, `widening_mul` does not
+        /// exist for types with no wider variant (e.g., for `i32x16` because
+        /// there is no `i64x16`).
+        ///
+        /// [`mul_keep_low_high`]: Self::mul_keep_low_high
+        #[must_use]
+        $fn_widening_mul
+      )?
+
+      #[doc = concat!(
+        "Computes `self * rhs`, producing intermediate ",
+        $T_BITS_MUL_2,
+        "-bit integers, then returns their low ",
+        $T_BITS,
+        "-bit parts and high ",
+        $T_BITS,
+        "-bit parts in two seperate SIMD vectors."
+      )]
+      ///
+      /// This function is different from `widening_mul`, which returns a single
+      /// SIMD vector of a larger integer type, instead of two seperate SIMD
+      /// vectors for low and high parts. Also note that while
+      /// `mul_keep_low_high` exists for all types, `widening_mul` does not
+      /// exist for types with no wider variant (e.g., for `i32x16` because
+      /// there is no `i64x16`).
+      #[must_use]
+      $fn_mul_keep_low_high
+
+      #[doc = concat!(
+        "Computes `self * rhs`, producing intermediate ",
+        $T_BITS_MUL_2,
+        "-bit integers, then returns their high ",
+        $T_BITS,
+        "-bit parts."
+      )]
+      #[must_use]
+      $fn_mul_keep_high
 
       #[must_use]
       $fn_abs

@@ -225,6 +225,8 @@ impl_simd_int! {
     N = 16,
     Simd = i32x16,
     UnsignedSimd = u32x16,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
   }
 
@@ -486,7 +488,20 @@ impl_simd_int! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let low = cast::<u32x16, i32x16>(low);
+
+    let overflow = high.simd_ne(low.is_negative());
+    (low, overflow)
+  }
+
+  optional_fn_widening_mul {
+    // Cannot have `widening_mul` because there is no `i64x16` type.
+  }
+
+  #[inline]
+  pub fn mul_keep_low_high(self, rhs: Self) -> (u32x16, i32x16) {
     pick! {
       if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
         #[cfg(target_arch = "x86")]
@@ -499,37 +514,39 @@ impl_simd_int! {
           shuffle_i32_m512i::<0b_00_11_00_01>(self.avx512),
           shuffle_i32_m512i::<0b_00_11_00_01>(rhs.avx512),
         );
-
         let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
         // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
-        let low = Self {
-          avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        };
-        let high = Self {
-          avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        };
-
-        let no_overflow = high.simd_eq(low.is_negative());
-        let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.select(low, limit)
+        (
+          u32x16 {
+            avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
+          },
+          i32x16 {
+            avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
+          },
+        )
       } else {
-        let [self_a, self_b]: [i32x8; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i32x8; 2] = cast(rhs);
+        let [self_a, self_b] = cast::<i32x16, [i32x8; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<i32x16, [i32x8; 2]>(rhs);
 
-        cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+        let result_a = self_a.mul_keep_low_high(rhs_a);
+        let result_b = self_b.mul_keep_low_high(rhs_b);
+        (
+          cast([result_a.0, result_b.0]),
+          cast([result_a.1, result_b.1]),
+        )
       }
     }
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
         #[cfg(target_arch = "x86")]
-        use core::arch::x86::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
+        use core::arch::x86::_mm512_unpackhi_epi64;
         #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
+        use core::arch::x86_64::_mm512_unpackhi_epi64;
 
         let even_wide_mul = mul_i32_wide_m512i(self.avx512, rhs.avx512);
         let odd_wide_mul = mul_i32_wide_m512i(
@@ -538,27 +555,15 @@ impl_simd_int! {
         );
         let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
-        // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
-        let low = Self {
-          avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        };
-        let high = Self {
+        // TODO(safe_arch): Add `_mm512_unpackhi_epi64`.
+        Self {
           avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        };
-
-        let overflow = high.simd_ne(low.is_negative());
-
-        (low, overflow)
+        }
       } else {
         let [self_a, self_b] = cast::<i32x16, [i32x8; 2]>(self);
         let [rhs_a, rhs_b] = cast::<i32x16, [i32x8; 2]>(rhs);
 
-        let result_a = self_a.overflowing_mul(rhs_a);
-        let result_b = self_b.overflowing_mul(rhs_b);
-        (
-          cast([result_a.0, result_b.0]),
-          cast([result_a.1, result_b.1]),
-        )
+        cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
       }
     }
   }

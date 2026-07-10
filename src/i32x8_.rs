@@ -250,6 +250,8 @@ impl_simd_int! {
     N = 8,
     Simd = i32x8,
     UnsignedSimd = u32x8,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
     [0, 1, 2, 3, 4, 5, 6, 7],
   }
 
@@ -508,34 +510,55 @@ impl_simd_int! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
-        let odd_wide_mul = mul_i64_low_bits_m256i(
-          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
-          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
-        );
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let low = cast::<u32x8, i32x8>(low);
 
-        let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
-        let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
-        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
-        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
+    let overflow = high.simd_ne(low.is_negative());
+    (low, overflow)
+  }
 
-        let no_overflow = high.simd_eq(low.is_negative());
-        let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        no_overflow.select(low, limit)
-      } else {
-        let [self_a, self_b]: [i32x4; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i32x4; 2] = cast(rhs);
+  optional_fn_widening_mul {
+    #[inline]
+    pub fn widening_mul(self, rhs: Self) -> i64x8 {
+      pick! {
+        if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
+          const SHUFFLE_INDICES: m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).avx512;
 
-        cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+          let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
+          let odd_wide_mul = mul_i64_low_bits_m256i(
+            shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
+            shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
+          );
+          let even_then_odd = cast::<[m256i; 2], m512i>([even_wide_mul, odd_wide_mul]);
+          i64x8 {
+            avx512: permute_i64_m512i(SHUFFLE_INDICES, even_then_odd),
+          }
+        } else if #[cfg(target_feature="avx2")] {
+          let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
+          let odd_wide_mul = mul_i64_low_bits_m256i(
+            shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
+            shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
+          );
+          let m0145 = unpack_low_i64_m256i(even_wide_mul, odd_wide_mul);
+          let m2367 = unpack_high_i64_m256i(even_wide_mul, odd_wide_mul);
+
+          cast([
+            shuffle_abi_i128z_all_m256i::<0b_0010_0000>(m0145, m2367),
+            shuffle_abi_i128z_all_m256i::<0b_0011_0001>(m0145, m2367),
+          ])
+        } else {
+          let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
+          let [rhs_a, rhs_b] = cast::<i32x8, [i32x4; 2]>(rhs);
+
+          cast([self_a.widening_mul(rhs_a), self_b.widening_mul(rhs_b)])
+        }
       }
     }
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_low_high(self, rhs: Self) -> (u32x8, i32x8) {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
@@ -545,22 +568,43 @@ impl_simd_int! {
         );
         let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
-        let low = Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) };
-        let high = Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) };
 
-        let overflow = high.simd_ne(low.is_negative());
-
-        (low, overflow)
+        (
+          u32x8 { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) },
+          i32x8 { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) },
+        )
       } else {
         let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
         let [rhs_a, rhs_b] = cast::<i32x8, [i32x4; 2]>(rhs);
 
-        let result_a = self_a.overflowing_mul(rhs_a);
-        let result_b = self_b.overflowing_mul(rhs_b);
+        let result_a = self_a.mul_keep_low_high(rhs_a);
+        let result_b = self_b.mul_keep_low_high(rhs_b);
         (
           cast([result_a.0, result_b.0]),
           cast([result_a.1, result_b.1]),
         )
+      }
+    }
+  }
+
+  #[inline]
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
+        let odd_wide_mul = mul_i64_low_bits_m256i(
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.avx2),
+          shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.avx2),
+        );
+        let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
+        let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
+
+        Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) }
+      } else {
+        let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<i32x8, [i32x4; 2]>(rhs);
+
+        cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
       }
     }
   }
