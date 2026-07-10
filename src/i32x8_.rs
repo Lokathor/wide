@@ -544,8 +544,8 @@ impl_simd_int! {
           let m2367 = unpack_high_i64_m256i(even_wide_mul, odd_wide_mul);
 
           cast([
-            shuffle_abi_i128z_all_m256i::<0b_1010_0000>(m0145, m2367),
-            shuffle_abi_i128z_all_m256i::<0b_1011_0001>(m0145, m2367),
+            shuffle_abi_i128z_all_m256i::<0b_0010_0000>(m0145, m2367),
+            shuffle_abi_i128z_all_m256i::<0b_0011_0001>(m0145, m2367),
           ])
         } else {
           let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
