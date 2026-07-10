@@ -58,6 +58,9 @@ impl_simd! {
     T = i32,
     N = 4,
     Simd = i32x4,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
   }
 
   #[inline]

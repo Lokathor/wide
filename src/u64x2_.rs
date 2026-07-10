@@ -61,6 +61,9 @@ impl_simd! {
     T = u64,
     N = 2,
     Simd = u64x2,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
   }
 
   #[inline]
