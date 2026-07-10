@@ -1008,8 +1008,8 @@ impl_simd_int! {
         let low_wide_mul = i32x4_extmul_low_i16x8(self.simd, rhs.simd);
         let high_wide_mul = i32x4_extmul_high_i16x8(self.simd, rhs.simd);
         (
-          Self { simd: i16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) },
-          Self { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) },
+          u16x8 { simd: i16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) },
+          i16x8 { simd: i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) },
         )
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
