@@ -407,8 +407,8 @@ impl_simd_uint! {
     #[inline]
     pub fn widening_mul(self, rhs: Self) -> u64x8 {
       pick! {
-        if #[cfg(target_feature="avx2")] {
-          const SHUFFLE_INDICES: __m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]);
+        if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
+          const SHUFFLE_INDICES: m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).avx512;
 
           let even_wide_mul = mul_u64_low_bits_m256i(self.avx2, rhs.avx2);
           let odd_wide_mul = mul_u64_low_bits_m256i(

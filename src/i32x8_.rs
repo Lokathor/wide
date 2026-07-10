@@ -523,7 +523,7 @@ impl_simd_int! {
     pub fn widening_mul(self, rhs: Self) -> i64x8 {
       pick! {
         if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
-          const SHUFFLE_INDICES: __m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]);
+          const SHUFFLE_INDICES: m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).avx512;
 
           let even_wide_mul = mul_i64_low_bits_m256i(self.avx2, rhs.avx2);
           let odd_wide_mul = mul_i64_low_bits_m256i(
@@ -544,8 +544,8 @@ impl_simd_int! {
           let m2367 = unpack_high_i64_m256i(even_wide_mul, odd_wide_mul);
 
           cast([
-            shuffle_abi_i128z_all_m256i::<0b_1010_0000>(m0156, m2367),
-            shuffle_abi_i128z_all_m256i::<0b_1011_0001>(m0156, m2367),
+            shuffle_abi_i128z_all_m256i::<0b_1010_0000>(m0145, m2367),
+            shuffle_abi_i128z_all_m256i::<0b_1011_0001>(m0145, m2367),
           ])
         } else {
           let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
@@ -570,8 +570,8 @@ impl_simd_int! {
         let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
 
         (
-          Self { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) },
-          Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) },
+          u32x8 { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) },
+          i32x8 { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) },
         )
       } else {
         let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);

@@ -518,10 +518,10 @@ impl_simd_int! {
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
         // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
         (
-          Self {
+          u32x16 {
             avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
           },
-          Self {
+          i32x16 {
             avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
           },
         )
@@ -544,9 +544,9 @@ impl_simd_int! {
     pick! {
       if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
         #[cfg(target_arch = "x86")]
-        use core::arch::x86::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
+        use core::arch::x86::_mm512_unpackhi_epi64;
         #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
+        use core::arch::x86_64::_mm512_unpackhi_epi64;
 
         let even_wide_mul = mul_i32_wide_m512i(self.avx512, rhs.avx512);
         let odd_wide_mul = mul_i32_wide_m512i(
@@ -558,7 +558,7 @@ impl_simd_int! {
         // TODO(safe_arch): Add `_mm512_unpackhi_epi64`.
         Self {
           avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        },
+        }
       } else {
         let [self_a, self_b] = cast::<i32x16, [i32x8; 2]>(self);
         let [rhs_a, rhs_b] = cast::<i32x16, [i32x8; 2]>(rhs);
