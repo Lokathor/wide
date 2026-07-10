@@ -1021,8 +1021,8 @@ impl_simd_int! {
           );
           let low_high = vuzpq_s16(low_wide_mul, high_wide_mul);
           (
-            Self { neon: low_high.0 },
-            Self { neon: low_high.1 },
+            u16x8 { neon: vreinterpretq_u16_s16(low_high.0) },
+            i16x8 { neon: low_high.1 },
           )
         }
       } else {

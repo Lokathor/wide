@@ -1086,14 +1086,13 @@ impl_simd_int! {
       pick! {
         if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
           unsafe {
-            let low_wide_mul = vreinterpretq_s8_s16(
-              vmull_s8(vget_low_s8(self.neon), vget_low_s8(rhs.neon)),
-            );
-            let high_wide_mul = vreinterpretq_s8_s16(
-              vmull_s8(vget_high_s8(self.neon), vget_high_s8(rhs.neon)),
-            );
+            let low_wide_mul = vmull_s8(vget_low_s8(self.neon), vget_low_s8(rhs.neon));
+            let high_wide_mul = vmull_s8(vget_high_s8(self.neon), vget_high_s8(rhs.neon));
 
-            cast([low_wide_mul, high_wide_mul])
+            i16x16 {
+              a: i16x8 { neon: low_wide_mul },
+              b: i16x8 { neon: high_wide_mul },
+            }
           }
         } else {
           let self_array = self.to_array();
@@ -1136,8 +1135,8 @@ impl_simd_int! {
           let low_high = vuzpq_s8(low_wide_mul, high_wide_mul);
 
           (
-            Self { neon: low_high.0 },
-            Self { neon: low_high.1 },
+            u8x16 { neon: vreinterpretq_u8_s8(low_high.0) },
+            i8x16 { neon: low_high.1 },
           )
         }
       } else {

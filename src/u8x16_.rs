@@ -978,14 +978,13 @@ impl_simd_uint! {
       pick! {
         if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
           unsafe {
-            let low_wide_mul = vreinterpretq_u8_u16(
-              vmull_u8(vget_low_u8(self.neon), vget_low_u8(rhs.neon)),
-            );
-            let high_wide_mul = vreinterpretq_u8_u16(
-              vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon)),
-            );
+            let low_wide_mul = vmull_u8(vget_low_u8(self.neon), vget_low_u8(rhs.neon));
+            let high_wide_mul = vmull_u8(vget_high_u8(self.neon), vget_high_u8(rhs.neon));
 
-            cast([low_wide_mul, high_wide_mul])
+            u16x16 {
+              a: u16x8 { neon: low_wide_mul },
+              b: u16x8 { neon: high_wide_mul },
+            }
           }
         } else {
           let self_array = self.to_array();
