@@ -6,10 +6,14 @@ macro_rules! impl_simd {
     // - `Pod` can be implemented for `Simd`
     // - `size_of::<Simd>()` is `size_of::<T>() * N`
     // - `align_of::<Simd>()` is `size_of::<Simd>()`
+    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
+      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
+      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
+      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
 
     $fn_simd_eq:item
@@ -83,6 +87,98 @@ macro_rules! impl_simd {
         result
       }
     }
+
+    $(
+      #[cfg(target_arch = "x86")]
+      impl From<core::arch::x86::$X86Inner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::x86::$X86Inner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::x86::$X86Inner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "x86")]
+      impl From<$Simd> for core::arch::x86::$X86Inner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::x86::$X86Inner>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "x86_64")]
+      impl From<core::arch::x86_64::$X86Inner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::x86_64::$X86Inner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::x86_64::$X86Inner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "x86_64")]
+      impl From<$Simd> for core::arch::x86_64::$X86Inner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::x86_64::$X86Inner>(value) }
+        }
+      }
+    )?
+    $(
+      #[cfg(target_arch = "aarch64")]
+      impl From<core::arch::aarch64::$ArmInner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::aarch64::$ArmInner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::aarch64::$ArmInner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "aarch64")]
+      impl From<$Simd> for core::arch::aarch64::$ArmInner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::aarch64::$ArmInner>(value) }
+        }
+      }
+    )?
+    $(
+      #[cfg(target_arch = "wasm32")]
+      impl From<core::arch::wasm32::$WasmInner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::wasm32::$WasmInner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::wasm32::$WasmInner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "wasm32")]
+      impl From<$Simd> for core::arch::wasm32::$WasmInner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::wasm32::$WasmInner>(value) }
+        }
+      }
+    )?
 
     macro_rules! impl_formatting_trait {
       ($Trait:path) => {

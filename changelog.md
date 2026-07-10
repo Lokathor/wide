@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Added conversions between `wide` types and native intrinsics SIMD types.
+* Added `reduce_mul` for integers.
 * Added integer functions `reduce_mul` and `mul_keep_low_high`.
 
 * Added overflowing arithmetic for integers.
