@@ -8,6 +8,7 @@
 #![allow(clippy::unusual_byte_groupings)]
 #![allow(clippy::misrefactored_assign_op)]
 #![allow(clippy::approx_constant)]
+#![forbid(missing_docs)]
 
 //! A crate to help you go wide.
 //!
