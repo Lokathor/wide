@@ -246,6 +246,9 @@ pub use i16x32_::*;
 mod i8x32_;
 pub use i8x32_::*;
 
+mod i8x64_;
+pub use i8x64_::*;
+
 mod i16x8_;
 pub use i16x8_::*;
 
@@ -272,6 +275,9 @@ pub use u8x16_::*;
 
 mod u8x32_;
 pub use u8x32_::*;
+
+mod u8x64_;
+pub use u8x64_::*;
 
 mod u16x8_;
 pub use u16x8_::*;

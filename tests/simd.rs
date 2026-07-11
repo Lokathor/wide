@@ -2078,13 +2078,13 @@ fn test_to_bitmask() {
         .chain(random_iter())
     {
       let expected = (0..N)
-        .map(|i| if value[i].is_negative() { 1 << i } else { 0 })
-        .fold(0, u32::bitor);
-      let actual = Simd::new(value).to_bitmask();
+        .map(|i| if value[i].is_negative() { 1u64 << i } else { 0 })
+        .fold(0u64, u64::bitor);
+      let actual = Simd::new(value).to_bitmask() as u64;
 
       assert!(
         actual == expected,
-        "expected: {expected:0>32b}\n  actual: {actual:0>32b}\n   value: {value:?}",
+        "expected: {expected:0>64b}\n  actual: {actual:0>64b}\n   value: {value:?}",
       );
     }
   });
@@ -2094,13 +2094,13 @@ fn test_to_bitmask() {
         .chain(random_iter())
     {
       let expected = (0..N)
-        .map(|i| if value[i] > T::MAX >> 1 { 1 << i } else { 0 })
-        .fold(0, u32::bitor);
-      let actual = Simd::new(value).to_bitmask();
+        .map(|i| if value[i] > T::MAX >> 1 { 1u64 << i } else { 0 })
+        .fold(0u64, u64::bitor);
+      let actual = Simd::new(value).to_bitmask() as u64;
 
       assert!(
         actual == expected,
-        "expected: {expected:0>32b}\n  actual: {actual:0>32b}\n   value: {value:?}",
+        "expected: {expected:0>64b}\n  actual: {actual:0>64b}\n   value: {value:?}",
       );
     }
   });
