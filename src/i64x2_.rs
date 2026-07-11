@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct i64x2 { pub(crate) neon : int64x2_t }
+    pub struct i64x2 { pub(crate) neon: int64x2_t }
 
     impl Default for i64x2 {
       #[inline]
@@ -249,7 +249,7 @@ impl_simd! {
       } else if #[cfg(target_feature="simd128")] {
         i64x2_bitmask(self.simd) != 0
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000000000000) != 0
       }
     }
@@ -265,7 +265,7 @@ impl_simd! {
       }  else if #[cfg(target_feature="simd128")] {
         i64x2_bitmask(self.simd) == 0b11
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
       }
     }

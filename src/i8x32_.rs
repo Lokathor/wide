@@ -8,7 +8,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i8x32 { a : i8x16, b : i8x16 }
+    pub struct i8x32 { a: i8x16, b: i8x16 }
   }
 }
 
@@ -26,11 +26,11 @@ impl_simd! {
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }
+        Self { avx: cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
+          a: self.a.simd_eq(rhs.a),
+          b: self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -43,8 +43,8 @@ impl_simd! {
         !self.simd_eq(rhs)
       } else {
         Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
+          a: self.a.simd_ne(rhs.a),
+          b: self.b.simd_ne(rhs.b),
         }
       }
     }
@@ -59,11 +59,11 @@ impl_simd! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
+        Self { avx: cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a: self.a.simd_gt(rhs.a),
+          b: self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -76,8 +76,8 @@ impl_simd! {
         !self.simd_gt(rhs)
       } else {
         Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
+          a: self.a.simd_le(rhs.a),
+          b: self.b.simd_le(rhs.b),
         }
       }
     }
@@ -90,8 +90,8 @@ impl_simd! {
         !self.simd_lt(rhs)
       } else {
         Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
+          a: self.a.simd_ge(rhs.a),
+          b: self.b.simd_ge(rhs.b),
         }
       }
     }
@@ -109,8 +109,8 @@ impl_simd! {
         }
       } else {
         Self {
-          a : self.a.bitselect(if_one.a, if_zero.a),
-          b : self.b.bitselect(if_one.b, if_zero.b),
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
         }
       }
     }
@@ -123,8 +123,8 @@ impl_simd! {
         Self { avx: blend_varying_i8_m256i(if_false.avx, if_true.avx, self.avx) }
       } else {
         Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
+          a: self.a.select(if_true.a, if_false.a),
+          b: self.b.select(if_true.b, if_false.b),
         }
       }
     }
@@ -264,8 +264,8 @@ impl_simd_int! {
         Self { avx: self.avx.not()  }
       } else {
         Self {
-          a : self.a.not(),
-          b : self.b.not(),
+          a: self.a.not(),
+          b: self.b.not(),
         }
       }
     }
@@ -278,8 +278,8 @@ impl_simd_int! {
         Self { avx: add_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
+          a: self.a.add(rhs.a),
+          b: self.b.add(rhs.b),
         }
       }
     }
@@ -292,8 +292,8 @@ impl_simd_int! {
         Self { avx: sub_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
+          a: self.a.sub(rhs.a),
+          b: self.b.sub(rhs.b),
         }
       }
     }
@@ -351,11 +351,11 @@ impl_simd_int! {
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-          Self { avx : bitand_m256i(self.avx,rhs.avx) }
+          Self { avx: bitand_m256i(self.avx,rhs.avx) }
       } else {
           Self {
-            a : self.a.bitand(rhs.a),
-            b : self.b.bitand(rhs.b),
+            a: self.a.bitand(rhs.a),
+            b: self.b.bitand(rhs.b),
           }
       }
     }
@@ -365,11 +365,11 @@ impl_simd_int! {
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : bitor_m256i(self.avx,rhs.avx) }
+        Self { avx: bitor_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
+          a: self.a.bitor(rhs.a),
+          b: self.b.bitor(rhs.b),
         }
       }
     }
@@ -379,11 +379,11 @@ impl_simd_int! {
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : bitxor_m256i(self.avx,rhs.avx) }
+        Self { avx: bitxor_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
+          a: self.a.bitxor(rhs.a),
+          b: self.b.bitxor(rhs.b),
         }
       }
     }
@@ -396,8 +396,8 @@ impl_simd_int! {
         Self { avx: max_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
+          a: self.a.max(rhs.a),
+          b: self.b.max(rhs.b),
         }
       }
     }
@@ -410,8 +410,8 @@ impl_simd_int! {
         Self { avx: min_i8_m256i(self.avx,rhs.avx) }
       } else {
         Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
+          a: self.a.min(rhs.a),
+          b: self.b.min(rhs.b),
         }
       }
     }
@@ -448,8 +448,8 @@ impl_simd_int! {
         Self { avx: add_saturating_i8_m256i(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.saturating_add(rhs.a),
-          b : self.b.saturating_add(rhs.b),
+          a: self.a.saturating_add(rhs.a),
+          b: self.b.saturating_add(rhs.b),
         }
       }
     }
@@ -462,8 +462,8 @@ impl_simd_int! {
         Self { avx: sub_saturating_i8_m256i(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.saturating_sub(rhs.a),
-          b : self.b.saturating_sub(rhs.b),
+          a: self.a.saturating_sub(rhs.a),
+          b: self.b.saturating_sub(rhs.b),
         }
       }
     }
@@ -522,8 +522,8 @@ impl_simd_int! {
         Self { avx: abs_i8_m256i(self.avx) }
       } else {
         Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
+          a: self.a.abs(),
+          b: self.b.abs(),
         }
       }
     }
@@ -576,8 +576,8 @@ impl i8x32 {
         Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.saturating_add(i8x32::splat(0x60)).avx) }
       } else {
           Self {
-            a : self.a.swizzle(rhs.a),
-            b : self.b.swizzle(rhs.b),
+            a: self.a.swizzle(rhs.a),
+            b: self.b.swizzle(rhs.b),
           }
       }
     }
@@ -599,8 +599,8 @@ impl i8x32 {
         Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.swizzle_relaxed(rhs.a),
-          b : self.b.swizzle_relaxed(rhs.b),
+          a: self.a.swizzle_relaxed(rhs.a),
+          b: self.b.swizzle_relaxed(rhs.b),
         }
       }
     }

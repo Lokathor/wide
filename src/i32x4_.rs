@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct i32x4 { pub(crate) neon : int32x4_t }
+    pub struct i32x4 { pub(crate) neon: int32x4_t }
 
     impl Default for i32x4 {
       #[inline]
@@ -233,7 +233,7 @@ impl_simd! {
           let masked = vcltq_s32(self.neon, vdupq_n_s32(0));
 
           // select the right bit out of each lane
-          let selectbit : uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
+          let selectbit: uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
           let r = vandq_u32(masked, selectbit);
 
           // horizontally add the 32-bit lanes
@@ -262,7 +262,7 @@ impl_simd! {
           vminvq_s32(self.neon) < 0
         }
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000080000000) != 0
       }
     }
@@ -282,7 +282,7 @@ impl_simd! {
           vmaxvq_s32(self.neon) < 0
         }
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
       }
     }

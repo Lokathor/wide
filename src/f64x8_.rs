@@ -8,7 +8,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(64))]
-    pub struct f64x8 { pub(crate) a : f64x4, pub(crate) b : f64x4 }
+    pub struct f64x8 { pub(crate) a: f64x4, pub(crate) b: f64x4 }
   }
 }
 
@@ -36,8 +36,8 @@ impl_simd! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
+          a: self.a.simd_eq(rhs.a),
+          b: self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -50,8 +50,8 @@ impl_simd! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
+          a: self.a.simd_ne(rhs.a),
+          b: self.b.simd_ne(rhs.b),
         }
       }
     }
@@ -64,8 +64,8 @@ impl_simd! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
+          a: self.a.simd_lt(rhs.a),
+          b: self.b.simd_lt(rhs.b),
         }
       }
     }
@@ -78,8 +78,8 @@ impl_simd! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a: self.a.simd_gt(rhs.a),
+          b: self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -92,8 +92,8 @@ impl_simd! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
+          a: self.a.simd_le(rhs.a),
+          b: self.b.simd_le(rhs.b),
         }
       }
     }
@@ -106,8 +106,8 @@ impl_simd! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
+          a: self.a.simd_ge(rhs.a),
+          b: self.b.simd_ge(rhs.b),
         }
       }
     }
@@ -139,8 +139,8 @@ impl_simd! {
         Self { avx512: blend_varying_m512d(if_false.avx512, if_true.avx512, movepi64_mask_m512d(self.avx512)) }
       } else {
         Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
+          a: self.a.select(if_true.a, if_false.a),
+          b: self.b.select(if_true.b, if_false.b),
         }
       }
     }
@@ -226,8 +226,8 @@ impl_simd_float! {
         Self { avx512: bitxor_m512d(self.avx512, Self::splat(-0.0).avx512) }
       } else {
         Self {
-          a : self.a.neg(),
-          b : self.b.neg(),
+          a: self.a.neg(),
+          b: self.b.neg(),
         }
       }
     }
@@ -240,8 +240,8 @@ impl_simd_float! {
         Self { avx512: bitxor_m512d(self.avx512, set_splat_m512d(f64::from_bits(u64::MAX))) }
       } else {
         Self {
-          a : self.a.not(),
-          b : self.b.not(),
+          a: self.a.not(),
+          b: self.b.not(),
         }
       }
     }
@@ -254,8 +254,8 @@ impl_simd_float! {
         Self { avx512: add_m512d(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
+          a: self.a.add(rhs.a),
+          b: self.b.add(rhs.b),
         }
       }
     }
@@ -268,8 +268,8 @@ impl_simd_float! {
         Self { avx512: sub_m512d(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
+          a: self.a.sub(rhs.a),
+          b: self.b.sub(rhs.b),
         }
       }
     }
@@ -318,8 +318,8 @@ impl_simd_float! {
         Self { avx512: bitand_m512d(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
+          a: self.a.bitand(rhs.a),
+          b: self.b.bitand(rhs.b),
         }
       }
     }
@@ -332,8 +332,8 @@ impl_simd_float! {
         Self { avx512: bitor_m512d(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
+          a: self.a.bitor(rhs.a),
+          b: self.b.bitor(rhs.b),
         }
       }
     }
@@ -346,8 +346,8 @@ impl_simd_float! {
         Self { avx512: bitxor_m512d(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
+          a: self.a.bitxor(rhs.a),
+          b: self.b.bitxor(rhs.b),
         }
       }
     }
@@ -479,8 +479,8 @@ impl_simd_float! {
         Self { avx512: max_m512d(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.fast_max(rhs.a),
-          b : self.b.fast_max(rhs.b),
+          a: self.a.fast_max(rhs.a),
+          b: self.b.fast_max(rhs.b),
         }
       }
     }
@@ -507,8 +507,8 @@ impl_simd_float! {
         Self { avx512: min_m512d(self.avx512, rhs.avx512) }
       } else {
         Self {
-          a : self.a.fast_min(rhs.a),
-          b : self.b.fast_min(rhs.b),
+          a: self.a.fast_min(rhs.a),
+          b: self.b.fast_min(rhs.b),
         }
       }
     }
@@ -568,8 +568,8 @@ impl_simd_float! {
         Self { avx512: round_m512d::<{round_op!(NegInf)}>(self.avx512) }
       } else {
         Self {
-          a : self.a.floor(),
-          b : self.b.floor(),
+          a: self.a.floor(),
+          b: self.b.floor(),
         }
       }
     }
@@ -582,8 +582,8 @@ impl_simd_float! {
         Self { avx512: round_m512d::<{round_op!(PosInf)}>(self.avx512) }
       } else {
         Self {
-          a : self.a.ceil(),
-          b : self.b.ceil(),
+          a: self.a.ceil(),
+          b: self.b.ceil(),
         }
       }
     }
@@ -771,8 +771,8 @@ impl_simd_float! {
         (self * m) + a
       } else {
         Self {
-          a : self.a.mul_add(m.a, a.a),
-          b : self.b.mul_add(m.b, a.b),
+          a: self.a.mul_add(m.a, a.a),
+          b: self.b.mul_add(m.b, a.b),
         }
       }
     }
@@ -808,8 +808,8 @@ impl_simd_float! {
         (self * m) - s
       } else {
         Self {
-          a : self.a.mul_sub(m.a, s.a),
-          b : self.b.mul_sub(m.b, s.b),
+          a: self.a.mul_sub(m.a, s.a),
+          b: self.b.mul_sub(m.b, s.b),
         }
       }
     }
@@ -845,8 +845,8 @@ impl_simd_float! {
         a - (self * m)
       } else {
         Self {
-          a : self.a.mul_neg_add(m.a, a.a),
-          b : self.b.mul_neg_add(m.b, a.b),
+          a: self.a.mul_neg_add(m.a, a.a),
+          b: self.b.mul_neg_add(m.b, a.b),
         }
       }
     }
@@ -882,8 +882,8 @@ impl_simd_float! {
           -(self * m) - s
         } else {
          Self {
-           a : self.a.mul_neg_sub(m.a, s.a),
-           b : self.b.mul_neg_sub(m.b, s.b),
+           a: self.a.mul_neg_sub(m.a, s.a),
+           b: self.b.mul_neg_sub(m.b, s.b),
          }
        }
     }
@@ -1020,8 +1020,8 @@ impl_simd_float! {
         Self { avx512: sqrt_m512d(self.avx512) }
       } else {
         Self {
-          a : self.a.sqrt(),
-          b : self.b.sqrt(),
+          a: self.a.sqrt(),
+          b: self.b.sqrt(),
         }
       }
     }

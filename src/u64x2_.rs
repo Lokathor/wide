@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct u64x2 { pub(crate) neon : uint64x2_t }
+    pub struct u64x2 { pub(crate) neon: uint64x2_t }
 
     impl Default for u64x2 {
       #[inline]

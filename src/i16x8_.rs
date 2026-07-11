@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct i16x8 { pub(crate) neon : int16x8_t }
+    pub struct i16x8 { pub(crate) neon: int16x8_t }
 
     impl Default for i16x8 {
       #[inline]
@@ -256,7 +256,7 @@ impl_simd! {
           let masked = vcltq_s16(self.neon, vdupq_n_s16(0));
 
           // select the right bit out of each lane
-          let selectbit : uint16x8_t = core::mem::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
+          let selectbit: uint16x8_t = core::mem::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
           let r = vandq_u16(masked, selectbit);
 
           // horizontally add the 16-bit lanes
@@ -287,7 +287,7 @@ impl_simd! {
           vminvq_s16(self.neon) < 0
         }
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000800080008000) != 0
       }
     }
@@ -305,7 +305,7 @@ impl_simd! {
           vmaxvq_s16(self.neon) < 0
         }
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         (v[0] & v[1] & 0x8000800080008000) == 0x8000800080008000
       }
     }
@@ -346,7 +346,7 @@ impl_simd! {
         ]
      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
 
-          #[inline] fn vtrq32(a : int16x8_t, b : int16x8_t) -> (int16x8_t, int16x8_t)
+          #[inline] fn vtrq32(a: int16x8_t, b: int16x8_t) -> (int16x8_t, int16x8_t)
           {
               unsafe {
                 let r = vtrnq_s32(vreinterpretq_s32_s16(a),vreinterpretq_s32_s16(b));
@@ -380,12 +380,12 @@ impl_simd! {
           ]
         }
       } else if #[cfg(target_feature="simd128")] {
-        #[inline] fn lo_i16(a : v128, b : v128) -> v128 { i16x8_shuffle::<0, 8, 1, 9, 2, 10, 3, 11>(a,b) }
-        #[inline] fn hi_i16(a : v128, b : v128) -> v128 { i16x8_shuffle::<4, 12, 5, 13, 6, 14, 7, 15>(a,b) }
-        #[inline] fn lo_i32(a : v128, b : v128) -> v128 { i32x4_shuffle::<0, 4, 1, 5>(a,b) }
-        #[inline] fn hi_i32(a : v128, b : v128) -> v128 { i32x4_shuffle::<2, 6, 3, 7>(a,b) }
-        #[inline] fn lo_i64(a : v128, b : v128) -> v128 { i64x2_shuffle::<0, 2>(a,b) }
-        #[inline] fn hi_i64(a : v128, b : v128) -> v128 { i64x2_shuffle::<1, 3>(a,b) }
+        #[inline] fn lo_i16(a: v128, b: v128) -> v128 { i16x8_shuffle::<0, 8, 1, 9, 2, 10, 3, 11>(a,b) }
+        #[inline] fn hi_i16(a: v128, b: v128) -> v128 { i16x8_shuffle::<4, 12, 5, 13, 6, 14, 7, 15>(a,b) }
+        #[inline] fn lo_i32(a: v128, b: v128) -> v128 { i32x4_shuffle::<0, 4, 1, 5>(a,b) }
+        #[inline] fn hi_i32(a: v128, b: v128) -> v128 { i32x4_shuffle::<2, 6, 3, 7>(a,b) }
+        #[inline] fn lo_i64(a: v128, b: v128) -> v128 { i64x2_shuffle::<0, 2>(a,b) }
+        #[inline] fn hi_i64(a: v128, b: v128) -> v128 { i64x2_shuffle::<1, 3>(a,b) }
 
         let a1 = lo_i16(data[0].simd, data[1].simd);
         let a2 = hi_i16(data[0].simd, data[1].simd);
@@ -1234,7 +1234,7 @@ impl i16x8 {
           i16x8 { neon: vcombine_s16(vqmovn_s32(v.a.neon), vqmovn_s32(v.b.neon)) }
         }
       } else {
-        fn clamp(a : i32) -> i16 {
+        fn clamp(a: i32) -> i16 {
             if a < i16::MIN as i32 {
                 i16::MIN
             }
