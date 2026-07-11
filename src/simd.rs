@@ -6,10 +6,14 @@ macro_rules! impl_simd {
     // - `Pod` can be implemented for `Simd`
     // - `size_of::<Simd>()` is `size_of::<T>() * N`
     // - `align_of::<Simd>()` is `size_of::<Simd>()`
+    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
+      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
+      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
+      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
 
     $fn_simd_eq:item
@@ -49,6 +53,135 @@ macro_rules! impl_simd {
         Self::splat(elem)
       }
     }
+
+    impl From<&[$T]> for $Simd {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
+      #[inline]
+      fn from(value: &[$T]) -> Self {
+        assert!(
+          value.len() <= $N,
+          concat!(
+            "slice has more elements than `",
+            stringify!($Simd),
+            "` can store",
+          ),
+        );
+
+        // SAFETY: `$Simd` accepts all bit-patterns, including all zeros.
+        let mut result = unsafe { core::mem::zeroed::<$Simd>() };
+
+        // SAFETY: `value` is valid for its own length, and `result` is valid
+        // because its length is checked to be less than or equal to
+        // `value.len()`. Both pointers are properly aligned because they
+        // originate from a slice of `$T`. The regions of memory do not overlap
+        // because they originate from a shared reference and a mutable
+        // reference.
+        unsafe {
+          core::ptr::copy_nonoverlapping::<$T>(
+            value.as_ptr(),
+            result.as_mut_array().as_mut_ptr(),
+            value.len()
+          );
+        }
+
+        result
+      }
+    }
+
+    $(
+      #[cfg(target_arch = "x86")]
+      impl From<core::arch::x86::$X86Inner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::x86::$X86Inner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::x86::$X86Inner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "x86")]
+      impl From<$Simd> for core::arch::x86::$X86Inner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::x86::$X86Inner>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "x86_64")]
+      impl From<core::arch::x86_64::$X86Inner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::x86_64::$X86Inner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::x86_64::$X86Inner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "x86_64")]
+      impl From<$Simd> for core::arch::x86_64::$X86Inner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::x86_64::$X86Inner>(value) }
+        }
+      }
+    )?
+    $(
+      #[cfg(target_arch = "aarch64")]
+      impl From<core::arch::aarch64::$ArmInner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::aarch64::$ArmInner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::aarch64::$ArmInner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "aarch64")]
+      impl From<$Simd> for core::arch::aarch64::$ArmInner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::aarch64::$ArmInner>(value) }
+        }
+      }
+    )?
+    $(
+      #[cfg(target_arch = "wasm32")]
+      impl From<core::arch::wasm32::$WasmInner> for $Simd {
+        /// Converts a native intrinsics SIMD type to a high-level SIMD type.
+        #[inline]
+        fn from(value: core::arch::wasm32::$WasmInner) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<core::arch::wasm32::$WasmInner, $Simd>(value) }
+        }
+      }
+
+      #[cfg(target_arch = "wasm32")]
+      impl From<$Simd> for core::arch::wasm32::$WasmInner {
+        /// Converts a high-level SIMD type to a native intrinsics SIMD type.
+        #[inline]
+        fn from(value: $Simd) -> Self {
+          // SAFETY: Both types are expected to accept all bit-patterns and to
+          // only contain initialized memory.
+          unsafe { core::mem::transmute::<$Simd, core::arch::wasm32::$WasmInner>(value) }
+        }
+      }
+    )?
 
     macro_rules! impl_formatting_trait {
       ($Trait:path) => {

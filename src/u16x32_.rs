@@ -29,6 +29,9 @@ impl_simd! {
     T = u16,
     N = 32,
     Simd = u16x32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
   }
 
   #[inline]
@@ -176,6 +179,8 @@ impl_simd_uint! {
     T = u16,
     N = 32,
     Simd = u16x32,
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
     [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -423,22 +428,37 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let [self_a, self_b]: [u16x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
-    cast([self_a.saturating_mul(rhs_a), self_b.saturating_mul(rhs_b)])
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let overflow = high.simd_ne(Self::ZERO);
+    (low, overflow)
+  }
+
+  optional_fn_widening_mul {
+    // Cannot have `widening_mul` because there is no `u32x32` type.
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
     // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
     // optimization.
 
     let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
     let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
 
-    let result_a = self_a.overflowing_mul(rhs_a);
-    let result_b = self_b.overflowing_mul(rhs_b);
+    let result_a = self_a.mul_keep_low_high(rhs_a);
+    let result_b = self_b.mul_keep_low_high(rhs_b);
     (cast([result_a.0, result_b.0]), cast([result_a.1, result_b.1]))
+  }
+
+  #[inline]
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
+    // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
+    // optimization.
+
+    let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
+
+    cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
   }
 }

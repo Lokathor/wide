@@ -85,6 +85,9 @@ impl_simd! {
     T = i64,
     N = 2,
     Simd = i64x2,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
   }
 
   #[inline]
@@ -318,6 +321,8 @@ impl_simd_int! {
     N = 2,
     Simd = i64x2,
     UnsignedSimd = u64x2,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
     [0, 1],
   }
 
@@ -629,20 +634,10 @@ impl_simd_int! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    Self::new([
-      self_array[0].saturating_mul(rhs_array[0]),
-      self_array[1].saturating_mul(rhs_array[1]),
-    ])
-  }
-
-  #[inline]
   pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
-    // one?
+    // one? This intentionally avoids `mul_keep_low_high` because getting the
+    // high bits of 64-bit multiplication could be slow.
 
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
@@ -655,6 +650,46 @@ impl_simd_int! {
       Self::new([result[0].0, result[1].0]),
       Self::new([-(result[0].1 as i64), -(result[1].1 as i64)]),
     )
+  }
+
+  optional_fn_widening_mul {
+    // Cannot have `widening_mul` because there is no `i128x2` type.
+  }
+
+  #[inline]
+  pub fn mul_keep_low_high(self, rhs: Self) -> (u64x2, i64x2) {
+    // TODO(perf): This implementation looks quite bad. Is there a better
+    // one?
+
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    let widening_mul = [
+      (self_array[0] as i128).wrapping_mul(rhs_array[0] as i128),
+      (self_array[1] as i128).wrapping_mul(rhs_array[1] as i128),
+    ];
+
+    (
+      u64x2::new([
+        widening_mul[0] as u64,
+        widening_mul[1] as u64,
+      ]),
+      i64x2::new([
+        (widening_mul[0] >> 64) as i64,
+        (widening_mul[1] >> 64) as i64,
+      ]),
+    )
+  }
+
+  #[inline]
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
+    let self_array = self.to_array();
+    let rhs_array = rhs.to_array();
+
+    Self::new([
+      ((self_array[0] as i128).wrapping_mul(rhs_array[0] as i128) >> 64) as i64,
+      ((self_array[1] as i128).wrapping_mul(rhs_array[1] as i128) >> 64) as i64,
+    ])
   }
 
   #[inline]

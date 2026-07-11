@@ -83,6 +83,9 @@ impl_simd! {
     T = u16,
     N = 8,
     Simd = u16x8,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint16x8_t },
+    optional_type_wasm_inner { WasmInner = v128 },
   }
 
   #[inline]
@@ -289,6 +292,8 @@ impl_simd_uint! {
     T = u16,
     N = 8,
     Simd = u16x8,
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7],
   }
 
@@ -783,61 +788,66 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn saturating_mul(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        let low_wide_mul = u32x4_extmul_low_u16x8(self.simd, rhs.simd);
-        let high_wide_mul = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
-        let low = Self { simd: u16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
-        let high = Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
+  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+    let (low, high) = self.mul_keep_low_high(rhs);
+    let overflow = high.simd_ne(Self::ZERO);
+    (low, overflow)
+  }
 
-        let no_overflow = high.simd_eq(Self::ZERO);
-        no_overflow.select(low, Self::MAX)
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          let low_wide_mul = vreinterpretq_u16_u32(
-            vmull_u16(vget_low_u16(self.neon), vget_low_u16(rhs.neon)),
-          );
-          let high_wide_mul = vreinterpretq_u16_u32(
-            vmull_u16(vget_high_u16(self.neon), vget_high_u16(rhs.neon)),
-          );
-          let low_high = vuzpq_u16(low_wide_mul, high_wide_mul);
-          let low = Self { neon: low_high.0 };
-          let high = Self { neon: low_high.1 };
+  optional_fn_widening_mul {
+    #[inline]
+    pub fn widening_mul(self, rhs: Self) -> u32x8 {
+      pick! {
+        if #[cfg(target_feature="avx2")] {
+          let a = convert_to_i32_m256i_from_u16_m128i(self.sse);
+          let b = convert_to_i32_m256i_from_u16_m128i(rhs.sse);
+          u32x8 { avx2: mul_i32_keep_low_m256i(a,b) }
+        } else if #[cfg(target_feature="sse2")] {
+          let low = mul_i16_keep_low_m128i(self.sse, rhs.sse);
+          let high = mul_u16_keep_high_m128i(self.sse, rhs.sse);
+          u32x8 {
+            a: u32x4 { sse:unpack_low_i16_m128i(low, high) },
+            b: u32x4 { sse:unpack_high_i16_m128i(low, high) }
+          }
+        } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+          let lhs_low = unsafe { vget_low_u16(self.neon) };
+          let rhs_low = unsafe { vget_low_u16(rhs.neon) };
 
-          let no_overflow = high.simd_eq(Self::ZERO);
-          no_overflow.select(low, Self::MAX)
+          let lhs_high = unsafe { vget_high_u16(self.neon) };
+          let rhs_high = unsafe { vget_high_u16(rhs.neon) };
+
+          let low = unsafe { vmull_u16(lhs_low, rhs_low) };
+          let high = unsafe { vmull_u16(lhs_high, rhs_high) };
+
+          u32x8 { a: u32x4 { neon: low }, b: u32x4 {neon: high } }
+        } else {
+          let a = self.as_array();
+          let b = rhs.as_array();
+          u32x8::new([
+            u32::from(a[0]) * u32::from(b[0]),
+            u32::from(a[1]) * u32::from(b[1]),
+            u32::from(a[2]) * u32::from(b[2]),
+            u32::from(a[3]) * u32::from(b[3]),
+            u32::from(a[4]) * u32::from(b[4]),
+            u32::from(a[5]) * u32::from(b[5]),
+            u32::from(a[6]) * u32::from(b[6]),
+            u32::from(a[7]) * u32::from(b[7]),
+          ])
         }
-      } else {
-        let self_array = self.to_array();
-        let rhs_array = rhs.to_array();
-
-        Self::new([
-          self_array[0].saturating_mul(rhs_array[0]),
-          self_array[1].saturating_mul(rhs_array[1]),
-          self_array[2].saturating_mul(rhs_array[2]),
-          self_array[3].saturating_mul(rhs_array[3]),
-          self_array[4].saturating_mul(rhs_array[4]),
-          self_array[5].saturating_mul(rhs_array[5]),
-          self_array[6].saturating_mul(rhs_array[6]),
-          self_array[7].saturating_mul(rhs_array[7]),
-        ])
       }
     }
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="simd128")] {
         let low_wide_mul = u32x4_extmul_low_u16x8(self.simd, rhs.simd);
         let high_wide_mul = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
-        let low = Self { simd: u16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) };
-        let high = Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) };
-
-        let overflow = high.simd_ne(Self::ZERO);
-
-        (low, overflow)
+        (
+          Self { simd: u16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) },
+          Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) },
+        )
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           let low_wide_mul = vreinterpretq_u16_u32(
@@ -847,12 +857,10 @@ impl_simd_uint! {
             vmull_u16(vget_high_u16(self.neon), vget_high_u16(rhs.neon)),
           );
           let low_high = vuzpq_u16(low_wide_mul, high_wide_mul);
-          let low = Self { neon: low_high.0 };
-          let high = Self { neon: low_high.1 };
-
-          let overflow = high.simd_ne(Self::ZERO);
-
-          (low, overflow)
+          (
+            Self { neon: low_high.0 },
+            Self { neon: low_high.1 },
+          )
         }
       } else {
         // TODO(perf): This implementation looks quite bad. Is there a better
@@ -861,7 +869,7 @@ impl_simd_uint! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        let widening_mul = cast::<[u32; 8], [[u16; 2]; 8]>([
+        let widening_mul = [
           (self_array[0] as u32).wrapping_mul(rhs_array[0] as u32),
           (self_array[1] as u32).wrapping_mul(rhs_array[1] as u32),
           (self_array[2] as u32).wrapping_mul(rhs_array[2] as u32),
@@ -870,31 +878,66 @@ impl_simd_uint! {
           (self_array[5] as u32).wrapping_mul(rhs_array[5] as u32),
           (self_array[6] as u32).wrapping_mul(rhs_array[6] as u32),
           (self_array[7] as u32).wrapping_mul(rhs_array[7] as u32),
-        ]);
-        let low = Self::new([
-          widening_mul[0][0],
-          widening_mul[1][0],
-          widening_mul[2][0],
-          widening_mul[3][0],
-          widening_mul[4][0],
-          widening_mul[5][0],
-          widening_mul[6][0],
-          widening_mul[7][0],
-        ]);
-        let high = Self::new([
-          widening_mul[0][1],
-          widening_mul[1][1],
-          widening_mul[2][1],
-          widening_mul[3][1],
-          widening_mul[4][1],
-          widening_mul[5][1],
-          widening_mul[6][1],
-          widening_mul[7][1],
-        ]);
+        ];
 
-        let overflow = high.simd_ne(Self::ZERO);
+        (
+          Self::new([
+            widening_mul[0] as u16,
+            widening_mul[1] as u16,
+            widening_mul[2] as u16,
+            widening_mul[3] as u16,
+            widening_mul[4] as u16,
+            widening_mul[5] as u16,
+            widening_mul[6] as u16,
+            widening_mul[7] as u16,
+          ]),
+          Self::new([
+            (widening_mul[0] >> 16) as u16,
+            (widening_mul[1] >> 16) as u16,
+            (widening_mul[2] >> 16) as u16,
+            (widening_mul[3] >> 16) as u16,
+            (widening_mul[4] >> 16) as u16,
+            (widening_mul[5] >> 16) as u16,
+            (widening_mul[6] >> 16) as u16,
+            (widening_mul[7] >> 16) as u16,
+          ]),
+        )
+      }
+    }
+  }
 
-        (low, overflow)
+  #[inline]
+  pub fn mul_keep_high(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: mul_u16_keep_high_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        let lhs_low = unsafe { vget_low_u16(self.neon) };
+        let rhs_low = unsafe { vget_low_u16(rhs.neon) };
+
+        let lhs_high = unsafe { vget_high_u16(self.neon) };
+        let rhs_high = unsafe { vget_high_u16(rhs.neon) };
+
+        let low = unsafe { vmull_u16(lhs_low, rhs_low) };
+        let high = unsafe { vmull_u16(lhs_high, rhs_high) };
+
+        u16x8 { neon: unsafe { vuzpq_u16(vreinterpretq_u16_u32(low), vreinterpretq_u16_u32(high)).1 } }
+      } else if #[cfg(target_feature="simd128")] {
+        let low =  u32x4_extmul_low_u16x8(self.simd, rhs.simd);
+        let high = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
+
+        Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
+      } else {
+        u16x8::new([
+          ((u32::from(rhs.as_array()[0]) * u32::from(self.as_array()[0])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[1]) * u32::from(self.as_array()[1])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[2]) * u32::from(self.as_array()[2])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[3]) * u32::from(self.as_array()[3])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[4]) * u32::from(self.as_array()[4])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[5]) * u32::from(self.as_array()[5])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[6]) * u32::from(self.as_array()[6])) >> 16) as u16,
+          ((u32::from(rhs.as_array()[7]) * u32::from(self.as_array()[7])) >> 16) as u16,
+        ])
       }
     }
   }
@@ -951,87 +994,18 @@ impl u16x8 {
     }
   }
 
-  /// Widening integer multiplication. Computes `self * rhs`, returning a wider
-  /// integer type in order to avoid overflowing.
+  /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
+  /// vector of larger integers.
+  ///
+  /// The returned value is always exact and can never overflow.
+  ///
+  /// This function has been renamed to [`widening_mul`].
+  ///
+  /// [`widening_mul`]: Self::widening_mul
   #[inline]
   #[must_use]
+  #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
   pub fn mul_widen(self, rhs: Self) -> u32x8 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let a = convert_to_i32_m256i_from_u16_m128i(self.sse);
-        let b = convert_to_i32_m256i_from_u16_m128i(rhs.sse);
-        u32x8 { avx2: mul_i32_keep_low_m256i(a,b) }
-      } else if #[cfg(target_feature="sse2")] {
-         let low = mul_i16_keep_low_m128i(self.sse, rhs.sse);
-         let high = mul_u16_keep_high_m128i(self.sse, rhs.sse);
-         u32x8 {
-          a: u32x4 { sse:unpack_low_i16_m128i(low, high) },
-          b: u32x4 { sse:unpack_high_i16_m128i(low, high) }
-        }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-         let lhs_low = unsafe { vget_low_u16(self.neon) };
-         let rhs_low = unsafe { vget_low_u16(rhs.neon) };
-
-         let lhs_high = unsafe { vget_high_u16(self.neon) };
-         let rhs_high = unsafe { vget_high_u16(rhs.neon) };
-
-         let low = unsafe { vmull_u16(lhs_low, rhs_low) };
-         let high = unsafe { vmull_u16(lhs_high, rhs_high) };
-
-         u32x8 { a: u32x4 { neon: low }, b: u32x4 {neon: high } }
-       } else {
-        let a = self.as_array();
-        let b = rhs.as_array();
-         u32x8::new([
-           u32::from(a[0]) * u32::from(b[0]),
-           u32::from(a[1]) * u32::from(b[1]),
-           u32::from(a[2]) * u32::from(b[2]),
-           u32::from(a[3]) * u32::from(b[3]),
-           u32::from(a[4]) * u32::from(b[4]),
-           u32::from(a[5]) * u32::from(b[5]),
-           u32::from(a[6]) * u32::from(b[6]),
-           u32::from(a[7]) * u32::from(b[7]),
-         ])
-       }
-    }
-  }
-
-  /// Computes `self * rhs`, producing intermediate 32-bit integers, then
-  /// returns their high 16-bit parts.
-  #[inline]
-  #[must_use]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: mul_u16_keep_high_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        let lhs_low = unsafe { vget_low_u16(self.neon) };
-        let rhs_low = unsafe { vget_low_u16(rhs.neon) };
-
-        let lhs_high = unsafe { vget_high_u16(self.neon) };
-        let rhs_high = unsafe { vget_high_u16(rhs.neon) };
-
-        let low = unsafe { vmull_u16(lhs_low, rhs_low) };
-        let high = unsafe { vmull_u16(lhs_high, rhs_high) };
-
-        u16x8 { neon: unsafe { vuzpq_u16(vreinterpretq_u16_u32(low), vreinterpretq_u16_u32(high)).1 } }
-      } else if #[cfg(target_feature="simd128")] {
-        let low =  u32x4_extmul_low_u16x8(self.simd, rhs.simd);
-        let high = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
-
-        Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
-      } else {
-        u16x8::new([
-          ((u32::from(rhs.as_array()[0]) * u32::from(self.as_array()[0])) >> 16) as u16,
-          ((u32::from(rhs.as_array()[1]) * u32::from(self.as_array()[1])) >> 16) as u16,
-          ((u32::from(rhs.as_array()[2]) * u32::from(self.as_array()[2])) >> 16) as u16,
-          ((u32::from(rhs.as_array()[3]) * u32::from(self.as_array()[3])) >> 16) as u16,
-          ((u32::from(rhs.as_array()[4]) * u32::from(self.as_array()[4])) >> 16) as u16,
-          ((u32::from(rhs.as_array()[5]) * u32::from(self.as_array()[5])) >> 16) as u16,
-          ((u32::from(rhs.as_array()[6]) * u32::from(self.as_array()[6])) >> 16) as u16,
-          ((u32::from(rhs.as_array()[7]) * u32::from(self.as_array()[7])) >> 16) as u16,
-        ])
-      }
-    }
+    self.widening_mul(rhs)
   }
 }
