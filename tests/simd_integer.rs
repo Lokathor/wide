@@ -922,6 +922,39 @@ fn test_swizzle_half() {
   assert_eq!(actual, expected);
 }
 
+/// Scalar reference: unsigned index in [0,31] selects table[idx], else 0.
+fn ref_swizzle32(table: [i8; 32], idx: [i8; 32]) -> [i8; 32] {
+  let mut out = [0i8; 32];
+  for i in 0..32 {
+    let ix = idx[i] as u8 as usize; // unsigned interpretation
+    out[i] = if ix < 32 { table[ix] } else { 0 };
+  }
+  out
+}
+
+#[test]
+fn test_i8x32_swizzle() {
+  let table_arr: [i8; 32] = core::array::from_fn(|i| (i as i8) + 1); // 1..=32
+  let table = i8x32::new(table_arr);
+  let cases: [[i8; 32]; 4] = [
+    core::array::from_fn(|i| i as i8), // identity
+    core::array::from_fn(|i| 31 - i as i8), // reverse
+    core::array::from_fn(|i| ((i + 16) % 32) as i8), // cross-half rotate by 16
+    {
+      let mut a = [3i8; 32];
+      a[0] = 32; // out of range -> 0
+      a[1] = 100; // out of range -> 0
+      a[2] = -1; // 255 unsigned -> 0
+      a
+    },
+  ];
+  for idx_arr in cases {
+    let expected = i8x32::new(ref_swizzle32(table_arr, idx_arr));
+    let actual = table.swizzle(i8x32::new(idx_arr));
+    assert_eq!(actual, expected, "idx={:?}", idx_arr);
+  }
+}
+
 #[test]
 fn test_from_u8x16_low() {
   // This function only exists for select types.
