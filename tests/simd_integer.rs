@@ -956,6 +956,22 @@ fn test_i8x32_swizzle() {
 }
 
 #[test]
+fn test_i8x32_swizzle_relaxed() {
+  let table_arr: [i8; 32] = core::array::from_fn(|i| (i as i8) + 1);
+  let table = i8x32::new(table_arr);
+  let cases: [[i8; 32]; 3] = [
+    core::array::from_fn(|i| i as i8),               // identity
+    core::array::from_fn(|i| 31 - i as i8),          // reverse
+    core::array::from_fn(|i| ((i + 16) % 32) as i8), // cross-half
+  ];
+  for idx_arr in cases {
+    let expected = i8x32::new(ref_swizzle32(table_arr, idx_arr)); // all in-range here
+    let actual = table.swizzle_relaxed(i8x32::new(idx_arr));
+    assert_eq!(actual, expected, "idx={:?}", idx_arr);
+  }
+}
+
+#[test]
 fn test_from_u8x16_low() {
   // This function only exists for select types.
 

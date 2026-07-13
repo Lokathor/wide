@@ -662,4 +662,46 @@ impl i8x32 {
       }
     }
   }
+
+  /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
+  /// `>= 32`) yield an implementation-defined result (`0` or `self[index % 32]`).
+  /// Prefer this when you know all indices are in range; it can be cheaper.
+  #[inline]
+  pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
+    pick! {
+      if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_permutexvar_epi8;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_permutexvar_epi8;
+        // TODO(safe_arch): Add `_mm256_permutexvar_epi8`.
+        Self { avx: m256i(unsafe { _mm256_permutexvar_epi8(rhs.avx.0, self.avx.0) }) }
+      } else if #[cfg(target_feature="avx2")] {
+        // Same broadcast+blend as strict, but skip the 0x60 zeroing fold.
+        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.avx, self.avx);
+        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.avx, self.avx);
+        let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, rhs.avx);
+        let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, rhs.avx);
+        let sel = shl_imm_u16_m256i::<3>(rhs.avx);
+        Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // vqtbl2 zeroes out-of-range anyway; identical to strict.
+        use core::arch::aarch64::{int8x16x2_t, vqtbl2q_s8, vreinterpretq_u8_s8};
+        unsafe {
+          let table = int8x16x2_t(self.a.neon, self.b.neon);
+          Self {
+            a: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.a.neon)) },
+            b: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.b.neon)) },
+          }
+        }
+      } else {
+        // Strict fallback is a valid relaxed implementation (it zeroes OOR).
+        let sixteen = i8x16::splat(16);
+        Self {
+          a: self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a - sixteen),
+          b: self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b - sixteen),
+        }
+      }
+    }
+  }
 }
