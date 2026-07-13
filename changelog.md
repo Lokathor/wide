@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Added `u8x32`/`i8x32` `swizzle` and `swizzle_relaxed`: a full-width 32-entry
+  byte table lookup (`vpermb` on AVX-512-VBMI, `vqtbl2` on NEON, emulated on
+  AVX2/SSSE3).
 * Added conversions between `wide` types and native intrinsics SIMD types.
 * Added `reduce_mul` for integers.
 * Added integer functions `reduce_mul` and `mul_keep_low_high`.
