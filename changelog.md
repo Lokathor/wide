@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fixed `i8x32`/`u8x32` `swizzle_half` on AVX2: out-of-range indices now
+  correctly zero their output lane (previously leaked `self[..][0]`).
 * Added conversions between `wide` types and native intrinsics SIMD types.
 * Added `reduce_mul` for integers.
 * Added integer functions `reduce_mul` and `mul_keep_low_high`.

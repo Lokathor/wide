@@ -923,6 +923,26 @@ fn test_swizzle_half() {
 }
 
 #[test]
+fn test_swizzle_half_out_of_range_zeroes() {
+  // `swizzle_half` is strict: any index outside `[0, 15]` (per half) must zero
+  // that output lane. This previously failed on the AVX2 path, which used a
+  // signed `saturating_add(0x60)` that cannot set the high bit that makes
+  // `pshufb` zero, so out-of-range indices leaked `self[..][0]`.
+  let value = i8x32::new([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+  ]);
+  for &bad in &[16i8, 17, 31, 100, -1, -128] {
+    let indices = i8x32::new([bad; 32]);
+    assert_eq!(
+      value.swizzle_half(indices),
+      i8x32::new([0i8; 32]),
+      "index {bad} is out of range and must zero every lane",
+    );
+  }
+}
+
+#[test]
 fn test_from_u8x16_low() {
   // This function only exists for select types.
 
