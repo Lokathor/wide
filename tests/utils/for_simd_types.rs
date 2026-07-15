@@ -18,7 +18,6 @@ use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
 /// // - type Simd
 /// // - type Signed
 /// // - type SimdSigned
-/// // - fn pow_simd (because its name differs for each type)
 /// for_simd_types!(|T: Float, N| ...);
 ///
 /// // Has access to:
@@ -47,12 +46,12 @@ macro_rules! for_simd_types {
     for_simd_types!(|T: Integer, N| $expr);
   };
   (|T: Float, N| $expr:expr) => {
-    for_simd_types!(float!(f32, 4, f32x4, i32, i32x4, pow_f32x4, $expr));
-    for_simd_types!(float!(f32, 8, f32x8, i32, i32x8, pow_f32x8, $expr));
-    for_simd_types!(float!(f32, 16, f32x16, i32, i32x16, pow_f32x16, $expr));
-    for_simd_types!(float!(f64, 2, f64x2, i64, i64x2, pow_f64x2, $expr));
-    for_simd_types!(float!(f64, 4, f64x4, i64, i64x4, pow_f64x4, $expr));
-    for_simd_types!(float!(f64, 8, f64x8, i64, i64x8, pow_f64x8, $expr));
+    for_simd_types!(float!(f32, 4, f32x4, i32, i32x4, $expr));
+    for_simd_types!(float!(f32, 8, f32x8, i32, i32x8, $expr));
+    for_simd_types!(float!(f32, 16, f32x16, i32, i32x16, $expr));
+    for_simd_types!(float!(f64, 2, f64x2, i64, i64x2, $expr));
+    for_simd_types!(float!(f64, 4, f64x4, i64, i64x4, $expr));
+    for_simd_types!(float!(f64, 8, f64x8, i64, i64x8, $expr));
   };
   (|T: Integer, N| $expr:expr) => {
     for_simd_types!(|T: Signed, N| $expr);
@@ -110,7 +109,7 @@ macro_rules! for_simd_types {
     // for_simd_types!(unsigned!(u64, 4, u64x4, u128, (u128x4), $expr));
     // for_simd_types!(unsigned!(u64, 8, u64x8, u128, (u128x8), $expr));
   };
-  (float!($T:ident, $N:literal, $Simd:ident, $Signed:ident, $SimdSigned:ident, $pow_simd:ident, $expr:expr)) => {{
+  (float!($T:ident, $N:literal, $Simd:ident, $Signed:ident, $SimdSigned:ident, $expr:expr)) => {{
     type Simd = wide::$Simd;
     #[allow(dead_code)]
     type T = $T;
@@ -120,10 +119,6 @@ macro_rules! for_simd_types {
     type Signed = $Signed;
     #[allow(dead_code)]
     type SimdSigned = wide::$SimdSigned;
-    #[allow(dead_code)]
-    #[expect(non_upper_case_globals)]
-    /// Points to `Simd::pow_{Simd}` which has a different name for each type.
-    const pow_simd: fn(Simd, Simd) -> Simd = Simd::$pow_simd;
     $crate::utils::for_simd_types_helper(|| $expr, stringify!($T), $N);
   }};
   (signed!(

@@ -1637,10 +1637,10 @@ fn test_log10() {
 }
 
 #[test]
-fn test_pow_simd() {
+fn test_powf_simd() {
   for_simd_types!(|T: Float, N| {
     #[expect(clippy::approx_constant)]
-    for [value, n] in simd_chunks!(
+    for [x, n] in simd_chunks!(
       [
         1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0,
         -3.1, -3.0, -4.0, 5.1,
@@ -1649,42 +1649,30 @@ fn test_pow_simd() {
         0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1,
         2.7, 4.0, -3.0, 29.0,
       ],
+    )
+    .chain(
+      simd_chunks!([
+        1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0,
+        -3.1, -3.0, -4.0, 5.1,
+      ])
+      .flat_map(|x| {
+        [
+          0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0,
+          0.1, 2.7, 4.0, -3.0, 29.0,
+        ]
+        .into_iter()
+        .map(move |n| [x, [n; N]])
+      }),
     ) {
-      let expected = Simd::new(std::array::from_fn(|i| value[i].powf(n[i])));
-      let actual = pow_simd(Simd::new(value), Simd::new(n));
+      let expected = Simd::new(std::array::from_fn(|i| x[i].powf(n[i])));
+      let actual = Simd::new(x).powf_simd(Simd::new(n));
 
       assert!(
         ((actual - expected).abs().simd_le(expected.abs() * 1e-6)
           | actual.is_nan() & expected.is_nan())
         .all(),
-        "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n       n: {n:?}",
+        "expected: {expected:?}\n  actual: {actual:?}\n       x: {x:?}\n       n: {n:?}",
       );
-    }
-  });
-}
-
-#[test]
-fn test_powf() {
-  for_simd_types!(|T: Float, N| {
-    for value in simd_chunks!([
-      1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0,
-      -3.1, -3.0, -4.0, 5.1,
-    ]) {
-      #[expect(clippy::approx_constant)]
-      for n in [
-        0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1,
-        2.7, 4.0, -3.0, 29.0,
-      ] {
-        let expected = Simd::new(std::array::from_fn(|i| value[i].powf(n)));
-        let actual = Simd::new(value).powf(n);
-
-        assert!(
-          ((actual - expected).abs().simd_le(expected.abs() * 1e-6)
-            | actual.is_nan() & expected.is_nan())
-          .all(),
-          "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n       n: {n:?}",
-        );
-      }
     }
   });
 }
