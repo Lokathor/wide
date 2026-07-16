@@ -289,7 +289,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u16x16) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -328,7 +328,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u16x16) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
         #[cfg(target_arch = "x86")]

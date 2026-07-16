@@ -321,7 +321,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u16x32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Mask `rhs` to 15 to match `wrapping_shl`.
@@ -354,7 +354,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u16x32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         #[cfg(target_arch = "x86")]

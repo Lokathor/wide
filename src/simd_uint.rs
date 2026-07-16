@@ -10,6 +10,7 @@ macro_rules! impl_simd_uint {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
+      SignedSimd = $SignedSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
@@ -114,6 +115,8 @@ macro_rules! impl_simd_uint {
     impl_shift_operator!(
       $T,
       $Simd,
+      $Simd,
+      $SignedSimd,
       Shl,
       shl,
       ShlAssign,
@@ -141,6 +144,8 @@ macro_rules! impl_simd_uint {
     impl_shift_operator!(
       $T,
       $Simd,
+      $Simd,
+      $SignedSimd,
       Shr,
       shr,
       ShrAssign,

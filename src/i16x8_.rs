@@ -535,7 +535,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u16x8) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -550,7 +550,7 @@ impl_simd_int! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           // Mask `rhs` to 15 to match `wrapping_shl`.
-          let rhs = vandq_s16(rhs.neon, vmovq_n_s16(15));
+          let rhs = vreinterpretq_s16_u16(vandq_u16(rhs.neon, vmovq_n_u16(15)));
           Self { neon: vshlq_s16(self.neon, rhs) }
         }
       } else {
@@ -601,7 +601,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u16x8) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -617,7 +617,7 @@ impl_simd_int! {
         unsafe {
           // Mask `rhs` to 15 to match `wrapping_shr`, and negate it because
           // there is no shift-right intrinsic.
-          let neg_rhs = vnegq_s16(vandq_s16(rhs.neon, vmovq_n_s16(15)));
+          let neg_rhs = vnegq_s16(vreinterpretq_s16_u16(vandq_u16(rhs.neon, vmovq_n_u16(15))));
           Self { neon: vshlq_s16(self.neon, neg_rhs) }
         }
       } else {

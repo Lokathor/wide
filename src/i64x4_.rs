@@ -287,7 +287,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u64x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 63 to have same behavior on all platforms
@@ -320,7 +320,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u64x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let arr: [i64; 4] = cast(self);

@@ -287,7 +287,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u64x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO(safe_arch): add shl_each_i64_m512i
@@ -333,7 +333,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u64x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)

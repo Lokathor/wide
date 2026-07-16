@@ -359,7 +359,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u64x2) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 63 to have same behavior on all platforms
@@ -368,12 +368,12 @@ impl_simd_int! {
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // mask the shift count to 63 to have same behavior on all platforms
-          let shift_by = vandq_s64(rhs.neon, vmovq_n_s64(63));
+          let shift_by = vreinterpretq_s64_u64(vandq_s64(rhs.neon, vmovq_n_s64(63)));
           Self { neon: vshlq_s64(self.neon, shift_by) }
         }
       } else {
         let arr: [i64; 2] = cast(self);
-        let rhs: [i64; 2] = cast(rhs);
+        let rhs: [u64; 2] = cast(rhs);
         cast([
           arr[0].wrapping_shl(rhs[0] as u32),
           arr[1].wrapping_shl(rhs[1] as u32),
@@ -406,18 +406,18 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u64x2) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // mask the shift count to 63 to have same behavior on all platforms
           // no right shift, have to pass negative value to left shift on neon
-          let shift_by = vnegq_s64(vandq_s64(rhs.neon, vmovq_n_s64(63)));
+          let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.neon, vmovq_n_u64(63))));
           Self { neon: vshlq_s64(self.neon, shift_by) }
         }
       } else {
         let arr: [i64; 2] = cast(self);
-        let rhs: [i64; 2] = cast(rhs);
+        let rhs: [u64; 2] = cast(rhs);
         cast([
           arr[0].wrapping_shr(rhs[0] as u32),
           arr[1].wrapping_shr(rhs[1] as u32),

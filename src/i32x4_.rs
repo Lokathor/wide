@@ -407,7 +407,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: i32x4) -> Self::Output {
+  fn shl(self, rhs: u32x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 31 to have same behavior on all platforms
@@ -416,17 +416,17 @@ impl_simd_int! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // mask the shift count to 31 to have same behavior on all platforms
-          let shift_by = vandq_s32(rhs.neon, vmovq_n_s32(31));
+          let shift_by = vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31)));
           Self { neon: vshlq_s32(self.neon, shift_by) }
         }
       } else {
         let arr: [i32; 4] = cast(self);
-        let rhs: [i32; 4] = cast(rhs);
+        let rhs: [u32; 4] = cast(rhs);
         cast([
-          arr[0].wrapping_shl(rhs[0] as u32),
-          arr[1].wrapping_shl(rhs[1] as u32),
-          arr[2].wrapping_shl(rhs[2] as u32),
-          arr[3].wrapping_shl(rhs[3] as u32),
+          arr[0].wrapping_shl(rhs[0]),
+          arr[1].wrapping_shl(rhs[1]),
+          arr[2].wrapping_shl(rhs[2]),
+          arr[3].wrapping_shl(rhs[3]),
         ])
       }
     }
@@ -458,7 +458,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: i32x4) -> Self::Output {
+  fn shr(self, rhs: u32x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 31 to have same behavior on all platforms
@@ -468,17 +468,17 @@ impl_simd_int! {
         unsafe {
           // mask the shift count to 31 to have same behavior on all platforms
           // no right shift, have to pass negative value to left shift on neon
-          let shift_by = vnegq_s32(vandq_s32(rhs.neon, vmovq_n_s32(31)));
+          let shift_by = vnegq_s32(vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31))));
           Self { neon: vshlq_s32(self.neon, shift_by) }
         }
       } else {
         let arr: [i32; 4] = cast(self);
-        let rhs: [i32; 4] = cast(rhs);
+        let rhs: [u32; 4] = cast(rhs);
         cast([
-          arr[0].wrapping_shr(rhs[0] as u32),
-          arr[1].wrapping_shr(rhs[1] as u32),
-          arr[2].wrapping_shr(rhs[2] as u32),
-          arr[3].wrapping_shr(rhs[3] as u32),
+          arr[0].wrapping_shr(rhs[0]),
+          arr[1].wrapping_shr(rhs[1]),
+          arr[2].wrapping_shr(rhs[2]),
+          arr[3].wrapping_shr(rhs[3]),
         ])
       }
     }

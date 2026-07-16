@@ -118,6 +118,8 @@ macro_rules! impl_simd_int {
     impl_shift_operator!(
       $T,
       $Simd,
+      $UnsignedSimd,
+      $Simd,
       Shl,
       shl,
       ShlAssign,
@@ -144,6 +146,8 @@ macro_rules! impl_simd_int {
     );
     impl_shift_operator!(
       $T,
+      $Simd,
+      $UnsignedSimd,
       $Simd,
       Shr,
       shr,

@@ -310,12 +310,12 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u8x32) -> Self::Output {
     // For x86, this technically can be done explicitly by converting to `i16`
     // or `i32` then converting back after multiplication, but that may not
     // actually be faster than auto-vectorization.
     let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
     cast([self_a << rhs_a, self_b << rhs_b])
   }
 
@@ -329,12 +329,12 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u8x32) -> Self::Output {
     // For x86, this technically can be done explicitly by converting to `i16`
     // or `i32` then converting back after multiplication, but that may not
     // actually be faster than auto-vectorization.
     let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
     cast([self_a >> rhs_a, self_b >> rhs_b])
   }
 

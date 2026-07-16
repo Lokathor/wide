@@ -315,7 +315,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: i32x8) -> Self::Output {
+  fn shl(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar wrapping_shl by masking the shift count
@@ -349,7 +349,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: i32x8) -> Self::Output {
+  fn shr(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar

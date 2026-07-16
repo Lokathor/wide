@@ -534,7 +534,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shl(self, rhs: u8x16) -> Self::Output {
     // For x86, this technically can be done explicitly by converting
     // to `i16` or `i32` then converting back after multiplication, but that may
     // not actually be faster than auto-vectorization.
@@ -542,12 +542,12 @@ impl_simd_int! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // Mask `rhs` to 7 to match `wrapping_shl`.
-          let shift_by = vandq_s8(rhs.neon, vmovq_n_s8(7));
+          let shift_by = vreinterpretq_s8_u8(vandq_u8(rhs.neon, vmovq_n_u8(7)));
           Self { neon: vshlq_s8(self.neon, shift_by) }
         }
       } else {
         let self_array: [i8; 16] = cast(self);
-        let rhs_array: [i8; 16] = cast(rhs);
+        let rhs_array: [u8; 16] = cast(rhs);
 
         Self::new([
           self_array[0].wrapping_shl(rhs_array[0] as u32),
@@ -609,7 +609,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u8x16) -> Self::Output {
     // For x86, this technically can be done explicitly by converting
     // to `i16` or `i32` then converting back after multiplication, but that may
     // not actually be faster than auto-vectorization.
@@ -618,12 +618,12 @@ impl_simd_int! {
         unsafe {
           // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
           // there is no shift-right intrinsic.
-          let neg_rhs = vnegq_s8(vandq_s8(rhs.neon, vmovq_n_s8(7)));
+          let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(vandq_u8(rhs.neon, vmovq_n_u8(7))));
           Self { neon: vshlq_s8(self.neon, neg_rhs) }
         }
       } else {
         let self_array: [i8; 16] = cast(self);
-        let rhs_array: [i8; 16] = cast(rhs);
+        let rhs_array: [u8; 16] = cast(rhs);
 
         Self::new([
           self_array[0].wrapping_shr(rhs_array[0] as u32),
