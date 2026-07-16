@@ -368,7 +368,7 @@ impl_simd_int! {
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // mask the shift count to 63 to have same behavior on all platforms
-          let shift_by = vreinterpretq_s64_u64(vandq_s64(rhs.neon, vmovq_n_s64(63)));
+          let shift_by = vreinterpretq_s64_u64(vandq_u64(rhs.neon, vmovq_n_u64(63)));
           Self { neon: vshlq_s64(self.neon, shift_by) }
         }
       } else {
