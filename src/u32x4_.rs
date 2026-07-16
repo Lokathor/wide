@@ -535,7 +535,19 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u32 {
-    cast(i32x4::reduce_add(cast(self)))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let hi64  = unpack_high_i64_m128i(self.sse, self.sse);
+        let sum64 = add_i32_m128i(hi64, self.sse);
+        let hi32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(sum64);    // Swap the low two elements
+        let sum32 = add_i32_m128i(sum64, hi32);
+        get_i32_from_m128i_s(sum32).cast_unsigned()
+      } else {
+        let arr: [u32; 4] = cast(self);
+        arr[0].wrapping_add(arr[1]).wrapping_add(
+        arr[2].wrapping_add(arr[3]))
+      }
+    }
   }
 
   #[inline]

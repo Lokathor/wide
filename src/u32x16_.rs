@@ -364,7 +364,8 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u32 {
-    cast(i32x16::reduce_add(cast(self)))
+    let array: [u32x8; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
   }
 
   #[inline]

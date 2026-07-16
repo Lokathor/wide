@@ -258,58 +258,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: self.avx.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: add_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: sub_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `i16`
-    // then converting back after multiplication, but that may not actually be
-    // faster than auto-vectorization.
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a * rhs_a, self_b * rhs_b])
-  }
-
-  #[inline]
   fn shl(self, rhs: u8x32) -> Self::Output {
     // For x86, this technically can be done explicitly by converting to `i16`
     // or `i32` then converting back after multiplication, but that may not
@@ -348,48 +296,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-          Self { avx : bitand_m256i(self.avx,rhs.avx) }
-      } else {
-          Self {
-            a : self.a.bitand(rhs.a),
-            b : self.b.bitand(rhs.b),
-          }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : bitor_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : bitxor_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -415,18 +321,6 @@ impl_simd_int! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
   }
 
   #[inline]

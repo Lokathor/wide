@@ -346,9 +346,22 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u64 {
-    cast(i64x4::reduce_add(cast(self)))
+    pick! {
+      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
+        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
+        let xz_yw = add_i64_m256i(zwxx, self.avx2);
+        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
+        let sum = add_i64_m256i(xz_yw, yw_xz);
+        extract_i64_from_m256i::<0>(sum).cast_unsigned()
+      } else {
+        let array: [u64; 4] = cast(self);
+        array[0]
+          .wrapping_add(array[1])
+          .wrapping_add(array[2])
+          .wrapping_add(array[3])
+      }
+    }
   }
-
 
   #[inline]
   pub fn reduce_mul(self) -> u64 {
