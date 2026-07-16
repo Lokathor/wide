@@ -363,7 +363,7 @@ impl_simd_int! {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & Self::splat(63);
+        let shift_by = rhs & u64x2::splat(63);
         Self { sse: shl_each_u64_m128i(self.sse, shift_by.sse) }
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {

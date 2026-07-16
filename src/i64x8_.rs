@@ -294,7 +294,7 @@ impl_simd_int! {
         // Self { avx512: shl_each_i64_m512i(self.avx512, rhs.avx512) }
         // Fallback for now:
         let a: [i64; 8] = cast(self);
-        let r: [i64; 8] = cast(rhs);
+        let r: [u64; 8] = cast(rhs);
         cast([
           a[0].wrapping_shl(r[0] as u32),
           a[1].wrapping_shl(r[1] as u32),
@@ -340,7 +340,7 @@ impl_simd_int! {
         // Self { avx512: shr_each_i64_m512i(self.avx512, rhs.avx512) }
         // Fallback for now:
         let a: [i64; 8] = cast(self);
-        let r: [i64; 8] = cast(rhs);
+        let r: [u64; 8] = cast(rhs);
         cast([
           a[0].wrapping_shr(r[0] as u32),
           a[1].wrapping_shr(r[1] as u32),

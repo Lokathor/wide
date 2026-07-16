@@ -291,7 +291,7 @@ impl_simd_int! {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & Self::splat(63);
+        let shift_by = rhs & u64x4::splat(63);
         Self { avx2: shl_each_u64_m256i(self.avx2, shift_by.avx2) }
       } else {
         Self {
@@ -324,7 +324,7 @@ impl_simd_int! {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let arr: [i64; 4] = cast(self);
-        let rhs: [i64; 4] = cast(rhs);
+        let rhs: [u64; 4] = cast(rhs);
         cast([
           arr[0].wrapping_shr(rhs[0] as u32),
           arr[1].wrapping_shr(rhs[1] as u32),

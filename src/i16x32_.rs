@@ -329,7 +329,7 @@ impl_simd_int! {
         Self { avx512: shl_each_u16_m512i(self.avx512, rhs) }
       } else {
         let [self_a, self_b]: [i16x16; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i16x16; 2] = cast(rhs);
+        let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
 
         cast([self_a << rhs_a, self_b << rhs_b])
       }
@@ -368,7 +368,7 @@ impl_simd_int! {
         Self { avx512: m512i(unsafe { _mm512_srav_epi16(self.avx512.0, rhs.0) }) }
       } else {
         let [self_a, self_b]: [i16x16; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i16x16; 2] = cast(rhs);
+        let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
 
         cast([self_a >> rhs_a, self_b >> rhs_b])
       }

@@ -303,7 +303,7 @@ impl_simd_int! {
         cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.0) })
       } else {
         let [self_a, self_b]: [i16x8; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i16x8; 2] = cast(rhs);
+        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
 
         cast([self_a << rhs_a, self_b << rhs_b])
       }
@@ -342,7 +342,7 @@ impl_simd_int! {
         cast(unsafe { _mm256_srav_epi16(self.avx2.0, rhs.0) })
       } else {
         let [self_a, self_b]: [i16x8; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i16x8; 2] = cast(rhs);
+        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
 
         cast([self_a >> rhs_a, self_b >> rhs_b])
       }
