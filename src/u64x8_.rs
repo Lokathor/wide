@@ -411,6 +411,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shl_all_u64_m512i(self.avx512, rhs as u64) }
+      } else {
+        Self {
+          a: self.a.unbounded_shl_scalar(rhs),
+          b: self.b.unbounded_shl_scalar(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

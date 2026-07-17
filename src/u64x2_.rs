@@ -520,6 +520,25 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: shl_all_u64_m128i(self.sse, cast([rhs as u64, 0])) }
+      } else if #[cfg(target_feature="simd128")] {
+        // The intrinsic performs wrapping shift so we need to mask the result.
+        Self { simd: u64x2_shl(self.simd, rhs) } & Self::splat(rhs as u64).simd_lt(64)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64)) } }
+      } else {
+        Self { arr: [
+          self.arr[0].unbounded_shl(rhs),
+          self.arr[1].unbounded_shl(rhs),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {

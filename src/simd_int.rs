@@ -318,6 +318,27 @@ macro_rules! impl_simd_int {
         cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
       }
 
+      /// Shifts left each element of `self` by the same scalar `rhs`, without
+      /// bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, and `0` is returned.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shl`]. For most targets, `unbounded_shl_scalar` is faster
+      /// than the standard operator.
+      ///
+      /// This function is faster than `self.unbounded_shl(splat(rhs))` because
+      /// it has special hardware support.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[inline]
+      #[must_use]
+      pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+        // Shift left is the same for unsigned and signed integers.
+        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
+      }
+
       #[must_use]
       $fn_saturating_add
 

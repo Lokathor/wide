@@ -33,6 +33,7 @@ macro_rules! impl_simd_uint {
     $fn_reduce_max:item
     $fn_reduce_min:item
     $fn_unbounded_shl:item
+    $fn_unbounded_shl_scalar:item
     $fn_saturating_add:item
     $fn_saturating_sub:item
     $fn_overflowing_mul:item
@@ -310,6 +311,23 @@ macro_rules! impl_simd_uint {
       #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
       #[must_use]
       $fn_unbounded_shl
+
+      /// Shifts left each element of `self` by the same scalar `rhs`, without
+      /// bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, and `0` is returned.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shl`]. For most targets, `unbounded_shl_scalar` is faster
+      /// than the standard operator.
+      ///
+      /// This function is faster than `self.unbounded_shl(splat(rhs))` because
+      /// it has special hardware support.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[must_use]
+      $fn_unbounded_shl_scalar
 
       #[must_use]
       $fn_saturating_add
