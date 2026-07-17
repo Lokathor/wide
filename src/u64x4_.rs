@@ -371,6 +371,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: shl_each_u64_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a: self.a.unbounded_shl(rhs.a),
+          b: self.b.unbounded_shl(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

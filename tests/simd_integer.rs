@@ -6,6 +6,77 @@ use wide::{
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
 
 #[test]
+fn test_unbounded_shl() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        -123,
+        -121,
+        53,
+        -60,
+        -49,
+        T::MAX / 2,
+        T::MIN + 1,
+        T::MIN / 2,
+        -121,
+        53,
+      ],
+      [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
+    )
+    .chain(random_iter())
+    .map(|[left, right]| (left, right.map(T::cast_unsigned)))
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shl(SimdUnsigned::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        T::MAX - 122,
+        T::MAX - 120,
+        53,
+        T::MAX - 59,
+        T::MAX - 48,
+        T::MAX / 4,
+        T::MAX / 2,
+        T::MAX / 4,
+        T::MAX - 120,
+        53,
+      ],
+      [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shl(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
+
+#[test]
 fn test_saturating_add() {
   for_simd_types!(|T: Integer, N| {
     for [left, right] in simd_chunks!(

@@ -905,6 +905,42 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    // For x86, this technically can be done explicitly by converting to `u16`
+    // or `u32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          Self { neon: vshlq_u8(self.neon, cast(rhs.neon)) } & rhs.simd_lt(8)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].unbounded_shl(rhs_array[0] as u32),
+          self_array[1].unbounded_shl(rhs_array[1] as u32),
+          self_array[2].unbounded_shl(rhs_array[2] as u32),
+          self_array[3].unbounded_shl(rhs_array[3] as u32),
+          self_array[4].unbounded_shl(rhs_array[4] as u32),
+          self_array[5].unbounded_shl(rhs_array[5] as u32),
+          self_array[6].unbounded_shl(rhs_array[6] as u32),
+          self_array[7].unbounded_shl(rhs_array[7] as u32),
+          self_array[8].unbounded_shl(rhs_array[8] as u32),
+          self_array[9].unbounded_shl(rhs_array[9] as u32),
+          self_array[10].unbounded_shl(rhs_array[10] as u32),
+          self_array[11].unbounded_shl(rhs_array[11] as u32),
+          self_array[12].unbounded_shl(rhs_array[12] as u32),
+          self_array[13].unbounded_shl(rhs_array[13] as u32),
+          self_array[14].unbounded_shl(rhs_array[14] as u32),
+          self_array[15].unbounded_shl(rhs_array[15] as u32),
+        ])
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {

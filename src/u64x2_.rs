@@ -502,6 +502,24 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { sse: shl_each_u64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // The intrinsic has different semantics so we need to mask ourselves.
+          Self { neon: vshlq_u64(self.neon, cast(rhs.neon)) } & rhs.simd_lt(64)
+        }
+      } else {
+        // Cannot use scalar `unbounded_shl` because it takes `u32`, which is
+        // smaller than `u64`.
+        (self << rhs) & rhs.simd_lt(64)
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {

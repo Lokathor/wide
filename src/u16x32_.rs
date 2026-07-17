@@ -387,6 +387,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: shl_each_u16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
+
+        cast([self_a.unbounded_shl(rhs_a), self_b.unbounded_shl(rhs_b)])
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {

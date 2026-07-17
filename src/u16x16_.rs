@@ -397,6 +397,26 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_sllv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_sllv_epi16;
+
+        // TODO(safe_arch): Add `_mm256_sllv_epi16`.
+        cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.0) })
+      } else {
+        let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);
+
+        cast([self_a.unbounded_shl(rhs_a), self_b.unbounded_shl(rhs_b)])
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
