@@ -20,9 +20,9 @@ macro_rules! impl_simd_uint {
     $fn_add:item
     $fn_sub:item
     $fn_mul:item
-    $fn_shl:item
+    $fn_shl_unsigned_simd:item
     $fn_shl_u32:item
-    $fn_shr:item
+    $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
     $fn_bitand:item
     $fn_bitor:item
@@ -121,7 +121,7 @@ macro_rules! impl_simd_uint {
       shl,
       ShlAssign,
       shl_assign,
-      $fn_shl,
+      $fn_shl_unsigned_simd,
       $fn_shl_u32,
       /// Shifts lanes by the corresponding lane.
       ///
@@ -150,7 +150,7 @@ macro_rules! impl_simd_uint {
       shr,
       ShrAssign,
       shr_assign,
-      $fn_shr,
+      $fn_shr_unsigned_simd,
       $fn_shr_u32,
       /// Shifts each lane individually.
       ///

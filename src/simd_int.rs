@@ -16,7 +16,7 @@ macro_rules! impl_simd_int {
       [$($index:literal),* $(,)?],
     }
 
-    $fn_shr:item
+    $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
     $fn_max:item
     $fn_min:item
@@ -198,7 +198,7 @@ macro_rules! impl_simd_int {
       shr,
       ShrAssign,
       shr_assign,
-      $fn_shr,
+      $fn_shr_unsigned_simd,
       $fn_shr_u32,
       /// Shifts each lane individually.
       ///
