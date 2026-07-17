@@ -10,6 +10,7 @@ macro_rules! impl_simd_uint {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
+      SignedSimd = $SignedSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
@@ -286,6 +287,16 @@ macro_rules! impl_simd_uint {
       /// horizontal min of all the elements of the vector
       #[must_use]
       $fn_reduce_min
+
+      /// Returns the bit patterns of `self` reinterpreted as signed integers of
+      /// the same size.
+      #[inline]
+      #[must_use]
+      pub const fn cast_signed(self) -> $SignedSimd {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
+      }
 
       #[must_use]
       $fn_saturating_add

@@ -251,6 +251,7 @@ impl_simd_uint! {
     T = u32,
     N = 4,
     Simd = u32x4,
+    SignedSimd = i32x4,
     T_BITS = 32,
     T_BITS_MUL_2 = 64,
     [0, 1, 2, 3],

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Added cast functions `cast_unsigned`, `cast_signed`, `to_bits`, `from_bits`.
 * Renamed float function `pow_{simd-type-name}` to `powf_simd` and deprecated `powf`.
 * Added conversions between `wide` types and native intrinsics SIMD types.
 * Added `reduce_mul` for integers.

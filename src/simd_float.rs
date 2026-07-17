@@ -11,6 +11,7 @@ macro_rules! impl_simd_float {
       N = $N:literal,
       Simd = $Simd:ident,
       UnsignedT = $UnsignedT:ident,
+      UnsignedSimd = $UnsignedSimd:ident,
     }
     old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
 
@@ -265,6 +266,30 @@ macro_rules! impl_simd_float {
       #[must_use]
       pub fn midpoint(self, other: Self) -> Self {
         (self + other) * 0.5
+      }
+
+      /// Raw transmutation to unsigned integer vector.
+      ///
+      /// Note that this function preserves the *bitwise* value, and not the
+      /// numeric value.
+      #[inline]
+      #[must_use]
+      pub const fn to_bits(self) -> $UnsignedSimd {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+      }
+
+      /// Raw transmutation from unsigned integer vector.
+      ///
+      /// Note that this function preserves the *bitwise* value, and not the
+      /// numeric value.
+      #[inline]
+      #[must_use]
+      pub const fn from_bits(bits: $UnsignedSimd) -> Self {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
       }
 
       /// Restrict a value to a certain interval unless it is NaN.
