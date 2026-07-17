@@ -16,8 +16,6 @@ macro_rules! impl_simd_int {
       [$($index:literal),* $(,)?],
     }
 
-    $fn_shl:item
-    $fn_shl_u32:item
     $fn_shr:item
     $fn_shr_u32:item
     $fn_max:item
@@ -165,8 +163,14 @@ macro_rules! impl_simd_int {
       shl,
       ShlAssign,
       shl_assign,
-      $fn_shl,
-      $fn_shl_u32,
+      #[inline]
+      fn shl(self, rhs: $UnsignedSimd) -> Self {
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+      },
+      #[inline]
+      fn shl(self, rhs: u32) -> Self {
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+      },
       /// Shifts lanes by the corresponding lane.
       ///
       /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any

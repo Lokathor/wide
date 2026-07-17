@@ -223,52 +223,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: u64x8) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // TODO(safe_arch): add shl_each_i64_m512i
-        // Self { avx512: shl_each_i64_m512i(self.avx512, rhs.avx512) }
-        // Fallback for now:
-        let a: [i64; 8] = cast(self);
-        let r: [u64; 8] = cast(rhs);
-        cast([
-          a[0].wrapping_shl(r[0] as u32),
-          a[1].wrapping_shl(r[1] as u32),
-          a[2].wrapping_shl(r[2] as u32),
-          a[3].wrapping_shl(r[3] as u32),
-          a[4].wrapping_shl(r[4] as u32),
-          a[5].wrapping_shl(r[5] as u32),
-          a[6].wrapping_shl(r[6] as u32),
-          a[7].wrapping_shl(r[7] as u32),
-        ])
-      } else {
-        // widen via two halves
-        Self {
-          a: self.a.shl(rhs.a),
-          b: self.b.shl(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = rhs as u64 & 63;
-        Self { avx512: shl_all_u64_m512i(self.avx512, shift) }
-      } else {
-        Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
   fn shr(self, rhs: u64x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {

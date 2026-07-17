@@ -233,45 +233,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: u16x16) -> Self::Output {
-    pick! {
-      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm256_sllv_epi16;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm256_sllv_epi16;
-
-        // Mask `rhs` to 15 to match `wrapping_shl`.
-        let rhs = bitand_m256i(rhs.avx2, set_splat_i16_m256i(15));
-        // TODO(safe_arch): Add `_mm256_sllv_epi16`.
-        cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.0) })
-      } else {
-        let [self_a, self_b]: [i16x8; 2] = cast(self);
-        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
-
-        cast([self_a << rhs_a, self_b << rhs_b])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 15, 0]);
-        Self { avx2: shl_all_u16_m256i(self.avx2, shift) }
-      } else {
-        Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
   fn shr(self, rhs: u16x16) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {

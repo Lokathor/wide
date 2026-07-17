@@ -340,57 +340,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: u32x4) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 31 to have same behavior on all platforms
-        let shift_by = bitand_m128i(rhs.sse, set_splat_i32_m128i(31));
-        Self { sse: shl_each_u32_m128i(self.sse, shift_by) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          // mask the shift count to 31 to have same behavior on all platforms
-          let shift_by = vreinterpretq_s32_u32(vandq_u32(rhs.neon, vmovq_n_u32(31)));
-          Self { neon: vshlq_s32(self.neon, shift_by) }
-        }
-      } else {
-        let arr: [i32; 4] = cast(self);
-        let rhs: [u32; 4] = cast(rhs);
-        cast([
-          arr[0].wrapping_shl(rhs[0]),
-          arr[1].wrapping_shl(rhs[1]),
-          arr[2].wrapping_shl(rhs[2]),
-          arr[3].wrapping_shl(rhs[3]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 31, 0]);
-        Self { sse: shl_all_u32_m128i(self.sse, shift) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i32x4_shl(self.simd, rhs) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        unsafe {Self { neon: vshlq_s32(self.neon, vmovq_n_s32(rhs as i32 & 31)) }}
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_shl(rhs),
-          self.arr[1].wrapping_shl(rhs),
-          self.arr[2].wrapping_shl(rhs),
-          self.arr[3].wrapping_shl(rhs),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
   fn shr(self, rhs: u32x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {

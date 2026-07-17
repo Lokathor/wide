@@ -268,39 +268,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: u16x32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        // Mask `rhs` to 15 to match `wrapping_shl`.
-        let rhs = bitand_m512i(rhs.avx512, set_splat_i16_m512i(15));
-        Self { avx512: shl_each_u16_m512i(self.avx512, rhs) }
-      } else {
-        let [self_a, self_b]: [i16x16; 2] = cast(self);
-        let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
-
-        cast([self_a << rhs_a, self_b << rhs_b])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = rhs as u16 & 15;
-        Self { avx512: shl_all_u16_m512i(self.avx512, shift) }
-      } else {
-        Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
   fn shr(self, rhs: u16x32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {

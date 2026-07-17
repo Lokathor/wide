@@ -259,40 +259,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: u32x8) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // ensure same behavior as scalar wrapping_shl by masking the shift count
-        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
-        // shl is the same for unsigned and signed
-        Self { avx2: shl_each_u32_m256i(self.avx2, shift_by) }
-      } else {
-        Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 31, 0]);
-        Self { avx2: shl_all_u32_m256i(self.avx2, shift) }
-      } else {
-        Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
   fn shr(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {

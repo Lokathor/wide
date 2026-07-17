@@ -301,53 +301,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn shl(self, rhs: u64x2) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & u64x2::splat(63);
-        Self { sse: shl_each_u64_m128i(self.sse, shift_by.sse) }
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          // mask the shift count to 63 to have same behavior on all platforms
-          let shift_by = vreinterpretq_s64_u64(vandq_u64(rhs.neon, vmovq_n_u64(63)));
-          Self { neon: vshlq_s64(self.neon, shift_by) }
-        }
-      } else {
-        let arr: [i64; 2] = cast(self);
-        let rhs: [u64; 2] = cast(rhs);
-        cast([
-          arr[0].wrapping_shl(rhs[0] as u32),
-          arr[1].wrapping_shl(rhs[1] as u32),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 63, 0]);
-        Self { sse: shl_all_u64_m128i(self.sse, shift) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shl(self.simd, rhs) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        unsafe {Self { neon: vshlq_s64(self.neon, vmovq_n_s64(rhs as i64 & 63)) }}
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_shl(rhs),
-          self.arr[1].wrapping_shl(rhs),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
   fn shr(self, rhs: u64x2) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
