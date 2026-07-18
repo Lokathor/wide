@@ -912,7 +912,7 @@ impl_simd_uint! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
-          Self { neon: vshlq_u8(self.neon, cast(rhs.neon)) } & rhs.simd_lt(8)
+          Self { neon: vshlq_u8(self.neon, vreinterpretq_s8_u8(rhs.neon)) } & rhs.simd_lt(8)
         }
       } else {
         let self_array = self.to_array();
@@ -987,7 +987,7 @@ impl_simd_uint! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // mask to hide `rhs` overflow.
-          Self { neon: vshlq_u8(self.neon, vnegq_s8(cast(rhs))) } & rhs.simd_lt(8)
+          Self { neon: vshlq_u8(self.neon, vnegq_s8(vreinterpretq_s8_u8(rhs.neon))) } & rhs.simd_lt(8)
         }
       } else {
         let self_array = self.to_array();
@@ -1027,7 +1027,7 @@ impl_simd_uint! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          Self { neon: vshlq_u8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed())) }
+          Self { neon: vshlq_u8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)) }
         }
       } else {
         let self_array = self.to_array();

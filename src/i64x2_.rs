@@ -568,7 +568,7 @@ impl_simd_int! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          Self { neon: vshlq_s64(self.neon, vnegq_s64(cast(rhs.min(u64x2::splat(64))))) }
+          Self { neon: vshlq_s64(self.neon, vnegq_s64(vreinterpretq_s64_u64(rhs.min(u64x2::splat(64)).neon))) }
         }
       } else {
         // Cannot use scalar `unbounded_shl` because it takes `u32`, which is

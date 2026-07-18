@@ -1020,7 +1020,7 @@ impl_simd_int! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          let neg_rhs = vnegq_s8(cast(rhs.min(u8x16::splat(8))));
+          let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(rhs.min(u8x16::splat(8)).neon));
           Self { neon: vshlq_s8(self.neon, neg_rhs) }
         }
       } else {
@@ -1061,7 +1061,7 @@ impl_simd_int! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          Self { neon: vshlq_s8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed())) }
+          Self { neon: vshlq_s8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)) }
         }
       } else {
         let self_array = self.to_array();

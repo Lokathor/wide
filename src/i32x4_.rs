@@ -667,7 +667,7 @@ impl_simd_int! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          Self { neon: vshlq_s32(self.neon, vnegq_s32(cast(rhs.min(u32x4::splat(32))))) }
+          Self { neon: vshlq_s32(self.neon, vnegq_s32(vreinterpretq_s32_u32(rhs.min(u32x4::splat(32)).neon))) }
         }
       } else {
         let self_array = self.to_array();

@@ -509,7 +509,7 @@ impl_simd_uint! {
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // The intrinsic has different semantics so we need to mask ourselves.
-          Self { neon: vshlq_u64(self.neon, cast(rhs.neon)) } & rhs.simd_lt(64)
+          Self { neon: vshlq_u64(self.neon, vreinterpretq_s64_u64(rhs.neon)) } & rhs.simd_lt(64)
         }
       } else {
         // Cannot use scalar `unbounded_shl` because it takes `u32`, which is
@@ -547,7 +547,7 @@ impl_simd_uint! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // mask to hide `rhs` overflow.
-          Self { neon: vshlq_u64(self.neon, vnegq_s64(cast(rhs))) } & rhs.simd_lt(64)
+          Self { neon: vshlq_u64(self.neon, vnegq_s64(vreinterpretq_s64_u64(rhs.neon))) } & rhs.simd_lt(64)
         }
       } else {
         // Cannot use scalar `unbounded_shr` because it takes `u32`, which is
@@ -568,7 +568,7 @@ impl_simd_uint! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-rhs.min(64).cast_signed())) }
+          Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-rhs.min(64).cast_signed() as i64)) }
         }
       } else {
         Self {
