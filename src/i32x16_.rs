@@ -453,6 +453,26 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr(self, rhs: u32x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_srav_epi32;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_srav_epi32;
+
+        // TODO(safe_arch): Add `_mm512_srav_epi32`.
+        Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.avx512.0, rhs.avx512.0) }) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr(rhs.a),
+          b: self.b.unbounded_shr(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

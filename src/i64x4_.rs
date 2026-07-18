@@ -440,6 +440,14 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr(self, rhs: u64x4) -> Self {
+    Self {
+      a: self.a.unbounded_shr(rhs.a),
+      b: self.b.unbounded_shr(rhs.b),
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

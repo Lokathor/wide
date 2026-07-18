@@ -33,6 +33,7 @@ macro_rules! impl_simd_int {
     $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
+    $fn_unbounded_shr:item
     $fn_saturating_add:item
     $fn_saturating_sub:item
     $fn_overflowing_mul:item
@@ -338,6 +339,21 @@ macro_rules! impl_simd_int {
         // Shift left is the same for unsigned and signed integers.
         cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
       }
+
+      /// Shifts right each element of `self` by the corresponding element of
+      /// `rhs`, without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, which yields `0` for a positive
+      /// number, and `-1` for a negative number.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shr`]. For most targets, `unbounded_shr` is faster than the
+      /// standard operator.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[must_use]
+      $fn_unbounded_shr
 
       #[must_use]
       $fn_saturating_add
