@@ -948,7 +948,7 @@ impl_simd_uint! {
     pick! {
       if #[cfg(target_feature="simd128")] {
         // The intrinsic performs wrapping shift so we need to mask the result.
-        if rhs >= 8 { Self::ZERO } else { Self { simd: u8x16_shl(self.simd, rhs) } };
+        if rhs >= 8 { Self::ZERO } else { Self { simd: u8x16_shl(self.simd, rhs) } }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // The intrinsic has different semantics so we need to saturate `rhs`.
         unsafe { Self { neon: vshlq_u8(self.neon, vmovq_n_s8(rhs.min(i8::MAX as u32) as i8)) } }
