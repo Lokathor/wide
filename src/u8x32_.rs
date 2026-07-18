@@ -393,6 +393,15 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `u16` or `u32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+    cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

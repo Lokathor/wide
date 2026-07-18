@@ -448,6 +448,13 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // there is no signed right shift in AVX2
+    let [self_a, self_b] = cast::<i64x4, [i64x2; 2]>(self);
+    cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {

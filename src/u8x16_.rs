@@ -1016,6 +1016,45 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `u16` or `u32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        if rhs < 8 { Self { simd: u8x16_shr(self.simd, rhs) } } else { Self::ZERO }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          Self { neon: vshlq_u8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed())) }
+        }
+      } else {
+        let self_array = self.to_array();
+
+        cast([
+          self_array[0].unbounded_shr(rhs),
+          self_array[1].unbounded_shr(rhs),
+          self_array[2].unbounded_shr(rhs),
+          self_array[3].unbounded_shr(rhs),
+          self_array[4].unbounded_shr(rhs),
+          self_array[5].unbounded_shr(rhs),
+          self_array[6].unbounded_shr(rhs),
+          self_array[7].unbounded_shr(rhs),
+          self_array[8].unbounded_shr(rhs),
+          self_array[9].unbounded_shr(rhs),
+          self_array[10].unbounded_shr(rhs),
+          self_array[11].unbounded_shr(rhs),
+          self_array[12].unbounded_shr(rhs),
+          self_array[13].unbounded_shr(rhs),
+          self_array[14].unbounded_shr(rhs),
+          self_array[15].unbounded_shr(rhs),
+        ])
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {

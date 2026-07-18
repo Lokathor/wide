@@ -507,6 +507,22 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        // `u32 as u16` truncates the higher half so we need to manually
+        // saturate.
+        Self { avx512: shr_all_i16_m512i(self.avx512, rhs.min(u16::MAX as u32) as u16) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {

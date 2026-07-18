@@ -413,6 +413,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: shr_all_u64_m256i(self.avx2, cast([rhs as u64, 0])) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
