@@ -77,6 +77,209 @@ fn test_unbounded_shl() {
 }
 
 #[test]
+fn test_unbounded_shl_scalar() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      -123,
+      -121,
+      53,
+      -60,
+      -49,
+      T::MAX / 2,
+      T::MIN + 1,
+      T::MIN / 2,
+      -121,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shl(right)));
+      let actual = Simd::new(left).unbounded_shl_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      T::MAX - 122,
+      T::MAX - 120,
+      53,
+      T::MAX - 59,
+      T::MAX - 48,
+      T::MAX / 4,
+      T::MAX / 2,
+      T::MAX / 4,
+      T::MAX - 120,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shl(right)));
+      let actual = Simd::new(left).unbounded_shl_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
+
+#[test]
+fn test_unbounded_shr() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        -123,
+        -121,
+        53,
+        -60,
+        -49,
+        T::MAX / 2,
+        T::MIN + 1,
+        T::MIN / 2,
+        -121,
+        53,
+      ],
+      [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
+    )
+    .chain(random_iter())
+    .map(|[left, right]| (left, right.map(T::cast_unsigned)))
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shr(SimdUnsigned::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        T::MAX - 122,
+        T::MAX - 120,
+        53,
+        T::MAX - 59,
+        T::MAX - 48,
+        T::MAX / 4,
+        T::MAX / 2,
+        T::MAX / 4,
+        T::MAX - 120,
+        53,
+      ],
+      [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shr(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
+
+#[test]
+fn test_unbounded_shr_scalar() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      -123,
+      -121,
+      53,
+      -60,
+      -49,
+      T::MAX / 2,
+      T::MIN + 1,
+      T::MIN / 2,
+      -121,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shr(right)));
+      let actual = Simd::new(left).unbounded_shr_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      T::MAX - 122,
+      T::MAX - 120,
+      53,
+      T::MAX - 59,
+      T::MAX - 48,
+      T::MAX / 4,
+      T::MAX / 2,
+      T::MAX / 4,
+      T::MAX - 120,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shr(right)));
+      let actual = Simd::new(left).unbounded_shr_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
+
+#[test]
 fn test_saturating_add() {
   for_simd_types!(|T: Integer, N| {
     for [left, right] in simd_chunks!(
