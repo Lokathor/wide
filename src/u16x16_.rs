@@ -406,7 +406,7 @@ impl_simd_uint! {
         use core::arch::x86_64::_mm256_sllv_epi16;
 
         // TODO(safe_arch): Add `_mm256_sllv_epi16`.
-        cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.0) })
+        cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.avx2.0) })
       } else {
         let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);
@@ -420,7 +420,7 @@ impl_simd_uint! {
   pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: shl_all_u16_m256i(self.avx2, [rhs as u64, 0]) }
+        Self { avx2: shl_all_u16_m256i(self.avx2, cast([rhs as u64, 0])) }
       } else {
         Self {
           a: self.a.unbounded_shl_scalar(rhs),

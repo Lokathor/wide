@@ -441,10 +441,10 @@ impl_simd_int! {
 
   #[inline]
   pub fn unbounded_shr(self, rhs: u64x4) -> Self {
-    Self {
-      a: self.a.unbounded_shr(rhs.a),
-      b: self.b.unbounded_shr(rhs.b),
-    }
+    let [self_a, self_b] = cast::<i64x4, [i64x2; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u64x4, [u64x2; 2]>(rhs);
+
+    cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
   }
 
   #[inline]
