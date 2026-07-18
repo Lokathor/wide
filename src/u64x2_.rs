@@ -528,7 +528,7 @@ impl_simd_uint! {
         // The intrinsic performs wrapping shift so we need to mask the result.
         Self { simd: u64x2_shl(self.simd, rhs) } & Self::splat(rhs as u64).simd_lt(64)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs as i64)) } }
+        unsafe { Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs.min(64) as i64)) } }
       } else {
         Self { arr: [
           self.arr[0].unbounded_shl(rhs),
