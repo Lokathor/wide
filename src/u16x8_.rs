@@ -757,7 +757,7 @@ impl_simd_uint! {
         if rhs >= 16 { Self::ZERO } else { Self { simd: u16x8_shl(self.simd, rhs) } }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // The intrinsic has different semantics so we need to saturate `rhs`.
-        unsafe { Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs.min(i16::MAX as u32) as i16)) } }
+        unsafe { Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs.min(16) as i16)) } }
       } else {
         Self { arr: [
           self.arr[0].unbounded_shl(rhs),
