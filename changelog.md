@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Added `u8x32`/`i8x32` `swizzle` and `swizzle_relaxed`: a full-width 32-entry
+  byte table lookup (`vpermb` on AVX-512-VBMI, `vqtbl2` on NEON, emulated on
+  AVX2/SSSE3).
 * Fixed `i8x32`/`u8x32` `swizzle_half` on AVX2: out-of-range indices now
   correctly zero their output lane (previously leaked `self[..][0]`).
 * Made `to_array`, `as_array` and `as_mut_array` available in const contexts.

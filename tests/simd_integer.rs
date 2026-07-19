@@ -1,6 +1,6 @@
 use wide::{
   f32x4, f32x8, f32x16, i8x16, i8x32, i16x8, i16x16, i32x4, i32x8, i32x16,
-  u8x16, u16x8,
+  u8x16, u8x32, u16x8,
 };
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
@@ -1194,6 +1194,80 @@ fn test_swizzle_half() {
   ]);
   let actual = value.swizzle_half(indices);
   assert_eq!(actual, expected);
+}
+
+/// Scalar reference: unsigned index in [0,31] selects table[idx], else 0.
+fn ref_swizzle32(table: [i8; 32], idx: [i8; 32]) -> [i8; 32] {
+  let mut out = [0i8; 32];
+  for i in 0..32 {
+    let ix = idx[i] as u8 as usize; // unsigned interpretation
+    out[i] = if ix < 32 { table[ix] } else { 0 };
+  }
+  out
+}
+
+#[test]
+fn test_i8x32_swizzle() {
+  let table_arr: [i8; 32] = core::array::from_fn(|i| (i as i8) + 1); // 1..=32
+  let table = i8x32::new(table_arr);
+  let cases: [[i8; 32]; 4] = [
+    core::array::from_fn(|i| i as i8), // identity
+    core::array::from_fn(|i| 31 - i as i8), // reverse
+    core::array::from_fn(|i| ((i + 16) % 32) as i8), // cross-half rotate by 16
+    {
+      let mut a = [3i8; 32];
+      a[0] = 32; // out of range -> 0
+      a[1] = 100; // out of range -> 0
+      a[2] = -1; // 255 unsigned -> 0
+      a
+    },
+  ];
+  for idx_arr in cases {
+    let expected = i8x32::new(ref_swizzle32(table_arr, idx_arr));
+    let actual = table.swizzle(i8x32::new(idx_arr));
+    assert_eq!(actual, expected, "idx={:?}", idx_arr);
+  }
+}
+
+#[test]
+fn test_i8x32_swizzle_relaxed() {
+  let table_arr: [i8; 32] = core::array::from_fn(|i| (i as i8) + 1);
+  let table = i8x32::new(table_arr);
+  let cases: [[i8; 32]; 3] = [
+    core::array::from_fn(|i| i as i8),               // identity
+    core::array::from_fn(|i| 31 - i as i8),          // reverse
+    core::array::from_fn(|i| ((i + 16) % 32) as i8), // cross-half
+  ];
+  for idx_arr in cases {
+    let expected = i8x32::new(ref_swizzle32(table_arr, idx_arr)); // all in-range here
+    let actual = table.swizzle_relaxed(i8x32::new(idx_arr));
+    assert_eq!(actual, expected, "idx={:?}", idx_arr);
+  }
+}
+
+#[test]
+fn test_u8x32_swizzle() {
+  let table_arr: [u8; 32] = core::array::from_fn(|i| (i as u8) + 1); // 1..=32
+  let table = u8x32::new(table_arr);
+  // strict: unsigned indices, out-of-range (incl. 128 and 255) -> 0
+  let mut idx_arr = [4u8; 32];
+  idx_arr[0] = 0;
+  idx_arr[1] = 31;
+  idx_arr[2] = 32; // OOR -> 0
+  idx_arr[3] = 128; // OOR -> 0 (would be negative i8 after cast)
+  idx_arr[4] = 255; // OOR -> 0
+  let mut expected = [0u8; 32];
+  for i in 0..32 {
+    let ix = idx_arr[i] as usize;
+    expected[i] = if ix < 32 { table_arr[ix] } else { 0 };
+  }
+  let actual = table.swizzle(u8x32::new(idx_arr));
+  assert_eq!(actual, u8x32::new(expected), "idx={:?}", idx_arr);
+
+  // relaxed: in-range only, must match table lookup
+  let rev: [u8; 32] = core::array::from_fn(|i| 31 - i as u8);
+  let rev_expected: [u8; 32] = core::array::from_fn(|i| table_arr[(31 - i) as usize]);
+  assert_eq!(table.swizzle_relaxed(u8x32::new(rev)), u8x32::new(rev_expected));
 }
 
 #[test]

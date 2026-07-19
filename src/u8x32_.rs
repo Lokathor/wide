@@ -501,4 +501,18 @@ impl u8x32 {
   pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
     cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
   }
+
+  /// Full 32-entry byte table lookup. An index in `[0, 31]` selects
+  /// `self[index]`; any index `>= 32` yields `0`.
+  #[inline]
+  pub fn swizzle(self, rhs: u8x32) -> u8x32 {
+    cast(i8x32::swizzle(cast(self), cast(rhs)))
+  }
+
+  /// Like [`swizzle`](Self::swizzle), but out-of-range indices yield an
+  /// implementation-defined result (`0` or `self[index % 32]`).
+  #[inline]
+  pub fn swizzle_relaxed(self, rhs: u8x32) -> u8x32 {
+    cast(i8x32::swizzle_relaxed(cast(self), cast(rhs)))
+  }
 }
