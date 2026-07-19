@@ -235,6 +235,7 @@ impl_simd_float! {
     Simd = f32x16,
     UnsignedT = u32,
   }
+  old_powf_simd_fn_name = pow_f32x16,
 
   #[inline]
   fn neg(self) -> Self::Output {
@@ -905,7 +906,7 @@ impl_simd_float! {
   }
 
   #[inline]
-  pub fn pow_f32x16(self, y: Self) -> Self {
+  pub fn powf_simd(self, n: Self) -> Self {
     const_f32_as_f32x16!(ln2f_hi, 0.693359375);
     const_f32_as_f32x16!(ln2f_lo, -2.12194440e-4);
     const_f32_as_f32x16!(P0logf, 3.3333331174E-1);
@@ -939,17 +940,17 @@ impl_simd_float! {
 
     let ef = x1.exponent();
     let ef = mask.select(ef + f32x16::ONE, ef);
-    let e1 = (ef * y).round_ties_even();
-    let yr = ef.mul_sub(y, e1);
+    let e1 = (ef * n).round_ties_even();
+    let yr = ef.mul_sub(n, e1);
 
     let lg = f32x16::HALF.mul_neg_add(x2, x) + lg1;
     let x2_err = (f32x16::HALF * x).mul_sub(x, f32x16::HALF * x2);
     let lg_err = f32x16::HALF.mul_add(x2, lg - x) - lg1;
 
-    let e2 = (lg * y * f32x16::LOG2_E).round_ties_even();
-    let v = lg.mul_sub(y, e2 * ln2f_hi);
+    let e2 = (lg * n * f32x16::LOG2_E).round_ties_even();
+    let v = lg.mul_sub(n, e2 * ln2f_hi);
     let v = e2.mul_neg_add(ln2f_lo, v);
-    let v = v - (lg_err + x2_err).mul_sub(y, yr * f32x16::LN_2);
+    let v = v - (lg_err + x2_err).mul_sub(n, yr * f32x16::LN_2);
 
     let x = v;
     let e3 = (x * f32x16::LOG2_E).round_ties_even();
@@ -978,9 +979,9 @@ impl_simd_float! {
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
     let z = x_zero.select(
-      y.simd_lt(f32x16::ZERO).select(
+      n.simd_lt(f32x16::ZERO).select(
         Self::infinity(),
-        y.simd_eq(f32x16::ZERO).select(f32x16::ONE, f32x16::ZERO),
+        n.simd_eq(f32x16::ZERO).select(f32x16::ONE, f32x16::ZERO),
       ),
       z,
     );
@@ -988,10 +989,10 @@ impl_simd_float! {
     let x_sign = self.is_sign_negative();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.simd_eq(y.round_ties_even());
+      let yi = n.simd_eq(n.round_ties_even());
 
       // Is y odd? If yes flip the sign of the result.
-      let y_odd = cast::<i32x16, f32x16>(y.round_int() << 31);
+      let y_odd = cast::<i32x16, f32x16>(n.round_int() << 31);
 
       let z1 = yi
         .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
@@ -1002,18 +1003,13 @@ impl_simd_float! {
     };
 
     let x_finite = self.is_finite();
-    let y_finite = y.is_finite();
+    let y_finite = n.is_finite();
     let e_finite = ee.is_finite();
     if (x_finite & y_finite & (e_finite | x_zero)).all() {
       return z;
     }
 
-    (self.is_nan() | y.is_nan()).select(self + y, z)
-  }
-
-  #[inline]
-  pub fn powf(self, y: f32) -> Self {
-    Self::pow_f32x16(self, f32x16::splat(y))
+    (self.is_nan() | n.is_nan()).select(self + n, z)
   }
 
   #[inline]

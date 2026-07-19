@@ -12,6 +12,7 @@ macro_rules! impl_simd_float {
       Simd = $Simd:ident,
       UnsignedT = $UnsignedT:ident,
     }
+    old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
 
     $fn_neg:item
     $fn_not:item
@@ -52,8 +53,7 @@ macro_rules! impl_simd_float {
     $fn_mul_sub:item
     $fn_mul_neg_add:item
     $fn_mul_neg_sub:item
-    $fn_pow_simd:item
-    $fn_powf:item
+    $fn_powf_simd:item
     $fn_sqrt:item
     $fn_exp:item
     $fn_exp2:item
@@ -413,11 +413,19 @@ macro_rules! impl_simd_float {
         r.simd_lt(Self::ZERO).select(r + rhs.abs(), r)
       }
 
+      /// Raises each element of the number `self` to the corresponding element
+      /// of the floating point power `n`.
+      ///
+      /// This function cannot be named simply `powf`, because a now deprecated
+      /// function already uses that name.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
-      $fn_pow_simd
-
-      #[must_use]
-      $fn_powf
+      $fn_powf_simd
 
       #[must_use]
       $fn_sqrt
@@ -509,6 +517,44 @@ macro_rules! impl_simd_float {
       /// Calculates hyperbolic tangent: `sinh(self)/cosh(self)`.
       #[must_use]
       $fn_tanh
+
+      /// Raises each element of the number `self` to the corresponding element
+      /// of the floating point power `n`.
+      ///
+      /// This function has been renamed to [`powf_simd`].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
+      ///
+      /// [`powf_simd`]: Self::powf_simd
+      #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+      #[inline]
+      #[must_use]
+      pub fn $old_powf_simd_fn_name(self, n: Self) -> Self {
+        self.powf_simd(n)
+      }
+
+      /// Raises each element of the number `self` to the scalar floating point
+      /// power `n`.
+      ///
+      /// This function has been deprecated because it raises all elements of
+      /// `x` to the same power, even though that brings no performance benefit.
+      #[doc = concat!("Use `x.powf_simd(", stringify!($Simd), "::splat(n))` instead.")]
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
+      #[deprecated(since = "1.6.0", note = "use `x.powf_simd(splat(n))` instead")]
+      #[inline]
+      #[must_use]
+      pub fn powf(self, n: $T) -> Self {
+        self.powf_simd(Self::splat(n))
+      }
     }
   };
 }
