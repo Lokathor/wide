@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fixed `i8x32`/`u8x32` `swizzle_half` on AVX2: out-of-range indices now
+  correctly zero their output lane (previously leaked `self[..][0]`).
 * Made `to_array`, `as_array` and `as_mut_array` available in const contexts.
 * Added four unbounded-shift functions for integers.
 * Renamed float function `pow_{simd-type-name}` to `powf_simd` and deprecated `powf`.

@@ -592,7 +592,7 @@ impl i8x32 {
   pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.saturating_add(i8x32::splat(0x60)).avx) }
+        Self { avx: shuffle_av_i8z_half_m256i(self.avx, add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x70))) }
       } else {
           Self {
             a : self.a.swizzle(rhs.a),
