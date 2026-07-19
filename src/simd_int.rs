@@ -33,6 +33,8 @@ macro_rules! impl_simd_int {
     $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
+    $fn_unbounded_shr:item
+    $fn_unbounded_shr_scalar:item
     $fn_saturating_add:item
     $fn_saturating_sub:item
     $fn_overflowing_mul:item
@@ -124,23 +126,36 @@ macro_rules! impl_simd_int {
       shl_assign,
       $fn_shl,
       $fn_shl_u32,
-      /// Shifts lanes by the corresponding lane.
+      /// Shifts left each element of `self` by the corresponding element of
+      /// `rhs`.
       ///
-      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shl`)
+      /// This operator behaves like [`wrapping_shl`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shl`], so consider using that instead.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
       ,
-      /// Shifts all lanes by the value given.
+      /// Shifts left each element of `self` by the uniform scalar `rhs`.
       ///
-      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shl`)
+      /// This operator behaves like [`wrapping_shl`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shl_scalar`], so consider using that instead.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[doc = concat!("[`unbounded_shl_scalar`]: ", stringify!($Simd), "::unbounded_shl_scalar")]
       ,
-      /// Shifts the same value by each lane, returning a SIMD type.
+      /// Shifts left the scalar `self` by each element of `rhs`.
       ///
-      /// Bitwise shift-left; yields `self << mask(rhs)`, where mask removes any
-      /// high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shl`)
+      /// This operator behaves like [`wrapping_shl`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shl`], so consider using that instead.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
     );
     impl_shift_operator!(
       $T,
@@ -151,23 +166,36 @@ macro_rules! impl_simd_int {
       shr_assign,
       $fn_shr,
       $fn_shr_u32,
-      /// Shifts each lane individually.
+      /// Shifts right each element of `self` by the corresponding element of
+      /// `rhs`.
       ///
-      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes
-      /// any high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shr`)
+      /// This operator behaves like [`wrapping_shr`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shr`], so consider using that instead.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
       ,
-      /// Shifts all lanes by the value given.
+      /// Shifts right each element of `self` by the uniform scalar `rhs`.
       ///
-      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes
-      /// any high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shr`)
+      /// This operator behaves like [`wrapping_shr`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shr_scalar`], so consider using that instead.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[doc = concat!("[`unbounded_shr_scalar`]: ", stringify!($Simd), "::unbounded_shr_scalar")]
       ,
-      /// Shifts the same value by each lane, returning a SIMD type.
+      /// Shifts right the scalar `self` by each element of `rhs`.
       ///
-      /// Bitwise shift-right; yields `self >> mask(rhs)`, where mask removes
-      /// any high-order bits of `rhs` that would cause the shift to exceed the
-      /// bitwidth of the type. (same as `wrapping_shr`)
+      /// This operator behaves like [`wrapping_shr`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shr`], so consider using that instead.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
     );
     impl_binary_operator!(
       $T,
@@ -290,6 +318,86 @@ macro_rules! impl_simd_int {
       /// horizontal min of all the elements of the vector
       #[must_use]
       $fn_reduce_min
+
+      /// Shifts left each element of `self` by the corresponding element of
+      /// `rhs`, without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, and `0` is returned.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shl`]. For most targets, `unbounded_shl` is faster than the
+      /// standard operator.
+      ///
+      /// If you intend to shift all elements by the same value, consider using
+      /// [`unbounded_shl_scalar`] which is faster.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
+      #[inline]
+      #[must_use]
+      pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
+        // Shift left is the same for unsigned and signed integers.
+        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
+      }
+
+      /// Shifts left each element of `self` by the uniform scalar `rhs`,
+      /// without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, and `0` is returned.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shl`]. For most targets, `unbounded_shl_scalar` is faster
+      /// than the standard operator.
+      ///
+      /// This function is faster than `self.unbounded_shl(splat(rhs))` because
+      /// it has special hardware support.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[inline]
+      #[must_use]
+      pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+        // Shift left is the same for unsigned and signed integers.
+        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
+      }
+
+      /// Shifts right each element of `self` by the corresponding element of
+      /// `rhs`, without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, which yields `0` for a positive
+      /// number, and `-1` for a negative number.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shr`]. For most targets, `unbounded_shr` is faster than the
+      /// standard operator.
+      ///
+      /// If you intend to shift all elements by the same value, consider using
+      /// [`unbounded_shr_scalar`] which is faster.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
+      #[must_use]
+      $fn_unbounded_shr
+
+      /// Shifts right each element of `self` by the uniform scalar `rhs`,
+      /// without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, which yields `0` for a positive
+      /// number, and `-1` for a negative number.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shr`]. For most targets, `unbounded_shr_scalar` is faster
+      /// than the standard operator.
+      ///
+      /// This function is faster than `self.unbounded_shr(splat(rhs))` because
+      /// it has special hardware support.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[must_use]
+      $fn_unbounded_shr_scalar
 
       #[must_use]
       $fn_saturating_add

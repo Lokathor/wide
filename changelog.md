@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Made `to_array`, `as_array` and `as_mut_array` available in const contexts.
+* Added four unbounded-shift functions for integers.
 * Renamed float function `pow_{simd-type-name}` to `powf_simd` and deprecated `powf`.
 * Added conversions between `wide` types and native intrinsics SIMD types.
 * Added `reduce_mul` for integers.
