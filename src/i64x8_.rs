@@ -473,6 +473,32 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr(self, rhs: u64x8) -> Self {
+    // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
+    // Self { avx512: shr_each_i64_m512i(self.avx512, rhs.avx512) }
+    // Fallback for now:
+
+    let [self_a, self_b] = cast::<i64x8, [i64x4; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u64x8, [u64x4; 2]>(rhs);
+
+    cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shr_all_i64_m512i(self.avx512, rhs as u64) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {

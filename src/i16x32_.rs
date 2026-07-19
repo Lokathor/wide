@@ -487,6 +487,42 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr(self, rhs: u16x32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_srav_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_srav_epi16;
+
+        // TODO(safe_arch): Add `_mm512_srav_epi16`.
+        Self { avx512: m512i(unsafe { _mm512_srav_epi16(self.avx512.0, rhs.avx512.0) }) }
+      } else {
+        let [self_a, self_b] = cast::<i16x32, [i16x16; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
+
+        cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        // `u32 as u16` truncates the higher half so we need to manually
+        // saturate.
+        Self { avx512: shr_all_i16_m512i(self.avx512, rhs.min(u16::MAX as u32) as u16) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
