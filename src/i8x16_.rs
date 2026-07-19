@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct i8x16 { pub(crate) neon : int8x16_t }
+    pub struct i8x16 { pub(crate) neon: int8x16_t }
 
     impl Default for i8x16 {
       #[inline]
@@ -304,11 +304,11 @@ impl_simd! {
           let masked = vcltq_s8(self.neon, vdupq_n_s8(0));
 
           // select the right bit out of each lane
-          let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+          let selectbit: uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
           let out = vandq_u8(masked, selectbit);
 
           // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
-          let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+          let table: uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
           let r = vqtbl1q_u8(out, table);
 
           // horizontally add the 16-bit lanes
@@ -347,7 +347,7 @@ impl_simd! {
           vminvq_s8(self.neon) < 0
         }
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8080808080808080) != 0
       }
     }
@@ -365,7 +365,7 @@ impl_simd! {
           vmaxvq_s8(self.neon) < 0
         }
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         (v[0] & v[1] & 0x8080808080808080) == 0x8080808080808080
       }
     }
@@ -1405,7 +1405,7 @@ impl i8x16 {
 
         i8x16 { simd: i8x16_narrow_i16x8(v.a.simd, v.b.simd) }
       } else {
-        fn clamp(a : i16) -> i8 {
+        fn clamp(a: i16) -> i8 {
             if a < i8::MIN as i16 {
               i8::MIN
             }

@@ -29,7 +29,7 @@ pick! {
     use core::arch::aarch64::*;
     #[repr(C)]
     #[derive(Copy, Clone)]
-    pub struct u32x4 { pub(crate) neon : uint32x4_t }
+    pub struct u32x4 { pub(crate) neon: uint32x4_t }
 
     impl Default for u32x4 {
       #[inline]
@@ -219,7 +219,7 @@ impl_simd! {
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) != 0
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000080000000) != 0
       }
     }
@@ -233,7 +233,7 @@ impl_simd! {
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) == 0b1111
       } else {
-        let v : [u64;2] = cast(self);
+        let v: [u64;2] = cast(self);
         (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
       }
     }
@@ -851,7 +851,7 @@ impl_simd_uint! {
         let r = mul_u64_low_bits_m256i(a, b);
 
         // the compiler does a good job shuffling the lanes around
-        let b : [u32;8] = cast(r);
+        let b: [u32;8] = cast(r);
         cast([b[1],b[3],b[5],b[7]])
       } else if #[cfg(target_feature="sse2")] {
         let evenp = mul_widen_u32_odd_m128i(self.sse, rhs.sse);
@@ -861,8 +861,8 @@ impl_simd_uint! {
           shr_imm_u64_m128i::<32>(rhs.sse));
 
         // the compiler does a good job shuffling the lanes around
-        let a : [u32;4]= cast(evenp);
-        let b : [u32;4]= cast(oddp);
+        let a: [u32;4]= cast(evenp);
+        let b: [u32;4]= cast(oddp);
         cast([a[1],b[1],a[3],b[3]])
 
       } else if #[cfg(target_feature="simd128")] {

@@ -8,7 +8,7 @@ pick! {
   } else {
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u32x8 { pub(crate) a : u32x4, pub(crate) b : u32x4 }
+    pub struct u32x8 { pub(crate) a: u32x4, pub(crate) b: u32x4 }
   }
 }
 
@@ -29,8 +29,8 @@ impl_simd! {
         Self { avx2: cmp_eq_mask_i32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
+          a: self.a.simd_eq(rhs.a),
+          b: self.b.simd_eq(rhs.b),
         }
       }
     }
@@ -56,8 +56,8 @@ impl_simd! {
         Self { avx2: cmp_gt_mask_i32_m256i((self ^ highbit).avx2, (rhs ^ highbit).avx2 ) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a: self.a.simd_gt(rhs.a),
+          b: self.b.simd_gt(rhs.b),
         }
       }
     }
@@ -99,8 +99,8 @@ impl_simd! {
         Self { avx2: blend_varying_i8_m256i(if_false.avx2, if_true.avx2, self.avx2) }
       } else {
         Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
+          a: self.a.select(if_true.a, if_false.a),
+          b: self.b.select(if_true.b, if_false.b),
         }
       }
     }
@@ -157,8 +157,8 @@ impl_simd_uint! {
         Self { avx2: self.avx2.not()  }
       } else {
         Self {
-          a : self.a.not(),
-          b : self.b.not(),
+          a: self.a.not(),
+          b: self.b.not(),
         }
       }
     }
@@ -171,8 +171,8 @@ impl_simd_uint! {
         Self { avx2: add_i32_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
+          a: self.a.add(rhs.a),
+          b: self.b.add(rhs.b),
         }
       }
     }
@@ -185,8 +185,8 @@ impl_simd_uint! {
         Self { avx2: sub_i32_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
+          a: self.a.sub(rhs.a),
+          b: self.b.sub(rhs.b),
         }
       }
     }
@@ -199,8 +199,8 @@ impl_simd_uint! {
         Self { avx2: mul_i32_keep_low_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.mul(rhs.a),
-          b : self.b.mul(rhs.b),
+          a: self.a.mul(rhs.a),
+          b: self.b.mul(rhs.b),
         }
       }
     }
@@ -215,8 +215,8 @@ impl_simd_uint! {
         Self { avx2: shl_each_u32_m256i(self.avx2, shift_by) }
       } else {
         Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
+          a: self.a.shl(rhs.a),
+          b: self.b.shl(rhs.b),
         }
       }
     }
@@ -232,8 +232,8 @@ impl_simd_uint! {
         Self { avx2: shl_all_u32_m256i(self.avx2, shift) }
       } else {
         Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
+          a: self.a.shl(rhs),
+          b: self.b.shl(rhs),
         }
       }
     }
@@ -248,8 +248,8 @@ impl_simd_uint! {
         Self { avx2: shr_each_u32_m256i(self.avx2, shift_by ) }
       } else {
         Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
+          a: self.a.shr(rhs.a),
+          b: self.b.shr(rhs.b),
         }
       }
     }
@@ -265,8 +265,8 @@ impl_simd_uint! {
         Self { avx2: shr_all_u32_m256i(self.avx2, shift) }
       } else {
         Self {
-          a : self.a.shr(rhs),
-          b : self.b.shr(rhs),
+          a: self.a.shr(rhs),
+          b: self.b.shr(rhs),
         }
       }
     }
@@ -279,8 +279,8 @@ impl_simd_uint! {
         Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
+          a: self.a.bitand(rhs.a),
+          b: self.b.bitand(rhs.b),
         }
       }
     }
@@ -293,8 +293,8 @@ impl_simd_uint! {
         Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
+          a: self.a.bitor(rhs.a),
+          b: self.b.bitor(rhs.b),
         }
       }
     }
@@ -307,8 +307,8 @@ impl_simd_uint! {
         Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
       } else {
         Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
+          a: self.a.bitxor(rhs.a),
+          b: self.b.bitxor(rhs.b),
         }
       }
     }
@@ -321,8 +321,8 @@ impl_simd_uint! {
         Self { avx2: max_u32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
+          a: self.a.max(rhs.a),
+          b: self.b.max(rhs.b),
         }
       }
     }
@@ -335,8 +335,8 @@ impl_simd_uint! {
         Self { avx2: min_u32_m256i(self.avx2, rhs.avx2 ) }
       } else {
         Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
+          a: self.a.min(rhs.a),
+          b: self.b.min(rhs.b),
         }
       }
     }
@@ -521,18 +521,18 @@ impl_simd_uint! {
   pub fn mul_keep_high(self, rhs: u32x8) -> u32x8 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        let a : [u32;8]= cast(self);
-        let b : [u32;8]= cast(rhs);
+        let a: [u32;8]= cast(self);
+        let b: [u32;8]= cast(rhs);
 
         // let the compiler shuffle the values around, it does the right thing
-        let r1 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
-        let r2 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
+        let r1: [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
+        let r2: [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
 
         cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
       } else {
         Self {
-          a : self.a.mul_keep_high(rhs.a),
-          b : self.b.mul_keep_high(rhs.b),
+          a: self.a.mul_keep_high(rhs.a),
+          b: self.b.mul_keep_high(rhs.b),
         }
       }
     }

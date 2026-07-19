@@ -573,14 +573,14 @@ impl_simd_float! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        // max_m128d seems to do rhs < self ? self : rhs. So if there's any NaN
+        // max_m128d seems to do rhs < self ? self: rhs. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
         rhs.is_nan().select(self, Self { sse: max_m128d(self.sse, rhs.sse) })
       } else if #[cfg(target_feature="simd128")] {
         // WASM has two max intrinsics:
         // - max: This propagates NaN, that's the opposite of what we need.
-        // - pmax: This is defined as self < rhs ? rhs : self, which basically
+        // - pmax: This is defined as self < rhs ? rhs: self, which basically
         //   chooses self if either is NaN.
         //
         // pmax is what we want, but we need to specifically check self for NaN.
@@ -626,14 +626,14 @@ impl_simd_float! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        // min_m128d seems to do rhs < self ? rhs : self. So if there's any NaN
+        // min_m128d seems to do rhs < self ? rhs: self. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
         rhs.is_nan().select(self, Self { sse: min_m128d(self.sse, rhs.sse) })
       } else if #[cfg(target_feature="simd128")] {
         // WASM has two min intrinsics:
         // - min: This propagates NaN, that's the opposite of what we need.
-        // - pmin: This is defined as rhs < self ? rhs : self, which basically
+        // - pmin: This is defined as rhs < self ? rhs: self, which basically
         //   chooses self if either is NaN.
         //
         // pmin is what we want, but we need to specifically check self for NaN.
