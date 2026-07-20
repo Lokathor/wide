@@ -391,6 +391,16 @@ macro_rules! impl_simd_int {
       #[must_use]
       $fn_reduce_min
 
+      /// Returns the bit patterns of `self` reinterpreted as unsigned integers
+      /// of the same size.
+      #[inline]
+      #[must_use]
+      pub const fn cast_unsigned(self) -> $UnsignedSimd {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+      }
+
       /// Shifts left each element of `self` by the corresponding element of
       /// `rhs`, without bounding `rhs`.
       ///

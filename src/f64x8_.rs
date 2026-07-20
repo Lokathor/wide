@@ -217,6 +217,7 @@ impl_simd_float! {
     N = 8,
     Simd = f64x8,
     UnsignedT = u64,
+    UnsignedSimd = u64x8,
   }
   old_powf_simd_fn_name = pow_f64x8,
 
