@@ -652,6 +652,84 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr(self, rhs: u8x16) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that may
+    // not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(rhs.min(u8x16::splat(8)).neon));
+          Self { neon: vshlq_s8(self.neon, neg_rhs) }
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].unbounded_shr(rhs_array[0] as u32),
+          self_array[1].unbounded_shr(rhs_array[1] as u32),
+          self_array[2].unbounded_shr(rhs_array[2] as u32),
+          self_array[3].unbounded_shr(rhs_array[3] as u32),
+          self_array[4].unbounded_shr(rhs_array[4] as u32),
+          self_array[5].unbounded_shr(rhs_array[5] as u32),
+          self_array[6].unbounded_shr(rhs_array[6] as u32),
+          self_array[7].unbounded_shr(rhs_array[7] as u32),
+          self_array[8].unbounded_shr(rhs_array[8] as u32),
+          self_array[9].unbounded_shr(rhs_array[9] as u32),
+          self_array[10].unbounded_shr(rhs_array[10] as u32),
+          self_array[11].unbounded_shr(rhs_array[11] as u32),
+          self_array[12].unbounded_shr(rhs_array[12] as u32),
+          self_array[13].unbounded_shr(rhs_array[13] as u32),
+          self_array[14].unbounded_shr(rhs_array[14] as u32),
+          self_array[15].unbounded_shr(rhs_array[15] as u32),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        if rhs < 8 { Self { simd: i8x16_shr(self.simd, rhs) } } else { self.is_negative() }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          Self { neon: vshlq_s8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)) }
+        }
+      } else {
+        let self_array = self.to_array();
+
+        cast([
+          self_array[0].unbounded_shr(rhs),
+          self_array[1].unbounded_shr(rhs),
+          self_array[2].unbounded_shr(rhs),
+          self_array[3].unbounded_shr(rhs),
+          self_array[4].unbounded_shr(rhs),
+          self_array[5].unbounded_shr(rhs),
+          self_array[6].unbounded_shr(rhs),
+          self_array[7].unbounded_shr(rhs),
+          self_array[8].unbounded_shr(rhs),
+          self_array[9].unbounded_shr(rhs),
+          self_array[10].unbounded_shr(rhs),
+          self_array[11].unbounded_shr(rhs),
+          self_array[12].unbounded_shr(rhs),
+          self_array[13].unbounded_shr(rhs),
+          self_array[14].unbounded_shr(rhs),
+          self_array[15].unbounded_shr(rhs),
+        ])
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {

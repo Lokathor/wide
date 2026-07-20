@@ -434,6 +434,57 @@ impl_simd_int! {
   }
 
   #[inline]
+  pub fn unbounded_shr(self, rhs: u32x4) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { sse: shr_each_i32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          Self { neon: vshlq_s32(self.neon, vnegq_s32(vreinterpretq_s32_u32(rhs.min(u32x4::splat(32)).neon))) }
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].unbounded_shr(rhs_array[0]),
+          self_array[1].unbounded_shr(rhs_array[1]),
+          self_array[2].unbounded_shr(rhs_array[2]),
+          self_array[3].unbounded_shr(rhs_array[3]),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: shr_all_i32_m128i(self.sse, cast([rhs as u64, 0])) }
+      } else if #[cfg(target_feature="simd128")] {
+        if rhs < 32 { Self { simd: i32x4_shr(self.simd, rhs) } } else { self.is_negative() }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          Self { neon: vshlq_s32(self.neon, vmovq_n_s32(-rhs.min(32).cast_signed())) }
+        }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].unbounded_shr(rhs),
+            self.arr[1].unbounded_shr(rhs),
+            self.arr[2].unbounded_shr(rhs),
+            self.arr[3].unbounded_shr(rhs),
+          ]
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {

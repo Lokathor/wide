@@ -238,7 +238,7 @@ jobs:
       - name: Set RUSTFLAGS for AVX512
         if: always()
         run: |
-          echo "RUSTFLAGS=-C target-feature=+avx512f,+avx512dq,+avx512cd,+avx512bw,+avx512vl" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-C target-feature=+avx512f,+avx512dq,+avx512cd,+avx512bw,+avx512vl,+avx512vbmi" >> $GITHUB_ENV
         shell: bash
 
       - name: Build tests with AVX512

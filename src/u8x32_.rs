@@ -366,6 +366,44 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    // For x86, this technically can be done explicitly by converting to `u16`
+    // or `u32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
+    cast([self_a.unbounded_shl(rhs_a), self_b.unbounded_shl(rhs_b)])
+  }
+
+  #[inline]
+  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `u16` or `u32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+    cast([self_a.unbounded_shl_scalar(rhs), self_b.unbounded_shl_scalar(rhs)])
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: Self) -> Self {
+    // For x86, this technically can be done explicitly by converting to `u16`
+    // or `u32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
+    cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `u16` or `u32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+    cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
+  }
+
+  #[inline]
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -464,5 +502,19 @@ impl u8x32 {
   #[inline]
   pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
     cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
+  }
+
+  /// Full 32-entry byte table lookup. An index in `[0, 31]` selects
+  /// `self[index]`; any index `>= 32` yields `0`.
+  #[inline]
+  pub fn swizzle(self, rhs: u8x32) -> u8x32 {
+    cast(i8x32::swizzle(cast(self), cast(rhs)))
+  }
+
+  /// Like [`swizzle`](Self::swizzle), but out-of-range indices yield an
+  /// implementation-defined result (`0` or `self[index % 32]`).
+  #[inline]
+  pub fn swizzle_relaxed(self, rhs: u8x32) -> u8x32 {
+    cast(i8x32::swizzle_relaxed(cast(self), cast(rhs)))
   }
 }

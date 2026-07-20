@@ -323,20 +323,28 @@ macro_rules! impl_simd {
 
       #[inline]
       #[must_use]
-      pub fn to_array(self) -> [$T; $N] {
-        cast(self)
+      pub const fn to_array(self) -> [$T; $N] {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$Simd, [$T; $N]>(self) }
       }
 
       #[inline]
       #[must_use]
-      pub fn as_array(&self) -> &[$T; $N] {
-        cast_ref(self)
+      pub const fn as_array(&self) -> &[$T; $N] {
+        // SAFETY: The input type has greater alignment than the output type,
+        // and both pointed-at types have the same size, accept all bit-patterns
+        // and only contain initialized memory.
+        unsafe { core::mem::transmute::<&$Simd, &[$T; $N]>(self) }
       }
 
       #[inline]
       #[must_use]
-      pub fn as_mut_array(&mut self) -> &mut [$T; $N] {
-        cast_mut(self)
+      pub const fn as_mut_array(&mut self) -> &mut [$T; $N] {
+        // SAFETY: The input type has greater alignment than the output type,
+        // and both pointed-at types have the same size, accept all bit-patterns
+        // and only contain initialized memory.
+        unsafe { core::mem::transmute::<&mut $Simd, &mut [$T; $N]>(self) }
       }
 
       /// Test if each element is equal to the corresponding element in `other`.
