@@ -1,9 +1,283 @@
 use wide::{
   f32x4, f32x8, f32x16, i8x16, i8x32, i16x8, i16x16, i32x4, i32x8, i32x16,
-  u8x16, u16x8,
+  u8x16, u8x32, u16x8,
 };
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
+
+#[test]
+fn test_unbounded_shl() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        -123,
+        -121,
+        53,
+        -60,
+        -49,
+        T::MAX / 2,
+        T::MIN + 1,
+        T::MIN / 2,
+        -121,
+        53,
+      ],
+      [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
+    )
+    .chain(random_iter())
+    .map(|[left, right]| (left, right.map(T::cast_unsigned)))
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shl(SimdUnsigned::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        T::MAX - 122,
+        T::MAX - 120,
+        53,
+        T::MAX - 59,
+        T::MAX - 48,
+        T::MAX / 4,
+        T::MAX / 2,
+        T::MAX / 4,
+        T::MAX - 120,
+        53,
+      ],
+      [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shl(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
+
+#[test]
+fn test_unbounded_shl_scalar() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      -123,
+      -121,
+      53,
+      -60,
+      -49,
+      T::MAX / 2,
+      T::MIN + 1,
+      T::MIN / 2,
+      -121,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shl(right)));
+      let actual = Simd::new(left).unbounded_shl_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      T::MAX - 122,
+      T::MAX - 120,
+      53,
+      T::MAX - 59,
+      T::MAX - 48,
+      T::MAX / 4,
+      T::MAX / 2,
+      T::MAX / 4,
+      T::MAX - 120,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shl(right)));
+      let actual = Simd::new(left).unbounded_shl_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
+
+#[test]
+fn test_unbounded_shr() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        -123,
+        -121,
+        53,
+        -60,
+        -49,
+        T::MAX / 2,
+        T::MIN + 1,
+        T::MIN / 2,
+        -121,
+        53,
+      ],
+      [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
+    )
+    .chain(random_iter())
+    .map(|[left, right]| (left, right.map(T::cast_unsigned)))
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shr(SimdUnsigned::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for [left, right] in simd_chunks!(
+      [
+        1,
+        2,
+        T::MAX - 1,
+        T::MAX - 122,
+        T::MAX - 120,
+        53,
+        T::MAX - 59,
+        T::MAX - 48,
+        T::MAX / 4,
+        T::MAX / 2,
+        T::MAX / 4,
+        T::MAX - 120,
+        53,
+      ],
+      [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
+    )
+    .chain(random_iter())
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        // Cannot use `as u32` because that truncates, not saturates.
+        left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
+      }));
+      let actual = Simd::new(left).unbounded_shr(Simd::new(right));
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
+
+#[test]
+fn test_unbounded_shr_scalar() {
+  for_simd_types!(|T: Signed, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      -123,
+      -121,
+      53,
+      -60,
+      -49,
+      T::MAX / 2,
+      T::MIN + 1,
+      T::MIN / 2,
+      -121,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shr(right)));
+      let actual = Simd::new(left).unbounded_shr_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+  for_simd_types!(|T: Unsigned, N| {
+    for (left, right) in simd_chunks!([
+      1,
+      2,
+      T::MAX - 1,
+      T::MAX - 122,
+      T::MAX - 120,
+      53,
+      T::MAX - 59,
+      T::MAX - 48,
+      T::MAX / 4,
+      T::MAX / 2,
+      T::MAX / 4,
+      T::MAX - 120,
+      53,
+    ],)
+    .flat_map(|left| {
+      [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right))
+    })
+    .chain(random_iter())
+    {
+      let expected =
+        Simd::new(std::array::from_fn(|i| left[i].unbounded_shr(right)));
+      let actual = Simd::new(left).unbounded_shr_scalar(right);
+
+      assert!(
+        actual == expected,
+        "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
+      );
+    }
+  });
+}
 
 #[test]
 fn test_saturating_add() {
@@ -920,6 +1194,100 @@ fn test_swizzle_half() {
   ]);
   let actual = value.swizzle_half(indices);
   assert_eq!(actual, expected);
+}
+
+/// Scalar reference: unsigned index in [0,31] selects table[idx], else 0.
+fn ref_swizzle32(table: [i8; 32], idx: [i8; 32]) -> [i8; 32] {
+  let mut out = [0i8; 32];
+  for i in 0..32 {
+    let ix = idx[i] as u8 as usize; // unsigned interpretation
+    out[i] = if ix < 32 { table[ix] } else { 0 };
+  }
+  out
+}
+
+#[test]
+fn test_i8x32_swizzle() {
+  let table_arr: [i8; 32] = core::array::from_fn(|i| (i as i8) + 1); // 1..=32
+  let table = i8x32::new(table_arr);
+  let cases: [[i8; 32]; 4] = [
+    core::array::from_fn(|i| i as i8), // identity
+    core::array::from_fn(|i| 31 - i as i8), // reverse
+    core::array::from_fn(|i| ((i + 16) % 32) as i8), // cross-half rotate by 16
+    {
+      let mut a = [3i8; 32];
+      a[0] = 32; // out of range -> 0
+      a[1] = 100; // out of range -> 0
+      a[2] = -1; // 255 unsigned -> 0
+      a
+    },
+  ];
+  for idx_arr in cases {
+    let expected = i8x32::new(ref_swizzle32(table_arr, idx_arr));
+    let actual = table.swizzle(i8x32::new(idx_arr));
+    assert_eq!(actual, expected, "idx={:?}", idx_arr);
+  }
+}
+
+#[test]
+fn test_i8x32_swizzle_relaxed() {
+  let table_arr: [i8; 32] = core::array::from_fn(|i| (i as i8) + 1);
+  let table = i8x32::new(table_arr);
+  let cases: [[i8; 32]; 3] = [
+    core::array::from_fn(|i| i as i8),               // identity
+    core::array::from_fn(|i| 31 - i as i8),          // reverse
+    core::array::from_fn(|i| ((i + 16) % 32) as i8), // cross-half
+  ];
+  for idx_arr in cases {
+    let expected = i8x32::new(ref_swizzle32(table_arr, idx_arr)); // all in-range here
+    let actual = table.swizzle_relaxed(i8x32::new(idx_arr));
+    assert_eq!(actual, expected, "idx={:?}", idx_arr);
+  }
+}
+
+#[test]
+fn test_u8x32_swizzle() {
+  let table_arr: [u8; 32] = core::array::from_fn(|i| (i as u8) + 1); // 1..=32
+  let table = u8x32::new(table_arr);
+  // strict: unsigned indices, out-of-range (incl. 128 and 255) -> 0
+  let mut idx_arr = [4u8; 32];
+  idx_arr[0] = 0;
+  idx_arr[1] = 31;
+  idx_arr[2] = 32; // OOR -> 0
+  idx_arr[3] = 128; // OOR -> 0 (would be negative i8 after cast)
+  idx_arr[4] = 255; // OOR -> 0
+  let mut expected = [0u8; 32];
+  for i in 0..32 {
+    let ix = idx_arr[i] as usize;
+    expected[i] = if ix < 32 { table_arr[ix] } else { 0 };
+  }
+  let actual = table.swizzle(u8x32::new(idx_arr));
+  assert_eq!(actual, u8x32::new(expected), "idx={:?}", idx_arr);
+
+  // relaxed: in-range only, must match table lookup
+  let rev: [u8; 32] = core::array::from_fn(|i| 31 - i as u8);
+  let rev_expected: [u8; 32] = core::array::from_fn(|i| table_arr[(31 - i) as usize]);
+  assert_eq!(table.swizzle_relaxed(u8x32::new(rev)), u8x32::new(rev_expected));
+}
+
+#[test]
+fn test_swizzle_half_out_of_range_zeroes() {
+  // `swizzle_half` is strict: any index outside `[0, 15]` (per half) must zero
+  // that output lane. This previously failed on the AVX2 path, which used a
+  // signed `saturating_add(0x60)` that cannot set the high bit that makes
+  // `pshufb` zero, so out-of-range indices leaked `self[..][0]`.
+  let value = i8x32::new([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+  ]);
+  for &bad in &[16i8, 17, 31, 100, -1, -128] {
+    let indices = i8x32::new([bad; 32]);
+    assert_eq!(
+      value.swizzle_half(indices),
+      i8x32::new([0i8; 32]),
+      "index {bad} is out of range and must zero every lane",
+    );
+  }
 }
 
 #[test]
