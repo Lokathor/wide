@@ -16,21 +16,10 @@ macro_rules! impl_simd_int {
       [$($index:literal),* $(,)?],
     }
 
-    $fn_not:item
-    $fn_add:item
-    $fn_sub:item
-    $fn_mul:item
-    $fn_shl:item
-    $fn_shl_u32:item
-    $fn_shr:item
+    $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
-    $fn_bitand:item
-    $fn_bitor:item
-    $fn_bitxor:item
     $fn_max:item
     $fn_min:item
-    $fn_reduce_add:item
-    $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
     $fn_unbounded_shr:item
@@ -54,11 +43,61 @@ macro_rules! impl_simd_int {
         Self::default() - self
       }
     );
-    impl_unary_operator!($Simd, Not, not, $fn_not);
+    impl_unary_operator!(
+      $Simd,
+      Not,
+      not,
+      #[inline]
+      fn not(self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
+      }
+    );
 
-    impl_binary_operator!($T, $Simd, Add, add, AddAssign, add_assign, $fn_add);
-    impl_binary_operator!($T, $Simd, Sub, sub, SubAssign, sub_assign, $fn_sub);
-    impl_binary_operator!($T, $Simd, Mul, mul, MulAssign, mul_assign, $fn_mul);
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Add,
+      add,
+      AddAssign,
+      add_assign,
+      #[inline]
+      fn add(self, rhs: Self) -> Self::Output {
+        // Wrapping addition is the same for signed and unsigned integers.
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Sub,
+      sub,
+      SubAssign,
+      sub_assign,
+      #[inline]
+      fn sub(self, rhs: Self) -> Self::Output {
+        // Wrapping subtraction is the same for signed and unsigned integers.
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Mul,
+      mul,
+      MulAssign,
+      mul_assign,
+      #[inline]
+      fn mul(self, rhs: Self) -> Self::Output {
+        // Wrapping multiplication is the same for signed and unsigned integers.
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
+    );
     impl_binary_operator!(
         $T,
         $Simd,
@@ -120,12 +159,20 @@ macro_rules! impl_simd_int {
     impl_shift_operator!(
       $T,
       $Simd,
+      $UnsignedSimd,
+      $Simd,
       Shl,
       shl,
       ShlAssign,
       shl_assign,
-      $fn_shl,
-      $fn_shl_u32,
+      #[inline]
+      fn shl(self, rhs: $UnsignedSimd) -> Self {
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+      },
+      #[inline]
+      fn shl(self, rhs: u32) -> Self {
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+      },
       /// Shifts left each element of `self` by the corresponding element of
       /// `rhs`.
       ///
@@ -160,11 +207,13 @@ macro_rules! impl_simd_int {
     impl_shift_operator!(
       $T,
       $Simd,
+      $UnsignedSimd,
+      $Simd,
       Shr,
       shr,
       ShrAssign,
       shr_assign,
-      $fn_shr,
+      $fn_shr_unsigned_simd,
       $fn_shr_u32,
       /// Shifts right each element of `self` by the corresponding element of
       /// `rhs`.
@@ -204,7 +253,12 @@ macro_rules! impl_simd_int {
       bitand,
       BitAndAssign,
       bitand_assign,
-      $fn_bitand
+      #[inline]
+      fn bitand(self, rhs: Self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
     );
     impl_binary_operator!(
       $T,
@@ -213,7 +267,12 @@ macro_rules! impl_simd_int {
       bitor,
       BitOrAssign,
       bitor_assign,
-      $fn_bitor
+      #[inline]
+      fn bitor(self, rhs: Self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
     );
     impl_binary_operator!(
       $T,
@@ -222,7 +281,12 @@ macro_rules! impl_simd_int {
       bitxor,
       BitXorAssign,
       bitxor_assign,
-      $fn_bitxor
+      #[inline]
+      fn bitxor(self, rhs: Self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
     );
 
     impl<Rhs> core::iter::Sum<Rhs> for $Simd
@@ -304,12 +368,20 @@ macro_rules! impl_simd_int {
       }
 
       /// horizontal add of all the elements of the vector
+      #[inline]
       #[must_use]
-      $fn_reduce_add
+      pub fn reduce_add(self) -> $T {
+        // Wrapping addition is the same for signed and unsigned integers.
+        cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
+      }
 
       /// Reducing multiply. Returns the product of the elements of the vector.
+      #[inline]
       #[must_use]
-      $fn_reduce_mul
+      pub fn reduce_mul(self) -> $T {
+        // Wrapping multiplication is the same for signed and unsigned integers.
+        cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
+      }
 
       /// horizontal max of all the elements of the vector
       #[must_use]

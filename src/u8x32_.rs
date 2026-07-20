@@ -172,6 +172,7 @@ impl_simd_uint! {
     T = u8,
     N = 32,
     Simd = u8x32,
+    SignedSimd = i8x32,
     T_BITS = 8,
     T_BITS_MUL_2 = 16,
     [
@@ -342,7 +343,8 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u8 {
-    cast(i8x32::reduce_add(cast(self)))
+    let array: [u8x16; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
   }
 
   #[inline]

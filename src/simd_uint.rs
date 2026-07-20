@@ -10,6 +10,7 @@ macro_rules! impl_simd_uint {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
+      SignedSimd = $SignedSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
@@ -19,9 +20,9 @@ macro_rules! impl_simd_uint {
     $fn_add:item
     $fn_sub:item
     $fn_mul:item
-    $fn_shl:item
+    $fn_shl_unsigned_simd:item
     $fn_shl_u32:item
-    $fn_shr:item
+    $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
     $fn_bitand:item
     $fn_bitor:item
@@ -118,11 +119,13 @@ macro_rules! impl_simd_uint {
     impl_shift_operator!(
       $T,
       $Simd,
+      $Simd,
+      $SignedSimd,
       Shl,
       shl,
       ShlAssign,
       shl_assign,
-      $fn_shl,
+      $fn_shl_unsigned_simd,
       $fn_shl_u32,
       /// Shifts left each element of `self` by the corresponding element of
       /// `rhs`.
@@ -158,11 +161,13 @@ macro_rules! impl_simd_uint {
     impl_shift_operator!(
       $T,
       $Simd,
+      $Simd,
+      $SignedSimd,
       Shr,
       shr,
       ShrAssign,
       shr_assign,
-      $fn_shr,
+      $fn_shr_unsigned_simd,
       $fn_shr_u32,
       /// Shifts right each element of `self` by the corresponding element of
       /// `rhs`.

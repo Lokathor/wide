@@ -231,6 +231,7 @@ impl_simd_uint! {
     T = u64,
     N = 2,
     Simd = u64x2,
+    SignedSimd = i64x2,
     T_BITS = 64,
     T_BITS_MUL_2 = 128,
     [0, 1],
@@ -455,9 +456,17 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u64 {
-    cast(i64x2::reduce_add(cast(self)))
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [u64; 2] = cast(self);
+        array[0].wrapping_add(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_u64(self.neon, 0).wrapping_add(vgetq_lane_u64(self.neon, 1)) }
+      } else {
+        self.arr[0].wrapping_add(self.arr[1])
+      }
+    }
   }
-
 
   #[inline]
   pub fn reduce_mul(self) -> u64 {

@@ -301,123 +301,18 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn not(self) -> Self::Output {
-    self ^ cast::<u128, i64x2>(u128::MAX)
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: add_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_add(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vaddq_s64(self.neon, rhs.neon) } }
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_add(rhs.arr[0]),
-          self.arr[1].wrapping_add(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: sub_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_sub(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vsubq_s64(self.neon, rhs.neon) } }
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_sub(rhs.arr[0]),
-          self.arr[1].wrapping_sub(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    //we should try to implement this on sse2
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_mul(self.simd, rhs.simd) }
-      } else {
-        let arr1: [i64; 2] = cast(self);
-        let arr2: [i64; 2] = cast(rhs);
-        cast([
-          arr1[0].wrapping_mul(arr2[0]),
-          arr1[1].wrapping_mul(arr2[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & Self::splat(63);
-        Self { sse: shl_each_u64_m128i(self.sse, shift_by.sse) }
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          // mask the shift count to 63 to have same behavior on all platforms
-          let shift_by = vandq_s64(rhs.neon, vmovq_n_s64(63));
-          Self { neon: vshlq_s64(self.neon, shift_by) }
-        }
-      } else {
-        let arr: [i64; 2] = cast(self);
-        let rhs: [i64; 2] = cast(rhs);
-        cast([
-          arr[0].wrapping_shl(rhs[0] as u32),
-          arr[1].wrapping_shl(rhs[1] as u32),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 63, 0]);
-        Self { sse: shl_all_u64_m128i(self.sse, shift) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shl(self.simd, rhs) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        unsafe {Self { neon: vshlq_s64(self.neon, vmovq_n_s64(rhs as i64 & 63)) }}
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_shl(rhs),
-          self.arr[1].wrapping_shl(rhs),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u64x2) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           // mask the shift count to 63 to have same behavior on all platforms
           // no right shift, have to pass negative value to left shift on neon
-          let shift_by = vnegq_s64(vandq_s64(rhs.neon, vmovq_n_s64(63)));
+          let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.neon, vmovq_n_u64(63))));
           Self { neon: vshlq_s64(self.neon, shift_by) }
         }
       } else {
         let arr: [i64; 2] = cast(self);
-        let rhs: [i64; 2] = cast(rhs);
+        let rhs: [u64; 2] = cast(rhs);
         cast([
           arr[0].wrapping_shr(rhs[0] as u32),
           arr[1].wrapping_shr(rhs[1] as u32),
@@ -442,60 +337,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitand_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_and(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vandq_s64(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitand(rhs.arr[0]),
-          self.arr[1].bitand(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_or(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vorrq_s64(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitor(rhs.arr[0]),
-          self.arr[1].bitor(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_xor(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: veorq_s64(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitxor(rhs.arr[0]),
-          self.arr[1].bitxor(rhs.arr[1]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     self.simd_gt(rhs).select(self, rhs)
   }
@@ -503,34 +344,6 @@ impl_simd_int! {
   #[inline]
   pub fn min(self, rhs: Self) -> Self {
     self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> i64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [i64; 2] = cast(self);
-        array[0].wrapping_add(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).wrapping_add(vgetq_lane_s64(self.neon, 1)) }
-      } else {
-        self.arr[0].wrapping_add(self.arr[1])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> i64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [i64; 2] = cast(self);
-        array[0].wrapping_mul(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).wrapping_mul(vgetq_lane_s64(self.neon, 1)) }
-      } else {
-        self.arr[0].wrapping_mul(self.arr[1])
-      }
-    }
   }
 
   #[inline]

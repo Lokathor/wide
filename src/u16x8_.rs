@@ -266,6 +266,7 @@ impl_simd_uint! {
     T = u16,
     N = 8,
     Simd = u16x8,
+    SignedSimd = i16x8,
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7],
@@ -607,7 +608,32 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u16 {
-    cast(i16x8::reduce_add(cast(self)))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // there is a horizontal add instruction on ssse3, but apparently it is very slow on some AMD CPUs
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+        let sum64 = add_i16_m128i(self.sse, hi64);
+        let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+        let sum32 = add_i16_m128i(sum64, hi32);
+        let lo16 = shr_imm_u32_m128i::<16>(sum32);
+        let sum16 = add_i16_m128i(sum32, lo16);
+        extract_i16_as_i32_m128i::<0>(sum16) as u16
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vaddvq_u16(self.neon) }
+      } else {
+        let arr: [u16; 8] = cast(self);
+
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.wrapping_add(arr[1]);
+        r = r.wrapping_add(arr[2]);
+        r = r.wrapping_add(arr[3]);
+        r = r.wrapping_add(arr[4]);
+        r = r.wrapping_add(arr[5]);
+        r = r.wrapping_add(arr[6]);
+        r.wrapping_add(arr[7])
+      }
+    }
   }
 
   #[inline]
