@@ -464,24 +464,49 @@ macro_rules! impl_simd {
       #[must_use]
       $fn_select
 
-      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
-      /// mask or guarantee that the high bit of each element is used.
+      /// Converts to a bitmask, where each bit is `1` if the element of `self`
+      /// is true or `0` if the element of `self` is false.
+      ///
+      /// Each bit of the output corresponds to an element of `self`. The least
+      /// significant bit corresponds to the lowest element. Remaining bits are
+      /// `0`.
+      ///
+      /// This function assumes `self` is a [mask], meaning each element is
+      /// either all zeros or all ones. If the input is not a mask, the result
+      /// is unspecified.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       #[doc(alias("movemask", "move_mask"))]
       $fn_to_bitmask
 
-      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
-      /// mask or guarantee that the high bit of each element is used.
+      /// Returns `true` if any element of `self` is true.
+      ///
+      /// This function assumes `self` is a [mask], meaning each element is
+      /// either all zeros or all ones. If the input is not a mask, the result
+      /// is unspecified.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_any
 
-      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
-      /// mask or guarantee that the high bit of each element is used.
+      /// Returns `true` if all elements of `self` are true.
+      ///
+      /// This function assumes `self` is a [mask], meaning each element is
+      /// either all zeros or all ones. If the input is not a mask, the result
+      /// is unspecified.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_all
 
-      /// TODO BEFROE MERGING: Decide if this function should assume `self` is a
-      /// mask or guarantee that the high bit of each element is used.
+      /// Returns `true` if none of the elements of `self` are true.
+      ///
+      /// This function assumes `self` is a [mask], meaning each element is
+      /// either all zeros or all ones. If the input is not a mask, the result
+      /// is unspecified.
+      ///
+      /// [mask]: crate#masks
       #[inline]
       #[must_use]
       pub fn none(self) -> bool {

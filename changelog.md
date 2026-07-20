@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* SEMI-BREAKING: `i64xN` functions `to_bitmask`, `any`, `all` and `none` no
+  longer guarantee that the sign-bit is used to decide whether an element is
+  considered "true" or "false".
+
 * Added cast functions `cast_unsigned`, `cast_signed`, `to_bits`, `from_bits`.
 * Added `u8x32`/`i8x32` `swizzle` and `swizzle_relaxed`: a full-width 32-entry
   byte table lookup (`vpermb` on AVX-512-VBMI, `vqtbl2` on NEON, emulated on
