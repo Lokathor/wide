@@ -59,6 +59,17 @@
 //! assert_eq!(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
 //! ```
 //!
+//! # NaN bit patterns
+//!
+//! Operations on SIMD vectors of floats do not make any guarantees about the
+//! specific bit-patterns of output NaN values (meaning the sign bit,
+//! quiet/signaling bit, and payload). This is unlike standard library
+//! operations on float primitives, which do define rules for what NaN bit
+//! patterns are returned.
+//!
+//! The reason for this is that enforcing guarantees would add substantial
+//! overhead to operations, and is generally not worth it.
+//!
 //! # Wrapping semantics
 //!
 //! SIMD vectors of integers treat operators as wrapping, as if [`Wrapping<T>`]
