@@ -72,14 +72,141 @@ macro_rules! impl_simd_float {
     $fn_cosh:item
     $fn_tanh:item
   ) => {
-    impl_unary_operator!($Simd, Neg, neg, $fn_neg);
-    impl_unary_operator!($Simd, Not, not, $fn_not);
+    impl_unary_operator!(
+      $Simd,
+      Neg,
+      neg,
+      $fn_neg,
+      /// Returns the negative of each element of `self`.
+      ///
+      /// This always returns the precise result, simply flipping the sign-bit.
+    );
+    impl_unary_operator!(
+      $Simd,
+      Not,
+      not,
+      $fn_not,
+      /// Computes bitwise NOT for each element of `self`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+    );
 
-    impl_binary_operator!($T, $Simd, Add, add, AddAssign, add_assign, $fn_add);
-    impl_binary_operator!($T, $Simd, Sub, sub, SubAssign, sub_assign, $fn_sub);
-    impl_binary_operator!($T, $Simd, Mul, mul, MulAssign, mul_assign, $fn_mul);
-    impl_binary_operator!($T, $Simd, Div, div, DivAssign, div_assign, $fn_div);
-    impl_binary_operator!($T, $Simd, Rem, rem, RemAssign, rem_assign, $fn_rem);
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Add,
+      add,
+      AddAssign,
+      add_assign,
+      $fn_add,
+      /// Computes addition for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes addition for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes addition for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Sub,
+      sub,
+      SubAssign,
+      sub_assign,
+      $fn_sub,
+      /// Computes subtraction for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes subtraction for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes subtraction for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Mul,
+      mul,
+      MulAssign,
+      mul_assign,
+      $fn_mul,
+      /// Computes multiplication for each element of `self` and the
+      /// corresponding element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes multiplication for each element of `self` and the uniform
+      /// scalar `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes multiplication for the uniform scalar `self` and each element
+      /// of `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Div,
+      div,
+      DivAssign,
+      div_assign,
+      $fn_div,
+      /// Computes division for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes division for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes division for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Rem,
+      rem,
+      RemAssign,
+      rem_assign,
+      $fn_rem,
+      /// Computes the remainder for each element of `self` and the
+      /// corresponding element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes the remainder for each element of `self` and the uniform
+      /// scalar `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes the remainder for the uniform scalar `self` and each element
+      /// of `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
     impl_binary_operator!(
       $T,
       $Simd,
@@ -87,7 +214,24 @@ macro_rules! impl_simd_float {
       bitand,
       BitAndAssign,
       bitand_assign,
-      $fn_bitand
+      $fn_bitand,
+      /// Computes bitwise AND for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise AND for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise AND for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
     );
     impl_binary_operator!(
       $T,
@@ -96,7 +240,24 @@ macro_rules! impl_simd_float {
       bitor,
       BitOrAssign,
       bitor_assign,
-      $fn_bitor
+      $fn_bitor,
+      /// Computes bitwise OR for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise OR for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise OR for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
     );
     impl_binary_operator!(
       $T,
@@ -105,13 +266,33 @@ macro_rules! impl_simd_float {
       bitxor,
       BitXorAssign,
       bitxor_assign,
-      $fn_bitxor
+      $fn_bitxor,
+      /// Computes bitwise XOR for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise XOR for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise XOR for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
     );
 
     impl<Rhs> core::iter::Sum<Rhs> for $Simd
     where
       $Simd: AddAssign<Rhs>,
     {
+      /// Computes the sum of multiple SIMD vectors for each lane.
+      ///
+      /// The order of addition is not specified.
       #[inline]
       fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
         let mut total = Self::zeroed();
@@ -126,6 +307,9 @@ macro_rules! impl_simd_float {
     where
       $Simd: MulAssign<Rhs>,
     {
+      /// Computes the product of multiple SIMD vectors for each lane.
+      ///
+      /// The order of multiplication is not specified.
       #[inline]
       fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
         let mut total = Self::from(1.0);
