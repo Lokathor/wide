@@ -271,83 +271,12 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: self.avx.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: add_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: sub_i8_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `i16`
-    // then converting back after multiplication, but that may not actually be
-    // faster than auto-vectorization.
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a * rhs_a, self_b * rhs_b])
-  }
-
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u8x32) -> Self::Output {
     // For x86, this technically can be done explicitly by converting to `i16`
     // or `i32` then converting back after multiplication, but that may not
     // actually be faster than auto-vectorization.
     let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
-    cast([self_a << rhs_a, self_b << rhs_b])
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting
-    // to `i16` or `i32` then converting back after multiplication, but that
-    // may not actually be faster than auto-vectorization.
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    cast([self_a << rhs, self_b << rhs])
-  }
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `i16`
-    // or `i32` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    let [self_a, self_b]: [i8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [i8x16; 2] = cast(rhs);
+    let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
     cast([self_a >> rhs_a, self_b >> rhs_b])
   }
 
@@ -358,48 +287,6 @@ impl_simd_int! {
     // may not actually be faster than auto-vectorization.
     let [self_a, self_b]: [i8x16; 2] = cast(self);
     cast([self_a >> rhs, self_b >> rhs])
-  }
-
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-          Self { avx : bitand_m256i(self.avx,rhs.avx) }
-      } else {
-          Self {
-            a : self.a.bitand(rhs.a),
-            b : self.b.bitand(rhs.b),
-          }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : bitor_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx : bitxor_m256i(self.avx,rhs.avx) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
   }
 
   #[inline]
@@ -431,18 +318,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  pub fn reduce_add(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> i8 {
-    let array: [i8x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
-
-  #[inline]
   pub fn reduce_max(self) -> i8 {
     let array: [i8x16; 2] = cast(self);
     array[0].max(array[1]).reduce_max()
@@ -452,6 +327,25 @@ impl_simd_int! {
   pub fn reduce_min(self) -> i8 {
     let array: [i8x16; 2] = cast(self);
     array[0].min(array[1]).reduce_min()
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: u8x32) -> Self {
+    // For x86, this technically can be done explicitly by converting to `i16`
+    // or `i32` then converting back after multiplication, but that may not
+    // actually be faster than auto-vectorization.
+    let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
+    cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    let [self_a, self_b] = cast::<i8x32, [i8x16; 2]>(self);
+    cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
   }
 
   #[inline]
@@ -588,7 +482,7 @@ impl i8x32 {
   pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.saturating_add(i8x32::splat(0x60)).avx) }
+        Self { avx: shuffle_av_i8z_half_m256i(self.avx, add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x70))) }
       } else {
           Self {
             a : self.a.swizzle(rhs.a),
@@ -616,6 +510,105 @@ impl i8x32 {
         Self {
           a : self.a.swizzle_relaxed(rhs.a),
           b : self.b.swizzle_relaxed(rhs.b),
+        }
+      }
+    }
+  }
+
+  /// Full 32-entry byte table lookup.
+  ///
+  /// * An index (interpreted as unsigned) in `[0, 31]` selects `self[index]`.
+  /// * Any index `>= 32` (including negative `i8` values) yields `0`.
+  ///
+  /// Unlike [`swizzle_half`](Self::swizzle_half), indices address the entire
+  /// 32-byte vector, not just their own 16-byte half.
+  #[inline]
+  pub fn swizzle(self, rhs: i8x32) -> i8x32 {
+    pick! {
+      if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_permutexvar_epi8;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_permutexvar_epi8;
+        // vpermb takes the index mod 32 and never zeroes, so zero the
+        // out-of-range lanes ourselves: (rhs & 0xE0) == 0  <=>  rhs < 32.
+        // TODO(safe_arch): Add `_mm256_permutexvar_epi8`.
+        let permuted = m256i(unsafe { _mm256_permutexvar_epi8(rhs.avx.0, self.avx.0) });
+        let hi_bits = bitand_m256i(rhs.avx, set_splat_i8_m256i(0xE0_u8 as i8));
+        let in_range = cmp_eq_mask_i8_m256i(hi_bits, zeroed_m256i());
+        Self { avx: bitand_m256i(permuted, in_range) }
+      } else if #[cfg(target_feature="avx2")] {
+        // Broadcast each 16-byte table half into both 128-bit lanes, pshufb
+        // each by the index, blend by index bit 4. Fold the >=32 zeroing into
+        // pshufb with an unsigned saturating add of 0x60 (0x60 + 32 = 0x80).
+        let idx = add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x60));
+        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.avx, self.avx);
+        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.avx, self.avx);
+        let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, idx);
+        let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, idx);
+        // move index bit 4 into the sign bit (bit 7) for blendv.
+        let sel = shl_imm_u16_m256i::<3>(rhs.avx);
+        Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        use core::arch::aarch64::{int8x16x2_t, vqtbl2q_s8, vreinterpretq_u8_s8};
+        unsafe {
+          let table = int8x16x2_t(self.a.neon, self.b.neon);
+          Self {
+            a: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.a.neon)) },
+            b: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.b.neon)) },
+          }
+        }
+      } else {
+        // Generic {a,b}: each output half pulls from either table half.
+        // a.swizzle / b.swizzle are STRICT (zero index >= 16), and their
+        // nonzero domains are disjoint, so a bitwise OR selects correctly and
+        // out-of-range (>=32) falls out as 0 with no extra mask.
+        let sixteen = i8x16::splat(16);
+        Self {
+          a: self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a - sixteen),
+          b: self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b - sixteen),
+        }
+      }
+    }
+  }
+
+  /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
+  /// `>= 32`) yield an implementation-defined result (`0` or `self[index % 32]`).
+  /// Prefer this when you know all indices are in range; it can be cheaper.
+  #[inline]
+  pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
+    pick! {
+      if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_permutexvar_epi8;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_permutexvar_epi8;
+        // TODO(safe_arch): Add `_mm256_permutexvar_epi8`.
+        Self { avx: m256i(unsafe { _mm256_permutexvar_epi8(rhs.avx.0, self.avx.0) }) }
+      } else if #[cfg(target_feature="avx2")] {
+        // Same broadcast+blend as strict, but skip the 0x60 zeroing fold.
+        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.avx, self.avx);
+        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.avx, self.avx);
+        let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, rhs.avx);
+        let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, rhs.avx);
+        let sel = shl_imm_u16_m256i::<3>(rhs.avx);
+        Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        // vqtbl2 zeroes out-of-range anyway; identical to strict.
+        use core::arch::aarch64::{int8x16x2_t, vqtbl2q_s8, vreinterpretq_u8_s8};
+        unsafe {
+          let table = int8x16x2_t(self.a.neon, self.b.neon);
+          Self {
+            a: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.a.neon)) },
+            b: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.b.neon)) },
+          }
+        }
+      } else {
+        // Strict fallback is a valid relaxed implementation (it zeroes OOR).
+        let sixteen = i8x16::splat(16);
+        Self {
+          a: self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a - sixteen),
+          b: self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b - sixteen),
         }
       }
     }

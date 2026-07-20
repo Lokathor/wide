@@ -309,7 +309,9 @@ impl_simd_float! {
     N = 2,
     Simd = f64x2,
     UnsignedT = u64,
+    UnsignedSimd = u64x2,
   }
+  old_powf_simd_fn_name = pow_f64x2,
 
   #[inline]
   fn neg(self) -> Self::Output {
@@ -1079,7 +1081,7 @@ impl_simd_float! {
   }
 
   #[inline]
-  pub fn pow_f64x2(self, y: Self) -> Self {
+  pub fn powf_simd(self, n: Self) -> Self {
     const_f64_as_f64x2!(ln2d_hi, 0.693145751953125);
     const_f64_as_f64x2!(ln2d_lo, 1.42860682030941723212E-6);
     const_f64_as_f64x2!(P0log, 2.0039553499201281259648E1);
@@ -1123,17 +1125,17 @@ impl_simd_float! {
 
     let ef = x1.exponent();
     let ef = mask.select(ef + f64x2::ONE, ef);
-    let e1 = (ef * y).round_ties_even();
-    let yr = ef.mul_sub(y, e1);
+    let e1 = (ef * n).round_ties_even();
+    let yr = ef.mul_sub(n, e1);
 
     let lg = f64x2::HALF.mul_neg_add(x2, x) + lg1;
     let x2err = (f64x2::HALF * x).mul_sub(x, f64x2::HALF * x2);
     let lg_err = f64x2::HALF.mul_add(x2, lg - x) - lg1;
 
-    let e2 = (lg * y * f64x2::LOG2_E).round_ties_even();
-    let v = lg.mul_sub(y, e2 * ln2d_hi);
+    let e2 = (lg * n * f64x2::LOG2_E).round_ties_even();
+    let v = lg.mul_sub(n, e2 * ln2d_hi);
     let v = e2.mul_neg_add(ln2d_lo, v);
-    let v = v - (lg_err + x2err).mul_sub(y, yr * f64x2::LN_2);
+    let v = v - (lg_err + x2err).mul_sub(n, yr * f64x2::LN_2);
 
     let x = v;
     let e3 = (x * f64x2::LOG2_E).round_ties_even();
@@ -1164,9 +1166,9 @@ impl_simd_float! {
     // Check for self == 0
     let x_zero = self.is_zero_or_subnormal();
     let z = x_zero.select(
-      y.simd_lt(f64x2::ZERO).select(
+      n.simd_lt(f64x2::ZERO).select(
         Self::infinity(),
-        y.simd_eq(f64x2::ZERO).select(f64x2::ONE, f64x2::ZERO),
+        n.simd_eq(f64x2::ZERO).select(f64x2::ONE, f64x2::ZERO),
       ),
       z,
     );
@@ -1174,9 +1176,9 @@ impl_simd_float! {
     let x_sign = self.is_sign_negative();
     let z = if x_sign.any() {
       // Y into an integer
-      let yi = y.simd_eq(y.round_ties_even());
+      let yi = n.simd_eq(n.round_ties_even());
       // Is y odd? If yes flip the sign of the result.
-      let y_odd = cast::<i64x2, f64x2>(y.round_int() << 63);
+      let y_odd = cast::<i64x2, f64x2>(n.round_int() << 63);
 
       let z1 = yi
         .select(z | y_odd, self.simd_eq(Self::ZERO).select(z, Self::nan_pow()));
@@ -1186,19 +1188,14 @@ impl_simd_float! {
     };
 
     let x_finite = self.is_finite();
-    let y_finite = y.is_finite();
+    let y_finite = n.is_finite();
     let e_finite = ee.is_finite();
 
     if (x_finite & y_finite & (e_finite | x_zero)).all() {
       return z;
     }
 
-    (self.is_nan() | y.is_nan()).select(self + y, z)
-  }
-
-  #[inline]
-  pub fn powf(self, y: f64) -> Self {
-    Self::pow_f64x2(self, f64x2::splat(y))
+    (self.is_nan() | n.is_nan()).select(self + n, z)
   }
 
   #[inline]

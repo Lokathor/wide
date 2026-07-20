@@ -240,104 +240,11 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let arr1: [i64; 4] = cast(self);
-        let arr2: [i64; 4] = cast(rhs);
-        cast([
-          arr1[0].wrapping_mul(arr2[0]),
-          arr1[1].wrapping_mul(arr2[1]),
-          arr1[2].wrapping_mul(arr2[2]),
-          arr1[3].wrapping_mul(arr2[3]),
-        ])
-      } else {
-        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & Self::splat(63);
-        Self { avx2: shl_each_u64_m256i(self.avx2, shift_by.avx2) }
-      } else {
-        Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 63, 0]);
-        Self { avx2: shl_all_u64_m256i(self.avx2, shift) }
-      } else {
-        Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u64x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let arr: [i64; 4] = cast(self);
-        let rhs: [i64; 4] = cast(rhs);
+        let rhs: [u64; 4] = cast(rhs);
         cast([
           arr[0].wrapping_shr(rhs[0] as u32),
           arr[1].wrapping_shr(rhs[1] as u32),
@@ -361,48 +268,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx2")] {
-            Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     self.simd_gt(rhs).select(self, rhs)
   }
@@ -410,34 +275,6 @@ impl_simd_int! {
   #[inline]
   pub fn min(self, rhs: Self) -> Self {
     self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> i64 {
-    pick! {
-      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
-        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
-        let xz_yw = add_i64_m256i(zwxx, self.avx2);
-        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
-        let sum = add_i64_m256i(xz_yw, yw_xz);
-        extract_i64_from_m256i::<0>(sum)
-      } else {
-        let array: [i64; 4] = cast(self);
-        array[0]
-          .wrapping_add(array[1])
-          .wrapping_add(array[2])
-          .wrapping_add(array[3])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> i64 {
-    let array: [i64; 4] = cast(self);
-    array[0]
-      .wrapping_mul(array[1])
-      .wrapping_mul(array[2])
-      .wrapping_mul(array[3])
   }
 
   #[inline]
@@ -450,6 +287,21 @@ impl_simd_int! {
   pub fn reduce_min(self) -> i64 {
     let array: [i64; 4] = cast(self);
     array[0].min(array[1]).min(array[2]).min(array[3])
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: u64x4) -> Self {
+    let [self_a, self_b] = cast::<i64x4, [i64x2; 2]>(self);
+    let [rhs_a, rhs_b] = cast::<u64x4, [u64x2; 2]>(rhs);
+
+    cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // there is no signed right shift in AVX2
+    let [self_a, self_b] = cast::<i64x4, [i64x2; 2]>(self);
+    cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
   }
 
   #[inline]

@@ -257,6 +257,7 @@ impl_simd_uint! {
     T = u64,
     N = 2,
     Simd = u64x2,
+    SignedSimd = i64x2,
     T_BITS = 64,
     T_BITS_MUL_2 = 128,
     [0, 1],
@@ -481,9 +482,17 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u64 {
-    cast(i64x2::reduce_add(cast(self)))
+    pick! {
+      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+        let array: [u64; 2] = cast(self);
+        array[0].wrapping_add(array[1])
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vgetq_lane_u64(self.neon, 0).wrapping_add(vgetq_lane_u64(self.neon, 1)) }
+      } else {
+        self.arr[0].wrapping_add(self.arr[1])
+      }
+    }
   }
-
 
   #[inline]
   pub fn reduce_mul(self) -> u64 {
@@ -523,6 +532,86 @@ impl_simd_uint! {
         unsafe { vgetq_lane_u64(self.neon, 0).min(vgetq_lane_u64(self.neon, 1)) }
       } else {
         self.arr[0].min(self.arr[1])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { sse: shl_each_u64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // The intrinsic has different semantics so we need to mask ourselves.
+          Self { neon: vshlq_u64(self.neon, vreinterpretq_s64_u64(rhs.neon)) } & rhs.simd_lt(64)
+        }
+      } else {
+        // Cannot use scalar `unbounded_shl` because it takes `u32`, which is
+        // smaller than `u64`.
+        (self << rhs) & rhs.simd_lt(64)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: shl_all_u64_m128i(self.sse, cast([rhs as u64, 0])) }
+      } else if #[cfg(target_feature="simd128")] {
+        // The intrinsic performs wrapping shift so we need to mask the result.
+        Self { simd: u64x2_shl(self.simd, rhs) } & Self::splat(rhs as u64).simd_lt(64)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vshlq_u64(self.neon, vmovq_n_s64(rhs.min(64) as i64)) } }
+      } else {
+        Self { arr: [
+          self.arr[0].unbounded_shl(rhs),
+          self.arr[1].unbounded_shl(rhs),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { sse: shr_each_u64_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // mask to hide `rhs` overflow.
+          Self { neon: vshlq_u64(self.neon, vnegq_s64(vreinterpretq_s64_u64(rhs.neon))) } & rhs.simd_lt(64)
+        }
+      } else {
+        // Cannot use scalar `unbounded_shr` because it takes `u32`, which is
+        // smaller than `u64`.
+        (self >> rhs) & rhs.simd_lt(64)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: shr_all_u64_m128i(self.sse, cast([rhs as u64, 0])) }
+      } else if #[cfg(target_feature="simd128")] {
+        if rhs < 64 { Self { simd: u64x2_shr(self.simd, rhs) } } else { Self::ZERO }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          Self { neon: vshlq_u64(self.neon, vmovq_n_s64(-rhs.min(64).cast_signed() as i64)) }
+        }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].unbounded_shr(rhs),
+            self.arr[1].unbounded_shr(rhs),
+          ],
+        }
       }
     }
   }

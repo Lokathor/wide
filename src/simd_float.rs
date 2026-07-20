@@ -11,7 +11,9 @@ macro_rules! impl_simd_float {
       N = $N:literal,
       Simd = $Simd:ident,
       UnsignedT = $UnsignedT:ident,
+      UnsignedSimd = $UnsignedSimd:ident,
     }
+    old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
 
     $fn_neg:item
     $fn_not:item
@@ -52,8 +54,7 @@ macro_rules! impl_simd_float {
     $fn_mul_sub:item
     $fn_mul_neg_add:item
     $fn_mul_neg_sub:item
-    $fn_pow_simd:item
-    $fn_powf:item
+    $fn_powf_simd:item
     $fn_sqrt:item
     $fn_exp:item
     $fn_exp2:item
@@ -477,6 +478,30 @@ macro_rules! impl_simd_float {
         (self + other) * 0.5
       }
 
+      /// Raw transmutation to unsigned integer vector.
+      ///
+      /// Note that this function preserves the *bitwise* value, and not the
+      /// numeric value.
+      #[inline]
+      #[must_use]
+      pub const fn to_bits(self) -> $UnsignedSimd {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+      }
+
+      /// Raw transmutation from unsigned integer vector.
+      ///
+      /// Note that this function preserves the *bitwise* value, and not the
+      /// numeric value.
+      #[inline]
+      #[must_use]
+      pub const fn from_bits(bits: $UnsignedSimd) -> Self {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
+      }
+
       /// Restrict a value to a certain interval unless it is NaN.
       ///
       /// If `self`, `min` or `max` are NaN, the result is NaN. If `min > max`,
@@ -731,16 +756,8 @@ macro_rules! impl_simd_float {
       /// Raises each element of the number `self` to the corresponding element
       /// of the floating point power `n`.
       ///
-      /// # Unspecified precision
-      ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
-      /// execution from one invocation to the next.
-      #[must_use]
-      $fn_pow_simd
-
-      /// Raises each element of the number `self` to the scalar floating point
-      /// power `n`.
+      /// This function cannot be named simply `powf`, because a now deprecated
+      /// function already uses that name.
       ///
       /// # Unspecified precision
       ///
@@ -748,7 +765,7 @@ macro_rules! impl_simd_float {
       /// varies by platform, version, and can even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
-      $fn_powf
+      $fn_powf_simd
 
       /// Returns the square root of a number for each input element.
       ///
@@ -995,6 +1012,44 @@ macro_rules! impl_simd_float {
       /// execution from one invocation to the next.
       #[must_use]
       $fn_tanh
+
+      /// Raises each element of the number `self` to the corresponding element
+      /// of the floating point power `n`.
+      ///
+      /// This function has been renamed to [`powf_simd`].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
+      ///
+      /// [`powf_simd`]: Self::powf_simd
+      #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+      #[inline]
+      #[must_use]
+      pub fn $old_powf_simd_fn_name(self, n: Self) -> Self {
+        self.powf_simd(n)
+      }
+
+      /// Raises each element of the number `self` to the scalar floating point
+      /// power `n`.
+      ///
+      /// This function has been deprecated because it raises all elements of
+      /// `x` to the same power, even though that brings no performance benefit.
+      #[doc = concat!("Use `x.powf_simd(", stringify!($Simd), "::splat(n))` instead.")]
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
+      #[deprecated(since = "1.6.0", note = "use `x.powf_simd(splat(n))` instead")]
+      #[inline]
+      #[must_use]
+      pub fn powf(self, n: $T) -> Self {
+        self.powf_simd(Self::splat(n))
+      }
     }
   };
 }

@@ -292,6 +292,7 @@ impl_simd_uint! {
     T = u16,
     N = 8,
     Simd = u16x8,
+    SignedSimd = i16x8,
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7],
@@ -633,7 +634,32 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u16 {
-    cast(i16x8::reduce_add(cast(self)))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // there is a horizontal add instruction on ssse3, but apparently it is very slow on some AMD CPUs
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
+        let sum64 = add_i16_m128i(self.sse, hi64);
+        let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
+        let sum32 = add_i16_m128i(sum64, hi32);
+        let lo16 = shr_imm_u32_m128i::<16>(sum32);
+        let sum16 = add_i16_m128i(sum32, lo16);
+        extract_i16_as_i32_m128i::<0>(sum16) as u16
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { vaddvq_u16(self.neon) }
+      } else {
+        let arr: [u16; 8] = cast(self);
+
+        // most boring implementation possible so optimizer doesn't overthink this
+        let mut r = arr[0];
+        r = r.wrapping_add(arr[1]);
+        r = r.wrapping_add(arr[2]);
+        r = r.wrapping_add(arr[3]);
+        r = r.wrapping_add(arr[4]);
+        r = r.wrapping_add(arr[5]);
+        r = r.wrapping_add(arr[6]);
+        r.wrapping_add(arr[7])
+      }
+    }
   }
 
   #[inline]
@@ -735,6 +761,131 @@ impl_simd_uint! {
         r = r.min(arr[5]);
         r = r.min(arr[6]);
         r.min(arr[7])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_sllv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_sllv_epi16;
+
+        // TODO(safe_arch): Add `_mm_sllv_epi16`.
+        cast(unsafe { _mm_sllv_epi16(self.sse.0, rhs.sse.0) })
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          // The intrinsic has different semantics so we need to mask ourselves.
+          Self { neon: vshlq_u16(self.neon, vreinterpretq_s16_u16(rhs.neon)) } & rhs.simd_lt(16)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].unbounded_shl(rhs_array[0] as u32),
+          self_array[1].unbounded_shl(rhs_array[1] as u32),
+          self_array[2].unbounded_shl(rhs_array[2] as u32),
+          self_array[3].unbounded_shl(rhs_array[3] as u32),
+          self_array[4].unbounded_shl(rhs_array[4] as u32),
+          self_array[5].unbounded_shl(rhs_array[5] as u32),
+          self_array[6].unbounded_shl(rhs_array[6] as u32),
+          self_array[7].unbounded_shl(rhs_array[7] as u32),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: shl_all_u16_m128i(self.sse, cast([rhs as u64, 0])) }
+      } else if #[cfg(target_feature="simd128")] {
+        // The intrinsic performs wrapping shift so we need to mask the result.
+        if rhs >= 16 { Self::ZERO } else { Self { simd: u16x8_shl(self.simd, rhs) } }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        // The intrinsic has different semantics so we need to saturate `rhs`.
+        unsafe { Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs.min(16) as i16)) } }
+      } else {
+        Self { arr: [
+          self.arr[0].unbounded_shl(rhs),
+          self.arr[1].unbounded_shl(rhs),
+          self.arr[2].unbounded_shl(rhs),
+          self.arr[3].unbounded_shl(rhs),
+          self.arr[4].unbounded_shl(rhs),
+          self.arr[5].unbounded_shl(rhs),
+          self.arr[6].unbounded_shl(rhs),
+          self.arr[7].unbounded_shl(rhs),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_srlv_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_srlv_epi16;
+
+        // TODO(safe_arch): Add `_mm_srlv_epi16`.
+        cast(unsafe { _mm_srlv_epi16(self.sse.0, rhs.sse.0) })
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // mask to hide `rhs` overflow.
+          Self { neon: vshlq_u16(self.neon, vnegq_s16(vreinterpretq_s16_u16(rhs.neon))) } & rhs.simd_lt(16)
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].unbounded_shr(rhs_array[0] as u32),
+          self_array[1].unbounded_shr(rhs_array[1] as u32),
+          self_array[2].unbounded_shr(rhs_array[2] as u32),
+          self_array[3].unbounded_shr(rhs_array[3] as u32),
+          self_array[4].unbounded_shr(rhs_array[4] as u32),
+          self_array[5].unbounded_shr(rhs_array[5] as u32),
+          self_array[6].unbounded_shr(rhs_array[6] as u32),
+          self_array[7].unbounded_shr(rhs_array[7] as u32),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: shr_all_u16_m128i(self.sse, cast([rhs as u64, 0])) }
+      } else if #[cfg(target_feature="simd128")] {
+        if rhs < 16 { Self { simd: u16x8_shr(self.simd, rhs) } } else { Self::ZERO }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          Self { neon: vshlq_u16(self.neon, vmovq_n_s16(-rhs.min(16).cast_signed() as i16)) }
+        }
+      } else {
+        Self {
+          arr: [
+            self.arr[0].unbounded_shr(rhs),
+            self.arr[1].unbounded_shr(rhs),
+            self.arr[2].unbounded_shr(rhs),
+            self.arr[3].unbounded_shr(rhs),
+            self.arr[4].unbounded_shr(rhs),
+            self.arr[5].unbounded_shr(rhs),
+            self.arr[6].unbounded_shr(rhs),
+            self.arr[7].unbounded_shr(rhs),
+          ],
+        }
       }
     }
   }

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+* Added cast functions `cast_unsigned`, `cast_signed`, `to_bits`, `from_bits`.
+* Added `u8x32`/`i8x32` `swizzle` and `swizzle_relaxed`: a full-width 32-entry
+  byte table lookup (`vpermb` on AVX-512-VBMI, `vqtbl2` on NEON, emulated on
+  AVX2/SSSE3).
+* Fixed `i8x32`/`u8x32` `swizzle_half` on AVX2: out-of-range indices now
+  correctly zero their output lane (previously leaked `self[..][0]`).
+* Made `to_array`, `as_array` and `as_mut_array` available in const contexts.
+* Added four unbounded-shift functions for integers.
+* Renamed float function `pow_{simd-type-name}` to `powf_simd` and deprecated `powf`.
 * Added conversions between `wide` types and native intrinsics SIMD types.
 * Added `reduce_mul` for integers.
 * Added integer functions `reduce_mul` and `mul_keep_low_high`.
@@ -11,7 +20,8 @@
 
 * Fixed bugs in the fallback paths of `any`, `all`, `none` and `fast_clamp`.
 
-* Added support for shifting SIMD vectors by values of `isize` and `usize`.
+* Added support for shifting SIMD vectors by values of `isize` and `usize` and
+  SIMD vectors of "opposite-signedness".
 * Deprecated `blend` and replaced it with `select` and `bitselect`.
 * Fixed bug in `powf`.
 * Fixed `clamp` and added guarantees for `fast_clamp`.

@@ -457,185 +457,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn not(self) -> Self::Output {
-    self ^ cast::<u128, i8x16>(u128::MAX)
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: add_i8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_add(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vaddq_s8(self.neon, rhs.neon) } }
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_add(rhs.arr[0]),
-          self.arr[1].wrapping_add(rhs.arr[1]),
-          self.arr[2].wrapping_add(rhs.arr[2]),
-          self.arr[3].wrapping_add(rhs.arr[3]),
-          self.arr[4].wrapping_add(rhs.arr[4]),
-          self.arr[5].wrapping_add(rhs.arr[5]),
-          self.arr[6].wrapping_add(rhs.arr[6]),
-          self.arr[7].wrapping_add(rhs.arr[7]),
-          self.arr[8].wrapping_add(rhs.arr[8]),
-          self.arr[9].wrapping_add(rhs.arr[9]),
-          self.arr[10].wrapping_add(rhs.arr[10]),
-          self.arr[11].wrapping_add(rhs.arr[11]),
-          self.arr[12].wrapping_add(rhs.arr[12]),
-          self.arr[13].wrapping_add(rhs.arr[13]),
-          self.arr[14].wrapping_add(rhs.arr[14]),
-          self.arr[15].wrapping_add(rhs.arr[15]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: sub_i8_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i8x16_sub(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vsubq_s8(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_sub(rhs.arr[0]),
-          self.arr[1].wrapping_sub(rhs.arr[1]),
-          self.arr[2].wrapping_sub(rhs.arr[2]),
-          self.arr[3].wrapping_sub(rhs.arr[3]),
-          self.arr[4].wrapping_sub(rhs.arr[4]),
-          self.arr[5].wrapping_sub(rhs.arr[5]),
-          self.arr[6].wrapping_sub(rhs.arr[6]),
-          self.arr[7].wrapping_sub(rhs.arr[7]),
-          self.arr[8].wrapping_sub(rhs.arr[8]),
-          self.arr[9].wrapping_sub(rhs.arr[9]),
-          self.arr[10].wrapping_sub(rhs.arr[10]),
-          self.arr[11].wrapping_sub(rhs.arr[11]),
-          self.arr[12].wrapping_sub(rhs.arr[12]),
-          self.arr[13].wrapping_sub(rhs.arr[13]),
-          self.arr[14].wrapping_sub(rhs.arr[14]),
-          self.arr[15].wrapping_sub(rhs.arr[15]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    // For x86 and wasm, this technically can be done explicitly by converting
-    // to `i16` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    pick! {
-      if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vmulq_s8(self.neon, rhs.neon) } }
-      } else {
-        let self_array: [i8; 16] = cast(self);
-        let rhs_array: [i8; 16] = cast(rhs);
-
-        Self::new([
-          self_array[0].wrapping_mul(rhs_array[0]),
-          self_array[1].wrapping_mul(rhs_array[1]),
-          self_array[2].wrapping_mul(rhs_array[2]),
-          self_array[3].wrapping_mul(rhs_array[3]),
-          self_array[4].wrapping_mul(rhs_array[4]),
-          self_array[5].wrapping_mul(rhs_array[5]),
-          self_array[6].wrapping_mul(rhs_array[6]),
-          self_array[7].wrapping_mul(rhs_array[7]),
-          self_array[8].wrapping_mul(rhs_array[8]),
-          self_array[9].wrapping_mul(rhs_array[9]),
-          self_array[10].wrapping_mul(rhs_array[10]),
-          self_array[11].wrapping_mul(rhs_array[11]),
-          self_array[12].wrapping_mul(rhs_array[12]),
-          self_array[13].wrapping_mul(rhs_array[13]),
-          self_array[14].wrapping_mul(rhs_array[14]),
-          self_array[15].wrapping_mul(rhs_array[15]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting
-    // to `i16` or `i32` then converting back after multiplication, but that may
-    // not actually be faster than auto-vectorization.
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          // Mask `rhs` to 7 to match `wrapping_shl`.
-          let shift_by = vandq_s8(rhs.neon, vmovq_n_s8(7));
-          Self { neon: vshlq_s8(self.neon, shift_by) }
-        }
-      } else {
-        let self_array: [i8; 16] = cast(self);
-        let rhs_array: [i8; 16] = cast(rhs);
-
-        Self::new([
-          self_array[0].wrapping_shl(rhs_array[0] as u32),
-          self_array[1].wrapping_shl(rhs_array[1] as u32),
-          self_array[2].wrapping_shl(rhs_array[2] as u32),
-          self_array[3].wrapping_shl(rhs_array[3] as u32),
-          self_array[4].wrapping_shl(rhs_array[4] as u32),
-          self_array[5].wrapping_shl(rhs_array[5] as u32),
-          self_array[6].wrapping_shl(rhs_array[6] as u32),
-          self_array[7].wrapping_shl(rhs_array[7] as u32),
-          self_array[8].wrapping_shl(rhs_array[8] as u32),
-          self_array[9].wrapping_shl(rhs_array[9] as u32),
-          self_array[10].wrapping_shl(rhs_array[10] as u32),
-          self_array[11].wrapping_shl(rhs_array[11] as u32),
-          self_array[12].wrapping_shl(rhs_array[12] as u32),
-          self_array[13].wrapping_shl(rhs_array[13] as u32),
-          self_array[14].wrapping_shl(rhs_array[14] as u32),
-          self_array[15].wrapping_shl(rhs_array[15] as u32),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting
-    // to `i16` or `i32` then converting back after multiplication, but that
-    // may not actually be faster than auto-vectorization.
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        // Mask `rhs` to 7 to match `wrapping_shl`.
-        Self { simd: i8x16_shl(self.simd, rhs & 7) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // Mask `rhs` to 7 to match `wrapping_shl`.
-        unsafe { Self { neon: vshlq_s8(self.neon, vmovq_n_s8(rhs as i8 & 7)) } }
-      } else {
-        let self_array = self.to_array();
-
-        cast([
-          self_array[0].wrapping_shl(rhs),
-          self_array[1].wrapping_shl(rhs),
-          self_array[2].wrapping_shl(rhs),
-          self_array[3].wrapping_shl(rhs),
-          self_array[4].wrapping_shl(rhs),
-          self_array[5].wrapping_shl(rhs),
-          self_array[6].wrapping_shl(rhs),
-          self_array[7].wrapping_shl(rhs),
-          self_array[8].wrapping_shl(rhs),
-          self_array[9].wrapping_shl(rhs),
-          self_array[10].wrapping_shl(rhs),
-          self_array[11].wrapping_shl(rhs),
-          self_array[12].wrapping_shl(rhs),
-          self_array[13].wrapping_shl(rhs),
-          self_array[14].wrapping_shl(rhs),
-          self_array[15].wrapping_shl(rhs),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u8x16) -> Self::Output {
     // For x86, this technically can be done explicitly by converting
     // to `i16` or `i32` then converting back after multiplication, but that may
     // not actually be faster than auto-vectorization.
@@ -644,12 +466,12 @@ impl_simd_int! {
         unsafe {
           // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
           // there is no shift-right intrinsic.
-          let neg_rhs = vnegq_s8(vandq_s8(rhs.neon, vmovq_n_s8(7)));
+          let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(vandq_u8(rhs.neon, vmovq_n_u8(7))));
           Self { neon: vshlq_s8(self.neon, neg_rhs) }
         }
       } else {
         let self_array: [i8; 16] = cast(self);
-        let rhs_array: [i8; 16] = cast(rhs);
+        let rhs_array: [u8; 16] = cast(rhs);
 
         Self::new([
           self_array[0].wrapping_shr(rhs_array[0] as u32),
@@ -712,102 +534,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitand_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_and(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vandq_s8(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitand(rhs.arr[0]),
-          self.arr[1].bitand(rhs.arr[1]),
-          self.arr[2].bitand(rhs.arr[2]),
-          self.arr[3].bitand(rhs.arr[3]),
-          self.arr[4].bitand(rhs.arr[4]),
-          self.arr[5].bitand(rhs.arr[5]),
-          self.arr[6].bitand(rhs.arr[6]),
-          self.arr[7].bitand(rhs.arr[7]),
-          self.arr[8].bitand(rhs.arr[8]),
-          self.arr[9].bitand(rhs.arr[9]),
-          self.arr[10].bitand(rhs.arr[10]),
-          self.arr[11].bitand(rhs.arr[11]),
-          self.arr[12].bitand(rhs.arr[12]),
-          self.arr[13].bitand(rhs.arr[13]),
-          self.arr[14].bitand(rhs.arr[14]),
-          self.arr[15].bitand(rhs.arr[15]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_or(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vorrq_s8(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitor(rhs.arr[0]),
-          self.arr[1].bitor(rhs.arr[1]),
-          self.arr[2].bitor(rhs.arr[2]),
-          self.arr[3].bitor(rhs.arr[3]),
-          self.arr[4].bitor(rhs.arr[4]),
-          self.arr[5].bitor(rhs.arr[5]),
-          self.arr[6].bitor(rhs.arr[6]),
-          self.arr[7].bitor(rhs.arr[7]),
-          self.arr[8].bitor(rhs.arr[8]),
-          self.arr[9].bitor(rhs.arr[9]),
-          self.arr[10].bitor(rhs.arr[10]),
-          self.arr[11].bitor(rhs.arr[11]),
-          self.arr[12].bitor(rhs.arr[12]),
-          self.arr[13].bitor(rhs.arr[13]),
-          self.arr[14].bitor(rhs.arr[14]),
-          self.arr[15].bitor(rhs.arr[15]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_xor(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: veorq_s8(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitxor(rhs.arr[0]),
-          self.arr[1].bitxor(rhs.arr[1]),
-          self.arr[2].bitxor(rhs.arr[2]),
-          self.arr[3].bitxor(rhs.arr[3]),
-          self.arr[4].bitxor(rhs.arr[4]),
-          self.arr[5].bitxor(rhs.arr[5]),
-          self.arr[6].bitxor(rhs.arr[6]),
-          self.arr[7].bitxor(rhs.arr[7]),
-          self.arr[8].bitxor(rhs.arr[8]),
-          self.arr[9].bitxor(rhs.arr[9]),
-          self.arr[10].bitxor(rhs.arr[10]),
-          self.arr[11].bitxor(rhs.arr[11]),
-          self.arr[12].bitxor(rhs.arr[12]),
-          self.arr[13].bitxor(rhs.arr[13]),
-          self.arr[14].bitxor(rhs.arr[14]),
-          self.arr[15].bitxor(rhs.arr[15]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
@@ -833,91 +559,6 @@ impl_simd_int! {
         unsafe {Self { neon: vminq_s8(self.neon, rhs.neon) }}
       } else {
         self.simd_lt(rhs).select(self, rhs)
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> i8 {
-    #[allow(dead_code)]
-    const SHUFFLE_1: [i8; 16] =
-      [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
-    #[allow(dead_code)]
-    const SHUFFLE_2: [i8; 16] =
-      [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
-    #[allow(dead_code)]
-    const SHUFFLE_3: [i8; 16] =
-      [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    #[allow(dead_code)]
-    const SHUFFLE_4: [i8; 16] =
-      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        let rhs = shuffle_av_i8z_all_m128i(self.sse, m128i::from(SHUFFLE_1));
-        let sum = add_i8_m128i(self.sse, rhs);
-        let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_2));
-        let sum = add_i8_m128i(sum, rhs);
-        let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_3));
-        let sum = add_i8_m128i(sum, rhs);
-        let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_4));
-        let sum = add_i8_m128i(sum, rhs);
-        get_i32_from_m128i_s(sum) as i8
-      } else if #[cfg(target_feature="simd128")] {
-        let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.simd, self.simd);
-        let sum = i8x16_add(self.simd, rhs);
-        let rhs = i8x16_shuffle::<4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0>(sum, sum);
-        let sum = i8x16_add(sum, rhs);
-        let rhs = i8x16_shuffle::<2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(sum, sum);
-        let sum = i8x16_add(sum, rhs);
-        let rhs = i8x16_shuffle::<1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>(sum, sum);
-        let sum = i8x16_add(sum, rhs);
-        i8x16_extract_lane::<0>(sum)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          // Use `transmute` instead of `cast` because `int8x16_t` does not
-          // implement `bytemuck::Pod`.
-          let rhs = vqtbl1q_s8(self.neon, core::mem::transmute(SHUFFLE_1));
-          let sum = vaddq_s8(self.neon, rhs);
-          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_2));
-          let sum = vaddq_s8(sum, rhs);
-          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_3));
-          let sum = vaddq_s8(sum, rhs);
-          let rhs = vqtbl1q_s8(sum, core::mem::transmute(SHUFFLE_4));
-          let sum = vaddq_s8(sum, rhs);
-          vgetq_lane_s8(sum, 0)
-        }
-      } else {
-        let array: [i8; 16] = cast(self);
-        array.into_iter().reduce(i8::wrapping_add).unwrap()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> i8 {
-    pick! {
-      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        const HIGH_64: [u8; 16] = [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
-        const HIGH_32: [u8; 16] = [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
-        const HIGH_16: [u8; 16] = [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        const HIGH_8: [u8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-        unsafe {
-          // Use `transmute` instead of `cast` because `int8x16_t` does not
-          // implement `bytemuck::Pod`.
-          let high_64 = vqtbl1q_s8(self.neon, core::mem::transmute(HIGH_64));
-          let reduce_64 = vmulq_s8(self.neon, high_64);
-          let high_32 = vqtbl1q_s8(reduce_64, core::mem::transmute(HIGH_32));
-          let reduce_32 = vmulq_s8(reduce_64, high_32);
-          let high_16 = vqtbl1q_s8(reduce_32, core::mem::transmute(HIGH_16));
-          let reduce_16 = vmulq_s8(reduce_32, high_16);
-          let high_8 = vqtbl1q_s8(reduce_16, core::mem::transmute(HIGH_8));
-          let reduce_8 = vmulq_s8(reduce_16, high_8);
-          vgetq_lane_s8::<0>(reduce_8)
-        }
-      } else {
-        self.to_array().into_iter().reduce(i8::wrapping_mul).unwrap()
       }
     }
   }
@@ -1032,6 +673,84 @@ impl_simd_int! {
       } else {
         let array: [i8; 16] = cast(self);
         array.into_iter().reduce(i8::min).unwrap()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: u8x16) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that may
+    // not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(rhs.min(u8x16::splat(8)).neon));
+          Self { neon: vshlq_s8(self.neon, neg_rhs) }
+        }
+      } else {
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        Self::new([
+          self_array[0].unbounded_shr(rhs_array[0] as u32),
+          self_array[1].unbounded_shr(rhs_array[1] as u32),
+          self_array[2].unbounded_shr(rhs_array[2] as u32),
+          self_array[3].unbounded_shr(rhs_array[3] as u32),
+          self_array[4].unbounded_shr(rhs_array[4] as u32),
+          self_array[5].unbounded_shr(rhs_array[5] as u32),
+          self_array[6].unbounded_shr(rhs_array[6] as u32),
+          self_array[7].unbounded_shr(rhs_array[7] as u32),
+          self_array[8].unbounded_shr(rhs_array[8] as u32),
+          self_array[9].unbounded_shr(rhs_array[9] as u32),
+          self_array[10].unbounded_shr(rhs_array[10] as u32),
+          self_array[11].unbounded_shr(rhs_array[11] as u32),
+          self_array[12].unbounded_shr(rhs_array[12] as u32),
+          self_array[13].unbounded_shr(rhs_array[13] as u32),
+          self_array[14].unbounded_shr(rhs_array[14] as u32),
+          self_array[15].unbounded_shr(rhs_array[15] as u32),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    // For x86, this technically can be done explicitly by converting
+    // to `i16` or `i32` then converting back after multiplication, but that
+    // may not actually be faster than auto-vectorization.
+    pick! {
+      if #[cfg(target_feature="simd128")] {
+        if rhs < 8 { Self { simd: i8x16_shr(self.simd, rhs) } } else { self.is_negative() }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // Negate `rhs` because there is no direct shift-right intrinsic, and
+          // restrict it to prevent overflow.
+          Self { neon: vshlq_s8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)) }
+        }
+      } else {
+        let self_array = self.to_array();
+
+        cast([
+          self_array[0].unbounded_shr(rhs),
+          self_array[1].unbounded_shr(rhs),
+          self_array[2].unbounded_shr(rhs),
+          self_array[3].unbounded_shr(rhs),
+          self_array[4].unbounded_shr(rhs),
+          self_array[5].unbounded_shr(rhs),
+          self_array[6].unbounded_shr(rhs),
+          self_array[7].unbounded_shr(rhs),
+          self_array[8].unbounded_shr(rhs),
+          self_array[9].unbounded_shr(rhs),
+          self_array[10].unbounded_shr(rhs),
+          self_array[11].unbounded_shr(rhs),
+          self_array[12].unbounded_shr(rhs),
+          self_array[13].unbounded_shr(rhs),
+          self_array[14].unbounded_shr(rhs),
+          self_array[15].unbounded_shr(rhs),
+        ])
       }
     }
   }

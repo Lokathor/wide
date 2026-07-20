@@ -272,97 +272,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_i32_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_i32_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: mul_i32_keep_low_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.mul(rhs.a),
-          b : self.b.mul(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: i32x8) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // ensure same behavior as scalar wrapping_shl by masking the shift count
-        let shift_by = bitand_m256i(rhs.avx2, set_splat_i32_m256i(31));
-        // shl is the same for unsigned and signed
-        Self { avx2: shl_each_u32_m256i(self.avx2, shift_by) }
-      } else {
-        Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 31, 0]);
-        Self { avx2: shl_all_u32_m256i(self.avx2, shift) }
-      } else {
-        Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shr(self, rhs: i32x8) -> Self::Output {
+  fn shr(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar
@@ -389,47 +299,6 @@ impl_simd_int! {
         Self {
           a : self.a.shr(rhs),
           b : self.b.shr(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx2")] {
-      Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-    } else {
-      Self {
-        a : self.a.bitor(rhs.a),
-        b : self.b.bitor(rhs.b),
-      }
-    }    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
         }
       }
     }
@@ -464,18 +333,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  pub fn reduce_add(self) -> i32 {
-    let arr: [i32x4; 2] = cast(self);
-    (arr[0] + arr[1]).reduce_add()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> i32 {
-    let array: [i32x4; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
-
-  #[inline]
   pub fn reduce_max(self) -> i32 {
     let arr: [i32x4; 2] = cast(self);
     arr[0].max(arr[1]).reduce_max()
@@ -485,6 +342,34 @@ impl_simd_int! {
   pub fn reduce_min(self) -> i32 {
     let arr: [i32x4; 2] = cast(self);
     arr[0].min(arr[1]).reduce_min()
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: u32x8) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: shr_each_i32_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr(rhs.a),
+          b: self.b.unbounded_shr(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: shr_all_i32_m256i(self.avx2, cast([rhs as u64, 0])) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
   }
 
   #[inline]

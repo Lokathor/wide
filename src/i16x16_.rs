@@ -246,102 +246,7 @@ impl_simd_int! {
   }
 
   #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_i16_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_i16_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: mul_i16_keep_low_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.mul(rhs.a),
-          b : self.b.mul(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm256_sllv_epi16;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm256_sllv_epi16;
-
-        // Mask `rhs` to 15 to match `wrapping_shl`.
-        let rhs = bitand_m256i(rhs.avx2, set_splat_i16_m256i(15));
-        // TODO(safe_arch): Add `_mm256_sllv_epi16`.
-        cast(unsafe { _mm256_sllv_epi16(self.avx2.0, rhs.0) })
-      } else {
-        let [self_a, self_b]: [i16x8; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i16x8; 2] = cast(rhs);
-
-        cast([self_a << rhs_a, self_b << rhs_b])
-      }
-    }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 15, 0]);
-        Self { avx2: shl_all_u16_m256i(self.avx2, shift) }
-      } else {
-        Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  fn shr(self, rhs: u16x16) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -355,7 +260,7 @@ impl_simd_int! {
         cast(unsafe { _mm256_srav_epi16(self.avx2.0, rhs.0) })
       } else {
         let [self_a, self_b]: [i16x8; 2] = cast(self);
-        let [rhs_a, rhs_b]: [i16x8; 2] = cast(rhs);
+        let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
 
         cast([self_a >> rhs_a, self_b >> rhs_b])
       }
@@ -374,48 +279,6 @@ impl_simd_int! {
         Self {
           a : self.a.shr(rhs),
           b : self.b.shr(rhs),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
         }
       }
     }
@@ -450,19 +313,6 @@ impl_simd_int! {
   }
 
   #[inline]
-  pub fn reduce_add(self) -> i16 {
-    let arr: [i16x8; 2] = cast(self);
-
-    (arr[0] + arr[1]).reduce_add()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> i16 {
-    let array: [i16x8; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
-  }
-
-  #[inline]
   pub fn reduce_max(self) -> i16 {
     let arr: [i16x8; 2] = cast(self);
 
@@ -474,6 +324,40 @@ impl_simd_int! {
     let arr: [i16x8; 2] = cast(self);
 
     arr[0].min(arr[1]).reduce_min()
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: u16x16) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_srav_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_srav_epi16;
+
+        // TODO(safe_arch): Add `_mm256_srav_epi16`.
+        cast(unsafe { _mm256_srav_epi16(self.avx2.0, rhs.avx2.0) })
+      } else {
+        let [self_a, self_b] = cast::<i16x16, [i16x8; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);
+
+        cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: shr_all_i16_m256i(self.avx2, cast([rhs as u64, 0])) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
   }
 
   #[inline]

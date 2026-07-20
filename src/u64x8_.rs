@@ -179,6 +179,7 @@ impl_simd_uint! {
     T = u64,
     N = 8,
     Simd = u64x8,
+    SignedSimd = i64x8,
     T_BITS = 64,
     T_BITS_MUL_2 = 128,
     [0, 1, 2, 3, 4, 5, 6, 7],
@@ -407,6 +408,62 @@ impl_simd_uint! {
   pub fn reduce_min(self) -> u64 {
     let array: [u64x4; 2] = cast(self);
     array[0].min(array[1]).reduce_min()
+  }
+
+  #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shl_each_u64_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.unbounded_shl(rhs.a),
+          b: self.b.unbounded_shl(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shl_all_u64_m512i(self.avx512, rhs as u64) }
+      } else {
+        Self {
+          a: self.a.unbounded_shl_scalar(rhs),
+          b: self.b.unbounded_shl_scalar(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shr_each_u64_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr(rhs.a),
+          b: self.b.unbounded_shr(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: shr_all_u64_m512i(self.avx512, rhs as u64) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
   }
 
   #[inline]

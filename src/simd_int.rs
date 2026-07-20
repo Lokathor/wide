@@ -16,23 +16,14 @@ macro_rules! impl_simd_int {
       [$($index:literal),* $(,)?],
     }
 
-    $fn_not:item
-    $fn_add:item
-    $fn_sub:item
-    $fn_mul:item
-    $fn_shl:item
-    $fn_shl_u32:item
-    $fn_shr:item
+    $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
-    $fn_bitand:item
-    $fn_bitor:item
-    $fn_bitxor:item
     $fn_max:item
     $fn_min:item
-    $fn_reduce_add:item
-    $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
+    $fn_unbounded_shr:item
+    $fn_unbounded_shr_scalar:item
     $fn_saturating_add:item
     $fn_saturating_sub:item
     $fn_overflowing_mul:item
@@ -52,11 +43,61 @@ macro_rules! impl_simd_int {
         Self::default() - self
       }
     );
-    impl_unary_operator!($Simd, Not, not, $fn_not);
+    impl_unary_operator!(
+      $Simd,
+      Not,
+      not,
+      #[inline]
+      fn not(self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
+      }
+    );
 
-    impl_binary_operator!($T, $Simd, Add, add, AddAssign, add_assign, $fn_add);
-    impl_binary_operator!($T, $Simd, Sub, sub, SubAssign, sub_assign, $fn_sub);
-    impl_binary_operator!($T, $Simd, Mul, mul, MulAssign, mul_assign, $fn_mul);
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Add,
+      add,
+      AddAssign,
+      add_assign,
+      #[inline]
+      fn add(self, rhs: Self) -> Self::Output {
+        // Wrapping addition is the same for signed and unsigned integers.
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Sub,
+      sub,
+      SubAssign,
+      sub_assign,
+      #[inline]
+      fn sub(self, rhs: Self) -> Self::Output {
+        // Wrapping subtraction is the same for signed and unsigned integers.
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Mul,
+      mul,
+      MulAssign,
+      mul_assign,
+      #[inline]
+      fn mul(self, rhs: Self) -> Self::Output {
+        // Wrapping multiplication is the same for signed and unsigned integers.
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
+    );
     impl_binary_operator!(
         $T,
         $Simd,
@@ -145,58 +186,92 @@ macro_rules! impl_simd_int {
     impl_shift_operator!(
       $T,
       $Simd,
+      $UnsignedSimd,
+      $Simd,
       Shl,
       shl,
       ShlAssign,
       shl_assign,
-      $fn_shl,
-      $fn_shl_u32,
-      /// Shifts left each element of `left` by the corresponding element of
-      /// `right`.
+      #[inline]
+      fn shl(self, rhs: $UnsignedSimd) -> Self {
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+      },
+      #[inline]
+      fn shl(self, rhs: u32) -> Self {
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+      },
+      /// Shifts left each element of `self` by the corresponding element of
+      /// `rhs`.
       ///
-      /// This operation behaves like [`wrapping_shl`].
+      /// This operator behaves like [`wrapping_shl`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shl`], so consider using that instead.
       ///
       #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
       ,
-      /// Shifts left each element of `left` by the scalar `right`.
+      /// Shifts left each element of `self` by the uniform scalar `rhs`.
       ///
-      /// This operation behaves like [`wrapping_shl`].
+      /// This operator behaves like [`wrapping_shl`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shl_scalar`], so consider using that instead.
       ///
       #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[doc = concat!("[`unbounded_shl_scalar`]: ", stringify!($Simd), "::unbounded_shl_scalar")]
       ,
-      /// Shifts left the scalar `left` by each element of `right`.
+      /// Shifts left the scalar `self` by each element of `rhs`.
       ///
-      /// This operation behaves like [`wrapping_shl`].
+      /// This operator behaves like [`wrapping_shl`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shl`], so consider using that instead.
       ///
       #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
     );
     impl_shift_operator!(
       $T,
+      $Simd,
+      $UnsignedSimd,
       $Simd,
       Shr,
       shr,
       ShrAssign,
       shr_assign,
-      $fn_shr,
+      $fn_shr_unsigned_simd,
       $fn_shr_u32,
-      /// Shifts right each element of `left` by the corresponding element of
-      /// `right`.
+      /// Shifts right each element of `self` by the corresponding element of
+      /// `rhs`.
       ///
-      /// This operation behaves like [`wrapping_shr`].
+      /// This operator behaves like [`wrapping_shr`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shr`], so consider using that instead.
       ///
       #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
       ,
-      /// Shifts right each element of `left` by the scalar `right`.
+      /// Shifts right each element of `self` by the uniform scalar `rhs`.
       ///
-      /// This operation behaves like [`wrapping_shr`].
+      /// This operator behaves like [`wrapping_shr`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shr_scalar`], so consider using that instead.
       ///
       #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[doc = concat!("[`unbounded_shr_scalar`]: ", stringify!($Simd), "::unbounded_shr_scalar")]
       ,
-      /// Shifts right the scalar `left` by each element of `right`.
+      /// Shifts right the scalar `self` by each element of `rhs`.
       ///
-      /// This operation behaves like [`wrapping_shr`].
+      /// This operator behaves like [`wrapping_shr`].
+      ///
+      /// Note that for most targets, this operator is slower than
+      /// [`unbounded_shr`], so consider using that instead.
       ///
       #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
     );
     impl_binary_operator!(
       $T,
@@ -205,7 +280,12 @@ macro_rules! impl_simd_int {
       bitand,
       BitAndAssign,
       bitand_assign,
-      $fn_bitand
+      #[inline]
+      fn bitand(self, rhs: Self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
     );
     impl_binary_operator!(
       $T,
@@ -214,7 +294,12 @@ macro_rules! impl_simd_int {
       bitor,
       BitOrAssign,
       bitor_assign,
-      $fn_bitor
+      #[inline]
+      fn bitor(self, rhs: Self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
     );
     impl_binary_operator!(
       $T,
@@ -223,7 +308,12 @@ macro_rules! impl_simd_int {
       bitxor,
       BitXorAssign,
       bitxor_assign,
-      $fn_bitxor
+      #[inline]
+      fn bitxor(self, rhs: Self) -> Self::Output {
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
+        )
+      }
     );
 
     impl<Rhs> core::iter::Sum<Rhs> for $Simd
@@ -321,14 +411,22 @@ macro_rules! impl_simd_int {
       /// Reducing addition. Returns the sum of the vector's elements.
       ///
       /// Equivalent to `self[0] + self[1] + ...`.
+      #[inline]
       #[must_use]
-      $fn_reduce_add
+      pub fn reduce_add(self) -> $T {
+        // Wrapping addition is the same for signed and unsigned integers.
+        cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
+      }
 
       /// Reducing multiplication. Returns the product of the vector's elements.
       ///
       /// Equivalent to `self[0] * self[1] * ...`.
+      #[inline]
       #[must_use]
-      $fn_reduce_mul
+      pub fn reduce_mul(self) -> $T {
+        // Wrapping multiplication is the same for signed and unsigned integers.
+        cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
+      }
 
       /// Reducing maximum. Returns the maximum of the vector's elements.
       ///
@@ -341,6 +439,96 @@ macro_rules! impl_simd_int {
       /// Equivalent to `self[0].min(self[1].min(...))`.
       #[must_use]
       $fn_reduce_min
+
+      /// Returns the bit patterns of `self` reinterpreted as unsigned integers
+      /// of the same size.
+      #[inline]
+      #[must_use]
+      pub const fn cast_unsigned(self) -> $UnsignedSimd {
+        // SAFETY: Both types accept all bit-patterns and only contain
+        // initialized memory.
+        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+      }
+
+      /// Shifts left each element of `self` by the corresponding element of
+      /// `rhs`, without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, and `0` is returned.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shl`]. For most targets, `unbounded_shl` is faster than the
+      /// standard operator.
+      ///
+      /// If you intend to shift all elements by the same value, consider using
+      /// [`unbounded_shl_scalar`] which is faster.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
+      #[inline]
+      #[must_use]
+      pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
+        // Shift left is the same for unsigned and signed integers.
+        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
+      }
+
+      /// Shifts left each element of `self` by the uniform scalar `rhs`,
+      /// without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, and `0` is returned.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shl`]. For most targets, `unbounded_shl_scalar` is faster
+      /// than the standard operator.
+      ///
+      /// This function is faster than `self.unbounded_shl(splat(rhs))` because
+      /// it has special hardware support.
+      ///
+      #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+      #[inline]
+      #[must_use]
+      pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+        // Shift left is the same for unsigned and signed integers.
+        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
+      }
+
+      /// Shifts right each element of `self` by the corresponding element of
+      /// `rhs`, without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, which yields `0` for a positive
+      /// number, and `-1` for a negative number.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shr`]. For most targets, `unbounded_shr` is faster than the
+      /// standard operator.
+      ///
+      /// If you intend to shift all elements by the same value, consider using
+      /// [`unbounded_shr_scalar`] which is faster.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
+      #[must_use]
+      $fn_unbounded_shr
+
+      /// Shifts right each element of `self` by the uniform scalar `rhs`,
+      /// without bounding `rhs`.
+      ///
+      #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+      /// the entire value is shifted out, which yields `0` for a positive
+      /// number, and `-1` for a negative number.
+      ///
+      /// This is different from the standard operator, which behaves like
+      /// [`wrapping_shr`]. For most targets, `unbounded_shr_scalar` is faster
+      /// than the standard operator.
+      ///
+      /// This function is faster than `self.unbounded_shr(splat(rhs))` because
+      /// it has special hardware support.
+      ///
+      #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+      #[must_use]
+      $fn_unbounded_shr_scalar
 
       /// Saturating integer addition. Computes `self + rhs`, saturating at the
       /// numeric bounds instead of overflowing.

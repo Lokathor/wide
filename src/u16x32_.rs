@@ -179,6 +179,7 @@ impl_simd_uint! {
     T = u16,
     N = 32,
     Simd = u16x32,
+    SignedSimd = i16x32,
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [
@@ -378,7 +379,8 @@ impl_simd_uint! {
 
   #[inline]
   pub fn reduce_add(self) -> u16 {
-    cast(i16x32::reduce_add(cast(self)))
+    let array: [u16x16; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
   }
 
   #[inline]
@@ -397,6 +399,66 @@ impl_simd_uint! {
   pub fn reduce_min(self) -> u16 {
     let array: [u16x16; 2] = cast(self);
     array[0].min(array[1]).reduce_min()
+  }
+
+  #[inline]
+  pub fn unbounded_shl(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: shl_each_u16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
+
+        cast([self_a.unbounded_shl(rhs_a), self_b.unbounded_shl(rhs_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        // `u32 as u16` truncates the higher half so we need to manually
+        // saturate.
+        Self { avx512: shl_all_u16_m512i(self.avx512, rhs.min(u16::MAX as u32) as u16) }
+      } else {
+        Self {
+          a: self.a.unbounded_shl_scalar(rhs),
+          b: self.b.unbounded_shl_scalar(rhs),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr(self, rhs: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: shr_each_u16_m512i(self.avx512, rhs.avx512) }
+      } else {
+        let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
+
+        cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        // `u32 as u16` truncates the higher half so we need to manually
+        // saturate.
+        Self { avx512: shr_all_u16_m512i(self.avx512, rhs.min(u16::MAX as u32) as u16) }
+      } else {
+        Self {
+          a: self.a.unbounded_shr_scalar(rhs),
+          b: self.b.unbounded_shr_scalar(rhs),
+        }
+      }
+    }
   }
 
   #[inline]
