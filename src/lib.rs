@@ -81,10 +81,11 @@
 //! it is "not a bug" to wrap, and even debug builds are unlikely to tolerate
 //! the loss of performance.
 //!
-//! This is also true for things like [`f32x4::clamp`]. Even though
-//! [`f32::clamp`] panics for invalid inputs, the SIMD version does not, because
-//! it may be used with per-element branching, where invalid elements get
-//! discarded later by [`select`].
+//! This "no panicking" approach extends to more than just integer overflows. It
+//! is also true for things like [`f32x4::clamp`]. Even though [`f32::clamp`]
+//! panics for invalid inputs, the SIMD version does not, because it may be used
+//! with per-element branching, where invalid elements get discarded later by
+//! [`select`].
 //!
 //! # Casting
 //!
