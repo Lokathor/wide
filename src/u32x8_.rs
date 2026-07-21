@@ -2,10 +2,22 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
+    /// A SIMD vector with eight elements of type [`u32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
     pub struct u32x8 { pub(crate) avx2: m256i }
   } else {
+    /// A SIMD vector with eight elements of type [`u32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
     pub struct u32x8 { pub(crate) a : u32x4, pub(crate) b : u32x4 }
@@ -133,7 +145,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 8x8 `u32` matrix. Currently only accelerated on AVX2.
+  ///
+  /// Currently this function is only accelerated on `avx2`.
   #[inline]
   pub fn transpose(data: [u32x8; 8]) -> [u32x8; 8] {
     cast(i32x8::transpose(cast(data)))

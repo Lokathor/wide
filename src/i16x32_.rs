@@ -2,10 +2,22 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="avx512bw")] {
+    /// A SIMD vector with 32 elements of type [`i16`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
     pub struct i16x32 { pub(crate) avx512: m512i }
   } else {
+    /// A SIMD vector with 32 elements of type [`i16`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
     pub struct i16x32 { pub(crate) a : i16x16, pub(crate) b : i16x16 }
@@ -173,7 +185,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 32x32 `i16` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [i16x32; 32]) -> [i16x32; 32] {
     // Can this be optimized?
@@ -492,11 +505,14 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i16x32`], or only for
+/// particular types inconsistently.
 impl i16x32 {
-  /// Calculates partial dot product.
-  /// Multiplies packed signed 16-bit integers, producing intermediate signed
-  /// 32-bit integers. Horizontally add adjacent pairs of intermediate 32-bit
-  /// integers.
+  /// Partially computes the dot product.
+  ///
+  /// First this multiplies the input 16-bit integers, producing intermediate
+  /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
+  /// sixteen 32-bit integers.
   #[inline]
   #[must_use]
   pub fn dot(self, rhs: Self) -> i32x16 {

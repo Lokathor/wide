@@ -112,20 +112,32 @@ macro_rules! impl_simd_int {
 
             Self::new([$(self_array[$index].wrapping_div(rhs_array[$index])),*])
         },
-        /// Lanewise divide.
+        /// Divides each element of `left` by the corresponding element `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
         ,
-        /// Lanewise divide.
+        /// Divides each element of `left` by the scalar `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if `right` is zero.
         ,
-        /// Lanewise divide.
+        /// Divides the scalar `left` by each element of `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
     );
     impl_binary_operator!(
         $T,
@@ -141,20 +153,35 @@ macro_rules! impl_simd_int {
 
             Self::new([$(self_array[$index].wrapping_rem(rhs_array[$index])),*])
         },
-        /// Lanewise remainder.
+        /// Returns the remainder of each element of `left` divided by the
+        /// corresponding element `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
         ,
-        /// Lanewise remainder.
+        /// Returns the remainder of each element of `left` divided by the
+        /// scalar `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if `right` is zero.
         ,
-        /// Lanewise remainder.
+        /// Returns the remainder of the scalar `left` divided by each element
+        /// of `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
     );
     impl_shift_operator!(
       $T,
@@ -339,27 +366,41 @@ macro_rules! impl_simd_int {
     impl_formatting_trait!(core::fmt::Octal);
     impl_formatting_trait!(core::fmt::UpperHex);
 
+    /// The following functionality exists for all SIMD vectors of signed
+    /// integers.
     impl $Simd {
+      /// A SIMD vector with all elements set to `1`.
       pub const ONE: Self = Self::splat(1);
+
+      /// A SIMD vector with all elements set to `0`.
       pub const ZERO: Self = Self::splat(0);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
       pub const MAX: Self = Self::splat($T::MAX);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
       pub const MIN: Self = Self::splat($T::MIN);
 
-      /// The number of lanes in this SIMD vector.
+      /// The number of elements in this SIMD vector.
       pub const LANES: u16 = $N;
 
       /// The size of this SIMD vector in bits.
       pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
 
+      /// Returns the maximum between each element of `self` and the
+      /// corresponding element of `other`.
       #[must_use]
       $fn_max
 
+      /// Returns the minimum between each element of `self` and the
+      /// corresponding element of `other`.
       #[must_use]
       $fn_min
 
-      /// Restrict each element to a certain interval.
+      /// Clamps each element of `self` between the corresponding elements of
+      /// `min` and `max`.
       ///
-      /// If `min > max`, the result is unspeficied. Consider manually checking
+      /// If `min > max`, the result is unspecified. Consider manually checking
       /// for that case.
       #[inline]
       #[must_use]
@@ -367,7 +408,9 @@ macro_rules! impl_simd_int {
         self.max(min).min(max)
       }
 
-      /// horizontal add of all the elements of the vector
+      /// Reducing addition. Returns the sum of the vector's elements.
+      ///
+      /// Equivalent to `self[0] + self[1] + ...`.
       #[inline]
       #[must_use]
       pub fn reduce_add(self) -> $T {
@@ -375,7 +418,9 @@ macro_rules! impl_simd_int {
         cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
       }
 
-      /// Reducing multiply. Returns the product of the elements of the vector.
+      /// Reducing multiplication. Returns the product of the vector's elements.
+      ///
+      /// Equivalent to `self[0] * self[1] * ...`.
       #[inline]
       #[must_use]
       pub fn reduce_mul(self) -> $T {
@@ -383,11 +428,15 @@ macro_rules! impl_simd_int {
         cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
       }
 
-      /// horizontal max of all the elements of the vector
+      /// Reducing maximum. Returns the maximum of the vector's elements.
+      ///
+      /// Equivalent to `self[0].max(self[1].max(...))`.
       #[must_use]
       $fn_reduce_max
 
-      /// horizontal min of all the elements of the vector
+      /// Reducing minimum. Returns the minimum of the vector's elements.
+      ///
+      /// Equivalent to `self[0].min(self[1].min(...))`.
       #[must_use]
       $fn_reduce_min
 
@@ -481,13 +530,18 @@ macro_rules! impl_simd_int {
       #[must_use]
       $fn_unbounded_shr_scalar
 
+      /// Saturating integer addition. Computes `self + rhs`, saturating at the
+      /// numeric bounds instead of overflowing.
       #[must_use]
       $fn_saturating_add
 
+      /// Saturating integer subtraction. Computes `self - rhs`, saturating at
+      /// the numeric bounds instead of overflowing.
       #[must_use]
       $fn_saturating_sub
 
-      /// Lanewise saturating multiply.
+      /// Saturating integer multiplication. Computes `self * rhs`, saturating
+      /// at the numeric bounds instead of overflowing.
       #[inline]
       #[must_use]
       pub fn saturating_mul(self, rhs: Self) -> Self {
@@ -496,10 +550,15 @@ macro_rules! impl_simd_int {
         overflow.select(limit, result)
       }
 
-      /// Lanewise saturating divide.
+      /// Saturating integer division. Computes `self / rhs`, saturating at the
+      /// numeric bounds instead of overflowing.
       ///
       /// Note that because division has no hardware support, this operation is
       /// very slow and should be avoided if possible.
+      ///
+      /// # Panics
+      ///
+      /// Panics if any element of `rhs` is zero.
       #[inline]
       #[must_use]
       pub fn saturating_div(self, rhs: Self) -> Self {
@@ -509,6 +568,8 @@ macro_rules! impl_simd_int {
         Self::new([$(self_array[$index].saturating_div(rhs_array[$index])),*])
       }
 
+      /// Computes the absolute value of each input element, returned as an
+      /// unsigned integer in order to avoid wrapping.
       #[inline]
       #[must_use]
       pub fn unsigned_abs(self) -> $UnsignedSimd {
@@ -636,14 +697,15 @@ macro_rules! impl_simd_int {
       #[must_use]
       $fn_mul_keep_high
 
+      /// Returns the absolute value of each input element.
       #[must_use]
       $fn_abs
 
       /// Returns numbers representing the sign of each element.
       ///
-      /// - `0` if the number is zero
-      /// - `1` if the number is positive
-      /// - `-1` if the number is negative
+      /// - `0` if the element is zero
+      /// - `1` if the element is positive
+      /// - `-1` if the element is negative
       #[inline]
       #[must_use]
       pub fn signum(self) -> Self {
@@ -652,13 +714,17 @@ macro_rules! impl_simd_int {
         self.is_negative() - self.is_positive()
       }
 
-      /// Returns true for each positive element and false if it is zero or
-      /// negative.
+      /// Returns a [mask] that is true for each positive element, and false if
+      /// it is zero or negative.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_positive
 
-      /// Returns true for each negative element and false if it is zero or
-      /// positive.
+      /// Returns a [mask] that is true for each negative element, and false if
+      /// it is zero or positive.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_negative
     }

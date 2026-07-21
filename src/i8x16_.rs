@@ -2,12 +2,24 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
+    /// A SIMD vector with 16 elements of type [`i8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct i8x16 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
+    /// A SIMD vector with 16 elements of type [`i8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Clone, Copy)]
     #[repr(transparent)]
     pub struct i8x16 { pub(crate) simd: v128 }
@@ -27,6 +39,13 @@ pick! {
     impl Eq for i8x16 { }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
     use core::arch::aarch64::*;
+
+    /// A SIMD vector with 16 elements of type [`i8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct i8x16 { pub(crate) neon : int8x16_t }
@@ -47,6 +66,12 @@ pick! {
 
     impl Eq for i8x16 { }
   } else {
+    /// A SIMD vector with 16 elements of type [`i8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct i8x16 { arr: [i8;16] }
@@ -371,7 +396,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 16x16 `i8` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [i8x16; 16]) -> [i8x16; 16] {
     // Can this be optimized?
@@ -1025,8 +1051,11 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i8x16`], or only for
+/// particular types inconsistently.
 impl i8x16 {
-  /// converts `i16` to `i8`, saturating values that are too large
+  /// Converts each element from [`i16`] to [`i8`], saturating out of range
+  /// values.
   #[inline]
   #[must_use]
   pub fn from_i16x16_saturate(v: i16x16) -> i8x16 {
@@ -1079,7 +1108,10 @@ impl i8x16 {
     }
   }
 
-  /// converts `i16` to `i8`, truncating the upper bits if they are set
+  /// Converts each element from [`i16`] to [`i8`], truncating out of range
+  /// values (behaves like [`as`] casting).
+  ///
+  /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
   #[inline]
   #[must_use]
   pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
@@ -1114,6 +1146,11 @@ impl i8x16 {
     }
   }
 
+  /// Converts a slice to a SIMD vector, ignoring elements beyond the first 16.
+  ///
+  /// # Panics
+  ///
+  /// Panics if `input` has less than 16 elements.
   #[inline]
   #[must_use]
   pub fn from_slice_unaligned(input: &[i8]) -> Self {

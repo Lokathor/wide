@@ -2,12 +2,24 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
+    /// A SIMD vector with two elements of type [`u64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct u64x2 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
+    /// A SIMD vector with two elements of type [`u64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Clone, Copy)]
     #[repr(transparent)]
     pub struct u64x2 { pub(crate) simd: v128 }
@@ -27,6 +39,13 @@ pick! {
     impl Eq for u64x2 { }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
     use core::arch::aarch64::*;
+
+    /// A SIMD vector with two elements of type [`u64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct u64x2 { pub(crate) neon : uint64x2_t }
@@ -50,6 +69,12 @@ pick! {
 
     impl Eq for u64x2 { }
   } else {
+    /// A SIMD vector with two elements of type [`u64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct u64x2 { arr: [u64;2] }
@@ -219,7 +244,8 @@ impl_simd! {
     i64x2::all(cast(self))
   }
 
-  /// Transpose matrix of 2x2 `u64` matrix.
+  ///
+  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [u64x2; 2]) -> [u64x2; 2] {
     cast(i64x2::transpose(cast(data)))

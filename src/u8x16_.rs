@@ -2,12 +2,24 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
+    /// A SIMD vector with 16 elements of type [`u8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct u8x16 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
+    /// A SIMD vector with 16 elements of type [`u8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Clone, Copy)]
     #[repr(transparent)]
     pub struct u8x16 { pub(crate) simd: v128 }
@@ -27,6 +39,13 @@ pick! {
     impl Eq for u8x16 { }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
     use core::arch::aarch64::*;
+
+    /// A SIMD vector with 16 elements of type [`u8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct u8x16 { pub(crate) neon : uint8x16_t }
@@ -47,6 +66,12 @@ pick! {
 
     impl Eq for u8x16 { }
   } else {
+    /// A SIMD vector with 16 elements of type [`u8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct u8x16 { pub(crate) arr: [u8;16] }
@@ -325,7 +350,8 @@ impl_simd! {
     i8x16::all(cast(self))
   }
 
-  /// Transpose matrix of 16x16 `u8` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [u8x16; 16]) -> [u8x16; 16] {
     cast(i8x16::transpose(cast(data)))
@@ -1344,8 +1370,11 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u8x16`], or only for
+/// particular types inconsistently.
 impl u8x16 {
-  /// Unpack and interleave low lanes of two `u8x16`
+  /// Returns `[lhs[0], rhs[0], lhs[1], rhs[1], ...]`, taking the first 8
+  /// elements of each input and dropping their last 8 elements.
   #[inline]
   #[must_use]
   pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
@@ -1375,7 +1404,8 @@ impl u8x16 {
     }
   }
 
-  /// Unpack and interleave high lanes of two `u8x16`
+  /// Returns `[lhs[8], rhs[8], lhs[9], rhs[9], ...]`, taking the last 8
+  /// elements of each input and dropping their first 8 elements.
   #[inline]
   #[must_use]
   pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
@@ -1405,7 +1435,8 @@ impl u8x16 {
     }
   }
 
-  /// Pack and saturate two `i16x8` to `u8x16`
+  /// Treats two [`i16x8`] values as a single [`i16x16`] value, then converts
+  /// each element from [`i16`] to [`u8`], saturating out of range values.
   #[inline]
   #[must_use]
   pub fn narrow_i16x8(lhs: i16x8, rhs: i16x8) -> Self {

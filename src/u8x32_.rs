@@ -2,10 +2,22 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
+    /// A SIMD vector with 32 elements of type [`u8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
     pub struct u8x32 { pub(crate) avx: m256i }
   } else {
+    /// A SIMD vector with 32 elements of type [`u8`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
     pub struct u8x32 { pub(crate) a : u8x16, pub(crate) b : u8x16 }
@@ -160,7 +172,8 @@ impl_simd! {
     i8x32::all(cast(self))
   }
 
-  /// Transpose matrix of 32x32 `u8` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [u8x32; 32]) -> [u8x32; 32] {
     cast(i8x32::transpose(cast(data)))
@@ -476,6 +489,8 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u8x32`], or only for
+/// particular types inconsistently.
 impl u8x32 {
   /// Returns a new vector with lanes selected from the lanes of the first input
   /// vector a specified in the second input vector `rhs`.

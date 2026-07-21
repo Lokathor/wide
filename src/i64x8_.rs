@@ -2,10 +2,22 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="avx512f")] {
+    /// A SIMD vector with eight elements of type [`i64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
     pub struct i64x8 { pub(crate) avx512: m512i }
   } else {
+    /// A SIMD vector with eight elements of type [`i64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
     pub struct i64x8 { pub(crate) a : i64x4, pub(crate) b : i64x4 }
@@ -179,7 +191,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 8x8 `i64` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [i64x8; 8]) -> [i64x8; 8] {
     // Can this be optimized?
@@ -536,7 +549,10 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i64x8`], or only for
+/// particular types inconsistently.
 impl i64x8 {
+  /// Converts each element from [`i64`] to [`f64`].
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f64x8 {

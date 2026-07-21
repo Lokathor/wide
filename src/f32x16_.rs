@@ -2,10 +2,22 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="avx512f")] {
+    /// A SIMD vector with 16 elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(64))]
     pub struct f32x16 { pub(crate) avx512: m512 }
   } else {
+    /// A SIMD vector with 16 elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(64))]
     pub struct f32x16 { pub(crate) a : f32x8, pub(crate) b : f32x8 }
@@ -179,7 +191,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 16x16 `f32` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [f32x16; 16]) -> [f32x16; 16] {
     // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,
@@ -759,148 +772,100 @@ impl_simd_float! {
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfmadd` (single
   ///   rounding, best accuracy)
   /// - On `x86`/`x86_64` with AVX-512F only: Uses `(self * m) + a` (two
   ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x16;
-  /// let a = f32x16::from([1.0; 16]);
-  /// let b = f32x16::from([2.0; 16]);
-  /// let c = f32x16::from([10.0; 16]);
-  ///
-  /// let result = a.mul_add(b, c);
-  ///
-  /// let expected = f32x16::from([12.0; 16]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_add(self, m: Self, a: Self) -> Self {
+  pub fn mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-        Self { avx512: fused_mul_add_m512(self.avx512, m.avx512, a.avx512) }
+        Self { avx512: fused_mul_add_m512(self.avx512, a.avx512, b.avx512) }
       } else if #[cfg(target_feature="avx512f")] {
         // still want to use 512 bit ops
-        (self * m) + a
+        (self * a) + b
       } else {
         Self {
-          a: self.a.mul_add(m.a, a.a),
-          b: self.b.mul_add(m.b, a.b),
+          a: self.a.mul_add(a.a, b.a),
+          b: self.b.mul_add(a.b, b.b),
         }
       }
     }
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfmsub` (single
   ///   rounding, best accuracy)
   /// - On `x86`/`x86_64` with AVX-512F only: Uses `(self * m) - s` (two
   ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x16;
-  /// let a = f32x16::from([10.0; 16]);
-  /// let b = f32x16::from([3.0; 16]);
-  /// let c = f32x16::from([5.0; 16]);
-  ///
-  /// let result = a.mul_sub(b, c);
-  ///
-  /// let expected = f32x16::from([25.0; 16]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_sub(self, m: Self, s: Self) -> Self {
+  pub fn mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-        Self { avx512: fused_mul_sub_m512(self.avx512, m.avx512, s.avx512) }
+        Self { avx512: fused_mul_sub_m512(self.avx512, a.avx512, b.avx512) }
       } else if #[cfg(target_feature="avx512f")] {
         // still want to use 512 bit ops
-        (self * m) - s
+        (self * a) - b
       } else {
         Self {
-          a: self.a.mul_sub(m.a, s.a),
-          b: self.b.mul_sub(m.b, s.b),
+          a: self.a.mul_sub(a.a, b.a),
+          b: self.b.mul_sub(a.b, b.b),
         }
       }
     }
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmadd` (single
   ///   rounding, best accuracy)
   /// - On `x86`/`x86_64` with AVX-512F only: Uses `a - (self * m)` (two
   ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x16;
-  /// let a = f32x16::from([4.0; 16]);
-  /// let b = f32x16::from([2.0; 16]);
-  /// let c = f32x16::from([10.0; 16]);
-  ///
-  /// let result = a.mul_neg_add(b, c);
-  ///
-  /// let expected = f32x16::from([2.0; 16]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+  pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-        Self { avx512: fused_mul_neg_add_m512(self.avx512, m.avx512, a.avx512) }
+        Self { avx512: fused_mul_neg_add_m512(self.avx512, a.avx512, b.avx512) }
       } else if #[cfg(target_feature="avx512f")] {
         // still want to use 512 bit ops
-        a - (self * m)
+        b - (self * a)
       } else {
         Self {
-          a: self.a.mul_neg_add(m.a, a.a),
-          b: self.b.mul_neg_add(m.b, a.b),
+          a: self.a.mul_neg_add(a.a, b.a),
+          b: self.b.mul_neg_add(a.b, b.b),
         }
       }
     }
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmsub` (single
   ///   rounding, best accuracy)
   /// - On `x86`/`x86_64` with AVX-512F only: Uses `-(self * m) - s` (two
   ///   roundings)
   /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x16;
-  /// let a = f32x16::from([4.0; 16]);
-  /// let b = f32x16::from([2.0; 16]);
-  /// let c = f32x16::from([1.0; 16]);
-  ///
-  /// let result = a.mul_neg_sub(b, c);
-  ///
-  /// let expected = f32x16::from([-9.0; 16]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
+  pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-        Self { avx512: fused_mul_neg_sub_m512(self.avx512, m.avx512, s.avx512) }
+        Self { avx512: fused_mul_neg_sub_m512(self.avx512, a.avx512, b.avx512) }
       } else if #[cfg(target_feature="avx512f")] {
         // still want to use 512 bit ops
-        -(self * m) - s
+        -(self * a) - b
       } else {
         Self {
-          a: self.a.mul_neg_sub(m.a, s.a),
-          b: self.b.mul_neg_sub(m.b, s.b),
+          a: self.a.mul_neg_sub(a.a, b.a),
+          b: self.b.mul_neg_sub(a.b, b.b),
         }
       }
     }
@@ -1630,6 +1595,8 @@ impl_simd_float! {
   }
 }
 
+/// The following functionality exists only for [`f32x16`], or only for
+/// particular types inconsistently.
 impl f32x16 {
   #[inline]
   fn vm_pow2n(self) -> Self {
@@ -1699,6 +1666,7 @@ impl f32x16 {
     cast::<_, f32x16>(i32x16::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
 
+  /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   pub fn from_i32x16(v: i32x16) -> Self {
     pick! {
@@ -1713,11 +1681,14 @@ impl f32x16 {
     }
   }
 
-  /// Returns true for each element if its sign bit is set.
+  /// Returns a [mask] that checks if each element has a negative sign,
+  /// including `-0.0`, NaNs with negative sign bit and negative infinity.
   ///
-  /// If the sign bit is set, the result has all bits set, not just the sign
-  /// bit. This has been renamed to [`is_sign_negative`].
+  /// Note that this function has a misleading name. If the sign bit is set, the
+  /// result has all bits set, not just the sign bit. This function has been
+  /// renamed to [`is_sign_negative`].
   ///
+  /// [mask]: crate#masks
   /// [`is_sign_negative`]: Self::is_sign_negative
   #[inline]
   #[must_use]

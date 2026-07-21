@@ -2,10 +2,22 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="avx512f")] {
+    /// A SIMD vector with 16 elements of type [`u32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
     pub struct u32x16 { pub(crate) avx512: m512i }
   } else {
+    /// A SIMD vector with 16 elements of type [`u32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
     pub struct u32x16 { pub(crate) a : u32x8, pub(crate) b : u32x8 }
@@ -154,7 +166,8 @@ impl_simd! {
     i32x16::all(cast(self))
   }
 
-  /// Transpose matrix of 16x16 `u32` matrix. Currently not accelerated.
+  ///
+  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [u32x16; 16]) -> [u32x16; 16] {
     cast(i32x16::transpose(cast(data)))

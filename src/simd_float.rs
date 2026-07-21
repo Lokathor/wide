@@ -72,14 +72,141 @@ macro_rules! impl_simd_float {
     $fn_cosh:item
     $fn_tanh:item
   ) => {
-    impl_unary_operator!($Simd, Neg, neg, $fn_neg);
-    impl_unary_operator!($Simd, Not, not, $fn_not);
+    impl_unary_operator!(
+      $Simd,
+      Neg,
+      neg,
+      $fn_neg,
+      /// Returns the negative of each element of `self`.
+      ///
+      /// This always returns the precise result, simply flipping the sign-bit.
+    );
+    impl_unary_operator!(
+      $Simd,
+      Not,
+      not,
+      $fn_not,
+      /// Computes bitwise NOT for each element of `self`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+    );
 
-    impl_binary_operator!($T, $Simd, Add, add, AddAssign, add_assign, $fn_add);
-    impl_binary_operator!($T, $Simd, Sub, sub, SubAssign, sub_assign, $fn_sub);
-    impl_binary_operator!($T, $Simd, Mul, mul, MulAssign, mul_assign, $fn_mul);
-    impl_binary_operator!($T, $Simd, Div, div, DivAssign, div_assign, $fn_div);
-    impl_binary_operator!($T, $Simd, Rem, rem, RemAssign, rem_assign, $fn_rem);
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Add,
+      add,
+      AddAssign,
+      add_assign,
+      $fn_add,
+      /// Computes addition for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes addition for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes addition for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Sub,
+      sub,
+      SubAssign,
+      sub_assign,
+      $fn_sub,
+      /// Computes subtraction for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes subtraction for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes subtraction for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Mul,
+      mul,
+      MulAssign,
+      mul_assign,
+      $fn_mul,
+      /// Computes multiplication for each element of `self` and the
+      /// corresponding element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes multiplication for each element of `self` and the uniform
+      /// scalar `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes multiplication for the uniform scalar `self` and each element
+      /// of `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Div,
+      div,
+      DivAssign,
+      div_assign,
+      $fn_div,
+      /// Computes division for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes division for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes division for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
+    impl_binary_operator!(
+      $T,
+      $Simd,
+      Rem,
+      rem,
+      RemAssign,
+      rem_assign,
+      $fn_rem,
+      /// Computes the remainder for each element of `self` and the
+      /// corresponding element of `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes the remainder for each element of `self` and the uniform
+      /// scalar `rhs`.
+      ///
+      /// This always returns the precise result.
+      ,
+      /// Computes the remainder for the uniform scalar `self` and each element
+      /// of `rhs`, returning a SIMD vector.
+      ///
+      /// This always returns the precise result.
+    );
     impl_binary_operator!(
       $T,
       $Simd,
@@ -87,7 +214,24 @@ macro_rules! impl_simd_float {
       bitand,
       BitAndAssign,
       bitand_assign,
-      $fn_bitand
+      $fn_bitand,
+      /// Computes bitwise AND for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise AND for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise AND for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
     );
     impl_binary_operator!(
       $T,
@@ -96,7 +240,24 @@ macro_rules! impl_simd_float {
       bitor,
       BitOrAssign,
       bitor_assign,
-      $fn_bitor
+      $fn_bitor,
+      /// Computes bitwise OR for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise OR for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise OR for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
     );
     impl_binary_operator!(
       $T,
@@ -105,13 +266,33 @@ macro_rules! impl_simd_float {
       bitxor,
       BitXorAssign,
       bitxor_assign,
-      $fn_bitxor
+      $fn_bitxor,
+      /// Computes bitwise XOR for each element of `self` and the corresponding
+      /// element of `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise XOR for each element of `self` and the uniform scalar
+      /// `rhs`.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
+      ,
+      /// Computes bitwise XOR for the uniform scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
+      ///
+      /// This operator is not implemented for primitive scalar floats, but its
+      /// behavior here is the same as for integers.
     );
 
     impl<Rhs> core::iter::Sum<Rhs> for $Simd
     where
       $Simd: AddAssign<Rhs>,
     {
+      /// Computes the sum of multiple SIMD vectors for each lane.
+      ///
+      /// The order of addition is not specified.
       #[inline]
       fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
         let mut total = Self::zeroed();
@@ -126,6 +307,9 @@ macro_rules! impl_simd_float {
     where
       $Simd: MulAssign<Rhs>,
     {
+      /// Computes the product of multiple SIMD vectors for each lane.
+      ///
+      /// The order of multiplication is not specified.
       #[inline]
       fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
         let mut total = Self::from(1.0);
@@ -158,72 +342,229 @@ macro_rules! impl_simd_float {
     impl_formatting_trait!(core::fmt::Octal);
     impl_formatting_trait!(core::fmt::UpperHex);
 
+    /// The following functionality exists for all SIMD vectors of floats.
     impl $Simd {
+      /// A SIMD vector with all elements set to `1.0`.
       pub const ONE: Self = Self::splat(1.0);
+
+      /// A SIMD vector with all elements set to `0.5`.
       pub const HALF: Self = Self::splat(0.5);
+
+      /// A SIMD vector with all elements set to `0.0`.
       pub const ZERO: Self = Self::splat(0.0);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::EPSILON`].")]
       pub const EPSILON: Self = Self::splat($T::EPSILON);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
       pub const MIN: Self = Self::splat($T::MIN);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN_POSITIVE`].")]
       pub const MIN_POSITIVE: Self = Self::splat($T::MIN_POSITIVE);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
       pub const MAX: Self = Self::splat($T::MAX);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::NAN`].")]
       pub const NAN: Self = Self::splat($T::NAN);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::INFINITY`].")]
       pub const INFINITY: Self = Self::splat($T::INFINITY);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::NEG_INFINITY`].")]
       pub const NEG_INFINITY: Self = Self::splat($T::NEG_INFINITY);
+
+      /// A SIMD vector with all elements set to [Euler's number (e)].
+      ///
+      #[doc = concat!("[Euler's number (e)]: core::", stringify!($T), "::consts::E")]
       pub const E: Self = Self::splat(core::$T::consts::E);
+
+      /// A SIMD vector with all elements set to [1/π].
+      ///
+      #[doc = concat!("[1/π]: core::", stringify!($T), "::consts::FRAC_1_PI")]
       pub const FRAC_1_PI: Self = Self::splat(core::$T::consts::FRAC_1_PI);
+
+      /// A SIMD vector with all elements set to [2/π].
+      ///
+      #[doc = concat!("[2/π]: core::", stringify!($T), "::consts::FRAC_2_PI")]
       pub const FRAC_2_PI: Self = Self::splat(core::$T::consts::FRAC_2_PI);
+
+      /// A SIMD vector with all elements set to [2/sqrt(π)].
+      ///
+      #[doc = concat!("[2/sqrt(π)]: core::", stringify!($T), "::consts::FRAC_2_SQRT_PI")]
       pub const FRAC_2_SQRT_PI: Self =
         Self::splat(core::$T::consts::FRAC_2_SQRT_PI);
+
+      /// A SIMD vector with all elements set to [1/sqrt(2)].
+      ///
+      #[doc = concat!("[1/sqrt(2)]: core::", stringify!($T), "::consts::FRAC_1_SQRT_2")]
       pub const FRAC_1_SQRT_2: Self =
         Self::splat(core::$T::consts::FRAC_1_SQRT_2);
+
+      /// A SIMD vector with all elements set to [π/2].
+      ///
+      #[doc = concat!("[π/2]: core::", stringify!($T), "::consts::FRAC_PI_2")]
       pub const FRAC_PI_2: Self = Self::splat(core::$T::consts::FRAC_PI_2);
+
+      /// A SIMD vector with all elements set to [π/3].
+      ///
+      #[doc = concat!("[π/3]: core::", stringify!($T), "::consts::FRAC_PI_3")]
       pub const FRAC_PI_3: Self = Self::splat(core::$T::consts::FRAC_PI_3);
+
+      /// A SIMD vector with all elements set to [π/4].
+      ///
+      #[doc = concat!("[π/4]: core::", stringify!($T), "::consts::FRAC_PI_4")]
       pub const FRAC_PI_4: Self = Self::splat(core::$T::consts::FRAC_PI_4);
+
+      /// A SIMD vector with all elements set to [π/6].
+      ///
+      #[doc = concat!("[π/6]: core::", stringify!($T), "::consts::FRAC_PI_6")]
       pub const FRAC_PI_6: Self = Self::splat(core::$T::consts::FRAC_PI_6);
+
+      /// A SIMD vector with all elements set to [π/8].
+      ///
+      #[doc = concat!("[π/8]: core::", stringify!($T), "::consts::FRAC_PI_8")]
       pub const FRAC_PI_8: Self = Self::splat(core::$T::consts::FRAC_PI_8);
+
+      /// A SIMD vector with all elements set to [ln(2)].
+      ///
+      #[doc = concat!("[ln(2)]: core::", stringify!($T), "::consts::LN_2")]
       pub const LN_2: Self = Self::splat(core::$T::consts::LN_2);
+
+      /// A SIMD vector with all elements set to [ln(10)].
+      ///
+      #[doc = concat!("[ln(10)]: core::", stringify!($T), "::consts::LN_10")]
       pub const LN_10: Self = Self::splat(core::$T::consts::LN_10);
+
+      /// A SIMD vector with all elements set to [log<sub>2</sub>(e)].
+      ///
+      #[doc = concat!("[log<sub>2</sub>(e)]: core::", stringify!($T), "::consts::LOG2_E")]
       pub const LOG2_E: Self = Self::splat(core::$T::consts::LOG2_E);
+
+      /// A SIMD vector with all elements set to [log<sub>10</sub>(e)].
+      ///
+      #[doc = concat!("[log<sub>10</sub>(e)]: core::", stringify!($T), "::consts::LOG10_E")]
       pub const LOG10_E: Self = Self::splat(core::$T::consts::LOG10_E);
+
+      /// A SIMD vector with all elements set to [log<sub>10</sub>(2)].
+      ///
+      #[doc = concat!("[log<sub>10</sub>(2)]: core::", stringify!($T), "::consts::LOG10_2")]
       pub const LOG10_2: Self = Self::splat(core::$T::consts::LOG10_2);
+
+      /// A SIMD vector with all elements set to [log<sub>2</sub>(10)].
+      ///
+      #[doc = concat!("[log<sub>2</sub>(10)]: core::", stringify!($T), "::consts::LOG2_10")]
       pub const LOG2_10: Self = Self::splat(core::$T::consts::LOG2_10);
+
+      /// A SIMD vector with all elements set to [Archimedes’ constant (π)].
+      ///
+      #[doc = concat!("[Archimedes’ constant (π)]: core::", stringify!($T), "::consts::PI")]
       pub const PI: Self = Self::splat(core::$T::consts::PI);
+
+      /// A SIMD vector with all elements set to [sqrt(2)].
+      ///
+      #[doc = concat!("[sqrt(2)]: core::", stringify!($T), "::consts::SQRT_2")]
       pub const SQRT_2: Self = Self::splat(core::$T::consts::SQRT_2);
+
+      /// A SIMD vector with all elements set to [the full circle constant (τ)].
+      ///
+      /// Equal to 2π.
+      ///
+      #[doc = concat!("[the full circle constant (τ)]: core::", stringify!($T), "::consts::TAU")]
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
 
-      /// horizontal add of all the elements of the vector
+      /// Reducing addition. Returns the sum of the vector's elements.
+      ///
+      /// Equivalent to `self[0] + self[1] + ...`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of addition is non-deterministic. This means it varies by
+      /// platform, version, and can even differ within the same execution from
+      /// one invocation to the next.
       #[must_use]
       $fn_reduce_add
 
-      /// horizontal multiplication of all the elements of the vector
+      /// Reducing multiplication. Returns the product of the vector's elements.
+      ///
+      /// Equivalent to `self[0] * self[1] * ...`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of multiplication is non-deterministic. This means it varies
+      /// by platform, version, and can even differ within the same execution
+      /// from one invocation to the next.
       #[must_use]
       $fn_reduce_mul
 
+      /// Returns a [mask] that checks if each element is NaN.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_nan
 
+      /// Returns a [mask] that checks if each element is infinity (either
+      /// positive or negative).
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_inf
 
+      /// Returns a [mask] that checks if each element is neither infinite nor
+      /// NaN.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_finite
 
-      /// Returns true for each element if it has a positive sign, including `+0.0`,
-      /// `NaN`s with positive sign bit and positive infinity.
+      /// Returns a [mask] that checks if each element has a positive sign,
+      /// including `+0.0`, NaNs with positive sign bit and positive infinity.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_sign_positive
 
-      /// Returns true for each element if it has a negative sign, including `-0.0`,
-      /// `NaN`s with negative sign bit and negative infinity.
+      /// Returns a [mask] that checks if each element has a negative sign,
+      /// including `-0.0`, NaNs with negative sign bit and negative infinity.
+      ///
+      /// [mask]: crate#masks
       #[must_use]
       $fn_is_sign_negative
 
+      /// Returns the reciprocal (inverse) of a number, `1/x`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
+      ///
+      #[doc = concat!(
+        "To compute the reciprocal deterministically, use `",
+        stringify!($Simd),
+        "::ONE / x`."
+      )]
       #[must_use]
       $fn_recip
 
+      /// Returns the square root of the reciprocal (inverse) of a number,
+      /// `sqrt(1/x)`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_recip_sqrt
 
+      /// Converts radians to degrees.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn to_degrees(self) -> Self {
@@ -231,6 +572,13 @@ macro_rules! impl_simd_float {
         self * RAD_TO_DEG_RATIO
       }
 
+      /// Converts degrees to radians.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn to_radians(self) -> Self {
@@ -238,30 +586,76 @@ macro_rules! impl_simd_float {
         self * DEG_TO_RAD_RATIO
       }
 
-      /// Calculates the lanewise maximum of both vectors. If either lane is
-      /// NaN, the other lane gets chosen. Use `fast_max` for a faster
-      /// implementation that doesn't handle NaNs.
+      /// Returns the maximum between each element of `self` and the
+      /// corresponding element of `other`, ignoring NaN.
+      ///
+      /// For each lane, if exactly one of the arguments is NaN, then the other
+      /// argument is returned. If both arguments are NaN, the return value is
+      /// NaN. If the inputs compare equal (such as for the case of `+0.0` and
+      /// `-0.0`), either input may be returned non-deterministically.
+      ///
+      /// See [`fast_max`] for a faster variant that does not handle NaNs.
+      ///
+      /// [`fast_max`]: Self::fast_max
       #[must_use]
       $fn_max
 
-      /// Calculates the lanewise maximum of both vectors. This is a faster
-      /// implementation than `max`, but it doesn't specify any behavior if NaNs
-      /// are involved.
+      /// Returns the maximum between each element of `self` and the
+      /// corresponding element of `other`, not specifying behavior for NaNs.
+      ///
+      /// For each lane, if both arguments are NaN, the return value is NaN. If
+      /// the inputs compare equal (such as for the case of `+0.0` and `-0.0`),
+      /// or if exactly one of the arguments is NaN, either input may be
+      /// returned non-deterministically.
+      ///
+      /// See [`max`] for a slower variant that does handle NaNs.
+      ///
+      /// [`max`]: Self::max
       #[must_use]
       $fn_fast_max
 
-      /// Calculates the lanewise minimum of both vectors. If either lane is
-      /// NaN, the other lane gets chosen. Use `fast_min` for a faster
-      /// implementation that doesn't handle NaNs.
+      /// Returns the minimum between each element of `self` and the
+      /// corresponding element of `other`, ignoring NaN.
+      ///
+      /// For each lane, if exactly one of the arguments is NaN, then the other
+      /// argument is returned. If both arguments are NaN, the return value is
+      /// NaN. If the inputs compare equal (such as for the case of `+0.0` and
+      /// `-0.0`), either input may be returned non-deterministically.
+      ///
+      /// See [`fast_min`] for a faster variant that does not handle NaNs.
+      ///
+      /// [`fast_min`]: Self::fast_min
       #[must_use]
       $fn_min
 
-      /// Calculates the lanewise minimum of both vectors. This is a faster
-      /// implementation than `min`, but it doesn't specify any behavior if NaNs
-      /// are involved.
+      /// Returns the minimum between each element of `self` and the
+      /// corresponding element of `other`, not specifying behavior for NaNs.
+      ///
+      /// For each lane, if both arguments are NaN, the return value is NaN. If
+      /// the inputs compare equal (such as for the case of `+0.0` and `-0.0`),
+      /// or if exactly one of the arguments is NaN, either input may be
+      /// returned non-deterministically.
+      ///
+      /// See [`min`] for a slower variant that does handle NaNs.
+      ///
+      /// [`min`]: Self::min
       #[must_use]
       $fn_fast_min
 
+      /// Calculates the midpoint (average) between `self` and `other`.
+      ///
+      /// This returns NaN when *either* argument is NaN or if a combination of
+      /// +inf and -inf is provided as arguments.
+      ///
+      /// This function currently returns a less precise result than
+      #[doc = concat!("[`", stringify!($T), "::midpoint`]")]
+      /// in order to gain performance, but this may change in the future.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn midpoint(self, other: Self) -> Self {
@@ -294,22 +688,43 @@ macro_rules! impl_simd_float {
 
       /// Restrict a value to a certain interval unless it is NaN.
       ///
-      /// If `self`, `min` or `max` are NaN, the result is NaN.  If `min > max`,
-      /// the result is `min` since `max(min)` dominates.
+      /// If `self`, `min` or `max` are NaN, the result is NaN. If `min > max`,
+      /// the result is `min`. If inputs compare equal (such as for the case of
+      /// `+0.0` and `-0.0`), either input may be returned
+      /// non-deterministically.
+      ///
+      /// See [`fast_clamp`] for a faster variant that does not handle `min` or
+      /// `max` being NaN.
+      ///
+      /// [`fast_clamp`]: Self::fast_clamp
       #[must_use]
       $fn_clamp
 
       /// Restrict a value to a certain interval unless it is NaN.
       ///
-      /// If `self` is NaN, the result is NaN.  If `min > max`, the result is
-      /// `min` since `max(min)` dominates. If `min` or `max` are NaN, the
-      /// result is unspecified.
+      /// If `self` is NaN, the result is NaN. If `min > max`, the result is
+      /// `min`. If inputs compare equal (such as for the case of
+      /// `+0.0` and `-0.0`), or if `min` or `max` are NaN, any input may be
+      /// returned non-deterministically.
+      ///
+      /// See [`clamp`] for a slower variant that also handles `min` or `max`
+      /// being NaN.
+      ///
+      /// [`clamp`]: Self::clamp
       #[must_use]
       $fn_fast_clamp
 
+      /// Computes the absolute value of `self`.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_abs
 
+      /// Returns numbers that represents the signs of each element.
+      ///
+      /// - `1.0` if the element is positive, `+0.0` or `INFINITY`
+      /// - `-1.0` if the element is negative, `-0.0` or `NEG_INFINITY`
+      /// - NaN if the element is NaN
       #[inline]
       #[must_use]
       pub fn signum(self) -> Self {
@@ -318,6 +733,12 @@ macro_rules! impl_simd_float {
         self.is_nan().select(self, result)
       }
 
+      /// Returns numbers composed of the magnitudes of `self` and the signs of
+      /// `sign`.
+      ///
+      /// Equal to `self` if the sign of `self` and `sign` are the same,
+      /// otherwise equal to `-self`. Even if `self` or `sign` are NaN, the
+      /// result is the exact bit pattern of `self` with the sign bit of `sign`.
       #[inline]
       #[must_use]
       pub fn copysign(self, sign: Self) -> Self {
@@ -325,103 +746,167 @@ macro_rules! impl_simd_float {
         (self & magnitude_mask) | (sign & Self::from(-0.0))
       }
 
+      /// Flips the sign of `self` based on the sign of `sign`.
+      ///
+      /// If `sign` has a positive sign, the result is `self`. If `sign` has a
+      /// negative sign, the result is `-self`. Even if `self` or `sign` are
+      /// NaN, the result is the exact bit pattern of `self` with a sign flipped
+      /// based on the sign bit of `sign`.
       #[inline]
       #[must_use]
-      pub fn flip_signs(self, signs: Self) -> Self {
-        self ^ (signs & Self::from(-0.0))
+      pub fn flip_signs(self, sign: Self) -> Self {
+        self ^ (sign & Self::from(-0.0))
       }
 
+      /// Returns the largest integer less than or equal to each input element.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_floor
 
+      /// Returns the smallest integer greater than or equal to each input
+      /// element.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_ceil
 
-      /// Returns the nearest integers to `self`. If a value is half-way between
-      /// two integers, round away from `0.0`.
+      /// Returns the nearest integer to each input element. If a value is
+      /// half-way between two integers, round away from `0.0`.
       ///
       /// This function always returns the precise result.
       ///
-      /// For most targets [`round`] is slower than [`round_ties_even`]. If you
-      /// do not care about the difference, consider using that instead.
+      /// For most targets architectures, [`round`] is slower than
+      /// [`round_ties_even`]. If you do not care about the difference, consider
+      /// using that instead.
       ///
       /// [`round`]: Self::round
       /// [`round_ties_even`]: Self::round_ties_even
       #[must_use]
       $fn_round
 
-      /// Rounds each lane into an integer. This saturates out of range values
-      /// and turns NaNs into 0. Use `fast_round_int` for a faster
-      /// implementation that doesn't handle out of range values or NaNs.
+      /// Returns the nearest integer to each input element.
+      ///
+      /// The result for values half-way between two integers is currently not
+      /// specified.
+      ///
+      /// This saturates out of range values and turns NaNs to `0`. See
+      /// [`fast_round_int`] for a faster variant that does not handle out of
+      /// range values or NaNs.
+      ///
+      /// [`fast_round_int`]: Self::fast_round_int
       #[must_use]
       $fn_round_int
 
-      /// Rounds each lane into an integer. This is a faster implementation than
-      /// `round_int`, but it doesn't handle out of range values or NaNs. For
-      /// those values you get implementation defined behavior.
+      /// Returns the nearest integer to each input element.
+      ///
+      /// The result for values half-way between two integers is currently not
+      /// specified.
+      ///
+      /// This function does not handle out of range values or NaNs. See
+      /// [`round_int`] for a slower variant that does handle out of range
+      /// values and NaNs.
+      ///
+      /// [`round_int`]: Self::round_int
       #[must_use]
       $fn_fast_round_int
 
-      /// Returns the nearest integers to `self`. Rounds half-way cases to the
-      /// number with an even least significant digit.
+      /// Returns the nearest integer to each input element. Rounds half-way
+      /// cases to the number with an even least significant digit.
       ///
       /// This function always returns the precise result.
       #[must_use]
       $fn_round_ties_even
 
+      /// Returns the integer part of each input element. This means that
+      /// non-integer numbers are always truncated towards zero.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_trunc
 
-      /// Truncates each lane into an integer. This saturates out of range
-      /// values and turns NaNs into 0. Use `fast_trunc_int` for a faster
-      /// implementation that doesn't handle out of range values or NaNs.
+      /// Returns the integer part of each input element. This means that
+      /// non-integer numbers are always truncated towards zero.
+      ///
+      /// This saturates out of range values and turns NaNs to `0`. See
+      /// [`fast_trunc_int`] for a faster variant that does not handle out of
+      /// range values or NaNs.
+      ///
+      /// [`fast_trunc_int`]: Self::fast_trunc_int
       #[must_use]
       $fn_trunc_int
 
-      /// Truncates each lane into an integer. This is a faster implementation
-      /// than `trunc_int`, but it doesn't handle out of range values or NaNs.
-      /// For those values you get implementation defined behavior.
+      /// Returns the integer part of each input element. This means that
+      /// non-integer numbers are always truncated towards zero.
+      ///
+      /// This function does not handle out of range values or NaNs. See
+      /// [`trunc_int`] for a slower variant that does handle out of range
+      /// values and NaNs.
+      ///
+      /// [`trunc_int`]: Self::trunc_int
       #[must_use]
       $fn_fast_trunc_int
 
+      /// Returns the fractional part of each input element.
+      ///
+      /// This function always returns the precise result.
       #[inline]
       #[must_use]
       pub fn fract(self) -> Self {
         self - self.trunc()
       }
 
-      /// Performs a multiply-add operation: `self * m + a`
+      /// Fused multiply-add. Computes `(self * a) + b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate multiply and add operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_add
 
-      /// Performs a multiply-subtract operation: `self * m - s`
+      /// Fused multiply-sub. Computes `(self * a) - b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate multiply and subtract operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_sub
 
-      /// Performs a negative multiply-add operation: `a - (self * m)`
+      /// Fused multiply-negate-add. Computes `-(self * a) + b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_neg_add
 
-      /// Performs a negative multiply-subtract operation: `-(self * m) - s`
+      /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
       ///
-      /// When hardware FMA support is available, this computes the result with
-      /// a single rounding operation. Without FMA support, it falls back to
-      /// separate operations with two roundings.
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors. Note that in the
+      /// future, this function may change to always having one rounding error,
+      /// at the cost of worse performance.
       #[must_use]
       $fn_mul_neg_sub
 
+      /// Calculates Euclidean division, the matching function for
+      /// [`rem_euclid`].
+      ///
+      /// This computes the integer `n` such that
+      /// `self = n * rhs + self.rem_euclid(rhs)`. In other words, the result is
+      /// `self / rhs` rounded to the integer `n` such that `self >= n * rhs`.
+      ///
+      /// This function is not guaranteed to exactly match
+      #[doc = concat!("[`", stringify!($T), "::div_euclid`].")]
+      ///
+      /// [`rem_euclid`]: Self::rem_euclid
       #[inline]
       #[must_use]
       pub fn div_euclid(self, rhs: Self) -> Self {
@@ -431,6 +916,20 @@ macro_rules! impl_simd_float {
           .select(rhs.simd_gt(Self::ZERO).select(q - Self::ONE, q + Self::ONE), q)
       }
 
+      /// Calculates the least nonnegative remainder of `self` when divided by
+      /// `rhs`.
+      ///
+      /// In particular, the return value `r` satisfies `0.0 <= r < rhs.abs()` in
+      /// most cases. However, due to a floating point round-off error it can
+      /// result in `r == rhs.abs()`, violating the mathematical definition, if
+      /// `self` is much smaller than `rhs.abs()` in magnitude and `self < 0.0`.
+      /// This result is not an element of the function's codomain, but it is the
+      /// closest floating point number in the real numbers and thus fulfills the
+      /// property `self == self.div_euclid(rhs) * rhs + self.rem_euclid(rhs)`
+      /// approximately.
+      ///
+      /// This function is not guaranteed to exactly match
+      #[doc = concat!("[`", stringify!($T), "::rem_euclid`].")]
       #[inline]
       #[must_use]
       pub fn rem_euclid(self, rhs: Self) -> Self {
@@ -452,36 +951,87 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_powf_simd
 
+      /// Returns the square root of a number for each input element.
+      ///
+      /// Returns NaN if `self` is a negative number other than `-0.0`.
+      ///
+      /// This function always returns the precise result.
       #[must_use]
       $fn_sqrt
 
+      /// Returns `e^(self)`, (the exponential function) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_exp
 
-      /// Returns `2^self`.
+      /// Returns `2^(self)` for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_exp2
 
-      /// Natural log (ln(x))
+      /// Returns the natural logarithm of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_ln
 
+      /// Returns the base 2 logarithm of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn log2(self) -> Self {
         Self::ln(self) * Self::LOG2_E
       }
 
+      /// Returns the base 10 logarithm of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn log10(self) -> Self {
         Self::ln(self) * Self::LOG10_E
       }
 
-      /// Calculates the cube root: `self^(1/3)`.
+      /// Returns the cube root of a number for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_cbrt
 
+      /// Computes the sine of a number (in radians) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn sin(self) -> Self {
@@ -489,6 +1039,13 @@ macro_rules! impl_simd_float {
         s
       }
 
+      /// Computes the cosine of a number (in radians) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn cos(self) -> Self {
@@ -496,6 +1053,13 @@ macro_rules! impl_simd_float {
         c
       }
 
+      /// Computes the tangent of a number (in radians) for each input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn tan(self) -> Self {
@@ -503,43 +1067,133 @@ macro_rules! impl_simd_float {
         s / c
       }
 
+      /// Computes the arcsine of a number for each input element. Return value
+      /// is in radians in the range [-pi/2, pi/2] or NaN if the number is
+      /// outside the range [-1, 1].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_asin
 
+      /// Computes the arccosine of a number for each input element. Return
+      /// value is in radians in the range [0, pi] or NaN if the number is
+      /// outside the range [-1, 1].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_acos
 
+      /// Computes the arctangent of a number for each input element. Return
+      /// value is in radians in the range [-pi/2, pi/2].
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_atan
 
+      /// Computes the four quadrant arctangent of each element of `self` (`y`)
+      /// and the corresponding element of `other` (`x`) in radians.
+      ///
+      /// | `x`     | `y`     | Piecewise Definition | Range         |
+      /// |---------|---------|----------------------|---------------|
+      /// | `>= +0` | `>= +0` | `arctan(y/x)`        | `[+0, +pi/2]` |
+      /// | `>= +0` | `<= -0` | `arctan(y/x)`        | `[-pi/2, -0]` |
+      /// | `<= -0` | `>= +0` | `arctan(y/x) + pi`   | `[+pi/2, +pi]`|
+      /// | `<= -0` | `<= -0` | `arctan(y/x) - pi`   | `[-pi, -pi/2]`|
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_atan2
 
+      /// Simultaneously computes the sine and cosine of a number `x` for each
+      /// input element. Returns `(sin(x), cos(x))`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_sin_cos
 
+      /// Simultaneously computes the arcsine and arccosine of a number `x` for
+      /// each input element. Returns `(asin(x), acos(x))`.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_asin_acos
 
-      /// Calculate `e^self - 1` for each lane. Accurate even for very small
-      /// values.
+      /// Returns `e^(self) - 1` for each input element in a way that is
+      /// accurate even if a number is close to zero.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_exp_m1
 
-      /// Calculate `ln(1 + self)` for each lane. Accurate even for very small
-      /// values.
+      /// Returns `ln(1+n)` (natural logarithm) for each input element more
+      /// accurately than if the operations were performed separately.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_ln_1p
 
-      /// Calculates hyperbolic sine: `(e^self - e^(-self))/2`.
+      /// Returns the hyperbolic sine (`(e^self - e^(-self))/2`) for each input
+      /// element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_sinh
 
-      /// Calculates hyperbolic cosine: `(e^self + e^(-self))/2`.
+      /// Returns the hyperbolic cosine (`(e^self + e^(-self))/2`) for each
+      /// input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_cosh
 
-      /// Calculates hyperbolic tangent: `sinh(self)/cosh(self)`.
+      /// Returns the hyperbolic tangent (`sinh(self)/cosh(self)`) for each
+      /// input element.
+      ///
+      /// # Unspecified precision
+      ///
+      /// The precision of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[must_use]
       $fn_tanh
 

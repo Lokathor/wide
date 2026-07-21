@@ -2,12 +2,24 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
+    /// A SIMD vector with eight elements of type [`u16`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct u16x8 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
+    /// A SIMD vector with eight elements of type [`u16`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Clone, Copy)]
     #[repr(transparent)]
     pub struct u16x8 { pub(crate) simd: v128 }
@@ -27,6 +39,13 @@ pick! {
     impl Eq for u16x8 { }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
       use core::arch::aarch64::*;
+
+      /// A SIMD vector with eight elements of type [`u16`].
+      ///
+      /// See the [crate level documentation] for more information about SIMD
+      /// vectors.
+      ///
+      /// [crate level documentation]: crate
       #[repr(C)]
       #[derive(Copy, Clone)]
       pub struct u16x8 { pub(crate) neon : uint16x8_t }
@@ -47,6 +66,12 @@ pick! {
 
       impl Eq for u16x8 { }
   } else {
+    /// A SIMD vector with eight elements of type [`u16`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct u16x8 { pub(crate) arr: [u16;8] }
@@ -254,7 +279,8 @@ impl_simd! {
     i16x8::all(cast(self))
   }
 
-  /// Transpose matrix of 8x8 `u16` matrix.
+  ///
+  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [u16x8; 8]) -> [u16x8; 8] {
     cast(i16x8::transpose(cast(data)))
@@ -1068,8 +1094,11 @@ impl_simd_uint! {
   }
 }
 
+/// The following functionality exists only for [`u16x8`], or only for
+/// particular types inconsistently.
 impl u16x8 {
-  /// Unpack the lower half of the input and zero expand it to `u16` values.
+  /// Converts the lower eight elements of `u` from [`u8`] to [`u16`], dropping
+  /// the higher eight elements.
   #[inline]
   #[must_use]
   pub fn from_u8x16_low(u: u8x16) -> Self {
@@ -1092,7 +1121,8 @@ impl u16x8 {
     }
   }
 
-  /// Unpack the upper half of the input and zero expand it to `u16` values.
+  /// Converts the higher eight elements of `u` from [`u8`] to [`u16`], dropping
+  /// the lower eight elements.
   #[inline]
   #[must_use]
   pub fn from_u8x16_high(u: u8x16) -> Self {

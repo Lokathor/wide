@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* SEMI-BREAKING: `i64xN` functions `to_bitmask`, `any`, `all` and `none` no
+  longer guarantee that the sign-bit is used to decide whether an element is
+  considered "true" or "false".
+
 * Added cast functions `cast_unsigned`, `cast_signed`, `to_bits`, `from_bits`.
 * Added `u8x32`/`i8x32` `swizzle` and `swizzle_relaxed`: a full-width 32-entry
   byte table lookup (`vpermb` on AVX-512-VBMI, `vqtbl2` on NEON, emulated on
@@ -39,7 +43,7 @@
 
 * Added several functions and trait implementations that previously were only
   implemented for some types inconsistently.
-* Added inherit `simd_*` comparison functions and deprecated the `Cmp*` traits.
+* Added inherent `simd_*` comparison functions and deprecated the `Cmp*` traits.
 * Added integer `Div` and `Rem` implementations.
 * Added integer functions `clamp`, `saturating_mul` and `saturating_div`.
 * Added signed integer functions `is_positive` and `signum`.

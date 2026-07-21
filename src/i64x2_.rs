@@ -2,12 +2,24 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
+    /// A SIMD vector with two elements of type [`i64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct i64x2 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
+    /// A SIMD vector with two elements of type [`i64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Clone, Copy)]
     #[repr(transparent)]
     pub struct i64x2 { pub(crate) simd: v128 }
@@ -27,6 +39,13 @@ pick! {
     impl Eq for i64x2 { }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
     use core::arch::aarch64::*;
+
+    /// A SIMD vector with two elements of type [`i64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct i64x2 { pub(crate) neon : int64x2_t }
@@ -49,6 +68,12 @@ pick! {
 
     impl Eq for i64x2 { }
   } else {
+    /// A SIMD vector with two elements of type [`i64`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
     pub struct i64x2 { arr: [i64;2] }
@@ -271,7 +296,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 2x2 `i64` matrix.
+  ///
+  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [i64x2; 2]) -> [i64x2; 2] {
     pick! {
@@ -557,7 +583,10 @@ impl_simd_int! {
   }
 }
 
+/// The following functionality exists only for [`i64x2`], or only for
+/// particular types inconsistently.
 impl i64x2 {
+  /// Converts each element from [`i64`] to [`f64`].
   #[inline]
   #[must_use]
   pub fn round_float(self) -> f64x2 {

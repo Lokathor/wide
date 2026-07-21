@@ -72,20 +72,32 @@ macro_rules! impl_simd_uint {
 
             Self::new([$(self_array[$index].wrapping_div(rhs_array[$index])),*])
         },
-        /// Lanewise divide.
+        /// Divides each element of `left` by the corresponding element `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
         ,
-        /// Lanewise divide.
+        /// Divides each element of `left` by the scalar `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if `right` is zero.
         ,
-        /// Lanewise divide.
+        /// Divides the scalar `left` by each element of `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
     );
     impl_binary_operator!(
         $T,
@@ -101,20 +113,35 @@ macro_rules! impl_simd_uint {
 
             Self::new([$(self_array[$index].wrapping_rem(rhs_array[$index])),*])
         },
-        /// Lanewise remainder.
+        /// Returns the remainder of each element of `left` divided by the
+        /// corresponding element `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
         ,
-        /// Lanewise remainder.
+        /// Returns the remainder of each element of `left` divided by the
+        /// scalar `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if `right` is zero.
         ,
-        /// Lanewise remainder.
+        /// Returns the remainder of the scalar `left` divided by each element
+        /// of `right`.
         ///
         /// Note that because division has no hardware support, this operation
         /// is very slow and should be avoided if possible.
+        ///
+        /// # Panics
+        ///
+        /// Panics if any element of `right` is zero.
     );
     impl_shift_operator!(
       $T,
@@ -278,27 +305,41 @@ macro_rules! impl_simd_uint {
     impl_formatting_trait!(core::fmt::Octal);
     impl_formatting_trait!(core::fmt::UpperHex);
 
+    /// The following functionality exists for all SIMD vectors of unsigned
+    /// integers.
     impl $Simd {
+      /// A SIMD vector with all elements set to `1`.
       pub const ONE: Self = Self::splat(1);
+
+      /// A SIMD vector with all elements set to `0`.
       pub const ZERO: Self = Self::splat(0);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
       pub const MAX: Self = Self::splat($T::MAX);
+
+      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
       pub const MIN: Self = Self::splat($T::MIN);
 
-      /// The number of lanes in this SIMD vector.
+      /// The number of elements in this SIMD vector.
       pub const LANES: u16 = $N;
 
       /// The size of this SIMD vector in bits.
       pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
 
+      /// Returns the maximum between each element of `self` and the
+      /// corresponding element of `other`.
       #[must_use]
       $fn_max
 
+      /// Returns the minimum between each element of `self` and the
+      /// corresponding element of `other`.
       #[must_use]
       $fn_min
 
-      /// Restrict each element to a certain interval.
+      /// Clamps each element of `self` between the corresponding elements of
+      /// `min` and `max`.
       ///
-      /// If `min > max`, the result is unspeficied. Consider manually checking
+      /// If `min > max`, the result is unspecified. Consider manually checking
       /// for that case.
       #[inline]
       #[must_use]
@@ -306,19 +347,27 @@ macro_rules! impl_simd_uint {
         self.max(min).min(max)
       }
 
-      /// horizontal add of all the elements of the vector
+      /// Reducing addition. Returns the sum of the vector's elements.
+      ///
+      /// Equivalent to `self[0] + self[1] + ...`.
       #[must_use]
       $fn_reduce_add
 
-      /// Reducing multiply. Returns the product of the elements of the vector.
+      /// Reducing multiplication. Returns the product of the vector's elements.
+      ///
+      /// Equivalent to `self[0] * self[1] * ...`.
       #[must_use]
       $fn_reduce_mul
 
-      /// horizontal max of all the elements of the vector
+      /// Reducing maximum. Returns the maximum of the vector's elements.
+      ///
+      /// Equivalent to `self[0].max(self[1].max(...))`.
       #[must_use]
       $fn_reduce_max
 
-      /// horizontal min of all the elements of the vector
+      /// Reducing minimum. Returns the minimum of the vector's elements.
+      ///
+      /// Equivalent to `self[0].min(self[1].min(...))`.
       #[must_use]
       $fn_reduce_min
 
@@ -402,13 +451,18 @@ macro_rules! impl_simd_uint {
       #[must_use]
       $fn_unbounded_shr_scalar
 
+      /// Saturating integer addition. Computes `self + rhs`, saturating at the
+      /// numeric bounds instead of overflowing.
       #[must_use]
       $fn_saturating_add
 
+      /// Saturating integer subtraction. Computes `self - rhs`, saturating at
+      /// the numeric bounds instead of overflowing.
       #[must_use]
       $fn_saturating_sub
 
-      /// Lanewise saturating multiply.
+      /// Saturating integer multiplication. Computes `self * rhs`, saturating
+      /// at the numeric bounds instead of overflowing.
       #[inline]
       #[must_use]
       pub fn saturating_mul(self, rhs: Self) -> Self {
@@ -416,10 +470,19 @@ macro_rules! impl_simd_uint {
         low | high.simd_ne(Self::ZERO)
       }
 
-      /// Lanewise saturating divide.
+      /// Saturating integer division. Computes `self / rhs`, saturating at the
+      /// numeric bounds instead of overflowing.
+      ///
+      /// Note that for unsigned integers overflow never occurs, so this is
+      /// identical to regular division. This function only exists for
+      /// consistency with signed integers.
       ///
       /// Note that because division has no hardware support, this operation is
       /// very slow and should be avoided if possible.
+      ///
+      /// # Panics
+      ///
+      /// Panics if any element of `rhs` is zero.
       #[inline]
       #[must_use]
       pub fn saturating_div(self, rhs: Self) -> Self {

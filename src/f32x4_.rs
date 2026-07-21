@@ -2,12 +2,24 @@ use super::*;
 
 pick! {
   if #[cfg(target_feature="sse")] {
+    /// A SIMD vector with four elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
     pub struct f32x4 { pub(crate) sse: m128 }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
 
+    /// A SIMD vector with four elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Clone, Copy)]
     #[repr(transparent)]
     pub struct f32x4 { pub(crate) simd: v128 }
@@ -25,6 +37,13 @@ pick! {
     }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
     use core::arch::aarch64::*;
+
+    /// A SIMD vector with four elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct f32x4 { pub(crate) neon : float32x4_t }
@@ -44,6 +63,12 @@ pick! {
 
     }
     } else {
+    /// A SIMD vector with four elements of type [`f32`].
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
     #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
     pub struct f32x4 { pub(crate) arr: [f32;4] }
@@ -274,7 +299,8 @@ impl_simd! {
     }
   }
 
-  /// Transpose matrix of 4x4 `f32` matrix. Currently only accelerated on SSE.
+  ///
+  /// Currently this function is only accelerated on `sse`.
   #[inline]
   pub fn transpose(data: [f32x4; 4]) -> [f32x4; 4] {
     pick! {
@@ -1085,131 +1111,83 @@ impl_simd_float! {
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with FMA: Uses `vfmadd` (single rounding, best
   ///   accuracy)
   /// - On ARM64 with NEON: Uses `vfmaq_f32` (single rounding, best accuracy)
   /// - Without FMA support: Uses `(self * m) + a` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([1.0, 2.0, 3.0, 4.0]);
-  /// let b = f32x4::from([5.0, 6.0, 7.0, 8.0]);
-  /// let c = f32x4::from([9.0, 10.0, 11.0, 12.0]);
-  ///
-  /// let result = a.mul_add(b, c);
-  ///
-  /// let expected = f32x4::from([14.0, 22.0, 32.0, 44.0]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_add(self, m: Self, a: Self) -> Self {
+  pub fn mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_add_m128(self.sse, m.sse, a.sse) }
+        Self { sse: fused_mul_add_m128(self.sse, a.sse, b.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f32(a.neon, self.neon, m.neon) } }
+        unsafe { Self { neon: vfmaq_f32(b.neon, self.neon, a.neon) } }
       } else {
-        (self * m) + a
+        (self * a) + b
       }
     }
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with FMA: Uses `vfmsub` (single rounding, best
   ///   accuracy)
   /// - On ARM64 with NEON: Uses `vfmaq_f32(-s, self, m)` (single rounding, best
   ///   accuracy)
   /// - Without FMA support: Uses `(self * m) - s` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([10.0, 20.0, 30.0, 40.0]);
-  /// let b = f32x4::from([2.0, 3.0, 4.0, 5.0]);
-  /// let c = f32x4::from([5.0, 10.0, 15.0, 20.0]);
-  ///
-  /// let result = a.mul_sub(b, c);
-  ///
-  /// let expected = f32x4::from([15.0, 50.0, 105.0, 180.0]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_sub(self, m: Self, s: Self) -> Self {
+  pub fn mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_sub_m128(self.sse, m.sse, s.sse) }
+        Self { sse: fused_mul_sub_m128(self.sse, a.sse, b.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f32(vnegq_f32(s.neon), self.neon, m.neon) } }
+        unsafe { Self { neon: vfmaq_f32(vnegq_f32(b.neon), self.neon, a.neon) } }
       } else {
-        (self * m) - s
+        (self * a) - b
       }
     }
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with FMA: Uses `vfnmadd` (single rounding, best
   ///   accuracy)
   /// - On ARM64 with NEON: Uses `vfmsq_f32` (single rounding, best accuracy)
   /// - Without FMA support: Uses `a - (self * m)` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([3.0, 4.0, 5.0, 6.0]);
-  /// let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
-  /// let c = f32x4::from([10.0, 20.0, 30.0, 40.0]);
-  ///
-  /// let result = a.mul_neg_add(b, c);
-  ///
-  /// let expected = f32x4::from([4.0, 12.0, 20.0, 28.0]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_neg_add(self, m: Self, a: Self) -> Self {
+  pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_neg_add_m128(self.sse, m.sse, a.sse) }
+        Self { sse: fused_mul_neg_add_m128(self.sse, a.sse, b.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmsq_f32(a.neon, self.neon, m.neon) } }
+        unsafe { Self { neon: vfmsq_f32(b.neon, self.neon, a.neon) } }
       } else {
-        a - (self * m)
+        b - (self * a)
       }
     }
   }
 
   ///
-  /// # Platform-specific behavior
+  /// # Platform-specific behavior (may change in the future)
+  ///
   /// - On `x86`/`x86_64` with FMA: Uses `vfnmsub` (single rounding, best
   ///   accuracy)
   /// - On ARM64 with NEON: Uses `-(vfmaq_f32(s, self, m))` (single rounding,
   ///   best accuracy)
   /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
-  ///
-  /// # Examples
-  /// ```
-  /// # use wide::f32x4;
-  /// let a = f32x4::from([3.0, 4.0, 5.0, 6.0]);
-  /// let b = f32x4::from([2.0, 2.0, 2.0, 2.0]);
-  /// let c = f32x4::from([1.0, 2.0, 3.0, 4.0]);
-  ///
-  /// let result = a.mul_neg_sub(b, c);
-  ///
-  /// let expected = f32x4::from([-7.0, -10.0, -13.0, -16.0]);
-  /// assert_eq!(result, expected);
-  /// ```
   #[inline]
-  pub fn mul_neg_sub(self, m: Self, s: Self) -> Self {
+  pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-        Self { sse: fused_mul_neg_sub_m128(self.sse, m.sse, s.sse) }
+        Self { sse: fused_mul_neg_sub_m128(self.sse, a.sse, b.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vnegq_f32(vfmaq_f32(s.neon, self.neon, m.neon)) } }
+        unsafe { Self { neon: vnegq_f32(vfmaq_f32(b.neon, self.neon, a.neon)) } }
       } else {
-        -(self * m) - s
+        -(self * a) - b
       }
     }
   }
@@ -1956,6 +1934,8 @@ impl_simd_float! {
   }
 }
 
+/// The following functionality exists only for [`f32x4`], or only for
+/// particular types inconsistently.
 impl f32x4 {
   #[inline]
   fn vm_pow2n(self) -> Self {
@@ -2021,6 +2001,7 @@ impl f32x4 {
     cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
   }
 
+  /// Returns `[self[0], b[0], self[1], b[1]]`.
   #[must_use]
   #[inline]
   pub fn unpack_lo(self, b: Self) -> Self {
@@ -2044,6 +2025,7 @@ impl f32x4 {
     }
   }
 
+  /// Returns `[self[2], b[2], self[3], b[3]]`.
   #[must_use]
   #[inline]
   pub fn unpack_hi(self, b: Self) -> Self {
@@ -2067,6 +2049,7 @@ impl f32x4 {
     }
   }
 
+  /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   pub fn from_i32x4(v: i32x4) -> Self {
     pick! {
@@ -2087,11 +2070,14 @@ impl f32x4 {
     }
   }
 
-  /// Returns true for each element if its sign bit is set.
+  /// Returns a [mask] that checks if each element has a negative sign,
+  /// including `-0.0`, NaNs with negative sign bit and negative infinity.
   ///
-  /// If the sign bit is set, the result has all bits set, not just the sign
-  /// bit. This has been renamed to [`is_sign_negative`].
+  /// Note that this function has a misleading name. If the sign bit is set, the
+  /// result has all bits set, not just the sign bit. This function has been
+  /// renamed to [`is_sign_negative`].
   ///
+  /// [mask]: crate#masks
   /// [`is_sign_negative`]: Self::is_sign_negative
   #[inline]
   #[must_use]
