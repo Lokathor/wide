@@ -1,5 +1,11 @@
 # `wide` Changelog
 
+## Unreleased
+
+- Reverted a compile time optimization that triggered a compiler bug. See
+  [this issue](https://github.com/Lokathor/wide/issues/303) for more
+  information.
+
 ## 1.6.0
 
 * **Potential Change:** `i64xN` functions `to_bitmask`, `any`, `all` and `none`
