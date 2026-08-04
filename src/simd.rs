@@ -836,6 +836,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<$UnsignedSimd> for $Simd {
+      $($(#[$doc])*)?
       #[inline]
       fn $op_assign(&mut self, rhs: $UnsignedSimd) {
         *self = (*self).$op(rhs);
@@ -843,6 +844,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<$SignedSimd> for $Simd {
+      $($(#[$doc])*)?
       #[inline]
       fn $op_assign(&mut self, rhs: $SignedSimd) {
         *self = (*self).$op(rhs);
@@ -852,6 +854,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$UnsignedSimd> for $Simd {
       type Output = Self;
 
+      $($(#[$doc])*)?
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
         self.$op(*rhs)
@@ -861,6 +864,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$SignedSimd> for $Simd {
       type Output = Self;
 
+      $($(#[$doc])*)?
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
         self.$op(*rhs)
@@ -888,6 +892,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<&$UnsignedSimd> for $Simd {
+      $($(#[$doc])*)?
       #[inline]
       fn $op_assign(&mut self, rhs: &$UnsignedSimd) {
         *self = (*self).$op(*rhs);
@@ -895,6 +900,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<&$SignedSimd> for $Simd {
+      $($(#[$doc])*)?
       #[inline]
       fn $op_assign(&mut self, rhs: &$SignedSimd) {
         *self = (*self).$op(*rhs);
@@ -904,6 +910,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$UnsignedSimd> for &$Simd {
       type Output = $Simd;
 
+      $($(#[$doc])*)?
       #[inline]
       fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
         (*self).$op(rhs)
@@ -913,6 +920,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$SignedSimd> for &$Simd {
       type Output = $Simd;
 
+      $($(#[$doc])*)?
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
         (*self).$op(rhs)
@@ -942,6 +950,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$UnsignedSimd> for &$Simd {
       type Output = $Simd;
 
+      $($(#[$doc])*)?
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
         (*self).$op(*rhs)
@@ -951,6 +960,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$SignedSimd> for &$Simd {
       type Output = $Simd;
 
+      $($(#[$doc])*)?
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
         (*self).$op(*rhs)
