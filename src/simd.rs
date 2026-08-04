@@ -835,25 +835,34 @@ macro_rules! impl_shift_operator {
       }
     }
 
-    impl<Rhs> $OpAssign<Rhs> for $Simd
-    where
-      Self: $Op<Rhs, Output = Self>,
-    {
+    impl $OpAssign<$UnsignedSimd> for $Simd {
       #[inline]
-      fn $op_assign(&mut self, rhs: Rhs) {
+      fn $op_assign(&mut self, rhs: $UnsignedSimd) {
         *self = (*self).$op(rhs);
       }
     }
 
-    impl<Rhs> $Op<&Rhs> for $Simd
-    where
-      Self: $Op<Rhs, Output = Self>,
-      Rhs: Copy,
-    {
+    impl $OpAssign<$SignedSimd> for $Simd {
+      #[inline]
+      fn $op_assign(&mut self, rhs: $SignedSimd) {
+        *self = (*self).$op(rhs);
+      }
+    }
+
+    impl $Op<&$UnsignedSimd> for $Simd {
       type Output = Self;
 
       #[inline]
-      fn $op(self, rhs: &Rhs) -> Self::Output {
+      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
+        self.$op(*rhs)
+      }
+    }
+
+    impl $Op<&$SignedSimd> for $Simd {
+      type Output = Self;
+
+      #[inline]
+      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
         self.$op(*rhs)
       }
     }
@@ -878,14 +887,34 @@ macro_rules! impl_shift_operator {
       }
     }
 
-    impl<Rhs> $Op<Rhs> for &$Simd
-    where
-      $Simd: $Op<Rhs, Output = $Simd>,
-    {
+    impl $OpAssign<&$UnsignedSimd> for $Simd {
+      #[inline]
+      fn $op_assign(&mut self, rhs: &$UnsignedSimd) {
+        *self = (*self).$op(*rhs);
+      }
+    }
+
+    impl $OpAssign<&$SignedSimd> for $Simd {
+      #[inline]
+      fn $op_assign(&mut self, rhs: &$SignedSimd) {
+        *self = (*self).$op(*rhs);
+      }
+    }
+
+    impl $Op<$UnsignedSimd> for &$Simd {
       type Output = $Simd;
 
       #[inline]
-      fn $op(self, rhs: Rhs) -> Self::Output {
+      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
+        (*self).$op(rhs)
+      }
+    }
+
+    impl $Op<$SignedSimd> for &$Simd {
+      type Output = $Simd;
+
+      #[inline]
+      fn $op(self, rhs: $SignedSimd) -> Self::Output {
         (*self).$op(rhs)
       }
     }
@@ -910,6 +939,24 @@ macro_rules! impl_shift_operator {
       }
     }
 
+    impl $Op<&$UnsignedSimd> for &$Simd {
+      type Output = $Simd;
+
+      #[inline]
+      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
+        (*self).$op(*rhs)
+      }
+    }
+
+    impl $Op<&$SignedSimd> for &$Simd {
+      type Output = $Simd;
+
+      #[inline]
+      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
+        (*self).$op(*rhs)
+      }
+    }
+
     impl $Op<&$UnsignedSimd> for &$T {
       type Output = $Simd;
 
@@ -930,24 +977,73 @@ macro_rules! impl_shift_operator {
       }
     }
 
-    impl $Op<u32> for $Simd {
-      type Output = Self;
-
-      $($(#[$doc_scalar])*)?
-      $impl_u32
-    }
-
-    macro_rules! impl_scalar_with_cast {
-      ($T2:ident) => {
+    macro_rules! impl_scalar {
+      ($T2:ident, $impl:item) => {
         impl $Op<$T2> for $Simd {
           type Output = Self;
 
           $($(#[$doc_scalar])*)?
+          $impl
+        }
+
+        impl $OpAssign<$T2> for $Simd {
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op_assign(&mut self, rhs: $T2) {
+            *self = (*self).$op(rhs);
+          }
+        }
+
+        impl $Op<&$T2> for $Simd {
+          type Output = Self;
+
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op(self, rhs: &$T2) -> Self::Output {
+            self.$op(*rhs)
+          }
+        }
+
+        impl $OpAssign<&$T2> for $Simd {
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op_assign(&mut self, rhs: &$T2) {
+            *self = (*self).$op(*rhs);
+          }
+        }
+
+        impl $Op<$T2> for &$Simd {
+          type Output = $Simd;
+
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op(self, rhs: $T2) -> Self::Output {
+            (*self).$op(rhs)
+          }
+        }
+
+        impl $Op<&$T2> for &$Simd {
+          type Output = $Simd;
+
+          $($(#[$doc_scalar])*)?
+          #[inline]
+          fn $op(self, rhs: &$T2) -> Self::Output {
+            (*self).$op(*rhs)
+          }
+        }
+      }
+    }
+    impl_scalar!(u32, $impl_u32);
+
+    macro_rules! impl_scalar_with_cast {
+      ($T2:ident) => {
+        impl_scalar!(
+          $T2,
           #[inline]
           fn $op(self, rhs: $T2) -> Self::Output {
             self.$op(rhs as u32)
           }
-        }
+        );
       }
     }
     impl_scalar_with_cast!(i8);
