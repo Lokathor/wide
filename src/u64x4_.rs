@@ -569,3 +569,181 @@ impl_simd_uint! {
     }
   }
 }
+
+/// The following functionality exists only for [`u64x4`], or only for
+/// particular types inconsistently.
+impl u64x4 {
+  /// Returns `[self[0], b[0], self[1], b[1]]`, interleaving the low half of
+  /// each vector.
+  #[inline]
+  #[must_use]
+  pub fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_low_i64_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [aa, _]: [u64x2; 2] = cast(self);
+        let [ba, _]: [u64x2; 2] = cast(b);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
+      }
+    }
+  }
+
+  /// Returns `[self[2], b[2], self[3], b[3]]`, interleaving the high half of
+  /// each vector.
+  #[inline]
+  #[must_use]
+  pub fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_high_i64_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [_, ab]: [u64x2; 2] = cast(self);
+        let [_, bb]: [u64x2; 2] = cast(b);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
+      }
+    }
+  }
+
+  /// The exact per-lane product of `a` and `b` masked to `W` bits.
+  ///
+  /// Only exact for `W <= 32`, where the product still fits a lane, and
+  /// callers guard on that. It is instantiated for wider `W` too, since the
+  /// guard is a runtime `if` on a const, so it cannot assert the bound itself.
+  #[inline]
+  #[must_use]
+  pub(crate) fn mul_masked<const W: u32>(a: Self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `vpmuludq` reads the low 32 bits of a lane anyway, so at `W == 32` the
+        // operand masks are already implied and can be dropped. A scalar
+        // multiply has no such truncation, so the other arm always masks.
+        let (a, b) = if W == 32 {
+          (a, b)
+        } else {
+          let mask = Self::splat(add_mul_operand_mask_u64::<W>());
+          (a & mask, b & mask)
+        };
+
+        Self { avx2: mul_u64_low_bits_m256i(a.avx2, b.avx2) }
+      } else {
+        let mask = add_mul_operand_mask_u64::<W>();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
+      }
+    }
+  }
+
+  /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
+  /// `a` and `b`. `W` must be in `1..=64`.
+  #[inline]
+  #[must_use]
+  pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
+        // IFMA is fixed at 52 bits; any other width takes the generic path.
+        if W == 52 {
+          #[cfg(target_arch = "x86")]
+          use core::arch::x86::_mm256_madd52lo_epu64;
+          #[cfg(target_arch = "x86_64")]
+          use core::arch::x86_64::_mm256_madd52lo_epu64;
+
+          // TODO(safe_arch): Add `_mm256_madd52lo_epu64`.
+          return Self {
+            avx2: m256i(unsafe {
+              _mm256_madd52lo_epu64(self.avx2.0, a.avx2.0, b.avx2.0)
+            }),
+          };
+        }
+      }
+    }
+
+    // Below 33 bits the whole product fits a lane, so one widening multiply
+    // yields both halves and the split is a mask rather than an instruction.
+    if W <= 32 {
+      let mask = Self::splat(add_mul_operand_mask_u64::<W>());
+      return self + (Self::mul_masked::<W>(a, b) & mask);
+    }
+
+    let acc = self.to_array();
+    let a = a.to_array();
+    let b = b.to_array();
+    Self::new(core::array::from_fn(|i| {
+      add_mul_lo_lane_u64::<W>(acc[i], a[i], b[i])
+    }))
+  }
+
+  /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
+  /// and `b`. `W` must be in `1..=64`.
+  #[inline]
+  #[must_use]
+  pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
+        // IFMA is fixed at 52 bits; any other width takes the generic path.
+        if W == 52 {
+          #[cfg(target_arch = "x86")]
+          use core::arch::x86::_mm256_madd52hi_epu64;
+          #[cfg(target_arch = "x86_64")]
+          use core::arch::x86_64::_mm256_madd52hi_epu64;
+
+          // TODO(safe_arch): Add `_mm256_madd52hi_epu64`.
+          return Self {
+            avx2: m256i(unsafe {
+              _mm256_madd52hi_epu64(self.avx2.0, a.avx2.0, b.avx2.0)
+            }),
+          };
+        }
+      }
+    }
+
+    // See `add_mul_lo`: the whole product is in the lane, so the high half is a
+    // shift.
+    if W <= 32 {
+      return self + (Self::mul_masked::<W>(a, b) >> W);
+    }
+
+    let acc = self.to_array();
+    let a = a.to_array();
+    let b = b.to_array();
+    Self::new(core::array::from_fn(|i| {
+      add_mul_hi_lane_u64::<W>(acc[i], a[i], b[i])
+    }))
+  }
+
+  /// Gather lanes from the concatenation of `self` and `other`: index `i` in
+  /// `0..4` selects lane `i` of `self`, `4..8` selects lane `i - 4` of `other`.
+  /// Indices are taken modulo 8.
+  #[inline]
+  #[must_use]
+  pub fn swizzle2(self, other: Self, idx: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx2", target_feature="avx512vl", target_feature="avx512f"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_permutex2var_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_permutex2var_epi64;
+
+        // TODO(safe_arch): Add `_mm256_permutex2var_epi64`.
+        Self {
+          avx2: m256i(unsafe {
+            _mm256_permutex2var_epi64(self.avx2.0, idx.avx2.0, other.avx2.0)
+          }),
+        }
+      } else {
+        let a = self.to_array();
+        let b = other.to_array();
+        let idx = idx.to_array();
+        Self::new(core::array::from_fn(|i| {
+          let j = (idx[i] & 7) as usize;
+          if j < 4 { a[j] } else { b[j - 4] }
+        }))
+      }
+    }
+  }
+}

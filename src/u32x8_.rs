@@ -581,3 +581,116 @@ impl From<u16x8> for u32x8 {
     }
   }
 }
+
+/// The following functionality exists only for [`u32x8`], or only for
+/// particular types inconsistently.
+impl u32x8 {
+  /// Returns `[self[0], b[0], self[1], b[1], self[2], b[2], self[3], b[3]]`,
+  /// interleaving the low half of each vector.
+  #[inline]
+  #[must_use]
+  pub fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_low_i32_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [aa, _]: [u32x4; 2] = cast(self);
+        let [ba, _]: [u32x4; 2] = cast(b);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
+      }
+    }
+  }
+
+  /// Returns `[self[4], b[4], self[5], b[5], self[6], b[6], self[7], b[7]]`,
+  /// interleaving the high half of each vector.
+  #[inline]
+  #[must_use]
+  pub fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_high_i32_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [_, ab]: [u32x4; 2] = cast(self);
+        let [_, bb]: [u32x4; 2] = cast(b);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
+      }
+    }
+  }
+
+  /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
+  /// `a` and `b`. `W` must be in `1..=32`.
+  ///
+  /// There is no IFMA equivalent at this width, and below 17 bits no widening
+  /// multiply is needed either: the whole product fits a lane, so the ordinary
+  /// lane multiply already yields both halves.
+  #[inline]
+  #[must_use]
+  pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+    if W <= 16 {
+      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+      return self + (((a & mask) * (b & mask)) & mask);
+    }
+
+    let acc = self.to_array();
+    let a = a.to_array();
+    let b = b.to_array();
+    Self::new(core::array::from_fn(|i| {
+      add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
+    }))
+  }
+
+  /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
+  /// and `b`. `W` must be in `1..=32`.
+  #[inline]
+  #[must_use]
+  pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+    // See `add_mul_lo`: the whole product is in the lane, so the high half is a
+    // shift.
+    if W <= 16 {
+      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+      return self + (((a & mask) * (b & mask)) >> W);
+    }
+
+    let acc = self.to_array();
+    let a = a.to_array();
+    let b = b.to_array();
+    Self::new(core::array::from_fn(|i| {
+      add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
+    }))
+  }
+
+  /// Gather lanes from the concatenation of `self` and `other`: index `i` in
+  /// `0..8` selects lane `i` of `self`, `8..16` selects lane `i - 8` of
+  /// `other`. Indices are taken modulo 16.
+  #[inline]
+  #[must_use]
+  pub fn swizzle2(self, other: Self, idx: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx2", target_feature="avx512vl", target_feature="avx512f"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm256_permutex2var_epi32;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm256_permutex2var_epi32;
+
+        // TODO(safe_arch): Add `_mm256_permutex2var_epi32`.
+        Self {
+          avx2: m256i(unsafe {
+            _mm256_permutex2var_epi32(self.avx2.0, idx.avx2.0, other.avx2.0)
+          }),
+        }
+      } else {
+        let a = self.to_array();
+        let b = other.to_array();
+        let idx = idx.to_array();
+        Self::new(core::array::from_fn(|i| {
+          let j = (idx[i] & 15) as usize;
+          if j < 8 { a[j] } else { b[j - 8] }
+        }))
+      }
+    }
+  }
+}

@@ -371,6 +371,54 @@ pub use u64x4_::*;
 mod u64x8_;
 pub use u64x8_::*;
 
+/// A mask for the low `W` bits, the only part of a 64-bit `add_mul_lo` or
+/// `add_mul_hi` operand that is read.
+#[inline]
+const fn add_mul_operand_mask_u64<const W: u32>() -> u64 {
+  const { assert!(W >= 1 && W <= 64, "`add_mul` width must be in `1..=64`") };
+  u64::MAX >> (64 - W)
+}
+
+/// One `u64` lane of `add_mul_lo`: `acc + ((a * b) mod 2^W)`.
+#[inline]
+fn add_mul_lo_lane_u64<const W: u32>(acc: u64, a: u64, b: u64) -> u64 {
+  let mask = add_mul_operand_mask_u64::<W>();
+  let product = (a & mask) as u128 * (b & mask) as u128;
+  acc.wrapping_add(product as u64 & mask)
+}
+
+/// One `u64` lane of `add_mul_hi`: `acc + ((a * b) >> W)`.
+#[inline]
+fn add_mul_hi_lane_u64<const W: u32>(acc: u64, a: u64, b: u64) -> u64 {
+  let mask = add_mul_operand_mask_u64::<W>();
+  let product = (a & mask) as u128 * (b & mask) as u128;
+  acc.wrapping_add((product >> W) as u64)
+}
+
+/// A mask for the low `W` bits, the only part of a 32-bit `add_mul_lo` or
+/// `add_mul_hi` operand that is read.
+#[inline]
+const fn add_mul_operand_mask_u32<const W: u32>() -> u32 {
+  const { assert!(W >= 1 && W <= 32, "`add_mul` width must be in `1..=32`") };
+  u32::MAX >> (32 - W)
+}
+
+/// One `u32` lane of `add_mul_lo`: `acc + ((a * b) mod 2^W)`.
+#[inline]
+fn add_mul_lo_lane_u32<const W: u32>(acc: u32, a: u32, b: u32) -> u32 {
+  let mask = add_mul_operand_mask_u32::<W>();
+  let product = (a & mask) as u64 * (b & mask) as u64;
+  acc.wrapping_add(product as u32 & mask)
+}
+
+/// One `u32` lane of `add_mul_hi`: `acc + ((a * b) >> W)`.
+#[inline]
+fn add_mul_hi_lane_u32<const W: u32>(acc: u32, a: u32, b: u32) -> u32 {
+  let mask = add_mul_operand_mask_u32::<W>();
+  let product = (a & mask) as u64 * (b & mask) as u64;
+  acc.wrapping_add((product >> W) as u32)
+}
+
 #[allow(dead_code)]
 fn generic_bit_blend<T>(mask: T, y: T, n: T) -> T
 where

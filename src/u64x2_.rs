@@ -716,3 +716,179 @@ impl_simd_uint! {
     ])
   }
 }
+
+/// The following functionality exists only for [`u64x2`], or only for
+/// particular types inconsistently.
+impl u64x2 {
+  /// Returns `[self[0], b[0]]`, taking the low element of the 128-bit lane.
+  #[inline]
+  #[must_use]
+  pub fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_low_i64_m128i(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<0, 2>(self.simd, b.simd) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip1q_u64(self.neon, b.neon) } }
+      } else {
+        Self::new([self.as_array()[0], b.as_array()[0]])
+      }
+    }
+  }
+
+  /// Returns `[self[1], b[1]]`, taking the high element of the 128-bit lane.
+  #[inline]
+  #[must_use]
+  pub fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_high_i64_m128i(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<1, 3>(self.simd, b.simd) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip2q_u64(self.neon, b.neon) } }
+      } else {
+        Self::new([self.as_array()[1], b.as_array()[1]])
+      }
+    }
+  }
+
+  /// The exact per-lane product of `a` and `b` masked to `W` bits.
+  ///
+  /// Only exact for `W <= 32`, where the product still fits a lane, and
+  /// callers guard on that. It is instantiated for wider `W` too, since the
+  /// guard is a runtime `if` on a const, so it cannot assert the bound itself.
+  #[inline]
+  #[must_use]
+  fn mul_masked<const W: u32>(a: Self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // `pmuludq` reads the low 32 bits of a lane anyway, so at `W == 32` the
+        // operand masks are already implied and can be dropped. A scalar
+        // multiply has no such truncation, so the other arm always masks.
+        let (a, b) = if W == 32 {
+          (a, b)
+        } else {
+          let mask = Self::splat(add_mul_operand_mask_u64::<W>());
+          (a & mask, b & mask)
+        };
+
+        Self { sse: mul_widen_u32_odd_m128i(a.sse, b.sse) }
+      } else {
+        let mask = add_mul_operand_mask_u64::<W>();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
+      }
+    }
+  }
+
+  /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
+  /// `a` and `b`. `W` must be in `1..=64`.
+  #[inline]
+  #[must_use]
+  pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
+        // IFMA is fixed at 52 bits; any other width takes the generic path.
+        if W == 52 {
+          #[cfg(target_arch = "x86")]
+          use core::arch::x86::_mm_madd52lo_epu64;
+          #[cfg(target_arch = "x86_64")]
+          use core::arch::x86_64::_mm_madd52lo_epu64;
+
+          // TODO(safe_arch): Add `_mm_madd52lo_epu64`.
+          return Self {
+            sse: m128i(unsafe {
+              _mm_madd52lo_epu64(self.sse.0, a.sse.0, b.sse.0)
+            }),
+          };
+        }
+      }
+    }
+
+    // Below 33 bits the whole product fits a lane, so one widening multiply
+    // yields both halves and the split is a mask rather than an instruction.
+    if W <= 32 {
+      let mask = Self::splat(add_mul_operand_mask_u64::<W>());
+      return self + (Self::mul_masked::<W>(a, b) & mask);
+    }
+
+    let acc = self.to_array();
+    let a = a.to_array();
+    let b = b.to_array();
+    Self::new(core::array::from_fn(|i| {
+      add_mul_lo_lane_u64::<W>(acc[i], a[i], b[i])
+    }))
+  }
+
+  /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
+  /// and `b`. `W` must be in `1..=64`.
+  #[inline]
+  #[must_use]
+  pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
+        // IFMA is fixed at 52 bits; any other width takes the generic path.
+        if W == 52 {
+          #[cfg(target_arch = "x86")]
+          use core::arch::x86::_mm_madd52hi_epu64;
+          #[cfg(target_arch = "x86_64")]
+          use core::arch::x86_64::_mm_madd52hi_epu64;
+
+          // TODO(safe_arch): Add `_mm_madd52hi_epu64`.
+          return Self {
+            sse: m128i(unsafe {
+              _mm_madd52hi_epu64(self.sse.0, a.sse.0, b.sse.0)
+            }),
+          };
+        }
+      }
+    }
+
+    // See `add_mul_lo`: the whole product is in the lane, so the high half is a
+    // shift.
+    if W <= 32 {
+      return self + (Self::mul_masked::<W>(a, b) >> W);
+    }
+
+    let acc = self.to_array();
+    let a = a.to_array();
+    let b = b.to_array();
+    Self::new(core::array::from_fn(|i| {
+      add_mul_hi_lane_u64::<W>(acc[i], a[i], b[i])
+    }))
+  }
+
+  /// Gather lanes from the concatenation of `self` and `other`: index `i` in
+  /// `0..2` selects lane `i` of `self`, `2..4` selects lane `i - 2` of `other`.
+  /// Indices are taken modulo 4.
+  #[inline]
+  #[must_use]
+  pub fn swizzle2(self, other: Self, idx: Self) -> Self {
+    pick! {
+      if #[cfg(all(target_feature="sse2", target_feature="avx512vl", target_feature="avx512f"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_permutex2var_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_permutex2var_epi64;
+
+        // TODO(safe_arch): Add `_mm_permutex2var_epi64`.
+        Self {
+          sse: m128i(unsafe {
+            _mm_permutex2var_epi64(self.sse.0, idx.sse.0, other.sse.0)
+          }),
+        }
+      } else {
+        let a = self.to_array();
+        let b = other.to_array();
+        let idx = idx.to_array();
+        Self::new(core::array::from_fn(|i| {
+          let j = (idx[i] & 3) as usize;
+          if j < 2 { a[j] } else { b[j - 2] }
+        }))
+      }
+    }
+  }
+}
