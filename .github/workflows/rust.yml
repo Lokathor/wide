@@ -98,14 +98,16 @@ jobs:
     - name: Add targets via Rustup
       run: rustup target add riscv64gc-unknown-linux-gnu arm-unknown-linux-gnueabihf armv7-unknown-linux-gnueabihf wasm32-unknown-unknown
 
-    - name: Check the crate 1
+    - name: Check the crate risc
       run: cargo check --target riscv64gc-unknown-linux-gnu
-    - name: Check the crate 2
+    - name: Check the crate arm any
       run: cargo check --target arm-unknown-linux-gnueabihf
-    - name: Check the crate 3
+    - name: Check the crate arm v7
       run: cargo check --target armv7-unknown-linux-gnueabihf
-    - name: Check the crate 4
+    - name: Check the crate wasm simd
       run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target=wasm32-unknown-unknown
+    - name: Check the crate (avx512f && !avx512dq)
+      run: RUSTFLAGS="-C target-cpu=x86-64 -C target-feature=+avx512f,+avx512bw,+avx512vl" cargo check
 
   avx512_emulated_test:
     runs-on: ${{ matrix.rust.os }}
