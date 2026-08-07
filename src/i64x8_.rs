@@ -160,7 +160,7 @@ impl_simd! {
         // use f64 move_mask since it is the same size as i64
         movepi64_mask_m512d(cast(self.avx512)) as u32
       } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
+        f64x8::to_bitmask(cast(self))
       }
     }
   }
