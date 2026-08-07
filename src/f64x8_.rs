@@ -654,9 +654,10 @@ impl_simd_float! {
         let cast: i64x8 = cast(m512i(unsafe { _mm512_cvtpd_epi64(non_nan.avx512.0) }));
         flip_to_max ^ cast
       } else {
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.round_int(),
-          self.b.round_int(),
+          a.round_int(),
+          b.round_int(),
         ])
       }
     }
@@ -674,9 +675,11 @@ impl_simd_float! {
         // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
         cast(m512i(unsafe { _mm512_cvtpd_epi64(self.avx512.0) }))
       } else {
+
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.fast_round_int(),
-          self.b.fast_round_int(),
+          a.fast_round_int(),
+          b.fast_round_int(),
         ])
       }
     }
@@ -728,9 +731,10 @@ impl_simd_float! {
         let cast: i64x8 = cast(m512i(unsafe { _mm512_cvttpd_epi64(non_nan.avx512.0) }));
         flip_to_max ^ cast
       } else {
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.trunc_int(),
-          self.b.trunc_int(),
+          a.trunc_int(),
+          b.trunc_int(),
         ])
       }
     }
@@ -748,9 +752,10 @@ impl_simd_float! {
         // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
         cast(m512i(unsafe { _mm512_cvttpd_epi64(self.avx512.0) }))
       } else {
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.fast_trunc_int(),
-          self.b.fast_trunc_int(),
+          a.fast_trunc_int(),
+          b.fast_trunc_int(),
         ])
       }
     }
