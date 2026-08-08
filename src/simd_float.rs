@@ -720,11 +720,15 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_abs
 
-      /// Returns numbers that represents the signs of each element.
+      /// Returns numbers representing the sign of each element.
       ///
-      /// - `1.0` if the element is positive, `+0.0` or `INFINITY`
-      /// - `-1.0` if the element is negative, `-0.0` or `NEG_INFINITY`
+      /// - `1.0` if the element is positive, `+0.0`, or `INFINITY`
+      /// - `-1.0` if the element is negative, `-0.0`, or `NEG_INFINITY`
       /// - NaN if the element is NaN
+      ///
+      /// This matches the behavior of [`f32::signum`].
+      ///
+      /// [`f32::signum`]: https://doc.rust-lang.org/std/primitive.f32.html#method.signum
       #[inline]
       #[must_use]
       pub fn signum(self) -> Self {
