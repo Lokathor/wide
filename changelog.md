@@ -9,7 +9,8 @@
   multiply-add over the low `W` bits of each lane, keeping the low or high half
   of the product. `u64xN` uses `vpmadd52lo/hi` on AVX-512-IFMA when `W == 52`.
 - Added `swizzle2` for `u32xN` and `u64xN`: a lane gather from the
-  concatenation of two vectors (`vpermt2d`/`vpermt2q` on AVX-512).
+  concatenation of two vectors (`vpermt2d`/`vpermt2q` on AVX-512, `vpermd` on
+  AVX2, `vqtbl2` on NEON, emulated with a byte shuffle on SSSE3 and `simd128`).
 - Added `unpack_lo` and `unpack_hi` for `u32xN` and `u64xN`.
 
 ## 1.6.0

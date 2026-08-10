@@ -1048,6 +1048,36 @@ impl u32x4 {
             _mm_permutex2var_epi32(self.sse.0, idx.sse.0, other.sse.0)
           }),
         }
+      } else if #[cfg(any(target_feature="ssse3", target_feature="simd128"))] {
+        // There is no variable 32-bit shuffle here, but there is a byte
+        // shuffle, so look every lane up in both inputs by its bytes and then
+        // keep the half that the index actually selected.
+        let byte_indices = byte_indices_u32x4(idx & Self::splat(3));
+        let self_bytes = cast::<u32x4, u8x16>(self);
+        let other_bytes = cast::<u32x4, u8x16>(other);
+
+        let from_self =
+          cast::<u8x16, u32x4>(self_bytes.swizzle_relaxed(byte_indices));
+        let from_other =
+          cast::<u8x16, u32x4>(other_bytes.swizzle_relaxed(byte_indices));
+
+        (idx & Self::splat(4))
+          .simd_eq(Self::splat(0))
+          .select(from_self, from_other)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        use core::arch::aarch64::{uint8x16x2_t, vqtbl2q_u8};
+
+        // `vqtbl2q_u8` indexes a 32-byte table spanning two registers, which
+        // is the exact shape of `swizzle2`, so one lookup covers both inputs.
+        let byte_indices = byte_indices_u32x4(idx & Self::splat(7));
+        let table = uint8x16x2_t(
+          cast::<u32x4, u8x16>(self).neon,
+          cast::<u32x4, u8x16>(other).neon,
+        );
+
+        cast::<u8x16, u32x4>(u8x16 {
+          neon: unsafe { vqtbl2q_u8(table, byte_indices.neon) },
+        })
       } else {
         let a = self.to_array();
         let b = other.to_array();
@@ -1059,4 +1089,25 @@ impl u32x4 {
       }
     }
   }
+}
+
+/// The byte indices that select lane `sel` out of a byte table, so that lane
+/// `j` becomes the four bytes `[4*j, 4*j + 1, 4*j + 2, 4*j + 3]`.
+///
+/// `sel` must already be reduced to the table's lane count, which may be at
+/// most 64 lanes so that `4 * j` still fits in a byte.
+#[allow(dead_code)]
+#[inline]
+fn byte_indices_u32x4(sel: u32x4) -> u8x16 {
+  // The byte offset of the lane, broadcast to every byte of the lane.
+  let base = sel.unbounded_shl_scalar(2);
+  let base = base | base.unbounded_shl_scalar(8);
+  let base = base | base.unbounded_shl_scalar(16);
+
+  // Then the offset of each byte within its lane. These bits are free because
+  // every byte of `base` is a multiple of four. `from_ne_bytes` keeps this
+  // correct on big endian, where the bytes of a lane are the other way around.
+  const WITHIN_LANE: u32x4 = u32x4::splat(u32::from_ne_bytes([0, 1, 2, 3]));
+
+  cast::<u32x4, u8x16>(base | WITHIN_LANE)
 }

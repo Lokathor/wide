@@ -682,6 +682,36 @@ impl u32x8 {
             _mm256_permutex2var_epi32(self.avx2.0, idx.avx2.0, other.avx2.0)
           }),
         }
+      } else if #[cfg(target_feature="avx2")] {
+        // `vpermd` is a full cross-lane shuffle of a single vector and reduces
+        // the index modulo eight itself, so run it over both inputs and then
+        // keep the half that the index actually selected.
+        let from_self =
+          Self { avx2: shuffle_av_i32_all_m256i(self.avx2, idx.avx2) };
+        let from_other =
+          Self { avx2: shuffle_av_i32_all_m256i(other.avx2, idx.avx2) };
+
+        (idx & Self::splat(8))
+          .simd_eq(Self::splat(0))
+          .select(from_self, from_other)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        // Each half of `self` and of `other` is a table of four lanes, so a
+        // half-width `swizzle2` already covers all eight lanes of one input.
+        // Doing that for both inputs leaves only the choice between them.
+        //
+        // Only worth it where that half-width `swizzle2` is a single shuffle,
+        // as on `neon`; where the half is itself emulated it loses to scalar.
+        let from_self_a = self.a.swizzle2(self.b, idx.a);
+        let from_other_a = other.a.swizzle2(other.b, idx.a);
+        let from_self_b = self.a.swizzle2(self.b, idx.b);
+        let from_other_b = other.a.swizzle2(other.b, idx.b);
+
+        let eight = u32x4::splat(8);
+        let zero = u32x4::splat(0);
+        Self {
+          a: (idx.a & eight).simd_eq(zero).select(from_self_a, from_other_a),
+          b: (idx.b & eight).simd_eq(zero).select(from_self_b, from_other_b),
+        }
       } else {
         let a = self.to_array();
         let b = other.to_array();

@@ -880,6 +880,54 @@ impl u64x2 {
             _mm_permutex2var_epi64(self.sse.0, idx.sse.0, other.sse.0)
           }),
         }
+      } else if #[cfg(any(target_feature="ssse3", target_feature="simd128"))] {
+        // There is no variable 64-bit shuffle here, but there is a byte
+        // shuffle, so look every lane up in both inputs by its bytes and then
+        // keep the half that the index actually selected.
+        let byte_indices = byte_indices_u64x2(idx & Self::splat(1));
+        let self_bytes = cast::<u64x2, u8x16>(self);
+        let other_bytes = cast::<u64x2, u8x16>(other);
+
+        let from_self =
+          cast::<u8x16, u64x2>(self_bytes.swizzle_relaxed(byte_indices));
+        let from_other =
+          cast::<u8x16, u64x2>(other_bytes.swizzle_relaxed(byte_indices));
+
+        (idx & Self::splat(2))
+          .simd_eq(Self::splat(0))
+          .select(from_self, from_other)
+      } else if #[cfg(target_feature="sse2")] {
+        // Without a byte shuffle there is still no need to go through memory:
+        // with only two lanes per input, broadcast all four lanes of the
+        // table and pick one by the low two bits of the index. Unpacking a
+        // vector against itself is what broadcasts a lane.
+        let s0 = self.unpack_lo(self);
+        let s1 = self.unpack_hi(self);
+        let o0 = other.unpack_lo(other);
+        let o1 = other.unpack_hi(other);
+
+        // Subtracting a lane holding 0 or 1 from zero gives a lane that is all
+        // zeros or all ones, which is the mask that `select` wants.
+        let zero = Self::splat(0);
+        let odd_mask = zero - (idx & Self::splat(1));
+        let other_mask =
+          zero - (idx & Self::splat(2)).unbounded_shr_scalar(1);
+
+        other_mask.select(odd_mask.select(o1, o0), odd_mask.select(s1, s0))
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        use core::arch::aarch64::{uint8x16x2_t, vqtbl2q_u8};
+
+        // `vqtbl2q_u8` indexes a 32-byte table spanning two registers, which
+        // is the exact shape of `swizzle2`, so one lookup covers both inputs.
+        let byte_indices = byte_indices_u64x2(idx & Self::splat(3));
+        let table = uint8x16x2_t(
+          cast::<u64x2, u8x16>(self).neon,
+          cast::<u64x2, u8x16>(other).neon,
+        );
+
+        cast::<u8x16, u64x2>(u8x16 {
+          neon: unsafe { vqtbl2q_u8(table, byte_indices.neon) },
+        })
       } else {
         let a = self.to_array();
         let b = other.to_array();
@@ -891,4 +939,27 @@ impl u64x2 {
       }
     }
   }
+}
+
+/// The byte indices that select lane `sel` out of a byte table, so that lane
+/// `j` becomes the eight bytes `[8*j, 8*j + 1, ..., 8*j + 7]`.
+///
+/// `sel` must already be reduced to the table's lane count, which may be at
+/// most 32 lanes so that `8 * j` still fits in a byte.
+#[allow(dead_code)]
+#[inline]
+fn byte_indices_u64x2(sel: u64x2) -> u8x16 {
+  // The byte offset of the lane, broadcast to every byte of the lane.
+  let base = sel.unbounded_shl_scalar(3);
+  let base = base | base.unbounded_shl_scalar(8);
+  let base = base | base.unbounded_shl_scalar(16);
+  let base = base | base.unbounded_shl_scalar(32);
+
+  // Then the offset of each byte within its lane. These bits are free because
+  // every byte of `base` is a multiple of eight. `from_ne_bytes` keeps this
+  // correct on big endian, where the bytes of a lane are the other way around.
+  const WITHIN_LANE: u64x2 =
+    u64x2::splat(u64::from_ne_bytes([0, 1, 2, 3, 4, 5, 6, 7]));
+
+  cast::<u64x2, u8x16>(base | WITHIN_LANE)
 }

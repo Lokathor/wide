@@ -724,6 +724,27 @@ impl u32x16 {
             _mm512_permutex2var_epi32(self.avx512.0, idx.avx512.0, other.avx512.0)
           }),
         }
+      } else if #[cfg(any(
+        target_feature="avx2",
+        all(target_feature="neon",target_arch="aarch64"),
+      ))] {
+        // Each half of `self` and of `other` is a table of eight lanes, so a
+        // half-width `swizzle2` already covers all sixteen lanes of one input.
+        // Doing that for both inputs leaves only the choice between them.
+        //
+        // Only worth it where that half-width `swizzle2` lowers to a shuffle
+        // rather than to more emulation.
+        let from_self_a = self.a.swizzle2(self.b, idx.a);
+        let from_other_a = other.a.swizzle2(other.b, idx.a);
+        let from_self_b = self.a.swizzle2(self.b, idx.b);
+        let from_other_b = other.a.swizzle2(other.b, idx.b);
+
+        let sixteen = u32x8::splat(16);
+        let zero = u32x8::splat(0);
+        Self {
+          a: (idx.a & sixteen).simd_eq(zero).select(from_self_a, from_other_a),
+          b: (idx.b & sixteen).simd_eq(zero).select(from_self_b, from_other_b),
+        }
       } else {
         let a = self.to_array();
         let b = other.to_array();

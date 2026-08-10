@@ -2586,6 +2586,47 @@ fn test_swizzle2_wraps_indices() {
   assert_eq!(u64x8::new([0, 1, 10, 17, 0, 1, 16, 17]), a.swizzle2(b, idx));
 }
 
+macro_rules! check_swizzle2 {
+  ($Simd:ident, $T:ident, $N:literal) => {{
+    // `self` and `other` concatenate into one table of `2 * N` lanes, each
+    // holding a value that says which lane it is.
+    let a = $Simd::new(std::array::from_fn(|i| i as $T));
+    let b = $Simd::new(std::array::from_fn(|i| (100 + i) as $T));
+    let mut table = [0 as $T; 2 * $N];
+    table[..$N].copy_from_slice(&a.to_array());
+    table[$N..].copy_from_slice(&b.to_array());
+
+    // Sweep the indices twice around the table, so that every lane sees every
+    // in-range index as well as indices that have to wrap.
+    for base in 0..(4 * $N) {
+      for stride in [0, 1, $N - 1] {
+        let idx =
+          $Simd::new(std::array::from_fn(|i| (base + i * stride) as $T));
+        let expected = $Simd::new(std::array::from_fn(|i| {
+          table[(base + i * stride) % (2 * $N)]
+        }));
+
+        let ty = stringify!($Simd);
+        assert_eq!(
+          expected,
+          a.swizzle2(b, idx),
+          "at base={base} stride={stride} for {ty}"
+        );
+      }
+    }
+  }};
+}
+
+#[test]
+fn test_swizzle2_all_indices() {
+  check_swizzle2!(u32x4, u32, 4);
+  check_swizzle2!(u32x8, u32, 8);
+  check_swizzle2!(u32x16, u32, 16);
+  check_swizzle2!(u64x2, u64, 2);
+  check_swizzle2!(u64x4, u64, 4);
+  check_swizzle2!(u64x8, u64, 8);
+}
+
 #[test]
 fn test_unpack_low() {
   // `unpack_low` is inconsistently missing from types.

@@ -735,6 +735,39 @@ impl u64x4 {
             _mm256_permutex2var_epi64(self.avx2.0, idx.avx2.0, other.avx2.0)
           }),
         }
+      } else if #[cfg(target_feature="avx2")] {
+        // There is no variable 64-bit shuffle here, but `vpermd` is a full
+        // cross-lane 32-bit one, so shuffle the halves of each lane instead:
+        // lane `j` is the 32-bit pair `[2*j, 2*j + 1]`.
+        let sel = (idx & Self::splat(3)).unbounded_shl_scalar(1);
+        let idx32 = sel | sel.unbounded_shl_scalar(32) | Self::splat(1 << 32);
+
+        let from_self =
+          Self { avx2: shuffle_av_i32_all_m256i(self.avx2, idx32.avx2) };
+        let from_other =
+          Self { avx2: shuffle_av_i32_all_m256i(other.avx2, idx32.avx2) };
+
+        (idx & Self::splat(4))
+          .simd_eq(Self::splat(0))
+          .select(from_self, from_other)
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        // Each half of `self` and of `other` is a table of two lanes, so a
+        // half-width `swizzle2` already covers all four lanes of one input.
+        // Doing that for both inputs leaves only the choice between them.
+        //
+        // Only worth it where that half-width `swizzle2` is a single shuffle,
+        // as on `neon`; where the half is itself emulated it loses to scalar.
+        let from_self_a = self.a.swizzle2(self.b, idx.a);
+        let from_other_a = other.a.swizzle2(other.b, idx.a);
+        let from_self_b = self.a.swizzle2(self.b, idx.b);
+        let from_other_b = other.a.swizzle2(other.b, idx.b);
+
+        let four = u64x2::splat(4);
+        let zero = u64x2::splat(0);
+        Self {
+          a: (idx.a & four).simd_eq(zero).select(from_self_a, from_other_a),
+          b: (idx.b & four).simd_eq(zero).select(from_self_b, from_other_b),
+        }
       } else {
         let a = self.to_array();
         let b = other.to_array();
