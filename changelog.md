@@ -8,6 +8,11 @@
   auto-vectorization (it measures faster than the manual approach). See
   [this issue](https://github.com/Lokathor/wide/issues/208) for more
   information.
+* Added `from_le_bytes` and `to_le_bytes` to all SIMD vector types. The byte
+  order is defined as the raw memory representation of the vector, making the
+  two functions inverses of each other regardless of target endianness. See
+  [this issue](https://github.com/Lokathor/wide/issues/144) for more
+  information.
 * Fixed the `signum` documentation: the docs previously misstated the grammar
   and the set of inputs that map to `1.0`/`-1.0`. The behavior itself was
   already correct and matches [`f32::signum`].
