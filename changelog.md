@@ -8,9 +8,7 @@
   auto-vectorization (it measures faster than the manual approach). See
   [this issue](https://github.com/Lokathor/wide/issues/208) for more
   information.
-* Added `from_ne_bytes` and `to_ne_bytes` to all SIMD vector types. The byte
-  order is the native endianness of the target (the raw memory representation
-  of the vector), so the two functions are always inverses of each other. See
+* Added `from_ne_bytes` and `to_ne_bytes` to all SIMD vector types. See
   [this issue](https://github.com/Lokathor/wide/issues/144) for more
   information.
 * Fixed the `signum` documentation: the docs previously misstated the grammar
