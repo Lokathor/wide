@@ -369,38 +369,32 @@ macro_rules! impl_simd {
         unsafe { core::mem::transmute::<&mut $Simd, &mut [$T; $N]>(self) }
       }
 
-      /// Creates a SIMD vector from a little-endian byte array.
+      /// Creates a SIMD vector from a native-endian byte array.
       ///
       /// The bytes are interpreted as the raw memory representation of the
-      /// vector, with the first byte being the least significant byte of the
-      /// first element. This is equivalent to the `from_le_bytes` functions
-      /// on the primitive scalar types, but operates on the entire vector at
-      /// once.
+      /// vector. This is equivalent to the `from_ne_bytes` functions on the
+      /// primitive scalar types, but operates on the entire vector at once.
       ///
-      /// Note that because SIMD vectors do not have a single well-defined
-      /// byte ordering of their own, the "little-endian" ordering here is
-      /// purely defined by the function itself: `from_le_bytes` and
-      /// [`to_le_bytes`] are always inverses of each other, regardless of the
-      /// target's native byte order.
+      /// This is the inverse of [`to_ne_bytes`].
       ///
-      /// [`to_le_bytes`]: Self::to_le_bytes
+      /// [`to_ne_bytes`]: Self::to_ne_bytes
       #[inline]
       #[must_use]
-      pub fn from_le_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
+      pub fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
         // SAFETY: `$Simd` accepts all bit-patterns and only contains
         // initialized memory, and the byte array has the same size.
         unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
       }
 
-      /// Returns the raw memory representation of `self` as a little-endian
+      /// Returns the raw memory representation of `self` as a native-endian
       /// byte array.
       ///
-      /// See [`from_le_bytes`] for a note about the byte ordering.
+      /// This is the inverse of [`from_ne_bytes`].
       ///
-      /// [`from_le_bytes`]: Self::from_le_bytes
+      /// [`from_ne_bytes`]: Self::from_ne_bytes
       #[inline]
       #[must_use]
-      pub fn to_le_bytes(self) -> [u8; size_of::<$Simd>()] {
+      pub fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
         // SAFETY: `$Simd` accepts all bit-patterns and only contains
         // initialized memory, and the byte array has the same size.
         unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }

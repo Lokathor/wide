@@ -2634,10 +2634,10 @@ fn test_to_array() {
 }
 
 #[test]
-fn test_le_bytes() {
-  // `to_le_bytes` returns the raw memory representation of the vector,
-  // matching the primitive scalar `to_le_bytes` per element, and
-  // `from_le_bytes` is its inverse. Both hold on little-endian and
+fn test_ne_bytes() {
+  // `to_ne_bytes` returns the raw memory representation of the vector,
+  // matching the primitive scalar `to_ne_bytes` per element, and
+  // `from_ne_bytes` is its inverse. Both hold on little-endian and
   // big-endian targets.
   for_simd_types!(|T: Float, N| {
     for value in simd_chunks!([
@@ -2647,12 +2647,12 @@ fn test_le_bytes() {
     .chain(random_iter())
     {
       let simd = Simd::new(value);
-      let bytes = simd.to_le_bytes();
-      assert_eq!(Simd::from_le_bytes(bytes).to_le_bytes(), bytes);
+      let bytes = simd.to_ne_bytes();
+      assert_eq!(Simd::from_ne_bytes(bytes).to_ne_bytes(), bytes);
 
       let expected: [u8; size_of::<Simd>()] = value
         .into_iter()
-        .flat_map(T::to_le_bytes)
+        .flat_map(T::to_ne_bytes)
         .collect::<Vec<_>>()
         .try_into()
         .unwrap();
@@ -2665,12 +2665,12 @@ fn test_le_bytes() {
         .chain(random_iter())
     {
       let simd = Simd::new(value);
-      let bytes = simd.to_le_bytes();
-      assert_eq!(Simd::from_le_bytes(bytes).to_le_bytes(), bytes);
+      let bytes = simd.to_ne_bytes();
+      assert_eq!(Simd::from_ne_bytes(bytes).to_ne_bytes(), bytes);
 
       let expected: [u8; size_of::<Simd>()] = value
         .into_iter()
-        .flat_map(T::to_le_bytes)
+        .flat_map(T::to_ne_bytes)
         .collect::<Vec<_>>()
         .try_into()
         .unwrap();
