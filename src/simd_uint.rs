@@ -49,6 +49,18 @@ macro_rules! impl_simd_uint {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
+    $fn_shuffle:item
+    $fn_zeroing_shuffle:item
+    $fn_wrapping_shuffle:item
+    $fn_shuffle_2:item
+    $fn_zeroing_shuffle_2:item
+    $fn_wrapping_shuffle_2:item
+    $fn_shuffle_3:item
+    $fn_zeroing_shuffle_3:item
+    $fn_wrapping_shuffle_3:item
+    $fn_shuffle_4:item
+    $fn_zeroing_shuffle_4:item
+    $fn_wrapping_shuffle_4:item
     $fn_transpose:item
 
     // Uint-specific functions
@@ -76,6 +88,7 @@ macro_rules! impl_simd_uint {
         T = $T,
         N = $N,
         Simd = $Simd,
+        UintSimd = $Simd,
         optional_type_x86_inner { $(X86Inner = $X86Inner)? },
         optional_type_arm_inner { $(ArmInner = $ArmInner)? },
         optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
@@ -106,6 +119,30 @@ macro_rules! impl_simd_uint {
       $fn_any
 
       $fn_all
+
+      $fn_shuffle
+
+      $fn_zeroing_shuffle
+
+      $fn_wrapping_shuffle
+
+      $fn_shuffle_2
+
+      $fn_zeroing_shuffle_2
+
+      $fn_wrapping_shuffle_2
+
+      $fn_shuffle_3
+
+      $fn_zeroing_shuffle_3
+
+      $fn_wrapping_shuffle_3
+
+      $fn_shuffle_4
+
+      $fn_zeroing_shuffle_4
+
+      $fn_wrapping_shuffle_4
 
       $fn_transpose
     );

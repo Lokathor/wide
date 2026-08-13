@@ -703,6 +703,66 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u8x16) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn zeroing_shuffle(self, indices: u8x16) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn wrapping_shuffle(self, indices: u8x16) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
+    todo!()
+  }
+
   ///
   /// Currently this function is never accelerated.
   #[inline]

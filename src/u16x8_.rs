@@ -561,6 +561,66 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u16x8) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn zeroing_shuffle(self, indices: u16x8) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn wrapping_shuffle(self, indices: u16x8) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u16x8; 3], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u16x8; 3], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u16x8; 3], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u16x8; 4], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u16x8; 4], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u16x8; 4], indices: u16x8) -> u16x8 {
+    todo!()
+  }
+
   ///
   /// This function is accelerated on multiple target architectures.
   #[inline]

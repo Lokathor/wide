@@ -275,6 +275,66 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u32x8) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn zeroing_shuffle(self, indices: u32x8) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn wrapping_shuffle(self, indices: u32x8) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x8; 2], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u32x8; 2], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u32x8; 2], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x8; 3], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u32x8; 3], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u32x8; 3], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x8; 4], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn zeroing_shuffle(self: [u32x8; 4], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
+  #[inline]
+  fn wrapping_shuffle(self: [u32x8; 4], indices: u32x8) -> u32x8 {
+    todo!()
+  }
+
   ///
   /// Currently this function is only accelerated on `avx2`.
   #[inline]

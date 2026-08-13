@@ -22,6 +22,7 @@ macro_rules! impl_simd {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
+      UintSimd = $UintSimd:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
@@ -40,6 +41,18 @@ macro_rules! impl_simd {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
+    $fn_shuffle:item
+    $fn_zeroing_shuffle:item
+    $fn_wrapping_shuffle:item
+    $fn_shuffle_2:item
+    $fn_zeroing_shuffle_2:item
+    $fn_wrapping_shuffle_2:item
+    $fn_shuffle_3:item
+    $fn_zeroing_shuffle_3:item
+    $fn_wrapping_shuffle_3:item
+    $fn_shuffle_4:item
+    $fn_zeroing_shuffle_4:item
+    $fn_wrapping_shuffle_4:item
     $fn_transpose:item
   ) => {
     impl From<[$T; $N]> for $Simd {
@@ -218,6 +231,39 @@ macro_rules! impl_simd {
     impl_formatting_trait!(core::fmt::LowerExp);
     impl_formatting_trait!(core::fmt::UpperExp);
 
+    impl ShuffleExt for [$Simd; 2] {
+      type Indices = $UintSimd;
+      type Output = $Simd;
+
+      $fn_shuffle_2
+
+      $fn_zeroing_shuffle_2
+
+      $fn_wrapping_shuffle_2
+    }
+
+    impl ShuffleExt for [$Simd; 3] {
+      type Indices = $UintSimd;
+      type Output = $Simd;
+
+      $fn_shuffle_3
+
+      $fn_zeroing_shuffle_3
+
+      $fn_wrapping_shuffle_3
+    }
+
+    impl ShuffleExt for [$Simd; 4] {
+      type Indices = $UintSimd;
+      type Output = $Simd;
+
+      $fn_shuffle_4
+
+      $fn_zeroing_shuffle_4
+
+      $fn_wrapping_shuffle_4
+    }
+
     #[expect(deprecated)]
     impl CmpEq for $Simd {
       type Output = Self;
@@ -323,6 +369,8 @@ macro_rules! impl_simd {
     impl AlignTo for $Simd {
       type Elem = $T;
     }
+
+    impl<const N: usize> Sealed for [$Simd; N] {}
 
     /// The following functionality exists for all SIMD vectors.
     impl $Simd {
@@ -537,6 +585,51 @@ macro_rules! impl_simd {
       pub fn none(self) -> bool {
         !self.any()
       }
+
+      /// Returns a SIMD vector whose elements are selected from `self` using
+      /// the corresponding runtime `indices`.
+      ///
+      /// If an index is out of bounds, the corresponding result element is
+      /// unspecified.
+      ///
+      /// Equivalent to
+      /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`.
+      ///
+      /// # Type-specific guarantees
+      ///
+      /// For [`u8x16`] and [`i8x16`], it is guaranteed that for out of bounds
+      /// indices, if the high bit of an index is set, zero is returned.
+      /// Otherwise, either zero is returned or the index wraps around,
+      /// non-deterministically.
+      ///
+      /// For all other 8-bit types, it is guaranteed that for out of bounds
+      /// indices, either zero is returned or the index wraps around,
+      /// non-deterministically (unlike other types, which can return arbitrary
+      /// values).
+      #[must_use]
+      $fn_shuffle
+
+      /// Returns a SIMD vector whose elements are selected from `self` using
+      /// the corresponding runtime `indices`.
+      ///
+      /// If an index is out of bounds, the corresponding result element is
+      /// the number zero.
+      ///
+      /// Equivalent to
+      /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
+      /// with a zero fallback.
+      #[must_use]
+      $fn_zeroing_shuffle
+
+      /// Returns a SIMD vector whose elements are selected from `self` using
+      /// the corresponding runtime `indices`.
+      ///
+      /// Indices are wrapped by the number of elements in `self`.
+      ///
+      /// Equivalent to
+      /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
+      #[must_use]
+      $fn_wrapping_shuffle
 
       /// Transposes an array of SIMD vectors interpreted as a square matrix.
       #[must_use]
