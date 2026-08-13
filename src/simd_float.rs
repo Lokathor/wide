@@ -10,8 +10,8 @@ macro_rules! impl_simd_float {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      UnsignedT = $UnsignedT:ident,
-      UnsignedSimd = $UnsignedSimd:ident,
+      UintT = $UintT:ident,
+      UintSimd = $UintSimd:ident,
     }
     old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
 
@@ -330,7 +330,7 @@ macro_rules! impl_simd_float {
               if i > 0 {
                 write!(f, ", ")?;
               }
-              <$UnsignedT as $Trait>::fmt(&x.to_bits(), f)?;
+              <$UintT as $Trait>::fmt(&x.to_bits(), f)?;
             }
             write!(f, ")")
           }
@@ -668,10 +668,10 @@ macro_rules! impl_simd_float {
       /// numeric value.
       #[inline]
       #[must_use]
-      pub const fn to_bits(self) -> $UnsignedSimd {
+      pub const fn to_bits(self) -> $UintSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $UintSimd>(self) }
       }
 
       /// Raw transmutation from unsigned integer vector.
@@ -680,10 +680,10 @@ macro_rules! impl_simd_float {
       /// numeric value.
       #[inline]
       #[must_use]
-      pub const fn from_bits(bits: $UnsignedSimd) -> Self {
+      pub const fn from_bits(bits: $UintSimd) -> Self {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
+        unsafe { core::mem::transmute::<$UintSimd, $Simd>(bits) }
       }
 
       /// Restrict a value to a certain interval unless it is NaN.

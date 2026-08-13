@@ -308,8 +308,8 @@ impl_simd_float! {
     T = f64,
     N = 2,
     Simd = f64x2,
-    UnsignedT = u64,
-    UnsignedSimd = u64x2,
+    UintT = u64,
+    UintSimd = u64x2,
   }
   old_powf_simd_fn_name = pow_f64x2,
 

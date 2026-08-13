@@ -10,7 +10,7 @@ macro_rules! impl_simd_uint {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      SignedSimd = $SignedSimd:ident,
+      IntSimd = $IntSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
@@ -147,7 +147,7 @@ macro_rules! impl_simd_uint {
       $T,
       $Simd,
       $Simd,
-      $SignedSimd,
+      $IntSimd,
       Shl,
       shl,
       ShlAssign,
@@ -189,7 +189,7 @@ macro_rules! impl_simd_uint {
       $T,
       $Simd,
       $Simd,
-      $SignedSimd,
+      $IntSimd,
       Shr,
       shr,
       ShrAssign,
@@ -375,10 +375,10 @@ macro_rules! impl_simd_uint {
       /// the same size.
       #[inline]
       #[must_use]
-      pub const fn cast_signed(self) -> $SignedSimd {
+      pub const fn cast_signed(self) -> $IntSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $IntSimd>(self) }
       }
 
       /// Shifts left each element of `self` by the corresponding element of

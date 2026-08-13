@@ -477,7 +477,7 @@ impl_simd_int! {
     T = i16,
     N = 8,
     Simd = i16x8,
-    UnsignedSimd = u16x8,
+    UintSimd = u16x8,
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7],

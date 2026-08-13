@@ -10,7 +10,7 @@ macro_rules! impl_simd_int {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      UnsignedSimd = $UnsignedSimd:ident,
+      UintSimd = $UintSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
@@ -49,7 +49,7 @@ macro_rules! impl_simd_int {
       not,
       #[inline]
       fn not(self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
+        cast::<$UintSimd, $Simd>(!cast::<$Simd, $UintSimd>(self))
       }
     );
 
@@ -63,8 +63,8 @@ macro_rules! impl_simd_int {
       #[inline]
       fn add(self, rhs: Self) -> Self::Output {
         // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
+        cast::<$UintSimd, $Simd>(
+          cast::<$Simd, $UintSimd>(self) + cast::<$Simd, $UintSimd>(rhs),
         )
       }
     );
@@ -78,8 +78,8 @@ macro_rules! impl_simd_int {
       #[inline]
       fn sub(self, rhs: Self) -> Self::Output {
         // Wrapping subtraction is the same for signed and unsigned integers.
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
+        cast::<$UintSimd, $Simd>(
+          cast::<$Simd, $UintSimd>(self) - cast::<$Simd, $UintSimd>(rhs),
         )
       }
     );
@@ -93,8 +93,8 @@ macro_rules! impl_simd_int {
       #[inline]
       fn mul(self, rhs: Self) -> Self::Output {
         // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
+        cast::<$UintSimd, $Simd>(
+          cast::<$Simd, $UintSimd>(self) * cast::<$Simd, $UintSimd>(rhs),
         )
       }
     );
@@ -186,19 +186,19 @@ macro_rules! impl_simd_int {
     impl_shift_operator!(
       $T,
       $Simd,
-      $UnsignedSimd,
+      $UintSimd,
       $Simd,
       Shl,
       shl,
       ShlAssign,
       shl_assign,
       #[inline]
-      fn shl(self, rhs: $UnsignedSimd) -> Self {
-        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+      fn shl(self, rhs: $UintSimd) -> Self {
+        cast(cast::<$Simd, $UintSimd>(self) << rhs)
       },
       #[inline]
       fn shl(self, rhs: u32) -> Self {
-        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+        cast(cast::<$Simd, $UintSimd>(self) << rhs)
       },
       /// Shifts left each element of `self` by the corresponding element of
       /// `rhs`.
@@ -234,7 +234,7 @@ macro_rules! impl_simd_int {
     impl_shift_operator!(
       $T,
       $Simd,
-      $UnsignedSimd,
+      $UintSimd,
       $Simd,
       Shr,
       shr,
@@ -282,8 +282,8 @@ macro_rules! impl_simd_int {
       bitand_assign,
       #[inline]
       fn bitand(self, rhs: Self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
+        cast::<$UintSimd, $Simd>(
+          cast::<$Simd, $UintSimd>(self) & cast::<$Simd, $UintSimd>(rhs),
         )
       }
     );
@@ -296,8 +296,8 @@ macro_rules! impl_simd_int {
       bitor_assign,
       #[inline]
       fn bitor(self, rhs: Self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
+        cast::<$UintSimd, $Simd>(
+          cast::<$Simd, $UintSimd>(self) | cast::<$Simd, $UintSimd>(rhs),
         )
       }
     );
@@ -310,8 +310,8 @@ macro_rules! impl_simd_int {
       bitxor_assign,
       #[inline]
       fn bitxor(self, rhs: Self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
+        cast::<$UintSimd, $Simd>(
+          cast::<$Simd, $UintSimd>(self) ^ cast::<$Simd, $UintSimd>(rhs),
         )
       }
     );
@@ -415,7 +415,7 @@ macro_rules! impl_simd_int {
       #[must_use]
       pub fn reduce_add(self) -> $T {
         // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
+        cast::<$Simd, $UintSimd>(self).reduce_add().cast_signed()
       }
 
       /// Reducing multiplication. Returns the product of the vector's elements.
@@ -425,7 +425,7 @@ macro_rules! impl_simd_int {
       #[must_use]
       pub fn reduce_mul(self) -> $T {
         // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
+        cast::<$Simd, $UintSimd>(self).reduce_mul().cast_signed()
       }
 
       /// Reducing maximum. Returns the maximum of the vector's elements.
@@ -444,10 +444,10 @@ macro_rules! impl_simd_int {
       /// of the same size.
       #[inline]
       #[must_use]
-      pub const fn cast_unsigned(self) -> $UnsignedSimd {
+      pub const fn cast_unsigned(self) -> $UintSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $UintSimd>(self) }
       }
 
       /// Shifts left each element of `self` by the corresponding element of
@@ -467,9 +467,9 @@ macro_rules! impl_simd_int {
       /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
       #[inline]
       #[must_use]
-      pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
+      pub fn unbounded_shl(self, rhs: $UintSimd) -> Self {
         // Shift left is the same for unsigned and signed integers.
-        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
+        cast(cast::<$Simd, $UintSimd>(self).unbounded_shl(rhs))
       }
 
       /// Shifts left each element of `self` by the uniform scalar `rhs`,
@@ -490,7 +490,7 @@ macro_rules! impl_simd_int {
       #[must_use]
       pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
         // Shift left is the same for unsigned and signed integers.
-        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
+        cast(cast::<$Simd, $UintSimd>(self).unbounded_shl_scalar(rhs))
       }
 
       /// Shifts right each element of `self` by the corresponding element of
@@ -572,8 +572,8 @@ macro_rules! impl_simd_int {
       /// unsigned integer in order to avoid wrapping.
       #[inline]
       #[must_use]
-      pub fn unsigned_abs(self) -> $UnsignedSimd {
-        cast::<$Simd, $UnsignedSimd>(self.abs())
+      pub fn unsigned_abs(self) -> $UintSimd {
+        cast::<$Simd, $UintSimd>(self.abs())
       }
 
       /// Returns `self + rhs` and whether an overflow occured.

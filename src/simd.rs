@@ -784,8 +784,8 @@ macro_rules! impl_shift_operator {
   (
     $T:ident,
     $Simd:ident,
-    $UnsignedSimd:ident,
-    $SignedSimd:ident,
+    $UintSimd:ident,
+    $IntSimd:ident,
     $Op:ident,
     $op:ident,
     $OpAssign:ident,
@@ -798,191 +798,191 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc:meta])*
     )?
   ) => {
-    impl $Op<$UnsignedSimd> for $Simd {
+    impl $Op<$UintSimd> for $Simd {
       type Output = Self;
 
       $($(#[$doc])*)?
       $impl_unsigned_simd
     }
 
-    impl $Op<$SignedSimd> for $Simd {
+    impl $Op<$IntSimd> for $Simd {
       type Output = Self;
 
       $($(#[$doc])*)?
       #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        self.$op(cast::<$SignedSimd, $UnsignedSimd>(rhs))
+      fn $op(self, rhs: $IntSimd) -> Self::Output {
+        self.$op(cast::<$IntSimd, $UintSimd>(rhs))
       }
     }
 
-    impl $Op<$UnsignedSimd> for $T {
+    impl $Op<$UintSimd> for $T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: $UintSimd) -> Self::Output {
         $Simd::splat(self).$op(rhs)
       }
     }
 
-    impl $Op<$SignedSimd> for $T {
+    impl $Op<$IntSimd> for $T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
+      fn $op(self, rhs: $IntSimd) -> Self::Output {
         $Simd::splat(self).$op(rhs)
       }
     }
 
-    impl $OpAssign<$UnsignedSimd> for $Simd {
+    impl $OpAssign<$UintSimd> for $Simd {
       $($(#[$doc])*)?
       #[inline]
-      fn $op_assign(&mut self, rhs: $UnsignedSimd) {
+      fn $op_assign(&mut self, rhs: $UintSimd) {
         *self = (*self).$op(rhs);
       }
     }
 
-    impl $OpAssign<$SignedSimd> for $Simd {
+    impl $OpAssign<$IntSimd> for $Simd {
       $($(#[$doc])*)?
       #[inline]
-      fn $op_assign(&mut self, rhs: $SignedSimd) {
+      fn $op_assign(&mut self, rhs: $IntSimd) {
         *self = (*self).$op(rhs);
       }
     }
 
-    impl $Op<&$UnsignedSimd> for $Simd {
+    impl $Op<&$UintSimd> for $Simd {
       type Output = Self;
 
       $($(#[$doc])*)?
       #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$UintSimd) -> Self::Output {
         self.$op(*rhs)
       }
     }
 
-    impl $Op<&$SignedSimd> for $Simd {
+    impl $Op<&$IntSimd> for $Simd {
       type Output = Self;
 
       $($(#[$doc])*)?
       #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$IntSimd) -> Self::Output {
         self.$op(*rhs)
       }
     }
 
-    impl $Op<&$UnsignedSimd> for $T {
+    impl $Op<&$UintSimd> for $T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$UintSimd) -> Self::Output {
         $Simd::splat(self).$op(*rhs)
       }
     }
 
-    impl $Op<&$SignedSimd> for $T {
+    impl $Op<&$IntSimd> for $T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$IntSimd) -> Self::Output {
         $Simd::splat(self).$op(*rhs)
       }
     }
 
-    impl $OpAssign<&$UnsignedSimd> for $Simd {
+    impl $OpAssign<&$UintSimd> for $Simd {
       $($(#[$doc])*)?
       #[inline]
-      fn $op_assign(&mut self, rhs: &$UnsignedSimd) {
+      fn $op_assign(&mut self, rhs: &$UintSimd) {
         *self = (*self).$op(*rhs);
       }
     }
 
-    impl $OpAssign<&$SignedSimd> for $Simd {
+    impl $OpAssign<&$IntSimd> for $Simd {
       $($(#[$doc])*)?
       #[inline]
-      fn $op_assign(&mut self, rhs: &$SignedSimd) {
+      fn $op_assign(&mut self, rhs: &$IntSimd) {
         *self = (*self).$op(*rhs);
       }
     }
 
-    impl $Op<$UnsignedSimd> for &$Simd {
+    impl $Op<$UintSimd> for &$Simd {
       type Output = $Simd;
 
       $($(#[$doc])*)?
       #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: $UintSimd) -> Self::Output {
         (*self).$op(rhs)
       }
     }
 
-    impl $Op<$SignedSimd> for &$Simd {
+    impl $Op<$IntSimd> for &$Simd {
       type Output = $Simd;
 
       $($(#[$doc])*)?
       #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
+      fn $op(self, rhs: $IntSimd) -> Self::Output {
         (*self).$op(rhs)
       }
     }
 
-    impl $Op<$UnsignedSimd> for &$T {
+    impl $Op<$UintSimd> for &$T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: $UintSimd) -> Self::Output {
         $Simd::splat(*self).$op(rhs)
       }
     }
 
-    impl $Op<$SignedSimd> for &$T {
+    impl $Op<$IntSimd> for &$T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
+      fn $op(self, rhs: $IntSimd) -> Self::Output {
         $Simd::splat(*self).$op(rhs)
       }
     }
 
-    impl $Op<&$UnsignedSimd> for &$Simd {
+    impl $Op<&$UintSimd> for &$Simd {
       type Output = $Simd;
 
       $($(#[$doc])*)?
       #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$UintSimd) -> Self::Output {
         (*self).$op(*rhs)
       }
     }
 
-    impl $Op<&$SignedSimd> for &$Simd {
+    impl $Op<&$IntSimd> for &$Simd {
       type Output = $Simd;
 
       $($(#[$doc])*)?
       #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$IntSimd) -> Self::Output {
         (*self).$op(*rhs)
       }
     }
 
-    impl $Op<&$UnsignedSimd> for &$T {
+    impl $Op<&$UintSimd> for &$T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$UintSimd) -> Self::Output {
         $Simd::splat(*self).$op(*rhs)
       }
     }
 
-    impl $Op<&$SignedSimd> for &$T {
+    impl $Op<&$IntSimd> for &$T {
       type Output = $Simd;
 
       $($(#[$scalar_doc])*)?
       #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
+      fn $op(self, rhs: &$IntSimd) -> Self::Output {
         $Simd::splat(*self).$op(*rhs)
       }
     }
