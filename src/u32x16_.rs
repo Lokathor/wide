@@ -157,24 +157,85 @@ impl_simd_uint! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i32x16::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        movepi32_mask_m512i(self.avx512) as u32
+      } else {
+        f32x16::to_bitmask(cast(self))
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i32x16::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi32_mask_m512i(self.avx512) != 0
+      } else {
+        let [a, b]: [u32x8; 2] = cast(self);
+        (a | b).any()
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i32x16::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi32_mask_m512i(self.avx512) == 0xFFFF
+      } else {
+        let [a, b]: [u32x8; 2] = cast(self);
+        (a & b).all()
+      }
+    }
   }
 
   ///
   /// Currently this function is never accelerated.
   #[inline]
-  pub fn transpose(data: [u32x16; 16]) -> [u32x16; 16] {
-    cast(i32x16::transpose(cast(data)))
+  pub fn transpose(data: [Self; 16]) -> [Self; 16] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[u32x16; 16], index: usize) -> u32x16 {
+      u32x16::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+    ]
   }
 
   #[inline]

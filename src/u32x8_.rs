@@ -54,7 +54,16 @@ impl_simd_uint! {
 
   #[inline]
   fn simd_ne(self, rhs: Self) -> Self::Output {
-    !self.simd_eq(rhs)
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        !self.simd_eq(rhs)
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]
@@ -124,14 +133,21 @@ impl_simd_uint! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i32x8::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m256(cast(self.avx2)) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) != 0
+        move_mask_m256(cast(self.avx2)) != 0
       } else {
         (self.a | self.b).any()
       }
@@ -142,7 +158,7 @@ impl_simd_uint! {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10001000100010001000100010001000) == 0b10001000100010001000100010001000
+        move_mask_m256(cast(self.avx2)) == 0b11111111
       } else {
         (self.a & self.b).all()
       }
@@ -152,8 +168,75 @@ impl_simd_uint! {
   ///
   /// Currently this function is only accelerated on `avx2`.
   #[inline]
-  pub fn transpose(data: [u32x8; 8]) -> [u32x8; 8] {
-    cast(i32x8::transpose(cast(data)))
+  pub fn transpose(data: [Self; 8]) -> [Self; 8] {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let a0 = unpack_low_i32_m256i(data[0].avx2, data[1].avx2);
+        let a1 = unpack_high_i32_m256i(data[0].avx2, data[1].avx2);
+        let a2 = unpack_low_i32_m256i(data[2].avx2, data[3].avx2);
+        let a3 = unpack_high_i32_m256i(data[2].avx2, data[3].avx2);
+        let a4 = unpack_low_i32_m256i(data[4].avx2, data[5].avx2);
+        let a5 = unpack_high_i32_m256i(data[4].avx2, data[5].avx2);
+        let a6 = unpack_low_i32_m256i(data[6].avx2, data[7].avx2);
+        let a7 = unpack_high_i32_m256i(data[6].avx2, data[7].avx2);
+
+        pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
+          (z << 6) | (y << 4) | (x << 2) | w
+        }
+
+        const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
+        const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
+
+        // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
+        // (since blend runs on a different port than shuffle)
+        let b0 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a0),cast(a2)));
+        let b1 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a0),cast(a2)));
+        let b2 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a1),cast(a3)));
+        let b3 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a1),cast(a3)));
+        let b4 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a4),cast(a6)));
+        let b5 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a4),cast(a6)));
+        let b6 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a5),cast(a7)));
+        let b7 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a5),cast(a7)));
+
+        [
+          u32x8 { avx2: permute2z_m256i::<0x20>(b0, b4) },
+          u32x8 { avx2: permute2z_m256i::<0x20>(b1, b5) },
+          u32x8 { avx2: permute2z_m256i::<0x20>(b2, b6) },
+          u32x8 { avx2: permute2z_m256i::<0x20>(b3, b7) },
+          u32x8 { avx2: permute2z_m256i::<0x31>(b0, b4) },
+          u32x8 { avx2: permute2z_m256i::<0x31>(b1, b5) },
+          u32x8 { avx2: permute2z_m256i::<0x31>(b2, b6) },
+          u32x8 { avx2: permute2z_m256i::<0x31>(b3, b7) }
+        ]
+      } else {
+        // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
+
+        #[inline(always)]
+        fn transpose_column(data: &[u32x8; 8], index: usize) -> u32x8 {
+          u32x8::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+            data[4].as_array()[index],
+            data[5].as_array()[index],
+            data[6].as_array()[index],
+            data[7].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+          transpose_column(&data, 4),
+          transpose_column(&data, 5),
+          transpose_column(&data, 6),
+          transpose_column(&data, 7),
+        ]
+      }
+    }
   }
 
   #[inline]

@@ -151,24 +151,75 @@ impl_simd_uint! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i64x4::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // use f64 move_mask since it is the same size as i64
+        move_mask_m256d(cast(self.avx2)) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 2)
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i64x4::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256d(cast(self.avx2)) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i64x4::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256d(cast(self.avx2)) == 0b1111
+      } else {
+        (self.a & self.b).all()
+      }
+    }
   }
 
   ///
   /// Currently this function is only accelerated on `avx2`.
   #[inline]
-  pub fn transpose(data: [u64x4; 4]) -> [u64x4; 4] {
-    cast(i64x4::transpose(cast(data)))
+  pub fn transpose(data: [Self; 4]) -> [Self; 4] {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Can this be optimized?
+        // TODO: Once unpack functions are added, remove these casts
+        let a = data[0].cast_signed().unpack_lo(data[2].cast_signed());
+        let b = data[1].cast_signed().unpack_lo(data[3].cast_signed());
+        let c = data[0].cast_signed().unpack_hi(data[2].cast_signed());
+        let d = data[1].cast_signed().unpack_hi(data[3].cast_signed());
+        [
+          a.unpack_lo(b).cast_unsigned(),
+          a.unpack_hi(b).cast_unsigned(),
+          c.unpack_lo(d).cast_unsigned(),
+          c.unpack_hi(d).cast_unsigned(),
+        ]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[u64x4; 4], index: usize) -> u64x4 {
+          u64x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
+      }
+    }
   }
 
   #[inline]

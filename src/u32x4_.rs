@@ -237,16 +237,47 @@ impl_simd_uint! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i32x4::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m128(cast(self.sse)) as u32
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) as u32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s32(self.cast_signed().neon, vdupq_n_s32(0));
+
+          // select the right bit out of each lane
+          let selectbit : uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
+          let r = vandq_u32(masked, selectbit);
+
+          // horizontally add the 32-bit lanes
+          vaddvq_u32(r) as u32
+         }
+      } else {
+        ((self.arr[0] < 0) as u32) |
+        ((self.arr[1] < 0) as u32) << 1 |
+        ((self.arr[2] < 0) as u32) << 2 |
+        ((self.arr[3] < 0) as u32) << 3
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) != 0
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m128(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        // some lanes are negative
+        unsafe {
+          vminvq_s32(self.cast_signed().neon) < 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000080000000) != 0
@@ -258,9 +289,15 @@ impl_simd_uint! {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) == 0b1000100010001000
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m128(cast(self.sse)) == 0b1111
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) == 0b1111
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        // all lanes are negative
+        unsafe {
+          vmaxvq_s32(self.cast_signed().neon) < 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
@@ -271,8 +308,41 @@ impl_simd_uint! {
   ///
   /// Currently this function is only accelerated on `sse`.
   #[inline]
-  pub fn transpose(data: [u32x4; 4]) -> [u32x4; 4] {
-    cast(i32x4::transpose(cast(data)))
+  pub fn transpose(data: [Self; 4]) -> [Self; 4] {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        let mut e0 = data[0];
+        let mut e1 = data[1];
+        let mut e2 = data[2];
+        let mut e3 = data[3];
+
+        transpose_four_m128(
+          cast_mut(&mut e0.sse),
+          cast_mut(&mut e1.sse),
+          cast_mut(&mut e2.sse),
+          cast_mut(&mut e3.sse),
+        );
+
+        [e0, e1, e2, e3]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
+          u32x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
+      }
+    }
   }
 
   #[inline]

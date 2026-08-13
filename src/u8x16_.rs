@@ -341,24 +341,130 @@ impl_simd_uint! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i8x16::to_bitmask(cast(self)) as u32
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) as u32
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) as u32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltzq_s8(self.cast_signed().neon);
+
+          // select the right bit out of each lane
+          let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+          let out = vandq_u8(masked, selectbit);
+
+          // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
+          let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+          let r = vqtbl1q_u8(out, table);
+
+          // horizontally add the 16-bit lanes
+          vaddvq_u16(vreinterpretq_u16_u8(r)) as u32
+        }
+       } else {
+        ((self.arr[0].cast_signed() < 0) as u32) |
+        ((self.arr[1].cast_signed() < 0) as u32) << 1 |
+        ((self.arr[2].cast_signed() < 0) as u32) << 2 |
+        ((self.arr[3].cast_signed() < 0) as u32) << 3 |
+        ((self.arr[4].cast_signed() < 0) as u32) << 4 |
+        ((self.arr[5].cast_signed() < 0) as u32) << 5 |
+        ((self.arr[6].cast_signed() < 0) as u32) << 6 |
+        ((self.arr[7].cast_signed() < 0) as u32) << 7 |
+        ((self.arr[8].cast_signed() < 0) as u32) << 8 |
+        ((self.arr[9].cast_signed() < 0) as u32) << 9 |
+        ((self.arr[10].cast_signed() < 0) as u32) << 10 |
+        ((self.arr[11].cast_signed() < 0) as u32) << 11 |
+        ((self.arr[12].cast_signed() < 0) as u32) << 12 |
+        ((self.arr[13].cast_signed() < 0) as u32) << 13 |
+        ((self.arr[14].cast_signed() < 0) as u32) << 14 |
+        ((self.arr[15].cast_signed() < 0) as u32) << 15
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i8x16::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vminvq_s8(self.cast_signed().neon) < 0
+        }
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x8080808080808080) != 0
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i8x16::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        move_mask_i8_m128i(self.sse) == 0b1111_1111_1111_1111
+      } else if #[cfg(target_feature="simd128")] {
+        u8x16_bitmask(self.simd) == 0b1111_1111_1111_1111
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe {
+          vmaxvq_s8(self.cast_signed().neon) < 0
+        }
+      } else {
+        let v : [u64;2] = cast(self);
+        (v[0] & v[1] & 0x8080808080808080) == 0x8080808080808080
+      }
+    }
   }
 
   ///
   /// Currently this function is never accelerated.
   #[inline]
-  pub fn transpose(data: [u8x16; 16]) -> [u8x16; 16] {
-    cast(i8x16::transpose(cast(data)))
+  pub fn transpose(data: [Self; 16]) -> [Self; 16] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[u8x16; 16], index: usize) -> u8x16 {
+      u8x16::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+    ]
   }
 
   #[inline]

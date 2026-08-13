@@ -235,24 +235,71 @@ impl_simd_uint! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i64x2::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        // use f64 move_mask since it is the same size as i64
+        move_mask_m128d(cast(self.sse)) as u32
+      } else if #[cfg(target_feature="simd128")] {
+        i64x2_bitmask(self.simd) as u32
+      } else {
+        // nothing amazingly efficient for neon
+        let arr: [u64; 2] = cast(self);
+        (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as u32
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i64x2::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        // use f64 move_mask since it is the same size as i64
+        move_mask_m128d(cast(self.sse)) != 0
+      } else if #[cfg(target_feature="simd128")] {
+        i64x2_bitmask(self.simd) != 0
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] | v[1]) & 0x8000000000000000) != 0
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i64x2::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // use f64 move_mask since it is the same size as i64
+        move_mask_m128d(cast(self.sse)) == 0b11
+      }  else if #[cfg(target_feature="simd128")] {
+        i64x2_bitmask(self.simd) == 0b11
+      } else {
+        let v : [u64;2] = cast(self);
+        ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
+      }
+    }
   }
 
   ///
   /// This function is accelerated on multiple target architectures.
   #[inline]
-  pub fn transpose(data: [u64x2; 2]) -> [u64x2; 2] {
-    cast(i64x2::transpose(cast(data)))
+  pub fn transpose(data: [Self; 2]) -> [Self; 2] {
+    pick! {
+      if #[cfg(any(
+        target_feature="sse2",
+        all(target_feature="neon",target_arch="aarch64"),
+        target_feature="simd128",
+      ))] {
+        // TODO: Remove the casts once unpack functions exist for `Self`.
+        // [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
+        [
+          data[0].cast_signed().unpack_lo(data[1].cast_signed()).cast_unsigned(),
+          data[0].cast_signed().unpack_hi(data[1].cast_signed()).cast_unsigned(),
+        ]
+      } else {
+        let [x, y, z, w]: [u64; 4] = cast(data);
+        cast([x, z, y, w])
+      }
+    }
   }
 
   #[inline]

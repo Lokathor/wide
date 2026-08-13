@@ -157,24 +157,70 @@ impl_simd_uint! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i64x8::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        // use f64 move_mask since it is the same size as i64
+        movepi64_mask_m512d(cast(self.avx512)) as u32
+      } else {
+        f64x8::to_bitmask(cast(self))
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i64x8::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(cast(self.avx512)) != 0
+      } else {
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a | b).any()
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i64x8::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
+      } else {
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a & b).all()
+      }
+    }
   }
 
   ///
   /// Currently this function is never accelerated.
   #[inline]
-  pub fn transpose(data: [u64x8; 8]) -> [u64x8; 8] {
-    cast(i64x8::transpose(cast(data)))
+  pub fn transpose(data: [Self; 8]) -> [Self; 8] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[u64x8; 8], index: usize) -> u64x8 {
+      u64x8::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+    ]
   }
 
   #[inline]
