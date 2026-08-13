@@ -20,18 +20,10 @@ macro_rules! impl_simd_int {
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
 
-    $fn_simd_eq:item
-    $fn_simd_ne:item
     $fn_simd_lt:item
     $fn_simd_gt:item
     $fn_simd_le:item
     $fn_simd_ge:item
-    $fn_bitselect:item
-    $fn_select:item
-    $fn_to_bitmask:item
-    $fn_any:item
-    $fn_all:item
-    $fn_transpose:item
 
     $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
@@ -61,9 +53,15 @@ macro_rules! impl_simd_int {
         optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
       }
 
-      $fn_simd_eq
+      #[inline]
+      fn simd_eq(self, other: Self) -> Self {
+        self.cast_unsigned().simd_eq(other.cast_unsigned()).cast_signed()
+      }
 
-      $fn_simd_ne
+      #[inline]
+      fn simd_ne(self, other: Self) -> Self {
+        self.cast_unsigned().simd_ne(other.cast_unsigned()).cast_signed()
+      }
 
       $fn_simd_lt
 
@@ -73,17 +71,39 @@ macro_rules! impl_simd_int {
 
       $fn_simd_ge
 
-      $fn_bitselect
+      #[inline]
+      pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+        self.cast_unsigned()
+          .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
+          .cast_signed()
+      }
 
-      $fn_select
+      #[inline]
+      pub fn select(self, if_true: Self, if_false: Self) -> Self {
+        self.cast_unsigned()
+          .select(if_true.cast_unsigned(), if_false.cast_unsigned())
+          .cast_signed()
+      }
 
-      $fn_to_bitmask
+      #[inline]
+      pub fn to_bitmask(self) -> u32 {
+        self.cast_unsigned().to_bitmask()
+      }
 
-      $fn_any
+      #[inline]
+      pub fn any(self) -> bool {
+        self.cast_unsigned().any()
+      }
 
-      $fn_all
+      #[inline]
+      pub fn all(self) -> bool {
+        self.cast_unsigned().all()
+      }
 
-      $fn_transpose
+      #[inline]
+      pub fn transpose(data: [Self; $N]) -> [Self; $N] {
+        cast($UintSimd::transpose(cast::<[$Simd; $N], [$UintSimd; $N]>(data)))
+      }
     );
 
     impl_unary_operator!(
