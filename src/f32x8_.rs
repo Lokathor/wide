@@ -129,6 +129,48 @@ impl_simd_float! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> f32 {
+    pick! {
+      // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
+      if #[cfg(target_feature="avx")]{
+        let hi_quad = extract_m128_from_m256::<1>(self.avx);
+        let lo_quad = cast_to_m128_from_m256(self.avx);
+        let sum_quad = add_m128(lo_quad,hi_quad);
+        let lo_dual = sum_quad;
+        let hi_dual = move_high_low_m128(sum_quad,sum_quad);
+        let sum_dual = add_m128(lo_dual,hi_dual);
+        let lo = sum_dual;
+        let hi = shuffle_abi_f32_all_m128::<0b_01>(sum_dual, sum_dual);
+        let sum = add_m128_s(lo, hi);
+        get_f32_from_m128_s(sum)
+      } else {
+        self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f32 {
+    pick! {
+      // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
+      if #[cfg(target_feature="avx")] {
+        let hi_quad = extract_m128_from_m256::<1>(self.avx);
+        let lo_quad = cast_to_m128_from_m256(self.avx);
+        let product_quad = mul_m128(lo_quad,hi_quad);
+        let lo_dual = product_quad;
+        let hi_dual = move_high_low_m128(product_quad, product_quad);
+        let product_dual = mul_m128(lo_dual,hi_dual);
+        let lo = product_dual;
+        let hi = shuffle_abi_f32_all_m128::<0b_01>(product_dual, product_dual);
+        let product = mul_m128_s(lo, hi);
+        get_f32_from_m128_s(product)
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -404,48 +446,6 @@ impl_simd_float! {
           a : self.a.bitxor(rhs.a),
           b : self.b.bitxor(rhs.b),
         }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> f32 {
-    pick! {
-      // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
-      if #[cfg(target_feature="avx")]{
-        let hi_quad = extract_m128_from_m256::<1>(self.avx);
-        let lo_quad = cast_to_m128_from_m256(self.avx);
-        let sum_quad = add_m128(lo_quad,hi_quad);
-        let lo_dual = sum_quad;
-        let hi_dual = move_high_low_m128(sum_quad,sum_quad);
-        let sum_dual = add_m128(lo_dual,hi_dual);
-        let lo = sum_dual;
-        let hi = shuffle_abi_f32_all_m128::<0b_01>(sum_dual, sum_dual);
-        let sum = add_m128_s(lo, hi);
-        get_f32_from_m128_s(sum)
-      } else {
-        self.a.reduce_add() + self.b.reduce_add()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> f32 {
-    pick! {
-      // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
-      if #[cfg(target_feature="avx")] {
-        let hi_quad = extract_m128_from_m256::<1>(self.avx);
-        let lo_quad = cast_to_m128_from_m256(self.avx);
-        let product_quad = mul_m128(lo_quad,hi_quad);
-        let lo_dual = product_quad;
-        let hi_dual = move_high_low_m128(product_quad, product_quad);
-        let product_dual = mul_m128(lo_dual,hi_dual);
-        let lo = product_dual;
-        let hi = shuffle_abi_f32_all_m128::<0b_01>(product_dual, product_dual);
-        let product = mul_m128_s(lo, hi);
-        get_f32_from_m128_s(product)
-      } else {
-        self.a.reduce_mul() * self.b.reduce_mul()
       }
     }
   }

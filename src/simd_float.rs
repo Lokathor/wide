@@ -25,6 +25,8 @@ macro_rules! impl_simd_float {
     $fn_simd_gt:item
     $fn_simd_le:item
     $fn_simd_ge:item
+    $fn_reduce_add:item
+    $fn_reduce_mul:item
     $fn_bitselect:item
     $fn_select:item
     $fn_to_bitmask:item
@@ -42,8 +44,6 @@ macro_rules! impl_simd_float {
     $fn_bitand:item
     $fn_bitor:item
     $fn_bitxor:item
-    $fn_reduce_add:item
-    $fn_reduce_mul:item
     $fn_is_nan:item
     $fn_is_inf:item
     $fn_is_finite:item
@@ -110,6 +110,22 @@ macro_rules! impl_simd_float {
       $fn_simd_le
 
       $fn_simd_ge
+
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of addition is non-deterministic. This means it varies by
+      /// platform, version, and can even differ within the same execution from
+      /// one invocation to the next.
+      $fn_reduce_add
+
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of multiplication is non-deterministic. This means it varies
+      /// by platform, version, and can even differ within the same execution
+      /// from one invocation to the next.
+      $fn_reduce_mul
 
       $fn_bitselect
 
@@ -524,30 +540,6 @@ macro_rules! impl_simd_float {
       ///
       #[doc = concat!("[the full circle constant (τ)]: core::", stringify!($T), "::consts::TAU")]
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
-
-      /// Reducing addition. Returns the sum of the vector's elements.
-      ///
-      /// Equivalent to `self[0] + self[1] + ...`.
-      ///
-      /// # Unspecified precision
-      ///
-      /// The order of addition is non-deterministic. This means it varies by
-      /// platform, version, and can even differ within the same execution from
-      /// one invocation to the next.
-      #[must_use]
-      $fn_reduce_add
-
-      /// Reducing multiplication. Returns the product of the vector's elements.
-      ///
-      /// Equivalent to `self[0] * self[1] * ...`.
-      ///
-      /// # Unspecified precision
-      ///
-      /// The order of multiplication is non-deterministic. This means it varies
-      /// by platform, version, and can even differ within the same execution
-      /// from one invocation to the next.
-      #[must_use]
-      $fn_reduce_mul
 
       /// Returns a [mask] that checks if each element is NaN.
       ///

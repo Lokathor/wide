@@ -26,6 +26,8 @@ macro_rules! impl_simd_uint {
     $fn_simd_gt:item
     $fn_simd_le:item
     $fn_simd_ge:item
+    $fn_reduce_add:item
+    $fn_reduce_mul:item
     $fn_bitselect:item
     $fn_select:item
     $fn_to_bitmask:item
@@ -46,8 +48,6 @@ macro_rules! impl_simd_uint {
     $fn_bitxor:item
     $fn_max:item
     $fn_min:item
-    $fn_reduce_add:item
-    $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
     $fn_unbounded_shl:item
@@ -82,6 +82,10 @@ macro_rules! impl_simd_uint {
       $fn_simd_le
 
       $fn_simd_ge
+
+      $fn_reduce_add
+
+      $fn_reduce_mul
 
       $fn_bitselect
 
@@ -398,18 +402,6 @@ macro_rules! impl_simd_uint {
       pub fn clamp(self, min: Self, max: Self) -> Self {
         self.max(min).min(max)
       }
-
-      /// Reducing addition. Returns the sum of the vector's elements.
-      ///
-      /// Equivalent to `self[0] + self[1] + ...`.
-      #[must_use]
-      $fn_reduce_add
-
-      /// Reducing multiplication. Returns the product of the vector's elements.
-      ///
-      /// Equivalent to `self[0] * self[1] * ...`.
-      #[must_use]
-      $fn_reduce_mul
 
       /// Reducing maximum. Returns the maximum of the vector's elements.
       ///

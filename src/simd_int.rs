@@ -72,6 +72,18 @@ macro_rules! impl_simd_int {
       $fn_simd_ge
 
       #[inline]
+      pub fn reduce_add(self) -> $T {
+        // Wrapping addition is the same for signed and unsigned integers.
+        cast::<$Simd, $UintSimd>(self).reduce_add().cast_signed()
+      }
+
+      #[inline]
+      pub fn reduce_mul(self) -> $T {
+        // Wrapping multiplication is the same for signed and unsigned integers.
+        cast::<$Simd, $UintSimd>(self).reduce_mul().cast_signed()
+      }
+
+      #[inline]
       pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
         self.cast_unsigned()
           .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
@@ -478,26 +490,6 @@ macro_rules! impl_simd_int {
       #[must_use]
       pub fn clamp(self, min: Self, max: Self) -> Self {
         self.max(min).min(max)
-      }
-
-      /// Reducing addition. Returns the sum of the vector's elements.
-      ///
-      /// Equivalent to `self[0] + self[1] + ...`.
-      #[inline]
-      #[must_use]
-      pub fn reduce_add(self) -> $T {
-        // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$Simd, $UintSimd>(self).reduce_add().cast_signed()
-      }
-
-      /// Reducing multiplication. Returns the product of the vector's elements.
-      ///
-      /// Equivalent to `self[0] * self[1] * ...`.
-      #[inline]
-      #[must_use]
-      pub fn reduce_mul(self) -> $T {
-        // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$Simd, $UintSimd>(self).reduce_mul().cast_signed()
       }
 
       /// Reducing maximum. Returns the maximum of the vector's elements.

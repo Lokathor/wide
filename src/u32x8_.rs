@@ -99,6 +99,18 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> u32 {
+    let array: [u32x4; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> u32 {
+    let array: [u32x4; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -429,18 +441,6 @@ impl_simd_uint! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> u32 {
-    let array: [u32x4; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> u32 {
-    let array: [u32x4; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
   }
 
   #[inline]

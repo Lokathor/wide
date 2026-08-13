@@ -129,6 +129,35 @@ impl_simd_float! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> f32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")]{
+        reduce_add_m512(self.avx512)
+      } else {
+        self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
+        // safe.
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_reduce_mul_ps;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_reduce_mul_ps;
+
+        unsafe { _mm512_reduce_mul_ps(self.avx512.0) }
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -381,35 +410,6 @@ impl_simd_float! {
           a : self.a.bitxor(rhs.a),
           b : self.b.bitxor(rhs.b),
         }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> f32 {
-    pick! {
-      if #[cfg(target_feature="avx512f")]{
-        reduce_add_m512(self.avx512)
-      } else {
-        self.a.reduce_add() + self.b.reduce_add()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> f32 {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
-        // safe.
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm512_reduce_mul_ps;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm512_reduce_mul_ps;
-
-        unsafe { _mm512_reduce_mul_ps(self.avx512.0) }
-      } else {
-        self.a.reduce_mul() * self.b.reduce_mul()
       }
     }
   }

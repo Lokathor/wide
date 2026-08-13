@@ -126,6 +126,18 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> u16 {
+    let array: [u16x16; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> u16 {
+    let array: [u16x16; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
@@ -459,18 +471,6 @@ impl_simd_uint! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> u16 {
-    let array: [u16x16; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> u16 {
-    let array: [u16x16; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
   }
 
   #[inline]

@@ -129,6 +129,40 @@ impl_simd_float! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> f64 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
+        let lo = cast_to_m128d_from_m256d(self.avx);
+        let hi = extract_m128d_from_m256d::<1>(self.avx);
+        let lo = add_m128d(lo,hi);
+        let hi64 = unpack_high_m128d(lo,lo);
+        let sum = add_m128d_s(lo,hi64);
+        get_f64_from_m128d_s(sum)
+      } else {
+        self.a.reduce_add() + self.b.reduce_add()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f64 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
+        let lo = cast_to_m128d_from_m256d(self.avx);
+        let hi = extract_m128d_from_m256d::<1>(self.avx);
+        let lo = mul_m128d(lo,hi);
+        let hi64 = unpack_high_m128d(lo,lo);
+        let product = mul_m128d_s(lo,hi64);
+        get_f64_from_m128d_s(product)
+      } else {
+        self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -364,40 +398,6 @@ impl_simd_float! {
           a : self.a.bitxor(rhs.a),
           b : self.b.bitxor(rhs.b),
         }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> f64 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-        let lo = cast_to_m128d_from_m256d(self.avx);
-        let hi = extract_m128d_from_m256d::<1>(self.avx);
-        let lo = add_m128d(lo,hi);
-        let hi64 = unpack_high_m128d(lo,lo);
-        let sum = add_m128d_s(lo,hi64);
-        get_f64_from_m128d_s(sum)
-      } else {
-        self.a.reduce_add() + self.b.reduce_add()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> f64 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-        let lo = cast_to_m128d_from_m256d(self.avx);
-        let hi = extract_m128d_from_m256d::<1>(self.avx);
-        let lo = mul_m128d(lo,hi);
-        let hi64 = unpack_high_m128d(lo,lo);
-        let product = mul_m128d_s(lo,hi64);
-        get_f64_from_m128d_s(product)
-      } else {
-        self.a.reduce_mul() * self.b.reduce_mul()
       }
     }
   }

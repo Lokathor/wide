@@ -216,6 +216,18 @@ impl_simd_float! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> f32 {
+    let arr: [f32; 4] = cast(self);
+    arr.iter().sum()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> f32 {
+    let arr: [f32; 4] = cast(self);
+    arr.iter().product()
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -522,18 +534,6 @@ impl_simd_float! {
         ]}
       }
     }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> f32 {
-    let arr: [f32; 4] = cast(self);
-    arr.iter().sum()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> f32 {
-    let arr: [f32; 4] = cast(self);
-    arr.iter().product()
   }
 
   #[inline]
