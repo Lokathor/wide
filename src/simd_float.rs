@@ -1,3 +1,11 @@
+/// Emits functionality shared by all SIMD float types.
+///
+/// Functions that need a separate implementation for each type (for
+/// performance) use `$fn_{name}:item` syntax, and functions that have one
+/// shared implementation for all floats are written out normally inside this
+/// macro.
+///
+/// This macro also invokes `impl_simd`.
 macro_rules! impl_simd_float {
   (
     // SAFETY: The contents of this macro assume that:
@@ -19,6 +27,7 @@ macro_rules! impl_simd_float {
     }
     old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
 
+    // General SIMD functions
     $fn_neg:item
     $fn_not:item
     $fn_add:item
@@ -44,6 +53,7 @@ macro_rules! impl_simd_float {
     $fn_all:item
     $fn_transpose:item
 
+    // Float-specific functions
     $fn_is_nan:item
     $fn_is_inf:item
     $fn_is_finite:item

@@ -1,3 +1,11 @@
+/// Emits functionality shared by all SIMD signed-integer types.
+///
+/// Functions that need a separate implementation for each type (for
+/// performance) use `$fn_{name}:item` syntax, and functions that have one
+/// shared implementation for all ints are written out normally inside this
+/// macro.
+///
+/// This macro also invokes `impl_simd`.
 macro_rules! impl_simd_int {
   (
     // SAFETY: The contents of this macro assume that:
@@ -20,11 +28,13 @@ macro_rules! impl_simd_int {
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
 
+    // General SIMD functions
     $fn_simd_lt:item
     $fn_simd_gt:item
     $fn_simd_le:item
     $fn_simd_ge:item
 
+    // Int-specific functions
     $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
     $fn_max:item

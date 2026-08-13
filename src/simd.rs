@@ -1,3 +1,14 @@
+/// Emits functionality shared by all SIMD types.
+///
+/// Functions that need a separate implementation for each type (for
+/// performance) use `$fn_{name}:item` syntax, and functions that have one
+/// shared implementation are written out normally inside this macro.
+///
+/// `impl_simd` is not invoked directly from each SIMD type module.
+/// Instead, type modules invoke the `simd_float`, `simd_int` and `simd_uint`
+/// macros, which invoke this macro. This allows avoiding boilerplate for
+/// functions that have one shared implementation for one numerical category
+/// (float, int, uint), but not one implementation for *all* SIMD types.
 macro_rules! impl_simd {
   (
     // SAFETY: The contents of this macro assume that:
