@@ -312,62 +312,118 @@ impl_simd_uint! {
 
   #[inline]
   pub fn shuffle(self, indices: u64x8) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        Self { avx512: permute_i64_m512i(indices.avx512, self.avx512) }
+      } else {
+        let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
+        let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
+
+        cast([self_halfs.shuffle(indices_a), self_halfs.shuffle(indices_b)])
+      }
+    }
   }
 
   #[inline]
   pub fn zeroing_shuffle(self, indices: u64x8) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        self.shuffle(indices) & indices.simd_lt(8)
+      } else {
+        let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
+        let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
+
+        cast([self_halfs.zeroing_shuffle(indices_a), self_halfs.zeroing_shuffle(indices_b)])
+      }
+    }
   }
 
   #[inline]
   pub fn wrapping_shuffle(self, indices: u64x8) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
+        let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
+
+        cast([self_halfs.wrapping_shuffle(indices_a), self_halfs.wrapping_shuffle(indices_b)])
+      }
+    }
   }
 
   #[inline]
   fn shuffle(self: [u64x8; 2], indices: u64x8) -> u64x8 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_permutex2var_epi64;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_permutex2var_epi64;
+        // TODO(safe_arch): add `_mm512_permutex2var_epi64`.
+        u64x8 {
+          avx512: unsafe {
+            m512i(_mm512_permutex2var_epi64(self[0].avx512.0, indices.avx512.0, self[1].avx512.0))
+          },
+        }
+      } else {
+        self[0].zeroing_shuffle(indices) | self[1].zeroing_shuffle(indices - 8)
+      }
+    }
   }
 
   #[inline]
   fn zeroing_shuffle(self: [u64x8; 2], indices: u64x8) -> u64x8 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        self.shuffle(indices) & indices.simd_lt(16)
+      } else {
+        self.shuffle(indices)
+      }
+    }
   }
 
   #[inline]
   fn wrapping_shuffle(self: [u64x8; 2], indices: u64x8) -> u64x8 {
-    todo!()
+    pick! {
+      if #[cfg(target_feature = "avx512f")] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        self.shuffle(indices & 15)
+      }
+    }
   }
 
   #[inline]
   fn shuffle(self: [u64x8; 3], indices: u64x8) -> u64x8 {
-    todo!()
+    [self[0], self[1]].zeroing_shuffle(indices) | self[2].zeroing_shuffle(indices - 16)
   }
 
   #[inline]
   fn zeroing_shuffle(self: [u64x8; 3], indices: u64x8) -> u64x8 {
-    todo!()
+    self.shuffle(indices)
   }
 
   #[inline]
   fn wrapping_shuffle(self: [u64x8; 3], indices: u64x8) -> u64x8 {
-    todo!()
+    self.shuffle(indices % 24)
   }
 
   #[inline]
   fn shuffle(self: [u64x8; 4], indices: u64x8) -> u64x8 {
-    todo!()
+    [self[0], self[1]].zeroing_shuffle(indices) | [self[2], self[3]].zeroing_shuffle(indices - 16)
   }
 
   #[inline]
   fn zeroing_shuffle(self: [u64x8; 4], indices: u64x8) -> u64x8 {
-    todo!()
+    self.shuffle(indices)
   }
 
   #[inline]
   fn wrapping_shuffle(self: [u64x8; 4], indices: u64x8) -> u64x8 {
-    todo!()
+    self.shuffle(indices & 31)
   }
 
   ///

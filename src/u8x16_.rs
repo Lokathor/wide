@@ -705,62 +705,158 @@ impl_simd_uint! {
 
   #[inline]
   pub fn shuffle(self, indices: u8x16) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self { sse: shuffle_av_i8z_all_m128i(self.sse, indices.sse) }
+      } else if #[cfg(target_feature="relaxed-simd")] {
+        Self { simd: u8x16_relaxed_swizzle(self.simd, indices.simd) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u8x16_swizzle(self.simd, indices.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        unsafe { Self { neon: vqtbl1q_u8(self.neon, indices.neon) } }
+      } else {
+        let self_array = self.to_array();
+        let indices_array = indices.to_array();
+
+        let mut result = [0; 16];
+        for i in 0..16 {
+          let index = indices_array[i] as usize;
+          if index < 16 {
+            result[i] = self_array[index];
+          }
+        }
+
+        Self::new(result)
+      }
+    }
   }
 
   #[inline]
   pub fn zeroing_shuffle(self, indices: u8x16) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(target_feature="ssse3")] {
+        Self {
+          sse: shuffle_av_i8z_all_m128i(
+            self.sse,
+            add_saturating_u8_m128i(indices.sse, set_splat_i8_m128i(0x70)),
+          ),
+        }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i8x16_swizzle(self.simd, indices.simd) }
+      } else {
+        // The remaining branches of `shuffle` already have the behavior we want
+        self.shuffle(indices)
+      }
+    }
   }
 
   #[inline]
   pub fn wrapping_shuffle(self, indices: u8x16) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_permutexvar_epi8;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_permutexvar_epi8;
+
+        // TODO(safe_arch): add `_mm_permutexvar_epi8`.
+        Self { sse: unsafe { m128i(_mm_permutexvar_epi8(indices.sse.0, self.sse.0)) } }
+      } else {
+        self.shuffle(indices & 15)
+      }
+    }
   }
 
   #[inline]
   fn shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm_permutex2var_epi8;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm_permutex2var_epi8;
+
+        // TODO(safe_arch): add `_mm_permutex2var_epi8`.
+        u8x16 {
+          sse: unsafe {
+            m128i(_mm_permutex2var_epi8(self[0].sse.0, indices.sse.0, self[1].sse.0))
+          },
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        let table = uint8x16x2_t(self[0].neon, self[1].neon);
+        unsafe { u8x16 { neon: vqtbl2q_u8(table, indices.neon) } }
+      } else {
+        self[0].zeroing_shuffle(indices) | self[1].zeroing_shuffle(indices - 16)
+      }
+    }
   }
 
   #[inline]
   fn zeroing_shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
+        self.shuffle(indices) & indices.simd_lt(32)
+      } else {
+        self.shuffle(indices)
+      }
+    }
   }
 
   #[inline]
   fn wrapping_shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        self.shuffle(indices & 31)
+      }
+    }
   }
 
   #[inline]
   fn shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        let table = uint8x16x3_t(self[0].neon, self[1].neon, self[2].neon);
+        unsafe { u8x16 { neon: vqtbl3q_u8(table, indices.neon) } }
+      } else {
+        [self[0], self[1]].zeroing_shuffle(indices) | self[2].zeroing_shuffle(indices - 32)
+      }
+    }
   }
 
   #[inline]
   fn zeroing_shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
-    todo!()
+    self.shuffle(indices)
   }
 
   #[inline]
   fn wrapping_shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
-    todo!()
+    self.shuffle(indices % 48)
   }
 
   #[inline]
   fn shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        let table = uint8x16x4_t(self[0].neon, self[1].neon, self[2].neon, self[3].neon);
+        unsafe { u8x16 { neon: vqtbl4q_u8(table, indices.neon) } }
+      } else {
+        [self[0], self[1]].zeroing_shuffle(indices)
+          | [self[2], self[3]].zeroing_shuffle(indices - 32)
+      }
+    }
   }
 
   #[inline]
   fn zeroing_shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
-    todo!()
+    self.shuffle(indices)
   }
 
   #[inline]
   fn wrapping_shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
-    todo!()
+    self.shuffle(indices & 63)
   }
 
   ///
