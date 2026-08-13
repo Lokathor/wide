@@ -20,6 +20,13 @@ macro_rules! impl_simd_uint {
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
 
+    $fn_not:item
+    $fn_add:item
+    $fn_sub:item
+    $fn_mul:item
+    $fn_bitand:item
+    $fn_bitor:item
+    $fn_bitxor:item
     $fn_simd_eq:item
     $fn_simd_ne:item
     $fn_simd_lt:item
@@ -35,17 +42,10 @@ macro_rules! impl_simd_uint {
     $fn_all:item
     $fn_transpose:item
 
-    $fn_not:item
-    $fn_add:item
-    $fn_sub:item
-    $fn_mul:item
     $fn_shl_unsigned_simd:item
     $fn_shl_u32:item
     $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
-    $fn_bitand:item
-    $fn_bitor:item
-    $fn_bitxor:item
     $fn_max:item
     $fn_min:item
     $fn_reduce_max:item

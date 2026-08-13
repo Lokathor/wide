@@ -19,6 +19,16 @@ macro_rules! impl_simd_float {
     }
     old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
 
+    $fn_neg:item
+    $fn_not:item
+    $fn_add:item
+    $fn_sub:item
+    $fn_mul:item
+    $fn_div:item
+    $fn_rem:item
+    $fn_bitand:item
+    $fn_bitor:item
+    $fn_bitxor:item
     $fn_simd_eq:item
     $fn_simd_ne:item
     $fn_simd_lt:item
@@ -34,16 +44,6 @@ macro_rules! impl_simd_float {
     $fn_all:item
     $fn_transpose:item
 
-    $fn_neg:item
-    $fn_not:item
-    $fn_add:item
-    $fn_sub:item
-    $fn_mul:item
-    $fn_div:item
-    $fn_rem:item
-    $fn_bitand:item
-    $fn_bitor:item
-    $fn_bitxor:item
     $fn_is_nan:item
     $fn_is_inf:item
     $fn_is_finite:item
