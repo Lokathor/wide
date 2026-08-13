@@ -380,7 +380,7 @@ macro_rules! impl_simd {
       /// [`to_ne_bytes`]: Self::to_ne_bytes
       #[inline]
       #[must_use]
-      pub fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
+      pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
         // SAFETY: `$Simd` accepts all bit-patterns and only contains
         // initialized memory, and the byte array has the same size.
         unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
@@ -394,7 +394,7 @@ macro_rules! impl_simd {
       /// [`from_ne_bytes`]: Self::from_ne_bytes
       #[inline]
       #[must_use]
-      pub fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
+      pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
         // SAFETY: `$Simd` accepts all bit-patterns and only contains
         // initialized memory, and the byte array has the same size.
         unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
