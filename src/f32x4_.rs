@@ -82,15 +82,18 @@ macro_rules! const_f32_as_f32x4 {
   };
 }
 
-impl_simd! {
+impl_simd_float! {
   unsafe {
     T = f32,
     N = 4,
     Simd = f32x4,
+    UintT = u32,
+    UintSimd = u32x4,
     optional_type_x86_inner { X86Inner = __m128 },
     optional_type_arm_inner { ArmInner = float32x4_t },
     optional_type_wasm_inner { WasmInner = v128 },
   }
+  old_powf_simd_fn_name = pow_f32x4,
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -345,17 +348,6 @@ impl_simd! {
       }
     }
   }
-}
-
-impl_simd_float! {
-  unsafe {
-    T = f32,
-    N = 4,
-    Simd = f32x4,
-    UintT = u32,
-    UintSimd = u32x4,
-  }
-  old_powf_simd_fn_name = pow_f32x4,
 
   #[inline]
   fn neg(self) -> Self::Output {

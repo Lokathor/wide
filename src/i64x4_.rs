@@ -24,11 +24,15 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i64,
     N = 4,
     Simd = i64x4,
+    UintSimd = u64x4,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    [0, 1, 2, 3],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
@@ -225,18 +229,6 @@ impl_simd! {
         ]
       }
     }
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i64,
-    N = 4,
-    Simd = i64x4,
-    UintSimd = u64x4,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1, 2, 3],
   }
 
   #[inline]

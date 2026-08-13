@@ -6,14 +6,31 @@ macro_rules! impl_simd_float {
     // - `Pod` can be implemented for `Simd`
     // - `size_of::<Simd>()` is `size_of::<T>() * N`
     // - `align_of::<Simd>()` is `size_of::<Simd>()`
+    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
       UintT = $UintT:ident,
       UintSimd = $UintSimd:ident,
+      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
+      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
+      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
     old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
+
+    $fn_simd_eq:item
+    $fn_simd_ne:item
+    $fn_simd_lt:item
+    $fn_simd_gt:item
+    $fn_simd_le:item
+    $fn_simd_ge:item
+    $fn_bitselect:item
+    $fn_select:item
+    $fn_to_bitmask:item
+    $fn_any:item
+    $fn_all:item
+    $fn_transpose:item
 
     $fn_neg:item
     $fn_not:item
@@ -72,6 +89,41 @@ macro_rules! impl_simd_float {
     $fn_cosh:item
     $fn_tanh:item
   ) => {
+    impl_simd!(
+      unsafe {
+        T = $T,
+        N = $N,
+        Simd = $Simd,
+        optional_type_x86_inner { $(X86Inner = $X86Inner)? },
+        optional_type_arm_inner { $(ArmInner = $ArmInner)? },
+        optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
+      }
+
+      $fn_simd_eq
+
+      $fn_simd_ne
+
+      $fn_simd_lt
+
+      $fn_simd_gt
+
+      $fn_simd_le
+
+      $fn_simd_ge
+
+      $fn_bitselect
+
+      $fn_select
+
+      $fn_to_bitmask
+
+      $fn_any
+
+      $fn_all
+
+      $fn_transpose
+    );
+
     impl_unary_operator!(
       $Simd,
       Neg,

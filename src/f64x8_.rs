@@ -31,15 +31,18 @@ macro_rules! const_f64_as_f64x8 {
   };
 }
 
-impl_simd! {
+impl_simd_float! {
   unsafe {
     T = f64,
     N = 8,
     Simd = f64x8,
+    UintT = u64,
+    UintSimd = u64x8,
     optional_type_x86_inner { X86Inner = __m512d },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
   }
+  old_powf_simd_fn_name = pow_f64x8,
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -222,17 +225,6 @@ impl_simd! {
       transpose_column(&data, 7),
     ]
   }
-}
-
-impl_simd_float! {
-  unsafe {
-    T = f64,
-    N = 8,
-    Simd = f64x8,
-    UintT = u64,
-    UintSimd = u64x8,
-  }
-  old_powf_simd_fn_name = pow_f64x8,
 
   #[inline]
   fn neg(self) -> Self::Output {

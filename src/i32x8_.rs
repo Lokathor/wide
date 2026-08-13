@@ -24,11 +24,15 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i32,
     N = 8,
     Simd = i32x8,
+    UintSimd = u32x8,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    [0, 1, 2, 3, 4, 5, 6, 7],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
@@ -257,18 +261,6 @@ impl_simd! {
         ]
       }
     }
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i32,
-    N = 8,
-    Simd = i32x8,
-    UintSimd = u32x8,
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    [0, 1, 2, 3, 4, 5, 6, 7],
   }
 
   #[inline]

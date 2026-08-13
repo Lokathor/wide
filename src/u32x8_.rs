@@ -24,11 +24,15 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_uint! {
   unsafe {
     T = u32,
     N = 8,
     Simd = u32x8,
+    IntSimd = i32x8,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    [0, 1, 2, 3, 4, 5, 6, 7],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
@@ -150,18 +154,6 @@ impl_simd! {
   #[inline]
   pub fn transpose(data: [u32x8; 8]) -> [u32x8; 8] {
     cast(i32x8::transpose(cast(data)))
-  }
-}
-
-impl_simd_uint! {
-  unsafe {
-    T = u32,
-    N = 8,
-    Simd = u32x8,
-    IntSimd = i32x8,
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    [0, 1, 2, 3, 4, 5, 6, 7],
   }
 
   #[inline]

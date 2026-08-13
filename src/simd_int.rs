@@ -6,6 +6,7 @@ macro_rules! impl_simd_int {
     // - `Pod` can be implemented for `Simd`
     // - `size_of::<Simd>()` is `size_of::<T>() * N`
     // - `align_of::<Simd>()` is `size_of::<Simd>()`
+    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
@@ -14,7 +15,23 @@ macro_rules! impl_simd_int {
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
+      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
+      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
+      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
+
+    $fn_simd_eq:item
+    $fn_simd_ne:item
+    $fn_simd_lt:item
+    $fn_simd_gt:item
+    $fn_simd_le:item
+    $fn_simd_ge:item
+    $fn_bitselect:item
+    $fn_select:item
+    $fn_to_bitmask:item
+    $fn_any:item
+    $fn_all:item
+    $fn_transpose:item
 
     $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
@@ -34,6 +51,41 @@ macro_rules! impl_simd_int {
     $fn_is_positive:item
     $fn_is_negative:item
   ) => {
+    impl_simd!(
+      unsafe {
+        T = $T,
+        N = $N,
+        Simd = $Simd,
+        optional_type_x86_inner { $(X86Inner = $X86Inner)? },
+        optional_type_arm_inner { $(ArmInner = $ArmInner)? },
+        optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
+      }
+
+      $fn_simd_eq
+
+      $fn_simd_ne
+
+      $fn_simd_lt
+
+      $fn_simd_gt
+
+      $fn_simd_le
+
+      $fn_simd_ge
+
+      $fn_bitselect
+
+      $fn_select
+
+      $fn_to_bitmask
+
+      $fn_any
+
+      $fn_all
+
+      $fn_transpose
+    );
+
     impl_unary_operator!(
       $Simd,
       Neg,

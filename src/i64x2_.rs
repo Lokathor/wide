@@ -80,11 +80,15 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i64,
     N = 2,
     Simd = i64x2,
+    UintSimd = u64x2,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    [0, 1],
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = int64x2_t },
     optional_type_wasm_inner { WasmInner = v128 },
@@ -312,18 +316,6 @@ impl_simd! {
         cast([x, z, y, w])
       }
     }
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i64,
-    N = 2,
-    Simd = i64x2,
-    UintSimd = u64x2,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1],
   }
 
   #[inline]

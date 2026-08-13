@@ -31,15 +31,18 @@ macro_rules! const_f32_as_f32x16 {
   };
 }
 
-impl_simd! {
+impl_simd_float! {
   unsafe {
     T = f32,
     N = 16,
     Simd = f32x16,
+    UintT = u32,
+    UintSimd = u32x16,
     optional_type_x86_inner { X86Inner = __m512 },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
   }
+  old_powf_simd_fn_name = pow_f32x16,
 
   #[inline]
   fn simd_eq(self, rhs: Self) -> Self::Output {
@@ -239,17 +242,6 @@ impl_simd! {
       transpose_column(&data, 15),
     ]
   }
-}
-
-impl_simd_float! {
-  unsafe {
-    T = f32,
-    N = 16,
-    Simd = f32x16,
-    UintT = u32,
-    UintSimd = u32x16,
-  }
-  old_powf_simd_fn_name = pow_f32x16,
 
   #[inline]
   fn neg(self) -> Self::Output {
