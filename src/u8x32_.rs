@@ -756,15 +756,25 @@ impl u8x32 {
 
   /// Full 32-entry byte table lookup. An index in `[0, 31]` selects
   /// `self[index]`; any index `>= 32` yields `0`.
+  ///
+  /// This function has been deprecated and replaced with [`zeroing_shuffle`].
+  ///
+  /// [`zeroing_shuffle`]: Self::zeroing_shuffle
   #[inline]
+  #[deprecated(since = "1.7.0", note = "replaced with `zeroing_shuffle`")]
   pub fn swizzle(self, rhs: u8x32) -> u8x32 {
-    cast(i8x32::swizzle(cast(self), cast(rhs)))
+    self.zeroing_shuffle(rhs)
   }
 
   /// Like [`swizzle`](Self::swizzle), but out-of-range indices yield an
   /// implementation-defined result (`0` or `self[index % 32]`).
+  ///
+  /// This function has been deprecated and replaced with [`shuffle`].
+  ///
+  /// [`shuffle`]: Self::shuffle
   #[inline]
+  #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
   pub fn swizzle_relaxed(self, rhs: u8x32) -> u8x32 {
-    cast(i8x32::swizzle_relaxed(cast(self), cast(rhs)))
+    self.shuffle(rhs)
   }
 }
