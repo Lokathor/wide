@@ -1,10 +1,11 @@
 use core::ops::{BitOr, Neg, Not};
 use std::{convert::identity, iter::once};
 
+use bytemuck::cast;
 use wide::{
-  AlignTo, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i16x8,
-  i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16, u8x32,
-  u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+  AlignTo, ShuffleExt, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32,
+  i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16,
+  u8x32, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
@@ -2328,6 +2329,230 @@ fn test_reduce_mul() {
       assert_eq!(actual, expected);
     }
   });
+}
+
+#[test]
+fn test_shuffle() {
+  for_simd_types!(|T, N| {
+    // The values themselves do not matter here, as long as each lane is
+    // different
+    let simd = Simd::new(std::array::from_fn(|i| (i * 3 + 4) as T));
+
+    for indices in
+      shuffle_indices(1).map(|indices| indices.map(|index| index as Unsigned))
+    {
+      let indices = SimdUnsigned::new(indices);
+      let zeroing = simd.zeroing_shuffle(indices);
+      let wrapping = simd.wrapping_shuffle(indices);
+      let actual = simd.shuffle(indices);
+
+      let is_8bit = size_of::<T>() == 1;
+      let is_8bitx16 = is_8bit && N == 16;
+
+      if is_8bitx16 {
+        // `i/u8x16` make the most guarantees
+
+        let high_bit_set =
+          cast::<SimdSigned, Simd>(indices.cast_signed().is_negative());
+
+        assert!(
+          high_bit_set
+            .select(
+              actual.simd_eq(zeroing),
+              actual.simd_eq(zeroing) | actual.simd_eq(wrapping),
+            )
+            .all()
+        );
+      } else if is_8bit {
+        // All other 8-bit types also make additional guarantees
+
+        assert!((actual.simd_eq(zeroing) | actual.simd_eq(wrapping)).all());
+      } else {
+        let overflow =
+          cast::<SimdUnsigned, Simd>(indices.simd_ge(N as Unsigned));
+
+        assert!((actual.simd_eq(zeroing) | overflow).all());
+      }
+    }
+  });
+}
+
+#[test]
+fn test_zeroing_shuffle() {
+  for_simd_types!(|T, N| {
+    // The values themselves do not matter here, as long as each lane is
+    // different
+    let simd = Simd::new(std::array::from_fn(|i| (i * 3 + 4) as T));
+
+    for indices in
+      shuffle_indices(1).map(|indices| indices.map(|index| index as Unsigned))
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        simd.as_array().get(indices[i] as usize).copied().unwrap_or_default()
+      }));
+      let actual = simd.zeroing_shuffle(SimdUnsigned::new(indices));
+
+      assert_eq!(actual, expected);
+    }
+  });
+}
+
+#[test]
+fn test_wrapping_shuffle() {
+  for_simd_types!(|T, N| {
+    // The values themselves do not matter here, as long as each lane is
+    // different
+    let simd = Simd::new(std::array::from_fn(|i| (i * 3 + 4) as T));
+
+    for indices in
+      shuffle_indices(1).map(|indices| indices.map(|index| index as Unsigned))
+    {
+      let expected = Simd::new(std::array::from_fn(|i| {
+        simd.as_array()[indices[i] as usize % N]
+      }));
+      let actual = simd.wrapping_shuffle(SimdUnsigned::new(indices));
+
+      assert_eq!(actual, expected);
+    }
+  });
+}
+
+#[test]
+fn test_array_shuffle() {
+  macro_rules! test_inputs {
+    ($INPUTS:literal) => {
+      for_simd_types!(|T, N| {
+        // The values themselves do not matter here, as long as each lane is
+        // different
+        let simd: [Simd; $INPUTS] = std::array::from_fn(|input| {
+          Simd::new(std::array::from_fn(|lane| {
+            ((input * N + lane) * 3 + 4) as T
+          }))
+        });
+
+        for indices in shuffle_indices($INPUTS)
+          .map(|indices| indices.map(|index| index as Unsigned))
+        {
+          let indices = SimdUnsigned::new(indices);
+          let zeroing = simd.zeroing_shuffle(indices);
+          let wrapping = simd.wrapping_shuffle(indices);
+          let actual = simd.shuffle(indices);
+
+          let is_8bit = size_of::<T>() == 1;
+
+          if is_8bit {
+            // An additional guarantee is made for all 8-bit types
+
+            assert!((actual.simd_eq(zeroing) | actual.simd_eq(wrapping)).all());
+          } else {
+            let overflow = cast::<SimdUnsigned, Simd>(
+              indices.simd_ge((N * $INPUTS) as Unsigned),
+            );
+
+            assert!((actual.simd_eq(zeroing) | overflow).all());
+          }
+        }
+      });
+    };
+  }
+  test_inputs!(2);
+  test_inputs!(3);
+  test_inputs!(4);
+}
+
+#[test]
+fn test_array_zeroing_shuffle() {
+  macro_rules! test_inputs {
+    ($INPUTS:literal) => {
+      for_simd_types!(|T, N| {
+        // The values themselves do not matter here, as long as each lane is
+        // different
+        let simd: [Simd; $INPUTS] = std::array::from_fn(|input| {
+          Simd::new(std::array::from_fn(|lane| {
+            ((input * N + lane) * 3 + 4) as T
+          }))
+        });
+
+        for indices in shuffle_indices($INPUTS)
+          .map(|indices| indices.map(|index| index as Unsigned))
+        {
+          let expected = Simd::new(std::array::from_fn(|i| {
+            simd
+              .map(Simd::to_array)
+              .into_iter()
+              .flatten()
+              .nth(indices[i] as usize)
+              .unwrap_or_default()
+          }));
+          let actual = simd.zeroing_shuffle(SimdUnsigned::new(indices));
+
+          assert_eq!(actual, expected);
+        }
+      });
+    };
+  }
+  test_inputs!(2);
+  test_inputs!(3);
+  test_inputs!(4);
+}
+
+#[test]
+fn test_array_wrapping_shuffle() {
+  macro_rules! test_inputs {
+    ($INPUTS:literal) => {
+      for_simd_types!(|T, N| {
+        // The values themselves do not matter here, as long as each lane is
+        // different
+        let simd: [Simd; $INPUTS] = std::array::from_fn(|input| {
+          Simd::new(std::array::from_fn(|lane| {
+            ((input * N + lane) * 3 + 4) as T
+          }))
+        });
+
+        for indices in shuffle_indices($INPUTS)
+          .map(|indices| indices.map(|index| index as Unsigned))
+        {
+          let expected = Simd::new(std::array::from_fn(|i| {
+            simd
+              .map(Simd::to_array)
+              .into_iter()
+              .flatten()
+              .nth(indices[i] as usize % (N * $INPUTS))
+              .unwrap()
+          }));
+          let actual = simd.wrapping_shuffle(SimdUnsigned::new(indices));
+
+          assert_eq!(actual, expected);
+        }
+      });
+    };
+  }
+  test_inputs!(2);
+  test_inputs!(3);
+  test_inputs!(4);
+}
+
+/// A helper function for shuffle tests that generates an iterator over indices
+/// to test.
+///
+/// This can wrap indices intentionally, `inputs` (the number of input vectors)
+/// is used to compute the total in-bounds index count.
+///
+/// Its important that this function goes over enough values to catch bugs and
+/// edge cases.
+fn shuffle_indices<const N: usize>(
+  inputs: usize,
+) -> impl Iterator<Item = [usize; N]> {
+  (0..N)
+    .map(|offset| std::array::from_fn(|i| i * 3 + offset))
+    .chain(random_iter())
+    .map(move |indices| {
+      indices.map(|index| {
+        // We need both in bounds and out of bounds indices, so wrap indices half
+        // of the time
+        if index & 0b1000 != 0 { index % (N * inputs) } else { index }
+      })
+    })
 }
 
 #[test]

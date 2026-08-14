@@ -90,6 +90,7 @@ impl_random_for_integer!(u8);
 impl_random_for_integer!(u16);
 impl_random_for_integer!(u32);
 impl_random_for_integer!(u64);
+impl_random_for_integer!(usize);
 
 macro_rules! impl_random_for_simd {
   ($T:ident, $Simd:ident) => {
