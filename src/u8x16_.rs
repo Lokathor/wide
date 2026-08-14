@@ -732,7 +732,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn zeroing_shuffle(self, indices: u8x16) -> Self {
+  pub fn shuffle_zeroing(self, indices: u8x16) -> Self {
     pick! {
       if #[cfg(target_feature="ssse3")] {
         Self {
@@ -751,7 +751,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn wrapping_shuffle(self, indices: u8x16) -> Self {
+  pub fn shuffle_wrapping(self, indices: u8x16) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -786,13 +786,13 @@ impl_simd_uint! {
         let table = uint8x16x2_t(self[0].neon, self[1].neon);
         unsafe { u8x16 { neon: vqtbl2q_u8(table, indices.neon) } }
       } else {
-        self[0].zeroing_shuffle(indices) | self[1].zeroing_shuffle(indices - 16)
+        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 16)
       }
     }
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+  fn shuffle_zeroing(self: [u8x16; 2], indices: u8x16) -> u8x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         self.shuffle(indices) & indices.simd_lt(32)
@@ -803,7 +803,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+  fn shuffle_wrapping(self: [u8x16; 2], indices: u8x16) -> u8x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -821,18 +821,18 @@ impl_simd_uint! {
         let table = uint8x16x3_t(self[0].neon, self[1].neon, self[2].neon);
         unsafe { u8x16 { neon: vqtbl3q_u8(table, indices.neon) } }
       } else {
-        [self[0], self[1]].zeroing_shuffle(indices) | self[2].zeroing_shuffle(indices - 32)
+        [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 32)
       }
     }
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
+  fn shuffle_zeroing(self: [u8x16; 3], indices: u8x16) -> u8x16 {
     self.shuffle(indices)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u8x16; 3], indices: u8x16) -> u8x16 {
+  fn shuffle_wrapping(self: [u8x16; 3], indices: u8x16) -> u8x16 {
     self.shuffle(indices % 48)
   }
 
@@ -843,19 +843,19 @@ impl_simd_uint! {
         let table = uint8x16x4_t(self[0].neon, self[1].neon, self[2].neon, self[3].neon);
         unsafe { u8x16 { neon: vqtbl4q_u8(table, indices.neon) } }
       } else {
-        [self[0], self[1]].zeroing_shuffle(indices)
-          | [self[2], self[3]].zeroing_shuffle(indices - 32)
+        [self[0], self[1]].shuffle_zeroing(indices)
+          | [self[2], self[3]].shuffle_zeroing(indices - 32)
       }
     }
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
+  fn shuffle_zeroing(self: [u8x16; 4], indices: u8x16) -> u8x16 {
     self.shuffle(indices)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u8x16; 4], indices: u8x16) -> u8x16 {
+  fn shuffle_wrapping(self: [u8x16; 4], indices: u8x16) -> u8x16 {
     self.shuffle(indices & 63)
   }
 
@@ -1743,13 +1743,13 @@ impl u8x16 {
   /// * Index values that are out of range will cause that output lane to be
   ///   `0`.
   ///
-  /// This function has been deprecated and replaced with [`zeroing_shuffle`].
+  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
   ///
-  /// [`zeroing_shuffle`]: Self::zeroing_shuffle
+  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
   #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `zeroing_shuffle`")]
+  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
   pub fn swizzle(self, rhs: i8x16) -> i8x16 {
-    self.zeroing_shuffle(rhs.cast_unsigned()).cast_signed()
+    self.shuffle_zeroing(rhs.cast_unsigned()).cast_signed()
   }
 
   /// Works like [`swizzle`](Self::swizzle) with the following additional

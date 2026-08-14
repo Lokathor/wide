@@ -598,7 +598,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn zeroing_shuffle(self, indices: u16x8) -> Self {
+  pub fn shuffle_zeroing(self, indices: u16x8) -> Self {
     pick! {
       if #[cfg(any(
         target_feature = "ssse3",
@@ -616,7 +616,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn wrapping_shuffle(self, indices: u16x8) -> Self {
+  pub fn shuffle_wrapping(self, indices: u16x8) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -651,14 +651,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+  fn shuffle_zeroing(self: [u16x8; 2], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
     self.shuffle(indices) & indices.simd_lt(16)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+  fn shuffle_wrapping(self: [u16x8; 2], indices: u16x8) -> u16x8 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -678,14 +678,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u16x8; 3], indices: u16x8) -> u16x8 {
+  fn shuffle_zeroing(self: [u16x8; 3], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
     self.shuffle(indices) & indices.simd_lt(24)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u16x8; 3], indices: u16x8) -> u16x8 {
+  fn shuffle_wrapping(self: [u16x8; 3], indices: u16x8) -> u16x8 {
     self.shuffle(indices % 24)
   }
 
@@ -698,14 +698,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u16x8; 4], indices: u16x8) -> u16x8 {
+  fn shuffle_zeroing(self: [u16x8; 4], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
     self.shuffle(indices) & indices.simd_lt(32)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u16x8; 4], indices: u16x8) -> u16x8 {
+  fn shuffle_wrapping(self: [u16x8; 4], indices: u16x8) -> u16x8 {
     self.shuffle(indices & 31)
   }
 

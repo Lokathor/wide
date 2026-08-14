@@ -511,7 +511,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn zeroing_shuffle(self, indices: u32x4) -> Self {
+  pub fn shuffle_zeroing(self, indices: u32x4) -> Self {
     pick! {
       if #[cfg(any(
         target_feature = "avx",
@@ -530,7 +530,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn wrapping_shuffle(self, indices: u32x4) -> Self {
+  pub fn shuffle_wrapping(self, indices: u32x4) -> Self {
     self.shuffle(indices & 3)
   }
 
@@ -558,14 +558,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+  fn shuffle_zeroing(self: [u32x4; 2], indices: u32x4) -> u32x4 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(8)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+  fn shuffle_wrapping(self: [u32x4; 2], indices: u32x4) -> u32x4 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -585,14 +585,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+  fn shuffle_zeroing(self: [u32x4; 3], indices: u32x4) -> u32x4 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(12)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+  fn shuffle_wrapping(self: [u32x4; 3], indices: u32x4) -> u32x4 {
     self.shuffle(indices % 12)
   }
 
@@ -605,14 +605,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+  fn shuffle_zeroing(self: [u32x4; 4], indices: u32x4) -> u32x4 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(16)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+  fn shuffle_wrapping(self: [u32x4; 4], indices: u32x4) -> u32x4 {
     self.shuffle(indices & 15)
   }
 

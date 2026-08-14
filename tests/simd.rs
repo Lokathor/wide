@@ -2342,8 +2342,8 @@ fn test_shuffle() {
       shuffle_indices(1).map(|indices| indices.map(|index| index as Unsigned))
     {
       let indices = SimdUnsigned::new(indices);
-      let zeroing = simd.zeroing_shuffle(indices);
-      let wrapping = simd.wrapping_shuffle(indices);
+      let zeroing = simd.shuffle_zeroing(indices);
+      let wrapping = simd.shuffle_wrapping(indices);
       let actual = simd.shuffle(indices);
 
       let is_8bit = size_of::<T>() == 1;
@@ -2378,7 +2378,7 @@ fn test_shuffle() {
 }
 
 #[test]
-fn test_zeroing_shuffle() {
+fn test_shuffle_zeroing() {
   for_simd_types!(|T, N| {
     // The values themselves do not matter here, as long as each lane is
     // different
@@ -2390,7 +2390,7 @@ fn test_zeroing_shuffle() {
       let expected = Simd::new(std::array::from_fn(|i| {
         simd.as_array().get(indices[i] as usize).copied().unwrap_or_default()
       }));
-      let actual = simd.zeroing_shuffle(SimdUnsigned::new(indices));
+      let actual = simd.shuffle_zeroing(SimdUnsigned::new(indices));
 
       assert_eq!(actual, expected);
     }
@@ -2398,7 +2398,7 @@ fn test_zeroing_shuffle() {
 }
 
 #[test]
-fn test_wrapping_shuffle() {
+fn test_shuffle_wrapping() {
   for_simd_types!(|T, N| {
     // The values themselves do not matter here, as long as each lane is
     // different
@@ -2410,7 +2410,7 @@ fn test_wrapping_shuffle() {
       let expected = Simd::new(std::array::from_fn(|i| {
         simd.as_array()[indices[i] as usize % N]
       }));
-      let actual = simd.wrapping_shuffle(SimdUnsigned::new(indices));
+      let actual = simd.shuffle_wrapping(SimdUnsigned::new(indices));
 
       assert_eq!(actual, expected);
     }
@@ -2434,8 +2434,8 @@ fn test_array_shuffle() {
           .map(|indices| indices.map(|index| index as Unsigned))
         {
           let indices = SimdUnsigned::new(indices);
-          let zeroing = simd.zeroing_shuffle(indices);
-          let wrapping = simd.wrapping_shuffle(indices);
+          let zeroing = simd.shuffle_zeroing(indices);
+          let wrapping = simd.shuffle_wrapping(indices);
           let actual = simd.shuffle(indices);
 
           let is_8bit = size_of::<T>() == 1;
@@ -2461,7 +2461,7 @@ fn test_array_shuffle() {
 }
 
 #[test]
-fn test_array_zeroing_shuffle() {
+fn test_array_shuffle_zeroing() {
   macro_rules! test_inputs {
     ($INPUTS:literal) => {
       for_simd_types!(|T, N| {
@@ -2484,7 +2484,7 @@ fn test_array_zeroing_shuffle() {
               .nth(indices[i] as usize)
               .unwrap_or_default()
           }));
-          let actual = simd.zeroing_shuffle(SimdUnsigned::new(indices));
+          let actual = simd.shuffle_zeroing(SimdUnsigned::new(indices));
 
           assert_eq!(actual, expected);
         }
@@ -2497,7 +2497,7 @@ fn test_array_zeroing_shuffle() {
 }
 
 #[test]
-fn test_array_wrapping_shuffle() {
+fn test_array_shuffle_wrapping() {
   macro_rules! test_inputs {
     ($INPUTS:literal) => {
       for_simd_types!(|T, N| {
@@ -2520,7 +2520,7 @@ fn test_array_wrapping_shuffle() {
               .nth(indices[i] as usize % (N * $INPUTS))
               .unwrap()
           }));
-          let actual = simd.wrapping_shuffle(SimdUnsigned::new(indices));
+          let actual = simd.shuffle_wrapping(SimdUnsigned::new(indices));
 
           assert_eq!(actual, expected);
         }

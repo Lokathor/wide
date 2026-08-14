@@ -314,7 +314,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn zeroing_shuffle(self, indices: u32x8) -> Self {
+  pub fn shuffle_zeroing(self, indices: u32x8) -> Self {
     pick! {
       if #[cfg(any(
         target_feature = "ssse3",
@@ -332,7 +332,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn wrapping_shuffle(self, indices: u32x8) -> Self {
+  pub fn shuffle_wrapping(self, indices: u32x8) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -367,14 +367,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u32x8; 2], indices: u32x8) -> u32x8 {
+  fn shuffle_zeroing(self: [u32x8; 2], indices: u32x8) -> u32x8 {
     // Even if the `u8x32::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(16)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u32x8; 2], indices: u32x8) -> u32x8 {
+  fn shuffle_wrapping(self: [u32x8; 2], indices: u32x8) -> u32x8 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -394,14 +394,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u32x8; 3], indices: u32x8) -> u32x8 {
+  fn shuffle_zeroing(self: [u32x8; 3], indices: u32x8) -> u32x8 {
     // Even if the `u8x32::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(24)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u32x8; 3], indices: u32x8) -> u32x8 {
+  fn shuffle_wrapping(self: [u32x8; 3], indices: u32x8) -> u32x8 {
     self.shuffle(indices % 24)
   }
 
@@ -414,14 +414,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u32x8; 4], indices: u32x8) -> u32x8 {
+  fn shuffle_zeroing(self: [u32x8; 4], indices: u32x8) -> u32x8 {
     // Even if the `u8x32::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(32)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u32x8; 4], indices: u32x8) -> u32x8 {
+  fn shuffle_wrapping(self: [u32x8; 4], indices: u32x8) -> u32x8 {
     self.shuffle(indices & 31)
   }
 

@@ -42,17 +42,17 @@ macro_rules! impl_simd {
     $fn_any:item
     $fn_all:item
     $fn_shuffle:item
-    $fn_zeroing_shuffle:item
-    $fn_wrapping_shuffle:item
+    $fn_shuffle_zeroing:item
+    $fn_shuffle_wrapping:item
     $fn_shuffle_2:item
-    $fn_zeroing_shuffle_2:item
-    $fn_wrapping_shuffle_2:item
+    $fn_shuffle_zeroing_2:item
+    $fn_shuffle_wrapping_2:item
     $fn_shuffle_3:item
-    $fn_zeroing_shuffle_3:item
-    $fn_wrapping_shuffle_3:item
+    $fn_shuffle_zeroing_3:item
+    $fn_shuffle_wrapping_3:item
     $fn_shuffle_4:item
-    $fn_zeroing_shuffle_4:item
-    $fn_wrapping_shuffle_4:item
+    $fn_shuffle_zeroing_4:item
+    $fn_shuffle_wrapping_4:item
     $fn_transpose:item
   ) => {
     impl From<[$T; $N]> for $Simd {
@@ -237,9 +237,9 @@ macro_rules! impl_simd {
 
       $fn_shuffle_2
 
-      $fn_zeroing_shuffle_2
+      $fn_shuffle_zeroing_2
 
-      $fn_wrapping_shuffle_2
+      $fn_shuffle_wrapping_2
     }
 
     impl ShuffleExt for [$Simd; 3] {
@@ -248,9 +248,9 @@ macro_rules! impl_simd {
 
       $fn_shuffle_3
 
-      $fn_zeroing_shuffle_3
+      $fn_shuffle_zeroing_3
 
-      $fn_wrapping_shuffle_3
+      $fn_shuffle_wrapping_3
     }
 
     impl ShuffleExt for [$Simd; 4] {
@@ -259,9 +259,9 @@ macro_rules! impl_simd {
 
       $fn_shuffle_4
 
-      $fn_zeroing_shuffle_4
+      $fn_shuffle_zeroing_4
 
-      $fn_wrapping_shuffle_4
+      $fn_shuffle_wrapping_4
     }
 
     #[expect(deprecated)]
@@ -619,7 +619,7 @@ macro_rules! impl_simd {
       /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
       /// with a zero fallback.
       #[must_use]
-      $fn_zeroing_shuffle
+      $fn_shuffle_zeroing
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.
@@ -629,7 +629,7 @@ macro_rules! impl_simd {
       /// Equivalent to
       /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
       #[must_use]
-      $fn_wrapping_shuffle
+      $fn_shuffle_wrapping
 
       /// Transposes an array of SIMD vectors interpreted as a square matrix.
       #[must_use]

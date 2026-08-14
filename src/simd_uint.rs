@@ -50,17 +50,17 @@ macro_rules! impl_simd_uint {
     $fn_any:item
     $fn_all:item
     $fn_shuffle:item
-    $fn_zeroing_shuffle:item
-    $fn_wrapping_shuffle:item
+    $fn_shuffle_zeroing:item
+    $fn_shuffle_wrapping:item
     $fn_shuffle_2:item
-    $fn_zeroing_shuffle_2:item
-    $fn_wrapping_shuffle_2:item
+    $fn_shuffle_zeroing_2:item
+    $fn_shuffle_wrapping_2:item
     $fn_shuffle_3:item
-    $fn_zeroing_shuffle_3:item
-    $fn_wrapping_shuffle_3:item
+    $fn_shuffle_zeroing_3:item
+    $fn_shuffle_wrapping_3:item
     $fn_shuffle_4:item
-    $fn_zeroing_shuffle_4:item
-    $fn_wrapping_shuffle_4:item
+    $fn_shuffle_zeroing_4:item
+    $fn_shuffle_wrapping_4:item
     $fn_transpose:item
 
     // Uint-specific functions
@@ -122,27 +122,27 @@ macro_rules! impl_simd_uint {
 
       $fn_shuffle
 
-      $fn_zeroing_shuffle
+      $fn_shuffle_zeroing
 
-      $fn_wrapping_shuffle
+      $fn_shuffle_wrapping
 
       $fn_shuffle_2
 
-      $fn_zeroing_shuffle_2
+      $fn_shuffle_zeroing_2
 
-      $fn_wrapping_shuffle_2
+      $fn_shuffle_wrapping_2
 
       $fn_shuffle_3
 
-      $fn_zeroing_shuffle_3
+      $fn_shuffle_zeroing_3
 
-      $fn_wrapping_shuffle_3
+      $fn_shuffle_wrapping_3
 
       $fn_shuffle_4
 
-      $fn_zeroing_shuffle_4
+      $fn_shuffle_zeroing_4
 
-      $fn_wrapping_shuffle_4
+      $fn_shuffle_wrapping_4
 
       $fn_transpose
     );

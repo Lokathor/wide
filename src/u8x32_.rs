@@ -326,7 +326,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn zeroing_shuffle(self, indices: u8x32) -> Self {
+  pub fn shuffle_zeroing(self, indices: u8x32) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
         // vpermb takes the index mod 32 and never zeroes, so zero the
@@ -349,15 +349,15 @@ impl_simd_uint! {
         Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
       } else {
         Self {
-          a: [self.a, self.b].zeroing_shuffle(indices.a),
-          b: [self.a, self.b].zeroing_shuffle(indices.b),
+          a: [self.a, self.b].shuffle_zeroing(indices.a),
+          b: [self.a, self.b].shuffle_zeroing(indices.b),
         }
       }
     }
   }
 
   #[inline]
-  pub fn wrapping_shuffle(self, indices: u8x32) -> Self {
+  pub fn shuffle_wrapping(self, indices: u8x32) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
         Self { avx: permute_i8_m256i(indices.avx, self.avx) }
@@ -365,8 +365,8 @@ impl_simd_uint! {
         self.shuffle(indices & 31)
       } else {
         Self {
-          a: [self.a, self.b].wrapping_shuffle(indices.a),
-          b: [self.a, self.b].wrapping_shuffle(indices.b),
+          a: [self.a, self.b].shuffle_wrapping(indices.a),
+          b: [self.a, self.b].shuffle_wrapping(indices.b),
         }
       }
     }
@@ -387,7 +387,7 @@ impl_simd_uint! {
           },
         }
       } else if #[cfg(target_feature="avx2")] {
-        self[0].zeroing_shuffle(indices) | self[1].zeroing_shuffle(indices - 32)
+        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
       } else {
         u8x32 {
           a: [self[0].a, self[0].b, self[1].a, self[1].b].shuffle(indices.a),
@@ -398,7 +398,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u8x32; 2], indices: u8x32) -> u8x32 {
+  fn shuffle_zeroing(self: [u8x32; 2], indices: u8x32) -> u8x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         self.shuffle(indices) & indices.simd_lt(64)
@@ -406,15 +406,15 @@ impl_simd_uint! {
         self.shuffle(indices)
       } else {
         u8x32 {
-          a: [self[0].a, self[0].b, self[1].a, self[1].b].zeroing_shuffle(indices.a),
-          b: [self[0].a, self[0].b, self[1].a, self[1].b].zeroing_shuffle(indices.b),
+          a: [self[0].a, self[0].b, self[1].a, self[1].b].shuffle_zeroing(indices.a),
+          b: [self[0].a, self[0].b, self[1].a, self[1].b].shuffle_zeroing(indices.b),
         }
       }
     }
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u8x32; 2], indices: u8x32) -> u8x32 {
+  fn shuffle_wrapping(self: [u8x32; 2], indices: u8x32) -> u8x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -427,31 +427,31 @@ impl_simd_uint! {
 
   #[inline]
   fn shuffle(self: [u8x32; 3], indices: u8x32) -> u8x32 {
-    [self[0], self[1]].zeroing_shuffle(indices) | self[2].zeroing_shuffle(indices - 64)
+    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u8x32; 3], indices: u8x32) -> u8x32 {
+  fn shuffle_zeroing(self: [u8x32; 3], indices: u8x32) -> u8x32 {
     self.shuffle(indices)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u8x32; 3], indices: u8x32) -> u8x32 {
+  fn shuffle_wrapping(self: [u8x32; 3], indices: u8x32) -> u8x32 {
     self.shuffle(indices % 96)
   }
 
   #[inline]
   fn shuffle(self: [u8x32; 4], indices: u8x32) -> u8x32 {
-    [self[0], self[1]].zeroing_shuffle(indices) | [self[2], self[3]].zeroing_shuffle(indices - 64)
+    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u8x32; 4], indices: u8x32) -> u8x32 {
+  fn shuffle_zeroing(self: [u8x32; 4], indices: u8x32) -> u8x32 {
     self.shuffle(indices)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u8x32; 4], indices: u8x32) -> u8x32 {
+  fn shuffle_wrapping(self: [u8x32; 4], indices: u8x32) -> u8x32 {
     self.shuffle(indices & 127)
   }
 
@@ -757,13 +757,13 @@ impl u8x32 {
   /// Full 32-entry byte table lookup. An index in `[0, 31]` selects
   /// `self[index]`; any index `>= 32` yields `0`.
   ///
-  /// This function has been deprecated and replaced with [`zeroing_shuffle`].
+  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
   ///
-  /// [`zeroing_shuffle`]: Self::zeroing_shuffle
+  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
   #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `zeroing_shuffle`")]
+  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
   pub fn swizzle(self, rhs: u8x32) -> u8x32 {
-    self.zeroing_shuffle(rhs)
+    self.shuffle_zeroing(rhs)
   }
 
   /// Like [`swizzle`](Self::swizzle), but out-of-range indices yield an

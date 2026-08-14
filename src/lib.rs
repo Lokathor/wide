@@ -670,12 +670,12 @@ pub trait ShuffleExt: Sealed {
   /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
   ///
   /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-  /// let from_two_vectors = [simd_a, simd_b].zeroing_shuffle(u32x4::new([2, 3, 100, 5]));
+  /// let from_two_vectors = [simd_a, simd_b].shuffle_zeroing(u32x4::new([2, 3, 100, 5]));
   ///
   /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 0.0, 101.0]));
   /// ```
   #[must_use]
-  fn zeroing_shuffle(self, indices: Self::Indices) -> Self::Output;
+  fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
 
   /// Returns a SIMD vector whose elements are selected from multiple input
   /// vectors using the corresponding runtime `indices`.
@@ -695,12 +695,12 @@ pub trait ShuffleExt: Sealed {
   /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
   ///
   /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-  /// let from_two_vectors = [simd_a, simd_b].wrapping_shuffle(u32x4::new([2, 3, 9, 5]));
+  /// let from_two_vectors = [simd_a, simd_b].shuffle_wrapping(u32x4::new([2, 3, 9, 5]));
   ///
   /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 1.0, 101.0]));
   /// ```
   #[must_use]
-  fn wrapping_shuffle(self, indices: Self::Indices) -> Self::Output;
+  fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output;
 }
 
 /// A deprecated trait for the [`simd_eq`] function.

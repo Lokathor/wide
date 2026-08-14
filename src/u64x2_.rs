@@ -455,13 +455,13 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn zeroing_shuffle(self, indices: u64x2) -> Self {
+  pub fn shuffle_zeroing(self, indices: u64x2) -> Self {
     // Since all implementations use the `select` trick, we always need to mask
     self.shuffle(indices) & indices.simd_lt(2)
   }
 
   #[inline]
-  pub fn wrapping_shuffle(self, indices: u64x2) -> Self {
+  pub fn shuffle_wrapping(self, indices: u64x2) -> Self {
     // Since all implementations use the `select` trick, we always need to mask
     self.shuffle(indices & 1)
   }
@@ -490,14 +490,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+  fn shuffle_zeroing(self: [u64x2; 2], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(4)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+  fn shuffle_wrapping(self: [u64x2; 2], indices: u64x2) -> u64x2 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -517,14 +517,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u64x2; 3], indices: u64x2) -> u64x2 {
+  fn shuffle_zeroing(self: [u64x2; 3], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(6)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u64x2; 3], indices: u64x2) -> u64x2 {
+  fn shuffle_wrapping(self: [u64x2; 3], indices: u64x2) -> u64x2 {
     self.shuffle(indices % 6)
   }
 
@@ -537,14 +537,14 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn zeroing_shuffle(self: [u64x2; 4], indices: u64x2) -> u64x2 {
+  fn shuffle_zeroing(self: [u64x2; 4], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(8)
   }
 
   #[inline]
-  fn wrapping_shuffle(self: [u64x2; 4], indices: u64x2) -> u64x2 {
+  fn shuffle_wrapping(self: [u64x2; 4], indices: u64x2) -> u64x2 {
     self.shuffle(indices & 7)
   }
 

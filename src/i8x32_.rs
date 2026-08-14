@@ -303,8 +303,8 @@ impl i8x32 {
         Self { avx: shuffle_av_i8z_half_m256i(self.avx, add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x70))) }
       } else {
           Self {
-            a : self.a.zeroing_shuffle(rhs.a.cast_unsigned()),
-            b : self.b.zeroing_shuffle(rhs.b.cast_unsigned()),
+            a : self.a.shuffle_zeroing(rhs.a.cast_unsigned()),
+            b : self.b.shuffle_zeroing(rhs.b.cast_unsigned()),
           }
       }
     }
@@ -341,13 +341,13 @@ impl i8x32 {
   /// Unlike [`swizzle_half`](Self::swizzle_half), indices address the entire
   /// 32-byte vector, not just their own 16-byte half.
   ///
-  /// This function has been deprecated and replaced with [`zeroing_shuffle`].
+  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
   ///
-  /// [`zeroing_shuffle`]: Self::zeroing_shuffle
+  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
   #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `zeroing_shuffle`")]
+  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
   pub fn swizzle(self, rhs: i8x32) -> i8x32 {
-    self.zeroing_shuffle(rhs.cast_unsigned())
+    self.shuffle_zeroing(rhs.cast_unsigned())
   }
 
   /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned

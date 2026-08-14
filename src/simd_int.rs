@@ -129,13 +129,13 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
-      pub fn zeroing_shuffle(self, indices: $UintSimd) -> Self {
-        self.cast_unsigned().zeroing_shuffle(indices).cast_signed()
+      pub fn shuffle_zeroing(self, indices: $UintSimd) -> Self {
+        self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
       }
 
       #[inline]
-      pub fn wrapping_shuffle(self, indices: $UintSimd) -> Self {
-        self.cast_unsigned().wrapping_shuffle(indices).cast_signed()
+      pub fn shuffle_wrapping(self, indices: $UintSimd) -> Self {
+        self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
       }
 
       #[inline]
@@ -144,13 +144,13 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
-      fn zeroing_shuffle(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).zeroing_shuffle(indices))
+      fn shuffle_zeroing(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn wrapping_shuffle(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).wrapping_shuffle(indices))
+      fn shuffle_wrapping(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]
@@ -159,13 +159,13 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
-      fn zeroing_shuffle(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).zeroing_shuffle(indices))
+      fn shuffle_zeroing(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn wrapping_shuffle(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).wrapping_shuffle(indices))
+      fn shuffle_wrapping(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]
@@ -174,13 +174,13 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
-      fn zeroing_shuffle(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).zeroing_shuffle(indices))
+      fn shuffle_zeroing(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn wrapping_shuffle(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).wrapping_shuffle(indices))
+      fn shuffle_wrapping(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]

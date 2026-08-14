@@ -941,13 +941,13 @@ impl i8x16 {
   /// * Index values that are out of range will cause that output lane to be
   ///   `0`.
   ///
-  /// This function has been deprecated and replaced with [`zeroing_shuffle`].
+  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
   ///
-  /// [`zeroing_shuffle`]: Self::zeroing_shuffle
+  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
   #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `zeroing_shuffle`")]
+  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
   pub fn swizzle(self, rhs: i8x16) -> i8x16 {
-    self.zeroing_shuffle(rhs.cast_unsigned())
+    self.shuffle_zeroing(rhs.cast_unsigned())
   }
 
   /// Works like [`swizzle`](Self::swizzle) with the following additional
