@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Added runtime-index shuffle functions. Previous functions `swizzle` and
+  `swizzle_relaxed` have been deprecated. See
+  [this issue](https://github.com/lokathor/wide/pull/317) for more information.
 * Fixed the `signum` documentation: the docs previously misstated the grammar
   and the set of inputs that map to `1.0`/`-1.0`. The behavior itself was
   already correct and matches [`f32::signum`].
