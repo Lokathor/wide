@@ -642,7 +642,7 @@ impl u8x32 {
   }
 }
 
-#[cfg(target_feature="avx2")]
+#[cfg(target_feature = "avx2")]
 impl u8x32 {
   // There's no `u8` shift instruction, so we cheat: widen every byte to a
   // `u16`, shift in the wider lane, then shrink back down to `u8`. Shifting
@@ -650,14 +650,20 @@ impl u8x32 {
   // the saturating pack (shifting right can't overflow, so the mask is a
   // no-op there). For the unbounded variants we cap the count at 8, because
   // shifting a byte by 8 or more gets rid of everything anyway.
-  #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))]
+  #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
   #[inline]
   fn shift_each_u16(self, rhs: m256i, right: bool, unbounded: bool) -> Self {
     let self16 = convert_to_i16_m512i_from_u8_m256i(self.avx);
     let count16 = if unbounded {
-      convert_to_u16_m512i_from_u8_m256i(min_u8_m256i(rhs, set_splat_i8_m256i(8)))
+      convert_to_u16_m512i_from_u8_m256i(min_u8_m256i(
+        rhs,
+        set_splat_i8_m256i(8),
+      ))
     } else {
-      bitand_m512i(convert_to_u16_m512i_from_u8_m256i(rhs), set_splat_i16_m512i(7))
+      bitand_m512i(
+        convert_to_u16_m512i_from_u8_m256i(rhs),
+        set_splat_i16_m512i(7),
+      )
     };
     let shifted = if right {
       shr_each_u16_m512i(self16, count16)
@@ -665,17 +671,32 @@ impl u8x32 {
       shl_each_u16_m512i(self16, count16)
     };
     let shifted = bitand_m512i(shifted, set_splat_i16_m512i(0xFF));
-    Self { avx: Self::pack_u16_halves(extract_m256i_from_m512i::<0>(shifted), extract_m256i_from_m512i::<1>(shifted)) }
+    Self {
+      avx: Self::pack_u16_halves(
+        extract_m256i_from_m512i::<0>(shifted),
+        extract_m256i_from_m512i::<1>(shifted),
+      ),
+    }
   }
 
   // Same trick as above, but every lane is shifted by the same `count` and we
   // work on the two 128-bit halves separately (that's all AVX2 has).
   #[inline]
   fn shift_all_u16(self, count: m128i, right: bool) -> Self {
-    let low = convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<0>(self.avx));
-    let high = convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<1>(self.avx));
-    let low = if right { shr_all_u16_m256i(low, count) } else { shl_all_u16_m256i(low, count) };
-    let high = if right { shr_all_u16_m256i(high, count) } else { shl_all_u16_m256i(high, count) };
+    let low =
+      convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<0>(self.avx));
+    let high =
+      convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<1>(self.avx));
+    let low = if right {
+      shr_all_u16_m256i(low, count)
+    } else {
+      shl_all_u16_m256i(low, count)
+    };
+    let high = if right {
+      shr_all_u16_m256i(high, count)
+    } else {
+      shl_all_u16_m256i(high, count)
+    };
     let low = bitand_m256i(low, set_splat_i16_m256i(0xFF));
     let high = bitand_m256i(high, set_splat_i16_m256i(0xFF));
     Self { avx: Self::pack_u16_halves(low, high) }
@@ -691,6 +712,9 @@ impl u8x32 {
     let packed_high = extract_m128i_m256i::<1>(packed);
     let combined_low = unpack_low_i64_m128i(packed_low, packed_high);
     let combined_high = unpack_high_i64_m128i(packed_low, packed_high);
-    insert_m128i_to_m256i::<1>(insert_m128i_to_m256i::<0>(zeroed_m256i(), combined_low), combined_high)
+    insert_m128i_to_m256i::<1>(
+      insert_m128i_to_m256i::<0>(zeroed_m256i(), combined_low),
+      combined_high,
+    )
   }
 }

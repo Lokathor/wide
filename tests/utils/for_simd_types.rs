@@ -1,4 +1,4 @@
-use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
+use std::panic::{catch_unwind, resume_unwind, UnwindSafe};
 
 /// A macro to duplicate code for each SIMD type.
 ///
@@ -60,6 +60,7 @@ macro_rules! for_simd_types {
   (|T: Signed, N| $expr:expr) => {
     for_simd_types!(signed!(i8, 16, i8x16, u8, u8x16, i16, (), $expr));
     for_simd_types!(signed!(i8, 32, i8x32, u8, u8x32, i16, (), $expr));
+    for_simd_types!(signed!(i8, 64, i8x64, u8, u8x64, i16, (), $expr));
     for_simd_types!(signed!(i16, 8, i16x8, u16, u16x8, i32, (), $expr));
     for_simd_types!(signed!(i16, 16, i16x16, u16, u16x16, i32, (), $expr));
     for_simd_types!(signed!(i16, 32, i16x32, u16, u16x32, i32, (), $expr));
@@ -73,6 +74,7 @@ macro_rules! for_simd_types {
   (|T: Signed, N, DoubleSizedSimd| $expr:expr) => {
     for_simd_types!(signed!(i8, 16, i8x16, u8, u8x16, i16, (i16x16), $expr));
     for_simd_types!(signed!(i8, 32, i8x32, u8, u8x32, i16, (i16x32), $expr));
+    // for_simd_types!(signed!(i8, 64, i8x64, u8, u8x64, i16, (i16x64), $expr));
     for_simd_types!(signed!(i16, 8, i16x8, u16, u16x8, i32, (i32x8), $expr));
     for_simd_types!(signed!(i16, 16, i16x16, u16, u16x16, i32, (i32x16), $expr));
     // for_simd_types!(signed!(i16, 32, i16x32, u16, u16x32, i32, (i32x32), $expr));
@@ -86,6 +88,7 @@ macro_rules! for_simd_types {
   (|T: Unsigned, N| $expr:expr) => {
     for_simd_types!(unsigned!(u8, 16, u8x16, u16, (), $expr));
     for_simd_types!(unsigned!(u8, 32, u8x32, u16, (), $expr));
+    for_simd_types!(unsigned!(u8, 64, u8x64, u16, (), $expr));
     for_simd_types!(unsigned!(u16, 8, u16x8, u32, (), $expr));
     for_simd_types!(unsigned!(u16, 16, u16x16, u32, (), $expr));
     for_simd_types!(unsigned!(u16, 32, u16x32, u32, (), $expr));
@@ -99,6 +102,7 @@ macro_rules! for_simd_types {
   (|T: Unsigned, N, DoubleSizedSimd| $expr:expr) => {
     for_simd_types!(unsigned!(u8, 16, u8x16, u16, (u16x16), $expr));
     for_simd_types!(unsigned!(u8, 32, u8x32, u16, (u16x32), $expr));
+    // for_simd_types!(unsigned!(u8, 64, u8x64, u16, (u16x64), $expr));
     for_simd_types!(unsigned!(u16, 8, u16x8, u32, (u32x8), $expr));
     for_simd_types!(unsigned!(u16, 16, u16x16, u32, (u32x16), $expr));
     // for_simd_types!(unsigned!(u16, 32, u16x32, u32, (u32x32), $expr));

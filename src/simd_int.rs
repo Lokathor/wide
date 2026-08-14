@@ -22,6 +22,7 @@ macro_rules! impl_simd_int {
       UintSimd = $UintSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
+      BitmaskType = $BitmaskType:ty,
       [$($index:literal),* $(,)?],
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
@@ -108,7 +109,7 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
-      pub fn to_bitmask(self) -> u32 {
+      pub fn to_bitmask(self) -> $BitmaskType {
         self.cast_unsigned().to_bitmask()
       }
 
