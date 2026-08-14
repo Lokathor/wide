@@ -5,6 +5,12 @@
 * Added runtime-index shuffle functions. Previous functions `swizzle` and
   `swizzle_relaxed` have been deprecated. See
   [this issue](https://github.com/lokathor/wide/pull/317) for more information.
+* Added accelerated `u8x32` shift implementations. The vector-count variants
+  use `avx512bw`/`avx512vl` (`vpsllvw`/`vpsrlvw`) and the scalar-count `shr`
+  variants use `avx2`, with the scalar-count `shl` variants left to
+  auto-vectorization (it measures faster than the manual approach). See
+  [this issue](https://github.com/Lokathor/wide/issues/208) for more
+  information.
 * Fixed the `signum` documentation: the docs previously misstated the grammar
   and the set of inputs that map to `1.0`/`-1.0`. The behavior itself was
   already correct and matches [`f32::signum`].

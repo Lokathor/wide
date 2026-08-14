@@ -537,12 +537,15 @@ impl_simd_uint! {
 
   #[inline]
   fn shl(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `u16`
-    // or `u32` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    let [self_a, self_b]: [u8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
-    cast([self_a << rhs_a, self_b << rhs_b])
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        self.shift_each_u16(rhs.avx, false, false)
+      } else {
+        let [self_a, self_b]: [u8x16; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
+        cast([self_a << rhs_a, self_b << rhs_b])
+      }
+    }
   }
 
   #[inline]
@@ -556,21 +559,29 @@ impl_simd_uint! {
 
   #[inline]
   fn shr(self, rhs: Self) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting to `u16`
-    // or `u32` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    let [self_a, self_b]: [u8x16; 2] = cast(self);
-    let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
-    cast([self_a >> rhs_a, self_b >> rhs_b])
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        self.shift_each_u16(rhs.avx, true, false)
+      } else {
+        let [self_a, self_b]: [u8x16; 2] = cast(self);
+        let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
+        cast([self_a >> rhs_a, self_b >> rhs_b])
+      }
+    }
   }
 
   #[inline]
   fn shr(self, rhs: u32) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting
-    // to `u16` or `u32` then converting back after multiplication, but that
-    // may not actually be faster than auto-vectorization.
-    let [self_a, self_b]: [u8x16; 2] = cast(self);
-    cast([self_a >> rhs, self_b >> rhs])
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // Use `rhs % 8` to perform wrapping shift and not unbounded shift.
+        #[expect(clippy::suspicious_arithmetic_impl)]
+        self.shift_all_u16(m128i::from((rhs & 7) as u128), true)
+      } else {
+        let [self_a, self_b]: [u8x16; 2] = cast(self);
+        cast([self_a >> rhs, self_b >> rhs])
+      }
+    }
   }
 
   #[inline]
@@ -615,12 +626,15 @@ impl_simd_uint! {
 
   #[inline]
   pub fn unbounded_shl(self, rhs: Self) -> Self {
-    // For x86, this technically can be done explicitly by converting to `u16`
-    // or `u32` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
-    let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
-    cast([self_a.unbounded_shl(rhs_a), self_b.unbounded_shl(rhs_b)])
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        self.shift_each_u16(rhs.avx, false, true)
+      } else {
+        let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
+        cast([self_a.unbounded_shl(rhs_a), self_b.unbounded_shl(rhs_b)])
+      }
+    }
   }
 
   #[inline]
@@ -634,21 +648,32 @@ impl_simd_uint! {
 
   #[inline]
   pub fn unbounded_shr(self, rhs: Self) -> Self {
-    // For x86, this technically can be done explicitly by converting to `u16`
-    // or `u32` then converting back after multiplication, but that may not
-    // actually be faster than auto-vectorization.
-    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
-    let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
-    cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+    pick! {
+      if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
+        self.shift_each_u16(rhs.avx, true, true)
+      } else {
+        let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+        let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
+        cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
+      }
+    }
   }
 
   #[inline]
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
-    // For x86, this technically can be done explicitly by converting
-    // to `u16` or `u32` then converting back after multiplication, but that
-    // may not actually be faster than auto-vectorization.
-    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
-    cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `rhs >= 8` shifts out the whole byte.
+        if rhs < 8 {
+          self.shift_all_u16(m128i::from(rhs as u128), true)
+        } else {
+          Self::ZERO
+        }
+      } else {
+        let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+        cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
+      }
+    }
   }
 
   #[inline]
@@ -776,5 +801,58 @@ impl u8x32 {
   #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
   pub fn swizzle_relaxed(self, rhs: u8x32) -> u8x32 {
     self.shuffle(rhs)
+  }
+}
+
+#[cfg(target_feature="avx2")]
+impl u8x32 {
+  // There's no `u8` shift instruction, so we cheat: widen every byte to a
+  // `u16`, shift in the wider lane, then shrink back down to `u8`. Shifting
+  // left can push bits past `u8::MAX`, so we keep only the low 8 bits before
+  // the saturating pack (shifting right can't overflow, so the mask is a
+  // no-op there). For the unbounded variants we cap the count at 8, because
+  // shifting a byte by 8 or more gets rid of everything anyway.
+  #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))]
+  #[inline]
+  fn shift_each_u16(self, rhs: m256i, right: bool, unbounded: bool) -> Self {
+    let self16 = convert_to_i16_m512i_from_u8_m256i(self.avx);
+    let count16 = if unbounded {
+      convert_to_u16_m512i_from_u8_m256i(min_u8_m256i(rhs, set_splat_i8_m256i(8)))
+    } else {
+      bitand_m512i(convert_to_u16_m512i_from_u8_m256i(rhs), set_splat_i16_m512i(7))
+    };
+    let shifted = if right {
+      shr_each_u16_m512i(self16, count16)
+    } else {
+      shl_each_u16_m512i(self16, count16)
+    };
+    let shifted = bitand_m512i(shifted, set_splat_i16_m512i(0xFF));
+    Self { avx: Self::pack_u16_halves(extract_m256i_from_m512i::<0>(shifted), extract_m256i_from_m512i::<1>(shifted)) }
+  }
+
+  // Same trick as above, but every lane is shifted by the same `count` and we
+  // work on the two 128-bit halves separately (that's all AVX2 has).
+  #[inline]
+  fn shift_all_u16(self, count: m128i, right: bool) -> Self {
+    let low = convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<0>(self.avx));
+    let high = convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<1>(self.avx));
+    let low = if right { shr_all_u16_m256i(low, count) } else { shl_all_u16_m256i(low, count) };
+    let high = if right { shr_all_u16_m256i(high, count) } else { shl_all_u16_m256i(high, count) };
+    let low = bitand_m256i(low, set_splat_i16_m256i(0xFF));
+    let high = bitand_m256i(high, set_splat_i16_m256i(0xFF));
+    Self { avx: Self::pack_u16_halves(low, high) }
+  }
+
+  // `pack_i16_to_u8_m256i` packs 128 bits at a time, which scrambles the lane
+  // order. This un-scrambles it: split the packed result in half, interleave
+  // the 64-bit chunks back together, and reassemble.
+  #[inline]
+  fn pack_u16_halves(low: m256i, high: m256i) -> m256i {
+    let packed = pack_i16_to_u8_m256i(low, high);
+    let packed_low = extract_m128i_m256i::<0>(packed);
+    let packed_high = extract_m128i_m256i::<1>(packed);
+    let combined_low = unpack_low_i64_m128i(packed_low, packed_high);
+    let combined_high = unpack_high_i64_m128i(packed_low, packed_high);
+    insert_m128i_to_m256i::<1>(insert_m128i_to_m256i::<0>(zeroed_m256i(), combined_low), combined_high)
   }
 }
