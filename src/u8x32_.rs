@@ -550,11 +550,18 @@ impl_simd_uint! {
 
   #[inline]
   fn shl(self, rhs: u32) -> Self::Output {
-    // For x86, this technically can be done explicitly by converting
-    // to `u16` or `u32` then converting back after multiplication, but that
-    // may not actually be faster than auto-vectorization.
-    let [self_a, self_b]: [u8x16; 2] = cast(self);
-    cast([self_a << rhs, self_b << rhs])
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let values: u16x16 = cast(self);
+        let shift = rhs & 7;
+        let shifted = values << shift;
+        let crossed = u16x16::splat(!((0x00FFu16 << shift) & 0xFF00));
+        cast(shifted & crossed)
+      } else {
+        let [self_a, self_b]: [u8x16; 2] = cast(self);
+        cast([self_a << rhs, self_b << rhs])
+      }
+    }
   }
 
   #[inline]
@@ -574,9 +581,11 @@ impl_simd_uint! {
   fn shr(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        // Use `rhs % 8` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        self.shift_all_u16(m128i::from((rhs & 7) as u128), true)
+        let values: u16x16 = cast(self);
+        let shift = rhs & 7;
+        let shifted = values >> shift;
+        let crossed = u16x16::splat(!((0xFF00u16 >> shift) & 0x00FF));
+        cast(shifted & crossed)
       } else {
         let [self_a, self_b]: [u8x16; 2] = cast(self);
         cast([self_a >> rhs, self_b >> rhs])
@@ -639,11 +648,17 @@ impl_simd_uint! {
 
   #[inline]
   pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
-    // For x86, this technically can be done explicitly by converting
-    // to `u16` or `u32` then converting back after multiplication, but that
-    // may not actually be faster than auto-vectorization.
-    let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
-    cast([self_a.unbounded_shl_scalar(rhs), self_b.unbounded_shl_scalar(rhs)])
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let values: u16x16 = cast(self);
+        let shifted = values.unbounded_shl_scalar(rhs);
+        let crossed = u16x16::splat(!(0x00FFu16.wrapping_shl(rhs) & 0xFF00));
+        cast(shifted & crossed)
+      } else {
+        let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+        cast([self_a.unbounded_shl_scalar(rhs), self_b.unbounded_shl_scalar(rhs)])
+      }
+    }
   }
 
   #[inline]
@@ -663,12 +678,10 @@ impl_simd_uint! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        // `rhs >= 8` shifts out the whole byte.
-        if rhs < 8 {
-          self.shift_all_u16(m128i::from(rhs as u128), true)
-        } else {
-          Self::ZERO
-        }
+        let values: u16x16 = cast(self);
+        let shifted = values.unbounded_shr_scalar(rhs);
+        let crossed = u16x16::splat(!(0xFF00u16.wrapping_shr(rhs) & 0x00FF));
+        cast(shifted & crossed)
       } else {
         let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
         cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
@@ -843,32 +856,10 @@ impl u8x32 {
     }
   }
 
-  // Same trick as above, but every lane is shifted by the same `count` and we
-  // work on the two 128-bit halves separately (that's all AVX2 has).
-  #[inline]
-  fn shift_all_u16(self, count: m128i, right: bool) -> Self {
-    let low =
-      convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<0>(self.avx));
-    let high =
-      convert_to_i16_m256i_from_u8_m128i(extract_m128i_m256i::<1>(self.avx));
-    let low = if right {
-      shr_all_u16_m256i(low, count)
-    } else {
-      shl_all_u16_m256i(low, count)
-    };
-    let high = if right {
-      shr_all_u16_m256i(high, count)
-    } else {
-      shl_all_u16_m256i(high, count)
-    };
-    let low = bitand_m256i(low, set_splat_i16_m256i(0xFF));
-    let high = bitand_m256i(high, set_splat_i16_m256i(0xFF));
-    Self { avx: Self::pack_u16_halves(low, high) }
-  }
-
   // `pack_i16_to_u8_m256i` packs 128 bits at a time, which scrambles the lane
   // order. This un-scrambles it: split the packed result in half, interleave
   // the 64-bit chunks back together, and reassemble.
+  #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
   #[inline]
   fn pack_u16_halves(low: m256i, high: m256i) -> m256i {
     let packed = pack_i16_to_u8_m256i(low, high);

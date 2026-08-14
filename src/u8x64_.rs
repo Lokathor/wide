@@ -570,8 +570,18 @@ impl_simd_uint! {
 
   #[inline]
   fn shl(self, rhs: u32) -> Self::Output {
-    let [self_a, self_b]: [u8x32; 2] = cast(self);
-    cast([self_a << rhs, self_b << rhs])
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        let values: u16x32 = cast(self);
+        let shift = rhs & 7;
+        let shifted = values << shift;
+        let crossed = u16x32::splat(!((0x00FFu16 << shift) & 0xFF00));
+        cast(shifted & crossed)
+      } else {
+        let [self_a, self_b]: [u8x32; 2] = cast(self);
+        cast([self_a << rhs, self_b << rhs])
+      }
+    }
   }
 
   #[inline]
@@ -583,8 +593,18 @@ impl_simd_uint! {
 
   #[inline]
   fn shr(self, rhs: u32) -> Self::Output {
-    let [self_a, self_b]: [u8x32; 2] = cast(self);
-    cast([self_a >> rhs, self_b >> rhs])
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        let values: u16x32 = cast(self);
+        let shift = rhs & 7;
+        let shifted = values >> shift;
+        let crossed = u16x32::splat(!((0xFF00u16 >> shift) & 0x00FF));
+        cast(shifted & crossed)
+      } else {
+        let [self_a, self_b]: [u8x32; 2] = cast(self);
+        cast([self_a >> rhs, self_b >> rhs])
+      }
+    }
   }
 
   #[inline]
@@ -636,8 +656,17 @@ impl_simd_uint! {
 
   #[inline]
   pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
-    let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
-    cast([self_a.unbounded_shl_scalar(rhs), self_b.unbounded_shl_scalar(rhs)])
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        let values: u16x32 = cast(self);
+        let shifted = values.unbounded_shl_scalar(rhs);
+        let crossed = u16x32::splat(!(0x00FFu16.wrapping_shl(rhs) & 0xFF00));
+        cast(shifted & crossed)
+      } else {
+        let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
+        cast([self_a.unbounded_shl_scalar(rhs), self_b.unbounded_shl_scalar(rhs)])
+      }
+    }
   }
 
   #[inline]
@@ -649,8 +678,17 @@ impl_simd_uint! {
 
   #[inline]
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
-    let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
-    cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        let values: u16x32 = cast(self);
+        let shifted = values.unbounded_shr_scalar(rhs);
+        let crossed = u16x32::splat(!(0xFF00u16.wrapping_shr(rhs) & 0x00FF));
+        cast(shifted & crossed)
+      } else {
+        let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
+        cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
+      }
+    }
   }
 
   #[inline]

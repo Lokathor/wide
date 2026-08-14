@@ -958,26 +958,11 @@ impl_simd_uint! {
         // Mask `rhs` to 7 to match `wrapping_shl`.
         unsafe { Self { neon: vshlq_u8(self.neon, vmovq_n_s8(rhs as i8 & 7)) } }
       } else {
-        let self_array = self.to_array();
-
-        cast([
-          self_array[0].wrapping_shl(rhs),
-          self_array[1].wrapping_shl(rhs),
-          self_array[2].wrapping_shl(rhs),
-          self_array[3].wrapping_shl(rhs),
-          self_array[4].wrapping_shl(rhs),
-          self_array[5].wrapping_shl(rhs),
-          self_array[6].wrapping_shl(rhs),
-          self_array[7].wrapping_shl(rhs),
-          self_array[8].wrapping_shl(rhs),
-          self_array[9].wrapping_shl(rhs),
-          self_array[10].wrapping_shl(rhs),
-          self_array[11].wrapping_shl(rhs),
-          self_array[12].wrapping_shl(rhs),
-          self_array[13].wrapping_shl(rhs),
-          self_array[14].wrapping_shl(rhs),
-          self_array[15].wrapping_shl(rhs),
-        ])
+        let values: u16x8 = cast(self);
+        let shift = rhs & 7;
+        let shifted = values << shift;
+        let crossed = u16x8::splat(!((0x00FFu16 << shift) & 0xFF00));
+        cast(shifted & crossed)
       }
     }
   }
@@ -1035,26 +1020,11 @@ impl_simd_uint! {
         // there is no shift-right intrinsic.
         unsafe { Self { neon: vshlq_u8(self.neon, vmovq_n_s8(-(rhs as i8 & 7))) } }
       } else {
-        let self_array = self.to_array();
-
-        cast([
-          self_array[0].wrapping_shr(rhs),
-          self_array[1].wrapping_shr(rhs),
-          self_array[2].wrapping_shr(rhs),
-          self_array[3].wrapping_shr(rhs),
-          self_array[4].wrapping_shr(rhs),
-          self_array[5].wrapping_shr(rhs),
-          self_array[6].wrapping_shr(rhs),
-          self_array[7].wrapping_shr(rhs),
-          self_array[8].wrapping_shr(rhs),
-          self_array[9].wrapping_shr(rhs),
-          self_array[10].wrapping_shr(rhs),
-          self_array[11].wrapping_shr(rhs),
-          self_array[12].wrapping_shr(rhs),
-          self_array[13].wrapping_shr(rhs),
-          self_array[14].wrapping_shr(rhs),
-          self_array[15].wrapping_shr(rhs),
-        ])
+        let values: u16x8 = cast(self);
+        let shift = rhs & 7;
+        let shifted = values >> shift;
+        let crossed = u16x8::splat(!((0xFF00u16 >> shift) & 0x00FF));
+        cast(shifted & crossed)
       }
     }
   }
@@ -1286,26 +1256,10 @@ impl_simd_uint! {
         // The intrinsic has different semantics so we need to saturate `rhs`.
         unsafe { Self { neon: vshlq_u8(self.neon, vmovq_n_s8(rhs.min(i8::MAX as u32) as i8)) } }
       } else {
-        let self_array = self.to_array();
-
-        cast([
-          self_array[0].unbounded_shl(rhs),
-          self_array[1].unbounded_shl(rhs),
-          self_array[2].unbounded_shl(rhs),
-          self_array[3].unbounded_shl(rhs),
-          self_array[4].unbounded_shl(rhs),
-          self_array[5].unbounded_shl(rhs),
-          self_array[6].unbounded_shl(rhs),
-          self_array[7].unbounded_shl(rhs),
-          self_array[8].unbounded_shl(rhs),
-          self_array[9].unbounded_shl(rhs),
-          self_array[10].unbounded_shl(rhs),
-          self_array[11].unbounded_shl(rhs),
-          self_array[12].unbounded_shl(rhs),
-          self_array[13].unbounded_shl(rhs),
-          self_array[14].unbounded_shl(rhs),
-          self_array[15].unbounded_shl(rhs),
-        ])
+        let values: u16x8 = cast(self);
+        let shifted = values.unbounded_shl_scalar(rhs);
+        let crossed = u16x8::splat(!(0x00FFu16.wrapping_shl(rhs) & 0xFF00));
+        cast(shifted & crossed)
       }
     }
   }
@@ -1363,26 +1317,10 @@ impl_simd_uint! {
           Self { neon: vshlq_u8(self.neon, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)) }
         }
       } else {
-        let self_array = self.to_array();
-
-        cast([
-          self_array[0].unbounded_shr(rhs),
-          self_array[1].unbounded_shr(rhs),
-          self_array[2].unbounded_shr(rhs),
-          self_array[3].unbounded_shr(rhs),
-          self_array[4].unbounded_shr(rhs),
-          self_array[5].unbounded_shr(rhs),
-          self_array[6].unbounded_shr(rhs),
-          self_array[7].unbounded_shr(rhs),
-          self_array[8].unbounded_shr(rhs),
-          self_array[9].unbounded_shr(rhs),
-          self_array[10].unbounded_shr(rhs),
-          self_array[11].unbounded_shr(rhs),
-          self_array[12].unbounded_shr(rhs),
-          self_array[13].unbounded_shr(rhs),
-          self_array[14].unbounded_shr(rhs),
-          self_array[15].unbounded_shr(rhs),
-        ])
+        let values: u16x8 = cast(self);
+        let shifted = values.unbounded_shr_scalar(rhs);
+        let crossed = u16x8::splat(!(0xFF00u16.wrapping_shr(rhs) & 0x00FF));
+        cast(shifted & crossed)
       }
     }
   }
