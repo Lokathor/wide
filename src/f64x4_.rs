@@ -31,212 +31,16 @@ macro_rules! const_f64_as_f64x4 {
   };
 }
 
-impl_simd! {
-  unsafe {
-    T = f64,
-    N = 4,
-    Simd = f64x4,
-    optional_type_x86_inner { X86Inner = __m256d },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!( GreaterThanOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")]{
-        Self { avx: cmp_op_mask_m256d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self {
-          avx: bitor_m256d(
-            bitand_m256d(if_one.avx, self.avx),
-            bitandnot_m256d(self.avx, if_zero.avx),
-          ),
-        }
-      } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: blend_varying_m256d(if_false.avx, if_true.avx, self.avx) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) as u32
-      } else {
-        (self.b.to_bitmask() << 2) | self.a.to_bitmask()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) != 0
-      } else {
-        self.a.any() || self.b.any()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256d(self.avx) == 0b1111
-      } else {
-        self.a.all() && self.b.all()
-      }
-    }
-  }
-
-  ///
-  /// Currently this function is only accelerated on `avx`.
-  #[inline]
-  pub fn transpose(data: [f64x4; 4]) -> [f64x4; 4] {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // Can this be optimized?
-        let a = data[0].unpack_lo(data[2]);
-        let b = data[1].unpack_lo(data[3]);
-        let c = data[0].unpack_hi(data[2]);
-        let d = data[1].unpack_hi(data[3]);
-        [
-          a.unpack_lo(b),
-          a.unpack_hi(b),
-          c.unpack_lo(d),
-          c.unpack_hi(d),
-        ]
-      } else {
-        #[inline(always)]
-        fn transpose_column(data: &[f64x4; 4], index: usize) -> f64x4 {
-          f64x4::new([
-            data[0].as_array()[index],
-            data[1].as_array()[index],
-            data[2].as_array()[index],
-            data[3].as_array()[index],
-          ])
-        }
-
-        [
-          transpose_column(&data, 0),
-          transpose_column(&data, 1),
-          transpose_column(&data, 2),
-          transpose_column(&data, 3),
-        ]
-      }
-    }
-  }
-}
-
 impl_simd_float! {
   unsafe {
     T = f64,
     N = 4,
     Simd = f64x4,
-    UnsignedT = u64,
-    UnsignedSimd = u64x4,
+    UintT = u64,
+    UintSimd = u64x4,
+    optional_type_x86_inner { X86Inner = __m256d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
   }
   old_powf_simd_fn_name = pow_f64x4,
 
@@ -377,6 +181,90 @@ impl_simd_float! {
   }
 
   #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!( GreaterThanOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")]{
+        Self { avx: cmp_op_mask_m256d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> f64 {
     pick! {
       if #[cfg(target_feature="avx")] {
@@ -406,6 +294,110 @@ impl_simd_float! {
         get_f64_from_m128d_s(product)
       } else {
         self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self {
+          avx: bitor_m256d(
+            bitand_m256d(if_one.avx, self.avx),
+            bitandnot_m256d(self.avx, if_zero.avx),
+          ),
+        }
+      } else {
+        Self {
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: blend_varying_m256d(if_false.avx, if_true.avx, self.avx) }
+      } else {
+        Self {
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) as u32
+      } else {
+        (self.b.to_bitmask() << 2) | self.a.to_bitmask()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) != 0
+      } else {
+        self.a.any() || self.b.any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256d(self.avx) == 0b1111
+      } else {
+        self.a.all() && self.b.all()
+      }
+    }
+  }
+
+  ///
+  /// Currently this function is only accelerated on `avx`.
+  #[inline]
+  pub fn transpose(data: [f64x4; 4]) -> [f64x4; 4] {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // Can this be optimized?
+        let a = data[0].unpack_lo(data[2]);
+        let b = data[1].unpack_lo(data[3]);
+        let c = data[0].unpack_hi(data[2]);
+        let d = data[1].unpack_hi(data[3]);
+        [
+          a.unpack_lo(b),
+          a.unpack_hi(b),
+          c.unpack_lo(d),
+          c.unpack_hi(d),
+        ]
+      } else {
+        #[inline(always)]
+        fn transpose_column(data: &[f64x4; 4], index: usize) -> f64x4 {
+          f64x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
       }
     }
   }

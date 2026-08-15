@@ -24,14 +24,124 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_uint! {
   unsafe {
     T = u64,
     N = 8,
     Simd = u64x8,
+    IntSimd = i64x8,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    [0, 1, 2, 3, 4, 5, 6, 7],
     optional_type_x86_inner { X86Inner = __m512i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
+  }
+
+  #[inline]
+  fn not(self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512i(self.avx512, set_splat_i64_m512i(-1)) }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn add(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: add_i64_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.add(rhs.a),
+          b : self.b.add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: sub_i64_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.sub(rhs.a),
+          b : self.b.sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        let arr1: [u64; 8] = cast(self);
+        let arr2: [u64; 8] = cast(rhs);
+        cast([
+          arr1[0].wrapping_mul(arr2[0]),
+          arr1[1].wrapping_mul(arr2[1]),
+          arr1[2].wrapping_mul(arr2[2]),
+          arr1[3].wrapping_mul(arr2[3]),
+          arr1[4].wrapping_mul(arr2[4]),
+          arr1[5].wrapping_mul(arr2[5]),
+          arr1[6].wrapping_mul(arr2[6]),
+          arr1[7].wrapping_mul(arr2[7]),
+        ])
+      } else {
+        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitand_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+    if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitor_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: bitxor_m512i(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]
@@ -119,6 +229,19 @@ impl_simd! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> u64 {
+    let array: [u64x4; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+
+  #[inline]
+  pub fn reduce_mul(self) -> u64 {
+    let array: [u64x4; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -153,100 +276,70 @@ impl_simd! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i64x8::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512dq")] {
+        // use f64 move_mask since it is the same size as i64
+        movepi64_mask_m512d(cast(self.avx512)) as u32
+      } else {
+        f64x8::to_bitmask(cast(self))
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i64x8::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(cast(self.avx512)) != 0
+      } else {
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a | b).any()
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i64x8::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
+      } else {
+        let [a, b]: [i64x4; 2] = cast(self);
+        (a & b).all()
+      }
+    }
   }
 
   ///
   /// Currently this function is never accelerated.
   #[inline]
-  pub fn transpose(data: [u64x8; 8]) -> [u64x8; 8] {
-    cast(i64x8::transpose(cast(data)))
-  }
-}
+  pub fn transpose(data: [Self; 8]) -> [Self; 8] {
+    // Can this be optimized?
 
-impl_simd_uint! {
-  unsafe {
-    T = u64,
-    N = 8,
-    Simd = u64x8,
-    SignedSimd = i64x8,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1, 2, 3, 4, 5, 6, 7],
-  }
-
-  #[inline]
-  fn not(self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.avx512, set_splat_i64_m512i(-1)) }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
+    #[inline(always)]
+    fn transpose_column(data: &[u64x8; 8], index: usize) -> u64x8 {
+      u64x8::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+      ])
     }
-  }
 
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: add_i64_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: sub_i64_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        let arr1: [u64; 8] = cast(self);
-        let arr2: [u64; 8] = cast(rhs);
-        cast([
-          arr1[0].wrapping_mul(arr2[0]),
-          arr1[1].wrapping_mul(arr2[1]),
-          arr1[2].wrapping_mul(arr2[2]),
-          arr1[3].wrapping_mul(arr2[3]),
-          arr1[4].wrapping_mul(arr2[4]),
-          arr1[5].wrapping_mul(arr2[5]),
-          arr1[6].wrapping_mul(arr2[6]),
-          arr1[7].wrapping_mul(arr2[7]),
-        ])
-      } else {
-        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
-      }
-    }
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+    ]
   }
 
   #[inline]
@@ -316,48 +409,6 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitand_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitor_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -383,19 +434,6 @@ impl_simd_uint! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> u64 {
-    let array: [u64x4; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-
-  #[inline]
-  pub fn reduce_mul(self) -> u64 {
-    let array: [u64x4; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
   }
 
   #[inline]

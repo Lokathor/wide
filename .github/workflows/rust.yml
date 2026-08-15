@@ -98,30 +98,30 @@ jobs:
     - name: Add targets via Rustup
       run: rustup target add riscv64gc-unknown-linux-gnu arm-unknown-linux-gnueabihf armv7-unknown-linux-gnueabihf wasm32-unknown-unknown
 
-    - name: Check the crate 1
+    - name: Check the crate risc
       run: cargo check --target riscv64gc-unknown-linux-gnu
-    - name: Check the crate 2
+    - name: Check the crate arm any
       run: cargo check --target arm-unknown-linux-gnueabihf
-    - name: Check the crate 3
+    - name: Check the crate arm v7
       run: cargo check --target armv7-unknown-linux-gnueabihf
-    - name: Check the crate 4
+    - name: Check the crate wasm simd
       run: RUSTFLAGS="-Ctarget-feature=+simd128" cargo check --target=wasm32-unknown-unknown
+    - name: Check the crate (avx512f && !avx512dq)
+      run: RUSTFLAGS="-C target-cpu=x86-64 -C target-feature=+avx512f,+avx512bw,+avx512vl" cargo check
 
   avx512_emulated_test:
     runs-on: ${{ matrix.rust.os }}
     strategy:
       matrix:
         rust:
-          # Windows
-          - { target: x86_64-pc-windows-msvc, toolchain: 1.89.0,   os: windows-latest }
-          - { target: x86_64-pc-windows-msvc, toolchain: stable,   os: windows-latest }
-          - { target: x86_64-pc-windows-msvc, toolchain: beta,     os: windows-latest }
-          - { target: x86_64-pc-windows-msvc, toolchain: nightly,  os: windows-latest }
-          # Linux
-          - { target: x86_64-unknown-linux-gnu, toolchain: "1.89", os: ubuntu-latest }
-          - { target: x86_64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
-          - { target: x86_64-unknown-linux-gnu, toolchain: beta,   os: ubuntu-latest }
-          - { target: x86_64-unknown-linux-gnu, toolchain: nightly,os: ubuntu-latest }
+          # `wide` is a CPU-arch math library, so emulating the AVX-512 tests on
+          # a single OS is enough. See https://github.com/Lokathor/wide/issues/308
+          - { target: x86_64-unknown-linux-gnu, toolchain: "1.89",  os: ubuntu-latest }
+          - { target: x86_64-unknown-linux-gnu, toolchain: stable,  os: ubuntu-latest }
+          - { target: x86_64-unknown-linux-gnu, toolchain: beta,    os: ubuntu-latest }
+          - { target: x86_64-unknown-linux-gnu, toolchain: nightly, os: ubuntu-latest }
+    env:
+      RUSTFLAGS: "-C target-feature=+avx512f,+avx512dq,+avx512cd,+avx512bw,+avx512vl,+avx512vbmi"
     steps:
       - uses: actions/checkout@v3
 
@@ -133,128 +133,45 @@ jobs:
           profile:   minimal
           default:   true
 
-      # cache the downloaded SDE archive
+      # Cache the extracted Intel SDE so we don't re-download it on every run.
       - name: Cache Intel SDE
         id: cache-sde
         uses: actions/cache@v3
         with:
           path: sde-external-*
-          key: sde-${{ runner.os }}-${{ matrix.rust.target }}-9.58.0-2025-06-16
+          key: sde-linux-9.58.0-2025-06-16
 
-      - name: Set SDE path from cache (Linux)
-        if: runner.os == 'Linux' && steps.cache-sde.outputs.cache-hit == 'true'
-        shell: bash
+      - name: Install Intel SDE
+        if: steps.cache-sde.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
-          SDE_DIR=$(find . -maxdepth 1 -type d -name "sde-external-*")
-          if [ -z "$SDE_DIR" ]; then
-            echo "Error: SDE directory not found after cache restore"
-            exit 1
-          fi
-          echo "Found SDE directory: $SDE_DIR"
-          echo "$SDE_DIR" >> $GITHUB_PATH
-
-      - name: Set SDE path from cache (Windows)
-        if: runner.os == 'Windows' && steps.cache-sde.outputs.cache-hit == 'true'
-        shell: powershell
-        run: |
-          $SDE_DIR = Get-ChildItem -Directory | Where-Object Name -Like 'sde-external-*'
-          if (-not $SDE_DIR) {
-            Write-Error "Error: SDE directory not found after cache restore"
-            exit 1
-          }
-          Write-Host "Found SDE directory: $($SDE_DIR.FullName)"
-          # Add the extracted folder to PATH
-          "$($SDE_DIR.FullName)" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
-
-      # Linux: download & extract if cache miss
-      - name: Install Intel SDE (Linux)
-        if: runner.os == 'Linux' && steps.cache-sde.outputs.cache-hit != 'true'
-        run: |
           SDE_VERSION=9.58.0
           SDE_DATE=2025-06-16
           SDE_ID=859732
           SDE_FILENAME="sde-external-${SDE_VERSION}-${SDE_DATE}-lin.tar.xz"
-          for url in \
-            "https://downloadmirror.intel.com/${SDE_ID}/${SDE_FILENAME}" \
-            "https://software.intel.com/content/dam/develop/external/us/en/protected/${SDE_FILENAME}" \
-          ; do
-            if curl -fLO "$url"; then
-              tar xf "$SDE_FILENAME"
-              break
-            fi
-          done
-          SDE_DIR=$(find . -maxdepth 1 -type d -name "sde-external-*")
-          echo "SDE_DIR=$SDE_DIR" >> $GITHUB_ENV
-          echo "$SDE_DIR" >> $GITHUB_PATH
+          curl -fLO "https://downloadmirror.intel.com/${SDE_ID}/${SDE_FILENAME}"
+          tar xf "$SDE_FILENAME"
 
-      # Windows: download & extract if cache miss
-      - name: Install Intel SDE (Windows)
-        if: runner.os == 'Windows' && steps.cache-sde.outputs.cache-hit != 'true'
-        shell: bash
+      - name: Add Intel SDE to PATH and verify
         run: |
           set -euo pipefail
-
-          SDE_VERSION=9.58.0
-          SDE_DATE=2025-06-16
-          SDE_ID=859732
-          SDE_FILENAME="sde-external-${SDE_VERSION}-${SDE_DATE}-win.tar.xz"
-
-          echo "SDE_VERSION=$SDE_VERSION" >> $GITHUB_ENV
-          echo "SDE_DATE=$SDE_DATE" >> $GITHUB_ENV
-          echo "SDE_ID=$SDE_ID" >> $GITHUB_ENV
-          echo "SDE_FILENAME=$SDE_FILENAME" >> $GITHUB_ENV
-
-          for url in \
-            "https://downloadmirror.intel.com/${SDE_ID}/${SDE_FILENAME}" \
-            "https://software.intel.com/content/dam/develop/external/us/en/protected/${SDE_FILENAME}"; do
-            echo "Trying $url"
-            if curl -fLO "$url"; then
-              echo "Downloaded $SDE_FILENAME"
-              break
-            fi
-          done
-
-          # Extract
-          tar -xf "$SDE_FILENAME"
-          SDE_DIR=$(find . -type d -name "sde-external-*")
-          echo "$SDE_DIR" >> "$GITHUB_PATH"
-
-      - name: Validate Intel SDE installation
-        run: |
-          if [ "${RUNNER_OS}" = "Linux" ]; then
-            command -v sde64 || { echo "sde64 missing"; exit 1; }
-            sde64 --version | head -n1
-          else
-            powershell -Command "
-              if (!(Get-Command sde -ErrorAction SilentlyContinue)) {
-                throw 'sde.exe missing'
-              }
-              (sde --version)[0]
-            "
+          SDE_DIR=$(find "$PWD" -maxdepth 1 -type d -name "sde-external-*" | head -n1)
+          if [ -z "$SDE_DIR" ]; then
+            echo "Error: SDE directory not found"
+            exit 1
           fi
-        shell: bash
-
-      - name: Set RUSTFLAGS for AVX512
-        if: always()
-        run: |
-          echo "RUSTFLAGS=-C target-feature=+avx512f,+avx512dq,+avx512cd,+avx512bw,+avx512vl,+avx512vbmi" >> $GITHUB_ENV
-        shell: bash
+          echo "$SDE_DIR" >> "$GITHUB_PATH"
+          "$SDE_DIR/sde64" --version | head -n1
 
       - name: Build tests with AVX512
-        run: cargo test --target ${{ matrix.rust.target }} --no-run
+        run: cargo test --target ${{ matrix.rust.target }} --tests --no-run
 
+      # Cargo hands each test binary to the target runner, so we don't need to
+      # know where the artifacts live: SDE emulates a Sapphire Rapids CPU.
+      # `--tests` keeps the scope to the unit and integration test binaries
+      # (matching the previous behaviour) and skips doctests, which the old
+      # `--no-run` + manual-binary approach never ran.
       - name: Run tests under Intel SDE (Sapphire Rapids)
-        run: |
-          set -euo pipefail
-          # pick the right emulator executable
-          if [ "${RUNNER_OS}" = "Linux" ]; then
-            SDE_CMD="sde64 -spr"
-          else
-            SDE_CMD="sde -spr"
-          fi
-          find target/${{ matrix.rust.target }}/debug/deps -maxdepth 1 -type f \( -executable -o -iname '*.exe' \) | while read exe; do
-            echo "→ $exe"
-            $SDE_CMD -- "$exe"
-          done
-        shell: bash
+        env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: sde64 -spr --
+        run: cargo test --target ${{ matrix.rust.target }} --tests

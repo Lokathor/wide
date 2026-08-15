@@ -24,42 +24,18 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i64,
     N = 8,
     Simd = i64x8,
+    UintSimd = u64x8,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    [0, 1, 2, 3, 4, 5, 6, 7],
     optional_type_x86_inner { X86Inner = __m512i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Eq)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Ne)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
   }
 
   #[inline]
@@ -116,123 +92,6 @@ impl_simd! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self {
-          avx512: bitor_m512i(
-            bitand_m512i(if_one.avx512, self.avx512),
-            bitandnot_m512i(self.avx512, if_zero.avx512),
-          ),
-        }
-      } else {
-        Self {
-          a : self.a.bitselect(if_one.a, if_zero.a),
-          b : self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(if_false.avx512,if_true.avx512,movepi8_mask_m512i(self.avx512)) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
-  /// returns the bit mask for each high bit set in the vector with the lowest
-  /// lane being the lowest bit
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx512dq")] {
-        // use f64 move_mask since it is the same size as i64
-        movepi64_mask_m512d(cast(self.avx512)) as u32
-      } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 4)
-      }
-    }
-  }
-
-  /// true if any high bits are set for any value in the vector
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi64_mask_m512d(cast(self.avx512)) != 0
-      } else {
-        let [a, b]: [i64x4; 2] = cast(self);
-        (a | b).any()
-      }
-    }
-  }
-
-  /// true if all high bits are set for every value in the vector
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        movepi64_mask_m512d(cast(self.avx512)) == 0b11111111
-      } else {
-        let [a, b]: [i64x4; 2] = cast(self);
-        (a & b).all()
-      }
-    }
-  }
-
-  ///
-  /// Currently this function is never accelerated.
-  #[inline]
-  pub fn transpose(data: [i64x8; 8]) -> [i64x8; 8] {
-    // Can this be optimized?
-
-    #[inline(always)]
-    fn transpose_column(data: &[i64x8; 8], index: usize) -> i64x8 {
-      i64x8::new([
-        data[0].as_array()[index],
-        data[1].as_array()[index],
-        data[2].as_array()[index],
-        data[3].as_array()[index],
-        data[4].as_array()[index],
-        data[5].as_array()[index],
-        data[6].as_array()[index],
-        data[7].as_array()[index],
-      ])
-    }
-
-    [
-      transpose_column(&data, 0),
-      transpose_column(&data, 1),
-      transpose_column(&data, 2),
-      transpose_column(&data, 3),
-      transpose_column(&data, 4),
-      transpose_column(&data, 5),
-      transpose_column(&data, 6),
-      transpose_column(&data, 7),
-    ]
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i64,
-    N = 8,
-    Simd = i64x8,
-    UnsignedSimd = u64x8,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1, 2, 3, 4, 5, 6, 7],
   }
 
   #[inline]

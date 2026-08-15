@@ -24,14 +24,117 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_uint! {
   unsafe {
     T = u16,
     N = 16,
     Simd = u16x16,
+    IntSimd = i16x16,
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
+  }
+
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: self.avx2.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn add(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: add_i16_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.add(rhs.a),
+          b : self.b.add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: sub_i16_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.sub(rhs.a),
+          b : self.b.sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // non-widening multiplication is the same for unsigned and signed
+        Self { avx2: mul_i16_keep_low_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.mul(rhs.a),
+          b : self.b.mul(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]
@@ -116,6 +219,18 @@ impl_simd! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> u16 {
+    let array: [u16x8; 2] = cast(self);
+    (array[0] + array[1]).reduce_add()
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> u16 {
+    let array: [u16x8; 2] = cast(self);
+    (array[0] * array[1]).reduce_mul()
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -150,93 +265,84 @@ impl_simd! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i16x16::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+          let [a,b] = cast::<_,[m128i;2]>(self);
+          move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
+        } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i16x16::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i16x16::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
+      } else {
+        (self.a & self.b).all()
+      }
+    }
   }
 
   ///
   /// Currently this function is never accelerated.
   #[inline]
-  pub fn transpose(data: [u16x16; 16]) -> [u16x16; 16] {
-    cast(i16x16::transpose(cast(data)))
-  }
-}
+  pub fn transpose(data: [Self; 16]) -> [Self; 16] {
+    // Can this be optimized?
 
-impl_simd_uint! {
-  unsafe {
-    T = u16,
-    N = 16,
-    Simd = u16x16,
-    SignedSimd = i16x16,
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  }
-
-  #[inline]
-  fn not(self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
-      } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
-      }
+    #[inline(always)]
+    fn transpose_column(data: &[u16x16; 16], index: usize) -> u16x16 {
+      u16x16::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+        data[8].as_array()[index],
+        data[9].as_array()[index],
+        data[10].as_array()[index],
+        data[11].as_array()[index],
+        data[12].as_array()[index],
+        data[13].as_array()[index],
+        data[14].as_array()[index],
+        data[15].as_array()[index],
+      ])
     }
-  }
 
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_i16_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_i16_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // non-widening multiplication is the same for unsigned and signed
-        Self { avx2: mul_i16_keep_low_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.mul(rhs.a),
-          b : self.b.mul(rhs.b),
-        }
-      }
-    }
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+      transpose_column(&data, 8),
+      transpose_column(&data, 9),
+      transpose_column(&data, 10),
+      transpose_column(&data, 11),
+      transpose_column(&data, 12),
+      transpose_column(&data, 13),
+      transpose_column(&data, 14),
+      transpose_column(&data, 15),
+    ]
   }
 
   #[inline]
@@ -318,48 +424,6 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -385,18 +449,6 @@ impl_simd_uint! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> u16 {
-    let array: [u16x8; 2] = cast(self);
-    (array[0] + array[1]).reduce_add()
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> u16 {
-    let array: [u16x8; 2] = cast(self);
-    (array[0] * array[1]).reduce_mul()
   }
 
   #[inline]

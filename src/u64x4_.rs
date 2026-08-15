@@ -24,14 +24,120 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_uint! {
   unsafe {
     T = u64,
     N = 4,
     Simd = u64x4,
+    IntSimd = i64x4,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    [0, 1, 2, 3],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
+  }
+
+  #[inline]
+  fn not(self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: self.avx2.not()  }
+      } else {
+        Self {
+          a : self.a.not(),
+          b : self.b.not(),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn add(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: add_i64_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.add(rhs.a),
+          b : self.b.add(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: sub_i64_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.sub(rhs.a),
+          b : self.b.sub(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        let arr1: [i64; 4] = cast(self);
+        let arr2: [i64; 4] = cast(rhs);
+        cast([
+          arr1[0].wrapping_mul(arr2[0]),
+          arr1[1].wrapping_mul(arr2[1]),
+          arr1[2].wrapping_mul(arr2[2]),
+          arr1[3].wrapping_mul(arr2[3]),
+        ])
+      } else {
+        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitand(rhs.a),
+          b : self.b.bitand(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+    if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitor(rhs.a),
+          b : self.b.bitor(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
+      } else {
+        Self {
+          a : self.a.bitxor(rhs.a),
+          b : self.b.bitxor(rhs.b),
+        }
+      }
+    }
   }
 
   #[inline]
@@ -113,6 +219,34 @@ impl_simd! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> u64 {
+    pick! {
+      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
+        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
+        let xz_yw = add_i64_m256i(zwxx, self.avx2);
+        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
+        let sum = add_i64_m256i(xz_yw, yw_xz);
+        extract_i64_from_m256i::<0>(sum).cast_unsigned()
+      } else {
+        let array: [u64; 4] = cast(self);
+        array[0]
+          .wrapping_add(array[1])
+          .wrapping_add(array[2])
+          .wrapping_add(array[3])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> u64 {
+    let array: [u64; 4] = cast(self);
+    array[0]
+      .wrapping_mul(array[1])
+      .wrapping_mul(array[2])
+      .wrapping_mul(array[3])
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -147,94 +281,73 @@ impl_simd! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i64x4::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // use f64 move_mask since it is the same size as i64
+        move_mask_m256d(cast(self.avx2)) as u32
+      } else {
+        self.a.to_bitmask() | (self.b.to_bitmask() << 2)
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
-    i64x4::any(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256d(cast(self.avx2)) != 0
+      } else {
+        (self.a | self.b).any()
+      }
+    }
   }
 
   #[inline]
   pub fn all(self) -> bool {
-    i64x4::all(cast(self))
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        move_mask_m256d(cast(self.avx2)) == 0b1111
+      } else {
+        (self.a & self.b).all()
+      }
+    }
   }
 
   ///
   /// Currently this function is only accelerated on `avx2`.
   #[inline]
-  pub fn transpose(data: [u64x4; 4]) -> [u64x4; 4] {
-    cast(i64x4::transpose(cast(data)))
-  }
-}
-
-impl_simd_uint! {
-  unsafe {
-    T = u64,
-    N = 4,
-    Simd = u64x4,
-    SignedSimd = i64x4,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1, 2, 3],
-  }
-
-  #[inline]
-  fn not(self) -> Self {
+  pub fn transpose(data: [Self; 4]) -> [Self; 4] {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: self.avx2.not()  }
+        // Can this be optimized?
+        // TODO: Once unpack functions are added, remove these casts
+        let a = data[0].cast_signed().unpack_lo(data[2].cast_signed());
+        let b = data[1].cast_signed().unpack_lo(data[3].cast_signed());
+        let c = data[0].cast_signed().unpack_hi(data[2].cast_signed());
+        let d = data[1].cast_signed().unpack_hi(data[3].cast_signed());
+        [
+          a.unpack_lo(b).cast_unsigned(),
+          a.unpack_hi(b).cast_unsigned(),
+          c.unpack_lo(d).cast_unsigned(),
+          c.unpack_hi(d).cast_unsigned(),
+        ]
       } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
+        #[inline(always)]
+        fn transpose_column(data: &[u64x4; 4], index: usize) -> u64x4 {
+          u64x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
         }
-      }
-    }
-  }
 
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let arr1: [i64; 4] = cast(self);
-        let arr2: [i64; 4] = cast(rhs);
-        cast([
-          arr1[0].wrapping_mul(arr2[0]),
-          arr1[1].wrapping_mul(arr2[1]),
-          arr1[2].wrapping_mul(arr2[2]),
-          arr1[3].wrapping_mul(arr2[3]),
-        ])
-      } else {
-        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
       }
     }
   }
@@ -306,48 +419,6 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitand_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-    if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: bitxor_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     self.simd_gt(rhs).select(self, rhs)
   }
@@ -355,34 +426,6 @@ impl_simd_uint! {
   #[inline]
   pub fn min(self, rhs: Self) -> Self {
     self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> u64 {
-    pick! {
-      if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
-        let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.avx2);
-        let xz_yw = add_i64_m256i(zwxx, self.avx2);
-        let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
-        let sum = add_i64_m256i(xz_yw, yw_xz);
-        extract_i64_from_m256i::<0>(sum).cast_unsigned()
-      } else {
-        let array: [u64; 4] = cast(self);
-        array[0]
-          .wrapping_add(array[1])
-          .wrapping_add(array[2])
-          .wrapping_add(array[3])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> u64 {
-    let array: [u64; 4] = cast(self);
-    array[0]
-      .wrapping_mul(array[1])
-      .wrapping_mul(array[2])
-      .wrapping_mul(array[3])
   }
 
   #[inline]

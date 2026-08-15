@@ -24,42 +24,18 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i64,
     N = 4,
     Simd = i64x4,
+    UintSimd = u64x4,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    [0, 1, 2, 3],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_eq(rhs)
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
   }
 
   #[inline]
@@ -116,127 +92,6 @@ impl_simd! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self {
-          avx2: bitor_m256i(
-            bitand_m256i(if_one.avx2, self.avx2),
-            bitandnot_m256i(self.avx2, if_zero.avx2),
-          ),
-        }
-      } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: blend_varying_i8_m256i(if_false.avx2,if_true.avx2,self.avx2) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
-  /// returns the bit mask for each high bit set in the vector with the lowest
-  /// lane being the lowest bit
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m256d(cast(self.avx2)) as u32
-      } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 2)
-      }
-    }
-  }
-
-  /// true if any high bits are set for any value in the vector
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_m256d(cast(self.avx2)) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
-  }
-
-  /// true if all high bits are set for every value in the vector
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        move_mask_m256d(cast(self.avx2)) == 0b1111
-      } else {
-        (self.a & self.b).all()
-      }
-    }
-  }
-
-  ///
-  /// Currently this function is only accelerated on `avx2`.
-  #[inline]
-  pub fn transpose(data: [i64x4; 4]) -> [i64x4; 4] {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // Can this be optimized?
-        let a = data[0].unpack_lo(data[2]);
-        let b = data[1].unpack_lo(data[3]);
-        let c = data[0].unpack_hi(data[2]);
-        let d = data[1].unpack_hi(data[3]);
-        [
-          a.unpack_lo(b),
-          a.unpack_hi(b),
-          c.unpack_lo(d),
-          c.unpack_hi(d),
-        ]
-      } else {
-        #[inline(always)]
-        fn transpose_column(data: &[i64x4; 4], index: usize) -> i64x4 {
-          i64x4::new([
-            data[0].as_array()[index],
-            data[1].as_array()[index],
-            data[2].as_array()[index],
-            data[3].as_array()[index],
-          ])
-        }
-
-        [
-          transpose_column(&data, 0),
-          transpose_column(&data, 1),
-          transpose_column(&data, 2),
-          transpose_column(&data, 3),
-        ]
-      }
-    }
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i64,
-    N = 4,
-    Simd = i64x4,
-    UnsignedSimd = u64x4,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1, 2, 3],
   }
 
   #[inline]

@@ -31,206 +31,16 @@ macro_rules! const_f64_as_f64x8 {
   };
 }
 
-impl_simd! {
-  unsafe {
-    T = f64,
-    N = 8,
-    Simd = f64x8,
-    optional_type_x86_inner { X86Inner = __m512d },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx512, rhs.avx512) }
-      } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self {
-          avx512: bitor_m512d(
-            bitand_m512d(if_one.avx512, self.avx512),
-            bitandnot_m512d(self.avx512, if_zero.avx512),
-          ),
-        }
-      } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_m512d(if_false.avx512, if_true.avx512, movepi64_mask_m512d(self.avx512)) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi64_mask_m512d(self.avx512) as u32
-      } else {
-        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi64_mask_m512d(self.avx512) != 0
-      } else {
-        self.a.any() || self.b.any()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        movepi64_mask_m512d(self.avx512) == 0b11111111
-      } else {
-        self.a.all() && self.b.all()
-      }
-    }
-  }
-
-  ///
-  /// Currently this function is never accelerated.
-  #[inline]
-  pub fn transpose(data: [f64x8; 8]) -> [f64x8; 8] {
-    // Can this be optimized?
-
-    #[inline(always)]
-    fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
-      f64x8::new([
-        data[0].as_array()[index],
-        data[1].as_array()[index],
-        data[2].as_array()[index],
-        data[3].as_array()[index],
-        data[4].as_array()[index],
-        data[5].as_array()[index],
-        data[6].as_array()[index],
-        data[7].as_array()[index],
-      ])
-    }
-
-    [
-      transpose_column(&data, 0),
-      transpose_column(&data, 1),
-      transpose_column(&data, 2),
-      transpose_column(&data, 3),
-      transpose_column(&data, 4),
-      transpose_column(&data, 5),
-      transpose_column(&data, 6),
-      transpose_column(&data, 7),
-    ]
-  }
-}
-
 impl_simd_float! {
   unsafe {
     T = f64,
     N = 8,
     Simd = f64x8,
-    UnsignedT = u64,
-    UnsignedSimd = u64x8,
+    UintT = u64,
+    UintSimd = u64x8,
+    optional_type_x86_inner { X86Inner = __m512d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
   }
   old_powf_simd_fn_name = pow_f64x8,
 
@@ -369,6 +179,90 @@ impl_simd_float! {
   }
 
   #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.avx512, rhs.avx512) }
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> f64 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
@@ -405,6 +299,104 @@ impl_simd_float! {
         self.a.reduce_mul() * self.b.reduce_mul()
       }
     }
+  }
+
+  #[inline]
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self {
+          avx512: bitor_m512d(
+            bitand_m512d(if_one.avx512, self.avx512),
+            bitandnot_m512d(self.avx512, if_zero.avx512),
+          ),
+        }
+      } else {
+        Self {
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: blend_varying_m512d(if_false.avx512, if_true.avx512, movepi64_mask_m512d(self.avx512)) }
+      } else {
+        Self {
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(self.avx512) as u32
+      } else {
+        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(self.avx512) != 0
+      } else {
+        self.a.any() || self.b.any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        movepi64_mask_m512d(self.avx512) == 0b11111111
+      } else {
+        self.a.all() && self.b.all()
+      }
+    }
+  }
+
+  ///
+  /// Currently this function is never accelerated.
+  #[inline]
+  pub fn transpose(data: [f64x8; 8]) -> [f64x8; 8] {
+    // Can this be optimized?
+
+    #[inline(always)]
+    fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
+      f64x8::new([
+        data[0].as_array()[index],
+        data[1].as_array()[index],
+        data[2].as_array()[index],
+        data[3].as_array()[index],
+        data[4].as_array()[index],
+        data[5].as_array()[index],
+        data[6].as_array()[index],
+        data[7].as_array()[index],
+      ])
+    }
+
+    [
+      transpose_column(&data, 0),
+      transpose_column(&data, 1),
+      transpose_column(&data, 2),
+      transpose_column(&data, 3),
+      transpose_column(&data, 4),
+      transpose_column(&data, 5),
+      transpose_column(&data, 6),
+      transpose_column(&data, 7),
+    ]
   }
 
   #[inline]
@@ -654,9 +646,10 @@ impl_simd_float! {
         let cast: i64x8 = cast(m512i(unsafe { _mm512_cvtpd_epi64(non_nan.avx512.0) }));
         flip_to_max ^ cast
       } else {
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.round_int(),
-          self.b.round_int(),
+          a.round_int(),
+          b.round_int(),
         ])
       }
     }
@@ -674,9 +667,11 @@ impl_simd_float! {
         // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
         cast(m512i(unsafe { _mm512_cvtpd_epi64(self.avx512.0) }))
       } else {
+
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.fast_round_int(),
-          self.b.fast_round_int(),
+          a.fast_round_int(),
+          b.fast_round_int(),
         ])
       }
     }
@@ -728,9 +723,10 @@ impl_simd_float! {
         let cast: i64x8 = cast(m512i(unsafe { _mm512_cvttpd_epi64(non_nan.avx512.0) }));
         flip_to_max ^ cast
       } else {
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.trunc_int(),
-          self.b.trunc_int(),
+          a.trunc_int(),
+          b.trunc_int(),
         ])
       }
     }
@@ -748,9 +744,10 @@ impl_simd_float! {
         // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
         cast(m512i(unsafe { _mm512_cvttpd_epi64(self.avx512.0) }))
       } else {
+        let [a,b]: [f64x4;2] = cast(self);
         cast([
-          self.a.fast_trunc_int(),
-          self.b.fast_trunc_int(),
+          a.fast_trunc_int(),
+          b.fast_trunc_int(),
         ])
       }
     }

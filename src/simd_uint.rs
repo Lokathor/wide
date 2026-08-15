@@ -1,3 +1,11 @@
+/// Emits functionality shared by all SIMD unsigned-integer types.
+///
+/// Functions that need a separate implementation for each type (for
+/// performance) use `$fn_{name}:item` syntax, and functions that have one
+/// shared implementation for all uints are written out normally inside this
+/// macro.
+///
+/// This macro also invokes `impl_simd`.
 macro_rules! impl_simd_uint {
   (
     // SAFETY: The contents of this macro assume that:
@@ -6,31 +14,50 @@ macro_rules! impl_simd_uint {
     // - `Pod` can be implemented for `Simd`
     // - `size_of::<Simd>()` is `size_of::<T>() * N`
     // - `align_of::<Simd>()` is `size_of::<Simd>()`
+    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      SignedSimd = $SignedSimd:ident,
+      IntSimd = $IntSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
+      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
+      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
+      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
 
+    // General SIMD functions
     $fn_not:item
     $fn_add:item
     $fn_sub:item
     $fn_mul:item
+    $fn_bitand:item
+    $fn_bitor:item
+    $fn_bitxor:item
+    $fn_simd_eq:item
+    $fn_simd_ne:item
+    $fn_simd_lt:item
+    $fn_simd_gt:item
+    $fn_simd_le:item
+    $fn_simd_ge:item
+    $fn_reduce_add:item
+    $fn_reduce_mul:item
+    $fn_bitselect:item
+    $fn_select:item
+    $fn_to_bitmask:item
+    $fn_any:item
+    $fn_all:item
+    $fn_transpose:item
+
+    // Uint-specific functions
     $fn_shl_unsigned_simd:item
     $fn_shl_u32:item
     $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
-    $fn_bitand:item
-    $fn_bitor:item
-    $fn_bitxor:item
     $fn_max:item
     $fn_min:item
-    $fn_reduce_add:item
-    $fn_reduce_mul:item
     $fn_reduce_max:item
     $fn_reduce_min:item
     $fn_unbounded_shl:item
@@ -44,6 +71,45 @@ macro_rules! impl_simd_uint {
     $fn_mul_keep_low_high:item
     $fn_mul_keep_high:item
   ) => {
+    impl_simd!(
+      unsafe {
+        T = $T,
+        N = $N,
+        Simd = $Simd,
+        optional_type_x86_inner { $(X86Inner = $X86Inner)? },
+        optional_type_arm_inner { $(ArmInner = $ArmInner)? },
+        optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
+      }
+
+      $fn_simd_eq
+
+      $fn_simd_ne
+
+      $fn_simd_lt
+
+      $fn_simd_gt
+
+      $fn_simd_le
+
+      $fn_simd_ge
+
+      $fn_reduce_add
+
+      $fn_reduce_mul
+
+      $fn_bitselect
+
+      $fn_select
+
+      $fn_to_bitmask
+
+      $fn_any
+
+      $fn_all
+
+      $fn_transpose
+    );
+
     impl_unary_operator!(
       $Simd,
       Neg,
@@ -147,7 +213,7 @@ macro_rules! impl_simd_uint {
       $T,
       $Simd,
       $Simd,
-      $SignedSimd,
+      $IntSimd,
       Shl,
       shl,
       ShlAssign,
@@ -189,7 +255,7 @@ macro_rules! impl_simd_uint {
       $T,
       $Simd,
       $Simd,
-      $SignedSimd,
+      $IntSimd,
       Shr,
       shr,
       ShrAssign,
@@ -347,18 +413,6 @@ macro_rules! impl_simd_uint {
         self.max(min).min(max)
       }
 
-      /// Reducing addition. Returns the sum of the vector's elements.
-      ///
-      /// Equivalent to `self[0] + self[1] + ...`.
-      #[must_use]
-      $fn_reduce_add
-
-      /// Reducing multiplication. Returns the product of the vector's elements.
-      ///
-      /// Equivalent to `self[0] * self[1] * ...`.
-      #[must_use]
-      $fn_reduce_mul
-
       /// Reducing maximum. Returns the maximum of the vector's elements.
       ///
       /// Equivalent to `self[0].max(self[1].max(...))`.
@@ -375,10 +429,10 @@ macro_rules! impl_simd_uint {
       /// the same size.
       #[inline]
       #[must_use]
-      pub const fn cast_signed(self) -> $SignedSimd {
+      pub const fn cast_signed(self) -> $IntSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $IntSimd>(self) }
       }
 
       /// Shifts left each element of `self` by the corresponding element of

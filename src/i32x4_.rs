@@ -78,54 +78,18 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i32,
     N = 4,
     Simd = i32x4,
+    UintSimd = u32x4,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    [0, 1, 2, 3],
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = int32x4_t },
     optional_type_wasm_inner { WasmInner = v128 },
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_eq_mask_i32_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i32x4_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s32_u32(vceqq_s32(self.neon, rhs.neon)) }}
-      } else {
-        Self { arr: [
-          if self.arr[0] == rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] == rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] == rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] == rhs.arr[3] { -1 } else { 0 },
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        !self.simd_eq(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i32x4_ne(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_eq(rhs)
-      } else {
-        Self { arr: [
-          if self.arr[0] != rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] != rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] != rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] != rhs.arr[3] { -1 } else { 0 },
-        ]}
-      }
-    }
   }
 
   #[inline]
@@ -206,163 +170,6 @@ impl_simd! {
         ]}
       }
     }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.sse, self.sse),
-            bitandnot_m128i(self.sse, if_zero.sse),
-          ),
-        }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_s32(vreinterpretq_u32_s32(self.neon), if_one.neon, if_zero.neon) }}
-      } else {
-        generic_bit_blend(self, if_one, if_zero)
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_s32(vreinterpretq_u32_s32(self.neon), if_true.neon, if_false.neon) }}
-      } else {
-        generic_bit_blend(self, if_true, if_false)
-      }
-    }
-  }
-
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // use f32 move_mask since it is the same size as i32
-        move_mask_m128(cast(self.sse)) as u32
-      } else if #[cfg(target_feature="simd128")] {
-        u32x4_bitmask(self.simd) as u32
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe
-        {
-          // set all to 1 if top bit is set, else 0
-          let masked = vcltq_s32(self.neon, vdupq_n_s32(0));
-
-          // select the right bit out of each lane
-          let selectbit : uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
-          let r = vandq_u32(masked, selectbit);
-
-          // horizontally add the 32-bit lanes
-          vaddvq_u32(r) as u32
-         }
-      } else {
-        ((self.arr[0] < 0) as u32) |
-        ((self.arr[1] < 0) as u32) << 1 |
-        ((self.arr[2] < 0) as u32) << 2 |
-        ((self.arr[3] < 0) as u32) << 3
-      }
-    }
-  }
-
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // use f32 move_mask since it is the same size as i32
-        move_mask_m128(cast(self.sse)) != 0
-      } else if #[cfg(target_feature="simd128")] {
-        u32x4_bitmask(self.simd) != 0
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        // some lanes are negative
-        unsafe {
-          vminvq_s32(self.neon) < 0
-        }
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] | v[1]) & 0x8000000080000000) != 0
-      }
-    }
-  }
-
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // use f32 move_mask since it is the same size as i32
-        move_mask_m128(cast(self.sse)) == 0b1111
-      } else if #[cfg(target_feature="simd128")] {
-        u32x4_bitmask(self.simd) == 0b1111
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // all lanes are negative
-        unsafe {
-          vmaxvq_s32(self.neon) < 0
-        }
-      } else {
-        let v : [u64;2] = cast(self);
-        (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
-      }
-    }
-  }
-
-  ///
-  /// Currently this function is only accelerated on `sse`.
-  #[inline]
-  pub fn transpose(data: [i32x4; 4]) -> [i32x4; 4] {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        let mut e0 = data[0];
-        let mut e1 = data[1];
-        let mut e2 = data[2];
-        let mut e3 = data[3];
-
-        transpose_four_m128(
-          cast_mut(&mut e0.sse),
-          cast_mut(&mut e1.sse),
-          cast_mut(&mut e2.sse),
-          cast_mut(&mut e3.sse),
-        );
-
-        [e0, e1, e2, e3]
-      } else {
-        #[inline(always)]
-        fn transpose_column(data: &[i32x4; 4], index: usize) -> i32x4 {
-          i32x4::new([
-            data[0].as_array()[index],
-            data[1].as_array()[index],
-            data[2].as_array()[index],
-            data[3].as_array()[index],
-          ])
-        }
-
-        [
-          transpose_column(&data, 0),
-          transpose_column(&data, 1),
-          transpose_column(&data, 2),
-          transpose_column(&data, 3),
-        ]
-      }
-    }
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i32,
-    N = 4,
-    Simd = i32x4,
-    UnsignedSimd = u32x4,
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    [0, 1, 2, 3],
   }
 
   #[inline]

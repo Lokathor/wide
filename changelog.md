@@ -2,13 +2,33 @@
 
 ## Unreleased
 
-- Reverted a compile time optimization that triggered a compiler bug. See
-  [this issue](https://github.com/Lokathor/wide/issues/303) for more
+* Added accelerated `u8x32` shift implementations. The vector-count variants
+  use `avx512bw`/`avx512vl` (`vpsllvw`/`vpsrlvw`) and the scalar-count `shr`
+  variants use `avx2`, with the scalar-count `shl` variants left to
+  auto-vectorization (it measures faster than the manual approach). See
+  [this issue](https://github.com/Lokathor/wide/issues/208) for more
   information.
-- Added `add_mul_lo` and `add_mul_hi` for `u32xN` and `u64xN`: a fused
+* Added `from_ne_bytes` and `to_ne_bytes` to all SIMD vector types. See
+  [this issue](https://github.com/Lokathor/wide/issues/144) for more
+  information.
+* Fixed the `signum` documentation: the docs previously misstated the grammar
+  and the set of inputs that map to `1.0`/`-1.0`. The behavior itself was
+  already correct and matches [`f32::signum`].
+* Optimized float `signum`. This changes the bit-patterns of returned NaNs.
+* Optimized `copysign`.
+* Added `add_mul_lo` and `add_mul_hi` for `u32xN` and `u64xN`: a fused
   multiply-add over the low `W` bits of each lane, keeping the low or high half
   of the product. `u64xN` uses `vpmadd52lo/hi` on AVX-512-IFMA when `W == 52`.
-- Added `unpack_lo` and `unpack_hi` for `u32xN` and `u64xN`.
+* Added `unpack_lo` and `unpack_hi` for `u32xN` and `u64xN`.
+
+## 1.6.1
+
+* Reverted a compile time optimization that triggered a compiler bug. See
+  [this issue](https://github.com/Lokathor/wide/issues/303) for more
+  information.
+* Fixed code path errors that resulted when `avx512f` was enabled without
+  `avx512dq`, which is a valid potential build. CI checks have been added for
+  this combination to prevent recurrence.
 
 ## 1.6.0
 

@@ -24,42 +24,18 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i16,
     N = 16,
     Simd = i16x16,
+    UintSimd = u16x16,
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_eq_mask_i16_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        !self.simd_eq(rhs)
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
   }
 
   #[inline]
@@ -116,133 +92,6 @@ impl_simd! {
         }
       }
     }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self {
-          avx2: bitor_m256i(
-            bitand_m256i(if_one.avx2, self.avx2),
-            bitandnot_m256i(self.avx2, if_zero.avx2),
-          ),
-        }
-      } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: blend_varying_i8_m256i(if_false.avx2, if_true.avx2, self.avx2) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-          let [a,b] = cast::<_,[m128i;2]>(self);
-          move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
-        } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 8)
-      }
-    }
-  }
-
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) != 0
-      } else {
-        (self.a | self.b).any()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        ((move_mask_i8_m256i(self.avx2) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
-      } else {
-        (self.a & self.b).all()
-      }
-    }
-  }
-
-  ///
-  /// Currently this function is never accelerated.
-  #[inline]
-  pub fn transpose(data: [i16x16; 16]) -> [i16x16; 16] {
-    // Can this be optimized?
-
-    #[inline(always)]
-    fn transpose_column(data: &[i16x16; 16], index: usize) -> i16x16 {
-      i16x16::new([
-        data[0].as_array()[index],
-        data[1].as_array()[index],
-        data[2].as_array()[index],
-        data[3].as_array()[index],
-        data[4].as_array()[index],
-        data[5].as_array()[index],
-        data[6].as_array()[index],
-        data[7].as_array()[index],
-        data[8].as_array()[index],
-        data[9].as_array()[index],
-        data[10].as_array()[index],
-        data[11].as_array()[index],
-        data[12].as_array()[index],
-        data[13].as_array()[index],
-        data[14].as_array()[index],
-        data[15].as_array()[index],
-      ])
-    }
-
-    [
-      transpose_column(&data, 0),
-      transpose_column(&data, 1),
-      transpose_column(&data, 2),
-      transpose_column(&data, 3),
-      transpose_column(&data, 4),
-      transpose_column(&data, 5),
-      transpose_column(&data, 6),
-      transpose_column(&data, 7),
-      transpose_column(&data, 8),
-      transpose_column(&data, 9),
-      transpose_column(&data, 10),
-      transpose_column(&data, 11),
-      transpose_column(&data, 12),
-      transpose_column(&data, 13),
-      transpose_column(&data, 14),
-      transpose_column(&data, 15),
-    ]
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i16,
-    N = 16,
-    Simd = i16x16,
-    UnsignedSimd = u16x16,
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
   }
 
   #[inline]

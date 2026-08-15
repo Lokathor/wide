@@ -2799,6 +2799,52 @@ fn test_to_array() {
 }
 
 #[test]
+fn test_ne_bytes() {
+  // `to_ne_bytes` returns the raw memory representation of the vector,
+  // matching the primitive scalar `to_ne_bytes` per element, and
+  // `from_ne_bytes` is its inverse. Both hold on little-endian and
+  // big-endian targets.
+  for_simd_types!(|T: Float, N| {
+    for value in simd_chunks!([
+      1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
+      14.0, 15.0, 16.0,
+    ])
+    .chain(random_iter())
+    {
+      let simd = Simd::new(value);
+      let bytes = simd.to_ne_bytes();
+      assert_eq!(Simd::from_ne_bytes(bytes).to_ne_bytes(), bytes);
+
+      let expected: [u8; size_of::<Simd>()] = value
+        .into_iter()
+        .flat_map(T::to_ne_bytes)
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap();
+      assert_eq!(bytes, expected);
+    }
+  });
+  for_simd_types!(|T: Integer, N| {
+    for value in
+      simd_chunks!([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,])
+        .chain(random_iter())
+    {
+      let simd = Simd::new(value);
+      let bytes = simd.to_ne_bytes();
+      assert_eq!(Simd::from_ne_bytes(bytes).to_ne_bytes(), bytes);
+
+      let expected: [u8; size_of::<Simd>()] = value
+        .into_iter()
+        .flat_map(T::to_ne_bytes)
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap();
+      assert_eq!(bytes, expected);
+    }
+  });
+}
+
+#[test]
 fn test_as_array() {
   for_simd_types!(|T, N| {
     let array = std::array::from_fn(|i| i as T);

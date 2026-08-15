@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_cast)]
+
 use wide::{
   f32x4, f32x8, f32x16, i8x16, i8x32, i16x8, i16x16, i32x4, i32x8, i32x16,
   u8x16, u8x32, u16x8,
@@ -1234,8 +1236,8 @@ fn test_i8x32_swizzle_relaxed() {
   let table_arr: [i8; 32] = core::array::from_fn(|i| (i as i8) + 1);
   let table = i8x32::new(table_arr);
   let cases: [[i8; 32]; 3] = [
-    core::array::from_fn(|i| i as i8),               // identity
-    core::array::from_fn(|i| 31 - i as i8),          // reverse
+    core::array::from_fn(|i| i as i8), // identity
+    core::array::from_fn(|i| 31 - i as i8), // reverse
     core::array::from_fn(|i| ((i + 16) % 32) as i8), // cross-half
   ];
   for idx_arr in cases {
@@ -1266,7 +1268,8 @@ fn test_u8x32_swizzle() {
 
   // relaxed: in-range only, must match table lookup
   let rev: [u8; 32] = core::array::from_fn(|i| 31 - i as u8);
-  let rev_expected: [u8; 32] = core::array::from_fn(|i| table_arr[(31 - i) as usize]);
+  let rev_expected: [u8; 32] =
+    core::array::from_fn(|i| table_arr[(31 - i) as usize]);
   assert_eq!(table.swizzle_relaxed(u8x32::new(rev)), u8x32::new(rev_expected));
 }
 

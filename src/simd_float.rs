@@ -1,3 +1,11 @@
+/// Emits functionality shared by all SIMD float types.
+///
+/// Functions that need a separate implementation for each type (for
+/// performance) use `$fn_{name}:item` syntax, and functions that have one
+/// shared implementation for all floats are written out normally inside this
+/// macro.
+///
+/// This macro also invokes `impl_simd`.
 macro_rules! impl_simd_float {
   (
     // SAFETY: The contents of this macro assume that:
@@ -6,15 +14,20 @@ macro_rules! impl_simd_float {
     // - `Pod` can be implemented for `Simd`
     // - `size_of::<Simd>()` is `size_of::<T>() * N`
     // - `align_of::<Simd>()` is `size_of::<Simd>()`
+    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      UnsignedT = $UnsignedT:ident,
-      UnsignedSimd = $UnsignedSimd:ident,
+      UintT = $UintT:ident,
+      UintSimd = $UintSimd:ident,
+      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
+      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
+      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
     }
     old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
 
+    // General SIMD functions
     $fn_neg:item
     $fn_not:item
     $fn_add:item
@@ -25,8 +38,22 @@ macro_rules! impl_simd_float {
     $fn_bitand:item
     $fn_bitor:item
     $fn_bitxor:item
+    $fn_simd_eq:item
+    $fn_simd_ne:item
+    $fn_simd_lt:item
+    $fn_simd_gt:item
+    $fn_simd_le:item
+    $fn_simd_ge:item
     $fn_reduce_add:item
     $fn_reduce_mul:item
+    $fn_bitselect:item
+    $fn_select:item
+    $fn_to_bitmask:item
+    $fn_any:item
+    $fn_all:item
+    $fn_transpose:item
+
+    // Float-specific functions
     $fn_is_nan:item
     $fn_is_inf:item
     $fn_is_finite:item
@@ -72,6 +99,57 @@ macro_rules! impl_simd_float {
     $fn_cosh:item
     $fn_tanh:item
   ) => {
+    impl_simd!(
+      unsafe {
+        T = $T,
+        N = $N,
+        Simd = $Simd,
+        optional_type_x86_inner { $(X86Inner = $X86Inner)? },
+        optional_type_arm_inner { $(ArmInner = $ArmInner)? },
+        optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
+      }
+
+      $fn_simd_eq
+
+      $fn_simd_ne
+
+      $fn_simd_lt
+
+      $fn_simd_gt
+
+      $fn_simd_le
+
+      $fn_simd_ge
+
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of addition is non-deterministic. This means it varies by
+      /// platform, version, and can even differ within the same execution from
+      /// one invocation to the next.
+      $fn_reduce_add
+
+      ///
+      /// # Unspecified precision
+      ///
+      /// The order of multiplication is non-deterministic. This means it varies
+      /// by platform, version, and can even differ within the same execution
+      /// from one invocation to the next.
+      $fn_reduce_mul
+
+      $fn_bitselect
+
+      $fn_select
+
+      $fn_to_bitmask
+
+      $fn_any
+
+      $fn_all
+
+      $fn_transpose
+    );
+
     impl_unary_operator!(
       $Simd,
       Neg,
@@ -330,7 +408,7 @@ macro_rules! impl_simd_float {
               if i > 0 {
                 write!(f, ", ")?;
               }
-              <$UnsignedT as $Trait>::fmt(&x.to_bits(), f)?;
+              <$UintT as $Trait>::fmt(&x.to_bits(), f)?;
             }
             write!(f, ")")
           }
@@ -472,30 +550,6 @@ macro_rules! impl_simd_float {
       ///
       #[doc = concat!("[the full circle constant (τ)]: core::", stringify!($T), "::consts::TAU")]
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
-
-      /// Reducing addition. Returns the sum of the vector's elements.
-      ///
-      /// Equivalent to `self[0] + self[1] + ...`.
-      ///
-      /// # Unspecified precision
-      ///
-      /// The order of addition is non-deterministic. This means it varies by
-      /// platform, version, and can even differ within the same execution from
-      /// one invocation to the next.
-      #[must_use]
-      $fn_reduce_add
-
-      /// Reducing multiplication. Returns the product of the vector's elements.
-      ///
-      /// Equivalent to `self[0] * self[1] * ...`.
-      ///
-      /// # Unspecified precision
-      ///
-      /// The order of multiplication is non-deterministic. This means it varies
-      /// by platform, version, and can even differ within the same execution
-      /// from one invocation to the next.
-      #[must_use]
-      $fn_reduce_mul
 
       /// Returns a [mask] that checks if each element is NaN.
       ///
@@ -668,10 +722,10 @@ macro_rules! impl_simd_float {
       /// numeric value.
       #[inline]
       #[must_use]
-      pub const fn to_bits(self) -> $UnsignedSimd {
+      pub const fn to_bits(self) -> $UintSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $UintSimd>(self) }
       }
 
       /// Raw transmutation from unsigned integer vector.
@@ -680,10 +734,10 @@ macro_rules! impl_simd_float {
       /// numeric value.
       #[inline]
       #[must_use]
-      pub const fn from_bits(bits: $UnsignedSimd) -> Self {
+      pub const fn from_bits(bits: $UintSimd) -> Self {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
+        unsafe { core::mem::transmute::<$UintSimd, $Simd>(bits) }
       }
 
       /// Restrict a value to a certain interval unless it is NaN.
@@ -720,17 +774,19 @@ macro_rules! impl_simd_float {
       #[must_use]
       $fn_abs
 
-      /// Returns numbers that represents the signs of each element.
+      /// Returns numbers representing the sign of each element.
       ///
-      /// - `1.0` if the element is positive, `+0.0` or `INFINITY`
-      /// - `-1.0` if the element is negative, `-0.0` or `NEG_INFINITY`
+      /// - `1.0` if the element is positive, `+0.0`, or `INFINITY`
+      /// - `-1.0` if the element is negative, `-0.0`, or `NEG_INFINITY`
       /// - NaN if the element is NaN
+      ///
+      /// This matches the behavior of [`f32::signum`].
+      ///
+      /// [`f32::signum`]: https://doc.rust-lang.org/std/primitive.f32.html#method.signum
       #[inline]
       #[must_use]
       pub fn signum(self) -> Self {
-        let result = Self::ONE | self & -Self::ZERO;
-
-        self.is_nan().select(self, result)
+        Self::ONE | self & -Self::ZERO | self.is_nan()
       }
 
       /// Returns numbers composed of the magnitudes of `self` and the signs of
@@ -742,8 +798,7 @@ macro_rules! impl_simd_float {
       #[inline]
       #[must_use]
       pub fn copysign(self, sign: Self) -> Self {
-        let magnitude_mask = Self::from($T::from_bits($UnsignedT::MAX >> 1));
-        (self & magnitude_mask) | (sign & Self::from(-0.0))
+        Self::splat(-0.0).bitselect(sign, self)
       }
 
       /// Flips the sign of `self` based on the sign of `sign`.

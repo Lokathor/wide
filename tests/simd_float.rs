@@ -63,7 +63,7 @@ fn test_signum() {
       let actual = Simd::new(value).signum();
 
       assert!(
-        actual ^ expected == Simd::ZERO,
+        (actual.simd_eq(expected) | actual.is_nan() & expected.is_nan()).all(),
         "expected: {expected:?}\n  actual: {actual:?}",
       );
     }

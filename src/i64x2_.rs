@@ -80,54 +80,18 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_int! {
   unsafe {
     T = i64,
     N = 2,
     Simd = i64x2,
+    UintSimd = u64x2,
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    [0, 1],
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = int64x2_t },
     optional_type_wasm_inner { WasmInner = v128 },
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: cmp_eq_mask_i64_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_eq(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s64_u64(vceqq_s64(self.neon, rhs.neon)) }}
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] == r[0] { -1_i64 } else { 0 },
-          if s[1] == r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_eq(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_ne(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_eq(rhs)
-      } else {
-        let s: [i64;2] = cast(self);
-        let r: [i64;2] = cast(rhs);
-        cast([
-          if s[0] != r[0] { -1_i64 } else { 0 },
-          if s[1] != r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
   }
 
   #[inline]
@@ -209,121 +173,6 @@ impl_simd! {
         ])
       }
     }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.sse, self.sse),
-            bitandnot_m128i(self.sse, if_zero.sse),
-          ),
-        }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_s64(vreinterpretq_u64_s64(self.neon), if_one.neon, if_zero.neon) }}
-      } else {
-        generic_bit_blend(self, if_one, if_zero)
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_s64(vreinterpretq_u64_s64(self.neon), if_true.neon, if_false.neon) }}
-      } else {
-        generic_bit_blend(self, if_true, if_false)
-      }
-    }
-  }
-
-  /// returns the bit mask for each high bit set in the vector with the lowest
-  /// lane being the lowest bit
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m128d(cast(self.sse)) as u32
-      } else if #[cfg(target_feature="simd128")] {
-        i64x2_bitmask(self.simd) as u32
-      } else {
-        // nothing amazingly efficient for neon
-        let arr: [u64; 2] = cast(self);
-        (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as u32
-      }
-    }
-  }
-
-  /// true if any high bits are set for any value in the vector
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m128d(cast(self.sse)) != 0
-      } else if #[cfg(target_feature="simd128")] {
-        i64x2_bitmask(self.simd) != 0
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] | v[1]) & 0x8000000000000000) != 0
-      }
-    }
-  }
-
-  /// true if all high bits are set for every value in the vector
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m128d(cast(self.sse)) == 0b11
-      }  else if #[cfg(target_feature="simd128")] {
-        i64x2_bitmask(self.simd) == 0b11
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
-      }
-    }
-  }
-
-  ///
-  /// This function is accelerated on multiple target architectures.
-  #[inline]
-  pub fn transpose(data: [i64x2; 2]) -> [i64x2; 2] {
-    pick! {
-      if #[cfg(any(
-        target_feature="sse2",
-        all(target_feature="neon",target_arch="aarch64"),
-        target_feature="simd128",
-      ))] {
-        [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
-      } else {
-        let [x, y, z, w]: [i64; 4] = cast(data);
-        cast([x, z, y, w])
-      }
-    }
-  }
-}
-
-impl_simd_int! {
-  unsafe {
-    T = i64,
-    N = 2,
-    Simd = i64x2,
-    UnsignedSimd = u64x2,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1],
   }
 
   #[inline]

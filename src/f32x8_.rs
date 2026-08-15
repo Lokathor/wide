@@ -31,248 +31,16 @@ macro_rules! const_f32_as_f32x8 {
   };
 }
 
-impl_simd! {
-  unsafe {
-    T = f32,
-    N = 8,
-    Simd = f32x8,
-    optional_type_x86_inner { X86Inner = __m256 },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self {
-          avx: bitor_m256(
-            bitand_m256(if_one.avx, self.avx),
-            bitandnot_m256(self.avx, if_zero.avx),
-          ),
-        }
-      } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        Self { avx: blend_varying_m256(if_false.avx, if_true.avx, self.avx) }
-      } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
-      }
-    }
-  }
-
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256(self.avx) as u32
-      } else {
-        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256(self.avx) != 0
-      } else {
-        self.a.any() || self.b.any()
-      }
-    }
-  }
-
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        move_mask_m256(self.avx) == 0b11111111
-      } else {
-        self.a.all() && self.b.all()
-      }
-    }
-  }
-
-  ///
-  /// Currently this function is only accelerated on `avx`.
-  #[inline]
-  pub fn transpose(data: [f32x8; 8]) -> [f32x8; 8] {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        let a0 = unpack_lo_m256(data[0].avx, data[1].avx);
-        let a1 = unpack_hi_m256(data[0].avx, data[1].avx);
-        let a2 = unpack_lo_m256(data[2].avx, data[3].avx);
-        let a3 = unpack_hi_m256(data[2].avx, data[3].avx);
-        let a4 = unpack_lo_m256(data[4].avx, data[5].avx);
-        let a5 = unpack_hi_m256(data[4].avx, data[5].avx);
-        let a6 = unpack_lo_m256(data[6].avx, data[7].avx);
-        let a7 = unpack_hi_m256(data[6].avx, data[7].avx);
-
-        pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
-          (z << 6) | (y << 4) | (x << 2) | w
-        }
-
-        const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
-        const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
-
-        // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
-        // (since blend runs on a different port than shuffle)
-        let b0 = shuffle_m256::<SHUFF_LO>(a0,a2);
-        let b1 = shuffle_m256::<SHUFF_HI>(a0,a2);
-        let b2 = shuffle_m256::<SHUFF_LO>(a1,a3);
-        let b3 = shuffle_m256::<SHUFF_HI>(a1,a3);
-        let b4 = shuffle_m256::<SHUFF_LO>(a4,a6);
-        let b5 = shuffle_m256::<SHUFF_HI>(a4,a6);
-        let b6 = shuffle_m256::<SHUFF_LO>(a5,a7);
-        let b7 = shuffle_m256::<SHUFF_HI>(a5,a7);
-
-        [
-          f32x8 { avx: permute2z_m256::<0x20>(b0, b4) },
-          f32x8 { avx: permute2z_m256::<0x20>(b1, b5) },
-          f32x8 { avx: permute2z_m256::<0x20>(b2, b6) },
-          f32x8 { avx: permute2z_m256::<0x20>(b3, b7) },
-          f32x8 { avx: permute2z_m256::<0x31>(b0, b4) },
-          f32x8 { avx: permute2z_m256::<0x31>(b1, b5) },
-          f32x8 { avx: permute2z_m256::<0x31>(b2, b6) },
-          f32x8 { avx: permute2z_m256::<0x31>(b3, b7) }
-        ]
-      } else {
-        // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
-
-        #[inline(always)]
-        fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
-          f32x8::new([
-            data[0].as_array()[index],
-            data[1].as_array()[index],
-            data[2].as_array()[index],
-            data[3].as_array()[index],
-            data[4].as_array()[index],
-            data[5].as_array()[index],
-            data[6].as_array()[index],
-            data[7].as_array()[index],
-          ])
-        }
-
-        [
-          transpose_column(&data, 0),
-          transpose_column(&data, 1),
-          transpose_column(&data, 2),
-          transpose_column(&data, 3),
-          transpose_column(&data, 4),
-          transpose_column(&data, 5),
-          transpose_column(&data, 6),
-          transpose_column(&data, 7),
-        ]
-      }
-    }
-  }
-}
-
 impl_simd_float! {
   unsafe {
     T = f32,
     N = 8,
     Simd = f32x8,
-    UnsignedT = u32,
-    UnsignedSimd = u32x8,
+    UintT = u32,
+    UintSimd = u32x8,
+    optional_type_x86_inner { X86Inner = __m256 },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
   }
   old_powf_simd_fn_name = pow_f32x8,
 
@@ -417,6 +185,90 @@ impl_simd_float! {
   }
 
   #[inline]
+  fn simd_eq(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_eq(rhs.a),
+          b : self.b.simd_eq(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ne(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_ne(rhs.a),
+          b : self.b.simd_ne(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.avx, rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> f32 {
     pick! {
       // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
@@ -454,6 +306,146 @@ impl_simd_float! {
         get_f32_from_m128_s(product)
       } else {
         self.a.reduce_mul() * self.b.reduce_mul()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self {
+          avx: bitor_m256(
+            bitand_m256(if_one.avx, self.avx),
+            bitandnot_m256(self.avx, if_zero.avx),
+          ),
+        }
+      } else {
+        Self {
+          a: self.a.bitselect(if_one.a, if_zero.a),
+          b: self.b.bitselect(if_one.b, if_zero.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        Self { avx: blend_varying_m256(if_false.avx, if_true.avx, self.avx) }
+      } else {
+        Self {
+          a : self.a.select(if_true.a, if_false.a),
+          b : self.b.select(if_true.b, if_false.b),
+        }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn to_bitmask(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256(self.avx) as u32
+      } else {
+        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn any(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256(self.avx) != 0
+      } else {
+        self.a.any() || self.b.any()
+      }
+    }
+  }
+
+  #[inline]
+  pub fn all(self) -> bool {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        move_mask_m256(self.avx) == 0b11111111
+      } else {
+        self.a.all() && self.b.all()
+      }
+    }
+  }
+
+  ///
+  /// Currently this function is only accelerated on `avx`.
+  #[inline]
+  pub fn transpose(data: [f32x8; 8]) -> [f32x8; 8] {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        let a0 = unpack_lo_m256(data[0].avx, data[1].avx);
+        let a1 = unpack_hi_m256(data[0].avx, data[1].avx);
+        let a2 = unpack_lo_m256(data[2].avx, data[3].avx);
+        let a3 = unpack_hi_m256(data[2].avx, data[3].avx);
+        let a4 = unpack_lo_m256(data[4].avx, data[5].avx);
+        let a5 = unpack_hi_m256(data[4].avx, data[5].avx);
+        let a6 = unpack_lo_m256(data[6].avx, data[7].avx);
+        let a7 = unpack_hi_m256(data[6].avx, data[7].avx);
+
+        pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
+          (z << 6) | (y << 4) | (x << 2) | w
+        }
+
+        const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
+        const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
+
+        // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
+        // (since blend runs on a different port than shuffle)
+        let b0 = shuffle_m256::<SHUFF_LO>(a0,a2);
+        let b1 = shuffle_m256::<SHUFF_HI>(a0,a2);
+        let b2 = shuffle_m256::<SHUFF_LO>(a1,a3);
+        let b3 = shuffle_m256::<SHUFF_HI>(a1,a3);
+        let b4 = shuffle_m256::<SHUFF_LO>(a4,a6);
+        let b5 = shuffle_m256::<SHUFF_HI>(a4,a6);
+        let b6 = shuffle_m256::<SHUFF_LO>(a5,a7);
+        let b7 = shuffle_m256::<SHUFF_HI>(a5,a7);
+
+        [
+          f32x8 { avx: permute2z_m256::<0x20>(b0, b4) },
+          f32x8 { avx: permute2z_m256::<0x20>(b1, b5) },
+          f32x8 { avx: permute2z_m256::<0x20>(b2, b6) },
+          f32x8 { avx: permute2z_m256::<0x20>(b3, b7) },
+          f32x8 { avx: permute2z_m256::<0x31>(b0, b4) },
+          f32x8 { avx: permute2z_m256::<0x31>(b1, b5) },
+          f32x8 { avx: permute2z_m256::<0x31>(b2, b6) },
+          f32x8 { avx: permute2z_m256::<0x31>(b3, b7) }
+        ]
+      } else {
+        // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
+
+        #[inline(always)]
+        fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
+          f32x8::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+            data[4].as_array()[index],
+            data[5].as_array()[index],
+            data[6].as_array()[index],
+            data[7].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+          transpose_column(&data, 4),
+          transpose_column(&data, 5),
+          transpose_column(&data, 6),
+          transpose_column(&data, 7),
+        ]
       }
     }
   }

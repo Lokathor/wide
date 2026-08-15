@@ -78,14 +78,145 @@ pick! {
   }
 }
 
-impl_simd! {
+impl_simd_uint! {
   unsafe {
     T = u32,
     N = 4,
     Simd = u32x4,
+    IntSimd = i32x4,
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    [0, 1, 2, 3],
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = uint32x4_t },
     optional_type_wasm_inner { WasmInner = v128 },
+  }
+
+  #[inline]
+  fn not(self) -> Self::Output {
+    self ^ cast::<u128, u32x4>(u128::MAX)
+  }
+
+  #[inline]
+  fn add(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: add_i32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_add(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vaddq_u32(self.neon, rhs.neon) } }
+      } else {
+        Self { arr: [
+          self.arr[0].wrapping_add(rhs.arr[0]),
+          self.arr[1].wrapping_add(rhs.arr[1]),
+          self.arr[2].wrapping_add(rhs.arr[2]),
+          self.arr[3].wrapping_add(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn sub(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: sub_i32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_sub(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vsubq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].wrapping_sub(rhs.arr[0]),
+          self.arr[1].wrapping_sub(rhs.arr[1]),
+          self.arr[2].wrapping_sub(rhs.arr[2]),
+          self.arr[3].wrapping_sub(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        Self { sse: mul_32_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: u32x4_mul(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vmulq_u32(self.neon, rhs.neon) }}
+      } else {
+        let arr1: [u32; 4] = cast(self);
+        let arr2: [u32; 4] = cast(rhs);
+        cast([
+          arr1[0].wrapping_mul(arr2[0]),
+          arr1[1].wrapping_mul(arr2[1]),
+          arr1[2].wrapping_mul(arr2[2]),
+          arr1[3].wrapping_mul(arr2[3]),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn bitand(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitand_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_and(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vandq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitand(rhs.arr[0]),
+          self.arr[1].bitand(rhs.arr[1]),
+          self.arr[2].bitand(rhs.arr[2]),
+          self.arr[3].bitand(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn bitor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_or(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vorrq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitor(rhs.arr[0]),
+          self.arr[1].bitor(rhs.arr[1]),
+          self.arr[2].bitor(rhs.arr[2]),
+          self.arr[3].bitor(rhs.arr[3]),
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  fn bitxor(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: v128_xor(self.simd, rhs.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: veorq_u32(self.neon, rhs.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0].bitxor(rhs.arr[0]),
+          self.arr[1].bitxor(rhs.arr[1]),
+          self.arr[2].bitxor(rhs.arr[2]),
+          self.arr[3].bitxor(rhs.arr[3]),
+        ]}
+      }
+    }
   }
 
   #[inline]
@@ -197,6 +328,53 @@ impl_simd! {
   }
 
   #[inline]
+  pub fn reduce_add(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        let hi64  = unpack_high_i64_m128i(self.sse, self.sse);
+        let sum64 = add_i32_m128i(hi64, self.sse);
+        let hi32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(sum64);    // Swap the low two elements
+        let sum32 = add_i32_m128i(sum64, hi32);
+        get_i32_from_m128i_s(sum32).cast_unsigned()
+      } else {
+        let arr: [u32; 4] = cast(self);
+        arr[0].wrapping_add(arr[1]).wrapping_add(
+        arr[2].wrapping_add(arr[3]))
+      }
+    }
+  }
+
+  #[inline]
+  pub fn reduce_mul(self) -> u32 {
+    pick! {
+      if #[cfg(target_feature="sse4.1")] {
+        let high_64  = unpack_high_i64_m128i(self.sse, self.sse);
+        let reduce_64 = mul_32_m128i(high_64, self.sse);
+        let high_32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(reduce_64);
+        let reduce_32 = mul_32_m128i(reduce_64, high_32);
+        get_i32_from_m128i_s(reduce_32).cast_unsigned()
+      } else if #[cfg(target_feature="simd128")] {
+        let high_64 = u64x2_shuffle::<1, 0>(self.simd, self.simd);
+        let reduce_64 = u32x4_mul(self.simd, high_64);
+        let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
+        let reduce_32 = u32x4_mul(reduce_64, high_32);
+        u32x4_extract_lane::<0>(reduce_32)
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        unsafe {
+          let high_64 = vextq_u32::<2>(self.neon, self.neon);
+          let reduce_64 = vmulq_u32(self.neon, high_64);
+          let high_32 = vrev64q_u32(reduce_64);
+          let reduce_32 = vmulq_u32(reduce_64, high_32);
+          vgetq_lane_u32::<0>(reduce_32)
+        }
+      } else {
+        let array = self.to_array();
+        array[0].wrapping_mul(array[1]).wrapping_mul(array[2].wrapping_mul(array[3]))
+      }
+    }
+  }
+
+  #[inline]
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -233,16 +411,47 @@ impl_simd! {
 
   #[inline]
   pub fn to_bitmask(self) -> u32 {
-    i32x4::to_bitmask(cast(self))
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m128(cast(self.sse)) as u32
+      } else if #[cfg(target_feature="simd128")] {
+        u32x4_bitmask(self.simd) as u32
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe
+        {
+          // set all to 1 if top bit is set, else 0
+          let masked = vcltq_s32(self.cast_signed().neon, vdupq_n_s32(0));
+
+          // select the right bit out of each lane
+          let selectbit : uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
+          let r = vandq_u32(masked, selectbit);
+
+          // horizontally add the 32-bit lanes
+          vaddvq_u32(r) as u32
+         }
+      } else {
+        ((self.arr[0] < 0) as u32) |
+        ((self.arr[1] < 0) as u32) << 1 |
+        ((self.arr[2] < 0) as u32) << 2 |
+        ((self.arr[3] < 0) as u32) << 3
+      }
+    }
   }
 
   #[inline]
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) != 0
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m128(cast(self.sse)) != 0
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) != 0
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        // some lanes are negative
+        unsafe {
+          vminvq_s32(self.cast_signed().neon) < 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         ((v[0] | v[1]) & 0x8000000080000000) != 0
@@ -254,9 +463,15 @@ impl_simd! {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1000100010001000) == 0b1000100010001000
+        // use f32 move_mask since it is the same size as i32
+        move_mask_m128(cast(self.sse)) == 0b1111
       } else if #[cfg(target_feature="simd128")] {
         u32x4_bitmask(self.simd) == 0b1111
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        // all lanes are negative
+        unsafe {
+          vmaxvq_s32(self.cast_signed().neon) < 0
+        }
       } else {
         let v : [u64;2] = cast(self);
         (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
@@ -267,85 +482,39 @@ impl_simd! {
   ///
   /// Currently this function is only accelerated on `sse`.
   #[inline]
-  pub fn transpose(data: [u32x4; 4]) -> [u32x4; 4] {
-    cast(i32x4::transpose(cast(data)))
-  }
-}
-
-impl_simd_uint! {
-  unsafe {
-    T = u32,
-    N = 4,
-    Simd = u32x4,
-    SignedSimd = i32x4,
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    [0, 1, 2, 3],
-  }
-
-  #[inline]
-  fn not(self) -> Self::Output {
-    self ^ cast::<u128, u32x4>(u128::MAX)
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
+  pub fn transpose(data: [Self; 4]) -> [Self; 4] {
     pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: add_i32_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_add(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vaddq_u32(self.neon, rhs.neon) } }
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_add(rhs.arr[0]),
-          self.arr[1].wrapping_add(rhs.arr[1]),
-          self.arr[2].wrapping_add(rhs.arr[2]),
-          self.arr[3].wrapping_add(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
+      if #[cfg(target_feature="sse")] {
+        let mut e0 = data[0];
+        let mut e1 = data[1];
+        let mut e2 = data[2];
+        let mut e3 = data[3];
 
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: sub_i32_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_sub(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vsubq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].wrapping_sub(rhs.arr[0]),
-          self.arr[1].wrapping_sub(rhs.arr[1]),
-          self.arr[2].wrapping_sub(rhs.arr[2]),
-          self.arr[3].wrapping_sub(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
+        transpose_four_m128(
+          cast_mut(&mut e0.sse),
+          cast_mut(&mut e1.sse),
+          cast_mut(&mut e2.sse),
+          cast_mut(&mut e3.sse),
+        );
 
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self { sse: mul_32_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_mul(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmulq_u32(self.neon, rhs.neon) }}
+        [e0, e1, e2, e3]
       } else {
-        let arr1: [u32; 4] = cast(self);
-        let arr2: [u32; 4] = cast(rhs);
-        cast([
-          arr1[0].wrapping_mul(arr2[0]),
-          arr1[1].wrapping_mul(arr2[1]),
-          arr1[2].wrapping_mul(arr2[2]),
-          arr1[3].wrapping_mul(arr2[3]),
-        ])
+        #[inline(always)]
+        fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
+          u32x4::new([
+            data[0].as_array()[index],
+            data[1].as_array()[index],
+            data[2].as_array()[index],
+            data[3].as_array()[index],
+          ])
+        }
+
+        [
+          transpose_column(&data, 0),
+          transpose_column(&data, 1),
+          transpose_column(&data, 2),
+          transpose_column(&data, 3),
+        ]
       }
     }
   }
@@ -454,66 +623,6 @@ impl_simd_uint! {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitand_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_and(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vandq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitand(rhs.arr[0]),
-          self.arr[1].bitand(rhs.arr[1]),
-          self.arr[2].bitand(rhs.arr[2]),
-          self.arr[3].bitand(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_or(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vorrq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitor(rhs.arr[0]),
-          self.arr[1].bitor(rhs.arr[1]),
-          self.arr[2].bitor(rhs.arr[2]),
-          self.arr[3].bitor(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_xor(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: veorq_u32(self.neon, rhs.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0].bitxor(rhs.arr[0]),
-          self.arr[1].bitxor(rhs.arr[1]),
-          self.arr[2].bitxor(rhs.arr[2]),
-          self.arr[3].bitxor(rhs.arr[3]),
-        ]}
-      }
-    }
-  }
-
-  #[inline]
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
@@ -555,53 +664,6 @@ impl_simd_uint! {
           arr[2].min(rhs[2]),
           arr[3].min(rhs[3]),
         ])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        let hi64  = unpack_high_i64_m128i(self.sse, self.sse);
-        let sum64 = add_i32_m128i(hi64, self.sse);
-        let hi32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(sum64);    // Swap the low two elements
-        let sum32 = add_i32_m128i(sum64, hi32);
-        get_i32_from_m128i_s(sum32).cast_unsigned()
-      } else {
-        let arr: [u32; 4] = cast(self);
-        arr[0].wrapping_add(arr[1]).wrapping_add(
-        arr[2].wrapping_add(arr[3]))
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_mul(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        let high_64  = unpack_high_i64_m128i(self.sse, self.sse);
-        let reduce_64 = mul_32_m128i(high_64, self.sse);
-        let high_32  = shuffle_ai_f32_all_m128i::<0b10_11_00_01>(reduce_64);
-        let reduce_32 = mul_32_m128i(reduce_64, high_32);
-        get_i32_from_m128i_s(reduce_32).cast_unsigned()
-      } else if #[cfg(target_feature="simd128")] {
-        let high_64 = u64x2_shuffle::<1, 0>(self.simd, self.simd);
-        let reduce_64 = u32x4_mul(self.simd, high_64);
-        let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
-        let reduce_32 = u32x4_mul(reduce_64, high_32);
-        u32x4_extract_lane::<0>(reduce_32)
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          let high_64 = vextq_u32::<2>(self.neon, self.neon);
-          let reduce_64 = vmulq_u32(self.neon, high_64);
-          let high_32 = vrev64q_u32(reduce_64);
-          let reduce_32 = vmulq_u32(reduce_64, high_32);
-          vgetq_lane_u32::<0>(reduce_32)
-        }
-      } else {
-        let array = self.to_array();
-        array[0].wrapping_mul(array[1]).wrapping_mul(array[2].wrapping_mul(array[3]))
       }
     }
   }
