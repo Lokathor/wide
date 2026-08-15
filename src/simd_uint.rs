@@ -23,6 +23,7 @@ macro_rules! impl_simd_uint {
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
+      ShuffleNExt = $ShuffleNExt:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
@@ -50,15 +51,19 @@ macro_rules! impl_simd_uint {
     $fn_any:item
     $fn_all:item
     $fn_shuffle:item
+    $fn_shuffle_consts:item
     $fn_shuffle_zeroing:item
     $fn_shuffle_wrapping:item
     $fn_shuffle_2:item
+    $fn_shuffle_consts_2:item
     $fn_shuffle_zeroing_2:item
     $fn_shuffle_wrapping_2:item
     $fn_shuffle_3:item
+    $fn_shuffle_consts_3:item
     $fn_shuffle_zeroing_3:item
     $fn_shuffle_wrapping_3:item
     $fn_shuffle_4:item
+    $fn_shuffle_consts_4:item
     $fn_shuffle_zeroing_4:item
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
@@ -89,6 +94,7 @@ macro_rules! impl_simd_uint {
         N = $N,
         Simd = $Simd,
         UintSimd = $Simd,
+        ShuffleNExt = $ShuffleNExt,
         optional_type_x86_inner { $(X86Inner = $X86Inner)? },
         optional_type_arm_inner { $(ArmInner = $ArmInner)? },
         optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
@@ -122,11 +128,15 @@ macro_rules! impl_simd_uint {
 
       $fn_shuffle
 
+      $fn_shuffle_consts
+
       $fn_shuffle_zeroing
 
       $fn_shuffle_wrapping
 
       $fn_shuffle_2
+
+      $fn_shuffle_consts_2
 
       $fn_shuffle_zeroing_2
 
@@ -134,11 +144,15 @@ macro_rules! impl_simd_uint {
 
       $fn_shuffle_3
 
+      $fn_shuffle_consts_3
+
       $fn_shuffle_zeroing_3
 
       $fn_shuffle_wrapping_3
 
       $fn_shuffle_4
+
+      $fn_shuffle_consts_4
 
       $fn_shuffle_zeroing_4
 

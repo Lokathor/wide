@@ -36,6 +36,13 @@ impl_simd_int! {
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
     ],
+    shuffle_consts_parameters {
+      I0, I1, I2, I3, I4, I5, I6, I7, I8, I9,
+      I10, I11, I12, I13, I14, I15, I16, I17, I18,
+      I19, I20, I21, I22, I23, I24, I25, I26, I27,
+      I28, I29, I30, I31,
+    },
+    ShuffleNExt = Shuffle32Ext,
     optional_type_x86_inner { X86Inner = __m512i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},

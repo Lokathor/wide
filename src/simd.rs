@@ -23,6 +23,7 @@ macro_rules! impl_simd {
       N = $N:literal,
       Simd = $Simd:ident,
       UintSimd = $UintSimd:ident,
+      ShuffleNExt = $ShuffleNExt:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
@@ -42,15 +43,19 @@ macro_rules! impl_simd {
     $fn_any:item
     $fn_all:item
     $fn_shuffle:item
+    $fn_shuffle_consts:item
     $fn_shuffle_zeroing:item
     $fn_shuffle_wrapping:item
     $fn_shuffle_2:item
+    $fn_shuffle_consts_2:item
     $fn_shuffle_zeroing_2:item
     $fn_shuffle_wrapping_2:item
     $fn_shuffle_3:item
+    $fn_shuffle_consts_3:item
     $fn_shuffle_zeroing_3:item
     $fn_shuffle_wrapping_3:item
     $fn_shuffle_4:item
+    $fn_shuffle_consts_4:item
     $fn_shuffle_zeroing_4:item
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
@@ -262,6 +267,18 @@ macro_rules! impl_simd {
       $fn_shuffle_zeroing_4
 
       $fn_shuffle_wrapping_4
+    }
+
+    impl $ShuffleNExt for [$Simd; 2] {
+      $fn_shuffle_consts_2
+    }
+
+    impl $ShuffleNExt for [$Simd; 3] {
+      $fn_shuffle_consts_3
+    }
+
+    impl $ShuffleNExt for [$Simd; 4] {
+      $fn_shuffle_consts_4
     }
 
     #[expect(deprecated)]
@@ -608,6 +625,22 @@ macro_rules! impl_simd {
       /// values).
       #[must_use]
       $fn_shuffle
+
+      /// Returns a SIMD vector whose elements are selected from `self` using
+      /// the corresponding constant indices.
+      ///
+      /// If an index is out of bounds, the corresponding result element is
+      /// the number zero.
+      ///
+      /// Equivalent to `[self[I0], self[I1], self[I2], ..., self[[I{N-1}]]]`.
+      ///
+      /// When indices are known at compile time, prefer using this function
+      /// over [`shuffle`] or [`shuffle_zeroing`], which are less efficient.
+      ///
+      /// [`shuffle`]: Self::shuffle
+      /// [`shuffle_zeroing`]: Self::shuffle_zeroing
+      #[must_use]
+      $fn_shuffle_consts
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.

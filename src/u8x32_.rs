@@ -36,6 +36,7 @@ impl_simd_uint! {
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
     ],
+    ShuffleNExt = Shuffle32Ext,
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
@@ -326,6 +327,44 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+    const I16: usize,
+    const I17: usize,
+    const I18: usize,
+    const I19: usize,
+    const I20: usize,
+    const I21: usize,
+    const I22: usize,
+    const I23: usize,
+    const I24: usize,
+    const I25: usize,
+    const I26: usize,
+    const I27: usize,
+    const I28: usize,
+    const I29: usize,
+    const I30: usize,
+    const I31: usize,
+  >(self) -> Self {
+    todo!()
+  }
+
+  #[inline]
   pub fn shuffle_zeroing(self, indices: u8x32) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
@@ -398,6 +437,44 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+    const I16: usize,
+    const I17: usize,
+    const I18: usize,
+    const I19: usize,
+    const I20: usize,
+    const I21: usize,
+    const I22: usize,
+    const I23: usize,
+    const I24: usize,
+    const I25: usize,
+    const I26: usize,
+    const I27: usize,
+    const I28: usize,
+    const I29: usize,
+    const I30: usize,
+    const I31: usize,
+  >(self: [u8x32; 2]) -> u8x32 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u8x32; 2], indices: u8x32) -> u8x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
@@ -431,6 +508,44 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+    const I16: usize,
+    const I17: usize,
+    const I18: usize,
+    const I19: usize,
+    const I20: usize,
+    const I21: usize,
+    const I22: usize,
+    const I23: usize,
+    const I24: usize,
+    const I25: usize,
+    const I26: usize,
+    const I27: usize,
+    const I28: usize,
+    const I29: usize,
+    const I30: usize,
+    const I31: usize,
+  >(self: [u8x32; 3]) -> u8x32 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u8x32; 3], indices: u8x32) -> u8x32 {
     self.shuffle(indices)
   }
@@ -443,6 +558,44 @@ impl_simd_uint! {
   #[inline]
   fn shuffle(self: [u8x32; 4], indices: u8x32) -> u8x32 {
     [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 64)
+  }
+
+  #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+    const I16: usize,
+    const I17: usize,
+    const I18: usize,
+    const I19: usize,
+    const I20: usize,
+    const I21: usize,
+    const I22: usize,
+    const I23: usize,
+    const I24: usize,
+    const I25: usize,
+    const I26: usize,
+    const I27: usize,
+    const I28: usize,
+    const I29: usize,
+    const I30: usize,
+    const I31: usize,
+  >(self: [u8x32; 4]) -> u8x32 {
+    todo!()
   }
 
   #[inline]

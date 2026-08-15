@@ -87,6 +87,10 @@ impl_simd_int! {
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7],
+    shuffle_consts_parameters {
+      I0, I1, I2, I3, I4, I5, I6, I7,
+    },
+    ShuffleNExt = Shuffle8Ext,
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = int16x8_t },
     optional_type_wasm_inner { WasmInner = v128 },

@@ -38,6 +38,11 @@ impl_simd_float! {
     Simd = f32x16,
     UintT = u32,
     UintSimd = u32x16,
+    shuffle_consts_parameters {
+      I0, I1, I2, I3, I4, I5, I6, I7, I8, I9,
+      I10, I11, I12, I13, I14, I15,
+    },
+    ShuffleNExt = Shuffle16Ext,
     optional_type_x86_inner { X86Inner = __m512 },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},

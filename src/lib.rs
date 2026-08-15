@@ -66,9 +66,28 @@
 //!
 //! Single-input shuffling is performed using the [`shuffle`] method and its
 //! variants. Multi-input shuffling is performed by placing the input vectors in
-//! an array and calling the corresponding methods from [`ShuffleExt`].
+//! an array and calling the corresponding methods from [`ShuffleExt`] and its
+//! associated traits.
 //!
-//! Currently, `wide` only supports runtime-index based shuffling:
+//! Constant-index based shuffling:
+//!
+//! ```
+//! use wide::{f32x4, Shuffle4Ext, u32x4};
+//!
+//! let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+//! let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+//!
+//! let reverse = simd_a.shuffle_consts::<3, 2, 1, 0>();
+//!
+//! assert_eq!(reverse, f32x4::new([3.0, 2.0, 1.0, 0.0]));
+//!
+//! // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+//! let from_two_vectors = [simd_a, simd_b].shuffle_consts::<2, 3, 4, 5>();
+//!
+//! assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+//! ```
+//!
+//! Runtime-index based shuffling:
 //!
 //! ```
 //! use wide::{f32x4, ShuffleExt, u32x4};
@@ -702,6 +721,66 @@ pub trait ShuffleExt: Sealed {
   #[must_use]
   fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output;
 }
+
+macro_rules! shuffle_n_ext {
+  ($ShuffleNExt:ident, $n_doc:literal, [$($INDEX_N:ident),* $(,)?]) => {
+    /// An extension trait implemented for arrays of SIMD vectors, which provides
+    /// [`shuffle_consts`] from multiple input vectors.
+    ///
+    #[doc = concat!("This trait is specific to SIMD vectors with ", $n_doc, " elements.")]
+    /// There is a separate trait per supported element count, because
+    /// [`shuffle_consts`] takes a different amount of generic parameters based
+    /// on the number of elements.
+    ///
+    /// In the future, if the type system supports it, there will be a single
+    /// `shuffle_const<[usize; N]>` method, and these traits will be deprecated.
+    ///
+    /// [`shuffle_consts`]: Self::shuffle_consts
+    pub trait $ShuffleNExt: ShuffleExt {
+      /// Returns a SIMD vector whose elements are selected from multiple input
+      /// vectors using the corresponding constant indices.
+      ///
+      /// If `N` is the number of elements in each vector, indices in the range
+      /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
+      /// select values from `self[1]`, etc.
+      ///
+      /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
+      /// corresponding result element is the number zero.
+      ///
+      /// # Example
+      ///
+      /// ```
+      /// use wide::{f32x4, Shuffle4Ext, u32x4};
+      ///
+      /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+      /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+      ///
+      /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+      /// let from_two_vectors = [simd_a, simd_b].shuffle_consts::<2, 3, 100, 5>();
+      ///
+      /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 0.0, 101.0]));
+      /// ```
+      #[must_use]
+      fn shuffle_consts<$(const $INDEX_N: usize),*>(self) -> Self::Output;
+    }
+  };
+}
+shuffle_n_ext!(Shuffle2Ext, "two", [I0, I1]);
+shuffle_n_ext!(Shuffle4Ext, "four", [I0, I1, I2, I3]);
+shuffle_n_ext!(Shuffle8Ext, "eight", [I0, I1, I2, I3, I4, I5, I6, I7]);
+shuffle_n_ext!(
+  Shuffle16Ext,
+  "16",
+  [I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15]
+);
+shuffle_n_ext!(
+  Shuffle32Ext,
+  "32",
+  [
+    I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, I16,
+    I17, I18, I19, I20, I21, I22, I23, I24, I25, I26, I27, I28, I29, I30, I31,
+  ]
+);
 
 /// A deprecated trait for the [`simd_eq`] function.
 ///

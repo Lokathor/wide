@@ -33,6 +33,7 @@ impl_simd_uint! {
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    ShuffleNExt = Shuffle16Ext,
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
@@ -334,6 +335,28 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self) -> Self {
+    todo!()
+  }
+
+  #[inline]
   pub fn shuffle_zeroing(self, indices: u16x16) -> Self {
     pick! {
       if #[cfg(any(
@@ -387,6 +410,28 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self: [u16x16; 2]) -> u16x16 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u16x16; 2], indices: u16x16) -> u16x16 {
     // Even if the `u8x32` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
@@ -414,6 +459,28 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self: [u16x16; 3]) -> u16x16 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u16x16; 3], indices: u16x16) -> u16x16 {
     // Even if the `u8x32` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
@@ -431,6 +498,28 @@ impl_simd_uint! {
     let byte_indices = indices.to_byte_indices();
 
     cast::<u8x32, u16x16>(self_bytes.shuffle(byte_indices))
+  }
+
+  #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self: [u16x16; 4]) -> u16x16 {
+    todo!()
   }
 
   #[inline]

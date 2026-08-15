@@ -33,6 +33,7 @@ impl_simd_uint! {
     T_BITS = 32,
     T_BITS_MUL_2 = 64,
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    ShuffleNExt = Shuffle16Ext,
     optional_type_x86_inner { X86Inner = __m512i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
@@ -315,6 +316,28 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self) -> Self {
+    todo!()
+  }
+
+  #[inline]
   pub fn shuffle_zeroing(self, indices: u32x16) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
@@ -355,6 +378,28 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self: [u32x16; 2]) -> u32x16 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u32x16; 2], indices: u32x16) -> u32x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
@@ -383,6 +428,28 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self: [u32x16; 3]) -> u32x16 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u32x16; 3], indices: u32x16) -> u32x16 {
     self.shuffle(indices)
   }
@@ -395,6 +462,28 @@ impl_simd_uint! {
   #[inline]
   fn shuffle(self: [u32x16; 4], indices: u32x16) -> u32x16 {
     [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 32)
+  }
+
+  #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+    const I8: usize,
+    const I9: usize,
+    const I10: usize,
+    const I11: usize,
+    const I12: usize,
+    const I13: usize,
+    const I14: usize,
+    const I15: usize,
+  >(self: [u32x16; 4]) -> u32x16 {
+    todo!()
   }
 
   #[inline]

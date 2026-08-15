@@ -87,6 +87,7 @@ impl_simd_uint! {
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7],
+    ShuffleNExt = Shuffle8Ext,
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = uint16x8_t },
     optional_type_wasm_inner { WasmInner = v128 },
@@ -598,6 +599,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self) -> Self {
+    todo!()
+  }
+
+  #[inline]
   pub fn shuffle_zeroing(self, indices: u16x8) -> Self {
     pick! {
       if #[cfg(any(
@@ -651,6 +666,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self: [u16x8; 2]) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u16x8; 2], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
@@ -678,6 +707,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self: [u16x8; 3]) -> u16x8 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u16x8; 3], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
@@ -695,6 +738,20 @@ impl_simd_uint! {
     let byte_indices = indices.to_byte_indices();
 
     cast::<u8x16, u16x8>(self_bytes.shuffle(byte_indices))
+  }
+
+  #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self: [u16x8; 4]) -> u16x8 {
+    todo!()
   }
 
   #[inline]

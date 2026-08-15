@@ -92,6 +92,8 @@ impl_simd_float! {
     Simd = f64x2,
     UintT = u64,
     UintSimd = u64x2,
+    shuffle_consts_parameters { I0, I1 },
+    ShuffleNExt = Shuffle2Ext,
     optional_type_x86_inner { X86Inner = __m128d },
     optional_type_arm_inner { ArmInner = float64x2_t },
     optional_type_wasm_inner { WasmInner = v128 },

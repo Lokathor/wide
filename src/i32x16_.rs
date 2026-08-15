@@ -33,6 +33,11 @@ impl_simd_int! {
     T_BITS = 32,
     T_BITS_MUL_2 = 64,
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    shuffle_consts_parameters {
+      I0, I1, I2, I3, I4, I5, I6, I7, I8, I9,
+      I10, I11, I12, I13, I14, I15,
+    },
+    ShuffleNExt = Shuffle16Ext,
     optional_type_x86_inner { X86Inner = __m512i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},

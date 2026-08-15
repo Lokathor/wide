@@ -90,6 +90,7 @@ impl_simd_uint! {
     T_BITS = 64,
     T_BITS_MUL_2 = 128,
     [0, 1],
+    ShuffleNExt = Shuffle2Ext,
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = uint64x2_t },
     optional_type_wasm_inner { WasmInner = v128 },
@@ -455,6 +456,11 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn shuffle_consts<const I0: usize, const I1: usize>(self) -> Self {
+    todo!()
+  }
+
+  #[inline]
   pub fn shuffle_zeroing(self, indices: u64x2) -> Self {
     // Since all implementations use the `select` trick, we always need to mask
     self.shuffle(indices) & indices.simd_lt(2)
@@ -490,6 +496,11 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<const I0: usize, const I1: usize>(self: [u64x2; 2]) -> u64x2 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u64x2; 2], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
@@ -517,6 +528,11 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<const I0: usize, const I1: usize>(self: [u64x2; 3]) -> u64x2 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u64x2; 3], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
@@ -534,6 +550,11 @@ impl_simd_uint! {
     let byte_indices = indices.to_byte_indices();
 
     cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+  }
+
+  #[inline]
+  fn shuffle_consts<const I0: usize, const I1: usize>(self: [u64x2; 4]) -> u64x2 {
+    todo!()
   }
 
   #[inline]

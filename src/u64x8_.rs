@@ -33,6 +33,7 @@ impl_simd_uint! {
     T_BITS = 64,
     T_BITS_MUL_2 = 128,
     [0, 1, 2, 3, 4, 5, 6, 7],
+    ShuffleNExt = Shuffle8Ext,
     optional_type_x86_inner { X86Inner = __m512i },
     optional_type_arm_inner {},
     optional_type_wasm_inner {},
@@ -325,6 +326,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self) -> Self {
+    todo!()
+  }
+
+  #[inline]
   pub fn shuffle_zeroing(self, indices: u64x8) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
@@ -374,6 +389,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self: [u64x8; 2]) -> u64x8 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u64x8; 2], indices: u64x8) -> u64x8 {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
@@ -402,6 +431,20 @@ impl_simd_uint! {
   }
 
   #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self: [u64x8; 3]) -> u64x8 {
+    todo!()
+  }
+
+  #[inline]
   fn shuffle_zeroing(self: [u64x8; 3], indices: u64x8) -> u64x8 {
     self.shuffle(indices)
   }
@@ -414,6 +457,20 @@ impl_simd_uint! {
   #[inline]
   fn shuffle(self: [u64x8; 4], indices: u64x8) -> u64x8 {
     [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 16)
+  }
+
+  #[inline]
+  fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+    const I4: usize,
+    const I5: usize,
+    const I6: usize,
+    const I7: usize,
+  >(self: [u64x8; 4]) -> u64x8 {
+    todo!()
   }
 
   #[inline]
