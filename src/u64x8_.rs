@@ -665,11 +665,6 @@ impl u64x8 {
   fn mul_masked<const W: u32>(a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm512_mul_epu32;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm512_mul_epu32;
-
         // `vpmuludq` reads the low 32 bits of a lane anyway, so at `W == 32` the
         // operand masks are already implied and can be dropped.
         let (a, b) = if W == 32 {
@@ -679,8 +674,7 @@ impl u64x8 {
           (a & mask, b & mask)
         };
 
-        // TODO(safe_arch): Add `_mm512_mul_epu32`.
-        Self { avx512: m512i(unsafe { _mm512_mul_epu32(a.avx512.0, b.avx512.0) }) }
+        Self { avx512: mul_u32_wide_m512i(a.avx512, b.avx512) }
       } else {
         // Lane-wise, so each half is independent.
         Self {
@@ -700,16 +694,8 @@ impl u64x8 {
       if #[cfg(target_feature="avx512ifma")] {
         // IFMA is fixed at 52 bits; any other width takes the generic path.
         if W == 52 {
-          #[cfg(target_arch = "x86")]
-          use core::arch::x86::_mm512_madd52lo_epu64;
-          #[cfg(target_arch = "x86_64")]
-          use core::arch::x86_64::_mm512_madd52lo_epu64;
-
-          // TODO(safe_arch): Add `_mm512_madd52lo_epu64`.
           return Self {
-            avx512: m512i(unsafe {
-              _mm512_madd52lo_epu64(self.avx512.0, a.avx512.0, b.avx512.0)
-            }),
+            avx512: add_mul_low_u52_m512i(self.avx512, a.avx512, b.avx512),
           };
         }
       }
@@ -739,16 +725,8 @@ impl u64x8 {
       if #[cfg(target_feature="avx512ifma")] {
         // IFMA is fixed at 52 bits; any other width takes the generic path.
         if W == 52 {
-          #[cfg(target_arch = "x86")]
-          use core::arch::x86::_mm512_madd52hi_epu64;
-          #[cfg(target_arch = "x86_64")]
-          use core::arch::x86_64::_mm512_madd52hi_epu64;
-
-          // TODO(safe_arch): Add `_mm512_madd52hi_epu64`.
           return Self {
-            avx512: m512i(unsafe {
-              _mm512_madd52hi_epu64(self.avx512.0, a.avx512.0, b.avx512.0)
-            }),
+            avx512: add_mul_high_u52_m512i(self.avx512, a.avx512, b.avx512),
           };
         }
       }

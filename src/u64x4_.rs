@@ -648,16 +648,8 @@ impl u64x4 {
       if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
         // IFMA is fixed at 52 bits; any other width takes the generic path.
         if W == 52 {
-          #[cfg(target_arch = "x86")]
-          use core::arch::x86::_mm256_madd52lo_epu64;
-          #[cfg(target_arch = "x86_64")]
-          use core::arch::x86_64::_mm256_madd52lo_epu64;
-
-          // TODO(safe_arch): Add `_mm256_madd52lo_epu64`.
           return Self {
-            avx2: m256i(unsafe {
-              _mm256_madd52lo_epu64(self.avx2.0, a.avx2.0, b.avx2.0)
-            }),
+            avx2: add_mul_low_u52_m256i(self.avx2, a.avx2, b.avx2),
           };
         }
       }
@@ -687,16 +679,8 @@ impl u64x4 {
       if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
         // IFMA is fixed at 52 bits; any other width takes the generic path.
         if W == 52 {
-          #[cfg(target_arch = "x86")]
-          use core::arch::x86::_mm256_madd52hi_epu64;
-          #[cfg(target_arch = "x86_64")]
-          use core::arch::x86_64::_mm256_madd52hi_epu64;
-
-          // TODO(safe_arch): Add `_mm256_madd52hi_epu64`.
           return Self {
-            avx2: m256i(unsafe {
-              _mm256_madd52hi_epu64(self.avx2.0, a.avx2.0, b.avx2.0)
-            }),
+            avx2: add_mul_high_u52_m256i(self.avx2, a.avx2, b.avx2),
           };
         }
       }
