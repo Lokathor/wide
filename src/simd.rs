@@ -617,7 +617,12 @@ macro_rules! impl_simd {
 
     #[cfg(feature = "serde")]
     mod serde {
-      use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
+      use serde_core::{
+        de::{Error as DeError, SeqAccess, Visitor},
+        Deserialize, Serialize,
+        ser::SerializeTuple,
+      };
+      use core::{fmt, marker::PhantomData};
 
       use crate::$Simd;
 
@@ -642,7 +647,39 @@ macro_rules! impl_simd {
         where
           D: serde_core::Deserializer<'de>,
         {
-          Ok(<[$T; $N]>::deserialize(deserializer)?.into())
+          // Serde does not implement [T; 64]: Deserialize, so we do this manually.
+          struct ArrayVisitor<T, const N: usize>(PhantomData<T>);
+
+          impl<'de, T, const N: usize> Visitor<'de> for ArrayVisitor<T, N>
+          where
+            T: Deserialize<'de> + Default + Copy,
+          {
+            type Value = [T; N];
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+              formatter.write_str("a fixed-size sequence")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+              A: SeqAccess<'de>,
+            {
+              let mut array = [T::default(); N];
+              for (index, element) in array.iter_mut().enumerate() {
+                *element = seq
+                  .next_element()?
+                  .ok_or_else(|| A::Error::invalid_length(index, &self))?;
+              }
+              if seq.next_element::<T>()?.is_some() {
+                return Err(A::Error::invalid_length(N + 1, &self));
+              }
+              Ok(array)
+            }
+          }
+
+          Ok(deserializer
+            .deserialize_tuple($N, ArrayVisitor::<$T, $N>(PhantomData))?
+            .into())
         }
       }
     }
