@@ -407,6 +407,8 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`i64x8`], or only for

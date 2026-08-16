@@ -284,6 +284,8 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`i8x32`], or only for
@@ -392,8 +394,9 @@ impl i8x32 {
   }
 
   /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
-  /// `>= 32`) yield an implementation-defined result (`0` or `self[index % 32]`).
-  /// Prefer this when you know all indices are in range; it can be cheaper.
+  /// `>= 32`) yield an implementation-defined result (`0` or `self[index %
+  /// 32]`). Prefer this when you know all indices are in range; it can be
+  /// cheaper.
   #[inline]
   pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
     pick! {

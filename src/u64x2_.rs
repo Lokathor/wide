@@ -754,4 +754,6 @@ impl_simd_uint! {
       ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
     ])
   }
+
+  optional_fn_deserialize {}
 }

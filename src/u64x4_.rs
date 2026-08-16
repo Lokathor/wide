@@ -611,4 +611,6 @@ impl_simd_uint! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }

@@ -626,6 +626,8 @@ impl_simd_uint! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 impl From<u16x16> for u32x16 {

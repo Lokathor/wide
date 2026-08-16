@@ -602,6 +602,8 @@ impl_simd_uint! {
 
     cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
   }
+
+  optional_fn_deserialize {}
 }
 
 impl From<u8x16> for u16x16 {

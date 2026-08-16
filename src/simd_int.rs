@@ -53,7 +53,7 @@ macro_rules! impl_simd_int {
     $fn_abs:item
     $fn_is_positive:item
     $fn_is_negative:item
-    $(optional_fn_deserialize { $fn_deserialize:item })?
+    optional_fn_deserialize { $($fn_deserialize:item)? }
   ) => {
     impl_simd!(
       unsafe {
