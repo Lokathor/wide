@@ -53,6 +53,7 @@ macro_rules! impl_simd_int {
     $fn_abs:item
     $fn_is_positive:item
     $fn_is_negative:item
+    $(optional_fn_deserialize { $fn_deserialize:item })?
   ) => {
     impl_simd!(
       unsafe {
@@ -127,6 +128,8 @@ macro_rules! impl_simd_int {
       pub fn transpose(data: [Self; $N]) -> [Self; $N] {
         cast($UintSimd::transpose(cast::<[$Simd; $N], [$UintSimd; $N]>(data)))
       }
+
+      optional_fn_deserialize { $($fn_deserialize)? }
     );
 
     impl_unary_operator!(

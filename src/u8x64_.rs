@@ -591,4 +591,14 @@ impl_simd_uint! {
 
     cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
   }
+
+  optional_fn_deserialize {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+      D: serde_core::Deserializer<'de>,
+    {
+        crate::simd::deserialize_array(deserializer)
+    }
+  }
 }

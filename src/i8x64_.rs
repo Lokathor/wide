@@ -265,4 +265,14 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+      D: serde_core::Deserializer<'de>,
+    {
+        crate::simd::deserialize_array(deserializer)
+    }
+  }
 }
