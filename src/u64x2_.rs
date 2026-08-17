@@ -470,16 +470,7 @@ impl_simd_uint! {
   fn shuffle(self: [u64x2; 2], indices: u64x2) -> u64x2 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm_permutex2var_epi64;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm_permutex2var_epi64;
-        // TODO(safe_arch): add `_mm_permutex2var_epi64`.
-        u64x2 {
-          sse: unsafe {
-            m128i(_mm_permutex2var_epi64(self[0].sse.0, indices.sse.0, self[1].sse.0))
-          },
-        }
+        u64x2 { sse: shuffle_abv_i64_all_m128i(self[0].sse, indices.sse, self[1].sse) }
       } else {
         let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(self);
         let byte_indices = indices.to_byte_indices();

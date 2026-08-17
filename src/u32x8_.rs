@@ -347,16 +347,7 @@ impl_simd_uint! {
   fn shuffle(self: [u32x8; 2], indices: u32x8) -> u32x8 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm256_permutex2var_epi32;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm256_permutex2var_epi32;
-        // TODO(safe_arch): add `_mm256_permutex2var_epi32`.
-        u32x8 {
-          avx2: unsafe {
-            m256i(_mm256_permutex2var_epi32(self[0].avx2.0, indices.avx2.0, self[1].avx2.0))
-          },
-        }
+        u32x8 { avx2: shuffle_abv_i32_all_m256i(self[0].avx2, indices.avx2, self[1].avx2) }
       } else {
         let self_bytes = cast::<[u32x8; 2], [u8x32; 2]>(self);
         let byte_indices = indices.to_byte_indices();
