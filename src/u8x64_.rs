@@ -290,6 +290,130 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u8x64) -> Self {
+    pick! {
+      if #[cfg(target_feature = "avx512vbmi")] {
+        Self { avx512: permute_i8_m512i(indices.avx512, self.avx512) }
+      } else {
+        let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
+        let [indices_a, indices_b] = cast::<u8x64, [u8x32; 2]>(indices);
+
+        cast([[self_a, self_b].shuffle(indices_a), [self_a, self_b].shuffle(indices_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_zeroing(self, indices: u8x64) -> Self {
+    pick! {
+      if #[cfg(target_feature = "avx512vbmi")] {
+        self.shuffle(indices) & indices.simd_lt(64)
+      } else {
+        let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
+        let [indices_a, indices_b] = cast::<u8x64, [u8x32; 2]>(indices);
+
+        cast([
+          [self_a, self_b].shuffle_zeroing(indices_a),
+          [self_a, self_b].shuffle_zeroing(indices_b),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_wrapping(self, indices: u8x64) -> Self {
+    pick! {
+      if #[cfg(target_feature = "avx512vbmi")] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
+        let [indices_a, indices_b] = cast::<u8x64, [u8x32; 2]>(indices);
+
+        cast([
+          [self_a, self_b].shuffle_wrapping(indices_a),
+          [self_a, self_b].shuffle_wrapping(indices_b),
+        ])
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u8x64; 2], indices: u8x64) -> u8x64 {
+    pick! {
+      if #[cfg(target_feature = "avx512vbmi")] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_permutex2var_epi8;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_permutex2var_epi8;
+        // TODO(safe_arch): add `_mm512_permutex2var_epi8`.
+        u8x64 {
+          avx512: unsafe {
+            m512i(_mm512_permutex2var_epi8(self[0].avx512.0, indices.avx512.0, self[1].avx512.0))
+          },
+        }
+      } else {
+        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 64)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u8x64; 2], indices: u8x64) -> u8x64 {
+    pick! {
+      if #[cfg(target_feature = "avx512vbmi")] {
+        self.shuffle(indices) & indices.simd_lt(128)
+      } else {
+        self.shuffle(indices)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u8x64; 2], indices: u8x64) -> u8x64 {
+    pick! {
+      if #[cfg(target_feature = "avx512vbmi")] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        self.shuffle(indices & 127)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u8x64; 3], indices: u8x64) -> u8x64 {
+    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 128)
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u8x64; 3], indices: u8x64) -> u8x64 {
+    self.shuffle(indices)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u8x64; 3], indices: u8x64) -> u8x64 {
+    self.shuffle(indices % 192)
+  }
+
+  #[inline]
+  fn shuffle(self: [u8x64; 4], indices: u8x64) -> u8x64 {
+    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 128)
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u8x64; 4], indices: u8x64) -> u8x64 {
+    self.shuffle(indices)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u8x64; 4], indices: u8x64) -> u8x64 {
+    // There are 64*4=256 lanes to pick from, and that is exactly how many
+    // indices `u8` can represent, so out of bounds indices are impossible.
+    self.shuffle(indices)
+  }
+
   ///
   /// Currently this function is never accelerated.
   #[inline]
