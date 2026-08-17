@@ -86,6 +86,7 @@ impl_simd_int! {
     UintSimd = u32x4,
     T_BITS = 32,
     T_BITS_MUL_2 = 64,
+    BitmaskType = u32,
     [0, 1, 2, 3],
     optional_type_x86_inner { X86Inner = __m128i },
     optional_type_arm_inner { ArmInner = int32x4_t },
@@ -576,6 +577,8 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`i32x4`], or only for

@@ -32,6 +32,7 @@ impl_simd_int! {
     UintSimd = u16x32,
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
+    BitmaskType = u32,
     [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -320,6 +321,8 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`i16x32`], or only for

@@ -54,6 +54,7 @@ macro_rules! impl_simd {
     $fn_shuffle_zeroing_4:item
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
+    optional_fn_deserialize { $($fn_deserialize:item)? }
   ) => {
     impl From<[$T; $N]> for $Simd {
       /// Converts an array to a SIMD vector.
@@ -417,6 +418,37 @@ macro_rules! impl_simd {
         unsafe { core::mem::transmute::<&mut $Simd, &mut [$T; $N]>(self) }
       }
 
+      /// Creates a SIMD vector from a native-endian byte array.
+      ///
+      /// The bytes are interpreted as the raw memory representation of the
+      /// vector. This is equivalent to the `from_ne_bytes` functions on the
+      /// primitive scalar types, but operates on the entire vector at once.
+      ///
+      /// This is the inverse of [`to_ne_bytes`].
+      ///
+      /// [`to_ne_bytes`]: Self::to_ne_bytes
+      #[inline]
+      #[must_use]
+      pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
+        // SAFETY: `$Simd` accepts all bit-patterns and only contains
+        // initialized memory, and the byte array has the same size.
+        unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
+      }
+
+      /// Returns the raw memory representation of `self` as a native-endian
+      /// byte array.
+      ///
+      /// This is the inverse of [`from_ne_bytes`].
+      ///
+      /// [`from_ne_bytes`]: Self::from_ne_bytes
+      #[inline]
+      #[must_use]
+      pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
+        // SAFETY: `$Simd` accepts all bit-patterns and only contains
+        // initialized memory, and the byte array has the same size.
+        unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
+      }
+
       /// Returns a [mask] that checks if each element of `self` is equal to the
       /// corresponding element of `other`.
       ///
@@ -679,7 +711,10 @@ macro_rules! impl_simd {
 
     #[cfg(feature = "serde")]
     mod serde {
-      use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
+      use serde_core::{
+        Deserialize, Serialize,
+        ser::SerializeTuple,
+      };
 
       use crate::$Simd;
 
@@ -698,14 +733,11 @@ macro_rules! impl_simd {
         }
       }
 
-      impl<'de> Deserialize<'de> for $Simd {
-        #[inline]
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-          D: serde_core::Deserializer<'de>,
-        {
-          Ok(<[$T; $N]>::deserialize(deserializer)?.into())
-        }
+      impl_optional_deserialize!{
+        T = $T,
+        N = $N,
+        Simd = $Simd,
+        $($fn_deserialize)?
       }
     }
   };
@@ -1186,4 +1218,74 @@ macro_rules! impl_shift_operator {
     impl_scalar_with_cast!(u128);
     impl_scalar_with_cast!(usize);
   }
+}
+
+#[cfg(feature = "serde")]
+macro_rules! impl_optional_deserialize {
+  (T = $T:ident, N = $N:literal, Simd = $Simd:ty, $fn_deserialize:item) => {
+    impl<'de> Deserialize<'de> for $Simd {
+      $fn_deserialize
+    }
+  };
+  (T = $T:ident, N = $N:literal, Simd = $Simd:ty,) => {
+    impl<'de> Deserialize<'de> for $Simd {
+      #[inline]
+      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+      where
+        D: serde_core::Deserializer<'de>,
+      {
+        Ok(<[$T; $N]>::deserialize(deserializer)?.into())
+      }
+    }
+  };
+}
+
+#[cfg(feature = "serde")]
+pub(crate) fn deserialize_array<'de, Simd, T, const N: usize, D>(
+  deserializer: D,
+) -> Result<Simd, D::Error>
+where
+  D: serde_core::Deserializer<'de>,
+  T: serde_core::Deserialize<'de> + Default + Copy,
+  Simd: From<[T; N]>,
+{
+  // Serde does not implement [T; 64]: Deserialize, so we do this manually.
+  struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
+
+  impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
+  where
+    T: serde_core::Deserialize<'de> + Default + Copy,
+  {
+    type Value = [T; N];
+
+    fn expecting(
+      &self,
+      formatter: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+      formatter.write_str("an array of size {N}")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
+    where
+      A: serde_core::de::SeqAccess<'de>,
+    {
+      use serde_core::de::Error;
+      let mut array = [T::default(); N];
+      for (index, element) in array.iter_mut().enumerate() {
+        *element = seq
+          .next_element()?
+          .ok_or_else(|| A::Error::invalid_length(index, &self))?;
+      }
+      if seq.next_element::<T>()?.is_some() {
+        return Err(A::Error::invalid_length(N + 1, &self));
+      }
+      Ok(array)
+    }
+  }
+
+  Ok(
+    deserializer
+      .deserialize_tuple(N, ArrayVisitor::<T, N>(core::marker::PhantomData))?
+      .into(),
+  )
 }

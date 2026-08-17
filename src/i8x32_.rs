@@ -32,6 +32,7 @@ impl_simd_int! {
     UintSimd = u8x32,
     T_BITS = 8,
     T_BITS_MUL_2 = 16,
+    BitmaskType = u32,
     [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -283,6 +284,8 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`i8x32`], or only for
@@ -351,8 +354,9 @@ impl i8x32 {
   }
 
   /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
-  /// `>= 32`) yield an implementation-defined result (`0` or `self[index % 32]`).
-  /// Prefer this when you know all indices are in range; it can be cheaper.
+  /// `>= 32`) yield an implementation-defined result (`0` or `self[index %
+  /// 32]`). Prefer this when you know all indices are in range; it can be
+  /// cheaper.
   ///
   /// This function has been deprecated and replaced with [`shuffle`].
   ///

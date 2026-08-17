@@ -11,6 +11,11 @@
   auto-vectorization (it measures faster than the manual approach). See
   [this issue](https://github.com/Lokathor/wide/issues/208) for more
   information.
+* Added `from_ne_bytes` and `to_ne_bytes` to all SIMD vector types. See
+  [this issue](https://github.com/Lokathor/wide/issues/144) for more
+  information.
+* Added `u8x64` and `i8x64` types. See
+  [this PR](https://github.com/Lokathor/wide/issues/318).
 * Fixed the `signum` documentation: the docs previously misstated the grammar
   and the set of inputs that map to `1.0`/`-1.0`. The behavior itself was
   already correct and matches [`f32::signum`].

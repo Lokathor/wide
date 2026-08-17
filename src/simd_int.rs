@@ -22,6 +22,7 @@ macro_rules! impl_simd_int {
       UintSimd = $UintSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
+      BitmaskType = $BitmaskType:ty,
       [$($index:literal),* $(,)?],
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
@@ -52,6 +53,7 @@ macro_rules! impl_simd_int {
     $fn_abs:item
     $fn_is_positive:item
     $fn_is_negative:item
+    optional_fn_deserialize { $($fn_deserialize:item)? }
   ) => {
     impl_simd!(
       unsafe {
@@ -109,7 +111,7 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
-      pub fn to_bitmask(self) -> u32 {
+      pub fn to_bitmask(self) -> $BitmaskType {
         self.cast_unsigned().to_bitmask()
       }
 
@@ -187,6 +189,8 @@ macro_rules! impl_simd_int {
       pub fn transpose(data: [Self; $N]) -> [Self; $N] {
         cast($UintSimd::transpose(cast::<[$Simd; $N], [$UintSimd; $N]>(data)))
       }
+
+      optional_fn_deserialize { $($fn_deserialize)? }
     );
 
     impl_unary_operator!(

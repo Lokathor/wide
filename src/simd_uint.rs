@@ -82,6 +82,7 @@ macro_rules! impl_simd_uint {
     optional_fn_widening_mul { $($fn_widening_mul:item)? }
     $fn_mul_keep_low_high:item
     $fn_mul_keep_high:item
+    optional_fn_deserialize { $($fn_deserialize:item)? }
   ) => {
     impl_simd!(
       unsafe {
@@ -145,6 +146,8 @@ macro_rules! impl_simd_uint {
       $fn_shuffle_wrapping_4
 
       $fn_transpose
+
+      optional_fn_deserialize { $($fn_deserialize)? }
     );
 
     impl_unary_operator!(
