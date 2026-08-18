@@ -47,3 +47,7 @@ harness = false
 [[bench]]
 name = "math_benchmarks"
 harness = false
+
+[[bench]]
+name = "u8_shift"
+harness = false
