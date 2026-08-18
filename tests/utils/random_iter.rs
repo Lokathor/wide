@@ -13,7 +13,7 @@ where
   T: Random,
 {
   const SEED: u64 = 0x123456789abcdef0;
-  const ITERATIONS: usize = 100;
+  const ITERATIONS: usize = 1000;
 
   let mut state = SEED;
   (0..ITERATIONS).map(move |_| T::random(&mut state))

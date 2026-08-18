@@ -929,7 +929,10 @@ fn test_shl_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
-    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
+    .flat_map(|left| {
+      [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33]
+        .map(|right| (left, right))
+    })
     .chain(random_iter())
     {
       let expected =
@@ -971,7 +974,10 @@ fn test_shl_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
-    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
+    .flat_map(|left| {
+      [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33]
+        .map(|right| (left, right))
+    })
     .chain(random_iter())
     {
       let expected =
@@ -1088,7 +1094,10 @@ fn test_shr_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
-    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
+    .flat_map(|left| {
+      [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33]
+        .map(|right| (left, right))
+    })
     .chain(random_iter())
     {
       let expected =
@@ -1130,7 +1139,10 @@ fn test_shr_scalar() {
       T::MIN + 1,
       T::MIN / 2,
     ])
-    .flat_map(|left| [1, 0, 3, -2, -6, 100].map(|right| (left, right)))
+    .flat_map(|left| {
+      [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33]
+        .map(|right| (left, right))
+    })
     .chain(random_iter())
     {
       let expected =
