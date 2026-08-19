@@ -2807,6 +2807,32 @@ fn test_from_small() {
     assert_eq!(expected, actual);
   }
 
+  for value in once([
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    i16::MIN + 1,
+    i16::MIN,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    i16::MIN + 1,
+    i16::MIN,
+  ])
+  .chain(random_iter())
+  {
+    let expected = i32x16::new(value.map(|x| x as i32));
+    let actual = i32x16::from_i16x16(i16x16::new(value));
+
+    assert_eq!(expected, actual);
+  }
+
   for value in once([1, 2, 3, 4, 5, i16::MAX as u16, u16::MAX - 1, u16::MAX])
     .chain(random_iter())
   {

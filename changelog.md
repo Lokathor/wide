@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Added `from_i16x16` and `From<i16x16>` to `i32x16`.
 * Added runtime-index shuffle functions. Previous functions `swizzle` and
   `swizzle_relaxed` have been deprecated. See
   [PR #317](https://github.com/lokathor/wide/pull/317) for more information.
