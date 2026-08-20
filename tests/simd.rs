@@ -2798,6 +2798,48 @@ fn test_from_small() {
     assert_eq!(expected, actual);
   }
 
+  for value in once([
+    10,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    7,
+    i8::MAX,
+    12,
+    13,
+    6,
+    55,
+    i8::MIN,
+    10,
+    2,
+    -3,
+    4,
+    5,
+    -6,
+    7,
+    8,
+    9,
+    7,
+    i8::MAX,
+    12,
+    13,
+    6,
+    55,
+    i8::MIN,
+  ])
+  .chain(random_iter())
+  {
+    let expected = i16x32::new(value.map(|x| x as i16));
+    let actual = i16x32::from_i8x32(i8x32::new(value));
+
+    assert_eq!(expected, actual);
+  }
+
   for value in
     once([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]).chain(random_iter())
   {
