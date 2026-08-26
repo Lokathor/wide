@@ -576,7 +576,6 @@ macro_rules! impl_simd {
       ///
       /// [mask]: crate#masks
       /// [`bitselect`]: Self::bitselect
-      /// [`Self: Select<Output>`]: crate::Select
       #[inline]
       #[must_use]
       pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
