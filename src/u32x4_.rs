@@ -395,7 +395,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+  fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }

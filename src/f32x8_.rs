@@ -330,7 +330,7 @@ impl_simd_float! {
   }
 
   #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+  fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self { avx: blend_varying_m256(if_false.avx, if_true.avx, self.avx) }

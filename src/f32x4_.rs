@@ -423,7 +423,7 @@ impl_simd_float! {
   }
 
   #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+  fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self { sse: blend_varying_m128(if_false.sse, if_true.sse, self.sse) }

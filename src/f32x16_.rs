@@ -319,7 +319,7 @@ impl_simd_float! {
   }
 
   #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+  fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: blend_varying_m512(if_false.avx512, if_true.avx512, movepi32_mask_m512(self.avx512)) }

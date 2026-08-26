@@ -257,7 +257,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn select(self, if_true: Self, if_false: Self) -> Self {
+  fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self { avx: blend_varying_i8_m256i(if_false.avx, if_true.avx, self.avx) }

@@ -232,6 +232,10 @@ macro_rules! impl_simd {
     impl_formatting_trait!(core::fmt::LowerExp);
     impl_formatting_trait!(core::fmt::UpperExp);
 
+    impl Select<$Simd> for $Simd {
+      $fn_select
+    }
+
     impl ShuffleExt for [$Simd; 2] {
       type Indices = $UintSimd;
       type Output = $Simd;
@@ -554,20 +558,33 @@ macro_rules! impl_simd {
       #[must_use]
       $fn_bitselect
 
-      /// Elementwise selection.
+      /// Lanewise SIMD selection.
       ///
-      /// For each element of `self`:
+      /// For each lane:
       ///
-      /// - If all bits are one, return the corresponding element of `if_true`
-      /// - If all bits are zero, return the corresponding element of `if_false`
+      /// - If all bits of `self` are one, return the corresponding lane of
+      ///   `if_true`
+      /// - If all bits of `self` are zero, return the corresponding lane of
+      ///   `if_false`
       ///
       /// This function assumes `self` is a [mask], meaning each element is
       /// either all zeros or all ones. For bitwise selection use [`bitselect`].
       ///
+      /// In addition to selecting SIMD vectors, this method can be used to
+      /// select composite types (e.g., a downstream `Vec3<f32x4>` structure)
+      /// if you implement `Select<Composite> for Simd`.
+      ///
       /// [mask]: crate#masks
       /// [`bitselect`]: Self::bitselect
+      /// [`Self: Select<Output>`]: crate::Select
+      #[inline]
       #[must_use]
-      $fn_select
+      pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
+      where
+        Self: Select<Output>,
+      {
+        Select::select(self, if_true, if_false)
+      }
 
       /// Converts to a bitmask, where each bit is `1` if the element of `self`
       /// is true or `0` if the element of `self` is false.

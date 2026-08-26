@@ -104,7 +104,7 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
-      pub fn select(self, if_true: Self, if_false: Self) -> Self {
+      fn select(self, if_true: Self, if_false: Self) -> Self {
         self.cast_unsigned()
           .select(if_true.cast_unsigned(), if_false.cast_unsigned())
           .cast_signed()
