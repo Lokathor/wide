@@ -59,6 +59,9 @@
 //! assert_eq!(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
 //! ```
 //!
+//! To select from two values of a downstream type, implement the [`Select`]
+//! trait.
+//!
 //! # Shuffling
 //!
 //! Shuffling, also known as swizzling, creates a new SIMD vector by selecting
