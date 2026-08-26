@@ -299,6 +299,127 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u16x32) -> Self {
+    pick! {
+      if #[cfg(all(target_feature = "avx512bw"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_permutexvar_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_permutexvar_epi16;
+        // TODO(safe_arch): Add `_mm512_permutexvar_epi16`
+        Self { avx512: unsafe { m512i(_mm512_permutexvar_epi16(indices.avx512.0, self.avx512.0)) } }
+      } else {
+        let self_halfs = cast::<u16x32, [u16x16; 2]>(self);
+        let [indices_a, indices_b] = cast::<u16x32, [u16x16; 2]>(indices);
+
+        cast([self_halfs.shuffle(indices_a), self_halfs.shuffle(indices_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_zeroing(self, indices: u16x32) -> Self {
+    pick! {
+      if #[cfg(all(target_feature = "avx512bw"))] {
+        self.shuffle(indices) & indices.simd_lt(32)
+      } else {
+        let self_halfs = cast::<u16x32, [u16x16; 2]>(self);
+        let [indices_a, indices_b] = cast::<u16x32, [u16x16; 2]>(indices);
+
+        cast([self_halfs.shuffle_zeroing(indices_a), self_halfs.shuffle_zeroing(indices_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_wrapping(self, indices: u16x32) -> Self {
+    pick! {
+      if #[cfg(all(target_feature = "avx512bw"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        let self_halfs = cast::<u16x32, [u16x16; 2]>(self);
+        let [indices_a, indices_b] = cast::<u16x32, [u16x16; 2]>(indices);
+
+        cast([self_halfs.shuffle_wrapping(indices_a), self_halfs.shuffle_wrapping(indices_b)])
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512bw"))] {
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86::_mm512_permutex2var_epi16;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64::_mm512_permutex2var_epi16;
+        // TODO(safe_arch): add `_mm512_permutex2var_epi16`.
+        u16x32 {
+          avx512: unsafe {
+            m512i(_mm512_permutex2var_epi16(self[0].avx512.0, indices.avx512.0, self[1].avx512.0))
+          },
+        }
+      } else {
+        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
+        self.shuffle(indices) & indices.simd_lt(64)
+      } else {
+        self.shuffle(indices)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512bw"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        self.shuffle(indices & 63)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u16x32; 3], indices: u16x32) -> u16x32 {
+    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 64)
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u16x32; 3], indices: u16x32) -> u16x32 {
+    self.shuffle(indices)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u16x32; 3], indices: u16x32) -> u16x32 {
+    self.shuffle(indices % 96)
+  }
+
+  #[inline]
+  fn shuffle(self: [u16x32; 4], indices: u16x32) -> u16x32 {
+    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 64)
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u16x32; 4], indices: u16x32) -> u16x32 {
+    self.shuffle(indices)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u16x32; 4], indices: u16x32) -> u16x32 {
+    self.shuffle(indices & 127)
+  }
+
   ///
   /// Currently this function is never accelerated.
   #[inline]
@@ -607,4 +728,6 @@ impl_simd_uint! {
 
     cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
   }
+
+  optional_fn_deserialize {}
 }

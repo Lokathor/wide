@@ -32,6 +32,7 @@ impl_simd_int! {
     UintSimd = u8x32,
     T_BITS = 8,
     T_BITS_MUL_2 = 16,
+    BitmaskType = u32,
     [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -283,6 +284,8 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`i8x32`], or only for
@@ -303,8 +306,8 @@ impl i8x32 {
         Self { avx: shuffle_av_i8z_half_m256i(self.avx, add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x70))) }
       } else {
           Self {
-            a : self.a.swizzle(rhs.a),
-            b : self.b.swizzle(rhs.b),
+            a : self.a.shuffle_zeroing(rhs.a.cast_unsigned()),
+            b : self.b.shuffle_zeroing(rhs.b.cast_unsigned()),
           }
       }
     }
@@ -326,8 +329,8 @@ impl i8x32 {
         Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
       } else {
         Self {
-          a : self.a.swizzle_relaxed(rhs.a),
-          b : self.b.swizzle_relaxed(rhs.b),
+          a : self.a.shuffle(rhs.a.cast_unsigned()),
+          b : self.b.shuffle(rhs.b.cast_unsigned()),
         }
       }
     }
@@ -340,95 +343,27 @@ impl i8x32 {
   ///
   /// Unlike [`swizzle_half`](Self::swizzle_half), indices address the entire
   /// 32-byte vector, not just their own 16-byte half.
+  ///
+  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
+  ///
+  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
   #[inline]
+  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
   pub fn swizzle(self, rhs: i8x32) -> i8x32 {
-    pick! {
-      if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm256_permutexvar_epi8;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm256_permutexvar_epi8;
-        // vpermb takes the index mod 32 and never zeroes, so zero the
-        // out-of-range lanes ourselves: (rhs & 0xE0) == 0  <=>  rhs < 32.
-        // TODO(safe_arch): Add `_mm256_permutexvar_epi8`.
-        let permuted = m256i(unsafe { _mm256_permutexvar_epi8(rhs.avx.0, self.avx.0) });
-        let hi_bits = bitand_m256i(rhs.avx, set_splat_i8_m256i(0xE0_u8 as i8));
-        let in_range = cmp_eq_mask_i8_m256i(hi_bits, zeroed_m256i());
-        Self { avx: bitand_m256i(permuted, in_range) }
-      } else if #[cfg(target_feature="avx2")] {
-        // Broadcast each 16-byte table half into both 128-bit lanes, pshufb
-        // each by the index, blend by index bit 4. Fold the >=32 zeroing into
-        // pshufb with an unsigned saturating add of 0x60 (0x60 + 32 = 0x80).
-        let idx = add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x60));
-        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.avx, self.avx);
-        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.avx, self.avx);
-        let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, idx);
-        let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, idx);
-        // move index bit 4 into the sign bit (bit 7) for blendv.
-        let sel = shl_imm_u16_m256i::<3>(rhs.avx);
-        Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        use core::arch::aarch64::{int8x16x2_t, vqtbl2q_s8, vreinterpretq_u8_s8};
-        unsafe {
-          let table = int8x16x2_t(self.a.neon, self.b.neon);
-          Self {
-            a: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.a.neon)) },
-            b: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.b.neon)) },
-          }
-        }
-      } else {
-        // Generic {a,b}: each output half pulls from either table half.
-        // a.swizzle / b.swizzle are STRICT (zero index >= 16), and their
-        // nonzero domains are disjoint, so a bitwise OR selects correctly and
-        // out-of-range (>=32) falls out as 0 with no extra mask.
-        let sixteen = i8x16::splat(16);
-        Self {
-          a: self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a - sixteen),
-          b: self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b - sixteen),
-        }
-      }
-    }
+    self.shuffle_zeroing(rhs.cast_unsigned())
   }
 
   /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
-  /// `>= 32`) yield an implementation-defined result (`0` or `self[index % 32]`).
-  /// Prefer this when you know all indices are in range; it can be cheaper.
+  /// `>= 32`) yield an implementation-defined result (`0` or `self[index %
+  /// 32]`). Prefer this when you know all indices are in range; it can be
+  /// cheaper.
+  ///
+  /// This function has been deprecated and replaced with [`shuffle`].
+  ///
+  /// [`shuffle`]: Self::shuffle
   #[inline]
+  #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
   pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
-    pick! {
-      if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
-        #[cfg(target_arch = "x86")]
-        use core::arch::x86::_mm256_permutexvar_epi8;
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::_mm256_permutexvar_epi8;
-        // TODO(safe_arch): Add `_mm256_permutexvar_epi8`.
-        Self { avx: m256i(unsafe { _mm256_permutexvar_epi8(rhs.avx.0, self.avx.0) }) }
-      } else if #[cfg(target_feature="avx2")] {
-        // Same broadcast+blend as strict, but skip the 0x60 zeroing fold.
-        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.avx, self.avx);
-        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.avx, self.avx);
-        let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, rhs.avx);
-        let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, rhs.avx);
-        let sel = shl_imm_u16_m256i::<3>(rhs.avx);
-        Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        // vqtbl2 zeroes out-of-range anyway; identical to strict.
-        use core::arch::aarch64::{int8x16x2_t, vqtbl2q_s8, vreinterpretq_u8_s8};
-        unsafe {
-          let table = int8x16x2_t(self.a.neon, self.b.neon);
-          Self {
-            a: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.a.neon)) },
-            b: i8x16 { neon: vqtbl2q_s8(table, vreinterpretq_u8_s8(rhs.b.neon)) },
-          }
-        }
-      } else {
-        // Strict fallback is a valid relaxed implementation (it zeroes OOR).
-        let sixteen = i8x16::splat(16);
-        Self {
-          a: self.a.swizzle(rhs.a) | self.b.swizzle(rhs.a - sixteen),
-          b: self.a.swizzle(rhs.b) | self.b.swizzle(rhs.b - sixteen),
-        }
-      }
-    }
+    self.shuffle(rhs.cast_unsigned())
   }
 }

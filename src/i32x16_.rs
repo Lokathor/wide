@@ -32,6 +32,7 @@ impl_simd_int! {
     UintSimd = u32x16,
     T_BITS = 32,
     T_BITS_MUL_2 = 64,
+    BitmaskType = u32,
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     optional_type_x86_inner { X86Inner = __m512i },
     optional_type_arm_inner {},
@@ -369,11 +370,37 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
+}
+
+impl From<i16x16> for i32x16 {
+  #[inline]
+  fn from(value: i16x16) -> Self {
+    i32x16::from_i16x16(value)
+  }
 }
 
 /// The following functionality exists only for [`i32x16`], or only for
 /// particular types inconsistently.
 impl i32x16 {
+  /// Converts each element from [`i16`] to [`i32`].
+  #[inline]
+  #[must_use]
+  pub fn from_i16x16(v: i16x16) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        Self { avx512: convert_to_i32_m512i_from_i16_m256i(v.avx2) }
+      } else {
+        let [a, b]: [i16x8; 2] = cast(v);
+        Self {
+          a: i32x8::from_i16x8(a),
+          b: i32x8::from_i16x8(b),
+        }
+      }
+    }
+  }
+
   /// Converts each element from [`i32`] to [`f32`].
   #[inline]
   #[must_use]

@@ -13,7 +13,7 @@ where
   T: Random,
 {
   const SEED: u64 = 0x123456789abcdef0;
-  const ITERATIONS: usize = 100;
+  const ITERATIONS: usize = 1000;
 
   let mut state = SEED;
   (0..ITERATIONS).map(move |_| T::random(&mut state))
@@ -90,6 +90,7 @@ impl_random_for_integer!(u8);
 impl_random_for_integer!(u16);
 impl_random_for_integer!(u32);
 impl_random_for_integer!(u64);
+impl_random_for_integer!(usize);
 
 macro_rules! impl_random_for_simd {
   ($T:ident, $Simd:ident) => {

@@ -300,6 +300,113 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u32x16) -> Self {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        Self { avx512: permute_i32_m512i(indices.avx512, self.avx512) }
+      } else {
+        let self_halfs = cast::<u32x16, [u32x8; 2]>(self);
+        let [indices_a, indices_b] = cast::<u32x16, [u32x8; 2]>(indices);
+
+        cast([self_halfs.shuffle(indices_a), self_halfs.shuffle(indices_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_zeroing(self, indices: u32x16) -> Self {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        self.shuffle(indices) & indices.simd_lt(16)
+      } else {
+        let self_halfs = cast::<u32x16, [u32x8; 2]>(self);
+        let [indices_a, indices_b] = cast::<u32x16, [u32x8; 2]>(indices);
+
+        cast([self_halfs.shuffle_zeroing(indices_a), self_halfs.shuffle_zeroing(indices_b)])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_wrapping(self, indices: u32x16) -> Self {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        let self_halfs = cast::<u32x16, [u32x8; 2]>(self);
+        let [indices_a, indices_b] = cast::<u32x16, [u32x8; 2]>(indices);
+
+        cast([self_halfs.shuffle_wrapping(indices_a), self_halfs.shuffle_wrapping(indices_b)])
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x16; 2], indices: u32x16) -> u32x16 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        u32x16 { avx512: shuffle_abv_i32_all_m512i(self[0].avx512, indices.avx512, self[1].avx512) }
+      } else {
+        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 16)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u32x16; 2], indices: u32x16) -> u32x16 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f"))] {
+        self.shuffle(indices) & indices.simd_lt(32)
+      } else {
+        self.shuffle(indices)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u32x16; 2], indices: u32x16) -> u32x16 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        self.shuffle(indices & 31)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x16; 3], indices: u32x16) -> u32x16 {
+    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 32)
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u32x16; 3], indices: u32x16) -> u32x16 {
+    self.shuffle(indices)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u32x16; 3], indices: u32x16) -> u32x16 {
+    self.shuffle(indices % 48)
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x16; 4], indices: u32x16) -> u32x16 {
+    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 32)
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u32x16; 4], indices: u32x16) -> u32x16 {
+    self.shuffle(indices)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u32x16; 4], indices: u32x16) -> u32x16 {
+    self.shuffle(indices & 63)
+  }
+
   ///
   /// Currently this function is never accelerated.
   #[inline]
@@ -626,6 +733,8 @@ impl_simd_uint! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 impl From<u16x16> for u32x16 {

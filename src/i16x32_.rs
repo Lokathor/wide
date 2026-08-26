@@ -32,6 +32,7 @@ impl_simd_int! {
     UintSimd = u16x32,
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
+    BitmaskType = u32,
     [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
       21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -320,11 +321,38 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
+}
+
+impl From<i8x32> for i16x32 {
+  /// widen with sign extend from i8 to i16
+  #[inline]
+  fn from(i: i8x32) -> Self {
+    i16x32::from_i8x32(i)
+  }
 }
 
 /// The following functionality exists only for [`i16x32`], or only for
 /// particular types inconsistently.
 impl i16x32 {
+  /// Converts each element from [`i8`] to [`i16`].
+  #[inline]
+  #[must_use]
+  pub fn from_i8x32(v: i8x32) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        Self { avx512: convert_to_i16_m512i_from_i8_m256i(cast(v)) }
+      } else {
+        let [a, b]: [i8x16; 2] = cast(v);
+        Self {
+          a: i16x16::from_i8x16(a),
+          b: i16x16::from_i8x16(b),
+        }
+      }
+    }
+  }
+
   /// Partially computes the dot product.
   ///
   /// First this multiplies the input 16-bit integers, producing intermediate

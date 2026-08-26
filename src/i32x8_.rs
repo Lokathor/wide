@@ -32,6 +32,7 @@ impl_simd_int! {
     UintSimd = u32x8,
     T_BITS = 32,
     T_BITS_MUL_2 = 64,
+    BitmaskType = u32,
     [0, 1, 2, 3, 4, 5, 6, 7],
     optional_type_x86_inner { X86Inner = __m256i },
     optional_type_arm_inner {},
@@ -376,6 +377,8 @@ impl_simd_int! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 impl From<i16x8> for i32x8 {

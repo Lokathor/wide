@@ -419,6 +419,126 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u64x2) -> Self {
+    pick! {
+      if #[cfg(target_feature = "sse2")] {
+        let e0 = Self { sse: shuffle_ai_f32_all_m128i::<0b01_00_01_00>(self.sse) };
+        let e1 = Self { sse: shuffle_ai_f32_all_m128i::<0b11_10_11_10>(self.sse) };
+
+        // We can assume that each index is either `0` or `1`, and negating that
+        // always gives us either all bits zero or all bits one.
+        (-indices).select(e1, e0)
+      } else if #[cfg(target_feature = "simd128")] {
+        let e0 = Self { simd: u64x2_shuffle::<0, 0>(self.simd, self.simd) };
+        let e1 = Self { simd: u64x2_shuffle::<1, 1>(self.simd, self.simd) };
+
+        // We can assume that each index is either `0` or `1`, and negating that
+        // always gives us either all bits zero or all bits one.
+        (-indices).select(e1, e0)
+      } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]{
+        let e0 = unsafe { Self { neon: vdupq_n_u64(vget_lane_u64::<0>(vget_low_u64(self.neon))) } };
+        let e1 = unsafe { Self { neon: vdupq_n_u64(vget_lane_u64::<0>(vget_high_u64(self.neon))) } };
+
+        // We can assume that each index is either `0` or `1`, and negating that
+        // always gives us either all bits zero or all bits one.
+        (-indices).select(e1, e0)
+      } else {
+        let e0 = Self::splat(self.as_array()[0]);
+        let e1 = Self::splat(self.as_array()[1]);
+
+        // We can assume that each index is either `0` or `1`, and negating that
+        // always gives us either all bits zero or all bits one.
+        (-indices).select(e1, e0)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_zeroing(self, indices: u64x2) -> Self {
+    // Since all implementations use the `select` trick, we always need to mask
+    self.shuffle(indices) & indices.simd_lt(2)
+  }
+
+  #[inline]
+  pub fn shuffle_wrapping(self, indices: u64x2) -> Self {
+    // Since all implementations use the `select` trick, we always need to mask
+    self.shuffle(indices & 1)
+  }
+
+  #[inline]
+  fn shuffle(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+        u64x2 { sse: shuffle_abv_i64_all_m128i(self[0].sse, indices.sse, self[1].sse) }
+      } else {
+        let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(self);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+    // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+    // 8-bit can trigger an overflow causing incorrect behavior
+    self.shuffle(indices) & indices.simd_lt(4)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        self.shuffle(indices & 3)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u64x2; 3], indices: u64x2) -> u64x2 {
+    let self_bytes = cast::<[u64x2; 3], [u8x16; 3]>(self);
+    let byte_indices = indices.to_byte_indices();
+
+    cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u64x2; 3], indices: u64x2) -> u64x2 {
+    // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+    // 8-bit can trigger an overflow causing incorrect behavior
+    self.shuffle(indices) & indices.simd_lt(6)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u64x2; 3], indices: u64x2) -> u64x2 {
+    self.shuffle(indices % 6)
+  }
+
+  #[inline]
+  fn shuffle(self: [u64x2; 4], indices: u64x2) -> u64x2 {
+    let self_bytes = cast::<[u64x2; 4], [u8x16; 4]>(self);
+    let byte_indices = indices.to_byte_indices();
+
+    cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u64x2; 4], indices: u64x2) -> u64x2 {
+    // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+    // 8-bit can trigger an overflow causing incorrect behavior
+    self.shuffle(indices) & indices.simd_lt(8)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u64x2; 4], indices: u64x2) -> u64x2 {
+    self.shuffle(indices & 7)
+  }
+
   ///
   /// This function is accelerated on multiple target architectures.
   #[inline]
@@ -754,11 +874,39 @@ impl_simd_uint! {
       ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
     ])
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`u64x2`], or only for
 /// particular types inconsistently.
 impl u64x2 {
+  /// A helper for shuffle functions that turns indices of 64-bit lanes into
+  /// byte indices that can be used with 8-bit shuffle intrinsics.
+  ///
+  /// This turns each 64-bit lane `i` into eight 8-bit lanes
+  /// `[8*i, 8*i + 1, 8*i + 2, 8*i + 3, ...]`.
+  ///
+  /// This assumes `self` has already been reduced to the table's lane count,
+  /// which may be at most 32 lanes so that `8 * i` still fits in a byte.
+  #[allow(dead_code)]
+  #[inline]
+  fn to_byte_indices(self) -> u8x16 {
+    // The byte offset of the lane, broadcast to every byte of the lane.
+    let base = self.unbounded_shl_scalar(3);
+    let base = base | base.unbounded_shl_scalar(8);
+    let base = base | base.unbounded_shl_scalar(16);
+    let base = base | base.unbounded_shl_scalar(32);
+
+    // Then the offset of each byte within its lane. These bits are free because
+    // every byte of `base` is a multiple of eight. `from_ne_bytes` keeps this
+    // correct on big endian, where the bytes of a lane are the other way around.
+    const WITHIN_LANE: u64x2 =
+      u64x2::splat(u64::from_ne_bytes([0, 1, 2, 3, 4, 5, 6, 7]));
+
+    cast::<u64x2, u8x16>(base | WITHIN_LANE)
+  }
+
   /// Returns `[self[0], b[0]]`, taking the low element of the 128-bit lane.
   #[inline]
   #[must_use]

@@ -59,6 +59,33 @@
 //! assert_eq!(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
 //! ```
 //!
+//! # Shuffling
+//!
+//! Shuffling, also known as swizzling, creates a new SIMD vector by selecting
+//! elements from one or more input vectors according to a set of indices.
+//!
+//! Single-input shuffling is performed using the [`shuffle`] method and its
+//! variants. Multi-input shuffling is performed by placing the input vectors in
+//! an array and calling the corresponding methods from [`ShuffleExt`].
+//!
+//! Currently, `wide` only supports runtime-index based shuffling:
+//!
+//! ```
+//! use wide::{f32x4, ShuffleExt, u32x4};
+//!
+//! let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+//! let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+//!
+//! let reverse = simd_a.shuffle(u32x4::new([3, 2, 1, 0]));
+//!
+//! assert_eq!(reverse, f32x4::new([3.0, 2.0, 1.0, 0.0]));
+//!
+//! // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+//! let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
+//!
+//! assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+//! ```
+//!
 //! # NaN bit patterns
 //!
 //! Operations on SIMD vectors of floats do not make any guarantees about the
@@ -104,6 +131,7 @@
 //!     SIMD `sqrt` isn't available.
 //!
 //! [`select`]: f32x4::select
+//! [`shuffle`]: f32x4::shuffle
 //! [`Wrapping<T>`]: core::num::Wrapping
 
 // Note(Lokathor): Due to standard library magic, the std-only methods for f32
@@ -317,6 +345,9 @@ pub use i16x32_::*;
 mod i8x32_;
 pub use i8x32_::*;
 
+mod i8x64_;
+pub use i8x64_::*;
+
 mod i16x8_;
 pub use i16x8_::*;
 
@@ -343,6 +374,9 @@ pub use u8x16_::*;
 
 mod u8x32_;
 pub use u8x32_::*;
+
+mod u8x64_;
+pub use u8x64_::*;
 
 mod u16x8_;
 pub use u16x8_::*;
@@ -610,6 +644,119 @@ fn test_software_sqrt() {
   assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }
 
+/// An extension trait implemented for arrays of SIMD vectors, which provides
+/// shuffling from multiple input vectors.
+///
+/// # Example
+///
+/// ```
+/// use wide::{f32x4, ShuffleExt, u32x4};
+///
+/// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+/// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+///
+/// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+/// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
+///
+/// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+/// ```
+#[expect(private_bounds)]
+pub trait ShuffleExt: Sealed {
+  /// The type representing indices.
+  ///
+  /// This is always a SIMD vector of the unsigned integer with the same size as
+  /// `T` and the same number of elements.
+  type Indices;
+
+  /// The type returned by shuffle functions.
+  ///
+  /// This is always the type of SIMD vector contained in the array.
+  type Output;
+
+  /// Returns a SIMD vector whose elements are selected from multiple input
+  /// vectors using the corresponding runtime `indices`.
+  ///
+  /// If `N` is the number of elements in each vector, indices in the range
+  /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
+  /// select values from `self[1]`, etc.
+  ///
+  /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
+  /// corresponding result element is unspecified.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use wide::{f32x4, ShuffleExt, u32x4};
+  ///
+  /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+  /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+  ///
+  /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+  /// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
+  ///
+  /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+  /// ```
+  ///
+  /// # Type-specific guarantees
+  ///
+  /// For all 8-bit types, it is guaranteed that for out of bounds indices,
+  /// either zero is returned or the index wraps around, non-deterministically
+  /// (unlike other types, which can return arbitrary values).
+  #[must_use]
+  fn shuffle(self, indices: Self::Indices) -> Self::Output;
+
+  /// Returns a SIMD vector whose elements are selected from multiple input
+  /// vectors using the corresponding runtime `indices`.
+  ///
+  /// If `N` is the number of elements in each vector, indices in the range
+  /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
+  /// select values from `self[1]`, etc.
+  ///
+  /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
+  /// corresponding result element is the number zero.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use wide::{f32x4, ShuffleExt, u32x4};
+  ///
+  /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+  /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+  ///
+  /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+  /// let from_two_vectors = [simd_a, simd_b].shuffle_zeroing(u32x4::new([2, 3, 100, 5]));
+  ///
+  /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 0.0, 101.0]));
+  /// ```
+  #[must_use]
+  fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
+
+  /// Returns a SIMD vector whose elements are selected from multiple input
+  /// vectors using the corresponding runtime `indices`.
+  ///
+  /// If `N` is the number of elements in each vector, indices in the range
+  /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
+  /// select values from `self[1]`, etc.
+  ///
+  /// Indices are wrapped by `N * INPUTS`.
+  ///
+  /// # Example
+  ///
+  /// ```
+  /// use wide::{f32x4, ShuffleExt, u32x4};
+  ///
+  /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+  /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+  ///
+  /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+  /// let from_two_vectors = [simd_a, simd_b].shuffle_wrapping(u32x4::new([2, 3, 9, 5]));
+  ///
+  /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 1.0, 101.0]));
+  /// ```
+  #[must_use]
+  fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output;
+}
+
 /// A deprecated trait for the [`simd_eq`] function.
 ///
 /// [`simd_eq`]: f32x4::simd_eq
@@ -779,3 +926,5 @@ where
     pod_align_to_mut(slice)
   }
 }
+
+trait Sealed {}

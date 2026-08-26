@@ -479,6 +479,134 @@ impl_simd_uint! {
     }
   }
 
+  #[inline]
+  pub fn shuffle(self, indices: u32x4) -> Self {
+    pick! {
+      if #[cfg(target_feature = "avx")] {
+        cast(shuffle_av_f32_all_m128(cast(self), indices.sse))
+      } else if #[cfg(any(
+        target_feature = "ssse3",
+        all(target_arch = "aarch64", target_feature = "neon"),
+        target_feature = "simd128",
+      ))] {
+        let self_bytes = cast::<u32x4, u8x16>(self);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+      } else {
+        let self_array = self.to_array();
+        let indices_array = indices.to_array();
+
+        let mut result = [0; 4];
+        for i in 0..4 {
+          let index = indices_array[i] as usize;
+          if index < 4 {
+            result[i] = self_array[index];
+          }
+        }
+
+        Self::new(result)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_zeroing(self, indices: u32x4) -> Self {
+    pick! {
+      if #[cfg(any(
+        target_feature = "avx",
+        target_feature = "ssse3",
+        all(target_arch = "aarch64", target_feature = "neon"),
+        target_feature = "simd128",
+      ))] {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        self.shuffle(indices) & indices.simd_lt(4)
+      } else {
+        // The fallback branch of `shuffle` already has the behavior we want
+        self.shuffle(indices)
+      }
+    }
+  }
+
+  #[inline]
+  pub fn shuffle_wrapping(self, indices: u32x4) -> Self {
+    self.shuffle(indices & 3)
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+        u32x4 { sse: shuffle_abv_i32_all_m128i(self[0].sse, indices.sse, self[1].sse) }
+      } else {
+        let self_bytes = cast::<[u32x4; 2], [u8x16; 2]>(self);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+    // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+    // 8-bit can trigger an overflow causing incorrect behavior
+    self.shuffle(indices) & indices.simd_lt(8)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+    pick! {
+      if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+        // `avx512` shuffle intrinsics are wrapping
+        self.shuffle(indices)
+      } else {
+        self.shuffle(indices & 7)
+      }
+    }
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+    let self_bytes = cast::<[u32x4; 3], [u8x16; 3]>(self);
+    let byte_indices = indices.to_byte_indices();
+
+    cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+    // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+    // 8-bit can trigger an overflow causing incorrect behavior
+    self.shuffle(indices) & indices.simd_lt(12)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+    self.shuffle(indices % 12)
+  }
+
+  #[inline]
+  fn shuffle(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+    let self_bytes = cast::<[u32x4; 4], [u8x16; 4]>(self);
+    let byte_indices = indices.to_byte_indices();
+
+    cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+  }
+
+  #[inline]
+  fn shuffle_zeroing(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+    // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+    // 8-bit can trigger an overflow causing incorrect behavior
+    self.shuffle(indices) & indices.simd_lt(16)
+  }
+
+  #[inline]
+  fn shuffle_wrapping(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+    self.shuffle(indices & 15)
+  }
+
   ///
   /// Currently this function is only accelerated on `sse`.
   #[inline]
@@ -989,6 +1117,8 @@ impl_simd_uint! {
       }
     }
   }
+
+  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`u32x4`], or only for
@@ -1089,5 +1219,29 @@ impl u32x4 {
     Self::new(core::array::from_fn(|i| {
       add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
     }))
+  }
+
+  /// A helper for shuffle functions that turns indices of 32-bit lanes into
+  /// byte indices that can be used with 8-bit shuffle intrinsics.
+  ///
+  /// This turns each 32-bit lane `i` into four 8-bit lanes
+  /// `[4*i, 4*i + 1, 4*i + 2, 4*i + 3]`.
+  ///
+  /// This assumes `self` has already been reduced to the table's lane count,
+  /// which may be at most 64 lanes so that `4 * i` still fits in a byte.
+  #[allow(dead_code)]
+  #[inline]
+  fn to_byte_indices(self) -> u8x16 {
+    // The byte offset of the lane, broadcast to every byte of the lane.
+    let base = self.unbounded_shl_scalar(2);
+    let base = base | base.unbounded_shl_scalar(8);
+    let base = base | base.unbounded_shl_scalar(16);
+
+    // Then the offset of each byte within its lane. These bits are free because
+    // every byte of `base` is a multiple of four. `from_ne_bytes` keeps this
+    // correct on big endian, where the bytes of a lane are the other way around.
+    const WITHIN_LANE: u32x4 = u32x4::splat(u32::from_ne_bytes([0, 1, 2, 3]));
+
+    cast::<u32x4, u8x16>(base | WITHIN_LANE)
   }
 }
