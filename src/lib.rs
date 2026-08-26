@@ -596,6 +596,71 @@ fn test_software_sqrt() {
   assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }
 
+/// A trait for lanewise SIMD selection.
+///
+/// The method [`select`] is used to select lanes from two SIMD values based on
+/// the elements of a SIMD [mask].
+///
+/// The type of values to select from could be a SIMD vector (e.g.,
+/// [`f32x4`]), or it could be a composite type over SIMD vectors (e.g., a
+/// `Vec3<f32x4>` structure).
+///
+/// This trait is meant to be implemented for such downstream types. If you
+/// simply want to call [`select`], you do not need to import this trait as SIMD
+/// vectors have an inherent method for this.
+///
+/// # Example
+///
+/// ```
+/// # use wide::{u32x4, Select};
+/// #
+/// #[derive(Debug, PartialEq)]
+/// struct Point {
+///     x: u32x4,
+///     y: u32x4,
+/// }
+///
+/// impl Select<Point> for u32x4 {
+///     fn select(self, if_true: Point, if_false: Point) -> Point {
+///         Point {
+///             x: self.select(if_true.x, if_false.x),
+///             y: self.select(if_true.y, if_false.y),
+///         }
+///     }
+/// }
+///
+/// let mask = u32x4::new([0, !0, !0, 0]);
+/// let if_true = Point { x: u32x4::splat(2), y: u32x4::ZERO };
+/// let if_false = Point { x: u32x4::ZERO, y: u32x4::splat(5) };
+///
+/// assert_eq!(
+///     mask.select(if_true, if_false),
+///     Point {
+///         x: u32x4::new([0, 2, 2, 0]),
+///         y: u32x4::new([5, 0, 0, 5]),
+///     },
+/// );
+/// ```
+///
+/// [`select`]: f32x4::select
+/// [mask]: crate#masks
+pub trait Select<T> {
+  /// Lanewise SIMD selection.
+  ///
+  /// If `self` is a SIMD vector, it is treated as a [mask], where
+  /// each lane is considered true if all bits are one, or false if all bits are
+  /// zero.
+  ///
+  /// For each lane:
+  ///
+  /// - If `self` is true, return the corresponding lane of `if_true`
+  /// - If `self` is false, return the corresponding lane of `if_false`
+  ///
+  /// [mask]: crate#masks
+  #[must_use]
+  fn select(self, if_true: T, if_false: T) -> T;
+}
+
 /// An extension trait implemented for arrays of SIMD vectors, which provides
 /// shuffling from multiple input vectors.
 ///
