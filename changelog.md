@@ -3,6 +3,8 @@
 ## Unreleased
 
 * Added `Select` trait for arbitrary types in the `select` method
+* Added support for `select` with mixed types (e.g., selecting `f32x4` values
+  with `u32x4` mask)
 * Added `from_i16x16` and `From<i16x16>` to `i32x16`.
 * Added `from_i8x32` and `From<i8x32>` to `i16x32`.
 * Added runtime-index shuffle functions. Previous functions `swizzle` and
