@@ -19,6 +19,7 @@ macro_rules! impl_simd_float {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
+      IntSimd = $IntSimd:ident,
       UintT = $UintT:ident,
       UintSimd = $UintSimd:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
@@ -482,6 +483,34 @@ macro_rules! impl_simd_float {
     impl_formatting_trait!(core::fmt::LowerHex);
     impl_formatting_trait!(core::fmt::Octal);
     impl_formatting_trait!(core::fmt::UpperHex);
+
+    impl Select<$Simd> for $UintSimd {
+      #[inline]
+      fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
+        $Simd::from_bits(self).select(if_true, if_false)
+      }
+    }
+
+    impl Select<$UintSimd> for $Simd {
+      #[inline]
+      fn select(self, if_true: $UintSimd, if_false: $UintSimd) -> $UintSimd {
+        self.to_bits().select(if_true, if_false)
+      }
+    }
+
+    impl Select<$Simd> for $IntSimd {
+      #[inline]
+      fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
+        $Simd::from_bits(self.cast_unsigned()).select(if_true, if_false)
+      }
+    }
+
+    impl Select<$IntSimd> for $Simd {
+      #[inline]
+      fn select(self, if_true: $IntSimd, if_false: $IntSimd) -> $IntSimd {
+        self.to_bits().cast_signed().select(if_true, if_false)
+      }
+    }
 
     /// The following functionality exists for all SIMD vectors of floats.
     impl $Simd {

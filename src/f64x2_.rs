@@ -90,6 +90,7 @@ impl_simd_float! {
     T = f64,
     N = 2,
     Simd = f64x2,
+    IntSimd = i64x2,
     UintT = u64,
     UintSimd = u64x2,
     optional_type_x86_inner { X86Inner = __m128d },

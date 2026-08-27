@@ -36,6 +36,7 @@ impl_simd_float! {
     T = f32,
     N = 8,
     Simd = f32x8,
+    IntSimd = i32x8,
     UintT = u32,
     UintSimd = u32x8,
     optional_type_x86_inner { X86Inner = __m256 },

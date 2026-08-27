@@ -525,6 +525,20 @@ macro_rules! impl_simd_int {
     impl_formatting_trait!(core::fmt::Octal);
     impl_formatting_trait!(core::fmt::UpperHex);
 
+    impl Select<$Simd> for $UintSimd {
+      #[inline]
+      fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
+        self.cast_signed().select(if_true, if_false)
+      }
+    }
+
+    impl Select<$UintSimd> for $Simd {
+      #[inline]
+      fn select(self, if_true: $UintSimd, if_false: $UintSimd) -> $UintSimd {
+        self.cast_unsigned().select(if_true, if_false)
+      }
+    }
+
     /// The following functionality exists for all SIMD vectors of signed
     /// integers.
     impl $Simd {
