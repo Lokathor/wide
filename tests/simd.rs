@@ -2093,6 +2093,7 @@ fn test_to_bitmask() {
       let expected = (0..N)
         .map(|i| if value[i].is_negative() { 1 << i } else { 0 })
         .fold(0, u64::bitor);
+      #[allow(clippy::unnecessary_cast)]
       let actual = Simd::new(value).to_bitmask() as u64;
 
       assert!(
@@ -2109,6 +2110,7 @@ fn test_to_bitmask() {
       let expected = (0..N)
         .map(|i| if value[i] > T::MAX >> 1 { 1 << i } else { 0 })
         .fold(0, u64::bitor);
+      #[allow(clippy::unnecessary_cast)]
       let actual = Simd::new(value).to_bitmask() as u64;
 
       assert!(
@@ -2560,8 +2562,8 @@ fn shuffle_indices<const N: usize>(
     .chain(random_iter())
     .map(move |indices| {
       indices.map(|index| {
-        // We need both in bounds and out of bounds indices, so wrap indices half
-        // of the time
+        // We need both in bounds and out of bounds indices, so wrap indices
+        // half of the time
         if index & 0b1000 != 0 { index % (N * inputs) } else { index }
       })
     })
