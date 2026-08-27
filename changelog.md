@@ -1,6 +1,6 @@
 # `wide` Changelog
 
-## Unreleased
+## 1.7
 
 * Added `Select` trait for arbitrary types in the `select` method
 * Added support for `select` with mixed types (e.g., selecting `f32x4` values
