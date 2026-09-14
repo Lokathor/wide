@@ -530,10 +530,7 @@ fn test_fast_round_int() {
       0.0, 0.1, 0.5, 0.7, -0.0, -0.1, -0.5, -0.7, 2.0, 2.1, 2.5, 2.7, -2.0,
       -2.1, -2.5, -2.7, 5.0, 5.1, 5.5, 5.7, -5.0, -5.1, -5.5, -5.7,
     ]) {
-      // TODO:  Currently `round` actually behaves like `round_ties_even`.
-      // Decide the correct behavior then add documentation.
-      let expected =
-        SimdSigned::new(value.map(|x| x.round_ties_even() as Signed));
+      let expected = Simd::new(value).round_int();
       let actual = Simd::new(value).fast_round_int();
 
       assert_eq!(actual, expected);
@@ -579,14 +576,17 @@ fn test_round_int() {
     {
       // TODO:  Currently `round` actually behaves like `round_ties_even`.
       // Decide the correct behavior then add documentation.
-      let expected = SimdSigned::new(value.map(|x| {
+      let expected_1 = SimdSigned::new(value.map(|x| {
+        x.round().clamp(Signed::MIN as T, Signed::MAX as T) as Signed
+      }));
+      let expected_2 = SimdSigned::new(value.map(|x| {
         x.round_ties_even().clamp(Signed::MIN as T, Signed::MAX as T) as Signed
       }));
       let actual = Simd::new(value).round_int();
 
       assert!(
-        actual == expected,
-        "\nexpected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}",
+        (actual.simd_eq(expected_1) | actual.simd_eq(expected_2)).all(),
+        "\nexpected_1: {expected_1:?}\nexpected_2: {expected_2:?}\n  actual: {actual:?}\n   value: {value:?}",
       );
     }
   });

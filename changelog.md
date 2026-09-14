@@ -1,5 +1,10 @@
 # `wide` Changelog
 
+## Unreleased
+
+* [#327](https://github.com/Lokathor/wide/pull/327): Fixed `i/u32x4::to_bitmask`
+  incorrect result in fallback path
+
 ## 1.7
 
 * Added `Select` trait for arbitrary types in the `select` method
