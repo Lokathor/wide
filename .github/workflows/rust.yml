@@ -81,6 +81,20 @@ jobs:
     - name: Test with 'native' CPU features + All Cargo Features 
       if: matrix.rust.target != 'wasm32-wasip1'
       run: cargo test --target ${{ matrix.rust.target }} --all-features
+
+    - name: Test without SIMD + No Default Cargo Features
+      if: matrix.rust.target == 'wasm32-wasip1'
+      env:
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUSTFLAGS: "-C target-feature=-simd128"
+      run: cargo test --target ${{ matrix.rust.target }} --no-default-features -- --nocapture
+
+    - name: Test without SIMD + All Cargo Features
+      if: matrix.rust.target == 'wasm32-wasip1'
+      env:
+        CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime run --dir .
+        CARGO_TARGET_WASM32_WASIP1_RUSTFLAGS: "-C target-feature=-simd128"
+      run: cargo test --target ${{ matrix.rust.target }} --all-features -- --nocapture
   
   build_check_only:
     runs-on: ${{ matrix.rust.os }}
