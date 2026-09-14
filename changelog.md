@@ -1,6 +1,6 @@
 # `wide` Changelog
 
-## Unreleased
+## 1.7.1
 
 * [#327](https://github.com/Lokathor/wide/pull/327): Fixed `i/u32x4::to_bitmask`
   incorrect result in fallback path
