@@ -431,10 +431,10 @@ impl_simd_uint! {
           vaddvq_u32(r) as u32
          }
       } else {
-        ((self.arr[0] < 0) as u32) |
-        ((self.arr[1] < 0) as u32) << 1 |
-        ((self.arr[2] < 0) as u32) << 2 |
-        ((self.arr[3] < 0) as u32) << 3
+        self.arr[0] >> 31 |
+        self.arr[1] >> 31 << 1 |
+        self.arr[2] >> 31 << 2 |
+        self.arr[3] >> 31 << 3
       }
     }
   }
