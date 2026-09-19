@@ -704,7 +704,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
+  pub fn unpack_lo(lhs: u8x16, rhs: u8x16) -> u8x16 {
     pick! {
         if #[cfg(target_feature = "sse2")] {
             u8x16 { sse: unpack_low_i8_m128i(lhs.sse, rhs.sse) }
@@ -732,7 +732,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
+  pub fn unpack_hi(lhs: u8x16, rhs: u8x16) -> u8x16 {
     pick! {
         if #[cfg(target_feature = "sse2")] {
             u8x16 { sse: unpack_high_i8_m128i(lhs.sse, rhs.sse) }
@@ -1668,6 +1668,39 @@ impl u8x16 {
             ]}
         }
     }
+  }
+
+  /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+  /// halfs.
+  ///
+  /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+  ///
+  /// This function has been deprecated and renamed to [`unpack_lo`] in order to
+  /// be consistent with other types.
+  ///
+  /// [`unpack_lo`]: Self::unpack_lo
+  #[inline]
+  #[must_use]
+  #[deprecated(since = "1.8.0", note = "renamed to `unpack_lo`")]
+  pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
+    Self::unpack_lo(lhs, rhs)
+  }
+
+  /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+  /// halfs.
+  ///
+  /// Equivalent to
+  /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+  ///
+  /// This function has been deprecated and renamed to [`unpack_hi`] in order to
+  /// be consistent with other types.
+  ///
+  /// [`unpack_hi`]: Self::unpack_hi
+  #[inline]
+  #[must_use]
+  #[deprecated(since = "1.8.0", note = "renamed to `unpack_hi`")]
+  pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
+    Self::unpack_hi(lhs, rhs)
   }
 
   /// Returns a new vector where each element is based on the index values in
