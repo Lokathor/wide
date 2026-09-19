@@ -301,12 +301,20 @@ impl_simd_uint! {
 
   #[inline]
   pub fn unpack_lo(self, other: Self) -> Self {
-    todo!()
+    // `_mm512_unpacklo_epi16` cannot be used because it acts within each
+    // 128-bit lane, which is a different operation.
+    let [self_a, _] = cast::<u16x32, [u16x16; 2]>(self);
+    let [other_a, _] = cast::<u16x32, [u16x16; 2]>(other);
+    cast([self_a.unpack_lo(other_a), self_a.unpack_hi(other_a)])
   }
 
   #[inline]
   pub fn unpack_hi(self, other: Self) -> Self {
-    todo!()
+    // `_mm512_unpackhi_epi16` cannot be used because it acts within each
+    // 128-bit lane, which is a different operation.
+    let [_, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+    let [_, other_b] = cast::<u16x32, [u16x16; 2]>(other);
+    cast([self_b.unpack_lo(other_b), self_b.unpack_hi(other_b)])
   }
 
   #[inline]

@@ -563,12 +563,58 @@ impl_simd_uint! {
 
   #[inline]
   pub fn unpack_lo(self, other: Self) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(target_feature = "sse2")] {
+        Self { sse: unpack_low_i16_m128i(self.sse, other.sse) }
+      } else if #[cfg(target_feature = "simd128")] {
+        Self { simd: u16x8_shuffle::<0, 8, 1, 9, 2, 10, 3, 11>(self.simd, other.simd) }
+      } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+        let lhs = unsafe { vget_low_u16(self.neon) };
+        let rhs = unsafe { vget_low_u16(other.neon) };
+
+        let zipped = unsafe { vzip_u16(lhs, rhs) };
+        Self { neon: unsafe { vcombine_u16(zipped.0, zipped.1) } }
+      } else {
+        Self::new([
+          self.as_array()[0],
+          other.as_array()[0],
+          self.as_array()[1],
+          other.as_array()[1],
+          self.as_array()[2],
+          other.as_array()[2],
+          self.as_array()[3],
+          other.as_array()[3],
+        ])
+      }
+    }
   }
 
   #[inline]
   pub fn unpack_hi(self, other: Self) -> Self {
-    todo!()
+    pick! {
+      if #[cfg(target_feature = "sse2")] {
+        Self { sse: unpack_high_i16_m128i(self.sse, other.sse) }
+      } else if #[cfg(target_feature = "simd128")] {
+        Self { simd: u16x8_shuffle::<4, 12, 5, 13, 6, 14, 7, 15>(self.simd, other.simd) }
+      } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+        let lhs = unsafe { vget_high_u16(self.neon) };
+        let rhs = unsafe { vget_high_u16(other.neon) };
+
+        let zipped = unsafe { vzip_u16(lhs, rhs) };
+        Self { neon: unsafe { vcombine_u16(zipped.0, zipped.1) } }
+      } else {
+        Self::new([
+          self.as_array()[4],
+          other.as_array()[4],
+          self.as_array()[5],
+          other.as_array()[5],
+          self.as_array()[6],
+          other.as_array()[6],
+          self.as_array()[7],
+          other.as_array()[7],
+        ])
+      }
+    }
   }
 
   #[inline]
