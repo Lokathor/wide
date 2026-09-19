@@ -2586,85 +2586,32 @@ fn test_transpose() {
 
 #[test]
 fn test_unpack_lo() {
-  // `unpack_lo` is inconsistently missing from types.
+  for_simd_types!(|T, N| {
+    let a = std::array::from_fn(|i| (i + 1) as T);
+    let b = std::array::from_fn(|i| (i + 100) as T);
 
-  let a = f32x4::new([1.0, 2.0, 3.0, 4.0]);
-  let b = f32x4::new([5.0, 6.0, 7.0, 8.0]);
-  let expected = f32x4::new([1.0, 5.0, 2.0, 6.0]);
-  let actual = a.unpack_lo(b);
-  assert_eq!(expected, actual);
+    let actual = Simd::new(a).unpack_lo(Simd::new(b));
+    let expected = Simd::new(std::array::from_fn(|i| {
+      a.into_iter().zip(b).flat_map(|(a, b)| [a, b]).nth(i).unwrap()
+    }));
 
-  // The low half of both vectors is interleaved one element at a time, across
-  // the whole vector rather than within each 128-bit lane.
-  let a = u32x4::new([1, 2, 3, 4]);
-  let b = u32x4::new([5, 6, 7, 8]);
-  assert_eq!(u32x4::new([1, 5, 2, 6]), a.unpack_lo(b));
-
-  let a = u32x8::new([1, 2, 3, 4, 5, 6, 7, 8]);
-  let b = u32x8::new([11, 12, 13, 14, 15, 16, 17, 18]);
-  assert_eq!(u32x8::new([1, 11, 2, 12, 3, 13, 4, 14]), a.unpack_lo(b));
-
-  let a = u32x16::new([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-  let b = u32x16::new([
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-  ]);
-  let expected =
-    u32x16::new([1, 21, 2, 22, 3, 23, 4, 24, 5, 25, 6, 26, 7, 27, 8, 28]);
-  assert_eq!(expected, a.unpack_lo(b));
-
-  let a = u64x2::new([1, 2]);
-  let b = u64x2::new([5, 6]);
-  assert_eq!(u64x2::new([1, 5]), a.unpack_lo(b));
-
-  let a = u64x4::new([1, 2, 3, 4]);
-  let b = u64x4::new([5, 6, 7, 8]);
-  assert_eq!(u64x4::new([1, 5, 2, 6]), a.unpack_lo(b));
-
-  let a = u64x8::new([1, 2, 3, 4, 5, 6, 7, 8]);
-  let b = u64x8::new([11, 12, 13, 14, 15, 16, 17, 18]);
-  assert_eq!(u64x8::new([1, 11, 2, 12, 3, 13, 4, 14]), a.unpack_lo(b));
+    assert_eq!(actual, expected);
+  });
 }
 
 #[test]
 fn test_unpack_hi() {
-  // `unpack_hi` is inconsistently missing from types.
+  for_simd_types!(|T, N| {
+    let a = std::array::from_fn(|i| (i + 1) as T);
+    let b = std::array::from_fn(|i| (i + 100) as T);
 
-  let a = f32x4::new([1.0, 2.0, 3.0, 4.0]);
-  let b = f32x4::new([5.0, 6.0, 7.0, 8.0]);
-  let expected = f32x4::new([3.0, 7.0, 4.0, 8.0]);
-  let actual = a.unpack_hi(b);
-  assert_eq!(expected, actual);
+    let actual = Simd::new(a).unpack_hi(Simd::new(b));
+    let expected = Simd::new(std::array::from_fn(|i| {
+      a.into_iter().zip(b).flat_map(|(a, b)| [a, b]).skip(N).nth(i).unwrap()
+    }));
 
-  // As in `test_unpack_lo`, across the whole vector rather than within each
-  // 128-bit lane, taking the high half of both vectors.
-  let a = u32x4::new([1, 2, 3, 4]);
-  let b = u32x4::new([5, 6, 7, 8]);
-  assert_eq!(u32x4::new([3, 7, 4, 8]), a.unpack_hi(b));
-
-  let a = u32x8::new([1, 2, 3, 4, 5, 6, 7, 8]);
-  let b = u32x8::new([11, 12, 13, 14, 15, 16, 17, 18]);
-  assert_eq!(u32x8::new([5, 15, 6, 16, 7, 17, 8, 18]), a.unpack_hi(b));
-
-  let a = u32x16::new([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-  let b = u32x16::new([
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-  ]);
-  let expected = u32x16::new([
-    9, 29, 10, 30, 11, 31, 12, 32, 13, 33, 14, 34, 15, 35, 16, 36,
-  ]);
-  assert_eq!(expected, a.unpack_hi(b));
-
-  let a = u64x2::new([1, 2]);
-  let b = u64x2::new([5, 6]);
-  assert_eq!(u64x2::new([2, 6]), a.unpack_hi(b));
-
-  let a = u64x4::new([1, 2, 3, 4]);
-  let b = u64x4::new([5, 6, 7, 8]);
-  assert_eq!(u64x4::new([3, 7, 4, 8]), a.unpack_hi(b));
-
-  let a = u64x8::new([1, 2, 3, 4, 5, 6, 7, 8]);
-  let b = u64x8::new([11, 12, 13, 14, 15, 16, 17, 18]);
-  assert_eq!(u64x8::new([5, 15, 6, 16, 7, 17, 8, 18]), a.unpack_hi(b));
+    assert_eq!(actual, expected);
+  });
 }
 
 /// Scalar `(add_mul_lo, add_mul_hi)` for one `u32` lane, from the definition.
@@ -2769,32 +2716,6 @@ fn test_add_mul_matches_reference() {
   check_add_mul!(u64x2, add_mul_reference_u64, [1, 26, 32, 33, 51, 52, 64]);
   check_add_mul!(u64x4, add_mul_reference_u64, [1, 26, 32, 33, 51, 52, 64]);
   check_add_mul!(u64x8, add_mul_reference_u64, [1, 26, 32, 33, 51, 52, 64]);
-}
-
-#[test]
-fn test_unpack_low() {
-  // `unpack_low` is inconsistently missing from types.
-
-  let a = u8x16::new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
-  let b =
-    u8x16::new([12, 11, 22, 13, 99, 15, 16, 17, 8, 19, 2, 21, 22, 3, 24, 127]);
-  let expected =
-    u8x16::new([0, 12, 1, 11, 2, 22, 3, 13, 4, 99, 5, 15, 6, 16, 7, 17]);
-  let actual = u8x16::unpack_low(a, b);
-  assert_eq!(actual, expected);
-}
-
-#[test]
-fn test_unpack_high() {
-  // `unpack_high` is inconsistently missing from types.
-
-  let a = u8x16::new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
-  let b =
-    u8x16::new([12, 11, 22, 13, 99, 15, 16, 17, 8, 19, 2, 21, 22, 3, 24, 127]);
-  let expected =
-    u8x16::new([8, 8, 9, 19, 10, 2, 11, 21, 12, 22, 13, 3, 14, 24, 15, 127]);
-  let actual = u8x16::unpack_high(a, b);
-  assert_eq!(actual, expected);
 }
 
 #[test]
