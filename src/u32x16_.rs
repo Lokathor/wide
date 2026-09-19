@@ -301,6 +301,36 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // `_mm512_unpacklo_epi32` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [aa, _]: [u32x8; 2] = cast(self);
+        let [ba, _]: [u32x8; 2] = cast(b);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx512f")] {
+        // `_mm512_unpackhi_epi32` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [_, ab]: [u32x8; 2] = cast(self);
+        let [_, bb]: [u32x8; 2] = cast(b);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
+      }
+    }
+  }
+
+  #[inline]
   pub fn shuffle(self, indices: u32x16) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
@@ -789,42 +819,6 @@ impl From<u16x16> for u32x16 {
 /// The following functionality exists only for [`u32x16`], or only for
 /// particular types inconsistently.
 impl u32x16 {
-  /// Returns `[self[0], b[0], self[1], b[1], ...]`, interleaving the low half
-  /// of each vector.
-  #[inline]
-  #[must_use]
-  pub fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // `_mm512_unpacklo_epi32` cannot be used because it acts within each
-        // 128-bit lane, which is a different operation.
-        let [aa, _]: [u32x8; 2] = cast(self);
-        let [ba, _]: [u32x8; 2] = cast(b);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
-      } else {
-        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
-      }
-    }
-  }
-
-  /// Returns `[self[8], b[8], self[9], b[9], ...]`, interleaving the high half
-  /// of each vector.
-  #[inline]
-  #[must_use]
-  pub fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512f")] {
-        // `_mm512_unpackhi_epi32` cannot be used because it acts within each
-        // 128-bit lane, which is a different operation.
-        let [_, ab]: [u32x8; 2] = cast(self);
-        let [_, bb]: [u32x8; 2] = cast(b);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
-      } else {
-        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
-      }
-    }
-  }
-
   /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
   /// `a` and `b`. `W` must be in `1..=32`.
   ///

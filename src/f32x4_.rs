@@ -490,6 +490,50 @@ impl_simd_float! {
     }
   }
 
+  #[inline]
+  pub fn unpack_lo(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: unpack_low_m128(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: u32x4_shuffle::<0, 4, 1, 5>(self.simd, b.simd)
+        }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))]{
+        unsafe {Self { neon: vzip1q_f32(self.neon, b.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[0],
+          b.arr[0],
+          self.arr[1],
+          b.arr[1],
+        ]}
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, b: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse")] {
+        Self { sse: unpack_high_m128(self.sse, b.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self {
+          simd: u32x4_shuffle::<2, 6, 3, 7>(self.simd, b.simd)
+        }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe {Self { neon: vzip2q_f32(self.neon, b.neon) }}
+      } else {
+        Self { arr: [
+          self.arr[2],
+          b.arr[2],
+          self.arr[3],
+          b.arr[3],
+        ]}
+      }
+    }
+  }
+
   ///
   /// Currently this function is only accelerated on `sse`.
   #[inline]
@@ -1992,54 +2036,6 @@ impl f32x4 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
-  }
-
-  /// Returns `[self[0], b[0], self[1], b[1]]`.
-  #[must_use]
-  #[inline]
-  pub fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        Self { sse: unpack_low_m128(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: u32x4_shuffle::<0, 4, 1, 5>(self.simd, b.simd)
-        }
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))]{
-        unsafe {Self { neon: vzip1q_f32(self.neon, b.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[0],
-          b.arr[0],
-          self.arr[1],
-          b.arr[1],
-        ]}
-      }
-    }
-  }
-
-  /// Returns `[self[2], b[2], self[3], b[3]]`.
-  #[must_use]
-  #[inline]
-  pub fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        Self { sse: unpack_high_m128(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: u32x4_shuffle::<2, 6, 3, 7>(self.simd, b.simd)
-        }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vzip2q_f32(self.neon, b.neon) }}
-      } else {
-        Self { arr: [
-          self.arr[2],
-          b.arr[2],
-          self.arr[3],
-          b.arr[3],
-        ]}
-      }
-    }
   }
 
   /// Converts each element from [`i32`] to [`f32`].

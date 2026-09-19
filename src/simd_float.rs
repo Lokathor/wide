@@ -52,6 +52,8 @@ macro_rules! impl_simd_float {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
+    $fn_unpack_lo:item
+    $fn_unpack_hi:item
     $fn_transpose:item
 
     // Float-specific functions
@@ -148,6 +150,10 @@ macro_rules! impl_simd_float {
       $fn_any
 
       $fn_all
+
+      $fn_unpack_lo
+
+      $fn_unpack_hi
 
       #[inline]
       pub fn shuffle(self, indices: $UintSimd) -> Self {
