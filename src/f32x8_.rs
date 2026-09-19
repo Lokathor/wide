@@ -379,12 +379,12 @@ impl_simd_float! {
 
   #[inline]
   pub fn unpack_lo(self, other: Self) -> Self {
-    todo!()
+    Self::from_bits(self.to_bits().unpack_lo(other.to_bits()))
   }
 
   #[inline]
   pub fn unpack_hi(self, other: Self) -> Self {
-    todo!()
+    Self::from_bits(self.to_bits().unpack_hi(other.to_bits()))
   }
 
   ///
