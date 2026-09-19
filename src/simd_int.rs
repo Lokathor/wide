@@ -126,6 +126,16 @@ macro_rules! impl_simd_int {
       }
 
       #[inline]
+      pub fn unpack_lo(self, other: Self) -> Self {
+        self.cast_unsigned().unpack_lo(other.cast_unsigned()).cast_signed()
+      }
+
+      #[inline]
+      pub fn unpack_hi(self, other: Self) -> Self {
+        self.cast_unsigned().unpack_hi(other.cast_unsigned()).cast_signed()
+      }
+
+      #[inline]
       pub fn shuffle(self, indices: $UintSimd) -> Self {
         self.cast_unsigned().shuffle(indices).cast_signed()
       }
