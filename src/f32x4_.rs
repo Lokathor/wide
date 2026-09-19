@@ -1930,6 +1930,23 @@ impl_simd_float! {
 /// The following functionality exists only for [`f32x4`], or only for
 /// particular types inconsistently.
 impl f32x4 {
+  /// Returns a SIMD vector whose elements are selected from `self` using
+  /// constant indices.
+  ///
+  /// If an index is out of bounds, compilation fails.
+  ///
+  /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+  #[inline]
+  #[must_use]
+  pub fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+  >(self) -> Self {
+    Self::from_bits(self.to_bits().shuffle_consts::<I0, I1, I2, I3>())
+  }
+
   #[inline]
   fn vm_pow2n(self) -> Self {
     const_f32_as_f32x4!(pow2_23, 8388608.0);
