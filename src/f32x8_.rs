@@ -377,6 +377,16 @@ impl_simd_float! {
     }
   }
 
+  #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    todo!()
+  }
+
   ///
   /// Currently this function is only accelerated on `avx`.
   #[inline]

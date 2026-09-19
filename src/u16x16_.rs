@@ -298,6 +298,16 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    todo!()
+  }
+
+  #[inline]
   pub fn shuffle(self, indices: u16x16) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
