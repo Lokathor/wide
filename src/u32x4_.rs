@@ -480,34 +480,34 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, b: Self) -> Self {
+  pub fn unpack_lo(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_low_i32_m128i(self.sse, b.sse) }
+        Self { sse: unpack_low_i32_m128i(self.sse, other.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_shuffle::<0, 4, 1, 5>(self.simd, b.simd) }
+        Self { simd: u32x4_shuffle::<0, 4, 1, 5>(self.simd, other.simd) }
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip1q_u32(self.neon, b.neon) } }
+        Self { neon: unsafe { vzip1q_u32(self.neon, other.neon) } }
       } else {
         let s = self.as_array();
-        let b = b.as_array();
+        let b = other.as_array();
         Self::new([s[0], b[0], s[1], b[1]])
       }
     }
   }
 
   #[inline]
-  pub fn unpack_hi(self, b: Self) -> Self {
+  pub fn unpack_hi(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_high_i32_m128i(self.sse, b.sse) }
+        Self { sse: unpack_high_i32_m128i(self.sse, other.sse) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u32x4_shuffle::<2, 6, 3, 7>(self.simd, b.simd) }
+        Self { simd: u32x4_shuffle::<2, 6, 3, 7>(self.simd, other.simd) }
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip2q_u32(self.neon, b.neon) } }
+        Self { neon: unsafe { vzip2q_u32(self.neon, other.neon) } }
       } else {
         let s = self.as_array();
-        let b = b.as_array();
+        let b = other.as_array();
         Self::new([s[2], b[2], s[3], b[3]])
       }
     }

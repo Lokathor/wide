@@ -301,31 +301,31 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, b: Self) -> Self {
+  pub fn unpack_lo(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // `_mm512_unpacklo_epi32` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [aa, _]: [u32x8; 2] = cast(self);
-        let [ba, _]: [u32x8; 2] = cast(b);
+        let [ba, _]: [u32x8; 2] = cast(other);
         cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
       } else {
-        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
+        Self { a: self.a.unpack_lo(other.a), b: self.a.unpack_hi(other.a) }
       }
     }
   }
 
   #[inline]
-  pub fn unpack_hi(self, b: Self) -> Self {
+  pub fn unpack_hi(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // `_mm512_unpackhi_epi32` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [_, ab]: [u32x8; 2] = cast(self);
-        let [_, bb]: [u32x8; 2] = cast(b);
+        let [_, bb]: [u32x8; 2] = cast(other);
         cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
       } else {
-        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
+        Self { a: self.b.unpack_lo(other.b), b: self.b.unpack_hi(other.b) }
       }
     }
   }
