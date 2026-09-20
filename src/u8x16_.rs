@@ -505,7 +505,69 @@ impl_simd_uint! {
 
   #[inline]
   pub fn replace<const INDEX: usize>(self, value: u8) -> Self {
-    todo!()
+    const {
+      assert!(INDEX < 16, "attempt to call `Simd::replace` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..16 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => Self { sse: insert_i8_imm_m128i::<$INDEX>(self.sse, value as i32) },)*
+              16.. => unreachable!()
+            }
+          } else if #[cfg(target_feature = "sse2")] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm_slli_si128;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm_slli_si128;
+
+            let replace_mask = cast::<u128, Self>(const {
+              let shl_bytes = if cfg!(target_endian = "little") {
+                INDEX
+              } else {
+                15 - INDEX
+              };
+              (u8::MAX as u128) << (shl_bytes * 8)
+            });
+
+            match INDEX {
+              $($INDEX => {
+                let value = set_i32_m128i_s(value as i32);
+                // TODO(safe_arch): Add `_mm_slli_si128`
+                let shifted_value = Self {
+                  sse: m128i(unsafe { _mm_slli_si128::<$INDEX>(value.0) }),
+                };
+
+                replace_mask.select(shifted_value, self)
+              })*
+              16.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => Self { neon: vsetq_lane_u8::<$INDEX>(self.neon, value as i32) },)*
+                16.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self { simd: u8x16_replace_lane::<INDEX>(self.simd, value) }
+          } else {
+            let mut result = self;
+            result.as_mut_array()[INDEX] = value;
+            result
+          }
+        }
+      };
+    }
+    use_indices! { 0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
   }
 
   #[inline]

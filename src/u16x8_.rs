@@ -384,7 +384,42 @@ impl_simd_uint! {
 
   #[inline]
   pub fn replace<const INDEX: usize>(self, value: u16) -> Self {
-    todo!()
+    const {
+      assert!(INDEX < 8, "attempt to call `Simd::replace` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..8 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse2")] {
+            match INDEX {
+              $($INDEX => Self { sse: insert_i16_from_i32_m128i::<$INDEX>(self.sse, value as i32) },)*
+              8.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => Self { neon: vsetq_lane_u16::<$INDEX>(self.neon, value as i32) },)*
+                8.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self { simd: u16x8_replace_lane::<INDEX>(self.simd, value) }
+          } else {
+            let mut result = self;
+            result.as_mut_array()[INDEX] = value;
+            result
+          }
+        }
+      };
+    }
+    use_indices! { 0..8 = [0, 1, 2, 3, 4, 5, 6, 7] }
   }
 
   #[inline]

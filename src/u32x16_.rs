@@ -222,7 +222,51 @@ impl_simd_uint! {
 
   #[inline]
   pub fn replace<const INDEX: usize>(self, value: u32) -> Self {
-    todo!()
+    const {
+      assert!(INDEX < 16, "attempt to call `Simd::replace` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..16 = [$($INDEX:literal),*], 8..16 = [$($HIGH_INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "avx512f")] {
+            // TODO(safe_arch): Add `_mm512_mask_set1_epi32`
+            unsafe {
+              Self {
+                avx512: m512i(_mm512_mask_set1_epi32(
+                  self.avx512.0,
+                  const {
+                    let mut mask = [0; 16];
+                    mask[INDEX] = u32::MAX:
+                    Self::new(mask).avx512.0
+                  },
+                  value.cast_signed(),
+                )),
+              }
+            }
+          } else {
+            let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
+
+            if const { INDEX < 8 } {
+              cast([self_a.replace::<INDEX>(value), self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace::<{ $HIGH_INDEX - 8 }>(value),)*
+                ..8 | 16.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
+    }
   }
 
   #[inline]

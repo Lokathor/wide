@@ -212,7 +212,58 @@ impl_simd_uint! {
 
   #[inline]
   pub fn replace<const INDEX: usize>(self, value: u8) -> Self {
-    todo!()
+    const {
+      assert!(INDEX < 64, "attempt to call `Simd::replace` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..64 = [$($INDEX:literal),*], 32..64 = [$($HIGH_INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "avx512bw")] {
+            // TODO(safe_arch): Add `_mm512_mask_set1_epi8`
+            unsafe {
+              Self {
+                avx512: m512i(_mm512_mask_set1_epi8(
+                  self.avx512.0,
+                  const {
+                    let mut mask = [0; 64];
+                    mask[INDEX] = u8::MAX:
+                    Self::new(mask).avx512.0
+                  },
+                  value.cast_signed(),
+                )),
+              }
+            }
+          } else {
+            let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
+
+            if const { INDEX < 32 } {
+              cast([self_a.replace::<INDEX>(value), self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace::<{ $HIGH_INDEX - 32 }>(value),)*
+                ..32 | 64.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..64 = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
+      ],
+      32..64 = [
+        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+        55, 56, 57, 58, 59, 60, 61, 62, 63
+      ]
+    }
   }
 
   #[inline]
