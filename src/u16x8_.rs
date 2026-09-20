@@ -383,6 +383,16 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace<const INDEX: usize>(self, value: u16) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn extract<const INDEX: usize>(self) -> u16 {
+    todo!()
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u16 {
     pick! {
       if #[cfg(target_feature="sse2")] {

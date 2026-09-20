@@ -226,6 +226,16 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace<const INDEX: usize>(self, value: u8) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn extract<const INDEX: usize>(self) -> u8 {
+    todo!()
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u8 {
     let array: [u8x16; 2] = cast(self);
     (array[0] + array[1]).reduce_add()

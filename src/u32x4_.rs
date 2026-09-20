@@ -328,6 +328,16 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace<const INDEX: usize>(self, value: u32) -> Self {
+    todo!()
+  }
+
+  #[inline]
+  pub fn extract<const INDEX: usize>(self) -> u32 {
+    todo!()
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -1171,7 +1181,9 @@ impl u32x4 {
     const I1: usize,
     const I2: usize,
     const I3: usize,
-  >(self) -> Self {
+  >(
+    self,
+  ) -> Self {
     const {
       assert!(I0 < 4);
       assert!(I1 < 4);

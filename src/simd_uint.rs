@@ -42,6 +42,8 @@ macro_rules! impl_simd_uint {
     $fn_simd_gt:item
     $fn_simd_le:item
     $fn_simd_ge:item
+    $fn_replace:item
+    $fn_extract:item
     $fn_reduce_add:item
     $fn_reduce_mul:item
     $fn_bitselect:item
@@ -108,6 +110,10 @@ macro_rules! impl_simd_uint {
       $fn_simd_le
 
       $fn_simd_ge
+
+      $fn_replace
+
+      $fn_extract
 
       $fn_reduce_add
 
