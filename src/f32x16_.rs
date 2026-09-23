@@ -596,6 +596,26 @@ impl_simd_float! {
   }
 
   #[inline]
+  pub fn reduce_max(self) -> f32 {
+    todo!()
+  }
+
+  #[inline]
+  pub fn fast_reduce_max(self) -> f32 {
+    todo!()
+  }
+
+  #[inline]
+  pub fn reduce_min(self) -> f32 {
+    todo!()
+  }
+
+  #[inline]
+  pub fn fast_reduce_min(self) -> f32 {
+    todo!()
+  }
+
+  #[inline]
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
