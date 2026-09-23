@@ -350,6 +350,68 @@ fn test_fast_clamp() {
 }
 
 #[test]
+fn test_reduce_max() {
+  for_simd_types!(|T: Float, N| {
+    for value in random_iter::<[T; N]>() {
+      let actual = Simd::new(value).reduce_max();
+      let expected = value.into_iter().reduce(T::max).unwrap();
+
+      assert!(
+        actual == expected || actual.is_nan() && expected.is_nan(),
+        "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_fast_reduce_max() {
+  for_simd_types!(|T: Float, N| {
+    for value in random_iter::<[T; N]>() {
+      let actual = Simd::new(value).fast_reduce_max();
+      let expected = value.into_iter().reduce(T::max).unwrap();
+
+      assert!(
+        actual == expected
+          || actual.is_nan() && value.into_iter().any(T::is_nan),
+        "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_reduce_min() {
+  for_simd_types!(|T: Float, N| {
+    for value in random_iter::<[T; N]>() {
+      let actual = Simd::new(value).reduce_min();
+      let expected = value.into_iter().reduce(T::min).unwrap();
+
+      assert!(
+        actual == expected || actual.is_nan() && expected.is_nan(),
+        "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
+      );
+    }
+  });
+}
+
+#[test]
+fn test_fast_reduce_min() {
+  for_simd_types!(|T: Float, N| {
+    for value in random_iter::<[T; N]>() {
+      let actual = Simd::new(value).fast_reduce_min();
+      let expected = value.into_iter().reduce(T::min).unwrap();
+
+      assert!(
+        actual == expected
+          || actual.is_nan() && value.into_iter().any(T::is_nan),
+        "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
+      );
+    }
+  });
+}
+
+#[test]
 fn test_midpoint() {
   for_simd_types!(|T: Float, N| {
     for [value, other] in simd_chunks!(
