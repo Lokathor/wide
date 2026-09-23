@@ -68,6 +68,10 @@ macro_rules! impl_simd_float {
     $fn_fast_min:item
     $fn_clamp:item
     $fn_fast_clamp:item
+    $fn_reduce_max:item
+    $fn_fast_reduce_max:item
+    $fn_reduce_min:item
+    $fn_fast_reduce_min:item
     $fn_abs:item
     $fn_floor:item
     $fn_ceil:item
@@ -787,6 +791,56 @@ macro_rules! impl_simd_float {
       /// [`min`]: Self::min
       #[must_use]
       $fn_fast_min
+
+      /// Returns the maximum between all elements of `self`.
+      ///
+      /// If only some elements are NaN, then a non-NaN element is returned. If
+      /// all elements are NaN, the return value is NaN. If elements compare
+      /// equal (such as for the case of `+0.0` and `-0.0`), either may be
+      /// returned non-deterministically.
+      ///
+      /// See [`fast_reduce_max`] for a faster variant that does not handle
+      /// NaNs.
+      ///
+      /// [`fast_reduce_max`]: Self::fast_reduce_max
+      #[must_use]
+      $fn_reduce_max
+
+      /// Returns the maximum between all elements of `self`.
+      ///
+      /// Unlike [`reduce_max`], this function does not handle NaNs. If some
+      /// elements are NaN, then the return value is either a non-NaN element or
+      /// NaN. If elements compare equal (such as for the case of `+0.0` and
+      /// `-0.0`), either may be returned non-deterministically.
+      ///
+      /// [`reduce_max`]: Self::reduce_max
+      #[must_use]
+      $fn_fast_reduce_max
+
+      /// Returns the minimum between all elements of `self`.
+      ///
+      /// If only some elements are NaN, then a non-NaN element is returned. If
+      /// all elements are NaN, the return value is NaN. If elements compare
+      /// equal (such as for the case of `+0.0` and `-0.0`), either may be
+      /// returned non-deterministically.
+      ///
+      /// See [`fast_reduce_min`] for a faster variant that does not handle
+      /// NaNs.
+      ///
+      /// [`fast_reduce_min`]: Self::fast_reduce_min
+      #[must_use]
+      $fn_reduce_min
+
+      /// Returns the minimum between all elements of `self`.
+      ///
+      /// Unlike [`reduce_min`], this function does not handle NaNs. If some
+      /// elements are NaN, then the return value is either a non-NaN element or
+      /// NaN. If elements compare equal (such as for the case of `+0.0` and
+      /// `-0.0`), either may be returned non-deterministically.
+      ///
+      /// [`reduce_min`]: Self::reduce_min
+      #[must_use]
+      $fn_fast_reduce_min
 
       /// Calculates the midpoint (average) between `self` and `other`.
       ///
