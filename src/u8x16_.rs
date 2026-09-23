@@ -704,6 +704,62 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    pick! {
+        if #[cfg(target_feature = "sse2")] {
+            u8x16 { sse: unpack_low_i8_m128i(self.sse, other.sse) }
+        } else if #[cfg(target_feature = "simd128")] {
+          u8x16 { simd: u8x16_shuffle::<0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23>(self.simd, other.simd) }
+        } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            let lhs = unsafe { vget_low_u8(self.neon) };
+            let rhs = unsafe { vget_low_u8(other.neon) };
+
+            let zipped = unsafe { vzip_u8(lhs, rhs) };
+            u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
+        } else {
+            u8x16::new([
+                self.as_array()[0], other.as_array()[0],
+                self.as_array()[1], other.as_array()[1],
+                self.as_array()[2], other.as_array()[2],
+                self.as_array()[3], other.as_array()[3],
+                self.as_array()[4], other.as_array()[4],
+                self.as_array()[5], other.as_array()[5],
+                self.as_array()[6], other.as_array()[6],
+                self.as_array()[7], other.as_array()[7],
+            ])
+        }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    pick! {
+        if #[cfg(target_feature = "sse2")] {
+            u8x16 { sse: unpack_high_i8_m128i(self.sse, other.sse) }
+        } else if #[cfg(target_feature = "simd128")] {
+            u8x16 { simd: u8x16_shuffle::<8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31>(self.simd, other.simd) }
+        } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            let lhs = unsafe { vget_high_u8(self.neon) };
+            let rhs = unsafe { vget_high_u8(other.neon) };
+
+            let zipped = unsafe { vzip_u8(lhs, rhs) };
+            u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
+        } else {
+            u8x16::new([
+                self.as_array()[8], other.as_array()[8],
+                self.as_array()[9], other.as_array()[9],
+                self.as_array()[10], other.as_array()[10],
+                self.as_array()[11], other.as_array()[11],
+                self.as_array()[12], other.as_array()[12],
+                self.as_array()[13], other.as_array()[13],
+                self.as_array()[14], other.as_array()[14],
+                self.as_array()[15], other.as_array()[15],
+            ])
+        }
+    }
+  }
+
+  #[inline]
   pub fn shuffle(self, indices: u8x16) -> Self {
     pick! {
       if #[cfg(target_feature="ssse3")] {
@@ -1567,68 +1623,6 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u8x16`], or only for
 /// particular types inconsistently.
 impl u8x16 {
-  /// Returns `[lhs[0], rhs[0], lhs[1], rhs[1], ...]`, taking the first 8
-  /// elements of each input and dropping their last 8 elements.
-  #[inline]
-  #[must_use]
-  pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
-    pick! {
-        if #[cfg(target_feature = "sse2")] {
-            u8x16 { sse: unpack_low_i8_m128i(lhs.sse, rhs.sse) }
-        } else if #[cfg(target_feature = "simd128")] {
-          u8x16 { simd: u8x16_shuffle::<0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23>(lhs.simd, rhs.simd) }
-        } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-            let lhs = unsafe { vget_low_u8(lhs.neon) };
-            let rhs = unsafe { vget_low_u8(rhs.neon) };
-
-            let zipped = unsafe { vzip_u8(lhs, rhs) };
-            u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
-        } else {
-            u8x16::new([
-                lhs.as_array()[0], rhs.as_array()[0],
-                lhs.as_array()[1], rhs.as_array()[1],
-                lhs.as_array()[2], rhs.as_array()[2],
-                lhs.as_array()[3], rhs.as_array()[3],
-                lhs.as_array()[4], rhs.as_array()[4],
-                lhs.as_array()[5], rhs.as_array()[5],
-                lhs.as_array()[6], rhs.as_array()[6],
-                lhs.as_array()[7], rhs.as_array()[7],
-            ])
-        }
-    }
-  }
-
-  /// Returns `[lhs[8], rhs[8], lhs[9], rhs[9], ...]`, taking the last 8
-  /// elements of each input and dropping their first 8 elements.
-  #[inline]
-  #[must_use]
-  pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
-    pick! {
-        if #[cfg(target_feature = "sse2")] {
-            u8x16 { sse: unpack_high_i8_m128i(lhs.sse, rhs.sse) }
-        } else if #[cfg(target_feature = "simd128")] {
-            u8x16 { simd: u8x16_shuffle::<8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31>(lhs.simd, rhs.simd) }
-        } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-            let lhs = unsafe { vget_high_u8(lhs.neon) };
-            let rhs = unsafe { vget_high_u8(rhs.neon) };
-
-            let zipped = unsafe { vzip_u8(lhs, rhs) };
-            u8x16 { neon: unsafe { vcombine_u8(zipped.0, zipped.1) } }
-        } else {
-            u8x16::new([
-                lhs.as_array()[8], rhs.as_array()[8],
-                lhs.as_array()[9], rhs.as_array()[9],
-                lhs.as_array()[10], rhs.as_array()[10],
-                lhs.as_array()[11], rhs.as_array()[11],
-                lhs.as_array()[12], rhs.as_array()[12],
-                lhs.as_array()[13], rhs.as_array()[13],
-                lhs.as_array()[14], rhs.as_array()[14],
-                lhs.as_array()[15], rhs.as_array()[15],
-            ])
-        }
-    }
-  }
-
   /// Treats two [`i16x8`] values as a single [`i16x16`] value, then converts
   /// each element from [`i16`] to [`u8`], saturating out of range values.
   #[inline]
@@ -1674,6 +1668,39 @@ impl u8x16 {
             ]}
         }
     }
+  }
+
+  /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+  /// halfs.
+  ///
+  /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+  ///
+  /// This function has been deprecated and renamed to [`unpack_lo`] in order to
+  /// be consistent with other types.
+  ///
+  /// [`unpack_lo`]: Self::unpack_lo
+  #[inline]
+  #[must_use]
+  #[deprecated(since = "1.8.0", note = "renamed to `unpack_lo`")]
+  pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
+    lhs.unpack_lo(rhs)
+  }
+
+  /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+  /// halfs.
+  ///
+  /// Equivalent to
+  /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+  ///
+  /// This function has been deprecated and renamed to [`unpack_hi`] in order to
+  /// be consistent with other types.
+  ///
+  /// [`unpack_hi`]: Self::unpack_hi
+  #[inline]
+  #[must_use]
+  #[deprecated(since = "1.8.0", note = "renamed to `unpack_hi`")]
+  pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
+    lhs.unpack_hi(rhs)
   }
 
   /// Returns a new vector where each element is based on the index values in

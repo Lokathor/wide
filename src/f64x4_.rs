@@ -365,6 +365,36 @@ impl_simd_float! {
     }
   }
 
+  #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // `unpack_lo_m256d` cannot be used because it actually performs a
+        // different operation.
+        let [aa, _]: [f64x2; 2] = cast(self);
+        let [ba, _]: [f64x2; 2] = cast(other);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(other.a), b: self.a.unpack_hi(other.a) }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        // `unpack_hi_m256d` cannot be used because it actually performs a
+        // different operation.
+        let [_, ab]: [f64x2; 2] = cast(self);
+        let [_, bb]: [f64x2; 2] = cast(other);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(other.b), b: self.b.unpack_hi(other.b) }
+      }
+    }
+  }
+
   ///
   /// Currently this function is only accelerated on `avx`.
   #[inline]
@@ -1877,42 +1907,6 @@ impl f64x4 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
-  }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // `unpack_lo_m256d` cannot be used because it actually performs a
-        // different operation.
-        let [aa, _]: [f64x2; 2] = cast(self);
-        let [ba, _]: [f64x2; 2] = cast(b);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
-      } else {
-        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
-      }
-    }
-  }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx")] {
-        // `unpack_hi_m256d` cannot be used because it actually performs a
-        // different operation.
-        let [_, ab]: [f64x2; 2] = cast(self);
-        let [_, bb]: [f64x2; 2] = cast(b);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
-      } else {
-        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
-      }
-    }
   }
 
   /// Converts each element from [`i32`] to [`f64`].

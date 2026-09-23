@@ -420,6 +420,36 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_low_i64_m128i(self.sse, other.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<0, 2>(self.simd, other.simd) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip1q_u64(self.neon, other.neon) } }
+      } else {
+        Self::new([self.as_array()[0], other.as_array()[0]])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_high_i64_m128i(self.sse, other.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<1, 3>(self.simd, other.simd) }
+      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip2q_u64(self.neon, other.neon) } }
+      } else {
+        Self::new([self.as_array()[1], other.as_array()[1]])
+      }
+    }
+  }
+
+  #[inline]
   pub fn shuffle(self, indices: u64x2) -> Self {
     pick! {
       if #[cfg(target_feature = "sse2")] {
@@ -905,40 +935,6 @@ impl u64x2 {
       u64x2::splat(u64::from_ne_bytes([0, 1, 2, 3, 4, 5, 6, 7]));
 
     cast::<u64x2, u8x16>(base | WITHIN_LANE)
-  }
-
-  /// Returns `[self[0], b[0]]`, taking the low element of the 128-bit lane.
-  #[inline]
-  #[must_use]
-  pub fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_low_i64_m128i(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<0, 2>(self.simd, b.simd) }
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip1q_u64(self.neon, b.neon) } }
-      } else {
-        Self::new([self.as_array()[0], b.as_array()[0]])
-      }
-    }
-  }
-
-  /// Returns `[self[1], b[1]]`, taking the high element of the 128-bit lane.
-  #[inline]
-  #[must_use]
-  pub fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_high_i64_m128i(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<1, 3>(self.simd, b.simd) }
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip2q_u64(self.neon, b.neon) } }
-      } else {
-        Self::new([self.as_array()[1], b.as_array()[1]])
-      }
-    }
   }
 
   /// The exact per-lane product of `a` and `b` masked to `W` bits.
