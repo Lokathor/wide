@@ -796,22 +796,58 @@ impl_simd_float! {
 
   #[inline]
   pub fn reduce_max(self) -> f32 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vmaxnmvq_f32(self.neon) }
+      } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
+        todo!("implement once `shuffle_consts` is merged")
+      } else {
+        let self_array = self.to_array();
+        self_array[0].max(self_array[1]).max(self_array[2]).max(self_array[3])
+      }
+    }
   }
 
   #[inline]
   pub fn fast_reduce_max(self) -> f32 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vmaxnmvq_f32(self.neon) }
+      } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
+        todo!("implement once `shuffle_consts` is merged")
+      } else {
+        let self_array = self.to_array();
+        self_array[0].max(self_array[1]).max(self_array[2]).max(self_array[3])
+      }
+    }
   }
 
   #[inline]
   pub fn reduce_min(self) -> f32 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vminnmvq_f32(self.neon) }
+      } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
+        todo!("implement once `shuffle_consts` is merged")
+      } else {
+        let self_array = self.to_array();
+        self_array[0].min(self_array[1]).min(self_array[2]).min(self_array[3])
+      }
+    }
   }
 
   #[inline]
   pub fn fast_reduce_min(self) -> f32 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vminnmvq_f32(self.neon) }
+      } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
+        todo!("implement once `shuffle_consts` is merged")
+      } else {
+        let self_array = self.to_array();
+        self_array[0].min(self_array[1]).min(self_array[2]).min(self_array[3])
+      }
+    }
   }
 
   #[inline]

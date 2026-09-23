@@ -628,22 +628,26 @@ impl_simd_float! {
 
   #[inline]
   pub fn reduce_max(self) -> f32 {
-    todo!()
+    let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
+    self_a.max(self_b).reduce_max()
   }
 
   #[inline]
   pub fn fast_reduce_max(self) -> f32 {
-    todo!()
+    let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
+    self_a.fast_max(self_b).fast_reduce_max()
   }
 
   #[inline]
   pub fn reduce_min(self) -> f32 {
-    todo!()
+    let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
+    self_a.min(self_b).reduce_min()
   }
 
   #[inline]
   pub fn fast_reduce_min(self) -> f32 {
-    todo!()
+    let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
+    self_a.fast_min(self_b).fast_reduce_min()
   }
 
   #[inline]

@@ -735,22 +735,50 @@ impl_simd_float! {
 
   #[inline]
   pub fn reduce_max(self) -> f64 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vmaxnmvq_f64(self.neon) }
+      } else {
+        let self_array = self.to_array();
+        self_array[0].max(self_array[1])
+      }
+    }
   }
 
   #[inline]
   pub fn fast_reduce_max(self) -> f64 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vmaxnmvq_f64(self.neon) }
+      } else {
+        let [e0, e1] = self.to_array();
+        if e0 > e1 { e0 } else { e1 }
+      }
+    }
   }
 
   #[inline]
   pub fn reduce_min(self) -> f64 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vminnmvq_f64(self.neon) }
+      } else {
+        let self_array = self.to_array();
+        self_array[0].min(self_array[1])
+      }
+    }
   }
 
   #[inline]
   pub fn fast_reduce_min(self) -> f64 {
-    todo!()
+    pick! {
+      if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+        unsafe { vminnmvq_f64(self.neon) }
+      } else {
+        let [e0, e1] = self.to_array();
+        if e0 < e1 { e0 } else { e1 }
+      }
+    }
   }
 
   #[inline]
