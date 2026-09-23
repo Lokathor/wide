@@ -821,12 +821,13 @@ impl_simd_float! {
         // Based on https://github.com/bitshifter/glam-rs/blob/main/src/sse2.rs `m128_floor`
         // Based on https://github.com/microsoft/DirectXMath `XMVectorFloor`
 
+        const BOUNDS_LIMIT: i32x4 = i32x4::splat(8388608.0_f32.to_bits().cast_signed());
+
         // This evalutes to `false` for NaNs, positive and negative infinity
         // and values large enough that their precision guarantees they are
         // whole numbers.
         let in_bounds = Self::from_bits(
-          self.abs().to_bits().cast_signed().simd_lt(8388608.0_f32.to_bits().cast_signed())
-            .cast_unsigned()
+          self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
         );
 
         let self_trunc = Self {
@@ -870,12 +871,13 @@ impl_simd_float! {
         // Based on https://github.com/bitshifter/glam-rs/blob/main/src/sse2.rs `m128_ceil`
         // Based on https://github.com/microsoft/DirectXMath `XMVectorCeil`
 
+        const BOUNDS_LIMIT: i32x4 = i32x4::splat(8388608.0_f32.to_bits().cast_signed());
+
         // This evalutes to `false` for NaNs, positive and negative infinity
         // and values large enough that their precision guarantees they are
         // whole numbers.
         let in_bounds = Self::from_bits(
-          self.abs().to_bits().cast_signed().simd_lt(8388608.0_f32.to_bits().cast_signed())
-            .cast_unsigned()
+          self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
         );
 
         let self_trunc = Self {
