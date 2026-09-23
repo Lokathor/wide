@@ -1,5 +1,10 @@
 # `wide` Changelog
 
+## Unreleased
+
+* [#330](https://github.com/Lokathor/wide/pull/330): Add optimized `sse2` path
+  for `f32x4::floor` and `f32x4::ceil`
+
 ## 1.7.1
 
 * [#327](https://github.com/Lokathor/wide/pull/327): Fixed `i/u32x4::to_bitmask`

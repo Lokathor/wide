@@ -817,6 +817,31 @@ impl_simd_float! {
         Self { sse: floor_m128(self.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndmq_f32(self.neon) }}
+      } else if #[cfg(target_feature = "sse2")] {
+        // Based on https://github.com/bitshifter/glam-rs/blob/main/src/sse2.rs `m128_floor`
+        // Based on https://github.com/microsoft/DirectXMath `XMVectorFloor`
+
+        const BOUNDS_LIMIT: i32x4 = i32x4::splat(8388608.0_f32.to_bits().cast_signed());
+
+        // This evalutes to `false` for NaNs, positive and negative infinity
+        // and values large enough that their precision guarantees they are
+        // whole numbers.
+        let in_bounds = Self::from_bits(
+          self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
+        );
+
+        let self_trunc = Self {
+          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.sse)),
+        };
+
+        let gt_self = self_trunc.simd_gt(self);
+        // This is a faster way to compute `gt_self.select(0.0, -1.0)`
+        let offset = Self {
+          sse: convert_to_m128_from_i32_m128i(cast(gt_self)),
+        };
+
+        let result = self_trunc + offset;
+        in_bounds.abs().bitselect(result, self)
       } else if #[cfg(feature="std")] {
         let base: [f32; 4] = cast(self);
         cast(base.map(|val| val.floor()))
@@ -842,6 +867,31 @@ impl_simd_float! {
         Self { sse: ceil_m128(self.sse) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vrndpq_f32(self.neon) }}
+      } else if #[cfg(target_feature = "sse2")] {
+        // Based on https://github.com/bitshifter/glam-rs/blob/main/src/sse2.rs `m128_ceil`
+        // Based on https://github.com/microsoft/DirectXMath `XMVectorCeil`
+
+        const BOUNDS_LIMIT: i32x4 = i32x4::splat(8388608.0_f32.to_bits().cast_signed());
+
+        // This evalutes to `false` for NaNs, positive and negative infinity
+        // and values large enough that their precision guarantees they are
+        // whole numbers.
+        let in_bounds = Self::from_bits(
+          self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
+        );
+
+        let self_trunc = Self {
+          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.sse)),
+        };
+
+        let lt_self = self_trunc.simd_lt(self);
+        // This is a faster way to compute `lt_self.select(0.0, -1.0)`
+        let offset = Self {
+          sse: convert_to_m128_from_i32_m128i(cast(lt_self)),
+        };
+
+        let result = self_trunc - offset;
+        in_bounds.abs().bitselect(result, self)
       } else if #[cfg(feature="std")] {
         let base: [f32; 4] = cast(self);
         cast(base.map(|val| val.ceil()))
