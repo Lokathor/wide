@@ -41,6 +41,8 @@ macro_rules! impl_simd {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
+    $fn_unpack_lo:item
+    $fn_unpack_hi:item
     $fn_shuffle:item
     $fn_shuffle_zeroing:item
     $fn_shuffle_wrapping:item
@@ -633,6 +635,21 @@ macro_rules! impl_simd {
       pub fn none(self) -> bool {
         !self.any()
       }
+
+      /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+      /// halfs.
+      ///
+      /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+      #[must_use]
+      $fn_unpack_lo
+
+      /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+      /// halfs.
+      ///
+      /// Equivalent to
+      /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+      #[must_use]
+      $fn_unpack_hi
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.

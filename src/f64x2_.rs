@@ -481,6 +481,36 @@ impl_simd_float! {
     }
   }
 
+  #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_low_m128d(self.sse, other.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<0, 2>(self.simd, other.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip1q_f64(self.neon, other.neon) } }
+      } else {
+        Self::new([self.as_array()[0], other.as_array()[0]])
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        Self { sse: unpack_high_m128d(self.sse, other.sse) }
+      } else if #[cfg(target_feature="simd128")] {
+        Self { simd: i64x2_shuffle::<1, 3>(self.simd, other.simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+        Self { neon: unsafe { vzip2q_f64(self.neon, other.neon) } }
+      } else {
+        Self::new([self.as_array()[1], other.as_array()[1]])
+      }
+    }
+  }
+
   ///
   /// This function is accelerated on multiple target architectures.
   #[inline]
@@ -2119,42 +2149,6 @@ impl f64x2 {
   #[inline]
   fn nan_pow() -> Self {
     cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
-  }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_low_m128d(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<0, 2>(self.simd, b.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip1q_f64(self.neon, b.neon) } }
-      } else {
-        Self::new([self.as_array()[0], b.as_array()[0]])
-      }
-    }
-  }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_high_m128d(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<1, 3>(self.simd, b.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip2q_f64(self.neon, b.neon) } }
-      } else {
-        Self::new([self.as_array()[1], b.as_array()[1]])
-      }
-    }
   }
 
   /// Converts the lower two elements of `v` from [`i32`] to [`f64`], dropping
