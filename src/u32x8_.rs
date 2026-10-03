@@ -221,7 +221,7 @@ impl_simd_uint! {
 
             if const { INDEX < 4 } {
               let result_a = match INDEX {
-                $($LOW_INDEX => self_b.replace::<{ $LOW_INDEX }>(value),)*
+                $($LOW_INDEX => self_a.replace::<{ $LOW_INDEX }>(value),)*
                 4.. => unreachable!(),
               };
 
