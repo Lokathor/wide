@@ -227,7 +227,11 @@ impl_simd_uint! {
     /// Because of limitations in const generics, this must have separate
     /// branches per index. This macro is used to avoid duplication.
     macro_rules! use_indices {
-      (0..4 = [$($INDEX:literal),*], 2..4 = [$($HIGH_INDEX:literal),*]) => {
+      (
+        0..4 = [$($INDEX:literal),*],
+        0..2 = [$($LOW_INDEX:literal),*],
+        2..4 = [$($HIGH_INDEX:literal),*]
+      ) => {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             match INDEX {
@@ -238,7 +242,12 @@ impl_simd_uint! {
             let [self_a, self_b] = cast::<u64x4, [u64x2; 2]>(self);
 
             if const { INDEX < 2 } {
-              cast([self_a.replace::<INDEX>(value), self_b])
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_b.replace::<{ $LOW_INDEX }>(value),)*
+                2.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
             } else {
               let result_b = match INDEX {
                 $($HIGH_INDEX => self_b.replace::<{ $HIGH_INDEX - 2 }>(value),)*
@@ -251,7 +260,7 @@ impl_simd_uint! {
         }
       };
     }
-    use_indices! { 0..4 = [0, 1, 2, 3], 2..4 = [2, 3] }
+    use_indices! { 0..4 = [0, 1, 2, 3], 0..2 = [0, 1], 2..4 = [2, 3] }
   }
 
   #[inline]
@@ -847,7 +856,8 @@ impl u64x4 {
 
     // Then the offset of each byte within its lane. These bits are free because
     // every byte of `base` is a multiple of eight. `from_ne_bytes` keeps this
-    // correct on big endian, where the bytes of a lane are the other way around.
+    // correct on big endian, where the bytes of a lane are the other way
+    // around.
     const WITHIN_LANE: u64x4 =
       u64x4::splat(u64::from_ne_bytes([0, 1, 2, 3, 4, 5, 6, 7]));
 

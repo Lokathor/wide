@@ -229,7 +229,11 @@ impl_simd_uint! {
     /// Because of limitations in const generics, this must have separate
     /// branches per index. This macro is used to avoid duplication.
     macro_rules! use_indices {
-      (0..16 = [$($INDEX:literal),*], 8..16 = [$($HIGH_INDEX:literal),*]) => {
+      (
+        0..16 = [$($INDEX:literal),*],
+        0..8 = [$($LOW_INDEX:literal),*],
+        8..16 = [$($HIGH_INDEX:literal),*]
+      ) => {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
             // TODO(safe_arch): Add `_mm512_mask_set1_epi32`
@@ -250,7 +254,12 @@ impl_simd_uint! {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
 
             if const { INDEX < 8 } {
-              cast([self_a.replace::<INDEX>(value), self_b])
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_b.replace::<{ $LOW_INDEX }>(value),)*
+                8.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
             } else {
               let result_b = match INDEX {
                 $($HIGH_INDEX => self_b.replace::<{ $HIGH_INDEX - 8 }>(value),)*
@@ -265,6 +274,7 @@ impl_simd_uint! {
     }
     use_indices! {
       0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
       8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
     }
   }
