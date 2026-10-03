@@ -1124,6 +1124,163 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u32x4`], or only for
 /// particular types inconsistently.
 impl u32x4 {
+  /// Returns a SIMD vector whose elements are selected from `self` using
+  /// constant indices.
+  ///
+  /// If an index is out of bounds, compilation fails.
+  ///
+  /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+  #[inline]
+  #[must_use]
+  pub fn shuffle_consts<
+    const I0: usize,
+    const I1: usize,
+    const I2: usize,
+    const I3: usize,
+  >(self) -> Self {
+    const {
+      assert!(I0 < 4);
+      assert!(I1 < 4);
+      assert!(I2 < 4);
+      assert!(I3 < 4);
+    }
+
+    if const { I0 == 0 && I1 == 1 && I2 == 2 && I3 == 3 } {
+      self
+    } else {
+      pick! {
+        if #[cfg(target_feature = "sse2")] {
+          // This code path effectively calls `_mm_shuffle_epi32`, but must use
+          // inline assembly instead of the intrinsic. This operation takes an
+          // `i32` constant for indices, while we have a list of `usize`
+          // constants. The intrinsic takes the constant as a const-generic
+          // parameter, which does not let us perform the format conversion due
+          // to language limitations. However, inline assembly does support
+          // arbitrary `const` blocks for values in immediates.
+
+          use core::arch::asm;
+          #[cfg(target_arch = "x86")]
+          use core::arch::x86::__m128i;
+          #[cfg(target_arch = "x86_64")]
+          use core::arch::x86_64::__m128i;
+
+          let value: __m128i = self.sse.0;
+          let result: __m128i;
+
+          // SAFETY:
+          // - `pshufd` is guaranteed with `sse2`
+          // - This operation is `pure` because it only depends on the input
+          // - This operation is `nomem` because it only uses registers
+          // - This operation is `nostack` because it only uses registers
+          // - `result` always gets initialized
+          unsafe {
+            asm!(
+              "pshufd {result}, {value}, {immediate}",
+              result = lateout(xmm_reg) result,
+              value = in(xmm_reg) value,
+              immediate = const {
+                let i0 = I0 as u32;
+                let i1 = (I1 as u32) << 2;
+                let i2 = (I2 as u32) << 4;
+                let i3 = (I3 as u32) << 6;
+
+                (i0 | i1 | i2 | i3).cast_signed()
+              },
+              options(pure, nomem, nostack),
+            );
+          }
+
+          Self { sse: m128i(result) }
+        } else if #[cfg(all(
+          target_feature = "neon",
+          target_arch = "aarch64",
+          target_endian = "little",
+        ))] {
+          use core::mem::transmute;
+
+          // Special case for duplicate
+          if const { I0 == 1 && I1 == 1 && I2 == 1 && I3 == 1 } {
+            unsafe { Self { neon: vdupq_laneq_u32::<1>(self.neon) } }
+          } else if const { I0 == 2 && I1 == 2 && I2 == 2 && I3 == 2 } {
+            unsafe { Self { neon: vdupq_laneq_u32::<2>(self.neon) } }
+          } else if const { I0 == 3 && I1 == 3 && I2 == 3 && I3 == 3 } {
+            unsafe { Self { neon: vdupq_laneq_u32::<3>(self.neon) } }
+          }
+          // Special case for rotate
+          else if const { I0 == 1 && I1 == 2 && I2 == 3 && I3 == 0 } {
+            unsafe { Self { neon: vextq_u32::<1>(self.neon, self.neon) } }
+          } else if const { I0 == 2 && I1 == 3 && I2 == 0 && I3 == 1 } {
+            unsafe { Self { neon: vextq_u32::<2>(self.neon, self.neon) } }
+          } else if const { I0 == 3 && I1 == 0 && I2 == 1 && I3 == 2 } {
+            unsafe { Self { neon: vextq_u32::<3>(self.neon, self.neon) } }
+          }
+          // Special case for zip
+          else if const { I0 == 0 && I1 == 0 && I2 == 1 && I3 == 1 } {
+            unsafe { Self { neon: vzip1q_u32(self.neon, self.neon) } }
+          } else if const { I0 == 2 && I1 == 2 && I2 == 3 && I3 == 3 } {
+            unsafe { Self { neon: vzip2q_u32(self.neon, self.neon) } }
+          }
+          // Special case for unzip
+          else if const { I0 == 0 && I1 == 2 && I2 == 0 && I3 == 2 } {
+            unsafe { Self { neon: vuzp1q_u32(self.neon, self.neon) } }
+          } else if const { I0 == 1 && I1 == 3 && I2 == 1 && I3 == 3 } {
+            unsafe { Self { neon: vuzp2q_u32(self.neon, self.neon) } }
+          }
+          // Special case for transpose
+          else if const { I0 == 0 && I1 == 0 && I2 == 2 && I3 == 2 } {
+            unsafe { Self { neon: vtrn1q_u32(self.neon, self.neon) } }
+          } else if const { I0 == 1 && I1 == 1 && I2 == 3 && I3 == 3 } {
+            unsafe { Self { neon: vtrn2q_u32(self.neon, self.neon) } }
+          }
+          // Special case for reverse
+          else if const { I0 == 1 && I1 == 0 && I2 == 3 && I3 == 2 } {
+            unsafe { Self { neon: vrev64q_u32(self.neon) } }
+          }
+          // Fallback
+          else {
+            unsafe {
+              Self {
+                neon: vreinterpretq_u32_u8(vqtbl1q_u8(
+                  vreinterpretq_u8_u32(self.neon),
+                  const {
+                    transmute::<[u8; 16], uint8x16_t>([
+                      I0 as u8 * 4,
+                      I0 as u8 * 4 + 1,
+                      I0 as u8 * 4 + 2,
+                      I0 as u8 * 4 + 3,
+                      I1 as u8 * 4,
+                      I1 as u8 * 4 + 1,
+                      I1 as u8 * 4 + 2,
+                      I1 as u8 * 4 + 3,
+                      I2 as u8 * 4,
+                      I2 as u8 * 4 + 1,
+                      I2 as u8 * 4 + 2,
+                      I2 as u8 * 4 + 3,
+                      I3 as u8 * 4,
+                      I3 as u8 * 4 + 1,
+                      I3 as u8 * 4 + 2,
+                      I3 as u8 * 4 + 3,
+                    ])
+                  },
+                )),
+              }
+            }
+          }
+        } else if #[cfg(target_feature = "simd128")] {
+          Self { simd: u32x4_shuffle::<I0, I1, I2, I3>(self.simd, self.simd) }
+        } else {
+          let self_array = self.to_array();
+          Self::new([
+            self_array[I0],
+            self_array[I1],
+            self_array[I2],
+            self_array[I3],
+          ])
+        }
+      }
+    }
+  }
+
   /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
   /// vector of larger integers.
   ///

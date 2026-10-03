@@ -2392,6 +2392,48 @@ fn test_shuffle() {
 }
 
 #[test]
+fn test_shuffle_const_n4() {
+  let array = [21, 32, 43, 54];
+  let simd = u32x4::new(array);
+
+  // All permutations must be tested and there does not seem to be a nicer to do
+  // this
+  macro_rules! permutations {
+    ($([$I0:literal, $I1:literal, $I2:literal, $I3:literal]),* $(,)?) => {$(
+      assert_eq!(
+        simd.shuffle_consts::<$I0, $I1, $I2, $I3>(),
+        u32x4::new([array[$I0], array[$I1], array[$I2], array[$I3]]),
+      );
+    )*};
+    ($([$I0:literal, $I1:literal, $I2:literal]),* $(,)?) => {
+      permutations!($(
+        [$I0, $I1, $I2, 0],
+        [$I0, $I1, $I2, 1],
+        [$I0, $I1, $I2, 2],
+        [$I0, $I1, $I2, 3],
+      )*);
+    };
+    ($([$I0:literal, $I1:literal]),* $(,)?) => {
+      permutations!($(
+        [$I0, $I1, 0],
+        [$I0, $I1, 1],
+        [$I0, $I1, 2],
+        [$I0, $I1, 3],
+      )*);
+    };
+    ($([$I0:literal]),* $(,)?) => {
+      permutations!($(
+        [$I0, 0],
+        [$I0, 1],
+        [$I0, 2],
+        [$I0, 3],
+      )*);
+    };
+  }
+  permutations!([0], [1], [2], [3]);
+}
+
+#[test]
 fn test_shuffle_zeroing() {
   for_simd_types!(|T, N| {
     // The values themselves do not matter here, as long as each lane is
