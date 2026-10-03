@@ -314,6 +314,36 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_low_i64_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [aa, _]: [u64x2; 2] = cast(self);
+        let [ba, _]: [u64x2; 2] = cast(other);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(other.a), b: self.a.unpack_hi(other.a) }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_high_i64_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [_, ab]: [u64x2; 2] = cast(self);
+        let [_, bb]: [u64x2; 2] = cast(other);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(other.b), b: self.b.unpack_hi(other.b) }
+      }
+    }
+  }
+
+  #[inline]
   pub fn shuffle(self, indices: u64x4) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f", target_feature="avx512vl"))] {
@@ -781,42 +811,6 @@ impl u64x4 {
       u64x4::splat(u64::from_ne_bytes([0, 1, 2, 3, 4, 5, 6, 7]));
 
     cast::<u64x4, u8x32>(base | WITHIN_LANE)
-  }
-
-  /// Returns `[self[0], b[0], self[1], b[1]]`, interleaving the low half of
-  /// each vector.
-  #[inline]
-  #[must_use]
-  pub fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // `unpack_low_i64_m256i` cannot be used because it acts within each
-        // 128-bit lane, which is a different operation.
-        let [aa, _]: [u64x2; 2] = cast(self);
-        let [ba, _]: [u64x2; 2] = cast(b);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
-      } else {
-        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
-      }
-    }
-  }
-
-  /// Returns `[self[2], b[2], self[3], b[3]]`, interleaving the high half of
-  /// each vector.
-  #[inline]
-  #[must_use]
-  pub fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // `unpack_high_i64_m256i` cannot be used because it acts within each
-        // 128-bit lane, which is a different operation.
-        let [_, ab]: [u64x2; 2] = cast(self);
-        let [_, bb]: [u64x2; 2] = cast(b);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
-      } else {
-        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
-      }
-    }
   }
 
   /// The exact per-lane product of `a` and `b` masked to `W` bits.

@@ -337,36 +337,4 @@ impl i64x4 {
     let arr: [i64; 4] = cast(self);
     cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
   }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let [aa, _]: [i64x2; 2] = cast(self);
-        let [ba, _]: [i64x2; 2] = cast(b);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
-      } else {
-        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
-      }
-    }
-  }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let [_, ab]: [i64x2; 2] = cast(self);
-        let [_, bb]: [i64x2; 2] = cast(b);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
-      } else {
-        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
-      }
-    }
-  }
 }

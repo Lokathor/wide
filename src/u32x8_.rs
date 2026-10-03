@@ -276,6 +276,36 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn unpack_lo(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_low_i32_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [aa, _]: [u32x4; 2] = cast(self);
+        let [ba, _]: [u32x4; 2] = cast(other);
+        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+      } else {
+        Self { a: self.a.unpack_lo(other.a), b: self.a.unpack_hi(other.a) }
+      }
+    }
+  }
+
+  #[inline]
+  pub fn unpack_hi(self, other: Self) -> Self {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        // `unpack_high_i32_m256i` cannot be used because it acts within each
+        // 128-bit lane, which is a different operation.
+        let [_, ab]: [u32x4; 2] = cast(self);
+        let [_, bb]: [u32x4; 2] = cast(other);
+        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+      } else {
+        Self { a: self.b.unpack_lo(other.b), b: self.b.unpack_hi(other.b) }
+      }
+    }
+  }
+
+  #[inline]
   pub fn shuffle(self, indices: u32x8) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
@@ -831,42 +861,6 @@ impl From<u16x8> for u32x8 {
 /// The following functionality exists only for [`u32x8`], or only for
 /// particular types inconsistently.
 impl u32x8 {
-  /// Returns `[self[0], b[0], self[1], b[1], self[2], b[2], self[3], b[3]]`,
-  /// interleaving the low half of each vector.
-  #[inline]
-  #[must_use]
-  pub fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // `unpack_low_i32_m256i` cannot be used because it acts within each
-        // 128-bit lane, which is a different operation.
-        let [aa, _]: [u32x4; 2] = cast(self);
-        let [ba, _]: [u32x4; 2] = cast(b);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
-      } else {
-        Self { a: self.a.unpack_lo(b.a), b: self.a.unpack_hi(b.a) }
-      }
-    }
-  }
-
-  /// Returns `[self[4], b[4], self[5], b[5], self[6], b[6], self[7], b[7]]`,
-  /// interleaving the high half of each vector.
-  #[inline]
-  #[must_use]
-  pub fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // `unpack_high_i32_m256i` cannot be used because it acts within each
-        // 128-bit lane, which is a different operation.
-        let [_, ab]: [u32x4; 2] = cast(self);
-        let [_, bb]: [u32x4; 2] = cast(b);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
-      } else {
-        Self { a: self.b.unpack_lo(b.b), b: self.b.unpack_hi(b.b) }
-      }
-    }
-  }
-
   /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
   /// `a` and `b`. `W` must be in `1..=32`.
   ///

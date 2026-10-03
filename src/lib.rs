@@ -71,7 +71,10 @@
 //! variants. Multi-input shuffling is performed by placing the input vectors in
 //! an array and calling the corresponding methods from [`ShuffleExt`].
 //!
-//! Currently, `wide` only supports runtime-index based shuffling:
+//! Currently, constant-index shuffling is only supported for specific types,
+//! with the [`shuffle_consts`] method.
+//!
+//! Runtime-index based shuffling:
 //!
 //! ```
 //! use wide::{f32x4, ShuffleExt, u32x4};
@@ -87,6 +90,18 @@
 //! let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
 //!
 //! assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+//! ```
+//!
+//! Constant-index based shuffling:
+//!
+//! ```
+//! use wide::f32x4;
+//!
+//! let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+//!
+//! let reverse = simd_a.shuffle_consts::<3, 2, 1, 0>();
+//!
+//! assert_eq!(reverse, f32x4::new([3.0, 2.0, 1.0, 0.0]));
 //! ```
 //!
 //! # NaN bit patterns
@@ -135,6 +150,7 @@
 //!
 //! [`select`]: f32x4::select
 //! [`shuffle`]: f32x4::shuffle
+//! [`shuffle_consts`]: f32x4::shuffle_consts
 //! [`Wrapping<T>`]: core::num::Wrapping
 
 // Note(Lokathor): Due to standard library magic, the std-only methods for f32

@@ -445,40 +445,4 @@ impl i64x2 {
     let arr: [i64; 2] = cast(self);
     cast([arr[0] as f64, arr[1] as f64])
   }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_lo(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_low_i64_m128i(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<0, 2>(self.simd, b.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip1q_s64(self.neon, b.neon) } }
-      } else {
-        Self::new([self.as_array()[0], b.as_array()[0]])
-      }
-    }
-  }
-
-  // Sometimes used for `transpose`.
-  #[must_use]
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn unpack_hi(self, b: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_high_i64_m128i(self.sse, b.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<1, 3>(self.simd, b.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip2q_s64(self.neon, b.neon) } }
-      } else {
-        Self::new([self.as_array()[1], b.as_array()[1]])
-      }
-    }
-  }
 }
