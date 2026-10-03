@@ -405,7 +405,7 @@ impl_simd_uint! {
           ))] {
             unsafe {
               match INDEX {
-                $($INDEX => Self { neon: vsetq_lane_u16::<$INDEX>(self.neon, value as i32) },)*
+                $($INDEX => Self { neon: vsetq_lane_u16::<$INDEX>(value, self.neon) },)*
                 8.. => unreachable!(),
               }
             }
