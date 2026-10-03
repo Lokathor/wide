@@ -246,11 +246,7 @@ impl_simd_uint! {
               Self {
                 avx512: m512i(_mm512_mask_set1_epi16(
                   self.avx512.0,
-                  const {
-                    let mut mask = [0; 32];
-                    mask[INDEX] = u16::MAX;
-                    Self::new(mask).avx512.0
-                  },
+                  const { 1 << INDEX },
                   value.cast_signed(),
                 )),
               }
