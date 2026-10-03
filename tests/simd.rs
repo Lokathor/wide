@@ -2352,7 +2352,7 @@ fn test_replace() {
   // `for_simd_types`.
 
   macro_rules! test_indices {
-    ($T:ident, $Simd:ident, [$($INDEX:literal),*]) => {
+    ($T:ident, $N:literal, $Simd:ident, [$($INDEX:literal),*]) => {
       for (simd, value) in random_iter::<($Simd, $T)>() {$(
         let expected = {
           let mut result = simd;
@@ -2361,24 +2361,32 @@ fn test_replace() {
         };
         let actual = simd.replace::<$INDEX>(value);
 
-        assert_eq!(expected, actual, "simd = {simd}\nINDEX = {}\nvalue = {value}", $INDEX);
+        assert_eq!(
+          expected,
+          actual,
+          "\n     T: {T}\n     N: {N}\n INDEX: {INDEX}\n  simd: {simd}\n value: {value}",
+          T = stringify!($T),
+          N = $N,
+          INDEX = $INDEX,
+        );
       )*}
     };
   }
 
   macro_rules! test_type {
     ($T:ident, 2, $Simd:ident) => {
-      test_indices!($T, $Simd, [0, 1]);
+      test_indices!($T, 2, $Simd, [0, 1]);
     };
     ($T:ident, 4, $Simd:ident) => {
-      test_indices!($T, $Simd, [0, 1, 2, 3]);
+      test_indices!($T, 4, $Simd, [0, 1, 2, 3]);
     };
     ($T:ident, 8, $Simd:ident) => {
-      test_indices!($T, $Simd, [0, 1, 2, 3, 4, 5, 6, 7]);
+      test_indices!($T, 8, $Simd, [0, 1, 2, 3, 4, 5, 6, 7]);
     };
     ($T:ident, 16, $Simd:ident) => {
       test_indices!(
         $T,
+        16,
         $Simd,
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
       );
@@ -2386,6 +2394,7 @@ fn test_replace() {
     ($T:ident, 32, $Simd:ident) => {
       test_indices!(
         $T,
+        32,
         $Simd,
         [
           0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
@@ -2396,6 +2405,7 @@ fn test_replace() {
     ($T:ident, 64, $Simd:ident) => {
       test_indices!(
         $T,
+        64,
         $Simd,
         [
           0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
