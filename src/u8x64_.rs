@@ -238,7 +238,7 @@ impl_simd_uint! {
                   self.avx512.0,
                   const {
                     let mut mask = [0; 64];
-                    mask[INDEX] = u8::MAX:
+                    mask[INDEX] = u8::MAX;
                     Self::new(mask).avx512.0
                   },
                   value.cast_signed(),
