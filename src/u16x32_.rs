@@ -236,6 +236,11 @@ impl_simd_uint! {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512bw")] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm512_mask_set1_epi16;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm512_mask_set1_epi16;
+
             // TODO(safe_arch): Add `_mm512_mask_set1_epi16`
             unsafe {
               Self {
