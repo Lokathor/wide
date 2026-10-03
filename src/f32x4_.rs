@@ -844,7 +844,10 @@ impl_simd_float! {
       if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
         unsafe { vmaxnmvq_f32(self.neon) }
       } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
-        todo!("implement once `shuffle_consts` is merged")
+        let reduce_2 = self.max(self.shuffle_consts::<2, 3, 0, 1>());
+        let reduce_1 = reduce_2.max(reduce_2.shuffle_consts::<1, 0, 1, 0>());
+        // reduce_1.extract::<0>()
+        todo!("use `extract` method once it exists")
       } else {
         let self_array = self.to_array();
         self_array[0].max(self_array[1]).max(self_array[2]).max(self_array[3])
@@ -858,7 +861,10 @@ impl_simd_float! {
       if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
         unsafe { vmaxnmvq_f32(self.neon) }
       } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
-        todo!("implement once `shuffle_consts` is merged")
+        let reduce_2 = self.fast_max(self.shuffle_consts::<2, 3, 0, 1>());
+        let reduce_1 = reduce_2.fast_max(reduce_2.shuffle_consts::<1, 0, 1, 0>());
+        // reduce_1.extract::<0>()
+        todo!("use `extract` method once it exists")
       } else {
         let self_array = self.to_array();
         self_array[0].max(self_array[1]).max(self_array[2]).max(self_array[3])
@@ -872,7 +878,10 @@ impl_simd_float! {
       if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
         unsafe { vminnmvq_f32(self.neon) }
       } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
-        todo!("implement once `shuffle_consts` is merged")
+        let reduce_2 = self.min(self.shuffle_consts::<2, 3, 0, 1>());
+        let reduce_1 = reduce_2.min(reduce_2.shuffle_consts::<1, 0, 1, 0>());
+        // reduce_1.extract::<0>()
+        todo!("use `extract` method once it exists")
       } else {
         let self_array = self.to_array();
         self_array[0].min(self_array[1]).min(self_array[2]).min(self_array[3])
@@ -886,7 +895,10 @@ impl_simd_float! {
       if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
         unsafe { vminnmvq_f32(self.neon) }
       } else if #[cfg(any(target_feature = "sse2", target_feature = "simd128"))] {
-        todo!("implement once `shuffle_consts` is merged")
+        let reduce_2 = self.fast_min(self.shuffle_consts::<2, 3, 0, 1>());
+        let reduce_1 = reduce_2.fast_min(reduce_2.shuffle_consts::<1, 0, 1, 0>());
+        // reduce_1.extract::<0>()
+        todo!("use `extract` method once it exists")
       } else {
         let self_array = self.to_array();
         self_array[0].min(self_array[1]).min(self_array[2]).min(self_array[3])
