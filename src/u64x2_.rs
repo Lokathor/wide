@@ -327,7 +327,11 @@ impl_simd_uint! {
               2.. => unreachable!()
             }
           } else if #[cfg(target_feature = "sse2")] {
+            #[cfg(target_arch = "x86")]
+            let value = cast::<[u64; 2], m128i>([value, 0]);
+            #[cfg(target_arch = "x86_64")]
             let value = set_i64_m128i_s(value.cast_signed());
+
             match INDEX {
               0 => cast(copy_replace_low_f64_m128d(cast(self.sse), cast(value))),
               1 => cast(unpack_low_i64_m128i(cast(self.sse), cast(value))),
