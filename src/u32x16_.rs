@@ -305,7 +305,9 @@ impl_simd_uint! {
             unsafe {
               match INDEX {
                 $($INDEX => {
-                  let quarter = _mm512_extracti32x4_epi32(self.avx512.0, const { $INDEX / 4 });
+                  let quarter = cast::<m128i, u32x4>(m128i(
+                    _mm512_extracti32x4_epi32(self.avx512.0, const { $INDEX / 4 }),
+                  ));
                   quarter.extract_const::<{ $INDEX % 4 }>()
                 })*
                 16.. => unreachable!()
