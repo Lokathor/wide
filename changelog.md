@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* [#332](https://github.com/Lokathor/wide/pull/332): Add `replace_const` and
+  `extract_const` functions
+
 * [#330](https://github.com/Lokathor/wide/pull/330): Add optimized `sse2` path
   for `f32x4::floor` and `f32x4::ceil`
 
