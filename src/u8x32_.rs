@@ -250,7 +250,7 @@ impl_simd_uint! {
 
             if const { INDEX < 16 } {
               let result_a = match INDEX {
-                $($LOW_INDEX => self_a.replace_const::<{ $LOW_INDEX }>(value),)*
+                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
                 16.. => unreachable!(),
               };
 
@@ -302,7 +302,7 @@ impl_simd_uint! {
 
             if const { INDEX < 16 } {
               match INDEX {
-                $($LOW_INDEX => self_a.extract_const::<{ $LOW_INDEX }>(),)*
+                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
                 16.. => unreachable!(),
               }
             } else {
