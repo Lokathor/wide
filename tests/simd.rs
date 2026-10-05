@@ -2431,6 +2431,86 @@ fn test_replace_const() {
 }
 
 #[test]
+fn test_extract_const() {
+  // Due to limitations in const generics, this cannot be done with
+  // `for_simd_types`.
+
+  macro_rules! test_indices {
+    ($T:ident, $N:literal, $Simd:ident, [$($INDEX:literal),*]) => {
+      for simd in random_iter::<$Simd>() {$(
+        let expected = simd.to_array()[$INDEX];
+        let actual = simd.extract_const::<$INDEX>();
+
+        assert_eq!(
+          expected,
+          actual,
+          "\n     T: {T}\n     N: {N}\n INDEX: {INDEX}\n  simd: {simd}",
+          T = stringify!($T),
+          N = $N,
+          INDEX = $INDEX,
+        );
+      )*}
+    };
+  }
+
+  macro_rules! test_type {
+    ($T:ident, 2, $Simd:ident) => {
+      test_indices!($T, 2, $Simd, [0, 1]);
+    };
+    ($T:ident, 4, $Simd:ident) => {
+      test_indices!($T, 4, $Simd, [0, 1, 2, 3]);
+    };
+    ($T:ident, 8, $Simd:ident) => {
+      test_indices!($T, 8, $Simd, [0, 1, 2, 3, 4, 5, 6, 7]);
+    };
+    ($T:ident, 16, $Simd:ident) => {
+      test_indices!(
+        $T,
+        16,
+        $Simd,
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+      );
+    };
+    ($T:ident, 32, $Simd:ident) => {
+      test_indices!(
+        $T,
+        32,
+        $Simd,
+        [
+          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+          20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+        ]
+      );
+    };
+    ($T:ident, 64, $Simd:ident) => {
+      test_indices!(
+        $T,
+        64,
+        $Simd,
+        [
+          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+          20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+          37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+          54, 55, 56, 57, 58, 59, 60, 61, 62, 63
+        ]
+      );
+    };
+  }
+  test_type!(u8, 16, u8x16);
+  test_type!(u8, 32, u8x32);
+  test_type!(u8, 64, u8x64);
+  test_type!(u16, 8, u16x8);
+  test_type!(u16, 16, u16x16);
+  test_type!(u16, 32, u16x32);
+  test_type!(u32, 4, u32x4);
+  test_type!(u32, 8, u32x8);
+  test_type!(u32, 16, u32x16);
+  test_type!(u64, 2, u64x2);
+  test_type!(u64, 4, u64x4);
+  test_type!(u64, 8, u64x8);
+}
+
+#[test]
 fn test_shuffle() {
   for_simd_types!(|T, N| {
     // The values themselves do not matter here, as long as each lane is
