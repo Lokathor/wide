@@ -452,7 +452,7 @@ impl_simd_uint! {
           } else if #[cfg(target_feature = "simd128")] {
             u16x8_extract_lane::<INDEX>(self.simd)
           } else {
-            result.to_array()[INDEX]
+            self.to_array()[INDEX]
           }
         }
       };
