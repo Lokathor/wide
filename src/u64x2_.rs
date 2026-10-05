@@ -321,7 +321,7 @@ impl_simd_uint! {
     macro_rules! use_indices {
       (0..2 = [$($INDEX:literal),*]) => {
         pick! {
-          if #[cfg(target_feature = "sse4.1")] {
+          if #[cfg(all(target_arch = "x86_64", target_feature = "sse4.1"))] {
             match INDEX {
               $($INDEX => Self { sse: insert_i64_imm_m128i::<$INDEX>(self.sse, value as i64) },)*
               2.. => unreachable!()
