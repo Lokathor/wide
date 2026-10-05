@@ -247,7 +247,47 @@ impl_simd_uint! {
 
   #[inline]
   pub fn extract_const<const INDEX: usize>(self) -> u32 {
-    todo!()
+    const {
+      assert!(INDEX < 8, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..8 = [$($INDEX:literal),*],
+        0..4 = [$($LOW_INDEX:literal),*],
+        4..8 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "avx2")] {
+            match INDEX {
+              $($INDEX => extract_i32_from_m256i::<$INDEX>(self.avx2).cast_unsigned(),)*
+              8.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);
+
+            if const { INDEX < 4 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<{ $LOW_INDEX }>(),)*
+                4.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 4 }>(),)*
+                ..4 | 8.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
+      0..4 = [0, 1, 2, 3],
+      4..8 = [4, 5, 6, 7]
+    }
   }
 
   #[inline]
