@@ -398,20 +398,7 @@ impl_simd_uint! {
               4.. => unreachable!()
             }
           } else if #[cfg(all(target_feature = "sse2"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_srli_si128;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_srli_si128;
-
-            // Shift bytes so that the element at `INDEX` is becomes the first one
-            let shifted_self = match INDEX {
-              0 => self.sse,
-              // TODO(safe_arch): Add `_mm_srli_si128`
-              $($INDEX_FROM_1 => m128i(unsafe { _mm_srli_si128::<{ $INDEX_FROM_1 * 4 }>(self.sse.0) }),)*
-              4.. => unreachable!(),
-            };
-
-            get_i32_from_m128i_s(shifted_self).cast_unsigned()
+            get_i32_from_m128i_s(self.shuffle_consts::<INDEX, 0, 0, 0>().sse).cast_unsigned()
           } else if #[cfg(all(
             target_arch = "aarch64",
             target_feature = "neon",
