@@ -328,6 +328,100 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace_const<const INDEX: usize>(self, value: u32) -> Self {
+    const {
+      assert!(INDEX < 4, "attempt to call `Simd::replace_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..4 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => Self { sse: insert_i32_imm_m128i::<$INDEX>(self.sse, value as i32) },)*
+              4.. => unreachable!()
+            }
+          } else if #[cfg(target_feature = "sse2")] {
+            match INDEX {
+              $($INDEX => {
+                const INDEX_A: i32 = $INDEX * 2;
+                const INDEX_B: i32 = $INDEX * 2 + 1;
+
+                let [value_low, value_high] = [value, value >> 16];
+
+                let replace_a = insert_i16_from_i32_m128i::<INDEX_A>(self.sse, value_low.cast_signed());
+                let replace_b = insert_i16_from_i32_m128i::<INDEX_B>(replace_a, value_high.cast_signed());
+                Self { sse: replace_b }
+              })*
+              4.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => Self { neon: vsetq_lane_u32::<$INDEX>(value, self.neon) },)*
+                4.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self { simd: u32x4_replace_lane::<INDEX>(self.simd, value) }
+          } else {
+            let mut result = self;
+            result.as_mut_array()[INDEX] = value;
+            result
+          }
+        }
+      };
+    }
+    use_indices! { 0..4 = [0, 1, 2, 3] }
+  }
+
+  #[inline]
+  pub fn extract_const<const INDEX: usize>(self) -> u32 {
+    const {
+      assert!(INDEX < 4, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..4 = [$($INDEX:literal),*], 1..4 = [$($INDEX_FROM_1:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => extract_i32_imm_m128i::<$INDEX>(self.sse).cast_unsigned(),)*
+              4.. => unreachable!()
+            }
+          } else if #[cfg(all(target_feature = "sse2"))] {
+            get_i32_from_m128i_s(self.shuffle_consts::<INDEX, 0, 0, 0>().sse).cast_unsigned()
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => vgetq_lane_u32::<$INDEX>(self.neon),)*
+                4.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            u32x4_extract_lane::<INDEX>(self.simd)
+          } else {
+            self.to_array()[INDEX]
+          }
+        }
+      };
+    }
+    use_indices! { 0..4 = [0, 1, 2, 3], 1..4 = [1, 2, 3] }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
