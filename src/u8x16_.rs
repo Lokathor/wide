@@ -527,7 +527,9 @@ impl_simd_uint! {
 
             let replace_mask = const {
               let mut replace_mask = Self::ZERO;
-              replace_mask.as_mut_array()[INDEX] = u8::MAX;
+              if INDEX < 16 {
+                replace_mask.as_mut_array()[INDEX] = u8::MAX;
+              }
               replace_mask
             };
 
