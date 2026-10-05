@@ -504,6 +504,133 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace_const<const INDEX: usize>(self, value: u8) -> Self {
+    const {
+      assert!(INDEX < 16, "attempt to call `Simd::replace_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..16 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => Self { sse: insert_i8_imm_m128i::<$INDEX>(self.sse, value as i32) },)*
+              16.. => unreachable!()
+            }
+          } else if #[cfg(target_feature = "sse2")] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm_slli_si128;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm_slli_si128;
+
+            let replace_mask = const {
+              let mut replace_mask = Self::ZERO;
+              if INDEX < 16 {
+                replace_mask.as_mut_array()[INDEX] = u8::MAX;
+              }
+              replace_mask
+            };
+
+            match INDEX {
+              $($INDEX => {
+                let value = set_i32_m128i_s(value as i32);
+                // TODO(safe_arch): Add `_mm_slli_si128`
+                let shifted_value = Self {
+                  sse: m128i(unsafe { _mm_slli_si128::<$INDEX>(value.0) }),
+                };
+
+                replace_mask.select(shifted_value, self)
+              })*
+              16.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => Self { neon: vsetq_lane_u8::<$INDEX>(value, self.neon) },)*
+                16.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self { simd: u8x16_replace_lane::<INDEX>(self.simd, value) }
+          } else {
+            let mut result = self;
+            result.as_mut_array()[INDEX] = value;
+            result
+          }
+        }
+      };
+    }
+    use_indices! { 0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+  }
+
+  #[inline]
+  pub fn extract_const<const INDEX: usize>(self) -> u8 {
+    const {
+      assert!(INDEX < 16, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..16 = [$($INDEX:literal),*],
+        1..16 = [$($INDEX_FROM_1:literal),*],
+        4..16 = [$($INDEX_FROM_4:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => extract_i8_as_i32_imm_m128i::<$INDEX>(self.sse).cast_unsigned() as u8,)*
+              16.. => unreachable!()
+            }
+          } else if #[cfg(all(target_feature = "sse2"))] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm_srli_si128;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm_srli_si128;
+
+            // Shift bytes so that the element at `INDEX` becomes the lowest one
+            let shifted_self = match INDEX {
+              0 => self.sse,
+              // TODO(safe_arch): Add `_mm_srli_si128`
+              $($INDEX_FROM_1 => m128i(unsafe { _mm_srli_si128::<$INDEX_FROM_1>(self.sse.0) }),)*
+              16.. => unreachable!(),
+            };
+
+            get_i32_from_m128i_s(shifted_self).cast_unsigned() as u8
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => vgetq_lane_u8::<$INDEX>(self.neon),)*
+                16.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            u8x16_extract_lane::<INDEX>(self.simd)
+          } else {
+            self.to_array()[INDEX]
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      1..16 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      4..16 = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u8 {
     #[allow(dead_code)]
     const SHUFFLE_1: [u8; 16] =

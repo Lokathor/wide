@@ -221,6 +221,124 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace_const<const INDEX: usize>(self, value: u32) -> Self {
+    const {
+      assert!(INDEX < 16, "attempt to call `Simd::replace_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..16 = [$($INDEX:literal),*],
+        0..8 = [$($LOW_INDEX:literal),*],
+        8..16 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "avx512f")] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm512_mask_set1_epi32;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm512_mask_set1_epi32;
+
+            // TODO(safe_arch): Add `_mm512_mask_set1_epi32`
+            unsafe {
+              Self {
+                avx512: m512i(_mm512_mask_set1_epi32(
+                  self.avx512.0,
+                  const { 1 << INDEX },
+                  value.cast_signed(),
+                )),
+              }
+            }
+          } else {
+            let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
+
+            if const { INDEX < 8 } {
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
+                8.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 8 }>(value),)*
+                ..8 | 16.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
+      8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
+    }
+  }
+
+  #[inline]
+  pub fn extract_const<const INDEX: usize>(self) -> u32 {
+    const {
+      assert!(INDEX < 16, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..16 = [$($INDEX:literal),*],
+        0..8 = [$($LOW_INDEX:literal),*],
+        8..16 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm512_extracti32x4_epi32;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm512_extracti32x4_epi32;
+
+            // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
+            unsafe {
+              match INDEX {
+                $($INDEX => {
+                  let quarter = cast::<m128i, u32x4>(m128i(
+                    _mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.avx512.0),
+                  ));
+                  quarter.extract_const::<{ $INDEX % 4 }>()
+                })*
+                16.. => unreachable!()
+              }
+            }
+          } else {
+            let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
+
+            if const { INDEX < 8 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
+                8.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 8 }>(),)*
+                ..8 | 16.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
+      8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u32 {
     let array: [u32x8; 2] = cast(self);
     (array[0] + array[1]).reduce_add()

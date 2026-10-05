@@ -219,6 +219,92 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace_const<const INDEX: usize>(self, value: u64) -> Self {
+    const {
+      assert!(INDEX < 4, "attempt to call `Simd::replace_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..4 = [$($INDEX:literal),*],
+        0..2 = [$($LOW_INDEX:literal),*],
+        2..4 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
+            match INDEX {
+              $($INDEX => Self { avx2: insert_i64_to_m256i::<$INDEX>(self.avx2, value.cast_signed()) },)*
+              4.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u64x4, [u64x2; 2]>(self);
+
+            if const { INDEX < 2 } {
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
+                2.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 2 }>(value),)*
+                ..2 | 4.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+    use_indices! { 0..4 = [0, 1, 2, 3], 0..2 = [0, 1], 2..4 = [2, 3] }
+  }
+
+  #[inline]
+  pub fn extract_const<const INDEX: usize>(self) -> u64 {
+    const {
+      assert!(INDEX < 4, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..4 = [$($INDEX:literal),*],
+        0..2 = [$($LOW_INDEX:literal),*],
+        2..4 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
+            match INDEX {
+              $($INDEX => extract_i64_from_m256i::<$INDEX>(self.avx2).cast_unsigned(),)*
+              4.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u64x4, [u64x2; 2]>(self);
+
+            if const { INDEX < 2 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
+                2.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 2 }>(),)*
+                ..2 | 4.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+    use_indices! { 0..4 = [0, 1, 2, 3], 0..2 = [0, 1], 2..4 = [2, 3] }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u64 {
     pick! {
       if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {

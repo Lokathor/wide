@@ -226,6 +226,106 @@ impl_simd_uint! {
   }
 
   #[inline]
+  pub fn replace_const<const INDEX: usize>(self, value: u8) -> Self {
+    const {
+      assert!(INDEX < 32, "attempt to call `Simd::replace_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..32 = [$($INDEX:literal),*],
+        0..16 = [$($LOW_INDEX:literal),*],
+        16..32 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "avx2")] {
+            match INDEX {
+              $($INDEX => Self { avx: insert_i8_to_m256i::<$INDEX>(self.avx, value.cast_signed()) },)*
+              32.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+
+            if const { INDEX < 16 } {
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
+                16.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 16 }>(value),)*
+                ..16 | 32.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..32 = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31
+      ],
+      0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      16..32 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+    }
+  }
+
+  #[inline]
+  pub fn extract_const<const INDEX: usize>(self) -> u8 {
+    const {
+      assert!(INDEX < 32, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..32 = [$($INDEX:literal),*],
+        0..16 = [$($LOW_INDEX:literal),*],
+        16..32 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "avx2")] {
+            match INDEX {
+              $($INDEX => extract_i8_as_i32_m256i::<$INDEX>(self.avx).cast_unsigned() as u8,)*
+              32.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
+
+            if const { INDEX < 16 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
+                16.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 16 }>(),)*
+                ..16 | 32.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..32 = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31
+      ],
+      0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      16..32 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+    }
+  }
+
+  #[inline]
   pub fn reduce_add(self) -> u8 {
     let array: [u8x16; 2] = cast(self);
     (array[0] + array[1]).reduce_add()

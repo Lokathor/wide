@@ -85,6 +85,16 @@ macro_rules! impl_simd_int {
       $fn_simd_ge
 
       #[inline]
+      pub fn replace_const<const INDEX: usize>(self, value: $T) -> Self {
+        self.cast_unsigned().replace_const::<INDEX>(value.cast_unsigned()).cast_signed()
+      }
+
+      #[inline]
+      pub fn extract_const<const INDEX: usize>(self) -> $T {
+        self.cast_unsigned().extract_const::<INDEX>().cast_signed()
+      }
+
+      #[inline]
       pub fn reduce_add(self) -> $T {
         // Wrapping addition is the same for signed and unsigned integers.
         cast::<$Simd, $UintSimd>(self).reduce_add().cast_signed()
