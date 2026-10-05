@@ -363,7 +363,46 @@ impl_simd_uint! {
 
   #[inline]
   pub fn extract_const<const INDEX: usize>(self) -> u64 {
-    todo!()
+    const {
+      assert!(INDEX < 2, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..2 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(all(target_arch = "x86_64", target_feature = "sse4.1"))] {
+            match INDEX {
+              $($INDEX => extract_i64_imm_m128i::<$INDEX>(self.sse).cast_unsigned(),)*
+              2.. => unreachable!()
+            }
+          } else if #[cfg(target_arch = "x86_64")] {
+            match INDEX {
+              0 => get_i64_from_m128i_s(self.sse).cast_unsigned(),
+              1 => get_i64_from_m128i_s(unpack_high_i64_m128i(self.sse, self.sse)).cast_unsigned(),
+              2.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => vgetq_lane_u64::<$INDEX>(self.neon),)*
+                2.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            u64x2_extract_lane::<INDEX>(self.simd)
+          } else {
+            self.to_array()[INDEX]
+          }
+        }
+      };
+    }
+    use_indices! { 0..2 = [0, 1] }
   }
 
   #[inline]
