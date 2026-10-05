@@ -311,9 +311,9 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn replace<const INDEX: usize>(self, value: u64) -> Self {
+  pub fn replace_const<const INDEX: usize>(self, value: u64) -> Self {
     const {
-      assert!(INDEX < 2, "attempt to call `Simd::replace` with an out of bounds index");
+      assert!(INDEX < 2, "attempt to call `Simd::replace_const` with an out of bounds index");
     }
 
     /// Because of limitations in const generics, this must have separate
@@ -362,7 +362,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn extract<const INDEX: usize>(self) -> u64 {
+  pub fn extract_const<const INDEX: usize>(self) -> u64 {
     todo!()
   }
 

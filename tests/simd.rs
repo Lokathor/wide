@@ -2347,7 +2347,7 @@ fn test_reduce_mul() {
 }
 
 #[test]
-fn test_replace() {
+fn test_replace_const() {
   // Due to limitations in const generics, this cannot be done with
   // `for_simd_types`.
 
@@ -2359,7 +2359,7 @@ fn test_replace() {
           result.as_mut_array()[$INDEX] = value;
           result
         };
-        let actual = simd.replace::<$INDEX>(value);
+        let actual = simd.replace_const::<$INDEX>(value);
 
         assert_eq!(
           expected,

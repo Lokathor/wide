@@ -126,13 +126,13 @@ macro_rules! impl_simd_float {
       $fn_simd_ge
 
       #[inline]
-      pub fn replace<const INDEX: usize>(self, value: $T) -> Self {
-        Self::from_bits(self.to_bits().replace::<INDEX>(value.to_bits()))
+      pub fn replace_const<const INDEX: usize>(self, value: $T) -> Self {
+        Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
       }
 
       #[inline]
-      pub fn extract<const INDEX: usize>(self) -> $T {
-        $T::from_bits(self.to_bits().extract::<INDEX>())
+      pub fn extract_const<const INDEX: usize>(self) -> $T {
+        $T::from_bits(self.to_bits().extract_const::<INDEX>())
       }
 
       ///

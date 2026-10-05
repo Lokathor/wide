@@ -219,9 +219,9 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn replace<const INDEX: usize>(self, value: u16) -> Self {
+  pub fn replace_const<const INDEX: usize>(self, value: u16) -> Self {
     const {
-      assert!(INDEX < 16, "attempt to call `Simd::replace` with an out of bounds index");
+      assert!(INDEX < 16, "attempt to call `Simd::replace_const` with an out of bounds index");
     }
 
     /// Because of limitations in const generics, this must have separate
@@ -243,14 +243,14 @@ impl_simd_uint! {
 
             if const { INDEX < 8 } {
               let result_a = match INDEX {
-                $($LOW_INDEX => self_a.replace::<{ $LOW_INDEX }>(value),)*
+                $($LOW_INDEX => self_a.replace_const::<{ $LOW_INDEX }>(value),)*
                 8.. => unreachable!(),
               };
 
               cast([result_a, self_b])
             } else {
               let result_b = match INDEX {
-                $($HIGH_INDEX => self_b.replace::<{ $HIGH_INDEX - 8 }>(value),)*
+                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 8 }>(value),)*
                 ..8 | 16.. => unreachable!(),
               };
 
@@ -268,7 +268,7 @@ impl_simd_uint! {
   }
 
   #[inline]
-  pub fn extract<const INDEX: usize>(self) -> u16 {
+  pub fn extract_const<const INDEX: usize>(self) -> u16 {
     todo!()
   }
 
