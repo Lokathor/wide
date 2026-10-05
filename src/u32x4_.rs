@@ -349,13 +349,10 @@ impl_simd_uint! {
                 const INDEX_A: i32 = $INDEX * 2;
                 const INDEX_B: i32 = $INDEX * 2 + 1;
 
-                #[cfg(target_endian = "big")]
-                let [value_a, value_b] = [value >> 16, value];
-                #[cfg(target_endian = "little")]
-                let [value_a, value_b] = [value, value >> 16];
+                let [value_low, value_high] = [value, value >> 16];
 
-                let replace_a = insert_i16_from_i32_m128i::<INDEX_A>(self.sse, value_a.cast_signed());
-                let replace_b = insert_i16_from_i32_m128i::<INDEX_B>(replace_a, value_b.cast_signed());
+                let replace_a = insert_i16_from_i32_m128i::<INDEX_A>(self.sse, value_low.cast_signed());
+                let replace_b = insert_i16_from_i32_m128i::<INDEX_B>(replace_a, value_high.cast_signed());
                 Self { sse: replace_b }
               })*
               4.. => unreachable!(),
@@ -400,7 +397,7 @@ impl_simd_uint! {
               $($INDEX => extract_i32_imm_m128i::<$INDEX>(self.sse).cast_unsigned(),)*
               4.. => unreachable!()
             }
-          } else if #[cfg(all(target_feature = "sse2", target_endian = "little"))] {
+          } else if #[cfg(all(target_feature = "sse2"))] {
             #[cfg(target_arch = "x86")]
             use core::arch::x86::_mm_srli_si128;
             #[cfg(target_arch = "x86_64")]
@@ -411,21 +408,6 @@ impl_simd_uint! {
               0 => self.sse,
               // TODO(safe_arch): Add `_mm_srli_si128`
               $($INDEX_FROM_1 => m128i(unsafe { _mm_srli_si128::<{ $INDEX_FROM_1 * 4 }>(self.sse.0) }),)*
-              4.. => unreachable!(),
-            };
-
-            get_i32_from_m128i_s(shifted_self).cast_unsigned()
-          } else if #[cfg(all(target_feature = "sse2", target_endian = "big"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_slli_si128;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_slli_si128;
-
-            // Shift bytes so that the element at `INDEX` is becomes the first one
-            let shifted_self = match INDEX {
-              0 => self.sse,
-              // TODO(safe_arch): Add `_mm_slli_si128`
-              $($INDEX_FROM_1 => m128i(unsafe { _mm_slli_si128::<{ $INDEX_FROM_1 * 4 }>(self.sse.0) }),)*
               4.. => unreachable!(),
             };
 
