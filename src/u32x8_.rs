@@ -917,8 +917,7 @@ impl u32x8 {
 
     // Then the offset of each byte within its lane. These bits are free because
     // every byte of `base` is a multiple of four. `from_ne_bytes` keeps this
-    // correct on big endian, where the bytes of a lane are the other way
-    // around.
+    // correct on big endian, where the bytes of a lane are the other way around.
     const WITHIN_LANE: u32x8 = u32x8::splat(u32::from_ne_bytes([0, 1, 2, 3]));
 
     cast::<u32x8, u8x32>(base | WITHIN_LANE)

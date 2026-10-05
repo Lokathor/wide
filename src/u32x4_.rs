@@ -1296,9 +1296,7 @@ impl u32x4 {
     const I1: usize,
     const I2: usize,
     const I3: usize,
-  >(
-    self,
-  ) -> Self {
+  >(self) -> Self {
     const {
       assert!(I0 < 4);
       assert!(I1 < 4);

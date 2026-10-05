@@ -885,8 +885,7 @@ impl u16x16 {
 
     // Then the offset of each byte within its lane. These bits are free because
     // every byte of `base` is a multiple of two. `from_ne_bytes` keeps this
-    // correct on big endian, where the bytes of a lane are the other way
-    // around.
+    // correct on big endian, where the bytes of a lane are the other way around.
     const WITHIN_LANE: u16x16 = u16x16::splat(u16::from_ne_bytes([0, 1]));
 
     cast::<u16x16, u8x32>(base | WITHIN_LANE)
