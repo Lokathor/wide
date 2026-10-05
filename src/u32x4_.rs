@@ -386,7 +386,70 @@ impl_simd_uint! {
 
   #[inline]
   pub fn extract_const<const INDEX: usize>(self) -> u32 {
-    todo!()
+    const {
+      assert!(INDEX < 4, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (0..4 = [$($INDEX:literal),*], 1..4 = [$($INDEX_FROM_1:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => extract_i32_imm_m128i::<$INDEX>(self.sse).cast_unsigned(),)*
+              4.. => unreachable!()
+            }
+          } else if #[cfg(all(target_feature = "sse2", target_endian = "little"))] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm_srli_si128;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm_srli_si128;
+
+            // Shift bytes so that the element at `INDEX` is becomes the first one
+            let shifted_self = match INDEX {
+              0 => self.sse,
+              // TODO(safe_arch): Add `_mm_srli_si128`
+              $($INDEX_FROM_1 => m128i(unsafe { _mm_srli_si128::<{ $INDEX_FROM_1 * 4 }>(self.sse.0) }),)*
+              4.. => unreachable!(),
+            };
+
+            get_i32_from_m128i_s(shifted_self).cast_unsigned()
+          } else if #[cfg(all(target_feature = "sse2", target_endian = "big"))] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm_slli_si128;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm_slli_si128;
+
+            // Shift bytes so that the element at `INDEX` is becomes the first one
+            let shifted_self = match INDEX {
+              0 => self.sse,
+              // TODO(safe_arch): Add `_mm_slli_si128`
+              $($INDEX_FROM_1 => m128i(unsafe { _mm_slli_si128::<{ $INDEX_FROM_1 * 4 }>(self.sse.0) }),)*
+              4.. => unreachable!(),
+            };
+
+            get_i32_from_m128i_s(shifted_self).cast_unsigned()
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            unsafe {
+              match INDEX {
+                $($INDEX => vgetq_lane_u32::<$INDEX>(self.neon),)*
+                4.. => unreachable!(),
+              }
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self { simd: u32x4_extract_lane::<INDEX>(self.simd) }
+          } else {
+            self.to_array()[INDEX]
+          }
+        }
+      };
+    }
+    use_indices! { 0..4 = [0, 1, 2, 3], 1..4 = [1, 2, 3] }
   }
 
   #[inline]
