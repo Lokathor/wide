@@ -285,7 +285,61 @@ impl_simd_uint! {
 
   #[inline]
   pub fn extract_const<const INDEX: usize>(self) -> u16 {
-    todo!()
+    const {
+      assert!(INDEX < 32, "attempt to call `Simd::extract_const` with an out of bounds index");
+    }
+
+    /// Because of limitations in const generics, this must have separate
+    /// branches per index. This macro is used to avoid duplication.
+    macro_rules! use_indices {
+      (
+        0..32 = [$($INDEX:literal),*],
+        0..16 = [$($LOW_INDEX:literal),*],
+        16..32 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::_mm512_extracti32x4_epi32;
+            #[cfg(target_arch = "x86_64")]
+            use core::arch::x86_64::_mm512_extracti32x4_epi32;
+
+            // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
+            unsafe {
+              match INDEX {
+                $($INDEX => {
+                  let quarter = _mm512_extracti32x4_epi32(self.avx512.0, const { $INDEX / 8 });
+                  quarter.extract_const::<{ $INDEX % 8 }>()
+                })*
+                32.. => unreachable!()
+              }
+            }
+          } else {
+            let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+
+            if const { INDEX < 16 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<{ $LOW_INDEX }>(),)*
+                16.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 16 }>(),)*
+                ..16 | 32.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+    use_indices! {
+      0..32 = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31
+      ],
+      0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      16..32 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+    }
   }
 
   #[inline]
