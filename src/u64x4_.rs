@@ -233,7 +233,7 @@ impl_simd_uint! {
         2..4 = [$($HIGH_INDEX:literal),*]
       ) => {
         pick! {
-          if #[cfg(target_feature = "avx2")] {
+          if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
             match INDEX {
               $($INDEX => Self { avx2: insert_i64_to_m256i::<$INDEX>(self.avx2, value.cast_signed()) },)*
               4.. => unreachable!(),
