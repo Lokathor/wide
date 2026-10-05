@@ -525,14 +525,11 @@ impl_simd_uint! {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm_slli_si128;
 
-            let replace_mask = cast::<u128, Self>(const {
-              let shl_bytes = if cfg!(target_endian = "little") {
-                INDEX
-              } else {
-                15 - INDEX
-              };
-              (u8::MAX as u128) << (shl_bytes * 8)
-            });
+            let replace_mask = const {
+              let mut replace_mask = Self::ZERO;
+              replace_mask.as_mut_array()[INDEX] = u8::MAX;
+              replace_mask
+            };
 
             match INDEX {
               $($INDEX => {
@@ -597,7 +594,7 @@ impl_simd_uint! {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm_srli_si128;
 
-            // Shift bytes so that the element at `INDEX` is becomes the lowest byte
+            // Shift bytes so that the element at `INDEX` becomes the lowest one
             let shifted_self = match INDEX {
               0 => self.sse,
               // TODO(safe_arch): Add `_mm_srli_si128`
@@ -612,9 +609,9 @@ impl_simd_uint! {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::{_mm_slli_si128, _mm_srli_si128};
 
-            // Shift bytes so that the element at `INDEX` moves to position `3`,
-            // which is the least-significant byte of the 32-bit integer we move
-            // out of `self`
+            // Shift bytes so that the element at `INDEX` moves to byte position
+            // `3`, which is the least-significant byte of the 32-bit integer we
+            // move out of `self`
             let shifted_self = match INDEX {
               // TODO(safe_arch): Add `_mm_slli_si128`
               $($INDEX_TO_3 => m128i(unsafe { _mm_slli_si128::<{ 3 - $INDEX_TO_3 }>(self.sse.0) }),)*
