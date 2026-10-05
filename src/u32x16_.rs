@@ -306,7 +306,7 @@ impl_simd_uint! {
               match INDEX {
                 $($INDEX => {
                   let quarter = cast::<m128i, u32x4>(m128i(
-                    _mm512_extracti32x4_epi32(self.avx512.0, const { $INDEX / 4 }),
+                    _mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.avx512.0),
                   ));
                   quarter.extract_const::<{ $INDEX % 4 }>()
                 })*
