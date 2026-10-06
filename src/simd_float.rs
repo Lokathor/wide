@@ -824,10 +824,10 @@ macro_rules! impl_simd_float {
 
       /// Returns the maximum between all elements of `self`.
       ///
-      /// Unlike [`reduce_max`], this function does not handle NaNs. If some
-      /// elements are NaN, then the return value is either a non-NaN element or
-      /// NaN. If elements compare equal (such as for the case of `+0.0` and
-      /// `-0.0`), either may be returned non-deterministically.
+      /// Unlike [`reduce_max`], this function does not handle NaNs. If any
+      /// element is NaN, any element may be returned. If elements compare equal
+      /// (such as for the case of `+0.0` and `-0.0`), either may be returned
+      /// non-deterministically.
       ///
       /// [`reduce_max`]: Self::reduce_max
       #[must_use]
@@ -849,10 +849,10 @@ macro_rules! impl_simd_float {
 
       /// Returns the minimum between all elements of `self`.
       ///
-      /// Unlike [`reduce_min`], this function does not handle NaNs. If some
-      /// elements are NaN, then the return value is either a non-NaN element or
-      /// NaN. If elements compare equal (such as for the case of `+0.0` and
-      /// `-0.0`), either may be returned non-deterministically.
+      /// Unlike [`reduce_min`], this function does not handle NaNs. If any
+      /// element is NaN, any element may be returned. If elements compare equal
+      /// (such as for the case of `+0.0` and `-0.0`), either may be returned
+      /// non-deterministically.
       ///
       /// [`reduce_min`]: Self::reduce_min
       #[must_use]

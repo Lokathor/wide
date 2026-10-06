@@ -373,7 +373,7 @@ fn test_fast_reduce_max() {
 
       assert!(
         actual == expected
-          || actual.is_nan() && value.into_iter().any(T::is_nan),
+          || value.into_iter().any(T::is_nan) && value.contains(&actual),
         "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
       );
     }
@@ -404,7 +404,7 @@ fn test_fast_reduce_min() {
 
       assert!(
         actual == expected
-          || actual.is_nan() && value.into_iter().any(T::is_nan),
+          || value.into_iter().any(T::is_nan) && value.contains(&actual),
         "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
       );
     }
