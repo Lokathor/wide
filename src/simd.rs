@@ -58,7 +58,6 @@ macro_rules! impl_simd {
     $fn_shuffle_zeroing_4:item
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
-    optional_fn_deserialize { $($fn_deserialize:item)? }
   ) => {
     impl From<[$T; $N]> for $Simd {
       /// Converts an array to a SIMD vector.
@@ -783,11 +782,14 @@ macro_rules! impl_simd {
         }
       }
 
-      impl_optional_deserialize!{
-        T = $T,
-        N = $N,
-        Simd = $Simd,
-        $($fn_deserialize)?
+      impl<'de> Deserialize<'de> for $Simd {
+        #[inline]
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+          D: serde_core::Deserializer<'de>,
+        {
+          crate::simd::deserialize_impl(deserializer)
+        }
       }
     }
   };
@@ -1270,28 +1272,10 @@ macro_rules! impl_shift_operator {
   }
 }
 
+/// `serde` does not implement `Deserialize` for `[T; 64]`, so this manual
+/// implementation is used.
 #[cfg(feature = "serde")]
-macro_rules! impl_optional_deserialize {
-  (T = $T:ident, N = $N:literal, Simd = $Simd:ty, $fn_deserialize:item) => {
-    impl<'de> Deserialize<'de> for $Simd {
-      $fn_deserialize
-    }
-  };
-  (T = $T:ident, N = $N:literal, Simd = $Simd:ty,) => {
-    impl<'de> Deserialize<'de> for $Simd {
-      #[inline]
-      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where
-        D: serde_core::Deserializer<'de>,
-      {
-        Ok(<[$T; $N]>::deserialize(deserializer)?.into())
-      }
-    }
-  };
-}
-
-#[cfg(feature = "serde")]
-pub(crate) fn deserialize_array<'de, Simd, T, const N: usize, D>(
+pub(crate) fn deserialize_impl<'de, Simd, T, const N: usize, D>(
   deserializer: D,
 ) -> Result<Simd, D::Error>
 where
@@ -1299,7 +1283,6 @@ where
   T: serde_core::Deserialize<'de> + Default + Copy,
   Simd: From<[T; N]>,
 {
-  // Serde does not implement [T; 64]: Deserialize, so we do this manually.
   struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
 
   impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>

@@ -1743,8 +1743,6 @@ impl_simd_uint! {
       }
     }
   }
-
-  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`u8x16`], or only for
