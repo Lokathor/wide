@@ -230,8 +230,6 @@ macro_rules! impl_simd_float {
       }
 
       $fn_transpose
-
-      optional_fn_deserialize {}
     );
 
     impl_unary_operator!(

@@ -284,8 +284,6 @@ impl_simd_int! {
       }
     }
   }
-
-  optional_fn_deserialize {}
 }
 
 /// The following functionality exists only for [`i8x32`], or only for

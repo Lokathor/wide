@@ -370,8 +370,6 @@ impl_simd_int! {
       }
     }
   }
-
-  optional_fn_deserialize {}
 }
 
 impl From<i16x16> for i32x16 {
