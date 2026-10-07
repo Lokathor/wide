@@ -1295,7 +1295,7 @@ where
       &self,
       formatter: &mut core::fmt::Formatter<'_>,
     ) -> core::fmt::Result {
-      formatter.write_str("an array of size {N}")
+      formatter.write_str("an array of length {N}")
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
