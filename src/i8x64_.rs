@@ -24,7 +24,7 @@ pick! {
   }
 }
 
-impl_simd_int! {
+impl_simd_signed! {
   unsafe {
     T = i8,
     N = 64,

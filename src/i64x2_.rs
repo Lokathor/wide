@@ -80,7 +80,7 @@ pick! {
   }
 }
 
-impl_simd_int! {
+impl_simd_signed! {
   unsafe {
     T = i64,
     N = 2,

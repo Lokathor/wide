@@ -6,7 +6,7 @@
 /// macro.
 ///
 /// This macro also invokes `impl_simd`.
-macro_rules! impl_simd_int {
+macro_rules! impl_simd_signed {
   (
     // SAFETY: The contents of this macro assume that:
     //

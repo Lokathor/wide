@@ -81,7 +81,7 @@ pick! {
   }
 }
 
-impl_simd_uint! {
+impl_simd_unsigned! {
   unsafe {
     T = u64,
     N = 2,
