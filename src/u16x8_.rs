@@ -78,12 +78,12 @@ pick! {
   }
 }
 
-impl_simd_uint! {
+impl_simd_unsigned! {
   unsafe {
     T = u16,
     N = 8,
     Simd = u16x8,
-    IntSimd = i16x8,
+    SignedSimd = i16x8,
     T_BITS = 16,
     T_BITS_MUL_2 = 32,
     [0, 1, 2, 3, 4, 5, 6, 7],
