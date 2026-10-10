@@ -328,11 +328,11 @@ impl_simd_int! {
 /// The following functionality exists only for [`i64x4`], or only for
 /// particular types inconsistently.
 impl i64x4 {
-  /// Converts each element from [`i64`] to [`f64`].
-  #[inline]
-  #[must_use]
-  pub fn round_float(self) -> f64x4 {
-    let arr: [i64; 4] = cast(self);
-    cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
-  }
+    /// Converts each element from [`i64`] to [`f64`].
+    #[inline]
+    #[must_use]
+    pub fn round_float(self) -> f64x4 {
+        let arr: [i64; 4] = cast(self);
+        cast([arr[0] as f64, arr[1] as f64, arr[2] as f64, arr[3] as f64])
+    }
 }

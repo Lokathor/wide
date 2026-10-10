@@ -221,117 +221,119 @@ macro_rules! pick {
 // TODO: make these generic over `mul_add`? Worth it?
 
 macro_rules! polynomial_2 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    x2.mul_add($c2, x.mul_add($c1, $c0))
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        x2.mul_add($c2, x.mul_add($c1, $c0))
+    }};
 }
 
 macro_rules! polynomial_3 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    $c3.mul_add(x, $c2).mul_add(x2, $c1.mul_add(x, $c0))
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        $c3.mul_add(x, $c2).mul_add(x2, $c1.mul_add(x, $c0))
+    }};
 }
 
 macro_rules! polynomial_4 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr ,$c3:expr, $c4:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    $c3.mul_add(x, $c2).mul_add(x2, $c1.mul_add(x, $c0)) + $c4 * x4
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr ,$c3:expr, $c4:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        $c3.mul_add(x, $c2).mul_add(x2, $c1.mul_add(x, $c0)) + $c4 * x4
+    }};
 }
 
 macro_rules! polynomial_5 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    $c3
-      .mul_add(x, $c2)
-      .mul_add(x2, $c5.mul_add(x, $c4).mul_add(x4, $c1.mul_add(x, $c0)))
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        $c3.mul_add(x, $c2)
+            .mul_add(x2, $c5.mul_add(x, $c4).mul_add(x4, $c1.mul_add(x, $c0)))
+    }};
 }
 
 macro_rules! polynomial_5n {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    x2.mul_add(x.mul_add($c3, $c2), (x4.mul_add($c4 + x, x.mul_add($c1, $c0))))
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        x2.mul_add(
+            x.mul_add($c3, $c2),
+            (x4.mul_add($c4 + x, x.mul_add($c1, $c0))),
+        )
+    }};
 }
 
 macro_rules! polynomial_6 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr ,$c6:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    x4.mul_add(
-      x2.mul_add($c6, x.mul_add($c5, $c4)),
-      x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
-    )
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr ,$c6:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        x4.mul_add(
+            x2.mul_add($c6, x.mul_add($c5, $c4)),
+            x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+        )
+    }};
 }
 
 macro_rules! polynomial_6n {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    x4.mul_add(
-      x.mul_add($c5, x2 + $c4),
-      x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
-    )
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        x4.mul_add(
+            x.mul_add($c5, x2 + $c4),
+            x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+        )
+    }};
 }
 
 macro_rules! polynomial_7 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr, $c6:expr, $c7:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    x4.mul_add(
-      x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
-      x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
-    )
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr, $c6:expr, $c7:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        x4.mul_add(
+            x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
+            x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+        )
+    }};
 }
 
 macro_rules! polynomial_8 {
-  ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr,  $c6:expr, $c7:expr, $c8:expr $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    let x8 = x4 * x4;
-    x4.mul_add(
-      x2.mul_add($c7.mul_add(x, $c6), x.mul_add($c5, $c4)),
-      x8.mul_add($c8, x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0))),
-    )
-  }};
+    ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr, $c4:expr, $c5:expr,  $c6:expr, $c7:expr, $c8:expr $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        let x8 = x4 * x4;
+        x4.mul_add(
+            x2.mul_add($c7.mul_add(x, $c6), x.mul_add($c5, $c4)),
+            x8.mul_add($c8, x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0))),
+        )
+    }};
 }
 
 macro_rules! polynomial_13 {
-  // calculates polynomial c13*x^13 + c12*x^12 + ... + c1*x + c0
-  ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
-    let x = $x;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    let x8 = x4 * x4;
-    x8.mul_add(
-      x4.mul_add(
-        x.mul_add($c13, $c12),
-        x2.mul_add(x.mul_add($c11, $c10), x.mul_add($c9, $c8)),
-      ),
-      x4.mul_add(
-        x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
-        x2.mul_add(x.mul_add($c3, $c2), x),
-      ),
-    )
-  }};
+    // calculates polynomial c13*x^13 + c12*x^12 + ... + c1*x + c0
+    ($x:expr,  $c2:expr, $c3:expr, $c4:expr, $c5:expr,$c6:expr, $c7:expr, $c8:expr,$c9:expr, $c10:expr, $c11:expr, $c12:expr, $c13:expr  $(,)?) => {{
+        let x = $x;
+        let x2 = x * x;
+        let x4 = x2 * x2;
+        let x8 = x4 * x4;
+        x8.mul_add(
+            x4.mul_add(
+                x.mul_add($c13, $c12),
+                x2.mul_add(x.mul_add($c11, $c10), x.mul_add($c9, $c8)),
+            ),
+            x4.mul_add(
+                x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
+                x2.mul_add(x.mul_add($c3, $c2), x),
+            ),
+        )
+    }};
 }
 
 mod f32x16_;
@@ -428,239 +430,239 @@ pub use u64x8_::*;
 /// `add_mul_hi` operand that is read.
 #[inline]
 const fn add_mul_operand_mask_u64<const W: u32>() -> u64 {
-  const { assert!(W >= 1 && W <= 64, "`add_mul` width must be in `1..=64`") };
-  u64::MAX >> (64 - W)
+    const { assert!(W >= 1 && W <= 64, "`add_mul` width must be in `1..=64`") };
+    u64::MAX >> (64 - W)
 }
 
 /// One `u64` lane of `add_mul_lo`: `acc + ((a * b) mod 2^W)`.
 #[inline]
 fn add_mul_lo_lane_u64<const W: u32>(acc: u64, a: u64, b: u64) -> u64 {
-  let mask = add_mul_operand_mask_u64::<W>();
-  let product = (a & mask) as u128 * (b & mask) as u128;
-  acc.wrapping_add(product as u64 & mask)
+    let mask = add_mul_operand_mask_u64::<W>();
+    let product = (a & mask) as u128 * (b & mask) as u128;
+    acc.wrapping_add(product as u64 & mask)
 }
 
 /// One `u64` lane of `add_mul_hi`: `acc + ((a * b) >> W)`.
 #[inline]
 fn add_mul_hi_lane_u64<const W: u32>(acc: u64, a: u64, b: u64) -> u64 {
-  let mask = add_mul_operand_mask_u64::<W>();
-  let product = (a & mask) as u128 * (b & mask) as u128;
-  acc.wrapping_add((product >> W) as u64)
+    let mask = add_mul_operand_mask_u64::<W>();
+    let product = (a & mask) as u128 * (b & mask) as u128;
+    acc.wrapping_add((product >> W) as u64)
 }
 
 /// A mask for the low `W` bits, the only part of a 32-bit `add_mul_lo` or
 /// `add_mul_hi` operand that is read.
 #[inline]
 const fn add_mul_operand_mask_u32<const W: u32>() -> u32 {
-  const { assert!(W >= 1 && W <= 32, "`add_mul` width must be in `1..=32`") };
-  u32::MAX >> (32 - W)
+    const { assert!(W >= 1 && W <= 32, "`add_mul` width must be in `1..=32`") };
+    u32::MAX >> (32 - W)
 }
 
 /// One `u32` lane of `add_mul_lo`: `acc + ((a * b) mod 2^W)`.
 #[inline]
 fn add_mul_lo_lane_u32<const W: u32>(acc: u32, a: u32, b: u32) -> u32 {
-  let mask = add_mul_operand_mask_u32::<W>();
-  let product = (a & mask) as u64 * (b & mask) as u64;
-  acc.wrapping_add(product as u32 & mask)
+    let mask = add_mul_operand_mask_u32::<W>();
+    let product = (a & mask) as u64 * (b & mask) as u64;
+    acc.wrapping_add(product as u32 & mask)
 }
 
 /// One `u32` lane of `add_mul_hi`: `acc + ((a * b) >> W)`.
 #[inline]
 fn add_mul_hi_lane_u32<const W: u32>(acc: u32, a: u32, b: u32) -> u32 {
-  let mask = add_mul_operand_mask_u32::<W>();
-  let product = (a & mask) as u64 * (b & mask) as u64;
-  acc.wrapping_add((product >> W) as u32)
+    let mask = add_mul_operand_mask_u32::<W>();
+    let product = (a & mask) as u64 * (b & mask) as u64;
+    acc.wrapping_add((product >> W) as u32)
 }
 
 #[allow(dead_code)]
 fn generic_bit_blend<T>(mask: T, y: T, n: T) -> T
 where
-  T: Copy + BitXor<Output = T> + BitAnd<Output = T>,
+    T: Copy + BitXor<Output = T> + BitAnd<Output = T>,
 {
-  n ^ ((n ^ y) & mask)
+    n ^ ((n ^ y) & mask)
 }
 
 #[allow(unused)]
 fn software_sqrt(x: f64) -> f64 {
-  use core::num::Wrapping;
-  type wu32 = Wrapping<u32>;
-  const fn w(u: u32) -> wu32 {
-    Wrapping(u)
-  }
-  let mut z: f64;
-  let sign: wu32 = w(0x80000000);
-  let mut ix0: i32;
-  let mut s0: i32;
-  let mut q: i32;
-  let mut m: i32;
-  let mut t: i32;
-  let mut i: i32;
-  let mut r: wu32;
-  let mut t1: wu32;
-  let mut s1: wu32;
-  let mut ix1: wu32;
-  let mut q1: wu32;
-  // extract data
+    use core::num::Wrapping;
+    type wu32 = Wrapping<u32>;
+    const fn w(u: u32) -> wu32 {
+        Wrapping(u)
+    }
+    let mut z: f64;
+    let sign: wu32 = w(0x80000000);
+    let mut ix0: i32;
+    let mut s0: i32;
+    let mut q: i32;
+    let mut m: i32;
+    let mut t: i32;
+    let mut i: i32;
+    let mut r: wu32;
+    let mut t1: wu32;
+    let mut s1: wu32;
+    let mut ix1: wu32;
+    let mut q1: wu32;
+    // extract data
 
-  pick! {
-    if #[cfg(target_endian = "little")]
-    {
-      let [low, high]: [u32; 2] = cast(x);
-      ix0 = high as i32;
-      ix1 = w(low);
+    pick! {
+      if #[cfg(target_endian = "little")]
+      {
+        let [low, high]: [u32; 2] = cast(x);
+        ix0 = high as i32;
+        ix1 = w(low);
+      }
+      else
+      {
+        let [high, low]: [u32; 2] = cast(x);
+        ix0 = high as i32;
+        ix1 = w(low);
+      }
     }
-    else
-    {
-      let [high, low]: [u32; 2] = cast(x);
-      ix0 = high as i32;
-      ix1 = w(low);
-    }
-  }
 
-  // inf and nan
-  {
-    if x.is_nan() {
-      return f64::NAN;
-    }
-    if ix0 & 0x7ff00000 == 0x7ff00000 {
-      return x * x + x;
-    }
-  }
-  // handle zero
-  {
-    if ix0 <= 0 {
-      if ((ix0 & (!sign).0 as i32) | (ix1.0 as i32)) == 0 {
-        return x;
-      } else if ix0 < 0 {
-        return (x - x) / (x - x);
-      }
-    }
-  }
-  // normalize
-  {
-    m = ix0 >> 20;
-    if m == 0 {
-      // subnormal
-      while ix0 == 0 {
-        m -= 21;
-        ix0 |= (ix1 >> 11).0 as i32;
-        ix1 <<= 21;
-      }
-      i = 0;
-      while ix0 & 0x00100000 == 0 {
-        ix0 <<= 1;
-        i += 1;
-      }
-      m -= i - 1;
-      ix0 |= (ix1.0 >> (31 - i)) as i32;
-      ix1 <<= i as usize;
-    }
-    // un-bias exponent
-    m -= 1023;
-    ix0 = (ix0 & 0x000fffff) | 0x00100000;
-    if (m & 1) != 0 {
-      // odd m, double the input to make it even
-      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
-      ix1 += ix1;
-    }
-    m >>= 1;
-  }
-  // generate sqrt bit by bit
-  {
-    ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
-    ix1 += ix1;
-    // q and q1 store the sqrt(x);
-    q = 0;
-    q1 = w(0);
-    s0 = 0;
-    s1 = w(0);
-    // our bit that moves from right to left
-    r = w(0x00200000);
-    while r != w(0) {
-      t = s0 + (r.0 as i32);
-      if t <= ix0 {
-        s0 = t + (r.0 as i32);
-        ix0 -= t;
-        q += (r.0 as i32);
-      }
-      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
-      ix1 += ix1;
-      r >>= 1;
-    }
-    r = sign;
-    while r != w(0) {
-      t1 = s1 + r;
-      t = s0;
-      if (t < ix0) || ((t == ix0) && (t1 <= ix1)) {
-        s1 = t1 + r;
-        if t1 & sign == sign && (s1 & sign) == w(0) {
-          s0 += 1;
+    // inf and nan
+    {
+        if x.is_nan() {
+            return f64::NAN;
         }
-        ix0 -= t;
-        if ix1 < t1 {
-          ix0 -= 1;
+        if ix0 & 0x7ff00000 == 0x7ff00000 {
+            return x * x + x;
         }
-        ix1 -= t1;
-        q1 += r;
-      }
-      ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
-      ix1 += ix1;
-      r >>= 1;
     }
-  }
-  // use floating add to find out rounding direction
-  {
-    if ix0 | (ix1.0 as i32) != 0 {
-      z = 1.0 - 1.0e-300;
-      if z >= 1.0 {
-        z = 1.0 + 1.0e-300;
-        if q1 == w(0xffffffff) {
-          q1 = w(0);
-          q += 1;
-        } else if z > 1.0 {
-          if q1 == w(0xfffffffe) {
-            q += 1;
-          }
-          q1 += w(2);
-        } else {
-          q1 += q1 & w(1);
+    // handle zero
+    {
+        if ix0 <= 0 {
+            if ((ix0 & (!sign).0 as i32) | (ix1.0 as i32)) == 0 {
+                return x;
+            } else if ix0 < 0 {
+                return (x - x) / (x - x);
+            }
         }
-      }
     }
-  }
-  // finish up
-  ix0 = (q >> 1) + 0x3fe00000;
-  ix1 = q1 >> 1;
-  if q & 1 == 1 {
-    ix1 |= sign;
-  }
-  ix0 += m << 20;
+    // normalize
+    {
+        m = ix0 >> 20;
+        if m == 0 {
+            // subnormal
+            while ix0 == 0 {
+                m -= 21;
+                ix0 |= (ix1 >> 11).0 as i32;
+                ix1 <<= 21;
+            }
+            i = 0;
+            while ix0 & 0x00100000 == 0 {
+                ix0 <<= 1;
+                i += 1;
+            }
+            m -= i - 1;
+            ix0 |= (ix1.0 >> (31 - i)) as i32;
+            ix1 <<= i as usize;
+        }
+        // un-bias exponent
+        m -= 1023;
+        ix0 = (ix0 & 0x000fffff) | 0x00100000;
+        if (m & 1) != 0 {
+            // odd m, double the input to make it even
+            ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+            ix1 += ix1;
+        }
+        m >>= 1;
+    }
+    // generate sqrt bit by bit
+    {
+        ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+        ix1 += ix1;
+        // q and q1 store the sqrt(x);
+        q = 0;
+        q1 = w(0);
+        s0 = 0;
+        s1 = w(0);
+        // our bit that moves from right to left
+        r = w(0x00200000);
+        while r != w(0) {
+            t = s0 + (r.0 as i32);
+            if t <= ix0 {
+                s0 = t + (r.0 as i32);
+                ix0 -= t;
+                q += (r.0 as i32);
+            }
+            ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+            ix1 += ix1;
+            r >>= 1;
+        }
+        r = sign;
+        while r != w(0) {
+            t1 = s1 + r;
+            t = s0;
+            if (t < ix0) || ((t == ix0) && (t1 <= ix1)) {
+                s1 = t1 + r;
+                if t1 & sign == sign && (s1 & sign) == w(0) {
+                    s0 += 1;
+                }
+                ix0 -= t;
+                if ix1 < t1 {
+                    ix0 -= 1;
+                }
+                ix1 -= t1;
+                q1 += r;
+            }
+            ix0 += ix0 + ((ix1 & sign) >> 31).0 as i32;
+            ix1 += ix1;
+            r >>= 1;
+        }
+    }
+    // use floating add to find out rounding direction
+    {
+        if ix0 | (ix1.0 as i32) != 0 {
+            z = 1.0 - 1.0e-300;
+            if z >= 1.0 {
+                z = 1.0 + 1.0e-300;
+                if q1 == w(0xffffffff) {
+                    q1 = w(0);
+                    q += 1;
+                } else if z > 1.0 {
+                    if q1 == w(0xfffffffe) {
+                        q += 1;
+                    }
+                    q1 += w(2);
+                } else {
+                    q1 += q1 & w(1);
+                }
+            }
+        }
+    }
+    // finish up
+    ix0 = (q >> 1) + 0x3fe00000;
+    ix1 = q1 >> 1;
+    if q & 1 == 1 {
+        ix1 |= sign;
+    }
+    ix0 += m << 20;
 
-  pick! {
-    if #[cfg(target_endian = "little")]
-    {
-      cast::<[u32; 2], f64>([ix1.0, ix0 as u32])
+    pick! {
+      if #[cfg(target_endian = "little")]
+      {
+        cast::<[u32; 2], f64>([ix1.0, ix0 as u32])
+      }
+      else
+      {
+        cast::<[u32; 2], f64>([ix0 as u32, ix1.0])
+      }
     }
-    else
-    {
-      cast::<[u32; 2], f64>([ix0 as u32, ix1.0])
-    }
-  }
 }
 
 #[test]
 fn test_software_sqrt() {
-  assert!(software_sqrt(f64::NAN).is_nan());
-  assert_eq!(software_sqrt(f64::INFINITY), f64::INFINITY);
-  assert_eq!(software_sqrt(0.0), 0.0);
-  assert_eq!(software_sqrt(-0.0), -0.0);
-  assert!(software_sqrt(-1.0).is_nan());
-  assert!(software_sqrt(f64::NEG_INFINITY).is_nan());
-  assert_eq!(software_sqrt(4.0), 2.0);
-  assert_eq!(software_sqrt(9.0), 3.0);
-  assert_eq!(software_sqrt(16.0), 4.0);
-  assert_eq!(software_sqrt(25.0), 5.0);
-  assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
+    assert!(software_sqrt(f64::NAN).is_nan());
+    assert_eq!(software_sqrt(f64::INFINITY), f64::INFINITY);
+    assert_eq!(software_sqrt(0.0), 0.0);
+    assert_eq!(software_sqrt(-0.0), -0.0);
+    assert!(software_sqrt(-1.0).is_nan());
+    assert!(software_sqrt(f64::NEG_INFINITY).is_nan());
+    assert_eq!(software_sqrt(4.0), 2.0);
+    assert_eq!(software_sqrt(9.0), 3.0);
+    assert_eq!(software_sqrt(16.0), 4.0);
+    assert_eq!(software_sqrt(25.0), 5.0);
+    assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
 }
 
 /// A trait for lanewise SIMD selection.
@@ -712,20 +714,20 @@ fn test_software_sqrt() {
 /// [`select`]: f32x4::select
 /// [mask]: crate#masks
 pub trait Select<T> {
-  /// Lanewise SIMD selection.
-  ///
-  /// If `self` is a SIMD vector, it is treated as a [mask], where
-  /// each lane is considered true if all bits are one, or false if all bits are
-  /// zero.
-  ///
-  /// For each lane:
-  ///
-  /// - If `self` is true, return the corresponding lane of `if_true`
-  /// - If `self` is false, return the corresponding lane of `if_false`
-  ///
-  /// [mask]: crate#masks
-  #[must_use]
-  fn select(self, if_true: T, if_false: T) -> T;
+    /// Lanewise SIMD selection.
+    ///
+    /// If `self` is a SIMD vector, it is treated as a [mask], where
+    /// each lane is considered true if all bits are one, or false if all bits are
+    /// zero.
+    ///
+    /// For each lane:
+    ///
+    /// - If `self` is true, return the corresponding lane of `if_true`
+    /// - If `self` is false, return the corresponding lane of `if_false`
+    ///
+    /// [mask]: crate#masks
+    #[must_use]
+    fn select(self, if_true: T, if_false: T) -> T;
 }
 
 /// An extension trait implemented for arrays of SIMD vectors, which provides
@@ -746,237 +748,219 @@ pub trait Select<T> {
 /// ```
 #[expect(private_bounds)]
 pub trait ShuffleExt: Sealed {
-  /// The type representing indices.
-  ///
-  /// This is always a SIMD vector of the unsigned integer with the same size as
-  /// `T` and the same number of elements.
-  type Indices;
+    /// The type representing indices.
+    ///
+    /// This is always a SIMD vector of the unsigned integer with the same size as
+    /// `T` and the same number of elements.
+    type Indices;
 
-  /// The type returned by shuffle functions.
-  ///
-  /// This is always the type of SIMD vector contained in the array.
-  type Output;
+    /// The type returned by shuffle functions.
+    ///
+    /// This is always the type of SIMD vector contained in the array.
+    type Output;
 
-  /// Returns a SIMD vector whose elements are selected from multiple input
-  /// vectors using the corresponding runtime `indices`.
-  ///
-  /// If `N` is the number of elements in each vector, indices in the range
-  /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
-  /// select values from `self[1]`, etc.
-  ///
-  /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
-  /// corresponding result element is unspecified.
-  ///
-  /// # Example
-  ///
-  /// ```
-  /// use wide::{f32x4, ShuffleExt, u32x4};
-  ///
-  /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-  /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
-  ///
-  /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-  /// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
-  ///
-  /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
-  /// ```
-  ///
-  /// # Type-specific guarantees
-  ///
-  /// For all 8-bit types, it is guaranteed that for out of bounds indices,
-  /// either zero is returned or the index wraps around, non-deterministically
-  /// (unlike other types, which can return arbitrary values).
-  #[must_use]
-  fn shuffle(self, indices: Self::Indices) -> Self::Output;
+    /// Returns a SIMD vector whose elements are selected from multiple input
+    /// vectors using the corresponding runtime `indices`.
+    ///
+    /// If `N` is the number of elements in each vector, indices in the range
+    /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
+    /// select values from `self[1]`, etc.
+    ///
+    /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
+    /// corresponding result element is unspecified.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use wide::{f32x4, ShuffleExt, u32x4};
+    ///
+    /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+    /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+    ///
+    /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+    /// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
+    ///
+    /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+    /// ```
+    ///
+    /// # Type-specific guarantees
+    ///
+    /// For all 8-bit types, it is guaranteed that for out of bounds indices,
+    /// either zero is returned or the index wraps around, non-deterministically
+    /// (unlike other types, which can return arbitrary values).
+    #[must_use]
+    fn shuffle(self, indices: Self::Indices) -> Self::Output;
 
-  /// Returns a SIMD vector whose elements are selected from multiple input
-  /// vectors using the corresponding runtime `indices`.
-  ///
-  /// If `N` is the number of elements in each vector, indices in the range
-  /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
-  /// select values from `self[1]`, etc.
-  ///
-  /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
-  /// corresponding result element is the number zero.
-  ///
-  /// # Example
-  ///
-  /// ```
-  /// use wide::{f32x4, ShuffleExt, u32x4};
-  ///
-  /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-  /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
-  ///
-  /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-  /// let from_two_vectors = [simd_a, simd_b].shuffle_zeroing(u32x4::new([2, 3, 100, 5]));
-  ///
-  /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 0.0, 101.0]));
-  /// ```
-  #[must_use]
-  fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
+    /// Returns a SIMD vector whose elements are selected from multiple input
+    /// vectors using the corresponding runtime `indices`.
+    ///
+    /// If `N` is the number of elements in each vector, indices in the range
+    /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
+    /// select values from `self[1]`, etc.
+    ///
+    /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
+    /// corresponding result element is the number zero.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use wide::{f32x4, ShuffleExt, u32x4};
+    ///
+    /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+    /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+    ///
+    /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+    /// let from_two_vectors = [simd_a, simd_b].shuffle_zeroing(u32x4::new([2, 3, 100, 5]));
+    ///
+    /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 0.0, 101.0]));
+    /// ```
+    #[must_use]
+    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
 
-  /// Returns a SIMD vector whose elements are selected from multiple input
-  /// vectors using the corresponding runtime `indices`.
-  ///
-  /// If `N` is the number of elements in each vector, indices in the range
-  /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
-  /// select values from `self[1]`, etc.
-  ///
-  /// Indices are wrapped by `N * INPUTS`.
-  ///
-  /// # Example
-  ///
-  /// ```
-  /// use wide::{f32x4, ShuffleExt, u32x4};
-  ///
-  /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-  /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
-  ///
-  /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-  /// let from_two_vectors = [simd_a, simd_b].shuffle_wrapping(u32x4::new([2, 3, 9, 5]));
-  ///
-  /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 1.0, 101.0]));
-  /// ```
-  #[must_use]
-  fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output;
+    /// Returns a SIMD vector whose elements are selected from multiple input
+    /// vectors using the corresponding runtime `indices`.
+    ///
+    /// If `N` is the number of elements in each vector, indices in the range
+    /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
+    /// select values from `self[1]`, etc.
+    ///
+    /// Indices are wrapped by `N * INPUTS`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use wide::{f32x4, ShuffleExt, u32x4};
+    ///
+    /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+    /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+    ///
+    /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
+    /// let from_two_vectors = [simd_a, simd_b].shuffle_wrapping(u32x4::new([2, 3, 9, 5]));
+    ///
+    /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 1.0, 101.0]));
+    /// ```
+    #[must_use]
+    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output;
 }
 
 /// A deprecated trait for the [`simd_eq`] function.
 ///
 /// [`simd_eq`]: f32x4::simd_eq
-#[deprecated(
-  since = "1.5.0",
-  note = "use the inherent function `simd_eq` instead"
-)]
+#[deprecated(since = "1.5.0", note = "use the inherent function `simd_eq` instead")]
 pub trait CmpEq<Rhs = Self> {
-  /// The type returned by [`simd_eq`].
-  ///
-  /// [`simd_eq`]: Self::simd_eq
-  type Output;
+    /// The type returned by [`simd_eq`].
+    ///
+    /// [`simd_eq`]: Self::simd_eq
+    type Output;
 
-  /// Returns a [mask] that checks if each element of `self` is equal to the
-  /// corresponding element of `rhs`.
-  ///
-  /// This is a method of the deprecated [`CmpEq`] trait. Use the inherent
-  /// function instead.
-  ///
-  /// [mask]: crate#masks
-  fn simd_eq(self, rhs: Rhs) -> Self::Output;
+    /// Returns a [mask] that checks if each element of `self` is equal to the
+    /// corresponding element of `rhs`.
+    ///
+    /// This is a method of the deprecated [`CmpEq`] trait. Use the inherent
+    /// function instead.
+    ///
+    /// [mask]: crate#masks
+    fn simd_eq(self, rhs: Rhs) -> Self::Output;
 }
 
 /// A deprecated trait for the [`simd_gt`] function.
 ///
 /// [`simd_gt`]: f32x4::simd_gt
-#[deprecated(
-  since = "1.5.0",
-  note = "use the inherent function `simd_gt` instead"
-)]
+#[deprecated(since = "1.5.0", note = "use the inherent function `simd_gt` instead")]
 pub trait CmpGt<Rhs = Self> {
-  /// The type returned by [`simd_gt`].
-  ///
-  /// [`simd_gt`]: Self::simd_gt
-  type Output;
+    /// The type returned by [`simd_gt`].
+    ///
+    /// [`simd_gt`]: Self::simd_gt
+    type Output;
 
-  /// Returns a [mask] that checks if each element of `self` is greater than the
-  /// corresponding element of `rhs`.
-  ///
-  /// This is a method of the deprecated [`CmpGt`] trait. Use the inherent
-  /// function instead.
-  ///
-  /// [mask]: crate#masks
-  fn simd_gt(self, rhs: Rhs) -> Self::Output;
+    /// Returns a [mask] that checks if each element of `self` is greater than the
+    /// corresponding element of `rhs`.
+    ///
+    /// This is a method of the deprecated [`CmpGt`] trait. Use the inherent
+    /// function instead.
+    ///
+    /// [mask]: crate#masks
+    fn simd_gt(self, rhs: Rhs) -> Self::Output;
 }
 
 /// A deprecated trait for the [`simd_ge`] function.
 ///
 /// [`simd_ge`]: f32x4::simd_ge
-#[deprecated(
-  since = "1.5.0",
-  note = "use the inherent function `simd_ge` instead"
-)]
+#[deprecated(since = "1.5.0", note = "use the inherent function `simd_ge` instead")]
 pub trait CmpGe<Rhs = Self> {
-  /// The type returned by [`simd_ge`].
-  ///
-  /// [`simd_ge`]: Self::simd_ge
-  type Output;
+    /// The type returned by [`simd_ge`].
+    ///
+    /// [`simd_ge`]: Self::simd_ge
+    type Output;
 
-  /// Returns a [mask] that checks if each element of `self` is greater than or
-  /// equal to the corresponding element of `rhs`.
-  ///
-  /// This is a method of the deprecated [`CmpGe`] trait. Use the inherent
-  /// function instead.
-  ///
-  /// [mask]: crate#masks
-  fn simd_ge(self, rhs: Rhs) -> Self::Output;
+    /// Returns a [mask] that checks if each element of `self` is greater than or
+    /// equal to the corresponding element of `rhs`.
+    ///
+    /// This is a method of the deprecated [`CmpGe`] trait. Use the inherent
+    /// function instead.
+    ///
+    /// [mask]: crate#masks
+    fn simd_ge(self, rhs: Rhs) -> Self::Output;
 }
 
 /// A deprecated trait for the [`simd_ne`] function.
 ///
 /// [`simd_ne`]: f32x4::simd_ne
-#[deprecated(
-  since = "1.5.0",
-  note = "use the inherent function `simd_ne` instead"
-)]
+#[deprecated(since = "1.5.0", note = "use the inherent function `simd_ne` instead")]
 pub trait CmpNe<Rhs = Self> {
-  /// The type returned by [`simd_ne`].
-  ///
-  /// [`simd_ne`]: Self::simd_ne
-  type Output;
+    /// The type returned by [`simd_ne`].
+    ///
+    /// [`simd_ne`]: Self::simd_ne
+    type Output;
 
-  /// Returns a [mask] that checks if each element of `self` is not equal to the
-  /// corresponding element of `rhs`.
-  ///
-  /// This is a method of the deprecated [`CmpNe`] trait. Use the inherent
-  /// function instead.
-  ///
-  /// [mask]: crate#masks
-  fn simd_ne(self, rhs: Rhs) -> Self::Output;
+    /// Returns a [mask] that checks if each element of `self` is not equal to the
+    /// corresponding element of `rhs`.
+    ///
+    /// This is a method of the deprecated [`CmpNe`] trait. Use the inherent
+    /// function instead.
+    ///
+    /// [mask]: crate#masks
+    fn simd_ne(self, rhs: Rhs) -> Self::Output;
 }
 
 /// A deprecated trait for the [`simd_lt`] function.
 ///
 /// [`simd_lt`]: f32x4::simd_lt
-#[deprecated(
-  since = "1.5.0",
-  note = "use the inherent function `simd_lt` instead"
-)]
+#[deprecated(since = "1.5.0", note = "use the inherent function `simd_lt` instead")]
 pub trait CmpLt<Rhs = Self> {
-  /// The type returned by [`simd_lt`].
-  ///
-  /// [`simd_lt`]: Self::simd_lt
-  type Output;
+    /// The type returned by [`simd_lt`].
+    ///
+    /// [`simd_lt`]: Self::simd_lt
+    type Output;
 
-  /// Returns a [mask] that checks if each element of `self` is less than the
-  /// corresponding element of `rhs`.
-  ///
-  /// This is a method of the deprecated [`CmpLt`] trait. Use the inherent
-  /// function instead.
-  ///
-  /// [mask]: crate#masks
-  fn simd_lt(self, rhs: Rhs) -> Self::Output;
+    /// Returns a [mask] that checks if each element of `self` is less than the
+    /// corresponding element of `rhs`.
+    ///
+    /// This is a method of the deprecated [`CmpLt`] trait. Use the inherent
+    /// function instead.
+    ///
+    /// [mask]: crate#masks
+    fn simd_lt(self, rhs: Rhs) -> Self::Output;
 }
 
 /// A deprecated trait for the [`simd_le`] function.
 ///
 /// [`simd_le`]: f32x4::simd_le
-#[deprecated(
-  since = "1.5.0",
-  note = "use the inherent function `simd_le` instead"
-)]
+#[deprecated(since = "1.5.0", note = "use the inherent function `simd_le` instead")]
 pub trait CmpLe<Rhs = Self> {
-  /// The type returned by [`simd_le`].
-  ///
-  /// [`simd_le`]: Self::simd_le
-  type Output;
+    /// The type returned by [`simd_le`].
+    ///
+    /// [`simd_le`]: Self::simd_le
+    type Output;
 
-  /// Returns a [mask] that checks if each element of `self` is less than or
-  /// equal to the corresponding element of `rhs`.
-  ///
-  /// This is a method of the deprecated [`CmpLe`] trait. Use the inherent
-  /// function instead.
-  ///
-  /// [mask]: crate#masks
-  fn simd_le(self, rhs: Rhs) -> Self::Output;
+    /// Returns a [mask] that checks if each element of `self` is less than or
+    /// equal to the corresponding element of `rhs`.
+    ///
+    /// This is a method of the deprecated [`CmpLe`] trait. Use the inherent
+    /// function instead.
+    ///
+    /// [mask]: crate#masks
+    fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
 
 /// A trait for SIMD variants of [`align_to`] functions.
@@ -984,31 +968,29 @@ pub trait CmpLe<Rhs = Self> {
 /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
 pub trait AlignTo
 where
-  Self: Pod + Default + PartialEq + From<Self::Elem>,
-  Self::Elem: Pod + Default + PartialEq,
+    Self: Pod + Default + PartialEq + From<Self::Elem>,
+    Self::Elem: Pod + Default + PartialEq,
 {
-  /// The element type of this SIMD vector.
-  type Elem;
+    /// The element type of this SIMD vector.
+    type Elem;
 
-  /// A SIMD variant of [`align_to`].
-  ///
-  /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
-  #[inline]
-  fn simd_align_to(
-    slice: &[Self::Elem],
-  ) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-    pod_align_to(slice)
-  }
+    /// A SIMD variant of [`align_to`].
+    ///
+    /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
+    #[inline]
+    fn simd_align_to(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+        pod_align_to(slice)
+    }
 
-  /// A SIMD variant of [`align_to_mut`].
-  ///
-  /// [`align_to_mut`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to_mut
-  #[inline]
-  fn simd_align_to_mut(
-    slice: &mut [Self::Elem],
-  ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-    pod_align_to_mut(slice)
-  }
+    /// A SIMD variant of [`align_to_mut`].
+    ///
+    /// [`align_to_mut`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to_mut
+    #[inline]
+    fn simd_align_to_mut(
+        slice: &mut [Self::Elem],
+    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+        pod_align_to_mut(slice)
+    }
 }
 
 trait Sealed {}

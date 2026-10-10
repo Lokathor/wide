@@ -380,82 +380,82 @@ impl_simd_int! {
 }
 
 impl From<i16x8> for i32x8 {
-  #[inline]
-  fn from(value: i16x8) -> Self {
-    i32x8::from_i16x8(value)
-  }
+    #[inline]
+    fn from(value: i16x8) -> Self {
+        i32x8::from_i16x8(value)
+    }
 }
 
 /// The following functionality exists only for [`i32x8`], or only for
 /// particular types inconsistently.
 impl i32x8 {
-  /// Converts each element from [`i16`] to [`i32`].
-  #[inline]
-  #[must_use]
-  pub fn from_i16x8(v: i16x8) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i32x8 { avx2:convert_to_i32_m256i_from_i16_m128i(v.sse) }
-      } else if #[cfg(target_feature="sse2")] {
-        i32x8 {
-          a: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
-          b: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+    /// Converts each element from [`i16`] to [`i32`].
+    #[inline]
+    #[must_use]
+    pub fn from_i16x8(v: i16x8) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            i32x8 { avx2:convert_to_i32_m256i_from_i16_m128i(v.sse) }
+          } else if #[cfg(target_feature="sse2")] {
+            i32x8 {
+              a: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
+              b: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+            }
+          } else {
+            i32x8::new([
+              i32::from(v.as_array()[0]),
+              i32::from(v.as_array()[1]),
+              i32::from(v.as_array()[2]),
+              i32::from(v.as_array()[3]),
+              i32::from(v.as_array()[4]),
+              i32::from(v.as_array()[5]),
+              i32::from(v.as_array()[6]),
+              i32::from(v.as_array()[7]),
+            ])
+          }
         }
-      } else {
-        i32x8::new([
-          i32::from(v.as_array()[0]),
-          i32::from(v.as_array()[1]),
-          i32::from(v.as_array()[2]),
-          i32::from(v.as_array()[3]),
-          i32::from(v.as_array()[4]),
-          i32::from(v.as_array()[5]),
-          i32::from(v.as_array()[6]),
-          i32::from(v.as_array()[7]),
-        ])
-      }
     }
-  }
 
-  /// Converts each element from [`u16`] to [`i32`].
-  #[inline]
-  #[must_use]
-  pub fn from_u16x8(v: u16x8) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i32x8 { avx2:convert_to_i32_m256i_from_u16_m128i(v.sse) }
-      } else if #[cfg(target_feature="sse2")] {
-        i32x8 {
-          a: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
-          b: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+    /// Converts each element from [`u16`] to [`i32`].
+    #[inline]
+    #[must_use]
+    pub fn from_u16x8(v: u16x8) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            i32x8 { avx2:convert_to_i32_m256i_from_u16_m128i(v.sse) }
+          } else if #[cfg(target_feature="sse2")] {
+            i32x8 {
+              a: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
+              b: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+            }
+          } else {
+            i32x8::new([
+              i32::from(v.as_array()[0]),
+              i32::from(v.as_array()[1]),
+              i32::from(v.as_array()[2]),
+              i32::from(v.as_array()[3]),
+              i32::from(v.as_array()[4]),
+              i32::from(v.as_array()[5]),
+              i32::from(v.as_array()[6]),
+              i32::from(v.as_array()[7]),
+            ])
+          }
         }
-      } else {
-        i32x8::new([
-          i32::from(v.as_array()[0]),
-          i32::from(v.as_array()[1]),
-          i32::from(v.as_array()[2]),
-          i32::from(v.as_array()[3]),
-          i32::from(v.as_array()[4]),
-          i32::from(v.as_array()[5]),
-          i32::from(v.as_array()[6]),
-          i32::from(v.as_array()[7]),
-        ])
-      }
     }
-  }
 
-  /// Converts each element from [`i32`] to [`f32`].
-  #[inline]
-  #[must_use]
-  pub fn round_float(self) -> f32x8 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        cast(convert_to_m256_from_i32_m256i(self.avx2))
-      } else {
-        cast([
-          self.a.round_float(),
-          self.b.round_float(),
-        ])
-      }
+    /// Converts each element from [`i32`] to [`f32`].
+    #[inline]
+    #[must_use]
+    pub fn round_float(self) -> f32x8 {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            cast(convert_to_m256_from_i32_m256i(self.avx2))
+          } else {
+            cast([
+              self.a.round_float(),
+              self.b.round_float(),
+            ])
+          }
+        }
     }
-  }
 }

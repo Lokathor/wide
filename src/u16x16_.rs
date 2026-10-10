@@ -867,62 +867,62 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u16x16`], or only for
 /// particular types inconsistently.
 impl u16x16 {
-  /// A helper for shuffle functions that turns indices of 16-bit lanes into
-  /// byte indices that can be used with 8-bit shuffle intrinsics.
-  ///
-  /// This turns each 16-bit lane `i` into two 8-bit lanes `[2*i, 2*i + 1]`.
-  ///
-  /// This assumes `self` has already been reduced to the table's lane count,
-  /// which may be at most 128 lanes so that `2 * i` still fits in a byte.
-  #[allow(dead_code)]
-  #[inline]
-  fn to_byte_indices(self) -> u8x32 {
-    // The byte offset of the lane, broadcast to every byte of the lane.
-    let base = self.unbounded_shl_scalar(1);
-    let base = base | base.unbounded_shl_scalar(8);
+    /// A helper for shuffle functions that turns indices of 16-bit lanes into
+    /// byte indices that can be used with 8-bit shuffle intrinsics.
+    ///
+    /// This turns each 16-bit lane `i` into two 8-bit lanes `[2*i, 2*i + 1]`.
+    ///
+    /// This assumes `self` has already been reduced to the table's lane count,
+    /// which may be at most 128 lanes so that `2 * i` still fits in a byte.
+    #[allow(dead_code)]
+    #[inline]
+    fn to_byte_indices(self) -> u8x32 {
+        // The byte offset of the lane, broadcast to every byte of the lane.
+        let base = self.unbounded_shl_scalar(1);
+        let base = base | base.unbounded_shl_scalar(8);
 
-    // Then the offset of each byte within its lane. These bits are free because
-    // every byte of `base` is a multiple of two. `from_ne_bytes` keeps this
-    // correct on big endian, where the bytes of a lane are the other way around.
-    const WITHIN_LANE: u16x16 = u16x16::splat(u16::from_ne_bytes([0, 1]));
+        // Then the offset of each byte within its lane. These bits are free because
+        // every byte of `base` is a multiple of two. `from_ne_bytes` keeps this
+        // correct on big endian, where the bytes of a lane are the other way around.
+        const WITHIN_LANE: u16x16 = u16x16::splat(u16::from_ne_bytes([0, 1]));
 
-    cast::<u16x16, u8x32>(base | WITHIN_LANE)
-  }
+        cast::<u16x16, u8x32>(base | WITHIN_LANE)
+    }
 }
 
 impl From<u8x16> for u16x16 {
-  /// widens and sign extends to u16x16
-  #[inline]
-  fn from(v: u8x16) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        u16x16 { avx2:convert_to_i16_m256i_from_u8_m128i(v.sse) }
-      } else if #[cfg(target_feature="sse2")] {
-        u16x16 {
-          a: u16x8 { sse: shr_imm_u16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
-          b: u16x8 { sse: shr_imm_u16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
-        }
-      } else {
+    /// widens and sign extends to u16x16
+    #[inline]
+    fn from(v: u8x16) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            u16x16 { avx2:convert_to_i16_m256i_from_u8_m128i(v.sse) }
+          } else if #[cfg(target_feature="sse2")] {
+            u16x16 {
+              a: u16x8 { sse: shr_imm_u16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
+              b: u16x8 { sse: shr_imm_u16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
+            }
+          } else {
 
-        u16x16::new([
-          v.as_array()[0] as u16,
-          v.as_array()[1] as u16,
-          v.as_array()[2] as u16,
-          v.as_array()[3] as u16,
-          v.as_array()[4] as u16,
-          v.as_array()[5] as u16,
-          v.as_array()[6] as u16,
-          v.as_array()[7] as u16,
-          v.as_array()[8] as u16,
-          v.as_array()[9] as u16,
-          v.as_array()[10] as u16,
-          v.as_array()[11] as u16,
-          v.as_array()[12] as u16,
-          v.as_array()[13] as u16,
-          v.as_array()[14] as u16,
-          v.as_array()[15] as u16,
-          ])
-      }
+            u16x16::new([
+              v.as_array()[0] as u16,
+              v.as_array()[1] as u16,
+              v.as_array()[2] as u16,
+              v.as_array()[3] as u16,
+              v.as_array()[4] as u16,
+              v.as_array()[5] as u16,
+              v.as_array()[6] as u16,
+              v.as_array()[7] as u16,
+              v.as_array()[8] as u16,
+              v.as_array()[9] as u16,
+              v.as_array()[10] as u16,
+              v.as_array()[11] as u16,
+              v.as_array()[12] as u16,
+              v.as_array()[13] as u16,
+              v.as_array()[14] as u16,
+              v.as_array()[15] as u16,
+              ])
+          }
+        }
     }
-  }
 }

@@ -819,153 +819,153 @@ impl_simd_int! {
 /// The following functionality exists only for [`i8x16`], or only for
 /// particular types inconsistently.
 impl i8x16 {
-  /// Converts each element from [`i16`] to [`i8`], saturating out of range
-  /// values.
-  #[inline]
-  #[must_use]
-  pub fn from_i16x16_saturate(v: i16x16) -> i8x16 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(v.avx2), extract_m128i_from_m256i::<1>(v.avx2))  }
-      } else if #[cfg(target_feature="sse2")] {
-        i8x16 { sse: pack_i16_to_i8_m128i( v.a.sse, v.b.sse ) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        use core::arch::aarch64::*;
+    /// Converts each element from [`i16`] to [`i8`], saturating out of range
+    /// values.
+    #[inline]
+    #[must_use]
+    pub fn from_i16x16_saturate(v: i16x16) -> i8x16 {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(v.avx2), extract_m128i_from_m256i::<1>(v.avx2))  }
+          } else if #[cfg(target_feature="sse2")] {
+            i8x16 { sse: pack_i16_to_i8_m128i( v.a.sse, v.b.sse ) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+            use core::arch::aarch64::*;
 
-        unsafe {
-          i8x16 { neon: vcombine_s8(vqmovn_s16(v.a.neon), vqmovn_s16(v.b.neon)) }
-        }
-      } else if #[cfg(target_feature="simd128")] {
-        use core::arch::wasm32::*;
-
-        i8x16 { simd: i8x16_narrow_i16x8(v.a.simd, v.b.simd) }
-      } else {
-        fn clamp(a : i16) -> i8 {
-            if a < i8::MIN as i16 {
-              i8::MIN
+            unsafe {
+              i8x16 { neon: vcombine_s8(vqmovn_s16(v.a.neon), vqmovn_s16(v.b.neon)) }
             }
-            else if a > i8::MAX as i16 {
-              i8::MAX
-            } else {
-                a as i8
+          } else if #[cfg(target_feature="simd128")] {
+            use core::arch::wasm32::*;
+
+            i8x16 { simd: i8x16_narrow_i16x8(v.a.simd, v.b.simd) }
+          } else {
+            fn clamp(a : i16) -> i8 {
+                if a < i8::MIN as i16 {
+                  i8::MIN
+                }
+                else if a > i8::MAX as i16 {
+                  i8::MAX
+                } else {
+                    a as i8
+                }
             }
+
+            i8x16::new([
+              clamp(v.as_array()[0]),
+              clamp(v.as_array()[1]),
+              clamp(v.as_array()[2]),
+              clamp(v.as_array()[3]),
+              clamp(v.as_array()[4]),
+              clamp(v.as_array()[5]),
+              clamp(v.as_array()[6]),
+              clamp(v.as_array()[7]),
+              clamp(v.as_array()[8]),
+              clamp(v.as_array()[9]),
+              clamp(v.as_array()[10]),
+              clamp(v.as_array()[11]),
+              clamp(v.as_array()[12]),
+              clamp(v.as_array()[13]),
+              clamp(v.as_array()[14]),
+              clamp(v.as_array()[15]),
+            ])
+          }
         }
-
-        i8x16::new([
-          clamp(v.as_array()[0]),
-          clamp(v.as_array()[1]),
-          clamp(v.as_array()[2]),
-          clamp(v.as_array()[3]),
-          clamp(v.as_array()[4]),
-          clamp(v.as_array()[5]),
-          clamp(v.as_array()[6]),
-          clamp(v.as_array()[7]),
-          clamp(v.as_array()[8]),
-          clamp(v.as_array()[9]),
-          clamp(v.as_array()[10]),
-          clamp(v.as_array()[11]),
-          clamp(v.as_array()[12]),
-          clamp(v.as_array()[13]),
-          clamp(v.as_array()[14]),
-          clamp(v.as_array()[15]),
-        ])
-      }
     }
-  }
 
-  /// Converts each element from [`i16`] to [`i8`], truncating out of range
-  /// values (behaves like [`as`] casting).
-  ///
-  /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
-  #[inline]
-  #[must_use]
-  pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let a = v.avx2.bitand(set_splat_i16_m256i(0xff));
-        i8x16 { sse: pack_i16_to_u8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
-      } else if #[cfg(target_feature="sse2")] {
-        let mask = set_splat_i16_m128i(0xff);
-        i8x16 { sse: pack_i16_to_u8_m128i( v.a.sse.bitand(mask), v.b.sse.bitand(mask) ) }
-      } else {
-        // no super good intrinsics on other platforms... plain old codegen does a reasonable job
-        i8x16::new([
-          v.as_array()[0] as i8,
-          v.as_array()[1] as i8,
-          v.as_array()[2] as i8,
-          v.as_array()[3] as i8,
-          v.as_array()[4] as i8,
-          v.as_array()[5] as i8,
-          v.as_array()[6] as i8,
-          v.as_array()[7] as i8,
-          v.as_array()[8] as i8,
-          v.as_array()[9] as i8,
-          v.as_array()[10] as i8,
-          v.as_array()[11] as i8,
-          v.as_array()[12] as i8,
-          v.as_array()[13] as i8,
-          v.as_array()[14] as i8,
-          v.as_array()[15] as i8,
-        ])
-      }
+    /// Converts each element from [`i16`] to [`i8`], truncating out of range
+    /// values (behaves like [`as`] casting).
+    ///
+    /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
+    #[inline]
+    #[must_use]
+    pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            let a = v.avx2.bitand(set_splat_i16_m256i(0xff));
+            i8x16 { sse: pack_i16_to_u8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
+          } else if #[cfg(target_feature="sse2")] {
+            let mask = set_splat_i16_m128i(0xff);
+            i8x16 { sse: pack_i16_to_u8_m128i( v.a.sse.bitand(mask), v.b.sse.bitand(mask) ) }
+          } else {
+            // no super good intrinsics on other platforms... plain old codegen does a reasonable job
+            i8x16::new([
+              v.as_array()[0] as i8,
+              v.as_array()[1] as i8,
+              v.as_array()[2] as i8,
+              v.as_array()[3] as i8,
+              v.as_array()[4] as i8,
+              v.as_array()[5] as i8,
+              v.as_array()[6] as i8,
+              v.as_array()[7] as i8,
+              v.as_array()[8] as i8,
+              v.as_array()[9] as i8,
+              v.as_array()[10] as i8,
+              v.as_array()[11] as i8,
+              v.as_array()[12] as i8,
+              v.as_array()[13] as i8,
+              v.as_array()[14] as i8,
+              v.as_array()[15] as i8,
+            ])
+          }
+        }
     }
-  }
 
-  /// Converts a slice to a SIMD vector, ignoring elements beyond the first 16.
-  ///
-  /// # Panics
-  ///
-  /// Panics if `input` has less than 16 elements.
-  #[inline]
-  #[must_use]
-  pub fn from_slice_unaligned(input: &[i8]) -> Self {
-    assert!(input.len() >= 16);
+    /// Converts a slice to a SIMD vector, ignoring elements beyond the first 16.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `input` has less than 16 elements.
+    #[inline]
+    #[must_use]
+    pub fn from_slice_unaligned(input: &[i8]) -> Self {
+        assert!(input.len() >= 16);
 
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        unsafe { Self { sse: load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) ) } }
-      } else if #[cfg(target_feature="simd128")] {
-        unsafe { Self { simd: v128_load(input.as_ptr() as *const v128 ) } }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vld1q_s8( input.as_ptr() as *const i8 ) } }
-      } else {
-        // 2018 edition doesn't have try_into
-        unsafe { Self::new( *(input.as_ptr() as * const [i8;16]) ) }
-      }
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            unsafe { Self { sse: load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) ) } }
+          } else if #[cfg(target_feature="simd128")] {
+            unsafe { Self { simd: v128_load(input.as_ptr() as *const v128 ) } }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self { neon: vld1q_s8( input.as_ptr() as *const i8 ) } }
+          } else {
+            // 2018 edition doesn't have try_into
+            unsafe { Self::new( *(input.as_ptr() as * const [i8;16]) ) }
+          }
+        }
     }
-  }
 
-  /// Returns a new vector where each element is based on the index values in
-  /// `rhs`.
-  ///
-  /// * Index values in the range `[0, 15]` select the i-th element of `self`.
-  /// * Index values that are out of range will cause that output lane to be
-  ///   `0`.
-  ///
-  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
-  ///
-  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
-  #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
-  pub fn swizzle(self, rhs: i8x16) -> i8x16 {
-    self.shuffle_zeroing(rhs.cast_unsigned())
-  }
+    /// Returns a new vector where each element is based on the index values in
+    /// `rhs`.
+    ///
+    /// * Index values in the range `[0, 15]` select the i-th element of `self`.
+    /// * Index values that are out of range will cause that output lane to be
+    ///   `0`.
+    ///
+    /// This function has been deprecated and replaced with [`shuffle_zeroing`].
+    ///
+    /// [`shuffle_zeroing`]: Self::shuffle_zeroing
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
+    pub fn swizzle(self, rhs: i8x16) -> i8x16 {
+        self.shuffle_zeroing(rhs.cast_unsigned())
+    }
 
-  /// Works like [`swizzle`](Self::swizzle) with the following additional
-  /// details
-  ///
-  /// * Indices in the range `[0, 15]` will select the i-th element of `self`.
-  /// * If the high bit of any index is set (meaning that the index is
-  ///   negative), then the corresponding output lane is guaranteed to be zero.
-  /// * Otherwise the output lane is either `0` or `self[rhs[i] % 16]`,
-  ///   depending on the implementation.
-  ///
-  /// This function has been deprecated and replaced with [`shuffle`].
-  ///
-  /// [`shuffle`]: Self::shuffle
-  #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
-  pub fn swizzle_relaxed(self, rhs: i8x16) -> i8x16 {
-    self.shuffle(rhs.cast_unsigned())
-  }
+    /// Works like [`swizzle`](Self::swizzle) with the following additional
+    /// details
+    ///
+    /// * Indices in the range `[0, 15]` will select the i-th element of `self`.
+    /// * If the high bit of any index is set (meaning that the index is
+    ///   negative), then the corresponding output lane is guaranteed to be zero.
+    /// * Otherwise the output lane is either `0` or `self[rhs[i] % 16]`,
+    ///   depending on the implementation.
+    ///
+    /// This function has been deprecated and replaced with [`shuffle`].
+    ///
+    /// [`shuffle`]: Self::shuffle
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
+    pub fn swizzle_relaxed(self, rhs: i8x16) -> i8x16 {
+        self.shuffle(rhs.cast_unsigned())
+    }
 }

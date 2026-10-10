@@ -883,109 +883,106 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u8x32`], or only for
 /// particular types inconsistently.
 impl u8x32 {
-  /// Returns a new vector with lanes selected from the lanes of the first input
-  /// vector a specified in the second input vector `rhs`.
-  /// The indices i in range `[0, 15]` select the i-th element of `self`. For
-  /// indices outside of the range the resulting lane is `0`.
-  ///
-  /// This note that is the equivalent of two parallel swizzle operations on the
-  /// two halves of the vector, and the indexes each refer to the
-  /// corresponding half.
-  #[inline]
-  pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
-    cast(i8x32::swizzle_half(cast(self), cast(rhs)))
-  }
+    /// Returns a new vector with lanes selected from the lanes of the first input
+    /// vector a specified in the second input vector `rhs`.
+    /// The indices i in range `[0, 15]` select the i-th element of `self`. For
+    /// indices outside of the range the resulting lane is `0`.
+    ///
+    /// This note that is the equivalent of two parallel swizzle operations on the
+    /// two halves of the vector, and the indexes each refer to the
+    /// corresponding half.
+    #[inline]
+    pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
+        cast(i8x32::swizzle_half(cast(self), cast(rhs)))
+    }
 
-  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
-  /// the high bit of any element of `rhs` is set (negative) then the
-  /// corresponding output lane is guaranteed to be zero. Otherwise if the
-  /// element of `rhs` is within the range `[32, 127]` then the output lane is
-  /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
-  ///
-  /// This is the equivalent to two parallel swizzle operations on the two
-  /// halves of the vector, and the indexes each refer to their corresponding
-  /// half.
-  #[inline]
-  pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
-    cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
-  }
+    /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
+    /// the high bit of any element of `rhs` is set (negative) then the
+    /// corresponding output lane is guaranteed to be zero. Otherwise if the
+    /// element of `rhs` is within the range `[32, 127]` then the output lane is
+    /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
+    ///
+    /// This is the equivalent to two parallel swizzle operations on the two
+    /// halves of the vector, and the indexes each refer to their corresponding
+    /// half.
+    #[inline]
+    pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
+        cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
+    }
 
-  /// Full 32-entry byte table lookup. An index in `[0, 31]` selects
-  /// `self[index]`; any index `>= 32` yields `0`.
-  ///
-  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
-  ///
-  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
-  #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
-  pub fn swizzle(self, rhs: u8x32) -> u8x32 {
-    self.shuffle_zeroing(rhs)
-  }
+    /// Full 32-entry byte table lookup. An index in `[0, 31]` selects
+    /// `self[index]`; any index `>= 32` yields `0`.
+    ///
+    /// This function has been deprecated and replaced with [`shuffle_zeroing`].
+    ///
+    /// [`shuffle_zeroing`]: Self::shuffle_zeroing
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
+    pub fn swizzle(self, rhs: u8x32) -> u8x32 {
+        self.shuffle_zeroing(rhs)
+    }
 
-  /// Like [`swizzle`](Self::swizzle), but out-of-range indices yield an
-  /// implementation-defined result (`0` or `self[index % 32]`).
-  ///
-  /// This function has been deprecated and replaced with [`shuffle`].
-  ///
-  /// [`shuffle`]: Self::shuffle
-  #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
-  pub fn swizzle_relaxed(self, rhs: u8x32) -> u8x32 {
-    self.shuffle(rhs)
-  }
+    /// Like [`swizzle`](Self::swizzle), but out-of-range indices yield an
+    /// implementation-defined result (`0` or `self[index % 32]`).
+    ///
+    /// This function has been deprecated and replaced with [`shuffle`].
+    ///
+    /// [`shuffle`]: Self::shuffle
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
+    pub fn swizzle_relaxed(self, rhs: u8x32) -> u8x32 {
+        self.shuffle(rhs)
+    }
 }
 
 #[cfg(target_feature = "avx2")]
 impl u8x32 {
-  // There's no `u8` shift instruction, so we cheat: widen every byte to a
-  // `u16`, shift in the wider lane, then shrink back down to `u8`. Shifting
-  // left can push bits past `u8::MAX`, so we keep only the low 8 bits before
-  // the saturating pack (shifting right can't overflow, so the mask is a
-  // no-op there). For the unbounded variants we cap the count at 8, because
-  // shifting a byte by 8 or more gets rid of everything anyway.
-  #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
-  #[inline]
-  fn shift_each_u16(self, rhs: m256i, right: bool, unbounded: bool) -> Self {
-    let self16 = convert_to_i16_m512i_from_u8_m256i(self.avx);
-    let count16 = if unbounded {
-      convert_to_u16_m512i_from_u8_m256i(min_u8_m256i(
-        rhs,
-        set_splat_i8_m256i(8),
-      ))
-    } else {
-      bitand_m512i(
-        convert_to_u16_m512i_from_u8_m256i(rhs),
-        set_splat_i16_m512i(7),
-      )
-    };
-    let shifted = if right {
-      shr_each_u16_m512i(self16, count16)
-    } else {
-      shl_each_u16_m512i(self16, count16)
-    };
-    let shifted = bitand_m512i(shifted, set_splat_i16_m512i(0xFF));
-    Self {
-      avx: Self::pack_u16_halves(
-        extract_m256i_from_m512i::<0>(shifted),
-        extract_m256i_from_m512i::<1>(shifted),
-      ),
+    // There's no `u8` shift instruction, so we cheat: widen every byte to a
+    // `u16`, shift in the wider lane, then shrink back down to `u8`. Shifting
+    // left can push bits past `u8::MAX`, so we keep only the low 8 bits before
+    // the saturating pack (shifting right can't overflow, so the mask is a
+    // no-op there). For the unbounded variants we cap the count at 8, because
+    // shifting a byte by 8 or more gets rid of everything anyway.
+    #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
+    #[inline]
+    fn shift_each_u16(self, rhs: m256i, right: bool, unbounded: bool) -> Self {
+        let self16 = convert_to_i16_m512i_from_u8_m256i(self.avx);
+        let count16 = if unbounded {
+            convert_to_u16_m512i_from_u8_m256i(min_u8_m256i(rhs, set_splat_i8_m256i(8)))
+        } else {
+            bitand_m512i(
+                convert_to_u16_m512i_from_u8_m256i(rhs),
+                set_splat_i16_m512i(7),
+            )
+        };
+        let shifted = if right {
+            shr_each_u16_m512i(self16, count16)
+        } else {
+            shl_each_u16_m512i(self16, count16)
+        };
+        let shifted = bitand_m512i(shifted, set_splat_i16_m512i(0xFF));
+        Self {
+            avx: Self::pack_u16_halves(
+                extract_m256i_from_m512i::<0>(shifted),
+                extract_m256i_from_m512i::<1>(shifted),
+            ),
+        }
     }
-  }
 
-  // `pack_i16_to_u8_m256i` packs 128 bits at a time, which scrambles the lane
-  // order. This un-scrambles it: split the packed result in half, interleave
-  // the 64-bit chunks back together, and reassemble.
-  #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
-  #[inline]
-  fn pack_u16_halves(low: m256i, high: m256i) -> m256i {
-    let packed = pack_i16_to_u8_m256i(low, high);
-    let packed_low = extract_m128i_m256i::<0>(packed);
-    let packed_high = extract_m128i_m256i::<1>(packed);
-    let combined_low = unpack_low_i64_m128i(packed_low, packed_high);
-    let combined_high = unpack_high_i64_m128i(packed_low, packed_high);
-    insert_m128i_to_m256i::<1>(
-      insert_m128i_to_m256i::<0>(zeroed_m256i(), combined_low),
-      combined_high,
-    )
-  }
+    // `pack_i16_to_u8_m256i` packs 128 bits at a time, which scrambles the lane
+    // order. This un-scrambles it: split the packed result in half, interleave
+    // the 64-bit chunks back together, and reassemble.
+    #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
+    #[inline]
+    fn pack_u16_halves(low: m256i, high: m256i) -> m256i {
+        let packed = pack_i16_to_u8_m256i(low, high);
+        let packed_low = extract_m128i_m256i::<0>(packed);
+        let packed_high = extract_m128i_m256i::<1>(packed);
+        let combined_low = unpack_low_i64_m128i(packed_low, packed_high);
+        let combined_high = unpack_high_i64_m128i(packed_low, packed_high);
+        insert_m128i_to_m256i::<1>(
+            insert_m128i_to_m256i::<0>(zeroed_m256i(), combined_low),
+            combined_high,
+        )
+    }
 }

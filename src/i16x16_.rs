@@ -330,126 +330,126 @@ impl_simd_int! {
 }
 
 impl From<i8x16> for i16x16 {
-  /// widen with sign extend from i8 to i16
-  #[inline]
-  fn from(i: i8x16) -> Self {
-    i16x16::from_i8x16(i)
-  }
+    /// widen with sign extend from i8 to i16
+    #[inline]
+    fn from(i: i8x16) -> Self {
+        i16x16::from_i8x16(i)
+    }
 }
 
 impl From<u8x16> for i16x16 {
-  /// widen with zero extend from u8 to i16
-  #[inline]
-  fn from(i: u8x16) -> Self {
-    cast(u16x16::from(i))
-  }
+    /// widen with zero extend from u8 to i16
+    #[inline]
+    fn from(i: u8x16) -> Self {
+        cast(u16x16::from(i))
+    }
 }
 
 /// The following functionality exists only for [`i16x16`], or only for
 /// particular types inconsistently.
 impl i16x16 {
-  /// Converts each element from [`i8`] to [`i16`].
-  #[inline]
-  #[must_use]
-  pub fn from_i8x16(v: i8x16) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(v.sse) }
-      } else if #[cfg(target_feature="sse4.1")] {
-        i16x16 {
-          a: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(v.sse) },
-          b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.sse, v.sse)) }
-        }
-      } else if #[cfg(target_feature="sse2")] {
-        i16x16 {
-          a: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
-          b: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
-        }
-      } else {
+    /// Converts each element from [`i8`] to [`i16`].
+    #[inline]
+    #[must_use]
+    pub fn from_i8x16(v: i8x16) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(v.sse) }
+          } else if #[cfg(target_feature="sse4.1")] {
+            i16x16 {
+              a: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(v.sse) },
+              b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.sse, v.sse)) }
+            }
+          } else if #[cfg(target_feature="sse2")] {
+            i16x16 {
+              a: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
+              b: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
+            }
+          } else {
 
-        i16x16::new([
-          v.as_array()[0] as i16,
-          v.as_array()[1] as i16,
-          v.as_array()[2] as i16,
-          v.as_array()[3] as i16,
-          v.as_array()[4] as i16,
-          v.as_array()[5] as i16,
-          v.as_array()[6] as i16,
-          v.as_array()[7] as i16,
-          v.as_array()[8] as i16,
-          v.as_array()[9] as i16,
-          v.as_array()[10] as i16,
-          v.as_array()[11] as i16,
-          v.as_array()[12] as i16,
-          v.as_array()[13] as i16,
-          v.as_array()[14] as i16,
-          v.as_array()[15] as i16,
-          ])
-      }
-    }
-  }
-
-  /// Partially computes the dot product.
-  ///
-  /// First this multiplies the input 16-bit integers, producing intermediate
-  /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
-  /// eight 32-bit integers.
-  #[inline]
-  #[must_use]
-  pub fn dot(self, rhs: Self) -> i32x8 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i32x8 { avx2:  mul_i16_horizontal_add_m256i(self.avx2, rhs.avx2) }
-      } else {
-        i32x8 {
-          a : self.a.dot(rhs.a),
-          b : self.b.dot(rhs.b),
+            i16x16::new([
+              v.as_array()[0] as i16,
+              v.as_array()[1] as i16,
+              v.as_array()[2] as i16,
+              v.as_array()[3] as i16,
+              v.as_array()[4] as i16,
+              v.as_array()[5] as i16,
+              v.as_array()[6] as i16,
+              v.as_array()[7] as i16,
+              v.as_array()[8] as i16,
+              v.as_array()[9] as i16,
+              v.as_array()[10] as i16,
+              v.as_array()[11] as i16,
+              v.as_array()[12] as i16,
+              v.as_array()[13] as i16,
+              v.as_array()[14] as i16,
+              v.as_array()[15] as i16,
+              ])
+          }
         }
-      }
     }
-  }
 
-  /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
-  /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-  /// and `1`. This corresponds to the following instructions:
-  /// - `vqrdmulhq_n_s16` instruction on neon
-  /// - `i16x8_q15mulr_sat` on simd128
-  /// - `_mm256_mulhrs_epi16` on avx2
-  /// - emulated via `mul_i16_*` on sse2
-  #[inline]
-  #[must_use]
-  pub fn mul_scale_round(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: mul_i16_scale_round_m256i(self.avx2, rhs.avx2) }
-      } else {
-        Self {
-          a : self.a.mul_scale_round(rhs.a),
-          b : self.b.mul_scale_round(rhs.b),
+    /// Partially computes the dot product.
+    ///
+    /// First this multiplies the input 16-bit integers, producing intermediate
+    /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
+    /// eight 32-bit integers.
+    #[inline]
+    #[must_use]
+    pub fn dot(self, rhs: Self) -> i32x8 {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            i32x8 { avx2:  mul_i16_horizontal_add_m256i(self.avx2, rhs.avx2) }
+          } else {
+            i32x8 {
+              a : self.a.dot(rhs.a),
+              b : self.b.dot(rhs.b),
+            }
+          }
         }
-      }
     }
-  }
 
-  /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
-  /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-  /// and `1`. This corresponds to the following instructions:
-  /// - `vqrdmulhq_n_s16` instruction on neon
-  /// - `i16x8_q15mulr_sat` on simd128
-  /// - `_mm256_mulhrs_epi16` on avx2
-  /// - emulated via `mul_i16_*` on sse2
-  #[inline]
-  #[must_use]
-  pub fn mul_scale_round_n(self, rhs: i16) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2: mul_i16_scale_round_m256i(self.avx2, set_splat_i16_m256i(rhs)) }
-      } else {
-        Self {
-          a : self.a.mul_scale_round_n(rhs),
-          b : self.b.mul_scale_round_n(rhs),
+    /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
+    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
+    /// and `1`. This corresponds to the following instructions:
+    /// - `vqrdmulhq_n_s16` instruction on neon
+    /// - `i16x8_q15mulr_sat` on simd128
+    /// - `_mm256_mulhrs_epi16` on avx2
+    /// - emulated via `mul_i16_*` on sse2
+    #[inline]
+    #[must_use]
+    pub fn mul_scale_round(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self { avx2: mul_i16_scale_round_m256i(self.avx2, rhs.avx2) }
+          } else {
+            Self {
+              a : self.a.mul_scale_round(rhs.a),
+              b : self.b.mul_scale_round(rhs.b),
+            }
+          }
         }
-      }
     }
-  }
+
+    /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
+    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
+    /// and `1`. This corresponds to the following instructions:
+    /// - `vqrdmulhq_n_s16` instruction on neon
+    /// - `i16x8_q15mulr_sat` on simd128
+    /// - `_mm256_mulhrs_epi16` on avx2
+    /// - emulated via `mul_i16_*` on sse2
+    #[inline]
+    #[must_use]
+    pub fn mul_scale_round_n(self, rhs: i16) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self { avx2: mul_i16_scale_round_m256i(self.avx2, set_splat_i16_m256i(rhs)) }
+          } else {
+            Self {
+              a : self.a.mul_scale_round_n(rhs),
+              b : self.b.mul_scale_round_n(rhs),
+            }
+          }
+        }
+    }
 }
