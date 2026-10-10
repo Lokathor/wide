@@ -324,50 +324,50 @@ impl_simd_int! {
 }
 
 impl From<i8x32> for i16x32 {
-  /// widen with sign extend from i8 to i16
-  #[inline]
-  fn from(i: i8x32) -> Self {
-    i16x32::from_i8x32(i)
-  }
+    /// widen with sign extend from i8 to i16
+    #[inline]
+    fn from(i: i8x32) -> Self {
+        i16x32::from_i8x32(i)
+    }
 }
 
 /// The following functionality exists only for [`i16x32`], or only for
 /// particular types inconsistently.
 impl i16x32 {
-  /// Converts each element from [`i8`] to [`i16`].
-  #[inline]
-  #[must_use]
-  pub fn from_i8x32(v: i8x32) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: convert_to_i16_m512i_from_i8_m256i(cast(v)) }
-      } else {
-        let [a, b]: [i8x16; 2] = cast(v);
-        Self {
-          a: i16x16::from_i8x16(a),
-          b: i16x16::from_i8x16(b),
+    /// Converts each element from [`i8`] to [`i16`].
+    #[inline]
+    #[must_use]
+    pub fn from_i8x32(v: i8x32) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self { avx512: convert_to_i16_m512i_from_i8_m256i(cast(v)) }
+          } else {
+            let [a, b]: [i8x16; 2] = cast(v);
+            Self {
+              a: i16x16::from_i8x16(a),
+              b: i16x16::from_i8x16(b),
+            }
+          }
         }
-      }
     }
-  }
 
-  /// Partially computes the dot product.
-  ///
-  /// First this multiplies the input 16-bit integers, producing intermediate
-  /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
-  /// sixteen 32-bit integers.
-  #[inline]
-  #[must_use]
-  pub fn dot(self, rhs: Self) -> i32x16 {
-    pick! {
-      if #[cfg(target_feature="avx512bw")] {
-        i32x16 { avx512: mul_i16_horizontal_add_m512i(self.avx512, rhs.avx512) }
-      } else {
-        i32x16 {
-          a : self.a.dot(rhs.a),
-          b : self.b.dot(rhs.b),
+    /// Partially computes the dot product.
+    ///
+    /// First this multiplies the input 16-bit integers, producing intermediate
+    /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
+    /// sixteen 32-bit integers.
+    #[inline]
+    #[must_use]
+    pub fn dot(self, rhs: Self) -> i32x16 {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            i32x16 { avx512: mul_i16_horizontal_add_m512i(self.avx512, rhs.avx512) }
+          } else {
+            i32x16 {
+              a : self.a.dot(rhs.a),
+              b : self.b.dot(rhs.b),
+            }
+          }
         }
-      }
     }
-  }
 }

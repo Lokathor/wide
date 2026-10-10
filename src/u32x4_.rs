@@ -1250,241 +1250,238 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u32x4`], or only for
 /// particular types inconsistently.
 impl u32x4 {
-  /// Returns a SIMD vector whose elements are selected from `self` using
-  /// constant indices.
-  ///
-  /// If an index is out of bounds, compilation fails.
-  ///
-  /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
-  #[inline]
-  #[must_use]
-  pub fn shuffle_consts<
-    const I0: usize,
-    const I1: usize,
-    const I2: usize,
-    const I3: usize,
-  >(self) -> Self {
-    const {
-      assert!(I0 < 4);
-      assert!(I1 < 4);
-      assert!(I2 < 4);
-      assert!(I3 < 4);
-    }
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// constant indices.
+    ///
+    /// If an index is out of bounds, compilation fails.
+    ///
+    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_consts<const I0: usize, const I1: usize, const I2: usize, const I3: usize>(
+        self,
+    ) -> Self {
+        const {
+            assert!(I0 < 4);
+            assert!(I1 < 4);
+            assert!(I2 < 4);
+            assert!(I3 < 4);
+        }
 
-    if const { I0 == 0 && I1 == 1 && I2 == 2 && I3 == 3 } {
-      self
-    } else {
-      pick! {
-        if #[cfg(target_feature = "sse2")] {
-          // This code path effectively calls `_mm_shuffle_epi32`, but must use
-          // inline assembly instead of the intrinsic. This operation takes an
-          // `i32` constant for indices, while we have a list of `usize`
-          // constants. The intrinsic takes the constant as a const-generic
-          // parameter, which does not let us perform the format conversion due
-          // to language limitations. However, inline assembly does support
-          // arbitrary `const` blocks for values in immediates.
+        if const { I0 == 0 && I1 == 1 && I2 == 2 && I3 == 3 } {
+            self
+        } else {
+            pick! {
+              if #[cfg(target_feature = "sse2")] {
+                // This code path effectively calls `_mm_shuffle_epi32`, but must use
+                // inline assembly instead of the intrinsic. This operation takes an
+                // `i32` constant for indices, while we have a list of `usize`
+                // constants. The intrinsic takes the constant as a const-generic
+                // parameter, which does not let us perform the format conversion due
+                // to language limitations. However, inline assembly does support
+                // arbitrary `const` blocks for values in immediates.
 
-          use core::arch::asm;
-          #[cfg(target_arch = "x86")]
-          use core::arch::x86::__m128i;
-          #[cfg(target_arch = "x86_64")]
-          use core::arch::x86_64::__m128i;
+                use core::arch::asm;
+                #[cfg(target_arch = "x86")]
+                use core::arch::x86::__m128i;
+                #[cfg(target_arch = "x86_64")]
+                use core::arch::x86_64::__m128i;
 
-          let value: __m128i = self.sse.0;
-          let result: __m128i;
+                let value: __m128i = self.sse.0;
+                let result: __m128i;
 
-          // SAFETY:
-          // - `pshufd` is guaranteed with `sse2`
-          // - This operation is `pure` because it only depends on the input
-          // - This operation is `nomem` because it only uses registers
-          // - This operation is `nostack` because it only uses registers
-          // - `result` always gets initialized
-          unsafe {
-            asm!(
-              "pshufd {result}, {value}, {immediate}",
-              result = lateout(xmm_reg) result,
-              value = in(xmm_reg) value,
-              immediate = const {
-                let i0 = I0 as u32;
-                let i1 = (I1 as u32) << 2;
-                let i2 = (I2 as u32) << 4;
-                let i3 = (I3 as u32) << 6;
+                // SAFETY:
+                // - `pshufd` is guaranteed with `sse2`
+                // - This operation is `pure` because it only depends on the input
+                // - This operation is `nomem` because it only uses registers
+                // - This operation is `nostack` because it only uses registers
+                // - `result` always gets initialized
+                unsafe {
+                  asm!(
+                    "pshufd {result}, {value}, {immediate}",
+                    result = lateout(xmm_reg) result,
+                    value = in(xmm_reg) value,
+                    immediate = const {
+                      let i0 = I0 as u32;
+                      let i1 = (I1 as u32) << 2;
+                      let i2 = (I2 as u32) << 4;
+                      let i3 = (I3 as u32) << 6;
 
-                (i0 | i1 | i2 | i3).cast_signed()
-              },
-              options(pure, nomem, nostack),
-            );
-          }
+                      (i0 | i1 | i2 | i3).cast_signed()
+                    },
+                    options(pure, nomem, nostack),
+                  );
+                }
 
-          Self { sse: m128i(result) }
-        } else if #[cfg(all(
-          target_feature = "neon",
-          target_arch = "aarch64",
-          target_endian = "little",
-        ))] {
-          use core::mem::transmute;
+                Self { sse: m128i(result) }
+              } else if #[cfg(all(
+                target_feature = "neon",
+                target_arch = "aarch64",
+                target_endian = "little",
+              ))] {
+                use core::mem::transmute;
 
-          // Special case for duplicate
-          if const { I0 == 1 && I1 == 1 && I2 == 1 && I3 == 1 } {
-            unsafe { Self { neon: vdupq_laneq_u32::<1>(self.neon) } }
-          } else if const { I0 == 2 && I1 == 2 && I2 == 2 && I3 == 2 } {
-            unsafe { Self { neon: vdupq_laneq_u32::<2>(self.neon) } }
-          } else if const { I0 == 3 && I1 == 3 && I2 == 3 && I3 == 3 } {
-            unsafe { Self { neon: vdupq_laneq_u32::<3>(self.neon) } }
-          }
-          // Special case for rotate
-          else if const { I0 == 1 && I1 == 2 && I2 == 3 && I3 == 0 } {
-            unsafe { Self { neon: vextq_u32::<1>(self.neon, self.neon) } }
-          } else if const { I0 == 2 && I1 == 3 && I2 == 0 && I3 == 1 } {
-            unsafe { Self { neon: vextq_u32::<2>(self.neon, self.neon) } }
-          } else if const { I0 == 3 && I1 == 0 && I2 == 1 && I3 == 2 } {
-            unsafe { Self { neon: vextq_u32::<3>(self.neon, self.neon) } }
-          }
-          // Special case for zip
-          else if const { I0 == 0 && I1 == 0 && I2 == 1 && I3 == 1 } {
-            unsafe { Self { neon: vzip1q_u32(self.neon, self.neon) } }
-          } else if const { I0 == 2 && I1 == 2 && I2 == 3 && I3 == 3 } {
-            unsafe { Self { neon: vzip2q_u32(self.neon, self.neon) } }
-          }
-          // Special case for unzip
-          else if const { I0 == 0 && I1 == 2 && I2 == 0 && I3 == 2 } {
-            unsafe { Self { neon: vuzp1q_u32(self.neon, self.neon) } }
-          } else if const { I0 == 1 && I1 == 3 && I2 == 1 && I3 == 3 } {
-            unsafe { Self { neon: vuzp2q_u32(self.neon, self.neon) } }
-          }
-          // Special case for transpose
-          else if const { I0 == 0 && I1 == 0 && I2 == 2 && I3 == 2 } {
-            unsafe { Self { neon: vtrn1q_u32(self.neon, self.neon) } }
-          } else if const { I0 == 1 && I1 == 1 && I2 == 3 && I3 == 3 } {
-            unsafe { Self { neon: vtrn2q_u32(self.neon, self.neon) } }
-          }
-          // Special case for reverse
-          else if const { I0 == 1 && I1 == 0 && I2 == 3 && I3 == 2 } {
-            unsafe { Self { neon: vrev64q_u32(self.neon) } }
-          }
-          // Fallback
-          else {
-            unsafe {
-              Self {
-                neon: vreinterpretq_u32_u8(vqtbl1q_u8(
-                  vreinterpretq_u8_u32(self.neon),
-                  const {
-                    transmute::<[u8; 16], uint8x16_t>([
-                      I0 as u8 * 4,
-                      I0 as u8 * 4 + 1,
-                      I0 as u8 * 4 + 2,
-                      I0 as u8 * 4 + 3,
-                      I1 as u8 * 4,
-                      I1 as u8 * 4 + 1,
-                      I1 as u8 * 4 + 2,
-                      I1 as u8 * 4 + 3,
-                      I2 as u8 * 4,
-                      I2 as u8 * 4 + 1,
-                      I2 as u8 * 4 + 2,
-                      I2 as u8 * 4 + 3,
-                      I3 as u8 * 4,
-                      I3 as u8 * 4 + 1,
-                      I3 as u8 * 4 + 2,
-                      I3 as u8 * 4 + 3,
-                    ])
-                  },
-                )),
+                // Special case for duplicate
+                if const { I0 == 1 && I1 == 1 && I2 == 1 && I3 == 1 } {
+                  unsafe { Self { neon: vdupq_laneq_u32::<1>(self.neon) } }
+                } else if const { I0 == 2 && I1 == 2 && I2 == 2 && I3 == 2 } {
+                  unsafe { Self { neon: vdupq_laneq_u32::<2>(self.neon) } }
+                } else if const { I0 == 3 && I1 == 3 && I2 == 3 && I3 == 3 } {
+                  unsafe { Self { neon: vdupq_laneq_u32::<3>(self.neon) } }
+                }
+                // Special case for rotate
+                else if const { I0 == 1 && I1 == 2 && I2 == 3 && I3 == 0 } {
+                  unsafe { Self { neon: vextq_u32::<1>(self.neon, self.neon) } }
+                } else if const { I0 == 2 && I1 == 3 && I2 == 0 && I3 == 1 } {
+                  unsafe { Self { neon: vextq_u32::<2>(self.neon, self.neon) } }
+                } else if const { I0 == 3 && I1 == 0 && I2 == 1 && I3 == 2 } {
+                  unsafe { Self { neon: vextq_u32::<3>(self.neon, self.neon) } }
+                }
+                // Special case for zip
+                else if const { I0 == 0 && I1 == 0 && I2 == 1 && I3 == 1 } {
+                  unsafe { Self { neon: vzip1q_u32(self.neon, self.neon) } }
+                } else if const { I0 == 2 && I1 == 2 && I2 == 3 && I3 == 3 } {
+                  unsafe { Self { neon: vzip2q_u32(self.neon, self.neon) } }
+                }
+                // Special case for unzip
+                else if const { I0 == 0 && I1 == 2 && I2 == 0 && I3 == 2 } {
+                  unsafe { Self { neon: vuzp1q_u32(self.neon, self.neon) } }
+                } else if const { I0 == 1 && I1 == 3 && I2 == 1 && I3 == 3 } {
+                  unsafe { Self { neon: vuzp2q_u32(self.neon, self.neon) } }
+                }
+                // Special case for transpose
+                else if const { I0 == 0 && I1 == 0 && I2 == 2 && I3 == 2 } {
+                  unsafe { Self { neon: vtrn1q_u32(self.neon, self.neon) } }
+                } else if const { I0 == 1 && I1 == 1 && I2 == 3 && I3 == 3 } {
+                  unsafe { Self { neon: vtrn2q_u32(self.neon, self.neon) } }
+                }
+                // Special case for reverse
+                else if const { I0 == 1 && I1 == 0 && I2 == 3 && I3 == 2 } {
+                  unsafe { Self { neon: vrev64q_u32(self.neon) } }
+                }
+                // Fallback
+                else {
+                  unsafe {
+                    Self {
+                      neon: vreinterpretq_u32_u8(vqtbl1q_u8(
+                        vreinterpretq_u8_u32(self.neon),
+                        const {
+                          transmute::<[u8; 16], uint8x16_t>([
+                            I0 as u8 * 4,
+                            I0 as u8 * 4 + 1,
+                            I0 as u8 * 4 + 2,
+                            I0 as u8 * 4 + 3,
+                            I1 as u8 * 4,
+                            I1 as u8 * 4 + 1,
+                            I1 as u8 * 4 + 2,
+                            I1 as u8 * 4 + 3,
+                            I2 as u8 * 4,
+                            I2 as u8 * 4 + 1,
+                            I2 as u8 * 4 + 2,
+                            I2 as u8 * 4 + 3,
+                            I3 as u8 * 4,
+                            I3 as u8 * 4 + 1,
+                            I3 as u8 * 4 + 2,
+                            I3 as u8 * 4 + 3,
+                          ])
+                        },
+                      )),
+                    }
+                  }
+                }
+              } else if #[cfg(target_feature = "simd128")] {
+                Self { simd: u32x4_shuffle::<I0, I1, I2, I3>(self.simd, self.simd) }
+              } else {
+                let self_array = self.to_array();
+                Self::new([
+                  self_array[I0],
+                  self_array[I1],
+                  self_array[I2],
+                  self_array[I3],
+                ])
               }
             }
-          }
-        } else if #[cfg(target_feature = "simd128")] {
-          Self { simd: u32x4_shuffle::<I0, I1, I2, I3>(self.simd, self.simd) }
-        } else {
-          let self_array = self.to_array();
-          Self::new([
-            self_array[I0],
-            self_array[I1],
-            self_array[I2],
-            self_array[I3],
-          ])
         }
-      }
-    }
-  }
-
-  /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-  /// vector of larger integers.
-  ///
-  /// The returned value is always exact and can never overflow.
-  ///
-  /// This function has been renamed to [`widening_mul`].
-  ///
-  /// [`widening_mul`]: Self::widening_mul
-  #[inline]
-  #[must_use]
-  #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
-  pub fn mul_widen(self, rhs: Self) -> u64x4 {
-    self.widening_mul(rhs)
-  }
-
-  /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
-  /// `a` and `b`. `W` must be in `1..=32`.
-  ///
-  /// There is no IFMA equivalent at this width, and below 17 bits no widening
-  /// multiply is needed either: the whole product fits a lane, so the ordinary
-  /// lane multiply already yields both halves.
-  #[inline]
-  #[must_use]
-  pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
-    if W <= 16 {
-      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
-      return self + (((a & mask) * (b & mask)) & mask);
     }
 
-    let acc = self.to_array();
-    let a = a.to_array();
-    let b = b.to_array();
-    Self::new(core::array::from_fn(|i| {
-      add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
-    }))
-  }
-
-  /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
-  /// and `b`. `W` must be in `1..=32`.
-  #[inline]
-  #[must_use]
-  pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
-    // See `add_mul_lo`: the whole product is in the lane, so the high half is a
-    // shift.
-    if W <= 16 {
-      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
-      return self + (((a & mask) * (b & mask)) >> W);
+    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
+    /// vector of larger integers.
+    ///
+    /// The returned value is always exact and can never overflow.
+    ///
+    /// This function has been renamed to [`widening_mul`].
+    ///
+    /// [`widening_mul`]: Self::widening_mul
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
+    pub fn mul_widen(self, rhs: Self) -> u64x4 {
+        self.widening_mul(rhs)
     }
 
-    let acc = self.to_array();
-    let a = a.to_array();
-    let b = b.to_array();
-    Self::new(core::array::from_fn(|i| {
-      add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
-    }))
-  }
+    /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
+    /// `a` and `b`. `W` must be in `1..=32`.
+    ///
+    /// There is no IFMA equivalent at this width, and below 17 bits no widening
+    /// multiply is needed either: the whole product fits a lane, so the ordinary
+    /// lane multiply already yields both halves.
+    #[inline]
+    #[must_use]
+    pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+        if W <= 16 {
+            let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+            return self + (((a & mask) * (b & mask)) & mask);
+        }
 
-  /// A helper for shuffle functions that turns indices of 32-bit lanes into
-  /// byte indices that can be used with 8-bit shuffle intrinsics.
-  ///
-  /// This turns each 32-bit lane `i` into four 8-bit lanes
-  /// `[4*i, 4*i + 1, 4*i + 2, 4*i + 3]`.
-  ///
-  /// This assumes `self` has already been reduced to the table's lane count,
-  /// which may be at most 64 lanes so that `4 * i` still fits in a byte.
-  #[allow(dead_code)]
-  #[inline]
-  fn to_byte_indices(self) -> u8x16 {
-    // The byte offset of the lane, broadcast to every byte of the lane.
-    let base = self.unbounded_shl_scalar(2);
-    let base = base | base.unbounded_shl_scalar(8);
-    let base = base | base.unbounded_shl_scalar(16);
+        let acc = self.to_array();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| {
+            add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
+        }))
+    }
 
-    // Then the offset of each byte within its lane. These bits are free because
-    // every byte of `base` is a multiple of four. `from_ne_bytes` keeps this
-    // correct on big endian, where the bytes of a lane are the other way around.
-    const WITHIN_LANE: u32x4 = u32x4::splat(u32::from_ne_bytes([0, 1, 2, 3]));
+    /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
+    /// and `b`. `W` must be in `1..=32`.
+    #[inline]
+    #[must_use]
+    pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+        // See `add_mul_lo`: the whole product is in the lane, so the high half is a
+        // shift.
+        if W <= 16 {
+            let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+            return self + (((a & mask) * (b & mask)) >> W);
+        }
 
-    cast::<u32x4, u8x16>(base | WITHIN_LANE)
-  }
+        let acc = self.to_array();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| {
+            add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
+        }))
+    }
+
+    /// A helper for shuffle functions that turns indices of 32-bit lanes into
+    /// byte indices that can be used with 8-bit shuffle intrinsics.
+    ///
+    /// This turns each 32-bit lane `i` into four 8-bit lanes
+    /// `[4*i, 4*i + 1, 4*i + 2, 4*i + 3]`.
+    ///
+    /// This assumes `self` has already been reduced to the table's lane count,
+    /// which may be at most 64 lanes so that `4 * i` still fits in a byte.
+    #[allow(dead_code)]
+    #[inline]
+    fn to_byte_indices(self) -> u8x16 {
+        // The byte offset of the lane, broadcast to every byte of the lane.
+        let base = self.unbounded_shl_scalar(2);
+        let base = base | base.unbounded_shl_scalar(8);
+        let base = base | base.unbounded_shl_scalar(16);
+
+        // Then the offset of each byte within its lane. These bits are free because
+        // every byte of `base` is a multiple of four. `from_ne_bytes` keeps this
+        // correct on big endian, where the bytes of a lane are the other way around.
+        const WITHIN_LANE: u32x4 = u32x4::splat(u32::from_ne_bytes([0, 1, 2, 3]));
+
+        cast::<u32x4, u8x16>(base | WITHIN_LANE)
+    }
 }

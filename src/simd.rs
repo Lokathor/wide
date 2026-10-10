@@ -1276,49 +1276,44 @@ macro_rules! impl_shift_operator {
 /// implementation is used.
 #[cfg(feature = "serde")]
 pub(crate) fn deserialize_impl<'de, Simd, T, const N: usize, D>(
-  deserializer: D,
+    deserializer: D,
 ) -> Result<Simd, D::Error>
 where
-  D: serde_core::Deserializer<'de>,
-  T: serde_core::Deserialize<'de> + Default + Copy,
-  Simd: From<[T; N]>,
-{
-  struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
-
-  impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
-  where
+    D: serde_core::Deserializer<'de>,
     T: serde_core::Deserialize<'de> + Default + Copy,
-  {
-    type Value = [T; N];
+    Simd: From<[T; N]>,
+{
+    struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
 
-    fn expecting(
-      &self,
-      formatter: &mut core::fmt::Formatter<'_>,
-    ) -> core::fmt::Result {
-      formatter.write_str("an array of length {N}")
-    }
-
-    fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
+    impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
     where
-      A: serde_core::de::SeqAccess<'de>,
+        T: serde_core::Deserialize<'de> + Default + Copy,
     {
-      use serde_core::de::Error;
-      let mut array = [T::default(); N];
-      for (index, element) in array.iter_mut().enumerate() {
-        *element = seq
-          .next_element()?
-          .ok_or_else(|| A::Error::invalid_length(index, &self))?;
-      }
-      if seq.next_element::<T>()?.is_some() {
-        return Err(A::Error::invalid_length(N + 1, &self));
-      }
-      Ok(array)
-    }
-  }
+        type Value = [T; N];
 
-  Ok(
-    deserializer
-      .deserialize_tuple(N, ArrayVisitor::<T, N>(core::marker::PhantomData))?
-      .into(),
-  )
+        fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str("an array of length {N}")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
+        where
+            A: serde_core::de::SeqAccess<'de>,
+        {
+            use serde_core::de::Error;
+            let mut array = [T::default(); N];
+            for (index, element) in array.iter_mut().enumerate() {
+                *element = seq
+                    .next_element()?
+                    .ok_or_else(|| A::Error::invalid_length(index, &self))?;
+            }
+            if seq.next_element::<T>()?.is_some() {
+                return Err(A::Error::invalid_length(N + 1, &self));
+            }
+            Ok(array)
+        }
+    }
+
+    Ok(deserializer
+        .deserialize_tuple(N, ArrayVisitor::<T, N>(core::marker::PhantomData))?
+        .into())
 }

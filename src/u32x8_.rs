@@ -897,101 +897,101 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u32x8`], or only for
 /// particular types inconsistently.
 impl u32x8 {
-  /// A helper for shuffle functions that turns indices of 32-bit lanes into
-  /// byte indices that can be used with 8-bit shuffle intrinsics.
-  ///
-  /// This turns each 32-bit lane `i` into four 8-bit lanes
-  /// `[4*i, 4*i + 1, 4*i + 2, 4*i + 3]`.
-  ///
-  /// This assumes `self` has already been reduced to the table's lane count,
-  /// which may be at most 64 lanes so that `4 * i` still fits in a byte.
-  #[allow(dead_code)]
-  #[inline]
-  fn to_byte_indices(self) -> u8x32 {
-    // The byte offset of the lane, broadcast to every byte of the lane.
-    let base = self.unbounded_shl_scalar(2);
-    let base = base | base.unbounded_shl_scalar(8);
-    let base = base | base.unbounded_shl_scalar(16);
+    /// A helper for shuffle functions that turns indices of 32-bit lanes into
+    /// byte indices that can be used with 8-bit shuffle intrinsics.
+    ///
+    /// This turns each 32-bit lane `i` into four 8-bit lanes
+    /// `[4*i, 4*i + 1, 4*i + 2, 4*i + 3]`.
+    ///
+    /// This assumes `self` has already been reduced to the table's lane count,
+    /// which may be at most 64 lanes so that `4 * i` still fits in a byte.
+    #[allow(dead_code)]
+    #[inline]
+    fn to_byte_indices(self) -> u8x32 {
+        // The byte offset of the lane, broadcast to every byte of the lane.
+        let base = self.unbounded_shl_scalar(2);
+        let base = base | base.unbounded_shl_scalar(8);
+        let base = base | base.unbounded_shl_scalar(16);
 
-    // Then the offset of each byte within its lane. These bits are free because
-    // every byte of `base` is a multiple of four. `from_ne_bytes` keeps this
-    // correct on big endian, where the bytes of a lane are the other way around.
-    const WITHIN_LANE: u32x8 = u32x8::splat(u32::from_ne_bytes([0, 1, 2, 3]));
+        // Then the offset of each byte within its lane. These bits are free because
+        // every byte of `base` is a multiple of four. `from_ne_bytes` keeps this
+        // correct on big endian, where the bytes of a lane are the other way around.
+        const WITHIN_LANE: u32x8 = u32x8::splat(u32::from_ne_bytes([0, 1, 2, 3]));
 
-    cast::<u32x8, u8x32>(base | WITHIN_LANE)
-  }
+        cast::<u32x8, u8x32>(base | WITHIN_LANE)
+    }
 }
 
 impl From<u16x8> for u32x8 {
-  /// widens and zero extends to u32x8
-  #[inline]
-  fn from(v: u16x8) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx2:convert_to_i32_m256i_from_u16_m128i(v.sse) }
-      } else if #[cfg(target_feature="sse2")] {
-        Self {
-          a: u32x4 { sse: shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
-          b: u32x4 { sse: shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+    /// widens and zero extends to u32x8
+    #[inline]
+    fn from(v: u16x8) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self { avx2:convert_to_i32_m256i_from_u16_m128i(v.sse) }
+          } else if #[cfg(target_feature="sse2")] {
+            Self {
+              a: u32x4 { sse: shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.sse, v.sse)) },
+              b: u32x4 { sse: shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.sse, v.sse)) },
+            }
+          } else {
+            u32x8::new([
+              u32::from(v.as_array()[0]),
+              u32::from(v.as_array()[1]),
+              u32::from(v.as_array()[2]),
+              u32::from(v.as_array()[3]),
+              u32::from(v.as_array()[4]),
+              u32::from(v.as_array()[5]),
+              u32::from(v.as_array()[6]),
+              u32::from(v.as_array()[7]),
+            ])
+          }
         }
-      } else {
-        u32x8::new([
-          u32::from(v.as_array()[0]),
-          u32::from(v.as_array()[1]),
-          u32::from(v.as_array()[2]),
-          u32::from(v.as_array()[3]),
-          u32::from(v.as_array()[4]),
-          u32::from(v.as_array()[5]),
-          u32::from(v.as_array()[6]),
-          u32::from(v.as_array()[7]),
-        ])
-      }
     }
-  }
 }
 
 /// The following functionality exists only for [`u32x8`], or only for
 /// particular types inconsistently.
 impl u32x8 {
-  /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
-  /// `a` and `b`. `W` must be in `1..=32`.
-  ///
-  /// There is no IFMA equivalent at this width, and below 17 bits no widening
-  /// multiply is needed either: the whole product fits a lane, so the ordinary
-  /// lane multiply already yields both halves.
-  #[inline]
-  #[must_use]
-  pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
-    if W <= 16 {
-      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
-      return self + (((a & mask) * (b & mask)) & mask);
+    /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
+    /// `a` and `b`. `W` must be in `1..=32`.
+    ///
+    /// There is no IFMA equivalent at this width, and below 17 bits no widening
+    /// multiply is needed either: the whole product fits a lane, so the ordinary
+    /// lane multiply already yields both halves.
+    #[inline]
+    #[must_use]
+    pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+        if W <= 16 {
+            let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+            return self + (((a & mask) * (b & mask)) & mask);
+        }
+
+        let acc = self.to_array();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| {
+            add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
+        }))
     }
 
-    let acc = self.to_array();
-    let a = a.to_array();
-    let b = b.to_array();
-    Self::new(core::array::from_fn(|i| {
-      add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
-    }))
-  }
+    /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
+    /// and `b`. `W` must be in `1..=32`.
+    #[inline]
+    #[must_use]
+    pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+        // See `add_mul_lo`: the whole product is in the lane, so the high half is a
+        // shift.
+        if W <= 16 {
+            let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+            return self + (((a & mask) * (b & mask)) >> W);
+        }
 
-  /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
-  /// and `b`. `W` must be in `1..=32`.
-  #[inline]
-  #[must_use]
-  pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
-    // See `add_mul_lo`: the whole product is in the lane, so the high half is a
-    // shift.
-    if W <= 16 {
-      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
-      return self + (((a & mask) * (b & mask)) >> W);
+        let acc = self.to_array();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| {
+            add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
+        }))
     }
-
-    let acc = self.to_array();
-    let a = a.to_array();
-    let b = b.to_array();
-    Self::new(core::array::from_fn(|i| {
-      add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
-    }))
-  }
 }

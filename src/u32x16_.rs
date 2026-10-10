@@ -884,96 +884,96 @@ impl_simd_uint! {
 }
 
 impl From<u16x16> for u32x16 {
-  /// Widens and zero-extends each u16 lane to u32
-  #[inline]
-  fn from(v: u16x16) -> Self {
-    pick! {
-      if #[cfg(target_feature = "avx512f")] {
-        Self {
-          avx512: convert_to_u32_m512i_from_u16_m256i(v.avx2)
+    /// Widens and zero-extends each u16 lane to u32
+    #[inline]
+    fn from(v: u16x16) -> Self {
+        pick! {
+          if #[cfg(target_feature = "avx512f")] {
+            Self {
+              avx512: convert_to_u32_m512i_from_u16_m256i(v.avx2)
+            }
+          } else if #[cfg(target_feature = "avx2")] {
+            let lo: m128i = extract_m128i_from_m256i::<0>(v.avx2);
+            let hi: m128i = extract_m128i_from_m256i::<1>(v.avx2);
+            Self {
+              a: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(lo) },
+              b: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(hi) },
+            }
+          } else if #[cfg(target_feature = "sse2")] {
+            Self {
+              a: u32x8 {
+                a: u32x4 {
+                  sse: shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.a.sse, v.a.sse))
+                },
+                b: u32x4 {
+                  sse: shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.a.sse, v.a.sse))
+                },
+              },
+              b: u32x8 {
+                a: u32x4 {
+                  sse: shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.b.sse, v.b.sse))
+                },
+                b: u32x4 {
+                  sse: shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.b.sse, v.b.sse))
+                },
+              },
+            }
+          } else {
+            // Portable fallback
+            let arr = v.as_array();
+            Self::new([
+              arr[0] as u32,  arr[1] as u32,  arr[2] as u32,  arr[3] as u32,
+              arr[4] as u32,  arr[5] as u32,  arr[6] as u32,  arr[7] as u32,
+              arr[8] as u32,  arr[9] as u32,  arr[10] as u32, arr[11] as u32,
+              arr[12] as u32, arr[13] as u32, arr[14] as u32, arr[15] as u32,
+            ])
+          }
         }
-      } else if #[cfg(target_feature = "avx2")] {
-        let lo: m128i = extract_m128i_from_m256i::<0>(v.avx2);
-        let hi: m128i = extract_m128i_from_m256i::<1>(v.avx2);
-        Self {
-          a: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(lo) },
-          b: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(hi) },
-        }
-      } else if #[cfg(target_feature = "sse2")] {
-        Self {
-          a: u32x8 {
-            a: u32x4 {
-              sse: shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.a.sse, v.a.sse))
-            },
-            b: u32x4 {
-              sse: shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.a.sse, v.a.sse))
-            },
-          },
-          b: u32x8 {
-            a: u32x4 {
-              sse: shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.b.sse, v.b.sse))
-            },
-            b: u32x4 {
-              sse: shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.b.sse, v.b.sse))
-            },
-          },
-        }
-      } else {
-        // Portable fallback
-        let arr = v.as_array();
-        Self::new([
-          arr[0] as u32,  arr[1] as u32,  arr[2] as u32,  arr[3] as u32,
-          arr[4] as u32,  arr[5] as u32,  arr[6] as u32,  arr[7] as u32,
-          arr[8] as u32,  arr[9] as u32,  arr[10] as u32, arr[11] as u32,
-          arr[12] as u32, arr[13] as u32, arr[14] as u32, arr[15] as u32,
-        ])
-      }
     }
-  }
 }
 
 /// The following functionality exists only for [`u32x16`], or only for
 /// particular types inconsistently.
 impl u32x16 {
-  /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
-  /// `a` and `b`. `W` must be in `1..=32`.
-  ///
-  /// There is no IFMA equivalent at this width, and below 17 bits no widening
-  /// multiply is needed either: the whole product fits a lane, so the ordinary
-  /// lane multiply already yields both halves.
-  #[inline]
-  #[must_use]
-  pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
-    if W <= 16 {
-      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
-      return self + (((a & mask) * (b & mask)) & mask);
+    /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
+    /// `a` and `b`. `W` must be in `1..=32`.
+    ///
+    /// There is no IFMA equivalent at this width, and below 17 bits no widening
+    /// multiply is needed either: the whole product fits a lane, so the ordinary
+    /// lane multiply already yields both halves.
+    #[inline]
+    #[must_use]
+    pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+        if W <= 16 {
+            let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+            return self + (((a & mask) * (b & mask)) & mask);
+        }
+
+        let acc = self.to_array();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| {
+            add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
+        }))
     }
 
-    let acc = self.to_array();
-    let a = a.to_array();
-    let b = b.to_array();
-    Self::new(core::array::from_fn(|i| {
-      add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
-    }))
-  }
+    /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
+    /// and `b`. `W` must be in `1..=32`.
+    #[inline]
+    #[must_use]
+    pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+        // See `add_mul_lo`: the whole product is in the lane, so the high half is a
+        // shift.
+        if W <= 16 {
+            let mask = Self::splat(add_mul_operand_mask_u32::<W>());
+            return self + (((a & mask) * (b & mask)) >> W);
+        }
 
-  /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
-  /// and `b`. `W` must be in `1..=32`.
-  #[inline]
-  #[must_use]
-  pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
-    // See `add_mul_lo`: the whole product is in the lane, so the high half is a
-    // shift.
-    if W <= 16 {
-      let mask = Self::splat(add_mul_operand_mask_u32::<W>());
-      return self + (((a & mask) * (b & mask)) >> W);
+        let acc = self.to_array();
+        let a = a.to_array();
+        let b = b.to_array();
+        Self::new(core::array::from_fn(|i| {
+            add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
+        }))
     }
-
-    let acc = self.to_array();
-    let a = a.to_array();
-    let b = b.to_array();
-    Self::new(core::array::from_fn(|i| {
-      add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
-    }))
-  }
 }

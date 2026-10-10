@@ -582,58 +582,57 @@ impl_simd_int! {
 /// The following functionality exists only for [`i32x4`], or only for
 /// particular types inconsistently.
 impl i32x4 {
-  /// Returns a SIMD vector whose elements are selected from `self` using
-  /// constant indices.
-  ///
-  /// If an index is out of bounds, compilation fails.
-  ///
-  /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
-  #[inline]
-  #[must_use]
-  pub fn shuffle_consts<
-    const I0: usize,
-    const I1: usize,
-    const I2: usize,
-    const I3: usize,
-  >(self) -> Self {
-    self.cast_unsigned().shuffle_consts::<I0, I1, I2, I3>().cast_signed()
-  }
-
-  /// Converts each element from [`i32`] to [`f32`].
-  #[inline]
-  #[must_use]
-  pub fn round_float(self) -> f32x4 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        cast(convert_to_m128_from_i32_m128i(self.sse))
-      } else if #[cfg(target_feature="simd128")] {
-        cast(Self { simd: f32x4_convert_i32x4(self.simd) })
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        cast(unsafe {Self { neon: vreinterpretq_s32_f32(vcvtq_f32_s32(self.neon)) }})
-      } else {
-        let arr: [i32; 4] = cast(self);
-        cast([
-          arr[0] as f32,
-          arr[1] as f32,
-          arr[2] as f32,
-          arr[3] as f32,
-        ])
-      }
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// constant indices.
+    ///
+    /// If an index is out of bounds, compilation fails.
+    ///
+    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_consts<const I0: usize, const I1: usize, const I2: usize, const I3: usize>(
+        self,
+    ) -> Self {
+        self.cast_unsigned()
+            .shuffle_consts::<I0, I1, I2, I3>()
+            .cast_signed()
     }
-  }
 
-  /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-  /// vector of larger integers.
-  ///
-  /// The returned value is always exact and can never overflow.
-  ///
-  /// This function has been renamed to [`widening_mul`].
-  ///
-  /// [`widening_mul`]: Self::widening_mul
-  #[inline]
-  #[must_use]
-  #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
-  pub fn mul_widen(self, rhs: Self) -> i64x4 {
-    self.widening_mul(rhs)
-  }
+    /// Converts each element from [`i32`] to [`f32`].
+    #[inline]
+    #[must_use]
+    pub fn round_float(self) -> f32x4 {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            cast(convert_to_m128_from_i32_m128i(self.sse))
+          } else if #[cfg(target_feature="simd128")] {
+            cast(Self { simd: f32x4_convert_i32x4(self.simd) })
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            cast(unsafe {Self { neon: vreinterpretq_s32_f32(vcvtq_f32_s32(self.neon)) }})
+          } else {
+            let arr: [i32; 4] = cast(self);
+            cast([
+              arr[0] as f32,
+              arr[1] as f32,
+              arr[2] as f32,
+              arr[3] as f32,
+            ])
+          }
+        }
+    }
+
+    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
+    /// vector of larger integers.
+    ///
+    /// The returned value is always exact and can never overflow.
+    ///
+    /// This function has been renamed to [`widening_mul`].
+    ///
+    /// [`widening_mul`]: Self::widening_mul
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
+    pub fn mul_widen(self, rhs: Self) -> i64x4 {
+        self.widening_mul(rhs)
+    }
 }

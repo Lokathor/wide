@@ -76,10 +76,10 @@ pick! {
 }
 
 macro_rules! const_f32_as_f32x4 {
-  ($i:ident, $f:expr) => {
-    #[allow(non_upper_case_globals)]
-    pub const $i: f32x4 = f32x4::new([$f; 4]);
-  };
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f32x4 = f32x4::new([$f; 4]);
+    };
 }
 
 impl_simd_float! {
@@ -2088,121 +2088,116 @@ impl_simd_float! {
 /// The following functionality exists only for [`f32x4`], or only for
 /// particular types inconsistently.
 impl f32x4 {
-  /// Returns a SIMD vector whose elements are selected from `self` using
-  /// constant indices.
-  ///
-  /// If an index is out of bounds, compilation fails.
-  ///
-  /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
-  #[inline]
-  #[must_use]
-  pub fn shuffle_consts<
-    const I0: usize,
-    const I1: usize,
-    const I2: usize,
-    const I3: usize,
-  >(self) -> Self {
-    Self::from_bits(self.to_bits().shuffle_consts::<I0, I1, I2, I3>())
-  }
-
-  #[inline]
-  fn vm_pow2n(self) -> Self {
-    const_f32_as_f32x4!(pow2_23, 8388608.0);
-    const_f32_as_f32x4!(bias, 127.0);
-    let a = self + (bias + pow2_23);
-    let c = cast::<_, i32x4>(a) << 23;
-    let std_result = cast::<_, f32x4>(c);
-
-    let min_exp = f32x4::from(-126.0);
-    let is_sub = self.simd_lt(min_exp);
-    if is_sub.any() {
-      let valid = self.simd_ge(f32x4::from(-149.0));
-      let shift_f = self + f32x4::from(149.0);
-      let mut shift_i = shift_f.trunc_int();
-      shift_i = cast::<_, i32x4>(valid).select(shift_i, i32x4::ZERO);
-      let mantissa = i32x4::ONE << shift_i;
-      let sub_result = cast::<_, f32x4>(mantissa);
-      let sub_result = valid.select(sub_result, f32x4::ZERO);
-      is_sub.select(sub_result, std_result)
-    } else {
-      std_result
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// constant indices.
+    ///
+    /// If an index is out of bounds, compilation fails.
+    ///
+    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_consts<const I0: usize, const I1: usize, const I2: usize, const I3: usize>(
+        self,
+    ) -> Self {
+        Self::from_bits(self.to_bits().shuffle_consts::<I0, I1, I2, I3>())
     }
-  }
 
-  #[inline]
-  fn exponent(self) -> f32x4 {
-    const_f32_as_f32x4!(pow2_23, 8388608.0);
-    const_f32_as_f32x4!(bias, 127.0);
-    let a = cast::<_, u32x4>(self);
-    let b = a >> 23;
-    let c = b | cast::<_, u32x4>(pow2_23);
-    let d = cast::<_, f32x4>(c);
-    let e = d - (pow2_23 + bias);
-    e
-  }
+    #[inline]
+    fn vm_pow2n(self) -> Self {
+        const_f32_as_f32x4!(pow2_23, 8388608.0);
+        const_f32_as_f32x4!(bias, 127.0);
+        let a = self + (bias + pow2_23);
+        let c = cast::<_, i32x4>(a) << 23;
+        let std_result = cast::<_, f32x4>(c);
 
-  #[inline]
-  fn fraction_2(self) -> Self {
-    let t1 = cast::<_, u32x4>(self);
-    let t2 = cast::<_, u32x4>(
-      (t1 & u32x4::from(0x007FFFFF)) | u32x4::from(0x3F000000),
-    );
-    cast::<_, f32x4>(t2)
-  }
-  #[inline]
-  fn is_zero_or_subnormal(self) -> Self {
-    let t = cast::<_, i32x4>(self);
-    let t = t & i32x4::splat(0x7F800000);
-    let mask = t.simd_eq(i32x4::splat(0));
-    cast::<_, f32x4>(mask)
-  }
-  #[inline]
-  fn infinity() -> Self {
-    cast::<_, f32x4>(i32x4::splat(0x7F800000))
-  }
-  #[inline]
-  fn nan_log() -> Self {
-    cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
-  }
-  #[inline]
-  fn nan_pow() -> Self {
-    cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
-  }
-
-  /// Converts each element from [`i32`] to [`f32`].
-  #[inline]
-  pub fn from_i32x4(v: i32x4) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: convert_to_m128_from_i32_m128i(v.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f32x4_convert_i32x4(v.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vcvtq_f32_s32(v.neon) }}
-      } else {
-        Self { arr: [
-            v.as_array()[0] as f32,
-            v.as_array()[1] as f32,
-            v.as_array()[2] as f32,
-            v.as_array()[3] as f32,
-          ] }
-      }
+        let min_exp = f32x4::from(-126.0);
+        let is_sub = self.simd_lt(min_exp);
+        if is_sub.any() {
+            let valid = self.simd_ge(f32x4::from(-149.0));
+            let shift_f = self + f32x4::from(149.0);
+            let mut shift_i = shift_f.trunc_int();
+            shift_i = cast::<_, i32x4>(valid).select(shift_i, i32x4::ZERO);
+            let mantissa = i32x4::ONE << shift_i;
+            let sub_result = cast::<_, f32x4>(mantissa);
+            let sub_result = valid.select(sub_result, f32x4::ZERO);
+            is_sub.select(sub_result, std_result)
+        } else {
+            std_result
+        }
     }
-  }
 
-  /// Returns a [mask] that checks if each element has a negative sign,
-  /// including `-0.0`, NaNs with negative sign bit and negative infinity.
-  ///
-  /// Note that this function has a misleading name. If the sign bit is set, the
-  /// result has all bits set, not just the sign bit. This function has been
-  /// renamed to [`is_sign_negative`].
-  ///
-  /// [mask]: crate#masks
-  /// [`is_sign_negative`]: Self::is_sign_negative
-  #[inline]
-  #[must_use]
-  #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
-  pub fn sign_bit(self) -> Self {
-    self.is_sign_negative()
-  }
+    #[inline]
+    fn exponent(self) -> f32x4 {
+        const_f32_as_f32x4!(pow2_23, 8388608.0);
+        const_f32_as_f32x4!(bias, 127.0);
+        let a = cast::<_, u32x4>(self);
+        let b = a >> 23;
+        let c = b | cast::<_, u32x4>(pow2_23);
+        let d = cast::<_, f32x4>(c);
+        let e = d - (pow2_23 + bias);
+        e
+    }
+
+    #[inline]
+    fn fraction_2(self) -> Self {
+        let t1 = cast::<_, u32x4>(self);
+        let t2 = cast::<_, u32x4>((t1 & u32x4::from(0x007FFFFF)) | u32x4::from(0x3F000000));
+        cast::<_, f32x4>(t2)
+    }
+    #[inline]
+    fn is_zero_or_subnormal(self) -> Self {
+        let t = cast::<_, i32x4>(self);
+        let t = t & i32x4::splat(0x7F800000);
+        let mask = t.simd_eq(i32x4::splat(0));
+        cast::<_, f32x4>(mask)
+    }
+    #[inline]
+    fn infinity() -> Self {
+        cast::<_, f32x4>(i32x4::splat(0x7F800000))
+    }
+    #[inline]
+    fn nan_log() -> Self {
+        cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
+    }
+    #[inline]
+    fn nan_pow() -> Self {
+        cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
+    }
+
+    /// Converts each element from [`i32`] to [`f32`].
+    #[inline]
+    pub fn from_i32x4(v: i32x4) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self { sse: convert_to_m128_from_i32_m128i(v.sse) }
+          } else if #[cfg(target_feature="simd128")] {
+            Self { simd: f32x4_convert_i32x4(v.simd) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+            Self { neon: unsafe { vcvtq_f32_s32(v.neon) }}
+          } else {
+            Self { arr: [
+                v.as_array()[0] as f32,
+                v.as_array()[1] as f32,
+                v.as_array()[2] as f32,
+                v.as_array()[3] as f32,
+              ] }
+          }
+        }
+    }
+
+    /// Returns a [mask] that checks if each element has a negative sign,
+    /// including `-0.0`, NaNs with negative sign bit and negative infinity.
+    ///
+    /// Note that this function has a misleading name. If the sign bit is set, the
+    /// result has all bits set, not just the sign bit. This function has been
+    /// renamed to [`is_sign_negative`].
+    ///
+    /// [mask]: crate#masks
+    /// [`is_sign_negative`]: Self::is_sign_negative
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
+    pub fn sign_bit(self) -> Self {
+        self.is_sign_negative()
+    }
 }

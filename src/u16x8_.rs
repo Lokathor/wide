@@ -1553,88 +1553,88 @@ impl_simd_uint! {
 /// The following functionality exists only for [`u16x8`], or only for
 /// particular types inconsistently.
 impl u16x8 {
-  /// Converts the lower eight elements of `u` from [`u8`] to [`u16`], dropping
-  /// the higher eight elements.
-  #[inline]
-  #[must_use]
-  pub fn from_u8x16_low(u: u8x16) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
-      } else {
-        let u_arr: [u8; 16] = cast(u);
-        cast([
-          u_arr[0] as u16,
-          u_arr[1] as u16,
-          u_arr[2] as u16,
-          u_arr[3] as u16,
-          u_arr[4] as u16,
-          u_arr[5] as u16,
-          u_arr[6] as u16,
-          u_arr[7] as u16,
-        ])
-      }
+    /// Converts the lower eight elements of `u` from [`u8`] to [`u16`], dropping
+    /// the higher eight elements.
+    #[inline]
+    #[must_use]
+    pub fn from_u8x16_low(u: u8x16) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
+          } else {
+            let u_arr: [u8; 16] = cast(u);
+            cast([
+              u_arr[0] as u16,
+              u_arr[1] as u16,
+              u_arr[2] as u16,
+              u_arr[3] as u16,
+              u_arr[4] as u16,
+              u_arr[5] as u16,
+              u_arr[6] as u16,
+              u_arr[7] as u16,
+            ])
+          }
+        }
     }
-  }
 
-  /// Converts the higher eight elements of `u` from [`u8`] to [`u16`], dropping
-  /// the lower eight elements.
-  #[inline]
-  #[must_use]
-  pub fn from_u8x16_high(u: u8x16) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self{ sse: unpack_high_i8_m128i(u.sse, m128i::zeroed()) }
-      } else {
-        let u_arr: [u8; 16] = cast(u);
-        cast([
-          u_arr[8] as u16,
-          u_arr[9] as u16,
-          u_arr[10] as u16,
-          u_arr[11] as u16,
-          u_arr[12] as u16,
-          u_arr[13] as u16,
-          u_arr[14] as u16,
-          u_arr[15] as u16,
-        ])
-      }
+    /// Converts the higher eight elements of `u` from [`u8`] to [`u16`], dropping
+    /// the lower eight elements.
+    #[inline]
+    #[must_use]
+    pub fn from_u8x16_high(u: u8x16) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self{ sse: unpack_high_i8_m128i(u.sse, m128i::zeroed()) }
+          } else {
+            let u_arr: [u8; 16] = cast(u);
+            cast([
+              u_arr[8] as u16,
+              u_arr[9] as u16,
+              u_arr[10] as u16,
+              u_arr[11] as u16,
+              u_arr[12] as u16,
+              u_arr[13] as u16,
+              u_arr[14] as u16,
+              u_arr[15] as u16,
+            ])
+          }
+        }
     }
-  }
 
-  /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-  /// vector of larger integers.
-  ///
-  /// The returned value is always exact and can never overflow.
-  ///
-  /// This function has been renamed to [`widening_mul`].
-  ///
-  /// [`widening_mul`]: Self::widening_mul
-  #[inline]
-  #[must_use]
-  #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
-  pub fn mul_widen(self, rhs: Self) -> u32x8 {
-    self.widening_mul(rhs)
-  }
+    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
+    /// vector of larger integers.
+    ///
+    /// The returned value is always exact and can never overflow.
+    ///
+    /// This function has been renamed to [`widening_mul`].
+    ///
+    /// [`widening_mul`]: Self::widening_mul
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
+    pub fn mul_widen(self, rhs: Self) -> u32x8 {
+        self.widening_mul(rhs)
+    }
 
-  /// A helper for shuffle functions that turns indices of 16-bit lanes into
-  /// byte indices that can be used with 8-bit shuffle intrinsics.
-  ///
-  /// This turns each 16-bit lane `i` into two 8-bit lanes `[2*i, 2*i + 1]`.
-  ///
-  /// This assumes `self` has already been reduced to the table's lane count,
-  /// which may be at most 128 lanes so that `2 * i` still fits in a byte.
-  #[allow(dead_code)]
-  #[inline]
-  fn to_byte_indices(self) -> u8x16 {
-    // The byte offset of the lane, broadcast to every byte of the lane.
-    let base = self.unbounded_shl_scalar(1);
-    let base = base | base.unbounded_shl_scalar(8);
+    /// A helper for shuffle functions that turns indices of 16-bit lanes into
+    /// byte indices that can be used with 8-bit shuffle intrinsics.
+    ///
+    /// This turns each 16-bit lane `i` into two 8-bit lanes `[2*i, 2*i + 1]`.
+    ///
+    /// This assumes `self` has already been reduced to the table's lane count,
+    /// which may be at most 128 lanes so that `2 * i` still fits in a byte.
+    #[allow(dead_code)]
+    #[inline]
+    fn to_byte_indices(self) -> u8x16 {
+        // The byte offset of the lane, broadcast to every byte of the lane.
+        let base = self.unbounded_shl_scalar(1);
+        let base = base | base.unbounded_shl_scalar(8);
 
-    // Then the offset of each byte within its lane. These bits are free because
-    // every byte of `base` is a multiple of two. `from_ne_bytes` keeps this
-    // correct on big endian, where the bytes of a lane are the other way around.
-    const WITHIN_LANE: u16x8 = u16x8::splat(u16::from_ne_bytes([0, 1]));
+        // Then the offset of each byte within its lane. These bits are free because
+        // every byte of `base` is a multiple of two. `from_ne_bytes` keeps this
+        // correct on big endian, where the bytes of a lane are the other way around.
+        const WITHIN_LANE: u16x8 = u16x8::splat(u16::from_ne_bytes([0, 1]));
 
-    cast::<u16x8, u8x16>(base | WITHIN_LANE)
-  }
+        cast::<u16x8, u8x16>(base | WITHIN_LANE)
+    }
 }

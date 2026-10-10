@@ -79,10 +79,10 @@ pick! {
 }
 
 macro_rules! const_f64_as_f64x2 {
-  ($i:ident, $f:expr) => {
-    #[allow(non_upper_case_globals)]
-    pub const $i: f64x2 = f64x2::new([$f; 2]);
-  };
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f64x2 = f64x2::new([$f; 2]);
+    };
 }
 
 impl_simd_float! {
@@ -2131,100 +2131,100 @@ impl_simd_float! {
 /// The following functionality exists only for [`f64x2`], or only for
 /// particular types inconsistently.
 impl f64x2 {
-  #[inline]
-  fn vm_pow2n(self) -> Self {
-    const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
-    const_f64_as_f64x2!(bias, 1023.0);
-    let a = self + (bias + pow2_52);
-    let c = cast::<_, i64x2>(a) << 52;
-    let std_result = cast::<_, f64x2>(c);
+    #[inline]
+    fn vm_pow2n(self) -> Self {
+        const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
+        const_f64_as_f64x2!(bias, 1023.0);
+        let a = self + (bias + pow2_52);
+        let c = cast::<_, i64x2>(a) << 52;
+        let std_result = cast::<_, f64x2>(c);
 
-    let min_exp = f64x2::from(-1022.0);
-    let is_sub = self.simd_lt(min_exp);
-    if is_sub.any() {
-      let valid = self.simd_ge(f64x2::from(-1074.0));
-      let shift_f = self + f64x2::from(1074.0);
-      let mut shift_i = shift_f.trunc_int();
-      shift_i = cast::<_, i64x2>(valid).select(shift_i, i64x2::ZERO);
-      let mantissa = i64x2::ONE << shift_i;
-      let sub_result = cast::<_, f64x2>(mantissa);
-      let sub_result = valid.select(sub_result, f64x2::ZERO);
-      is_sub.select(sub_result, std_result)
-    } else {
-      std_result
+        let min_exp = f64x2::from(-1022.0);
+        let is_sub = self.simd_lt(min_exp);
+        if is_sub.any() {
+            let valid = self.simd_ge(f64x2::from(-1074.0));
+            let shift_f = self + f64x2::from(1074.0);
+            let mut shift_i = shift_f.trunc_int();
+            shift_i = cast::<_, i64x2>(valid).select(shift_i, i64x2::ZERO);
+            let mantissa = i64x2::ONE << shift_i;
+            let sub_result = cast::<_, f64x2>(mantissa);
+            let sub_result = valid.select(sub_result, f64x2::ZERO);
+            is_sub.select(sub_result, std_result)
+        } else {
+            std_result
+        }
     }
-  }
 
-  #[inline]
-  fn exponent(self) -> f64x2 {
-    const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
-    const_f64_as_f64x2!(bias, 1023.0);
-    let a = cast::<_, u64x2>(self);
-    let b = a >> 52;
-    let c = b | cast::<_, u64x2>(pow2_52);
-    let d = cast::<_, f64x2>(c);
-    let e = d - (pow2_52 + bias);
-    e
-  }
-
-  #[inline]
-  fn fraction_2(self) -> Self {
-    let t1 = cast::<_, u64x2>(self);
-    let t2 = cast::<_, u64x2>(
-      (t1 & u64x2::from(0x000FFFFFFFFFFFFF)) | u64x2::from(0x3FE0000000000000),
-    );
-    cast::<_, f64x2>(t2)
-  }
-
-  #[inline]
-  fn is_zero_or_subnormal(self) -> Self {
-    let t = cast::<_, i64x2>(self);
-    let t = t & i64x2::splat(0x7FF0000000000000);
-    let mask = t.simd_eq(i64x2::splat(0));
-    cast::<_, f64x2>(mask)
-  }
-
-  #[inline]
-  fn infinity() -> Self {
-    cast::<_, f64x2>(i64x2::splat(0x7FF0000000000000))
-  }
-
-  #[inline]
-  fn nan_log() -> Self {
-    cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
-  }
-
-  #[inline]
-  fn nan_pow() -> Self {
-    cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
-  }
-
-  /// Converts the lower two elements of `v` from [`i32`] to [`f64`], dropping
-  /// the higher two elements.
-  #[inline]
-  pub fn from_i32x4_lower2(v: i32x4) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self { sse: convert_to_m128d_from_lower2_i32_m128i(v.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_convert_low_i32x4(v.simd)}
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.neon))) }}
-      } else {
-        Self { arr: [
-            v.as_array()[0] as f64,
-            v.as_array()[1] as f64,
-        ]}
-      }
+    #[inline]
+    fn exponent(self) -> f64x2 {
+        const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
+        const_f64_as_f64x2!(bias, 1023.0);
+        let a = cast::<_, u64x2>(self);
+        let b = a >> 52;
+        let c = b | cast::<_, u64x2>(pow2_52);
+        let d = cast::<_, f64x2>(c);
+        let e = d - (pow2_52 + bias);
+        e
     }
-  }
+
+    #[inline]
+    fn fraction_2(self) -> Self {
+        let t1 = cast::<_, u64x2>(self);
+        let t2 = cast::<_, u64x2>(
+            (t1 & u64x2::from(0x000FFFFFFFFFFFFF)) | u64x2::from(0x3FE0000000000000),
+        );
+        cast::<_, f64x2>(t2)
+    }
+
+    #[inline]
+    fn is_zero_or_subnormal(self) -> Self {
+        let t = cast::<_, i64x2>(self);
+        let t = t & i64x2::splat(0x7FF0000000000000);
+        let mask = t.simd_eq(i64x2::splat(0));
+        cast::<_, f64x2>(mask)
+    }
+
+    #[inline]
+    fn infinity() -> Self {
+        cast::<_, f64x2>(i64x2::splat(0x7FF0000000000000))
+    }
+
+    #[inline]
+    fn nan_log() -> Self {
+        cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
+    }
+
+    #[inline]
+    fn nan_pow() -> Self {
+        cast::<_, f64x2>(i64x2::splat(0x7FF8000000000000 | 0x101 << 29))
+    }
+
+    /// Converts the lower two elements of `v` from [`i32`] to [`f64`], dropping
+    /// the higher two elements.
+    #[inline]
+    pub fn from_i32x4_lower2(v: i32x4) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self { sse: convert_to_m128d_from_lower2_i32_m128i(v.sse) }
+          } else if #[cfg(target_feature="simd128")] {
+            Self { simd: f64x2_convert_low_i32x4(v.simd)}
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+            Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.neon))) }}
+          } else {
+            Self { arr: [
+                v.as_array()[0] as f64,
+                v.as_array()[1] as f64,
+            ]}
+          }
+        }
+    }
 }
 
 impl From<i32x4> for f64x2 {
-  /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the
-  /// higher two `i32` lanes)
-  #[inline]
-  fn from(v: i32x4) -> Self {
-    Self::from_i32x4_lower2(v)
-  }
+    /// Converts the lower two `i32` lanes to two `f64` lanes (and dropping the
+    /// higher two `i32` lanes)
+    #[inline]
+    fn from(v: i32x4) -> Self {
+        Self::from_i32x4_lower2(v)
+    }
 }

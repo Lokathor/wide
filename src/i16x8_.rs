@@ -677,286 +677,286 @@ impl_simd_int! {
 /// The following functionality exists only for [`i16x8`], or only for
 /// particular types inconsistently.
 impl i16x8 {
-  /// Converts the lower eight elements of `u` from [`u8`] to [`i16`], dropping
-  /// the higher eight elements.
-  #[inline]
-  #[must_use]
-  pub fn from_u8x16_low(u: u8x16) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
-      } else {
-        let u_arr: [u8; 16] = cast(u);
-        cast([
-          u_arr[0] as u16 as i16,
-          u_arr[1] as u16 as i16,
-          u_arr[2] as u16 as i16,
-          u_arr[3] as u16 as i16,
-          u_arr[4] as u16 as i16,
-          u_arr[5] as u16 as i16,
-          u_arr[6] as u16 as i16,
-          u_arr[7] as u16 as i16,
-        ])
-      }
-    }
-  }
-
-  /// Converts the higher eight elements of `u` from [`u8`] to [`i16`], dropping
-  /// the lower eight elements.
-  #[inline]
-  #[must_use]
-  pub fn from_u8x16_high(u: u8x16) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self{ sse: unpack_high_i8_m128i(u.sse, m128i::zeroed()) }
-      } else {
-        let u_arr: [u8; 16] = cast(u);
-        cast([
-          u_arr[8] as u16 as i16,
-          u_arr[9] as u16 as i16,
-          u_arr[10] as u16 as i16,
-          u_arr[11] as u16 as i16,
-          u_arr[12] as u16 as i16,
-          u_arr[13] as u16 as i16,
-          u_arr[14] as u16 as i16,
-          u_arr[15] as u16 as i16,
-        ])
-      }
-    }
-  }
-
-  /// Converts each element from [`i32`] to [`i16`], saturating out of range
-  /// values.
-  #[inline]
-  #[must_use]
-  pub fn from_i32x8_saturate(v: i32x8) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(v.avx2), extract_m128i_from_m256i::<1>(v.avx2))  }
-      } else if #[cfg(target_feature="sse2")] {
-        i16x8 { sse: pack_i32_to_i16_m128i( v.a.sse, v.b.sse ) }
-      } else if #[cfg(target_feature="simd128")] {
-        use core::arch::wasm32::*;
-
-        i16x8 { simd: i16x8_narrow_i32x4(v.a.simd, v.b.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        use core::arch::aarch64::*;
-
-        unsafe {
-          i16x8 { neon: vcombine_s16(vqmovn_s32(v.a.neon), vqmovn_s32(v.b.neon)) }
+    /// Converts the lower eight elements of `u` from [`u8`] to [`i16`], dropping
+    /// the higher eight elements.
+    #[inline]
+    #[must_use]
+    pub fn from_u8x16_low(u: u8x16) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
+          } else {
+            let u_arr: [u8; 16] = cast(u);
+            cast([
+              u_arr[0] as u16 as i16,
+              u_arr[1] as u16 as i16,
+              u_arr[2] as u16 as i16,
+              u_arr[3] as u16 as i16,
+              u_arr[4] as u16 as i16,
+              u_arr[5] as u16 as i16,
+              u_arr[6] as u16 as i16,
+              u_arr[7] as u16 as i16,
+            ])
+          }
         }
-      } else {
-        fn clamp(a : i32) -> i16 {
-            if a < i16::MIN as i32 {
-                i16::MIN
+    }
+
+    /// Converts the higher eight elements of `u` from [`u8`] to [`i16`], dropping
+    /// the lower eight elements.
+    #[inline]
+    #[must_use]
+    pub fn from_u8x16_high(u: u8x16) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self{ sse: unpack_high_i8_m128i(u.sse, m128i::zeroed()) }
+          } else {
+            let u_arr: [u8; 16] = cast(u);
+            cast([
+              u_arr[8] as u16 as i16,
+              u_arr[9] as u16 as i16,
+              u_arr[10] as u16 as i16,
+              u_arr[11] as u16 as i16,
+              u_arr[12] as u16 as i16,
+              u_arr[13] as u16 as i16,
+              u_arr[14] as u16 as i16,
+              u_arr[15] as u16 as i16,
+            ])
+          }
+        }
+    }
+
+    /// Converts each element from [`i32`] to [`i16`], saturating out of range
+    /// values.
+    #[inline]
+    #[must_use]
+    pub fn from_i32x8_saturate(v: i32x8) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(v.avx2), extract_m128i_from_m256i::<1>(v.avx2))  }
+          } else if #[cfg(target_feature="sse2")] {
+            i16x8 { sse: pack_i32_to_i16_m128i( v.a.sse, v.b.sse ) }
+          } else if #[cfg(target_feature="simd128")] {
+            use core::arch::wasm32::*;
+
+            i16x8 { simd: i16x8_narrow_i32x4(v.a.simd, v.b.simd) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+            use core::arch::aarch64::*;
+
+            unsafe {
+              i16x8 { neon: vcombine_s16(vqmovn_s32(v.a.neon), vqmovn_s32(v.b.neon)) }
             }
-            else if a > i16::MAX as i32 {
-                i16::MAX
-            } else {
-                a as i16
+          } else {
+            fn clamp(a : i32) -> i16 {
+                if a < i16::MIN as i32 {
+                    i16::MIN
+                }
+                else if a > i16::MAX as i32 {
+                    i16::MAX
+                } else {
+                    a as i16
+                }
             }
+
+            i16x8::new([
+              clamp(v.as_array()[0]),
+              clamp(v.as_array()[1]),
+              clamp(v.as_array()[2]),
+              clamp(v.as_array()[3]),
+              clamp(v.as_array()[4]),
+              clamp(v.as_array()[5]),
+              clamp(v.as_array()[6]),
+              clamp(v.as_array()[7]),
+            ])
+          }
         }
-
-        i16x8::new([
-          clamp(v.as_array()[0]),
-          clamp(v.as_array()[1]),
-          clamp(v.as_array()[2]),
-          clamp(v.as_array()[3]),
-          clamp(v.as_array()[4]),
-          clamp(v.as_array()[5]),
-          clamp(v.as_array()[6]),
-          clamp(v.as_array()[7]),
-        ])
-      }
     }
-  }
 
-  /// Converts each element from [`i32`] to [`i16`], truncating out of range
-  /// values (behaves like [`as`] casting).
-  ///
-  /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
-  #[inline]
-  #[must_use]
-  pub fn from_i32x8_truncate(v: i32x8) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        let a = v.avx2.bitand(set_splat_i32_m256i(0xffff));
-        i16x8 { sse: pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
-      } else if #[cfg(target_feature="sse2")] {
-        let a = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.a.sse));
-        let b = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.b.sse));
+    /// Converts each element from [`i32`] to [`i16`], truncating out of range
+    /// values (behaves like [`as`] casting).
+    ///
+    /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
+    #[inline]
+    #[must_use]
+    pub fn from_i32x8_truncate(v: i32x8) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            let a = v.avx2.bitand(set_splat_i32_m256i(0xffff));
+            i16x8 { sse: pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
+          } else if #[cfg(target_feature="sse2")] {
+            let a = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.a.sse));
+            let b = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.b.sse));
 
-        i16x8 { sse: pack_i32_to_i16_m128i( a, b)  }
-      } else {
-      i16x8::new([
-        v.as_array()[0] as i16,
-        v.as_array()[1] as i16,
-        v.as_array()[2] as i16,
-        v.as_array()[3] as i16,
-        v.as_array()[4] as i16,
-        v.as_array()[5] as i16,
-        v.as_array()[6] as i16,
-        v.as_array()[7] as i16,
-      ])
-      }
-    }
-  }
-
-  /// Converts a slice to a SIMD vector, ignoring elements beyond the first 8.
-  ///
-  /// # Panics
-  ///
-  /// Panics if `input` has less than 8 elements.
-  #[inline]
-  #[must_use]
-  pub fn from_slice_unaligned(input: &[i16]) -> Self {
-    assert!(input.len() >= 8);
-
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        unsafe { Self { sse: load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) ) } }
-      } else if #[cfg(target_feature="simd128")] {
-        unsafe { Self { simd: v128_load(input.as_ptr() as *const v128 ) } }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vld1q_s16( input.as_ptr() as *const i16 ) } }
-      } else {
-        // 2018 edition doesn't have try_into
-        unsafe { Self::new( *(input.as_ptr() as * const [i16;8]) ) }
-      }
-    }
-  }
-
-  /// Partially computes the dot product.
-  ///
-  /// First this multiplies the input 16-bit integers, producing intermediate
-  /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
-  /// four 32-bit integers.
-  #[inline]
-  #[must_use]
-  pub fn dot(self, rhs: Self) -> i32x4 {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        i32x4 { sse:  mul_i16_horizontal_add_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="simd128")] {
-        i32x4 { simd: i32x4_dot_i16x8(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          let pl = vmull_s16(vget_low_s16(self.neon),  vget_low_s16(rhs.neon));
-          let ph = vmull_high_s16(self.neon, rhs.neon);
-          i32x4 { neon: vpaddq_s32(pl, ph) }
+            i16x8 { sse: pack_i32_to_i16_m128i( a, b)  }
+          } else {
+          i16x8::new([
+            v.as_array()[0] as i16,
+            v.as_array()[1] as i16,
+            v.as_array()[2] as i16,
+            v.as_array()[3] as i16,
+            v.as_array()[4] as i16,
+            v.as_array()[5] as i16,
+            v.as_array()[6] as i16,
+            v.as_array()[7] as i16,
+          ])
+          }
         }
-      } else {
-        i32x4 { arr: [
-          (i32::from(self.arr[0]) * i32::from(rhs.arr[0])) + (i32::from(self.arr[1]) * i32::from(rhs.arr[1])),
-          (i32::from(self.arr[2]) * i32::from(rhs.arr[2])) + (i32::from(self.arr[3]) * i32::from(rhs.arr[3])),
-          (i32::from(self.arr[4]) * i32::from(rhs.arr[4])) + (i32::from(self.arr[5]) * i32::from(rhs.arr[5])),
-          (i32::from(self.arr[6]) * i32::from(rhs.arr[6])) + (i32::from(self.arr[7]) * i32::from(rhs.arr[7])),
-        ] }
-      }
     }
-  }
 
-  /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
-  /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-  /// and `1`. This corresponds to the following instructions:
-  /// - `vqrdmulhq_s16` instruction on neon
-  /// - `i16x8_q15mulr_sat` on simd128
-  /// - `_mm_mulhrs_epi16` on ssse3
-  /// - emulated via `mul_i16_*` on sse2
-  #[inline]
-  #[must_use]
-  pub fn mul_scale_round(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        Self { sse:  mul_i16_scale_round_m128i(self.sse, rhs.sse) }
-      } else if #[cfg(target_feature="sse2")] {
-        // unfortunately mul_i16_scale_round_m128i only got added in sse3
-        let hi = mul_i16_keep_high_m128i(self.sse, rhs.sse);
-        let lo = mul_i16_keep_low_m128i(self.sse, rhs.sse);
-        let mut v1 = unpack_low_i16_m128i(lo, hi);
-        let mut v2 = unpack_high_i16_m128i(lo, hi);
-        let a = set_splat_i32_m128i(0x4000);
-        v1 = shr_imm_i32_m128i::<15>(add_i32_m128i(v1, a));
-        v2 = shr_imm_i32_m128i::<15>(add_i32_m128i(v2, a));
-        let s = pack_i32_to_i16_m128i(v1, v2);
-        Self { sse: s }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i16x8_q15mulr_sat(self.simd, rhs.simd) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vqrdmulhq_s16(self.neon, rhs.neon) } }
-      } else {
-        // compiler does a surprisingly good job of vectorizing this
-        Self { arr: [
-          ((i32::from(self.arr[0]) * i32::from(rhs.arr[0]) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[1]) * i32::from(rhs.arr[1]) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[2]) * i32::from(rhs.arr[2]) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[3]) * i32::from(rhs.arr[3]) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[4]) * i32::from(rhs.arr[4]) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[5]) * i32::from(rhs.arr[5]) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,
-        ]}
-      }
+    /// Converts a slice to a SIMD vector, ignoring elements beyond the first 8.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `input` has less than 8 elements.
+    #[inline]
+    #[must_use]
+    pub fn from_slice_unaligned(input: &[i16]) -> Self {
+        assert!(input.len() >= 8);
+
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            unsafe { Self { sse: load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) ) } }
+          } else if #[cfg(target_feature="simd128")] {
+            unsafe { Self { simd: v128_load(input.as_ptr() as *const v128 ) } }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self { neon: vld1q_s16( input.as_ptr() as *const i16 ) } }
+          } else {
+            // 2018 edition doesn't have try_into
+            unsafe { Self::new( *(input.as_ptr() as * const [i16;8]) ) }
+          }
+        }
     }
-  }
 
-  #[inline]
-  #[must_use]
-  /// Multiply and scale, equivalent to `((self * rhs) + 0x4000) >> 15` on each
-  /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-  /// and `1`. This corresponds to the following instructions:
-  /// - `vqrdmulhq_n_s16` instruction on neon
-  /// - `i16x8_q15mulr_sat` on simd128
-  /// - `_mm_mulhrs_epi16` on ssse3
-  /// - emulated via `mul_i16_*` on sse2
-  pub fn mul_scale_round_n(self, rhs: i16) -> Self {
-    pick! {
-      if #[cfg(target_feature="ssse3")] {
-        Self { sse:  mul_i16_scale_round_m128i(self.sse, set_splat_i16_m128i(rhs)) }
-      } else if #[cfg(target_feature="sse2")] {
-        // unfortunately mul_i16_scale_round_m128i only got added in sse3
-        let r = set_splat_i16_m128i(rhs);
-        let hi = mul_i16_keep_high_m128i(self.sse, r);
-        let lo = mul_i16_keep_low_m128i(self.sse, r);
-        let mut v1 = unpack_low_i16_m128i(lo, hi);
-        let mut v2 = unpack_high_i16_m128i(lo, hi);
-        let a = set_splat_i32_m128i(0x4000);
-        v1 = shr_imm_i32_m128i::<15>(add_i32_m128i(v1, a));
-        v2 = shr_imm_i32_m128i::<15>(add_i32_m128i(v2, a));
-        let s = pack_i32_to_i16_m128i(v1, v2);
-        Self { sse: s }
-      } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i16x8_q15mulr_sat(self.simd, i16x8_splat(rhs)) }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vqrdmulhq_n_s16(self.neon, rhs) } }
-      } else {
-        // compiler does a surprisingly good job of vectorizing this
-        Self { arr: [
-          ((i32::from(self.arr[0]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[1]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[2]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[3]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[4]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[5]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[6]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-          ((i32::from(self.arr[7]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-        ]}
-      }
+    /// Partially computes the dot product.
+    ///
+    /// First this multiplies the input 16-bit integers, producing intermediate
+    /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
+    /// four 32-bit integers.
+    #[inline]
+    #[must_use]
+    pub fn dot(self, rhs: Self) -> i32x4 {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            i32x4 { sse:  mul_i16_horizontal_add_m128i(self.sse, rhs.sse) }
+          } else if #[cfg(target_feature="simd128")] {
+            i32x4 { simd: i32x4_dot_i16x8(self.simd, rhs.simd) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {
+              let pl = vmull_s16(vget_low_s16(self.neon),  vget_low_s16(rhs.neon));
+              let ph = vmull_high_s16(self.neon, rhs.neon);
+              i32x4 { neon: vpaddq_s32(pl, ph) }
+            }
+          } else {
+            i32x4 { arr: [
+              (i32::from(self.arr[0]) * i32::from(rhs.arr[0])) + (i32::from(self.arr[1]) * i32::from(rhs.arr[1])),
+              (i32::from(self.arr[2]) * i32::from(rhs.arr[2])) + (i32::from(self.arr[3]) * i32::from(rhs.arr[3])),
+              (i32::from(self.arr[4]) * i32::from(rhs.arr[4])) + (i32::from(self.arr[5]) * i32::from(rhs.arr[5])),
+              (i32::from(self.arr[6]) * i32::from(rhs.arr[6])) + (i32::from(self.arr[7]) * i32::from(rhs.arr[7])),
+            ] }
+          }
+        }
     }
-  }
 
-  /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-  /// vector of larger integers.
-  ///
-  /// The returned value is always exact and can never overflow.
-  ///
-  /// This function has been renamed to [`widening_mul`].
-  ///
-  /// [`widening_mul`]: Self::widening_mul
-  #[inline]
-  #[must_use]
-  #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
-  pub fn mul_widen(self, rhs: Self) -> i32x8 {
-    self.widening_mul(rhs)
-  }
+    /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
+    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
+    /// and `1`. This corresponds to the following instructions:
+    /// - `vqrdmulhq_s16` instruction on neon
+    /// - `i16x8_q15mulr_sat` on simd128
+    /// - `_mm_mulhrs_epi16` on ssse3
+    /// - emulated via `mul_i16_*` on sse2
+    #[inline]
+    #[must_use]
+    pub fn mul_scale_round(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="ssse3")] {
+            Self { sse:  mul_i16_scale_round_m128i(self.sse, rhs.sse) }
+          } else if #[cfg(target_feature="sse2")] {
+            // unfortunately mul_i16_scale_round_m128i only got added in sse3
+            let hi = mul_i16_keep_high_m128i(self.sse, rhs.sse);
+            let lo = mul_i16_keep_low_m128i(self.sse, rhs.sse);
+            let mut v1 = unpack_low_i16_m128i(lo, hi);
+            let mut v2 = unpack_high_i16_m128i(lo, hi);
+            let a = set_splat_i32_m128i(0x4000);
+            v1 = shr_imm_i32_m128i::<15>(add_i32_m128i(v1, a));
+            v2 = shr_imm_i32_m128i::<15>(add_i32_m128i(v2, a));
+            let s = pack_i32_to_i16_m128i(v1, v2);
+            Self { sse: s }
+          } else if #[cfg(target_feature="simd128")] {
+            Self { simd: i16x8_q15mulr_sat(self.simd, rhs.simd) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self { neon: vqrdmulhq_s16(self.neon, rhs.neon) } }
+          } else {
+            // compiler does a surprisingly good job of vectorizing this
+            Self { arr: [
+              ((i32::from(self.arr[0]) * i32::from(rhs.arr[0]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[1]) * i32::from(rhs.arr[1]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[2]) * i32::from(rhs.arr[2]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[3]) * i32::from(rhs.arr[3]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[4]) * i32::from(rhs.arr[4]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[5]) * i32::from(rhs.arr[5]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,
+            ]}
+          }
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    /// Multiply and scale, equivalent to `((self * rhs) + 0x4000) >> 15` on each
+    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
+    /// and `1`. This corresponds to the following instructions:
+    /// - `vqrdmulhq_n_s16` instruction on neon
+    /// - `i16x8_q15mulr_sat` on simd128
+    /// - `_mm_mulhrs_epi16` on ssse3
+    /// - emulated via `mul_i16_*` on sse2
+    pub fn mul_scale_round_n(self, rhs: i16) -> Self {
+        pick! {
+          if #[cfg(target_feature="ssse3")] {
+            Self { sse:  mul_i16_scale_round_m128i(self.sse, set_splat_i16_m128i(rhs)) }
+          } else if #[cfg(target_feature="sse2")] {
+            // unfortunately mul_i16_scale_round_m128i only got added in sse3
+            let r = set_splat_i16_m128i(rhs);
+            let hi = mul_i16_keep_high_m128i(self.sse, r);
+            let lo = mul_i16_keep_low_m128i(self.sse, r);
+            let mut v1 = unpack_low_i16_m128i(lo, hi);
+            let mut v2 = unpack_high_i16_m128i(lo, hi);
+            let a = set_splat_i32_m128i(0x4000);
+            v1 = shr_imm_i32_m128i::<15>(add_i32_m128i(v1, a));
+            v2 = shr_imm_i32_m128i::<15>(add_i32_m128i(v2, a));
+            let s = pack_i32_to_i16_m128i(v1, v2);
+            Self { sse: s }
+          } else if #[cfg(target_feature="simd128")] {
+            Self { simd: i16x8_q15mulr_sat(self.simd, i16x8_splat(rhs)) }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self { neon: vqrdmulhq_n_s16(self.neon, rhs) } }
+          } else {
+            // compiler does a surprisingly good job of vectorizing this
+            Self { arr: [
+              ((i32::from(self.arr[0]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[1]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[2]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[3]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[4]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[5]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[6]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.arr[7]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+            ]}
+          }
+        }
+    }
+
+    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
+    /// vector of larger integers.
+    ///
+    /// The returned value is always exact and can never overflow.
+    ///
+    /// This function has been renamed to [`widening_mul`].
+    ///
+    /// [`widening_mul`]: Self::widening_mul
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
+    pub fn mul_widen(self, rhs: Self) -> i32x8 {
+        self.widening_mul(rhs)
+    }
 }

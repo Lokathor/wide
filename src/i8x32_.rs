@@ -289,79 +289,79 @@ impl_simd_int! {
 /// The following functionality exists only for [`i8x32`], or only for
 /// particular types inconsistently.
 impl i8x32 {
-  /// Returns a new vector with lanes selected from the lanes of the first input
-  /// vector a specified in the second input vector `rhs`.
-  /// The indices i in range `[0, 15]` select the i-th element of `self`. For
-  /// indices outside of the range the resulting lane is `0`.
-  ///
-  /// This note that is the equivalent of two parallel swizzle operations on the
-  /// two halves of the vector, and the indexes each refer to the
-  /// corresponding half.
-  #[inline]
-  pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: shuffle_av_i8z_half_m256i(self.avx, add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x70))) }
-      } else {
-          Self {
-            a : self.a.shuffle_zeroing(rhs.a.cast_unsigned()),
-            b : self.b.shuffle_zeroing(rhs.b.cast_unsigned()),
+    /// Returns a new vector with lanes selected from the lanes of the first input
+    /// vector a specified in the second input vector `rhs`.
+    /// The indices i in range `[0, 15]` select the i-th element of `self`. For
+    /// indices outside of the range the resulting lane is `0`.
+    ///
+    /// This note that is the equivalent of two parallel swizzle operations on the
+    /// two halves of the vector, and the indexes each refer to the
+    /// corresponding half.
+    #[inline]
+    pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self { avx: shuffle_av_i8z_half_m256i(self.avx, add_saturating_u8_m256i(rhs.avx, set_splat_i8_m256i(0x70))) }
+          } else {
+              Self {
+                a : self.a.shuffle_zeroing(rhs.a.cast_unsigned()),
+                b : self.b.shuffle_zeroing(rhs.b.cast_unsigned()),
+              }
           }
-      }
-    }
-  }
-
-  /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
-  /// the high bit of any element of `rhs` is set (negative) then the
-  /// corresponding output lane is guaranteed to be zero. Otherwise if the
-  /// element of `rhs` is within the range `[32, 127]` then the output lane is
-  /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
-  ///
-  /// This is the equivalent to two parallel swizzle operations on the two
-  /// halves of the vector, and the indexes each refer to their corresponding
-  /// half.
-  #[inline]
-  pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
-      } else {
-        Self {
-          a : self.a.shuffle(rhs.a.cast_unsigned()),
-          b : self.b.shuffle(rhs.b.cast_unsigned()),
         }
-      }
     }
-  }
 
-  /// Full 32-entry byte table lookup.
-  ///
-  /// * An index (interpreted as unsigned) in `[0, 31]` selects `self[index]`.
-  /// * Any index `>= 32` (including negative `i8` values) yields `0`.
-  ///
-  /// Unlike [`swizzle_half`](Self::swizzle_half), indices address the entire
-  /// 32-byte vector, not just their own 16-byte half.
-  ///
-  /// This function has been deprecated and replaced with [`shuffle_zeroing`].
-  ///
-  /// [`shuffle_zeroing`]: Self::shuffle_zeroing
-  #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
-  pub fn swizzle(self, rhs: i8x32) -> i8x32 {
-    self.shuffle_zeroing(rhs.cast_unsigned())
-  }
+    /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
+    /// the high bit of any element of `rhs` is set (negative) then the
+    /// corresponding output lane is guaranteed to be zero. Otherwise if the
+    /// element of `rhs` is within the range `[32, 127]` then the output lane is
+    /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
+    ///
+    /// This is the equivalent to two parallel swizzle operations on the two
+    /// halves of the vector, and the indexes each refer to their corresponding
+    /// half.
+    #[inline]
+    pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self { avx: shuffle_av_i8z_half_m256i(self.avx, rhs.avx) }
+          } else {
+            Self {
+              a : self.a.shuffle(rhs.a.cast_unsigned()),
+              b : self.b.shuffle(rhs.b.cast_unsigned()),
+            }
+          }
+        }
+    }
 
-  /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
-  /// `>= 32`) yield an implementation-defined result (`0` or `self[index %
-  /// 32]`). Prefer this when you know all indices are in range; it can be
-  /// cheaper.
-  ///
-  /// This function has been deprecated and replaced with [`shuffle`].
-  ///
-  /// [`shuffle`]: Self::shuffle
-  #[inline]
-  #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
-  pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
-    self.shuffle(rhs.cast_unsigned())
-  }
+    /// Full 32-entry byte table lookup.
+    ///
+    /// * An index (interpreted as unsigned) in `[0, 31]` selects `self[index]`.
+    /// * Any index `>= 32` (including negative `i8` values) yields `0`.
+    ///
+    /// Unlike [`swizzle_half`](Self::swizzle_half), indices address the entire
+    /// 32-byte vector, not just their own 16-byte half.
+    ///
+    /// This function has been deprecated and replaced with [`shuffle_zeroing`].
+    ///
+    /// [`shuffle_zeroing`]: Self::shuffle_zeroing
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
+    pub fn swizzle(self, rhs: i8x32) -> i8x32 {
+        self.shuffle_zeroing(rhs.cast_unsigned())
+    }
+
+    /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
+    /// `>= 32`) yield an implementation-defined result (`0` or `self[index %
+    /// 32]`). Prefer this when you know all indices are in range; it can be
+    /// cheaper.
+    ///
+    /// This function has been deprecated and replaced with [`shuffle`].
+    ///
+    /// [`shuffle`]: Self::shuffle
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
+    pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
+        self.shuffle(rhs.cast_unsigned())
+    }
 }
