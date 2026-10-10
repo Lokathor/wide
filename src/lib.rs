@@ -260,7 +260,7 @@ mod imports {
         unused_imports,
         reason = "this is only used on some target configurations"
     )]
-    use crate::utils::software_sqrt;
+    pub use crate::utils::software_sqrt;
     #[expect(deprecated)]
     pub use crate::{
         AlignTo, CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, Select, ShuffleExt, f32x4, f32x8,
