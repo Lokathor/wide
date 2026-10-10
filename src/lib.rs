@@ -176,7 +176,39 @@ use crate::utils::*;
 pub use bytemuck;
 
 #[expect(deprecated)]
-pub use simd::{AlignTo, CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, Select, ShuffleExt};
+pub use crate::{
+    f32x4_::f32x4,
+    f32x8_::f32x8,
+    f32x16_::f32x16,
+    f64x2_::f64x2,
+    f64x4_::f64x4,
+    f64x8_::f64x8,
+    i8x16_::i8x16,
+    i8x32_::i8x32,
+    i8x64_::i8x64,
+    i16x8_::i16x8,
+    i16x16_::i16x16,
+    i16x32_::i16x32,
+    i32x4_::i32x4,
+    i32x8_::i32x8,
+    i32x16_::i32x16,
+    i64x2_::i64x2,
+    i64x4_::i64x4,
+    i64x8_::i64x8,
+    simd::{AlignTo, CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, Select, ShuffleExt},
+    u8x16_::u8x16,
+    u8x32_::u8x32,
+    u8x64_::u8x64,
+    u16x8_::u16x8,
+    u16x16_::u16x16,
+    u16x32_::u16x32,
+    u32x4_::u32x4,
+    u32x8_::u32x8,
+    u32x16_::u32x16,
+    u64x2_::u64x2,
+    u64x4_::u64x4,
+    u64x8_::u64x8,
+};
 
 #[macro_use]
 mod simd;
@@ -186,96 +218,35 @@ mod simd_float;
 mod simd_int;
 #[macro_use]
 mod simd_uint;
-
 #[macro_use]
 mod utils;
-
 mod f32x16_;
-pub use f32x16_::*;
-
-mod f32x8_;
-pub use f32x8_::*;
-
 mod f32x4_;
-pub use f32x4_::*;
-
-mod f64x8_;
-pub use f64x8_::*;
-
-mod f64x4_;
-pub use f64x4_::*;
-
+mod f32x8_;
 mod f64x2_;
-pub use f64x2_::*;
-
-mod i8x16_;
-pub use i8x16_::*;
-
+mod f64x4_;
+mod f64x8_;
 mod i16x16_;
-pub use i16x16_::*;
-
 mod i16x32_;
-pub use i16x32_::*;
-
-mod i8x32_;
-pub use i8x32_::*;
-
-mod i8x64_;
-pub use i8x64_::*;
-
 mod i16x8_;
-pub use i16x8_::*;
-
-mod i32x4_;
-pub use i32x4_::*;
-
-mod i32x8_;
-pub use i32x8_::*;
-
 mod i32x16_;
-pub use i32x16_::*;
-
+mod i32x4_;
+mod i32x8_;
 mod i64x2_;
-pub use i64x2_::*;
-
 mod i64x4_;
-pub use i64x4_::*;
-
 mod i64x8_;
-pub use i64x8_::*;
-
-mod u8x16_;
-pub use u8x16_::*;
-
-mod u8x32_;
-pub use u8x32_::*;
-
-mod u8x64_;
-pub use u8x64_::*;
-
-mod u16x8_;
-pub use u16x8_::*;
-
+mod i8x16_;
+mod i8x32_;
+mod i8x64_;
 mod u16x16_;
-pub use u16x16_::*;
-
 mod u16x32_;
-pub use u16x32_::*;
-
-mod u32x4_;
-pub use u32x4_::*;
-
-mod u32x8_;
-pub use u32x8_::*;
-
+mod u16x8_;
 mod u32x16_;
-pub use u32x16_::*;
-
+mod u32x4_;
+mod u32x8_;
 mod u64x2_;
-pub use u64x2_::*;
-
 mod u64x4_;
-pub use u64x4_::*;
-
 mod u64x8_;
-pub use u64x8_::*;
+mod u8x16_;
+mod u8x32_;
+mod u8x64_;
