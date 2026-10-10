@@ -170,6 +170,8 @@ use safe_arch::*;
 
 use bytemuck::*;
 
+use crate::utils::*;
+
 // Re-export so that users don't need to add a bytemuck dependency of their own
 pub use bytemuck;
 
