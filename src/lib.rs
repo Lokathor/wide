@@ -244,13 +244,32 @@ mod u8x64_;
 mod imports {
     //! Exports items that should be imported by all SIMD-type modules.
 
-    pub use core::ops::*;
+    pub use core::ops::{
+        Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
+        DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub,
+        SubAssign,
+    };
 
     #[allow(unused_imports)]
     #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
     pub use safe_arch::*;
 
-    pub use bytemuck::*;
+    pub use bytemuck::{Zeroable, cast, cast_mut};
 
-    pub use crate::{utils::*, *};
+    #[allow(
+        unused_imports,
+        reason = "this is only used on some target configurations"
+    )]
+    use crate::utils::software_sqrt;
+    #[expect(deprecated)]
+    pub use crate::{
+        AlignTo, CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, Select, ShuffleExt, f32x4, f32x8,
+        f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8,
+        i32x16, i64x2, i64x4, i64x8, u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8,
+        u32x16, u64x2, u64x4, u64x8,
+        utils::{
+            add_mul_hi_lane_u32, add_mul_hi_lane_u64, add_mul_lo_lane_u32, add_mul_lo_lane_u64,
+            add_mul_operand_mask_u32, add_mul_operand_mask_u64, generic_bit_blend,
+        },
+    };
 }
