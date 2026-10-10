@@ -19,7 +19,7 @@ macro_rules! impl_simd_signed {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      UintSimd = $UintSimd:ident,
+      UnsignedSimd = $UnsignedSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       BitmaskType = $BitmaskType:ty,
@@ -35,7 +35,7 @@ macro_rules! impl_simd_signed {
     $fn_simd_le:item
     $fn_simd_ge:item
 
-    // Int-specific functions
+    // Integer functions
     $fn_shr_unsigned_simd:item
     $fn_shr_u32:item
     $fn_max:item
@@ -50,6 +50,8 @@ macro_rules! impl_simd_signed {
     optional_fn_widening_mul { $($fn_widening_mul:item)? }
     $fn_mul_keep_low_high:item
     $fn_mul_keep_high:item
+
+    // Signed-integer functions
     $fn_abs:item
     $fn_is_positive:item
     $fn_is_negative:item
@@ -59,7 +61,7 @@ macro_rules! impl_simd_signed {
         T = $T,
         N = $N,
         Simd = $Simd,
-        UintSimd = $UintSimd,
+        UnsignedSimd = $UnsignedSimd,
         optional_type_x86_inner { $(X86Inner = $X86Inner)? },
         optional_type_arm_inner { $(ArmInner = $ArmInner)? },
         optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
@@ -96,13 +98,13 @@ macro_rules! impl_simd_signed {
       #[inline]
       pub fn reduce_add(self) -> $T {
         // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$Simd, $UintSimd>(self).reduce_add().cast_signed()
+        cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
       }
 
       #[inline]
       pub fn reduce_mul(self) -> $T {
         // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$Simd, $UintSimd>(self).reduce_mul().cast_signed()
+        cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
       }
 
       #[inline]
@@ -145,68 +147,68 @@ macro_rules! impl_simd_signed {
       }
 
       #[inline]
-      pub fn shuffle(self, indices: $UintSimd) -> Self {
+      pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
         self.cast_unsigned().shuffle(indices).cast_signed()
       }
 
       #[inline]
-      pub fn shuffle_zeroing(self, indices: $UintSimd) -> Self {
+      pub fn shuffle_zeroing(self, indices: $UnsignedSimd) -> Self {
         self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
       }
 
       #[inline]
-      pub fn shuffle_wrapping(self, indices: $UintSimd) -> Self {
+      pub fn shuffle_wrapping(self, indices: $UnsignedSimd) -> Self {
         self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
       }
 
       #[inline]
-      fn shuffle(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle(indices))
+      fn shuffle(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle(indices))
       }
 
       #[inline]
-      fn shuffle_zeroing(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle_zeroing(indices))
+      fn shuffle_zeroing(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn shuffle_wrapping(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle_wrapping(indices))
+      fn shuffle_wrapping(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]
-      fn shuffle(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle(indices))
+      fn shuffle(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle(indices))
       }
 
       #[inline]
-      fn shuffle_zeroing(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle_zeroing(indices))
+      fn shuffle_zeroing(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn shuffle_wrapping(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle_wrapping(indices))
+      fn shuffle_wrapping(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]
-      fn shuffle(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle(indices))
+      fn shuffle(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle(indices))
       }
 
       #[inline]
-      fn shuffle_zeroing(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle_zeroing(indices))
+      fn shuffle_zeroing(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn shuffle_wrapping(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle_wrapping(indices))
+      fn shuffle_wrapping(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]
       pub fn transpose(data: [Self; $N]) -> [Self; $N] {
-        cast($UintSimd::transpose(cast::<[$Simd; $N], [$UintSimd; $N]>(data)))
+        cast($UnsignedSimd::transpose(cast::<[$Simd; $N], [$UnsignedSimd; $N]>(data)))
       }
     );
 
@@ -215,7 +217,7 @@ macro_rules! impl_simd_signed {
         T = $T,
         N = $N,
         Simd = $Simd,
-        UnsignedSimd = $UintSimd,
+        UnsignedSimd = $UnsignedSimd,
         SignedSimd = $Simd,
         T_BITS = $T_BITS,
         T_BITS_MUL_2 = $T_BITS_MUL_2,
@@ -224,62 +226,62 @@ macro_rules! impl_simd_signed {
 
       #[inline]
       fn not(self) -> Self::Output {
-        cast::<$UintSimd, $Simd>(!cast::<$Simd, $UintSimd>(self))
+        cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
       }
 
       #[inline]
       fn add(self, rhs: Self) -> Self::Output {
         // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$UintSimd, $Simd>(
-          cast::<$Simd, $UintSimd>(self) + cast::<$Simd, $UintSimd>(rhs),
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
         )
       }
 
       #[inline]
       fn sub(self, rhs: Self) -> Self::Output {
         // Wrapping subtraction is the same for signed and unsigned integers.
-        cast::<$UintSimd, $Simd>(
-          cast::<$Simd, $UintSimd>(self) - cast::<$Simd, $UintSimd>(rhs),
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
         )
       }
 
       #[inline]
       fn mul(self, rhs: Self) -> Self::Output {
         // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$UintSimd, $Simd>(
-          cast::<$Simd, $UintSimd>(self) * cast::<$Simd, $UintSimd>(rhs),
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
         )
       }
 
       #[inline]
       fn bitand(self, rhs: Self) -> Self::Output {
-        cast::<$UintSimd, $Simd>(
-          cast::<$Simd, $UintSimd>(self) & cast::<$Simd, $UintSimd>(rhs),
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
         )
       }
 
       #[inline]
       fn bitor(self, rhs: Self) -> Self::Output {
-        cast::<$UintSimd, $Simd>(
-          cast::<$Simd, $UintSimd>(self) | cast::<$Simd, $UintSimd>(rhs),
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
         )
       }
 
       #[inline]
       fn bitxor(self, rhs: Self) -> Self::Output {
-        cast::<$UintSimd, $Simd>(
-          cast::<$Simd, $UintSimd>(self) ^ cast::<$Simd, $UintSimd>(rhs),
+        cast::<$UnsignedSimd, $Simd>(
+          cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
         )
       }
 
       #[inline]
-      fn shl(self, rhs: $UintSimd) -> Self {
-        cast(cast::<$Simd, $UintSimd>(self) << rhs)
+      fn shl(self, rhs: $UnsignedSimd) -> Self {
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
       }
 
       #[inline]
       fn shl(self, rhs: u32) -> Self {
-        cast(cast::<$Simd, $UintSimd>(self) << rhs)
+        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
       }
 
       $fn_shr_unsigned_simd
@@ -295,15 +297,15 @@ macro_rules! impl_simd_signed {
       $fn_reduce_min
 
       #[inline]
-      pub fn unbounded_shl(self, rhs: $UintSimd) -> Self {
+      pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
         // Shift left is the same for unsigned and signed integers.
-        cast(cast::<$Simd, $UintSimd>(self).unbounded_shl(rhs))
+        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
       }
 
       #[inline]
       pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
         // Shift left is the same for unsigned and signed integers.
-        cast(cast::<$Simd, $UintSimd>(self).unbounded_shl_scalar(rhs))
+        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
       }
 
       $fn_unbounded_shr
@@ -360,16 +362,16 @@ macro_rules! impl_simd_signed {
       $fn_mul_keep_high
     );
 
-    impl Select<$Simd> for $UintSimd {
+    impl Select<$Simd> for $UnsignedSimd {
       #[inline]
       fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
         self.cast_signed().select(if_true, if_false)
       }
     }
 
-    impl Select<$UintSimd> for $Simd {
+    impl Select<$UnsignedSimd> for $Simd {
       #[inline]
-      fn select(self, if_true: $UintSimd, if_false: $UintSimd) -> $UintSimd {
+      fn select(self, if_true: $UnsignedSimd, if_false: $UnsignedSimd) -> $UnsignedSimd {
         self.cast_unsigned().select(if_true, if_false)
       }
     }
@@ -381,18 +383,18 @@ macro_rules! impl_simd_signed {
       /// of the same size.
       #[inline]
       #[must_use]
-      pub const fn cast_unsigned(self) -> $UintSimd {
+      pub const fn cast_unsigned(self) -> $UnsignedSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $UintSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
       }
 
       /// Computes the absolute value of each input element, returned as an
       /// unsigned integer in order to avoid wrapping.
       #[inline]
       #[must_use]
-      pub fn unsigned_abs(self) -> $UintSimd {
-        cast::<$Simd, $UintSimd>(self.abs())
+      pub fn unsigned_abs(self) -> $UnsignedSimd {
+        cast::<$Simd, $UnsignedSimd>(self.abs())
       }
 
       /// Returns the absolute value of each input element.

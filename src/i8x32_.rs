@@ -29,7 +29,7 @@ impl_simd_signed! {
     T = i8,
     N = 32,
     Simd = i8x32,
-    UintSimd = u8x32,
+    UnsignedSimd = u8x32,
     T_BITS = 8,
     T_BITS_MUL_2 = 16,
     BitmaskType = u32,

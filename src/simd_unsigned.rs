@@ -19,7 +19,7 @@ macro_rules! impl_simd_unsigned {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      IntSimd = $IntSimd:ident,
+      SignedSimd = $SignedSimd:ident,
       T_BITS = $T_BITS:literal,
       T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
       [$($index:literal),* $(,)?],
@@ -67,7 +67,7 @@ macro_rules! impl_simd_unsigned {
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
 
-    // Uint-specific functions
+    // Integer functions
     $fn_shl_unsigned_simd:item
     $fn_shl_u32:item
     $fn_shr_unsigned_simd:item
@@ -92,7 +92,7 @@ macro_rules! impl_simd_unsigned {
         T = $T,
         N = $N,
         Simd = $Simd,
-        UintSimd = $Simd,
+        UnsignedSimd = $Simd,
         optional_type_x86_inner { $(X86Inner = $X86Inner)? },
         optional_type_arm_inner { $(ArmInner = $ArmInner)? },
         optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
@@ -165,7 +165,7 @@ macro_rules! impl_simd_unsigned {
         N = $N,
         Simd = $Simd,
         UnsignedSimd = $Simd,
-        SignedSimd = $IntSimd,
+        SignedSimd = $SignedSimd,
         T_BITS = $T_BITS,
         T_BITS_MUL_2 = $T_BITS_MUL_2,
         [$($index),*],
@@ -261,10 +261,10 @@ macro_rules! impl_simd_unsigned {
       /// the same size.
       #[inline]
       #[must_use]
-      pub const fn cast_signed(self) -> $IntSimd {
+      pub const fn cast_signed(self) -> $SignedSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $IntSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
       }
     }
   };
