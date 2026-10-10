@@ -198,8 +198,8 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          // Use a fixed toolchain in order to prevent `rustfmt` updates from
-          // causing CI to fail
+          # Use a fixed toolchain in order to prevent `rustfmt` updates from
+          # causing CI to fail
           toolchain: "1.99.0"
           components: rustfmt
 
