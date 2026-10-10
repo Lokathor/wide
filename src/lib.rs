@@ -205,6 +205,8 @@ mod simd;
 #[macro_use]
 mod simd_float;
 #[macro_use]
+mod simd_integer;
+#[macro_use]
 mod simd_signed;
 #[macro_use]
 mod simd_unsigned;
