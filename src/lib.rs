@@ -175,6 +175,9 @@ use crate::utils::*;
 // Re-export so that users don't need to add a bytemuck dependency of their own
 pub use bytemuck;
 
+#[expect(deprecated)]
+pub use simd::{AlignTo, CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, Select, ShuffleExt};
+
 #[macro_use]
 mod simd;
 #[macro_use]

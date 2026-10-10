@@ -1,3 +1,5 @@
+use bytemuck::{Pod, pod_align_to, pod_align_to_mut};
+
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
@@ -707,8 +709,6 @@ macro_rules! impl_simd {
     impl AlignTo for $Simd {
       type Elem = $T;
     }
-
-    impl<const N: usize> Sealed for [$Simd; N] {}
 
     /// The following functionality exists for all SIMD vectors.
     impl $Simd {
@@ -1601,6 +1601,8 @@ macro_rules! impl_shift_operator {
     impl_scalar_with_cast!(usize);
   }
 }
+
+impl<Simd, const N: usize> Sealed for [Simd; N] {}
 
 /// `serde` does not implement `Deserialize` for `[T; 64]`, so this manual
 /// implementation is used.
