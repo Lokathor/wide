@@ -46,7 +46,8 @@ use bytemuck::{Pod, pod_align_to, pod_align_to_mut};
 /// );
 /// ```
 ///
-/// [`select`]: f32x4::select
+/// [`select`]: crate::f32x4::select
+/// [`f32x4`]: crate::f32x4
 /// [mask]: crate#masks
 pub trait Select<T> {
     /// Lanewise SIMD selection.
@@ -180,7 +181,7 @@ pub trait ShuffleExt: Sealed {
 
 /// A deprecated trait for the [`simd_eq`] function.
 ///
-/// [`simd_eq`]: f32x4::simd_eq
+/// [`simd_eq`]: crate::f32x4::simd_eq
 #[deprecated(since = "1.5.0", note = "use the inherent function `simd_eq` instead")]
 pub trait CmpEq<Rhs = Self> {
     /// The type returned by [`simd_eq`].
@@ -200,7 +201,7 @@ pub trait CmpEq<Rhs = Self> {
 
 /// A deprecated trait for the [`simd_gt`] function.
 ///
-/// [`simd_gt`]: f32x4::simd_gt
+/// [`simd_gt`]: crate::f32x4::simd_gt
 #[deprecated(since = "1.5.0", note = "use the inherent function `simd_gt` instead")]
 pub trait CmpGt<Rhs = Self> {
     /// The type returned by [`simd_gt`].
@@ -220,7 +221,7 @@ pub trait CmpGt<Rhs = Self> {
 
 /// A deprecated trait for the [`simd_ge`] function.
 ///
-/// [`simd_ge`]: f32x4::simd_ge
+/// [`simd_ge`]: crate::f32x4::simd_ge
 #[deprecated(since = "1.5.0", note = "use the inherent function `simd_ge` instead")]
 pub trait CmpGe<Rhs = Self> {
     /// The type returned by [`simd_ge`].
@@ -240,7 +241,7 @@ pub trait CmpGe<Rhs = Self> {
 
 /// A deprecated trait for the [`simd_ne`] function.
 ///
-/// [`simd_ne`]: f32x4::simd_ne
+/// [`simd_ne`]: crate::f32x4::simd_ne
 #[deprecated(since = "1.5.0", note = "use the inherent function `simd_ne` instead")]
 pub trait CmpNe<Rhs = Self> {
     /// The type returned by [`simd_ne`].
@@ -260,7 +261,7 @@ pub trait CmpNe<Rhs = Self> {
 
 /// A deprecated trait for the [`simd_lt`] function.
 ///
-/// [`simd_lt`]: f32x4::simd_lt
+/// [`simd_lt`]: crate::f32x4::simd_lt
 #[deprecated(since = "1.5.0", note = "use the inherent function `simd_lt` instead")]
 pub trait CmpLt<Rhs = Self> {
     /// The type returned by [`simd_lt`].
@@ -280,7 +281,7 @@ pub trait CmpLt<Rhs = Self> {
 
 /// A deprecated trait for the [`simd_le`] function.
 ///
-/// [`simd_le`]: f32x4::simd_le
+/// [`simd_le`]: crate::f32x4::simd_le
 #[deprecated(since = "1.5.0", note = "use the inherent function `simd_le` instead")]
 pub trait CmpLe<Rhs = Self> {
     /// The type returned by [`simd_le`].
