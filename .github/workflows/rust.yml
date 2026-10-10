@@ -189,3 +189,19 @@ jobs:
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: sde64 -spr --
         run: cargo test --target ${{ matrix.rust.target }} --tests
+
+  fmt_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          // Use a fixed toolchain in order to prevent `rustfmt` updates from
+          // causing CI to fail
+          toolchain: "1.99.0"
+          components: rustfmt
+
+      - name: Run `cargo fmt --check --all`
+        run: cargo fmt --check --all
