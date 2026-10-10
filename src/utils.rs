@@ -380,17 +380,22 @@ pub fn software_sqrt(x: f64) -> f64 {
     }
 }
 
-#[test]
-fn test_software_sqrt() {
-    assert!(software_sqrt(f64::NAN).is_nan());
-    assert_eq!(software_sqrt(f64::INFINITY), f64::INFINITY);
-    assert_eq!(software_sqrt(0.0), 0.0);
-    assert_eq!(software_sqrt(-0.0), -0.0);
-    assert!(software_sqrt(-1.0).is_nan());
-    assert!(software_sqrt(f64::NEG_INFINITY).is_nan());
-    assert_eq!(software_sqrt(4.0), 2.0);
-    assert_eq!(software_sqrt(9.0), 3.0);
-    assert_eq!(software_sqrt(16.0), 4.0);
-    assert_eq!(software_sqrt(25.0), 5.0);
-    assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
+#[cfg(test)]
+mod tests {
+    use crate::utils::software_sqrt;
+
+    #[test]
+    fn test_software_sqrt() {
+        assert!(software_sqrt(f64::NAN).is_nan());
+        assert_eq!(software_sqrt(f64::INFINITY), f64::INFINITY);
+        assert_eq!(software_sqrt(0.0), 0.0);
+        assert_eq!(software_sqrt(-0.0), -0.0);
+        assert!(software_sqrt(-1.0).is_nan());
+        assert!(software_sqrt(f64::NEG_INFINITY).is_nan());
+        assert_eq!(software_sqrt(4.0), 2.0);
+        assert_eq!(software_sqrt(9.0), 3.0);
+        assert_eq!(software_sqrt(16.0), 4.0);
+        assert_eq!(software_sqrt(25.0), 5.0);
+        assert_eq!(software_sqrt(5000.0 * 5000.0), 5000.0);
+    }
 }
