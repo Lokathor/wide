@@ -162,16 +162,6 @@ extern crate std;
 // Add/Sub/Mul/Div with constant
 // Shuffle left/right/by index
 
-use core::ops::*;
-
-#[allow(unused_imports)]
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-use safe_arch::*;
-
-use bytemuck::*;
-
-use crate::utils::*;
-
 // Re-export so that users don't need to add a bytemuck dependency of their own
 pub use bytemuck;
 
@@ -250,3 +240,17 @@ mod u64x8_;
 mod u8x16_;
 mod u8x32_;
 mod u8x64_;
+
+mod imports {
+    //! Exports items that should be imported by all SIMD-type modules.
+
+    pub use core::ops::*;
+
+    #[allow(unused_imports)]
+    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+    pub use safe_arch::*;
+
+    pub use bytemuck::*;
+
+    pub use crate::{utils::*, *};
+}
