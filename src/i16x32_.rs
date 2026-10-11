@@ -8,8 +8,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
+    #[derive(Clone, Copy)]
     pub struct i16x32 { pub(crate) avx512: m512i }
   } else {
     /// A SIMD vector with 32 elements of type [`i16`].
@@ -18,8 +18,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
+    #[derive(Clone, Copy)]
     pub struct i16x32 { pub(crate) a : i16x16, pub(crate) b : i16x16 }
   }
 }

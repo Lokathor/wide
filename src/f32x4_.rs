@@ -8,8 +8,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
+    #[derive(Clone, Copy)]
     pub struct f32x4 { pub(crate) sse: m128 }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
@@ -20,21 +20,9 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Clone, Copy)]
     #[repr(transparent)]
+    #[derive(Clone, Copy)]
     pub struct f32x4 { pub(crate) simd: v128 }
-
-    impl Default for f32x4 {
-      fn default() -> Self {
-        Self::splat(0.0)
-      }
-    }
-
-    impl PartialEq for f32x4 {
-      fn eq(&self, other: &Self) -> bool {
-        u32x4_all_true(f32x4_eq(self.simd, other.simd))
-      }
-    }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
     use core::arch::aarch64::*;
 
@@ -45,23 +33,8 @@ pick! {
     ///
     /// [crate level documentation]: crate
     #[repr(C)]
-    #[derive(Copy, Clone)]
+    #[derive(Clone, Copy)]
     pub struct f32x4 { pub(crate) neon : float32x4_t }
-
-    impl Default for f32x4 {
-      #[inline]
-      fn default() -> Self {
-        unsafe { Self { neon: vdupq_n_f32(0.0)} }
-      }
-    }
-
-    impl PartialEq for f32x4 {
-      #[inline]
-      fn eq(&self, other: &Self) -> bool {
-        unsafe { vminvq_u32(vceqq_f32(self.neon, other.neon))==u32::MAX }
-      }
-
-    }
     } else {
     /// A SIMD vector with four elements of type [`f32`].
     ///
@@ -69,8 +42,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
+    #[derive(Clone, Copy)]
     pub struct f32x4 { pub(crate) arr: [f32;4] }
   }
 }

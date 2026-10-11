@@ -52,6 +52,8 @@ macro_rules! impl_simd_integer {
         $fn_mul_keep_low_high:item
         $fn_mul_keep_high:item
     ) => {
+        impl Eq for $Simd {}
+
         impl_unary_operator!(
             $Simd,
             Neg,

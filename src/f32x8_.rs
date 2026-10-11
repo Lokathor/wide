@@ -8,8 +8,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
+    #[derive(Clone, Copy)]
     pub struct f32x8 { pub(crate) avx: m256 }
   } else {
     /// A SIMD vector with eight elements of type [`f32`].
@@ -18,8 +18,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(32))]
+    #[derive(Clone, Copy)]
     pub struct f32x8 { pub(crate) a : f32x4, pub(crate) b : f32x4 }
   }
 }

@@ -393,6 +393,20 @@ macro_rules! impl_simd {
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
   ) => {
+    impl PartialEq for $Simd {
+      #[inline]
+      fn eq(&self, other: &Self) -> bool {
+        self.simd_eq(*other).all()
+      }
+    }
+
+    impl Default for $Simd {
+      #[inline]
+      fn default() -> Self {
+        Self::zeroed()
+      }
+    }
+
     impl From<[$T; $N]> for $Simd {
       /// Converts an array to a SIMD vector.
       #[inline]

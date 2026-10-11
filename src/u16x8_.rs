@@ -8,8 +8,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
+    #[derive(Clone, Copy)]
     pub struct u16x8 { pub(crate) sse: m128i }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
@@ -20,23 +20,9 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Clone, Copy)]
     #[repr(transparent)]
+    #[derive(Clone, Copy)]
     pub struct u16x8 { pub(crate) simd: v128 }
-
-    impl Default for u16x8 {
-      fn default() -> Self {
-        Self::splat(0)
-      }
-    }
-
-    impl PartialEq for u16x8 {
-      fn eq(&self, other: &Self) -> bool {
-        u16x8_all_true(u16x8_eq(self.simd, other.simd))
-      }
-    }
-
-    impl Eq for u16x8 { }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
       use core::arch::aarch64::*;
 
@@ -47,24 +33,8 @@ pick! {
       ///
       /// [crate level documentation]: crate
       #[repr(C)]
-      #[derive(Copy, Clone)]
+      #[derive(Clone, Copy)]
       pub struct u16x8 { pub(crate) neon : uint16x8_t }
-
-      impl Default for u16x8 {
-        #[inline]
-        fn default() -> Self {
-          Self::splat(0)
-        }
-      }
-
-      impl PartialEq for u16x8 {
-        #[inline]
-        fn eq(&self, other: &Self) -> bool {
-          unsafe { vminvq_u16(vceqq_u16(self.neon, other.neon))==u16::MAX }
-        }
-      }
-
-      impl Eq for u16x8 { }
   } else {
     /// A SIMD vector with eight elements of type [`u16`].
     ///
@@ -72,8 +42,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(16))]
+    #[derive(Clone, Copy)]
     pub struct u16x8 { pub(crate) arr: [u16;8] }
   }
 }

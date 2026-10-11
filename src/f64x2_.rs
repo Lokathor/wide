@@ -8,8 +8,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
+    #[derive(Clone, Copy)]
     pub struct f64x2 { pub(crate) sse: m128d }
   } else if #[cfg(target_feature="simd128")] {
     use core::arch::wasm32::*;
@@ -20,21 +20,9 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Clone, Copy)]
     #[repr(transparent)]
+    #[derive(Clone, Copy)]
     pub struct f64x2 { pub(crate) simd: v128 }
-
-    impl Default for f64x2 {
-      fn default() -> Self {
-        Self::splat(0.0)
-      }
-    }
-
-    impl PartialEq for f64x2 {
-      fn eq(&self, other: &Self) -> bool {
-        u64x2_all_true(f64x2_eq(self.simd, other.simd))
-      }
-    }
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
     use core::arch::aarch64::*;
 
@@ -45,26 +33,8 @@ pick! {
     ///
     /// [crate level documentation]: crate
     #[repr(C)]
-    #[derive(Copy, Clone)]
+    #[derive(Clone, Copy)]
     pub struct f64x2 { pub(crate) neon: float64x2_t }
-
-    impl Default for f64x2 {
-      #[inline]
-      fn default() -> Self {
-        unsafe { Self { neon: vdupq_n_f64(0.0)} }
-      }
-    }
-
-    impl PartialEq for f64x2 {
-      #[inline]
-      fn eq(&self, other: &Self) -> bool {
-        unsafe
-        { let e = vceqq_f64(self.neon, other.neon);
-          vgetq_lane_u64(e,0) == u64::MAX && vgetq_lane_u64(e,1) == u64::MAX
-        }
-      }
-
-    }
   } else {
     /// A SIMD vector with two elements of type [`f64`].
     ///
@@ -72,8 +42,8 @@ pick! {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq)]
     #[repr(C, align(16))]
+    #[derive(Clone, Copy)]
     pub struct f64x2 { pub(crate) arr: [f64;2] }
   }
 }
