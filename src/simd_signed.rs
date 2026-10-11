@@ -1,20 +1,14 @@
 /// Emits functionality shared by all SIMD signed-integer types.
 ///
+/// To understand how to invoke this macro correctly, also see [`impl_simd!`]
+/// which is automatically invoked by this macro.
+///
 /// Functions that need a separate implementation for each type (for
 /// performance) use `$fn_{name}:item` syntax, and functions that have one
 /// shared implementation for all ints are written out normally inside this
 /// macro.
-///
-/// This macro also invokes `impl_simd`.
-macro_rules! impl_simd_signed {
+macro_rules! define_simd_signed {
   (
-    // SAFETY: The contents of this macro assume that:
-    //
-    // - `T` implements `Pod`
-    // - `Pod` can be implemented for `Simd`
-    // - `size_of::<Simd>()` is `size_of::<T>() * N`
-    // - `align_of::<Simd>()` is `size_of::<Simd>()`
-    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
@@ -58,7 +52,7 @@ macro_rules! impl_simd_signed {
     $fn_is_positive:item
     $fn_is_negative:item
   ) => {
-    impl_simd!(
+    define_simd!(
       unsafe {
         T = $T,
         N = $N,

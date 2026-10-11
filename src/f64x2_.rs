@@ -28,7 +28,7 @@ macro_rules! const_f64_as_f64x2 {
     };
 }
 
-impl_simd_float! {
+define_simd_float! {
   unsafe {
     T = f64,
     N = 2,

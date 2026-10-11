@@ -21,7 +21,7 @@ pick! {
   }
 }
 
-impl_simd_signed! {
+define_simd_signed! {
   unsafe {
     T = i16,
     N = 8,

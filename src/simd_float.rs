@@ -1,20 +1,14 @@
 /// Emits functionality shared by all SIMD float types.
 ///
+/// To understand how to invoke this macro correctly, also see [`impl_simd!`]
+/// which is automatically invoked by this macro.
+///
 /// Functions that need a separate implementation for each type (for
 /// performance) use `$fn_{name}:item` syntax, and functions that have one
 /// shared implementation for all floats are written out normally inside this
 /// macro.
-///
-/// This macro also invokes `impl_simd`.
-macro_rules! impl_simd_float {
+macro_rules! define_simd_float {
   (
-    // SAFETY: The contents of this macro assume that:
-    //
-    // - `T` implements `Pod`
-    // - `Pod` can be implemented for `Simd`
-    // - `size_of::<Simd>()` is `size_of::<T>() * N`
-    // - `align_of::<Simd>()` is `size_of::<Simd>()`
-    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
@@ -108,7 +102,7 @@ macro_rules! impl_simd_float {
     $fn_cosh:item
     $fn_tanh:item
   ) => {
-    impl_simd!(
+    define_simd!(
       unsafe {
         T = $T,
         N = $N,

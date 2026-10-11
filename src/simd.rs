@@ -331,7 +331,12 @@ where
 
 trait Sealed {}
 
-/// Emits functionality shared by all SIMD types.
+/// Defines a SIMD type and functionality shared by all SIMD types.
+///
+/// Modules invoking this macro must define an `Inner` type alias, which is used
+/// as the internal representation of the SIMD type. This type must have the
+/// size `size_of::<T>() * N`, but can have a lower alignment since the outer
+/// struct is defined with `repr(align($size_of_self))`.
 ///
 /// Functions that need a separate implementation for each type (for
 /// performance) use `$fn_{name}:item` syntax, and functions that have one
@@ -343,15 +348,8 @@ trait Sealed {}
 /// boilerplate for functions that have one shared implementation for one
 /// numerical category (float, signed-integer, unsigned-integer), but not one
 /// implementation for *all* SIMD types.
-macro_rules! impl_simd {
+macro_rules! define_simd {
   (
-    // SAFETY: The contents of this macro assume that:
-    //
-    // - `T` implements `Pod`
-    // - `Pod` can be implemented for `Simd`
-    // - `size_of::<Simd>()` is `size_of::<T>() * N`
-    // - `align_of::<Simd>()` is `size_of::<Simd>()`
-    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
