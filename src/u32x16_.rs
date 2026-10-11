@@ -33,7 +33,7 @@ define_simd_unsigned! {
   fn not(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.0, set_splat_i32_m512i(-1)) }
+        Self(bitxor_m512i(self.0, set_splat_i32_m512i(-1)) }
       } else {
         Self {
           a : self.0.lo.not(),
@@ -47,7 +47,7 @@ define_simd_unsigned! {
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: add_i32_m512i(self.0, rhs.0) }
+        Self(add_i32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.add(rhs.0.lo),
@@ -61,7 +61,7 @@ define_simd_unsigned! {
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: sub_i32_m512i(self.0, rhs.0) }
+        Self(sub_i32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.sub(rhs.0.lo),
@@ -75,7 +75,7 @@ define_simd_unsigned! {
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: mul_i32_keep_low_m512i(self.0, rhs.0) }
+        Self(mul_i32_keep_low_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.mul(rhs.0.lo),
@@ -89,7 +89,7 @@ define_simd_unsigned! {
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitand_m512i(self.0, rhs.0) }
+        Self(bitand_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.bitand(rhs.0.lo),
@@ -103,7 +103,7 @@ define_simd_unsigned! {
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
     if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitor_m512i(self.0, rhs.0) }
+        Self(bitor_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.bitor(rhs.0.lo),
@@ -117,7 +117,7 @@ define_simd_unsigned! {
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: bitxor_m512i(self.0, rhs.0) }
+        Self(bitxor_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.bitxor(rhs.0.lo),
@@ -131,7 +131,7 @@ define_simd_unsigned! {
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Eq)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Eq)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_eq(rhs.0.lo),
@@ -145,7 +145,7 @@ define_simd_unsigned! {
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Ne)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Ne)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_ne(rhs.0.lo),
@@ -159,7 +159,7 @@ define_simd_unsigned! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
       } else {
         Self {
           a : rhs.0.lo.simd_gt(self.0.lo),
@@ -173,7 +173,7 @@ define_simd_unsigned! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_gt(rhs.0.lo),
@@ -187,7 +187,7 @@ define_simd_unsigned! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_le(rhs.0.lo),
@@ -201,7 +201,7 @@ define_simd_unsigned! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_u32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_ge(rhs.0.lo),
@@ -364,7 +364,7 @@ define_simd_unsigned! {
   fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: blend_varying_i8_m512i(if_false.0,if_true.0,movepi8_mask_m512i(self.0)) }
+        Self(blend_varying_i8_m512i(if_false.0,if_true.0,movepi8_mask_m512i(self.0)) }
       } else {
         Self {
           a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -443,7 +443,7 @@ define_simd_unsigned! {
   pub fn shuffle(self, indices: u32x16) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
-        Self { avx512: permute_i32_m512i(indices.0, self.0) }
+        Self(permute_i32_m512i(indices.0, self.0) }
       } else {
         let self_halfs = cast::<u32x16, [u32x8; 2]>(self);
         let [indices_a, indices_b] = cast::<u32x16, [u32x8; 2]>(indices);
@@ -486,7 +486,7 @@ define_simd_unsigned! {
   fn shuffle(self: [u32x16; 2], indices: u32x16) -> u32x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
-        u32x16 { avx512: shuffle_abv_i32_all_m512i(self[0].0, indices.0, self[1].0) }
+        u32x16(shuffle_abv_i32_all_m512i(self[0].0, indices.0, self[1].0) }
       } else {
         self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 16)
       }
@@ -599,7 +599,7 @@ define_simd_unsigned! {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let shift_by = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
-        Self { avx512: shl_each_u32_m512i(self.0, shift_by) }
+        Self(shl_each_u32_m512i(self.0, shift_by) }
       } else {
         Self {
           a : self.0.lo.shl(rhs.0.lo),
@@ -616,7 +616,7 @@ define_simd_unsigned! {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs & 31;
-        Self { avx512: shl_all_u32_m512i(self.0, shift) }
+        Self(shl_all_u32_m512i(self.0, shift) }
       } else {
         Self {
           a : self.0.lo.shl(rhs),
@@ -631,7 +631,7 @@ define_simd_unsigned! {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let shift_by = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
-        Self { avx512: shr_each_u32_m512i(self.0, shift_by ) }
+        Self(shr_each_u32_m512i(self.0, shift_by ) }
       } else {
         Self {
           a : self.0.lo.shr(rhs.0.lo),
@@ -648,7 +648,7 @@ define_simd_unsigned! {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs & 31;
-        Self { avx512: shr_all_u32_m512i(self.0, shift) }
+        Self(shr_all_u32_m512i(self.0, shift) }
       } else {
         Self {
           a : self.0.lo.shr(rhs),
@@ -662,7 +662,7 @@ define_simd_unsigned! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: max_u32_m512i(self.0, rhs.0) }
+        Self(max_u32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.0.lo.max(rhs.0.lo),
@@ -676,7 +676,7 @@ define_simd_unsigned! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: min_u32_m512i(self.0, rhs.0) }
+        Self(min_u32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.0.lo.min(rhs.0.lo),
@@ -702,7 +702,7 @@ define_simd_unsigned! {
   pub fn unbounded_shl(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shl_each_u32_m512i(self.0, rhs.0) }
+        Self(shl_each_u32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.0.lo.unbounded_shl(rhs.0.lo),
@@ -716,7 +716,7 @@ define_simd_unsigned! {
   pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shl_all_u32_m512i(self.0, rhs) }
+        Self(shl_all_u32_m512i(self.0, rhs) }
       } else {
         Self {
           a: self.0.lo.unbounded_shl_scalar(rhs),
@@ -730,7 +730,7 @@ define_simd_unsigned! {
   pub fn unbounded_shr(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shr_each_u32_m512i(self.0, rhs.0) }
+        Self(shr_each_u32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -744,7 +744,7 @@ define_simd_unsigned! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shr_all_u32_m512i(self.0, rhs) }
+        Self(shr_all_u32_m512i(self.0, rhs) }
       } else {
         Self {
           a: self.0.lo.unbounded_shr_scalar(rhs),
@@ -849,13 +849,13 @@ define_simd_unsigned! {
         let bhi = extract_m256i32_from_m512i::<1>(rhs.0);
 
         let lo_res: m256i = {
-          let a8 = u32x8 { avx2: alo };
-          let b8 = u32x8 { avx2: blo };
+          let a8 = u32x8(alo };
+          let b8 = u32x8(blo };
           a8.mul_keep_high(b8).0
         };
         let hi_res: m256i = {
-          let a8 = u32x8 { avx2: ahi };
-          let b8 = u32x8 { avx2: bhi };
+          let a8 = u32x8(ahi };
+          let b8 = u32x8(bhi };
           a8.mul_keep_high(b8).0
         };
 
@@ -863,7 +863,7 @@ define_simd_unsigned! {
         let with_lo = insert_m256i32_to_m512i::<0>(zero, lo_res);
         let combined = insert_m256i32_to_m512i::<1>(with_lo, hi_res);
 
-        Self { avx512: combined }
+        Self(combined }
       } else {
         Self {
           a: self.0.lo.mul_keep_high(rhs.0.lo),
@@ -887,8 +887,8 @@ impl From<u16x16> for u32x16 {
             let lo: m128i = extract_m128i_from_m256i::<0>(v.0);
             let hi: m128i = extract_m128i_from_m256i::<1>(v.0);
             Self {
-              a: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(lo) },
-              b: u32x8 { avx2: convert_to_i32_m256i_from_u16_m128i(hi) },
+              a: u32x8(convert_to_i32_m256i_from_u16_m128i(lo) },
+              b: u32x8(convert_to_i32_m256i_from_u16_m128i(hi) },
             }
           } else if #[cfg(target_feature = "sse2")] {
             Self {

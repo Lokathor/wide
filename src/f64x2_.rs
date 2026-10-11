@@ -48,11 +48,11 @@ define_simd_float! {
   fn neg(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse")] {
-        Self { sse: bitxor_m128d(self.0, Self::splat(-0.0).0) }
+        Self(bitxor_m128d(self.0, Self::splat(-0.0).0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_neg(self.0) }
+        Self(f64x2_neg(self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vnegq_f64(self.0) }}
+        unsafe {Self(vnegq_f64(self.0) }}
       } else {
         Self::new([
           -self.0.arr[0],
@@ -66,11 +66,11 @@ define_simd_float! {
   fn not(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: self.0.not() }
+        Self(self.0.not() }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_not(self.0) }
+        Self(v128_not(self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_f64(self.0))) }}
+        unsafe {Self(vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_f64(self.0))) }}
       } else {
         Self::new([
           f64::from_bits(!self.0.arr[0].to_bits()),
@@ -84,11 +84,11 @@ define_simd_float! {
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: add_m128d(self.0, rhs.0) }
+        Self(add_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_add(self.0, rhs.0) }
+        Self(f64x2_add(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vaddq_f64(self.0, rhs.0) } }
+        unsafe { Self(vaddq_f64(self.0, rhs.0) } }
       } else {
         Self::new([
           self.0.arr[0] + rhs.0.arr[0],
@@ -102,11 +102,11 @@ define_simd_float! {
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: sub_m128d(self.0, rhs.0) }
+        Self(sub_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_sub(self.0, rhs.0) }
+        Self(f64x2_sub(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vsubq_f64(self.0, rhs.0) } }
+        unsafe { Self(vsubq_f64(self.0, rhs.0) } }
       } else {
         Self::new([
           self.0.arr[0] - rhs.0.arr[0],
@@ -120,11 +120,11 @@ define_simd_float! {
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: mul_m128d(self.0, rhs.0) }
+        Self(mul_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_mul(self.0, rhs.0) }
+        Self(f64x2_mul(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmulq_f64(self.0, rhs.0) }}
+        unsafe {Self(vmulq_f64(self.0, rhs.0) }}
       } else {
         Self::new([
           self.0.arr[0] * rhs.0.arr[0],
@@ -138,11 +138,11 @@ define_simd_float! {
   fn div(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: div_m128d(self.0, rhs.0) }
+        Self(div_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_div(self.0, rhs.0) }
+        Self(f64x2_div(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vdivq_f64(self.0, rhs.0) }}
+        unsafe {Self(vdivq_f64(self.0, rhs.0) }}
       } else {
         Self::new([
           self.0.arr[0] / rhs.0.arr[0],
@@ -164,11 +164,11 @@ define_simd_float! {
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: bitand_m128d(self.0, rhs.0) }
+        Self(bitand_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_and(self.0, rhs.0) }
+        Self(v128_and(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
+        unsafe {Self(vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
         Self::new([
           f64::from_bits(self.0.arr[0].to_bits() & rhs.0.arr[0].to_bits()),
@@ -182,11 +182,11 @@ define_simd_float! {
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: bitor_m128d(self.0, rhs.0) }
+        Self(bitor_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_or(self.0, rhs.0) }
+        Self(v128_or(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vorrq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
+        unsafe {Self(vreinterpretq_f64_u64(vorrq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
         Self::new([
           f64::from_bits(self.0.arr[0].to_bits() | rhs.0.arr[0].to_bits()),
@@ -200,11 +200,11 @@ define_simd_float! {
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: bitxor_m128d(self.0, rhs.0) }
+        Self(bitxor_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_xor(self.0, rhs.0) }
+        Self(v128_xor(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
+        unsafe {Self(vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
         Self::new([
           f64::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
@@ -218,11 +218,11 @@ define_simd_float! {
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_eq_mask_m128d(self.0, rhs.0) }
+        Self(cmp_eq_mask_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_eq(self.0, rhs.0) }
+        Self(f64x2_eq(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }}
+        unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }}
       } else {
         Self::new([
           if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -236,11 +236,11 @@ define_simd_float! {
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_neq_mask_m128d(self.0, rhs.0) }
+        Self(cmp_neq_mask_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_ne(self.0, rhs.0) }
+        Self(f64x2_ne(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }.not() }
+        unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }.not() }
       } else {
         Self::new([
           if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -254,11 +254,11 @@ define_simd_float! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_lt_mask_m128d(self.0, rhs.0) }
+        Self(cmp_lt_mask_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_lt(self.0, rhs.0) }
+        Self(f64x2_lt(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)) }}
+        unsafe {Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)) }}
       } else {
         Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -272,13 +272,13 @@ define_simd_float! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { sse: cmp_op_mask_m128d::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_m128d::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0) }
       } else if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_gt_mask_m128d(self.0, rhs.0) }
+        Self(cmp_gt_mask_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_gt(self.0, rhs.0) }
+        Self(f64x2_gt(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)) }}
+        unsafe {Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)) }}
       } else {
         Self::new([
           if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -292,11 +292,11 @@ define_simd_float! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_le_mask_m128d(self.0, rhs.0) }
+        Self(cmp_le_mask_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_le(self.0, rhs.0) }
+        Self(f64x2_le(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)) }}
+        unsafe {Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)) }}
       } else {
         Self::new([
           if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -310,11 +310,11 @@ define_simd_float! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_ge_mask_m128d(self.0, rhs.0) }
+        Self(cmp_ge_mask_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_ge(self.0, rhs.0) }
+        Self(f64x2_ge(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)) }}
+        unsafe {Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)) }}
       } else {
         Self::new([
           if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -358,9 +358,9 @@ define_simd_float! {
           ),
         }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_one.0, if_zero.0, self.0) }
+        Self(v128_bitselect(if_one.0, if_zero.0, self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_f64(vreinterpretq_u64_f64(self.0), if_one.0, if_zero.0) }}
+        unsafe {Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_one.0, if_zero.0) }}
       } else {
         generic_bit_blend(self, if_one, if_zero)
       }
@@ -371,11 +371,11 @@ define_simd_float! {
   fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_m128d(if_false.0, if_true.0, self.0) }
+        Self(blend_varying_m128d(if_false.0, if_true.0, self.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_true.0, if_false.0, self.0) }
+        Self(v128_bitselect(if_true.0, if_false.0, self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_f64(vreinterpretq_u64_f64(self.0), if_true.0, if_false.0) }}
+        unsafe {Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_true.0, if_false.0) }}
       } else {
         generic_bit_blend(self, if_true, if_false)
       }
@@ -430,11 +430,11 @@ define_simd_float! {
   pub fn unpack_lo(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_low_m128d(self.0, other.0) }
+        Self(unpack_low_m128d(self.0, other.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<0, 2>(self.0, other.0) }
+        Self(i64x2_shuffle::<0, 2>(self.0, other.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip1q_f64(self.0, other.0) } }
+        Self(unsafe { vzip1q_f64(self.0, other.0) } }
       } else {
         Self::new([self.as_array()[0], other.as_array()[0]])
       }
@@ -445,11 +445,11 @@ define_simd_float! {
   pub fn unpack_hi(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: unpack_high_m128d(self.0, other.0) }
+        Self(unpack_high_m128d(self.0, other.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shuffle::<1, 3>(self.0, other.0) }
+        Self(i64x2_shuffle::<1, 3>(self.0, other.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        Self { neon: unsafe { vzip2q_f64(self.0, other.0) } }
+        Self(unsafe { vzip2q_f64(self.0, other.0) } }
       } else {
         Self::new([self.as_array()[1], other.as_array()[1]])
       }
@@ -478,11 +478,11 @@ define_simd_float! {
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_unord_mask_m128d(self.0, self.0) }
+        Self(cmp_unord_mask_m128d(self.0, self.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_ne(self.0, self.0) }
+        Self(f64x2_ne(self.0, self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, self.0)) }.not() }
+        unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, self.0)) }.not() }
       } else {
         Self::new([
           if self.0.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -571,7 +571,7 @@ define_simd_float! {
         // max_m128d seems to do rhs < self ? self : rhs. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
-        rhs.is_nan().select(self, Self { sse: max_m128d(self.0, rhs.0) })
+        rhs.is_nan().select(self, Self(max_m128d(self.0, rhs.0) })
       } else if #[cfg(target_feature="simd128")] {
         // WASM has two max intrinsics:
         // - max: This propagates NaN, that's the opposite of what we need.
@@ -587,7 +587,7 @@ define_simd_float! {
           )
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxnmq_f64(self.0, rhs.0) }}
+        unsafe {Self(vmaxnmq_f64(self.0, rhs.0) }}
       } else {
         Self::new([
           self.0.arr[0].max(rhs.0.arr[0]),
@@ -601,13 +601,13 @@ define_simd_float! {
   pub fn fast_max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: max_m128d(self.0, rhs.0) }
+        Self(max_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
           simd: f64x2_pmax(self.0, rhs.0),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_f64(self.0, rhs.0) }}
+        unsafe {Self(vmaxq_f64(self.0, rhs.0) }}
       } else {
         Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { rhs.0.arr[0] } else { self.0.arr[0] },
@@ -624,7 +624,7 @@ define_simd_float! {
         // min_m128d seems to do rhs < self ? rhs : self. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
-        rhs.is_nan().select(self, Self { sse: min_m128d(self.0, rhs.0) })
+        rhs.is_nan().select(self, Self(min_m128d(self.0, rhs.0) })
       } else if #[cfg(target_feature="simd128")] {
         // WASM has two min intrinsics:
         // - min: This propagates NaN, that's the opposite of what we need.
@@ -640,7 +640,7 @@ define_simd_float! {
           )
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminnmq_f64(self.0, rhs.0) }}
+        unsafe {Self(vminnmq_f64(self.0, rhs.0) }}
       } else {
         Self::new([
           self.0.arr[0].min(rhs.0.arr[0]),
@@ -654,13 +654,13 @@ define_simd_float! {
   pub fn fast_min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: min_m128d(self.0, rhs.0) }
+        Self(min_m128d(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
         Self {
           simd: f64x2_pmin(self.0, rhs.0),
         }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminq_f64(self.0, rhs.0) }}
+        unsafe {Self(vminq_f64(self.0, rhs.0) }}
       } else {
         Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { self.0.arr[0] } else { rhs.0.arr[0] },
@@ -692,11 +692,11 @@ define_simd_float! {
       if #[cfg(target_feature="sse2")] {
         // For both `min_m128d` and `max_m128d` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { sse: max_m128d(min.0, min_m128d(max.0, self.0)) }
+        Self(max_m128d(min.0, min_m128d(max.0, self.0)) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_max(f64x2_min(self.0, max.0), min.0) }
+        Self(f64x2_max(f64x2_min(self.0, max.0), min.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vmaxq_f64(vminq_f64(self.0, max.0), min.0) } }
+        unsafe { Self(vmaxq_f64(vminq_f64(self.0, max.0), min.0) } }
       } else {
         // The standard library does not have NaN propagating `min` and `max`
         // functions.
@@ -760,9 +760,9 @@ define_simd_float! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_abs(self.0) }
+        Self(f64x2_abs(self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vabsq_f64(self.0) }}
+        unsafe {Self(vabsq_f64(self.0) }}
       } else {
         let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
         self & non_sign_bits
@@ -774,11 +774,11 @@ define_simd_float! {
   pub fn floor(self) -> Self {
     pick! {
       if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_floor(self.0) }
+        Self(f64x2_floor(self.0) }
       } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: floor_m128d(self.0) }
+        Self(floor_m128d(self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vrndmq_f64(self.0) }}
+        unsafe {Self(vrndmq_f64(self.0) }}
       } else if #[cfg(feature="std")] {
         let base: [f64; 2] = cast(self);
         cast(base.map(|val| val.floor()))
@@ -797,11 +797,11 @@ define_simd_float! {
   pub fn ceil(self) -> Self {
     pick! {
       if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_ceil(self.0) }
+        Self(f64x2_ceil(self.0) }
       } else if #[cfg(target_feature="sse4.1")] {
-        Self { sse: ceil_m128d(self.0) }
+        Self(ceil_m128d(self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vrndpq_f64(self.0) }}
+        unsafe {Self(vrndpq_f64(self.0) }}
       } else if #[cfg(feature="std")] {
         let base: [f64; 2] = cast(self);
         cast(base.map(|val| val.ceil()))
@@ -826,7 +826,7 @@ define_simd_float! {
         let self_abs = self.abs();
 
         let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self { sse: round_m128d::<{round_op!(Zero)}>(adjusted_self.0) };
+        let result_abs = Self(round_m128d::<{round_op!(Zero)}>(adjusted_self.0) };
         // The addition breaks for `0.5.next_down()` which incorrectly rounds to
         // `1.0`. This resets the result back to `0.0`.
         let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
@@ -843,13 +843,13 @@ define_simd_float! {
         let self_abs = self.abs();
 
         let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self { simd: f64x2_trunc(adjusted_self.0) };
+        let result_abs = Self(f64x2_trunc(adjusted_self.0) };
         // The addition breaks for `0.5.next_down()` which incorrectly rounds to
         // `1.0`. This resets the result back to `0.0`.
         let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
         // Large value, infinity and NaN need special handling.
-        let bounds_mask = Self { simd: i64x2_lt(self_abs.0, BOUNDS_LIMIT.0) };
+        let bounds_mask = Self(i64x2_lt(self_abs.0, BOUNDS_LIMIT.0) };
 
         // `abs` keeps the original sign.
         bounds_mask.abs().bitselect(result_abs, self)
@@ -895,7 +895,7 @@ define_simd_float! {
         let cast: i64x2 = cast(m128i(unsafe { _mm_cvtpd_epi64(non_nan.0.0) }));
         flip_to_max ^ cast
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtnq_s64_f64(self.0)) } })
+        cast(Self(unsafe { vreinterpretq_f64_s64(vcvtnq_s64_f64(self.0)) } })
       } else {
         let rounded: [f64; 2] = cast(self.round_ties_even());
         cast([rounded[0] as i64, rounded[1] as i64])
@@ -924,9 +924,9 @@ define_simd_float! {
   pub fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128d::<{round_op!(Nearest)}>(self.0) }
+        Self(round_m128d::<{round_op!(Nearest)}>(self.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_nearest(self.0) }
+        Self(f64x2_nearest(self.0) }
       } else {
         const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
         const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
@@ -945,9 +945,9 @@ define_simd_float! {
   pub fn trunc(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: round_m128d::<{round_op!(Zero)}>(self.0) }
+        Self(round_m128d::<{round_op!(Zero)}>(self.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_trunc(self.0) }
+        Self(f64x2_trunc(self.0) }
       } else {
         // There does not seem to be an SSE2 intrinsic for this.
         // `truncate_m128d_to_m128i` truncates to `i32` values which cannot
@@ -988,7 +988,7 @@ define_simd_float! {
         let cast: i64x2 = cast(m128i(unsafe { _mm_cvttpd_epi64(non_nan.0.0) }));
         flip_to_max ^ cast
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        cast(Self { neon: unsafe { vreinterpretq_f64_s64(vcvtq_s64_f64(self.0)) } })
+        cast(Self(unsafe { vreinterpretq_f64_s64(vcvtq_s64_f64(self.0)) } })
       } else {
         // There does not seem to be an intrinsic for `wasm32`.
         let n: [f64;2] = cast(self);
@@ -1025,9 +1025,9 @@ define_simd_float! {
   pub fn mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="fma"))] {
-        Self { sse: fused_mul_add_m128d(self.0, a.0, b.0) }
+        Self(fused_mul_add_m128d(self.0, a.0, b.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f64(b.0, self.0, a.0) } }
+        unsafe { Self(vfmaq_f64(b.0, self.0, a.0) } }
       } else {
         (self * a) + b
       }
@@ -1046,9 +1046,9 @@ define_simd_float! {
   pub fn mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="fma"))] {
-        Self { sse: fused_mul_sub_m128d(self.0, a.0, b.0) }
+        Self(fused_mul_sub_m128d(self.0, a.0, b.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        unsafe { Self { neon: vfmaq_f64(vnegq_f64(b.0), self.0, a.0) } }
+        unsafe { Self(vfmaq_f64(vnegq_f64(b.0), self.0, a.0) } }
       } else {
         (self * a) - b
       }
@@ -1066,9 +1066,9 @@ define_simd_float! {
   pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
         if #[cfg(all(target_feature="fma"))] {
-          Self { sse: fused_mul_neg_add_m128d(self.0, a.0, b.0) }
+          Self(fused_mul_neg_add_m128d(self.0, a.0, b.0) }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-          unsafe { Self { neon: vfmsq_f64(b.0, self.0, a.0) } }
+          unsafe { Self(vfmsq_f64(b.0, self.0, a.0) } }
         } else {
           b - (self * a)
         }
@@ -1087,9 +1087,9 @@ define_simd_float! {
   pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
         if #[cfg(all(target_feature="fma"))] {
-          Self { sse: fused_mul_neg_sub_m128d(self.0, a.0, b.0) }
+          Self(fused_mul_neg_sub_m128d(self.0, a.0, b.0) }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-          unsafe { Self { neon: vnegq_f64(vfmaq_f64(b.0, self.0, a.0)) } }
+          unsafe { Self(vnegq_f64(vfmaq_f64(b.0, self.0, a.0)) } }
         } else {
           -(self * a) - b
         }
@@ -1218,11 +1218,11 @@ define_simd_float! {
   pub fn sqrt(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: sqrt_m128d(self.0) }
+        Self(sqrt_m128d(self.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: f64x2_sqrt(self.0) }
+        Self(f64x2_sqrt(self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vsqrtq_f64(self.0) }}
+        unsafe {Self(vsqrtq_f64(self.0) }}
       } else if #[cfg(feature="std")] {
         Self::new([
           self.0.arr[0].sqrt(),
@@ -2150,11 +2150,11 @@ impl f64x2 {
     pub fn from_i32x4_lower2(v: i32x4) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self { sse: convert_to_m128d_from_lower2_i32_m128i(v.0) }
+            Self(convert_to_m128d_from_lower2_i32_m128i(v.0) }
           } else if #[cfg(target_feature="simd128")] {
-            Self { simd: f64x2_convert_low_i32x4(v.0)}
+            Self(f64x2_convert_low_i32x4(v.0)}
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.0))) }}
+            Self(unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.0))) }}
           } else {
             Self::new([
                 v.as_array()[0] as f64,

@@ -40,7 +40,7 @@ define_simd_float! {
   fn neg(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: bitxor_m256(self.0, Self::splat(-0.0).0) }
+        Self(bitxor_m256(self.0, Self::splat(-0.0).0) }
       } else {
         Self {
           a : self.0.lo.neg(),
@@ -54,7 +54,7 @@ define_simd_float! {
   fn not(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: self.0.not()  }
+        Self(self.0.not()  }
       } else {
         Self {
           a : self.0.lo.not(),
@@ -68,7 +68,7 @@ define_simd_float! {
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: add_m256(self.0, rhs.0) }
+        Self(add_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.add(rhs.0.lo),
@@ -82,7 +82,7 @@ define_simd_float! {
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: sub_m256(self.0, rhs.0) }
+        Self(sub_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.sub(rhs.0.lo),
@@ -96,7 +96,7 @@ define_simd_float! {
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: mul_m256(self.0, rhs.0) }
+        Self(mul_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.mul(rhs.0.lo),
@@ -110,7 +110,7 @@ define_simd_float! {
   fn div(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: div_m256(self.0, rhs.0) }
+        Self(div_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.div(rhs.0.lo),
@@ -138,7 +138,7 @@ define_simd_float! {
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: bitand_m256(self.0, rhs.0) }
+        Self(bitand_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.bitand(rhs.0.lo),
@@ -152,7 +152,7 @@ define_simd_float! {
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: bitor_m256(self.0, rhs.0) }
+        Self(bitor_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.bitor(rhs.0.lo),
@@ -166,7 +166,7 @@ define_simd_float! {
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: bitxor_m256(self.0, rhs.0) }
+        Self(bitxor_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.bitxor(rhs.0.lo),
@@ -180,7 +180,7 @@ define_simd_float! {
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_eq(rhs.0.lo),
@@ -194,7 +194,7 @@ define_simd_float! {
   fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_ne(rhs.0.lo),
@@ -208,7 +208,7 @@ define_simd_float! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_lt(rhs.0.lo),
@@ -222,7 +222,7 @@ define_simd_float! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_gt(rhs.0.lo),
@@ -236,7 +236,7 @@ define_simd_float! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_le(rhs.0.lo),
@@ -250,7 +250,7 @@ define_simd_float! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_ge(rhs.0.lo),
@@ -325,7 +325,7 @@ define_simd_float! {
   fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: blend_varying_m256(if_false.0, if_true.0, self.0) }
+        Self(blend_varying_m256(if_false.0, if_true.0, self.0) }
       } else {
         Self {
           a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -412,14 +412,14 @@ define_simd_float! {
         let b7 = shuffle_m256::<SHUFF_HI>(a5,a7);
 
         [
-          f32x8 { avx: permute2z_m256::<0x20>(b0, b4) },
-          f32x8 { avx: permute2z_m256::<0x20>(b1, b5) },
-          f32x8 { avx: permute2z_m256::<0x20>(b2, b6) },
-          f32x8 { avx: permute2z_m256::<0x20>(b3, b7) },
-          f32x8 { avx: permute2z_m256::<0x31>(b0, b4) },
-          f32x8 { avx: permute2z_m256::<0x31>(b1, b5) },
-          f32x8 { avx: permute2z_m256::<0x31>(b2, b6) },
-          f32x8 { avx: permute2z_m256::<0x31>(b3, b7) }
+          f32x8(permute2z_m256::<0x20>(b0, b4) },
+          f32x8(permute2z_m256::<0x20>(b1, b5) },
+          f32x8(permute2z_m256::<0x20>(b2, b6) },
+          f32x8(permute2z_m256::<0x20>(b3, b7) },
+          f32x8(permute2z_m256::<0x31>(b0, b4) },
+          f32x8(permute2z_m256::<0x31>(b1, b5) },
+          f32x8(permute2z_m256::<0x31>(b2, b6) },
+          f32x8(permute2z_m256::<0x31>(b3, b7) }
         ]
       } else {
         // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
@@ -456,7 +456,7 @@ define_simd_float! {
   pub fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.0, self.0) }
+        Self(cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.0, self.0) }
       } else {
         Self {
           a : self.0.lo.is_nan(),
@@ -508,7 +508,7 @@ define_simd_float! {
   pub fn recip(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: reciprocal_m256(self.0) }
+        Self(reciprocal_m256(self.0) }
       } else {
         Self {
           a : self.0.lo.recip(),
@@ -522,7 +522,7 @@ define_simd_float! {
   pub fn recip_sqrt(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: reciprocal_sqrt_m256(self.0) }
+        Self(reciprocal_sqrt_m256(self.0) }
       } else {
         Self {
           a : self.0.lo.recip_sqrt(),
@@ -539,7 +539,7 @@ define_simd_float! {
         // max_m256 seems to do rhs < self ? self : rhs. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
-        rhs.is_nan().select(self, Self { avx: max_m256(self.0, rhs.0) })
+        rhs.is_nan().select(self, Self(max_m256(self.0, rhs.0) })
       } else {
         Self {
           a : self.0.lo.max(rhs.0.lo),
@@ -554,7 +554,7 @@ define_simd_float! {
   pub fn fast_max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: max_m256(self.0, rhs.0) }
+        Self(max_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.fast_max(rhs.0.lo),
@@ -571,7 +571,7 @@ define_simd_float! {
         // min_m256 seems to do rhs > self ? self : rhs. So if there's any NaN
         // involved, it chooses rhs, so we need to specifically check rhs for
         // NaN.
-        rhs.is_nan().select(self, Self { avx: min_m256(self.0, rhs.0) })
+        rhs.is_nan().select(self, Self(min_m256(self.0, rhs.0) })
       } else {
         Self {
           a : self.0.lo.min(rhs.0.lo),
@@ -585,7 +585,7 @@ define_simd_float! {
   pub fn fast_min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: min_m256(self.0, rhs.0) }
+        Self(min_m256(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.fast_min(rhs.0.lo),
@@ -617,7 +617,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         // For both `min_m256` and `max_m256` if any input is NaN, `rhs` gets
         // chosen. For `self` to be chosen, `self` must be the second argument.
-        Self { avx: max_m256(min.0, min_m256(max.0, self.0)) }
+        Self(max_m256(min.0, min_m256(max.0, self.0)) }
       } else {
         Self {
           a: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
@@ -670,7 +670,7 @@ define_simd_float! {
   pub fn floor(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: floor_m256(self.0) }
+        Self(floor_m256(self.0) }
       } else {
         Self {
           a : self.0.lo.floor(),
@@ -684,7 +684,7 @@ define_simd_float! {
   pub fn ceil(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: ceil_m256(self.0) }
+        Self(ceil_m256(self.0) }
       } else {
         Self {
           a : self.0.lo.ceil(),
@@ -704,7 +704,7 @@ define_simd_float! {
         let self_abs = self.abs();
 
         let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self { avx: round_m256::<{round_op!(Zero)}>(adjusted_self.0) };
+        let result_abs = Self(round_m256::<{round_op!(Zero)}>(adjusted_self.0) };
         // The addition breaks for `0.5.next_down()` which incorrectly rounds to
         // `1.0`. This resets the result back to `0.0`.
         let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
@@ -758,7 +758,7 @@ define_simd_float! {
     pick! {
       // NOTE: Is there an SSE2 version of this? f32x4 version probably translates but I've not had time to figure it out
       if #[cfg(target_feature="avx")] {
-        Self { avx: round_m256::<{round_op!(Nearest)}>(self.0) }
+        Self(round_m256::<{round_op!(Nearest)}>(self.0) }
       } else {
         Self {
           a : self.0.lo.round_ties_even(),
@@ -772,7 +772,7 @@ define_simd_float! {
   pub fn trunc(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: round_m256::<{round_op!(Zero)}>(self.0) }
+        Self(round_m256::<{round_op!(Zero)}>(self.0) }
       } else {
         Self {
           a : self.0.lo.trunc(),
@@ -826,7 +826,7 @@ define_simd_float! {
   pub fn mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-        Self { avx: fused_mul_add_m256(self.0, a.0, b.0) }
+        Self(fused_mul_add_m256(self.0, a.0, b.0) }
       } else if #[cfg(target_feature="avx")] {
         // still want to use 256 bit ops
         (self * a) + b
@@ -850,7 +850,7 @@ define_simd_float! {
   pub fn mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-        Self { avx: fused_mul_sub_m256(self.0, a.0, b.0) }
+        Self(fused_mul_sub_m256(self.0, a.0, b.0) }
       } else if #[cfg(target_feature="avx")] {
         // still want to use 256 bit ops
         (self * a) - b
@@ -874,7 +874,7 @@ define_simd_float! {
   pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-        Self { avx: fused_mul_neg_add_m256(self.0, a.0, b.0) }
+        Self(fused_mul_neg_add_m256(self.0, a.0, b.0) }
       } else if #[cfg(target_feature="avx")] {
         // still want to use 256 bit ops
         b - (self * a)
@@ -898,7 +898,7 @@ define_simd_float! {
   pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-        Self { avx: fused_mul_neg_sub_m256(self.0, a.0, b.0) }
+        Self(fused_mul_neg_sub_m256(self.0, a.0, b.0) }
       } else if #[cfg(target_feature="avx")] {
         // still want to use 256 bit ops
         -(self * a) - b
@@ -1022,7 +1022,7 @@ define_simd_float! {
   pub fn sqrt(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self { avx: sqrt_m256(self.0) }
+        Self(sqrt_m256(self.0) }
       } else {
         Self {
           a : self.0.lo.sqrt(),
@@ -1705,7 +1705,7 @@ impl f32x8 {
     pub fn from_i32x8(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self { avx: convert_to_m256_from_i32_m256i(v.0) }
+            Self(convert_to_m256_from_i32_m256i(v.0) }
           } else {
             Self::new([
                 v.as_array()[0] as f32,

@@ -34,7 +34,7 @@ define_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i32_m256i(rhs.0, self.0) }
+        Self(cmp_gt_mask_i32_m256i(rhs.0, self.0) }
       } else {
         Self {
           a : self.0.lo.simd_lt(rhs.0.lo),
@@ -48,7 +48,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i32_m256i(self.0, rhs.0) }
+        Self(cmp_gt_mask_i32_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.simd_gt(rhs.0.lo),
@@ -92,7 +92,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar
         let shift_by = bitand_m256i(rhs.0, set_splat_i32_m256i(31));
-        Self { avx2: shr_each_i32_m256i(self.0, shift_by ) }
+        Self(shr_each_i32_m256i(self.0, shift_by ) }
       } else {
         Self {
           a : self.0.lo.shr(rhs.0.lo),
@@ -109,7 +109,7 @@ define_simd_signed! {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 31, 0]);
-        Self { avx2: shr_all_i32_m256i(self.0, shift) }
+        Self(shr_all_i32_m256i(self.0, shift) }
       } else {
         Self {
           a : self.0.lo.shr(rhs),
@@ -123,7 +123,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_i32_m256i(self.0, rhs.0) }
+        Self(max_i32_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.max(rhs.0.lo),
@@ -137,7 +137,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: min_i32_m256i(self.0, rhs.0) }
+        Self(min_i32_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.0.lo.min(rhs.0.lo),
@@ -163,7 +163,7 @@ define_simd_signed! {
   pub fn unbounded_shr(self, rhs: u32x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: shr_each_i32_m256i(self.0, rhs.0) }
+        Self(shr_each_i32_m256i(self.0, rhs.0) }
       } else {
         Self {
           a: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -177,7 +177,7 @@ define_simd_signed! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: shr_all_i32_m256i(self.0, cast([rhs as u64, 0])) }
+        Self(shr_all_i32_m256i(self.0, cast([rhs as u64, 0])) }
       } else {
         Self {
           a: self.0.lo.unbounded_shr_scalar(rhs),
@@ -286,8 +286,8 @@ define_simd_signed! {
         let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
 
         (
-          u32x8 { avx2: unpack_low_i64_m256i(ll_hh_1, ll_hh_2) },
-          i32x8 { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) },
+          u32x8(unpack_low_i64_m256i(ll_hh_1, ll_hh_2) },
+          i32x8(unpack_high_i64_m256i(ll_hh_1, ll_hh_2) },
         )
       } else {
         let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
@@ -315,7 +315,7 @@ define_simd_signed! {
         let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
 
-        Self { avx2: unpack_high_i64_m256i(ll_hh_1, ll_hh_2) }
+        Self(unpack_high_i64_m256i(ll_hh_1, ll_hh_2) }
       } else {
         let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
         let [rhs_a, rhs_b] = cast::<i32x8, [i32x4; 2]>(rhs);
@@ -329,7 +329,7 @@ define_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: abs_i32_m256i(self.0) }
+        Self(abs_i32_m256i(self.0) }
       } else {
         Self {
           a : self.0.lo.abs(),
@@ -389,8 +389,8 @@ impl i32x8 {
             i32x8 { avx2:convert_to_i32_m256i_from_i16_m128i(v.0) }
           } else if #[cfg(target_feature="sse2")] {
             i32x8 {
-              a: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0)) },
-              b: i32x4 { sse: shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0)) },
+              a: i32x4(shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0)) },
+              b: i32x4(shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0)) },
             }
           } else {
             i32x8::new([
@@ -416,8 +416,8 @@ impl i32x8 {
             i32x8 { avx2:convert_to_i32_m256i_from_u16_m128i(v.0) }
           } else if #[cfg(target_feature="sse2")] {
             i32x8 {
-              a: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0)) },
-              b: i32x4 { sse: shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0)) },
+              a: i32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0)) },
+              b: i32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0)) },
             }
           } else {
             i32x8::new([
