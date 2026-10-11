@@ -1,50 +1,23 @@
+#[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
+use core::arch::aarch64::*;
+#[cfg(target_feature = "simd128")]
+use core::arch::wasm32::*;
+
 use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="sse")] {
-    /// A SIMD vector with four elements of type [`f32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C, align(16))]
-    #[derive(Clone, Copy)]
-    pub struct f32x4 { pub(crate) sse: m128 }
+    type Inner = m128;
   } else if #[cfg(target_feature="simd128")] {
-    use core::arch::wasm32::*;
-
-    /// A SIMD vector with four elements of type [`f32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct f32x4 { pub(crate) simd: v128 }
+    type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-    use core::arch::aarch64::*;
-
-    /// A SIMD vector with four elements of type [`f32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct f32x4 { pub(crate) neon : float32x4_t }
-    } else {
-    /// A SIMD vector with four elements of type [`f32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
+    type Inner = float32x4_t;
+  } else {
     #[repr(C, align(16))]
     #[derive(Clone, Copy)]
-    pub struct f32x4 { pub(crate) arr: [f32;4] }
+    pub(crate) struct Inner {
+      pub arr: [f32; 4],
+    }
   }
 }
 
@@ -59,6 +32,8 @@ impl_simd_float! {
   unsafe {
     T = f32,
     N = 4,
+    N_STR = "four",
+    SIZE_OF_SELF = 16,
     Simd = f32x4,
     SignedSimd = i32x4,
     UnsignedT = u32,

@@ -2,25 +2,14 @@ use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    /// A SIMD vector with eight elements of type [`i32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C, align(32))]
-    #[derive(Clone, Copy)]
-    pub struct i32x8 { pub(crate) avx2: m256i }
+    type Inner = m256i;
   } else {
-    /// A SIMD vector with eight elements of type [`i32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
     #[repr(C, align(32))]
     #[derive(Clone, Copy)]
-    pub struct i32x8 { pub(crate) a : i32x4, pub(crate) b : i32x4}
+    pub(crate) struct Inner {
+      pub lo: i32x4,
+      pub hi: i32x4,
+    }
   }
 }
 
@@ -28,6 +17,8 @@ impl_simd_signed! {
   unsafe {
     T = i32,
     N = 8,
+    N_STR = "eight",
+    SIZE_OF_SELF = 32,
     Simd = i32x8,
     UnsignedSimd = u32x8,
     T_BITS = 32,

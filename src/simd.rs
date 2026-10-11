@@ -355,6 +355,8 @@ macro_rules! impl_simd {
     unsafe {
       T = $T:ident,
       N = $N:literal,
+      N_STR = $N_STR:literal,
+      SIZE_OF_SELF = $SIZE_OF_SELF:literal,
       Simd = $Simd:ident,
       UnsignedSimd = $UnsignedSimd:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
@@ -393,6 +395,16 @@ macro_rules! impl_simd {
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
   ) => {
+    #[doc = concat!("A SIMD vector with ", $N_STR, " elements of type [`", stringify!($T), "`].")]
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
+    #[repr(transparent)]
+    #[derive(Clone, Copy)]
+    pub struct $Simd(pub(crate) Inner);
+
     impl PartialEq for $Simd {
       #[inline]
       fn eq(&self, other: &Self) -> bool {

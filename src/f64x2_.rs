@@ -1,50 +1,23 @@
+#[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
+use core::arch::aarch64::*;
+#[cfg(target_feature = "simd128")]
+use core::arch::wasm32::*;
+
 use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
-    /// A SIMD vector with two elements of type [`f64`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C, align(16))]
-    #[derive(Clone, Copy)]
-    pub struct f64x2 { pub(crate) sse: m128d }
+    type Inner = m128d;
   } else if #[cfg(target_feature="simd128")] {
-    use core::arch::wasm32::*;
-
-    /// A SIMD vector with two elements of type [`f64`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct f64x2 { pub(crate) simd: v128 }
+    type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-    use core::arch::aarch64::*;
-
-    /// A SIMD vector with two elements of type [`f64`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct f64x2 { pub(crate) neon: float64x2_t }
+    type Inner = float64x2_t;
   } else {
-    /// A SIMD vector with two elements of type [`f64`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
     #[repr(C, align(16))]
     #[derive(Clone, Copy)]
-    pub struct f64x2 { pub(crate) arr: [f64;2] }
+    pub(crate) struct Inner {
+      pub arr: [f64; 2],
+    }
   }
 }
 
@@ -59,6 +32,8 @@ impl_simd_float! {
   unsafe {
     T = f64,
     N = 2,
+    N_STR = "two",
+    SIZE_OF_SELF = 16,
     Simd = f64x2,
     SignedSimd = i64x2,
     UnsignedT = u64,

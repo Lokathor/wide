@@ -1,50 +1,23 @@
+#[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
+use core::arch::aarch64::*;
+#[cfg(target_feature = "simd128")]
+use core::arch::wasm32::*;
+
 use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
-    /// A SIMD vector with four elements of type [`u32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C, align(16))]
-    #[derive(Clone, Copy)]
-    pub struct u32x4 { pub(crate) sse: m128i }
+    type Inner = m128i;
   } else if #[cfg(target_feature="simd128")] {
-    use core::arch::wasm32::*;
-
-    /// A SIMD vector with four elements of type [`u32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct u32x4 { pub(crate) simd: v128 }
+    type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-    use core::arch::aarch64::*;
-
-    /// A SIMD vector with four elements of type [`u32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct u32x4 { pub(crate) neon : uint32x4_t }
-} else {
-    /// A SIMD vector with four elements of type [`u32`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
+    type Inner = uint32x4_t;
+  } else {
     #[repr(C, align(16))]
     #[derive(Clone, Copy)]
-    pub struct u32x4 { arr: [u32;4] }
+    pub(crate) struct Inner {
+      pub arr: [u32; 4],
+    }
   }
 }
 
@@ -52,6 +25,8 @@ impl_simd_unsigned! {
   unsafe {
     T = u32,
     N = 4,
+    N_STR = "four",
+    SIZE_OF_SELF = 16,
     Simd = u32x4,
     SignedSimd = i32x4,
     T_BITS = 32,

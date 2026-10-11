@@ -2,25 +2,14 @@ use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="avx512bw")] {
-    /// A SIMD vector with 64 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C, align(64))]
-    #[derive(Clone, Copy)]
-    pub struct u8x64 { pub(crate) avx512: m512i }
+    type Inner = m512i;
   } else {
-    /// A SIMD vector with 64 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
     #[repr(C, align(64))]
     #[derive(Clone, Copy)]
-    pub struct u8x64 { pub(crate) a : u8x32, pub(crate) b : u8x32 }
+    pub(crate) struct Inner {
+      pub lo: u8x32,
+      pub hi: u8x32,
+    }
   }
 }
 
@@ -28,6 +17,8 @@ impl_simd_unsigned! {
   unsafe {
     T = u8,
     N = 64,
+    N_STR = "64",
+    SIZE_OF_SELF = 64,
     Simd = u8x64,
     SignedSimd = i8x64,
     T_BITS = 8,

@@ -18,6 +18,8 @@ macro_rules! impl_simd_unsigned {
     unsafe {
       T = $T:ident,
       N = $N:literal,
+      N_STR = $N_STR:literal,
+      SIZE_OF_SELF = $SIZE_OF_SELF:literal,
       Simd = $Simd:ident,
       SignedSimd = $SignedSimd:ident,
       T_BITS = $T_BITS:literal,
@@ -91,6 +93,8 @@ macro_rules! impl_simd_unsigned {
       unsafe {
         T = $T,
         N = $N,
+        N_STR = $N_STR,
+        SIZE_OF_SELF = $SIZE_OF_SELF,
         Simd = $Simd,
         UnsignedSimd = $Simd,
         optional_type_x86_inner { $(X86Inner = $X86Inner)? },

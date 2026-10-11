@@ -1,50 +1,23 @@
+#[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
+use core::arch::aarch64::*;
+#[cfg(target_feature = "simd128")]
+use core::arch::wasm32::*;
+
 use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
-    /// A SIMD vector with 16 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C, align(16))]
-    #[derive(Clone, Copy)]
-    pub struct u8x16 { pub(crate) sse: m128i }
+    type Inner = m128i;
   } else if #[cfg(target_feature="simd128")] {
-    use core::arch::wasm32::*;
-
-    /// A SIMD vector with 16 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct u8x16 { pub(crate) simd: v128 }
+    type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-    use core::arch::aarch64::*;
-
-    /// A SIMD vector with 16 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct u8x16 { pub(crate) neon : uint8x16_t }
+    type Inner = uint8x16_t;
   } else {
-    /// A SIMD vector with 16 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
     #[repr(C, align(16))]
     #[derive(Clone, Copy)]
-    pub struct u8x16 { pub(crate) arr: [u8;16] }
+    pub(crate) struct Inner {
+      pub arr: [u8; 16],
+    }
   }
 }
 
@@ -52,6 +25,8 @@ impl_simd_unsigned! {
   unsafe {
     T = u8,
     N = 16,
+    N_STR = "16",
+    SIZE_OF_SELF = 16,
     Simd = u8x16,
     SignedSimd = i8x16,
     T_BITS = 8,
