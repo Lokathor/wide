@@ -15,6 +15,10 @@
   implementation of `serde::Deserialize`. This could slightly change the
   function's behavior
 
+* [#336](https://github.com/Lokathor/wide/pull/336): Move functions shared
+  between unsigned and signed integers into their own `impl` block in
+  documentation
+
 ## 1.7.1
 
 * [#327](https://github.com/Lokathor/wide/pull/327): Fixed `i/u32x4::to_bitmask`
