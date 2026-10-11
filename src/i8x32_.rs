@@ -103,7 +103,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self(max_i8_m256i(self.0,rhs.0) }
+        Self(max_i8_m256i(self.0,rhs.0))
       } else {
         Self {
           a : self.0.lo.max(rhs.0.lo),
@@ -117,7 +117,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self(min_i8_m256i(self.0,rhs.0) }
+        Self(min_i8_m256i(self.0,rhs.0))
       } else {
         Self {
           a : self.0.lo.min(rhs.0.lo),
@@ -162,7 +162,7 @@ define_simd_signed! {
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self(add_saturating_i8_m256i(self.0, rhs.0) }
+        Self(add_saturating_i8_m256i(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.saturating_add(rhs.0.lo),
@@ -176,7 +176,7 @@ define_simd_signed! {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self(sub_saturating_i8_m256i(self.0, rhs.0) }
+        Self(sub_saturating_i8_m256i(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.saturating_sub(rhs.0.lo),
@@ -236,7 +236,7 @@ define_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self(abs_i8_m256i(self.0) }
+        Self(abs_i8_m256i(self.0))
       } else {
         Self {
           a : self.0.lo.abs(),
@@ -292,7 +292,7 @@ impl i8x32 {
     pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shuffle_av_i8z_half_m256i(self.0, add_saturating_u8_m256i(rhs.0, set_splat_i8_m256i(0x70))) }
+            Self(shuffle_av_i8z_half_m256i(self.0, add_saturating_u8_m256i(rhs.0, set_splat_i8_m256i(0x70))))
           } else {
               Self {
                 a : self.0.lo.shuffle_zeroing(rhs.0.lo.cast_unsigned()),
@@ -315,7 +315,7 @@ impl i8x32 {
     pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shuffle_av_i8z_half_m256i(self.0, rhs.0) }
+            Self(shuffle_av_i8z_half_m256i(self.0, rhs.0))
           } else {
             Self {
               a : self.0.lo.shuffle(rhs.0.lo.cast_unsigned()),

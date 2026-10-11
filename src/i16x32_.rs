@@ -37,7 +37,7 @@ define_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
       } else {
         Self {
           a : rhs.0.lo.simd_gt(self.0.lo),
@@ -51,7 +51,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.simd_gt(rhs.0.lo),
@@ -65,7 +65,7 @@ define_simd_signed! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.simd_le(rhs.0.lo),
@@ -79,7 +79,7 @@ define_simd_signed! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.simd_ge(rhs.0.lo),
@@ -101,7 +101,7 @@ define_simd_signed! {
         // Mask `rhs` to 15 to match `wrapping_shr`.
         let rhs = bitand_m512i(rhs.0, set_splat_i16_m512i(15));
         // TODO(safe_arch): Add `_mm512_srav_epi16`.
-        Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0) }) }
+        Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0) }))
       } else {
         let [self_a, self_b]: [i16x16; 2] = cast(self);
         let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
@@ -118,7 +118,7 @@ define_simd_signed! {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs as u16 & 15;
-        Self(shr_all_i16_m512i(self.0, shift) }
+        Self(shr_all_i16_m512i(self.0, shift))
       } else {
         Self {
           a : self.0.lo.shr(rhs),
@@ -132,7 +132,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(max_i16_m512i(self.0, rhs.0) }
+        Self(max_i16_m512i(self.0, rhs.0))
       } else {
         Self {
           a: self.0.lo.max(rhs.0.lo),
@@ -146,7 +146,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(min_i16_m512i(self.0, rhs.0) }
+        Self(min_i16_m512i(self.0, rhs.0))
       } else {
         Self {
           a: self.0.lo.min(rhs.0.lo),
@@ -178,7 +178,7 @@ define_simd_signed! {
         use core::arch::x86_64::_mm512_srav_epi16;
 
         // TODO(safe_arch): Add `_mm512_srav_epi16`.
-        Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0.0) }) }
+        Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0.0) }))
       } else {
         let [self_a, self_b] = cast::<i16x32, [i16x16; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
@@ -194,7 +194,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         // `u32 as u16` truncates the higher half so we need to manually
         // saturate.
-        Self(shr_all_i16_m512i(self.0, rhs.min(u16::MAX as u32) as u16) }
+        Self(shr_all_i16_m512i(self.0, rhs.min(u16::MAX as u32) as u16))
       } else {
         Self {
           a: self.0.lo.unbounded_shr_scalar(rhs),
@@ -208,7 +208,7 @@ define_simd_signed! {
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(add_saturating_i16_m512i(self.0, rhs.0) }
+        Self(add_saturating_i16_m512i(self.0, rhs.0))
       } else {
         Self {
           a: self.0.lo.saturating_add(rhs.0.lo),
@@ -222,7 +222,7 @@ define_simd_signed! {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(sub_saturating_i16_m512i(self.0, rhs.0) }
+        Self(sub_saturating_i16_m512i(self.0, rhs.0))
       } else {
         Self {
           a: self.0.lo.saturating_sub(rhs.0.lo),
@@ -273,7 +273,7 @@ define_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(abs_i16_m512i(self.0) }
+        Self(abs_i16_m512i(self.0))
       } else {
         Self {
           a : self.0.lo.abs(),
@@ -331,7 +331,7 @@ impl i16x32 {
     pub fn from_i8x32(v: i8x32) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(convert_to_i16_m512i_from_i8_m256i(cast(v)) }
+            Self(convert_to_i16_m512i_from_i8_m256i(cast(v)))
           } else {
             let [a, b]: [i8x16; 2] = cast(v);
             Self {
@@ -352,7 +352,7 @@ impl i16x32 {
     pub fn dot(self, rhs: Self) -> i32x16 {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            i32x16(mul_i16_horizontal_add_m512i(self.0, rhs.0) }
+            i32x16(mul_i16_horizontal_add_m512i(self.0, rhs.0))
           } else {
             i32x16 {
               a : self.0.lo.dot(rhs.0.lo),

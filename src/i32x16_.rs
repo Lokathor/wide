@@ -34,7 +34,7 @@ define_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
       } else {
         Self {
           a : rhs.0.lo.simd_gt(self.0.lo),
@@ -48,7 +48,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.simd_gt(rhs.0.lo),
@@ -62,7 +62,7 @@ define_simd_signed! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.simd_le(rhs.0.lo),
@@ -76,7 +76,7 @@ define_simd_signed! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
+        Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
       } else {
         Self {
           a : self.0.lo.simd_ge(rhs.0.lo),
@@ -98,7 +98,7 @@ define_simd_signed! {
         // Mask `rhs` to 31 to match `wrapping_shr`.
         let rhs = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
         // TODO(safe_arch): Add `_mm512_srav_epi32`.
-        Self(m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0) }) }
+        Self(m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0) }))
       } else {
         Self {
           a: self.0.lo >> rhs.0.lo,
@@ -115,7 +115,7 @@ define_simd_signed! {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs & 31;
-        Self(shr_all_i32_m512i(self.0, shift) }
+        Self(shr_all_i32_m512i(self.0, shift))
       } else {
         Self {
           a : self.0.lo.shr(rhs),
@@ -129,7 +129,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self(max_i32_m512i(self.0, rhs.0) }
+        Self(max_i32_m512i(self.0, rhs.0))
       } else {
         Self {
           a: self.0.lo.max(rhs.0.lo),
@@ -143,7 +143,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self(min_i32_m512i(self.0, rhs.0) }
+        Self(min_i32_m512i(self.0, rhs.0))
       } else {
         Self {
           a: self.0.lo.min(rhs.0.lo),
@@ -175,7 +175,7 @@ define_simd_signed! {
         use core::arch::x86_64::_mm512_srav_epi32;
 
         // TODO(safe_arch): Add `_mm512_srav_epi32`.
-        Self(m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0.0) }) }
+        Self(m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0.0) }))
       } else {
         Self {
           a: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -189,7 +189,7 @@ define_simd_signed! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self(shr_all_i32_m512i(self.0, rhs) }
+        Self(shr_all_i32_m512i(self.0, rhs))
       } else {
         Self {
           a: self.0.lo.unbounded_shr_scalar(rhs),
@@ -322,7 +322,7 @@ define_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self(abs_i32_m512i(self.0) }
+        Self(abs_i32_m512i(self.0))
       } else {
         Self {
           a : self.0.lo.abs(),
@@ -379,7 +379,7 @@ impl i32x16 {
     pub fn from_i16x16(v: i16x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(convert_to_i32_m512i_from_i16_m256i(v.0) }
+            Self(convert_to_i32_m512i_from_i16_m256i(v.0))
           } else {
             let [a, b]: [i16x8; 2] = cast(v);
             Self {
