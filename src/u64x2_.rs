@@ -379,12 +379,7 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.0, self.0),
-            bitandnot_m128i(self.0, if_zero.0),
-          ),
-        }
+        Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
       } else if #[cfg(target_feature="simd128")] {
         Self(v128_bitselect(if_one.0, if_zero.0, self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -832,12 +827,10 @@ define_simd_unsigned! {
           Self(vshlq_u64(self.0, vmovq_n_s64(-rhs.min(64).cast_signed() as i64)))
         }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].unbounded_shr(rhs),
             self.0.arr[1].unbounded_shr(rhs),
-          ],
-        }
+        ])
       }
     }
   }
@@ -853,12 +846,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqaddq_u64(self.0, rhs.0)) }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].saturating_add(rhs.0.arr[0]),
             self.0.arr[1].saturating_add(rhs.0.arr[1]),
-          ],
-        }
+        ])
       }
     }
   }
@@ -874,12 +865,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_u64(self.0, rhs.0)) }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].saturating_sub(rhs.0.arr[0]),
             self.0.arr[1].saturating_sub(rhs.0.arr[1]),
-          ],
-        }
+        ])
       }
     }
   }

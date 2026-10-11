@@ -247,9 +247,7 @@ define_simd_signed! {
             shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
           );
           let even_then_odd = cast::<[m256i; 2], m512i>([even_wide_mul, odd_wide_mul]);
-          i64x8 {
-            avx512: permute_i64_m512i(SHUFFLE_INDICES, even_then_odd),
-          }
+          i64x8(permute_i64_m512i(SHUFFLE_INDICES, even_then_odd))
         } else if #[cfg(target_feature="avx2")] {
           let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
           let odd_wide_mul = mul_i64_low_bits_m256i(
@@ -386,7 +384,7 @@ impl i32x8 {
     pub fn from_i16x8(v: i16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i32x8 { avx2:convert_to_i32_m256i_from_i16_m128i(v.0) }
+            i32x8(convert_to_i32_m256i_from_i16_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
             i32x8 {
               a: i32x4(shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
@@ -413,7 +411,7 @@ impl i32x8 {
     pub fn from_u16x8(v: u16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i32x8 { avx2:convert_to_i32_m256i_from_u16_m128i(v.0) }
+            i32x8(convert_to_i32_m256i_from_u16_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
             i32x8 {
               a: i32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),

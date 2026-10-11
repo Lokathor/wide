@@ -327,12 +327,10 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self {
-          avx2: bitor_m256i(
+        Self(bitor_m256i(
             bitand_m256i(if_one.0, self.0),
             bitandnot_m256i(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
@@ -926,9 +924,7 @@ impl u64x4 {
           if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.
             if W == 52 {
-              return Self {
-                avx2: add_mul_low_u52_m256i(self.0, a.0, b.0),
-              };
+              return Self(add_mul_low_u52_m256i(self.0, a.0, b.0));
             }
           }
         }
@@ -957,9 +953,7 @@ impl u64x4 {
           if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.
             if W == 52 {
-              return Self {
-                avx2: add_mul_high_u52_m256i(self.0, a.0, b.0),
-              };
+              return Self(add_mul_high_u52_m256i(self.0, a.0, b.0));
             }
           }
         }

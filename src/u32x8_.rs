@@ -297,12 +297,10 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self {
-          avx2: bitor_m256i(
+        Self(bitor_m256i(
             bitand_m256i(if_one.0, self.0),
             bitandnot_m256i(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
@@ -821,9 +819,7 @@ define_simd_unsigned! {
             shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
           );
           let even_then_odd = cast::<[m256i; 2], m512i>([even_wide_mul, odd_wide_mul]);
-          u64x8 {
-            avx512: permute_i64_m512i(SHUFFLE_INDICES, even_then_odd),
-          }
+          u64x8(permute_i64_m512i(SHUFFLE_INDICES, even_then_odd))
         } else {
           let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);
           let [rhs_a, rhs_b] = cast::<u32x8, [u32x4; 2]>(rhs);
@@ -919,7 +915,7 @@ impl From<u16x8> for u32x8 {
     fn from(v: u16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self { avx2:convert_to_i32_m256i_from_u16_m128i(v.0) }
+            Self(convert_to_i32_m256i_from_u16_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
             Self {
               a: u32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),

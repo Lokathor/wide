@@ -258,13 +258,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
         unsafe {
           use core::arch::aarch64::*;
-          Self {
-            neon: vcgtq_u16(self.0, rhs.0),
-          }
+          Self(vcgtq_u16(self.0, rhs.0))
         }
       } else {
-        Self {
-          arr: [
+        Self::new([
             if self.0.arr[0] > rhs.0.arr[0] { u16::MAX } else { 0 },
             if self.0.arr[1] > rhs.0.arr[1] { u16::MAX } else { 0 },
             if self.0.arr[2] > rhs.0.arr[2] { u16::MAX } else { 0 },
@@ -273,8 +270,7 @@ define_simd_unsigned! {
             if self.0.arr[5] > rhs.0.arr[5] { u16::MAX } else { 0 },
             if self.0.arr[6] > rhs.0.arr[6] { u16::MAX } else { 0 },
             if self.0.arr[7] > rhs.0.arr[7] { u16::MAX } else { 0 },
-          ]
-        }
+        ])
       }
     }
   }
@@ -484,12 +480,7 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.0, self.0),
-            bitandnot_m128i(self.0, if_zero.0),
-          ),
-        }
+        Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
       } else if #[cfg(target_feature="simd128")] {
         Self(v128_bitselect(if_one.0, if_zero.0, self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -715,11 +706,7 @@ define_simd_unsigned! {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm_permutex2var_epi16;
         // TODO(safe_arch): add `_mm_permutex2var_epi16`.
-        u16x8 {
-          sse: unsafe {
-            m128i(_mm_permutex2var_epi16(self[0].0.0, indices.0.0, self[1].0.0))
-          },
-        }
+        u16x8(unsafe { m128i(_mm_permutex2var_epi16(self[0].0.0, indices.0.0, self[1].0.0)) })
       } else {
         let self_bytes = cast::<[u16x8; 2], [u8x16; 2]>(self);
         let byte_indices = indices.to_byte_indices();
@@ -1275,8 +1262,7 @@ define_simd_unsigned! {
           Self(vshlq_u16(self.0, vmovq_n_s16(-rhs.min(16).cast_signed() as i16)))
         }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].unbounded_shr(rhs),
             self.0.arr[1].unbounded_shr(rhs),
             self.0.arr[2].unbounded_shr(rhs),
@@ -1285,8 +1271,7 @@ define_simd_unsigned! {
             self.0.arr[5].unbounded_shr(rhs),
             self.0.arr[6].unbounded_shr(rhs),
             self.0.arr[7].unbounded_shr(rhs),
-          ],
-        }
+        ])
       }
     }
   }
@@ -1358,8 +1343,8 @@ define_simd_unsigned! {
           let low = mul_i16_keep_low_m128i(self.0, rhs.0);
           let high = mul_u16_keep_high_m128i(self.0, rhs.0);
           u32x8 {
-            a: u32x4 { sse:unpack_low_i16_m128i(low, high) },
-            b: u32x4 { sse:unpack_high_i16_m128i(low, high) }
+            a: u32x4(unpack_low_i16_m128i(low, high)),
+            b: u32x4(unpack_high_i16_m128i(low, high))
           }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
           let lhs_low = unsafe { vget_low_u16(self.0) };
@@ -1371,7 +1356,7 @@ define_simd_unsigned! {
           let low = unsafe { vmull_u16(lhs_low, rhs_low) };
           let high = unsafe { vmull_u16(lhs_high, rhs_high) };
 
-          u32x8 { a: u32x4(low), b: u32x4 {neon: high } }
+          u32x8 { a: u32x4(low), b: u32x4(high) }
         } else {
           let a = self.as_array();
           let b = rhs.as_array();
@@ -1505,7 +1490,7 @@ impl u16x8 {
     pub fn from_u8x16_low(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self{ sse: unpack_low_i8_m128i(u.0, m128i::zeroed()) }
+            Self(unpack_low_i8_m128i(u.0, m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -1529,7 +1514,7 @@ impl u16x8 {
     pub fn from_u8x16_high(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self{ sse: unpack_high_i8_m128i(u.0, m128i::zeroed()) }
+            Self(unpack_high_i8_m128i(u.0, m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([

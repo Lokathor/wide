@@ -338,8 +338,7 @@ define_simd_signed! {
           Self(vshlq_s16(self.0, vmovq_n_s16(-rhs.min(16).cast_signed() as i16)))
         }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].unbounded_shr(rhs),
             self.0.arr[1].unbounded_shr(rhs),
             self.0.arr[2].unbounded_shr(rhs),
@@ -348,8 +347,7 @@ define_simd_signed! {
             self.0.arr[5].unbounded_shr(rhs),
             self.0.arr[6].unbounded_shr(rhs),
             self.0.arr[7].unbounded_shr(rhs),
-          ]
-        }
+        ])
       }
     }
   }
@@ -423,8 +421,8 @@ define_simd_signed! {
           let low = mul_i16_keep_low_m128i(self.0, rhs.0);
           let high = mul_i16_keep_high_m128i(self.0, rhs.0);
           i32x8 {
-            a: i32x4 { sse:unpack_low_i16_m128i(low, high) },
-            b: i32x4 { sse:unpack_high_i16_m128i(low, high) }
+            a: i32x4(unpack_low_i16_m128i(low, high)),
+            b: i32x4(unpack_high_i16_m128i(low, high))
           }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
           let lhs_low = unsafe { vget_low_s16(self.0) };
@@ -436,7 +434,7 @@ define_simd_signed! {
           let low = unsafe { vmull_s16(lhs_low, rhs_low) };
           let high = unsafe { vmull_s16(lhs_high, rhs_high) };
 
-          i32x8 { a: i32x4(low), b: i32x4 {neon: high } }
+          i32x8 { a: i32x4(low), b: i32x4(high) }
         } else {
           let a = self.as_array();
           let b = rhs.as_array();
@@ -539,14 +537,12 @@ define_simd_signed! {
         let low = unsafe { vmull_s16(lhs_low, rhs_low) };
         let high = unsafe { vmull_s16(lhs_high, rhs_high) };
 
-        Self {
-          neon: unsafe {
-            vreinterpretq_s16_u16(
-              vuzpq_u16(vreinterpretq_u16_s32(low),
-              vreinterpretq_u16_s32(high)).1
-            )
-          }
-        }
+        Self(unsafe {
+          vreinterpretq_s16_u16(
+            vuzpq_u16(vreinterpretq_u16_s32(low),
+            vreinterpretq_u16_s32(high)).1
+          )
+        })
       } else if #[cfg(target_feature="simd128")] {
         let low =  i32x4_extmul_low_i16x8(self.0, rhs.0);
         let high = i32x4_extmul_high_i16x8(self.0, rhs.0);
@@ -629,7 +625,7 @@ impl i16x8 {
     pub fn from_u8x16_low(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self{ sse: unpack_low_i8_m128i(u.0, m128i::zeroed()) }
+            Self(unpack_low_i8_m128i(u.0, m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -653,7 +649,7 @@ impl i16x8 {
     pub fn from_u8x16_high(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self{ sse: unpack_high_i8_m128i(u.0, m128i::zeroed()) }
+            Self(unpack_high_i8_m128i(u.0, m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -791,12 +787,12 @@ impl i16x8 {
               i32x4(vpaddq_s32(pl, ph))
             }
           } else {
-            i32x4 { arr: [
+            i32x4::new([
               (i32::from(self.0.arr[0]) * i32::from(rhs.0.arr[0])) + (i32::from(self.0.arr[1]) * i32::from(rhs.0.arr[1])),
               (i32::from(self.0.arr[2]) * i32::from(rhs.0.arr[2])) + (i32::from(self.0.arr[3]) * i32::from(rhs.0.arr[3])),
               (i32::from(self.0.arr[4]) * i32::from(rhs.0.arr[4])) + (i32::from(self.0.arr[5]) * i32::from(rhs.0.arr[5])),
               (i32::from(self.0.arr[6]) * i32::from(rhs.0.arr[6])) + (i32::from(self.0.arr[7]) * i32::from(rhs.0.arr[7])),
-            ] }
+            ])
           }
         }
     }

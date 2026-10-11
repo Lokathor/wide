@@ -242,13 +242,11 @@ define_simd_unsigned! {
 
             // TODO(safe_arch): Add `_mm512_mask_set1_epi64`
             unsafe {
-              Self {
-                avx512: m512i(_mm512_mask_set1_epi64(
+              Self(m512i(_mm512_mask_set1_epi64(
                   self.0.0,
                   const { 1 << INDEX },
                   value.cast_signed(),
-                )),
-              }
+              )))
             }
           } else {
             let [self_a, self_b] = cast::<u64x8, [u64x4; 2]>(self);
@@ -346,12 +344,10 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self {
-          avx512: bitor_m512i(
+        Self(bitor_m512i(
             bitand_m512i(if_one.0, self.0),
             bitandnot_m512i(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
@@ -934,9 +930,7 @@ impl u64x8 {
           if #[cfg(target_feature="avx512ifma")] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.
             if W == 52 {
-              return Self {
-                avx512: add_mul_low_u52_m512i(self.0, a.0, b.0),
-              };
+              return Self(add_mul_low_u52_m512i(self.0, a.0, b.0));
             }
           }
         }
@@ -965,9 +959,7 @@ impl u64x8 {
           if #[cfg(target_feature="avx512ifma")] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.
             if W == 52 {
-              return Self {
-                avx512: add_mul_high_u52_m512i(self.0, a.0, b.0),
-              };
+              return Self(add_mul_high_u52_m512i(self.0, a.0, b.0));
             }
           }
         }

@@ -268,12 +268,8 @@ define_simd_signed! {
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
         // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
         (
-          u32x16 {
-            avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
-          },
-          i32x16 {
-            avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
-          },
+          u32x16(m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) })),
+          i32x16(m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) })),
         )
       } else {
         let [self_a, self_b] = cast::<i32x16, [i32x8; 2]>(self);
@@ -306,9 +302,7 @@ define_simd_signed! {
         let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
         // TODO(safe_arch): Add `_mm512_unpackhi_epi64`.
-        Self {
-          avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
-        }
+        Self(m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }))
       } else {
         let [self_a, self_b] = cast::<i32x16, [i32x8; 2]>(self);
         let [rhs_a, rhs_b] = cast::<i32x16, [i32x8; 2]>(rhs);

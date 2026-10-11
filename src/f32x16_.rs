@@ -295,12 +295,10 @@ define_simd_float! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self {
-          avx512: bitor_m512(
+        Self(bitor_m512(
             bitand_m512(if_one.0, self.0),
             bitandnot_m512(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),

@@ -355,12 +355,7 @@ define_simd_float! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128(
-            bitand_m128(if_one.0, self.0),
-            bitandnot_m128(self.0, if_zero.0),
-          ),
-        }
+        Self(bitor_m128(bitand_m128(if_one.0, self.0), bitandnot_m128(self.0, if_zero.0)))
       } else if #[cfg(target_feature="simd128")] {
         Self(v128_bitselect(if_one.0, if_zero.0, self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -444,9 +439,7 @@ define_simd_float! {
       if #[cfg(target_feature="sse")] {
         Self(unpack_low_m128(self.0, other.0))
       } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: u32x4_shuffle::<0, 4, 1, 5>(self.0, other.0)
-        }
+        Self(u32x4_shuffle::<0, 4, 1, 5>(self.0, other.0))
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))]{
         unsafe {Self(vzip1q_f32(self.0, other.0))}
       } else {
@@ -466,9 +459,7 @@ define_simd_float! {
       if #[cfg(target_feature="sse")] {
         Self(unpack_high_m128(self.0, other.0))
       } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: u32x4_shuffle::<2, 6, 3, 7>(self.0, other.0)
-        }
+        Self(u32x4_shuffle::<2, 6, 3, 7>(self.0, other.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vzip2q_f32(self.0, other.0))}
       } else {
@@ -649,13 +640,11 @@ define_simd_float! {
         //   chooses self if either is NaN.
         //
         // pmax is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd: v128_bitselect(
-            rhs.0,
-            f32x4_pmax(self.0, rhs.0),
-            f32x4_ne(self.0, self.0), // NaN check
-          )
-        }
+        Self(v128_bitselect(
+          rhs.0,
+          f32x4_pmax(self.0, rhs.0),
+          f32x4_ne(self.0, self.0), // NaN check
+        ))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxnmq_f32(self.0, rhs.0))}
       } else {
@@ -675,9 +664,7 @@ define_simd_float! {
       if #[cfg(target_feature="sse")] {
         Self(max_m128(self.0, rhs.0))
       } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: f32x4_pmax(self.0, rhs.0),
-        }
+        Self(f32x4_pmax(self.0, rhs.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxq_f32(self.0, rhs.0))}
       } else {
@@ -706,13 +693,11 @@ define_simd_float! {
         //   chooses self if either is NaN.
         //
         // pmin is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd: v128_bitselect(
-            rhs.0,
-            f32x4_pmin(self.0, rhs.0),
-            f32x4_ne(self.0, self.0), // NaN check
-          )
-        }
+        Self(v128_bitselect(
+          rhs.0,
+          f32x4_pmin(self.0, rhs.0),
+          f32x4_ne(self.0, self.0), // NaN check
+        ))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminnmq_f32(self.0, rhs.0))}
       } else {
@@ -732,9 +717,7 @@ define_simd_float! {
       if #[cfg(target_feature="sse")] {
         Self(min_m128(self.0, rhs.0))
       } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: f32x4_pmin(self.0, rhs.0),
-        }
+        Self(f32x4_pmin(self.0, rhs.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminq_f32(self.0, rhs.0))}
       } else {
@@ -886,15 +869,11 @@ define_simd_float! {
           self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
         );
 
-        let self_trunc = Self {
-          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.0)),
-        };
+        let self_trunc = Self(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.0)));
 
         let gt_self = self_trunc.simd_gt(self);
         // This is a faster way to compute `gt_self.select(0.0, -1.0)`
-        let offset = Self {
-          sse: convert_to_m128_from_i32_m128i(cast(gt_self)),
-        };
+        let offset = Self(convert_to_m128_from_i32_m128i(cast(gt_self)));
 
         let result = self_trunc + offset;
         in_bounds.abs().bitselect(result, self)
@@ -936,15 +915,11 @@ define_simd_float! {
           self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
         );
 
-        let self_trunc = Self {
-          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.0)),
-        };
+        let self_trunc = Self(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.0)));
 
         let lt_self = self_trunc.simd_lt(self);
         // This is a faster way to compute `lt_self.select(0.0, -1.0)`
-        let offset = Self {
-          sse: convert_to_m128_from_i32_m128i(cast(lt_self)),
-        };
+        let offset = Self(convert_to_m128_from_i32_m128i(cast(lt_self)));
 
         let result = self_trunc - offset;
         in_bounds.abs().bitselect(result, self)
@@ -991,9 +966,9 @@ define_simd_float! {
         let self_abs = self.abs();
 
         let adjusted_self = self_abs + Self::HALF;
-        let result_abs = Self {
-          sse: convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(adjusted_self.0)),
-        };
+        let result_abs = Self(
+          convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(adjusted_self.0)),
+        );
         // The addition breaks for `0.5.next_down()` which incorrectly rounds to
         // `1.0`. This resets the result back to `0.0`.
         let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);

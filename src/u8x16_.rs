@@ -482,9 +482,7 @@ define_simd_unsigned! {
               $($INDEX => {
                 let value = set_i32_m128i_s(value as i32);
                 // TODO(safe_arch): Add `_mm_slli_si128`
-                let shifted_value = Self {
-                  sse: m128i(unsafe { _mm_slli_si128::<$INDEX>(value.0) }),
-                };
+                let shifted_value = Self(m128i(unsafe { _mm_slli_si128::<$INDEX>(value.0) }));
 
                 replace_mask.select(shifted_value, self)
               })*
@@ -664,12 +662,7 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.0, self.0),
-            bitandnot_m128i(self.0, if_zero.0),
-          ),
-        }
+        Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
       } else if #[cfg(target_feature="simd128")] {
         Self(v128_bitselect(if_one.0, if_zero.0, self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -863,12 +856,10 @@ define_simd_unsigned! {
   pub fn shuffle_zeroing(self, indices: u8x16) -> Self {
     pick! {
       if #[cfg(target_feature="ssse3")] {
-        Self {
-          sse: shuffle_av_i8z_all_m128i(
-            self.0,
-            add_saturating_u8_m128i(indices.0, set_splat_i8_m128i(0x70)),
-          ),
-        }
+        Self(shuffle_av_i8z_all_m128i(
+          self.0,
+          add_saturating_u8_m128i(indices.0, set_splat_i8_m128i(0x70)),
+        ))
       } else if #[cfg(target_feature="simd128")] {
         Self(i8x16_swizzle(self.0, indices.0))
       } else {
@@ -905,11 +896,7 @@ define_simd_unsigned! {
         use core::arch::x86_64::_mm_permutex2var_epi8;
 
         // TODO(safe_arch): add `_mm_permutex2var_epi8`.
-        u8x16 {
-          sse: unsafe {
-            m128i(_mm_permutex2var_epi8(self[0].0.0, indices.0.0, self[1].0.0))
-          },
-        }
+        u8x16(unsafe { m128i(_mm_permutex2var_epi8(self[0].0.0, indices.0.0, self[1].0.0)) })
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         let table = uint8x16x2_t(self[0].0, self[1].0);
         unsafe { u8x16(vqtbl2q_u8(table, indices.0)) }

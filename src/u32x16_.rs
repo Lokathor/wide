@@ -234,13 +234,11 @@ define_simd_unsigned! {
 
             // TODO(safe_arch): Add `_mm512_mask_set1_epi32`
             unsafe {
-              Self {
-                avx512: m512i(_mm512_mask_set1_epi32(
+              Self(m512i(_mm512_mask_set1_epi32(
                   self.0.0,
                   const { 1 << INDEX },
                   value.cast_signed(),
-                )),
-              }
+              )))
             }
           } else {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
@@ -345,12 +343,10 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self {
-          avx512: bitor_m512i(
+        Self(bitor_m512i(
             bitand_m512i(if_one.0, self.0),
             bitandnot_m512i(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
@@ -818,12 +814,8 @@ define_simd_unsigned! {
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
         // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
         (
-          Self {
-            avx512: m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) }),
-          },
-          Self {
-            avx512: m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }),
-          },
+          Self(m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) })),
+          Self(m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) })),
         )
       } else {
         let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
@@ -880,9 +872,7 @@ impl From<u16x16> for u32x16 {
     fn from(v: u16x16) -> Self {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
-            Self {
-              avx512: convert_to_u32_m512i_from_u16_m256i(v.0)
-            }
+            Self(convert_to_u32_m512i_from_u16_m256i(v.0))
           } else if #[cfg(target_feature = "avx2")] {
             let lo: m128i = extract_m128i_from_m256i::<0>(v.0);
             let hi: m128i = extract_m128i_from_m256i::<1>(v.0);
@@ -893,20 +883,12 @@ impl From<u16x16> for u32x16 {
           } else if #[cfg(target_feature = "sse2")] {
             Self {
               a: u32x8 {
-                a: u32x4 {
-                  sse: shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.lo.0, v.0.lo.0))
-                },
-                b: u32x4 {
-                  sse: shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.lo.0, v.0.lo.0))
-                },
+                a: u32x4(shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.lo.0, v.0.lo.0))),
+                b: u32x4(shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.lo.0, v.0.lo.0))),
               },
               b: u32x8 {
-                a: u32x4 {
-                  sse: shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.hi.0, v.0.hi.0))
-                },
-                b: u32x4 {
-                  sse: shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.hi.0, v.0.hi.0))
-                },
+                a: u32x4(shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.hi.0, v.0.hi.0))),
+                b: u32x4(shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.hi.0, v.0.hi.0))),
               },
             }
           } else {

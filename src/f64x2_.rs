@@ -351,12 +351,7 @@ define_simd_float! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128d(
-            bitand_m128d(if_one.0, self.0),
-            bitandnot_m128d(self.0, if_zero.0),
-          ),
-        }
+        Self(bitor_m128d(bitand_m128d(if_one.0, self.0), bitandnot_m128d(self.0, if_zero.0)))
       } else if #[cfg(target_feature="simd128")] {
         Self(v128_bitselect(if_one.0, if_zero.0, self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -579,13 +574,11 @@ define_simd_float! {
         //   chooses self if either is NaN.
         //
         // pmax is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd: v128_bitselect(
-            rhs.0,
-            f64x2_pmax(self.0, rhs.0),
-            f64x2_ne(self.0, self.0), // NaN check
-          )
-        }
+        Self(v128_bitselect(
+          rhs.0,
+          f64x2_pmax(self.0, rhs.0),
+          f64x2_ne(self.0, self.0), // NaN check
+        ))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxnmq_f64(self.0, rhs.0))}
       } else {
@@ -603,9 +596,7 @@ define_simd_float! {
       if #[cfg(target_feature="sse2")] {
         Self(max_m128d(self.0, rhs.0))
       } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: f64x2_pmax(self.0, rhs.0),
-        }
+        Self(f64x2_pmax(self.0, rhs.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxq_f64(self.0, rhs.0))}
       } else {
@@ -632,13 +623,11 @@ define_simd_float! {
         //   chooses self if either is NaN.
         //
         // pmin is what we want, but we need to specifically check self for NaN.
-        Self {
-          simd: v128_bitselect(
-            rhs.0,
-            f64x2_pmin(self.0, rhs.0),
-            f64x2_ne(self.0, self.0), // NaN check
-          )
-        }
+        Self(v128_bitselect(
+          rhs.0,
+          f64x2_pmin(self.0, rhs.0),
+          f64x2_ne(self.0, self.0), // NaN check
+        ))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminnmq_f64(self.0, rhs.0))}
       } else {
@@ -656,9 +645,7 @@ define_simd_float! {
       if #[cfg(target_feature="sse2")] {
         Self(min_m128d(self.0, rhs.0))
       } else if #[cfg(target_feature="simd128")] {
-        Self {
-          simd: f64x2_pmin(self.0, rhs.0),
-        }
+        Self(f64x2_pmin(self.0, rhs.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminq_f64(self.0, rhs.0))}
       } else {

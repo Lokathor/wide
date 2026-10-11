@@ -234,13 +234,11 @@ define_simd_unsigned! {
 
             // TODO(safe_arch): Add `_mm512_mask_set1_epi16`
             unsafe {
-              Self {
-                avx512: m512i(_mm512_mask_set1_epi16(
+              Self(m512i(_mm512_mask_set1_epi16(
                   self.0.0,
                   const { 1 << INDEX },
                   value.cast_signed(),
-                )),
-              }
+              )))
             }
           } else {
             let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
@@ -351,12 +349,10 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self {
-          avx512: bitor_m512i(
+        Self(bitor_m512i(
             bitand_m512i(if_one.0, self.0),
             bitandnot_m512i(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
@@ -489,11 +485,9 @@ define_simd_unsigned! {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm512_permutex2var_epi16;
         // TODO(safe_arch): add `_mm512_permutex2var_epi16`.
-        u16x32 {
-          avx512: unsafe {
+        u16x32(unsafe {
             m512i(_mm512_permutex2var_epi16(self[0].0.0, indices.0.0, self[1].0.0))
-          },
-        }
+        })
       } else {
         self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
       }

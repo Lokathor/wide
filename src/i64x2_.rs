@@ -242,12 +242,10 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqaddq_s64(self.0, rhs.0)) }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].saturating_add(rhs.0.arr[0]),
             self.0.arr[1].saturating_add(rhs.0.arr[1]),
-          ],
-        }
+        ])
       }
     }
   }
@@ -265,12 +263,10 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_s64(self.0, rhs.0)) }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].saturating_sub(rhs.0.arr[0]),
             self.0.arr[1].saturating_sub(rhs.0.arr[1]),
-          ],
-        }
+        ])
       }
     }
   }

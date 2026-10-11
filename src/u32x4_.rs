@@ -417,12 +417,7 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self {
-          sse: bitor_m128i(
-            bitand_m128i(if_one.0, self.0),
-            bitandnot_m128i(self.0, if_zero.0),
-          ),
-        }
+        Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
       } else if #[cfg(target_feature="simd128")] {
         Self(v128_bitselect(if_one.0, if_zero.0, self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -966,14 +961,12 @@ define_simd_unsigned! {
           Self(vshlq_u32(self.0, vmovq_n_s32(-rhs.min(32).cast_signed())))
         }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].unbounded_shr(rhs),
             self.0.arr[1].unbounded_shr(rhs),
             self.0.arr[2].unbounded_shr(rhs),
             self.0.arr[3].unbounded_shr(rhs),
-          ],
-        }
+        ])
       }
     }
   }
@@ -989,14 +982,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqaddq_u32(self.0, rhs.0)) }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].saturating_add(rhs.0.arr[0]),
             self.0.arr[1].saturating_add(rhs.0.arr[1]),
             self.0.arr[2].saturating_add(rhs.0.arr[2]),
             self.0.arr[3].saturating_add(rhs.0.arr[3]),
-          ],
-        }
+        ])
       }
     }
   }
@@ -1012,14 +1003,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_u32(self.0, rhs.0)) }
       } else {
-        Self {
-          arr: [
+        Self::new([
             self.0.arr[0].saturating_sub(rhs.0.arr[0]),
             self.0.arr[1].saturating_sub(rhs.0.arr[1]),
             self.0.arr[2].saturating_sub(rhs.0.arr[2]),
             self.0.arr[3].saturating_sub(rhs.0.arr[3]),
-          ],
-        }
+        ])
       }
     }
   }
@@ -1307,31 +1296,29 @@ impl u32x4 {
                 // Fallback
                 else {
                   unsafe {
-                    Self {
-                      neon: vreinterpretq_u32_u8(vqtbl1q_u8(
-                        vreinterpretq_u8_u32(self.0),
-                        const {
-                          transmute::<[u8; 16], uint8x16_t>([
-                            I0 as u8 * 4,
-                            I0 as u8 * 4 + 1,
-                            I0 as u8 * 4 + 2,
-                            I0 as u8 * 4 + 3,
-                            I1 as u8 * 4,
-                            I1 as u8 * 4 + 1,
-                            I1 as u8 * 4 + 2,
-                            I1 as u8 * 4 + 3,
-                            I2 as u8 * 4,
-                            I2 as u8 * 4 + 1,
-                            I2 as u8 * 4 + 2,
-                            I2 as u8 * 4 + 3,
-                            I3 as u8 * 4,
-                            I3 as u8 * 4 + 1,
-                            I3 as u8 * 4 + 2,
-                            I3 as u8 * 4 + 3,
-                          ])
-                        },
-                      )),
-                    }
+                    Self(vreinterpretq_u32_u8(vqtbl1q_u8(
+                      vreinterpretq_u8_u32(self.0),
+                      const {
+                        transmute::<[u8; 16], uint8x16_t>([
+                          I0 as u8 * 4,
+                          I0 as u8 * 4 + 1,
+                          I0 as u8 * 4 + 2,
+                          I0 as u8 * 4 + 3,
+                          I1 as u8 * 4,
+                          I1 as u8 * 4 + 1,
+                          I1 as u8 * 4 + 2,
+                          I1 as u8 * 4 + 3,
+                          I2 as u8 * 4,
+                          I2 as u8 * 4 + 1,
+                          I2 as u8 * 4 + 2,
+                          I2 as u8 * 4 + 3,
+                          I3 as u8 * 4,
+                          I3 as u8 * 4 + 1,
+                          I3 as u8 * 4 + 2,
+                          I3 as u8 * 4 + 3,
+                        ])
+                      },
+                    )))
                   }
                 }
               } else if #[cfg(target_feature = "simd128")] {

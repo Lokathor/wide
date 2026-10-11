@@ -42,7 +42,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_gt_mask_i8_m256i(self.0,rhs.0) }
+        Self(cmp_gt_mask_i8_m256i(self.0,rhs.0))
       } else {
         Self {
           a : self.0.lo.simd_gt(rhs.0.lo),

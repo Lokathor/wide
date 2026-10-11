@@ -319,12 +319,10 @@ define_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self {
-          avx2: bitor_m256i(
+        Self(bitor_m256i(
             bitand_m256i(if_one.0, self.0),
             bitandnot_m256i(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
@@ -475,11 +473,9 @@ define_simd_unsigned! {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm256_permutex2var_epi16;
         // TODO(safe_arch): add `_mm256_permutex2var_epi16`.
-        u16x16 {
-          avx2: unsafe {
+        u16x16(unsafe {
             m256i(_mm256_permutex2var_epi16(self[0].0.0, indices.0.0, self[1].0.0))
-          },
-        }
+        })
       } else {
         let self_bytes = cast::<[u16x16; 2], [u8x32; 2]>(self);
         let byte_indices = indices.to_byte_indices();
@@ -887,7 +883,7 @@ impl From<u8x16> for u16x16 {
     fn from(v: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            u16x16 { avx2:convert_to_i16_m256i_from_u8_m128i(v.0) }
+            u16x16(convert_to_i16_m256i_from_u8_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
             u16x16 {
               a: u16x8(shr_imm_u16_m128i::<8>(unpack_low_i8_m128i(v.0, v.0))),

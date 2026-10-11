@@ -294,12 +294,10 @@ define_simd_float! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self {
-          avx: bitor_m256d(
+        Self(bitor_m256d(
             bitand_m256d(if_one.0, self.0),
             bitandnot_m256d(self.0, if_zero.0),
-          ),
-        }
+        ))
       } else {
         Self {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),

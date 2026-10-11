@@ -345,7 +345,7 @@ impl i16x16 {
     pub fn from_i8x16(v: i8x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(v.0) }
+            i16x16(convert_to_i16_m256i_from_i8_m128i(v.0))
           } else if #[cfg(target_feature="sse4.1")] {
             i16x16 {
               a: i16x8(convert_to_i16_m128i_from_lower8_i8_m128i(v.0)),
