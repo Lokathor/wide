@@ -19,9 +19,9 @@ macro_rules! impl_simd_float {
       T = $T:ident,
       N = $N:literal,
       Simd = $Simd:ident,
-      IntSimd = $IntSimd:ident,
-      UintT = $UintT:ident,
-      UintSimd = $UintSimd:ident,
+      SignedSimd = $SignedSimd:ident,
+      UnsignedT = $UnsignedT:ident,
+      UnsignedSimd = $UnsignedSimd:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
@@ -111,7 +111,7 @@ macro_rules! impl_simd_float {
         T = $T,
         N = $N,
         Simd = $Simd,
-        UintSimd = $UintSimd,
+        UnsignedSimd = $UnsignedSimd,
         optional_type_x86_inner { $(X86Inner = $X86Inner)? },
         optional_type_arm_inner { $(ArmInner = $ArmInner)? },
         optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
@@ -170,63 +170,63 @@ macro_rules! impl_simd_float {
       $fn_unpack_hi
 
       #[inline]
-      pub fn shuffle(self, indices: $UintSimd) -> Self {
+      pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
         Self::from_bits(self.to_bits().shuffle(indices))
       }
 
       #[inline]
-      pub fn shuffle_zeroing(self, indices: $UintSimd) -> Self {
+      pub fn shuffle_zeroing(self, indices: $UnsignedSimd) -> Self {
         Self::from_bits(self.to_bits().shuffle_zeroing(indices))
       }
 
       #[inline]
-      pub fn shuffle_wrapping(self, indices: $UintSimd) -> Self {
+      pub fn shuffle_wrapping(self, indices: $UnsignedSimd) -> Self {
         Self::from_bits(self.to_bits().shuffle_wrapping(indices))
       }
 
       #[inline]
-      fn shuffle(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle(indices))
+      fn shuffle(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle(indices))
       }
 
       #[inline]
-      fn shuffle_zeroing(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle_zeroing(indices))
+      fn shuffle_zeroing(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn shuffle_wrapping(self: [$Simd; 2], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UintSimd; 2]>(self).shuffle_wrapping(indices))
+      fn shuffle_wrapping(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]
-      fn shuffle(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle(indices))
+      fn shuffle(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle(indices))
       }
 
       #[inline]
-      fn shuffle_zeroing(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle_zeroing(indices))
+      fn shuffle_zeroing(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn shuffle_wrapping(self: [$Simd; 3], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UintSimd; 3]>(self).shuffle_wrapping(indices))
+      fn shuffle_wrapping(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_wrapping(indices))
       }
 
       #[inline]
-      fn shuffle(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle(indices))
+      fn shuffle(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle(indices))
       }
 
       #[inline]
-      fn shuffle_zeroing(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle_zeroing(indices))
+      fn shuffle_zeroing(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_zeroing(indices))
       }
 
       #[inline]
-      fn shuffle_wrapping(self: [$Simd; 4], indices: $UintSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UintSimd; 4]>(self).shuffle_wrapping(indices))
+      fn shuffle_wrapping(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_wrapping(indices))
       }
 
       $fn_transpose
@@ -490,7 +490,7 @@ macro_rules! impl_simd_float {
               if i > 0 {
                 write!(f, ", ")?;
               }
-              <$UintT as $Trait>::fmt(&x.to_bits(), f)?;
+              <$UnsignedT as $Trait>::fmt(&x.to_bits(), f)?;
             }
             write!(f, ")")
           }
@@ -502,30 +502,30 @@ macro_rules! impl_simd_float {
     impl_formatting_trait!(core::fmt::Octal);
     impl_formatting_trait!(core::fmt::UpperHex);
 
-    impl Select<$Simd> for $UintSimd {
+    impl Select<$Simd> for $UnsignedSimd {
       #[inline]
       fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
         $Simd::from_bits(self).select(if_true, if_false)
       }
     }
 
-    impl Select<$UintSimd> for $Simd {
+    impl Select<$UnsignedSimd> for $Simd {
       #[inline]
-      fn select(self, if_true: $UintSimd, if_false: $UintSimd) -> $UintSimd {
+      fn select(self, if_true: $UnsignedSimd, if_false: $UnsignedSimd) -> $UnsignedSimd {
         self.to_bits().select(if_true, if_false)
       }
     }
 
-    impl Select<$Simd> for $IntSimd {
+    impl Select<$Simd> for $SignedSimd {
       #[inline]
       fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
         $Simd::from_bits(self.cast_unsigned()).select(if_true, if_false)
       }
     }
 
-    impl Select<$IntSimd> for $Simd {
+    impl Select<$SignedSimd> for $Simd {
       #[inline]
-      fn select(self, if_true: $IntSimd, if_false: $IntSimd) -> $IntSimd {
+      fn select(self, if_true: $SignedSimd, if_false: $SignedSimd) -> $SignedSimd {
         self.to_bits().cast_signed().select(if_true, if_false)
       }
     }
@@ -882,10 +882,10 @@ macro_rules! impl_simd_float {
       /// numeric value.
       #[inline]
       #[must_use]
-      pub const fn to_bits(self) -> $UintSimd {
+      pub const fn to_bits(self) -> $UnsignedSimd {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $UintSimd>(self) }
+        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
       }
 
       /// Raw transmutation from unsigned integer vector.
@@ -894,10 +894,10 @@ macro_rules! impl_simd_float {
       /// numeric value.
       #[inline]
       #[must_use]
-      pub const fn from_bits(bits: $UintSimd) -> Self {
+      pub const fn from_bits(bits: $UnsignedSimd) -> Self {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$UintSimd, $Simd>(bits) }
+        unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
       }
 
       /// Restrict a value to a certain interval unless it is NaN.

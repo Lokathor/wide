@@ -24,12 +24,12 @@ pick! {
   }
 }
 
-impl_simd_int! {
+impl_simd_signed! {
   unsafe {
     T = i32,
     N = 16,
     Simd = i32x16,
-    UintSimd = u32x16,
+    UnsignedSimd = u32x16,
     T_BITS = 32,
     T_BITS_MUL_2 = 64,
     BitmaskType = u32,
