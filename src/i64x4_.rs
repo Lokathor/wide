@@ -34,7 +34,7 @@ define_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
+        Self { avx2: !(cmp_gt_mask_i64_m256i(self.0, rhs.0) ^ cmp_eq_mask_i64_m256i(self.0, rhs.0)) }
       } else {
         Self {
           a : self.a.simd_lt(rhs.a),
@@ -48,7 +48,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: cmp_gt_mask_i64_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_gt(rhs.a),

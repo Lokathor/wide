@@ -34,7 +34,7 @@ define_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: !cmp_gt_mask_i16_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i16_m256i(self.avx2,rhs.avx2) }
+        Self { avx2: !cmp_gt_mask_i16_m256i(self.0, rhs.0) ^ cmp_eq_mask_i16_m256i(self.0,rhs.0) }
       } else {
         Self {
           a : self.a.simd_lt(rhs.a),
@@ -48,7 +48,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: cmp_gt_mask_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_gt(rhs.a),
@@ -96,9 +96,9 @@ define_simd_signed! {
         use core::arch::x86_64::_mm256_srav_epi16;
 
         // Mask `rhs` to 15 to match `wrapping_shr`.
-        let rhs = bitand_m256i(rhs.avx2, set_splat_i16_m256i(15));
+        let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
         // TODO(safe_arch): Add `_mm256_srav_epi16`.
-        cast(unsafe { _mm256_srav_epi16(self.avx2.0, rhs.0) })
+        cast(unsafe { _mm256_srav_epi16(self.0.0, rhs.0) })
       } else {
         let [self_a, self_b]: [i16x8; 2] = cast(self);
         let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -115,7 +115,7 @@ define_simd_signed! {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 15, 0]);
-        Self { avx2: shr_all_i16_m256i(self.avx2, shift) }
+        Self { avx2: shr_all_i16_m256i(self.0, shift) }
       } else {
         Self {
           a : self.a.shr(rhs),
@@ -129,7 +129,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: max_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: max_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.max(rhs.a),
@@ -143,7 +143,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: min_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: min_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.min(rhs.a),
@@ -177,7 +177,7 @@ define_simd_signed! {
         use core::arch::x86_64::_mm256_srav_epi16;
 
         // TODO(safe_arch): Add `_mm256_srav_epi16`.
-        cast(unsafe { _mm256_srav_epi16(self.avx2.0, rhs.avx2.0) })
+        cast(unsafe { _mm256_srav_epi16(self.0.0, rhs.0.0) })
       } else {
         let [self_a, self_b] = cast::<i16x16, [i16x8; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);
@@ -191,7 +191,7 @@ define_simd_signed! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: shr_all_i16_m256i(self.avx2, cast([rhs as u64, 0])) }
+        Self { avx2: shr_all_i16_m256i(self.0, cast([rhs as u64, 0])) }
       } else {
         Self {
           a: self.a.unbounded_shr_scalar(rhs),
@@ -205,7 +205,7 @@ define_simd_signed! {
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: add_saturating_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: add_saturating_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.saturating_add(rhs.a),
@@ -219,7 +219,7 @@ define_simd_signed! {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: sub_saturating_i16_m256i(self.avx2, rhs.avx2) }
+        Self { avx2: sub_saturating_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.saturating_sub(rhs.a),
@@ -279,7 +279,7 @@ define_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: abs_i16_m256i(self.avx2) }
+        Self { avx2: abs_i16_m256i(self.0) }
       } else {
         Self {
           a : self.a.abs(),
@@ -345,16 +345,16 @@ impl i16x16 {
     pub fn from_i8x16(v: i8x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(v.sse) }
+            i16x16 { avx2:convert_to_i16_m256i_from_i8_m128i(v.0) }
           } else if #[cfg(target_feature="sse4.1")] {
             i16x16 {
-              a: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(v.sse) },
-              b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.sse, v.sse)) }
+              a: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(v.0) },
+              b: i16x8 { sse: convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.0, v.0)) }
             }
           } else if #[cfg(target_feature="sse2")] {
             i16x16 {
-              a: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.sse, v.sse)) },
-              b: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.sse, v.sse)) },
+              a: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.0, v.0)) },
+              b: i16x8 { sse: shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.0, v.0)) },
             }
           } else {
 
@@ -390,7 +390,7 @@ impl i16x16 {
     pub fn dot(self, rhs: Self) -> i32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i32x8 { avx2:  mul_i16_horizontal_add_m256i(self.avx2, rhs.avx2) }
+            i32x8 { avx2:  mul_i16_horizontal_add_m256i(self.0, rhs.0) }
           } else {
             i32x8 {
               a : self.a.dot(rhs.a),
@@ -412,7 +412,7 @@ impl i16x16 {
     pub fn mul_scale_round(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self { avx2: mul_i16_scale_round_m256i(self.avx2, rhs.avx2) }
+            Self { avx2: mul_i16_scale_round_m256i(self.0, rhs.0) }
           } else {
             Self {
               a : self.a.mul_scale_round(rhs.a),
@@ -434,7 +434,7 @@ impl i16x16 {
     pub fn mul_scale_round_n(self, rhs: i16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self { avx2: mul_i16_scale_round_m256i(self.avx2, set_splat_i16_m256i(rhs)) }
+            Self { avx2: mul_i16_scale_round_m256i(self.0, set_splat_i16_m256i(rhs)) }
           } else {
             Self {
               a : self.a.mul_scale_round_n(rhs),

@@ -46,11 +46,11 @@ define_simd_unsigned! {
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: add_i16_m128i(self.sse, rhs.sse) }
+        Self { sse: add_i16_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_add(self.simd, rhs.simd) }
+        Self { simd: u16x8_add(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vaddq_u16(self.neon, rhs.neon) } }
+        unsafe { Self { neon: vaddq_u16(self.0, rhs.0) } }
       } else {
         Self { arr: [
           self.arr[0].wrapping_add(rhs.arr[0]),
@@ -70,11 +70,11 @@ define_simd_unsigned! {
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: sub_i16_m128i(self.sse, rhs.sse) }
+        Self { sse: sub_i16_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_sub(self.simd, rhs.simd) }
+        Self { simd: u16x8_sub(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vsubq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vsubq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           self.arr[0].wrapping_sub(rhs.arr[0]),
@@ -94,11 +94,11 @@ define_simd_unsigned! {
   fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: mul_i16_keep_low_m128i(self.sse, rhs.sse) }
+        Self { sse: mul_i16_keep_low_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_mul(self.simd, rhs.simd) }
+        Self { simd: u16x8_mul(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmulq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vmulq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           self.arr[0].wrapping_mul(rhs.arr[0]),
@@ -118,11 +118,11 @@ define_simd_unsigned! {
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: bitand_m128i(self.sse, rhs.sse) }
+        Self { sse: bitand_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_and(self.simd, rhs.simd) }
+        Self { simd: v128_and(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vandq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vandq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           self.arr[0].bitand(rhs.arr[0]),
@@ -142,11 +142,11 @@ define_simd_unsigned! {
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: bitor_m128i(self.sse, rhs.sse) }
+        Self { sse: bitor_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_or(self.simd, rhs.simd) }
+        Self { simd: v128_or(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vorrq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vorrq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           self.arr[0].bitor(rhs.arr[0]),
@@ -166,11 +166,11 @@ define_simd_unsigned! {
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: bitxor_m128i(self.sse, rhs.sse) }
+        Self { sse: bitxor_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_xor(self.simd, rhs.simd) }
+        Self { simd: v128_xor(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: veorq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: veorq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           self.arr[0].bitxor(rhs.arr[0]),
@@ -190,11 +190,11 @@ define_simd_unsigned! {
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: cmp_eq_mask_i16_m128i(self.sse, rhs.sse) }
+        Self { sse: cmp_eq_mask_i16_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_eq(self.simd, rhs.simd) }
+        Self { simd: u16x8_eq(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vceqq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vceqq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           if self.arr[0] == rhs.arr[0] { u16::MAX } else { 0 },
@@ -216,7 +216,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_eq(rhs)
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_ne(self.simd, rhs.simd) }
+        Self { simd: u16x8_ne(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_eq(rhs)
       } else {
@@ -248,18 +248,18 @@ define_simd_unsigned! {
 
         let bias = m128i::from([0x8000u16; 8]);
 
-        let a_biased = sub_i16_m128i(self.sse, bias);
-        let b_biased = sub_i16_m128i(rhs.sse, bias);
+        let a_biased = sub_i16_m128i(self.0, bias);
+        let b_biased = sub_i16_m128i(rhs.0, bias);
         let mask = cmp_gt_mask_i16_m128i(a_biased, b_biased);
 
         Self { sse: mask }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_gt(self.simd, rhs.simd) }
+        Self { simd: u16x8_gt(self.0, rhs.0) }
       } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
         unsafe {
           use core::arch::aarch64::*;
           Self {
-            neon: vcgtq_u16(self.neon, rhs.neon),
+            neon: vcgtq_u16(self.0, rhs.0),
           }
         }
       } else {
@@ -285,7 +285,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_gt(rhs)
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_le(self.simd, rhs.simd) }
+        Self { simd: u16x8_le(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
@@ -309,7 +309,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_lt(rhs)
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_ge(self.simd, rhs.simd) }
+        Self { simd: u16x8_ge(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
@@ -340,7 +340,7 @@ define_simd_unsigned! {
         pick! {
           if #[cfg(target_feature = "sse2")] {
             match INDEX {
-              $($INDEX => Self { sse: insert_i16_from_i32_m128i::<$INDEX>(self.sse, value as i32) },)*
+              $($INDEX => Self { sse: insert_i16_from_i32_m128i::<$INDEX>(self.0, value as i32) },)*
               8.. => unreachable!(),
             }
           } else if #[cfg(all(
@@ -350,12 +350,12 @@ define_simd_unsigned! {
           ))] {
             unsafe {
               match INDEX {
-                $($INDEX => Self { neon: vsetq_lane_u16::<$INDEX>(value, self.neon) },)*
+                $($INDEX => Self { neon: vsetq_lane_u16::<$INDEX>(value, self.0) },)*
                 8.. => unreachable!(),
               }
             }
           } else if #[cfg(target_feature = "simd128")] {
-            Self { simd: u16x8_replace_lane::<INDEX>(self.simd, value) }
+            Self { simd: u16x8_replace_lane::<INDEX>(self.0, value) }
           } else {
             let mut result = self;
             result.as_mut_array()[INDEX] = value;
@@ -380,7 +380,7 @@ define_simd_unsigned! {
         pick! {
           if #[cfg(target_feature = "sse2")] {
             match INDEX {
-              $($INDEX => extract_i16_as_i32_m128i::<$INDEX>(self.sse).cast_unsigned() as u16,)*
+              $($INDEX => extract_i16_as_i32_m128i::<$INDEX>(self.0).cast_unsigned() as u16,)*
               8.. => unreachable!(),
             }
           } else if #[cfg(all(
@@ -390,12 +390,12 @@ define_simd_unsigned! {
           ))] {
             unsafe {
               match INDEX {
-                $($INDEX => vgetq_lane_u16::<$INDEX>(self.neon),)*
+                $($INDEX => vgetq_lane_u16::<$INDEX>(self.0),)*
                 8.. => unreachable!(),
               }
             }
           } else if #[cfg(target_feature = "simd128")] {
-            u16x8_extract_lane::<INDEX>(self.simd)
+            u16x8_extract_lane::<INDEX>(self.0)
           } else {
             self.to_array()[INDEX]
           }
@@ -410,15 +410,15 @@ define_simd_unsigned! {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // there is a horizontal add instruction on ssse3, but apparently it is very slow on some AMD CPUs
-        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
-        let sum64 = add_i16_m128i(self.sse, hi64);
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.0);
+        let sum64 = add_i16_m128i(self.0, hi64);
         let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
         let sum32 = add_i16_m128i(sum64, hi32);
         let lo16 = shr_imm_u32_m128i::<16>(sum32);
         let sum16 = add_i16_m128i(sum32, lo16);
         extract_i16_as_i32_m128i::<0>(sum16) as u16
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vaddvq_u16(self.neon) }
+        unsafe { vaddvq_u16(self.0) }
       } else {
         let arr: [u16; 8] = cast(self);
 
@@ -439,16 +439,16 @@ define_simd_unsigned! {
   pub fn reduce_mul(self) -> u16 {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        let high_64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
-        let reduce_64 = mul_i16_keep_low_m128i(self.sse, high_64);
+        let high_64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.0);
+        let reduce_64 = mul_i16_keep_low_m128i(self.0, high_64);
         let high_32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(reduce_64);
         let reduce_32 = mul_i16_keep_low_m128i(reduce_64, high_32);
         let high_16 = shr_imm_u32_m128i::<16>(reduce_32);
         let reduce_16 = mul_i16_keep_low_m128i(reduce_32, high_16);
         extract_i16_as_i32_m128i::<0>(reduce_16) as u16
       } else if #[cfg(target_feature="simd128")] {
-        let high_64 = u64x2_shuffle::<1, 0>(self.simd, self.simd);
-        let reduce_64 = u16x8_mul(self.simd, high_64);
+        let high_64 = u64x2_shuffle::<1, 0>(self.0, self.0);
+        let reduce_64 = u16x8_mul(self.0, high_64);
         let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
         let reduce_32 = u16x8_mul(reduce_64, high_32);
         let high_16 = u16x8_shuffle::<1, 0, 0, 0, 0, 0, 0, 0>(reduce_32, reduce_32);
@@ -456,8 +456,8 @@ define_simd_unsigned! {
         u16x8_extract_lane::<0>(reduce_16)
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
-          let high_64 = vextq_u16::<4>(self.neon, self.neon);
-          let reduce_64 = vmulq_u16(self.neon, high_64);
+          let high_64 = vextq_u16::<4>(self.0, self.0);
+          let reduce_64 = vmulq_u16(self.0, high_64);
           let high_32 = vrev64q_u16(reduce_64);
           let reduce_32 = vmulq_u16(reduce_64, high_32);
           let high_16 = vrev32q_u16(reduce_32);
@@ -486,14 +486,14 @@ define_simd_unsigned! {
       if #[cfg(target_feature="sse2")] {
         Self {
           sse: bitor_m128i(
-            bitand_m128i(if_one.sse, self.sse),
-            bitandnot_m128i(self.sse, if_zero.sse),
+            bitand_m128i(if_one.0, self.0),
+            bitandnot_m128i(self.0, if_zero.0),
           ),
         }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_one.simd, if_zero.simd, self.simd) }
+        Self { simd: v128_bitselect(if_one.0, if_zero.0, self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_u16(self.neon, if_one.neon, if_zero.neon) }}
+        unsafe {Self { neon: vbslq_u16(self.0, if_one.0, if_zero.0) }}
       } else {
         generic_bit_blend(self, if_one, if_zero)
       }
@@ -504,11 +504,11 @@ define_simd_unsigned! {
   fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: blend_varying_i8_m128i(if_false.sse, if_true.sse, self.sse) }
+        Self { sse: blend_varying_i8_m128i(if_false.0, if_true.0, self.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: v128_bitselect(if_true.simd, if_false.simd, self.simd) }
+        Self { simd: v128_bitselect(if_true.0, if_false.0, self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vbslq_u16(self.neon, if_true.neon, if_false.neon) }}
+        unsafe {Self { neon: vbslq_u16(self.0, if_true.0, if_false.0) }}
       } else {
         generic_bit_blend(self, if_true, if_false)
       }
@@ -519,14 +519,14 @@ define_simd_unsigned! {
   pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i( pack_i16_to_i8_m128i(self.sse,self.sse)) as u32) & 0xff
+        (move_mask_i8_m128i( pack_i16_to_i8_m128i(self.0,self.0)) as u32) & 0xff
       } else if #[cfg(target_feature="simd128")] {
-        u16x8_bitmask(self.simd) as u32
+        u16x8_bitmask(self.0) as u32
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe
         {
           // set all to 1 if top bit is set, else 0
-          let masked = vcltzq_s16(self.cast_signed().neon);
+          let masked = vcltzq_s16(self.cast_signed().0);
 
           // select the right bit out of each lane
           let selectbit : uint16x8_t = core::mem::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
@@ -552,12 +552,12 @@ define_simd_unsigned! {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1010101010101010) != 0
+        (move_mask_i8_m128i(self.0) & 0b1010101010101010) != 0
       } else if #[cfg(target_feature="simd128")] {
-        u16x8_bitmask(self.simd) != 0
+        u16x8_bitmask(self.0) != 0
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
-          vminvq_s16(self.cast_signed().neon) < 0
+          vminvq_s16(self.cast_signed().0) < 0
         }
       } else {
         let v : [u64;2] = cast(self);
@@ -570,12 +570,12 @@ define_simd_unsigned! {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        (move_mask_i8_m128i(self.sse) & 0b1010101010101010) == 0b1010101010101010
+        (move_mask_i8_m128i(self.0) & 0b1010101010101010) == 0b1010101010101010
       } else if #[cfg(target_feature="simd128")] {
-        u16x8_bitmask(self.simd) == 0b11111111
+        u16x8_bitmask(self.0) == 0b11111111
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
-          vmaxvq_s16(self.cast_signed().neon) < 0
+          vmaxvq_s16(self.cast_signed().0) < 0
         }
       } else {
         let v : [u64;2] = cast(self);
@@ -588,12 +588,12 @@ define_simd_unsigned! {
   pub fn unpack_lo(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature = "sse2")] {
-        Self { sse: unpack_low_i16_m128i(self.sse, other.sse) }
+        Self { sse: unpack_low_i16_m128i(self.0, other.0) }
       } else if #[cfg(target_feature = "simd128")] {
-        Self { simd: u16x8_shuffle::<0, 8, 1, 9, 2, 10, 3, 11>(self.simd, other.simd) }
+        Self { simd: u16x8_shuffle::<0, 8, 1, 9, 2, 10, 3, 11>(self.0, other.0) }
       } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-        let lhs = unsafe { vget_low_u16(self.neon) };
-        let rhs = unsafe { vget_low_u16(other.neon) };
+        let lhs = unsafe { vget_low_u16(self.0) };
+        let rhs = unsafe { vget_low_u16(other.0) };
 
         let zipped = unsafe { vzip_u16(lhs, rhs) };
         Self { neon: unsafe { vcombine_u16(zipped.0, zipped.1) } }
@@ -616,12 +616,12 @@ define_simd_unsigned! {
   pub fn unpack_hi(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature = "sse2")] {
-        Self { sse: unpack_high_i16_m128i(self.sse, other.sse) }
+        Self { sse: unpack_high_i16_m128i(self.0, other.0) }
       } else if #[cfg(target_feature = "simd128")] {
-        Self { simd: u16x8_shuffle::<4, 12, 5, 13, 6, 14, 7, 15>(self.simd, other.simd) }
+        Self { simd: u16x8_shuffle::<4, 12, 5, 13, 6, 14, 7, 15>(self.0, other.0) }
       } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-        let lhs = unsafe { vget_high_u16(self.neon) };
-        let rhs = unsafe { vget_high_u16(other.neon) };
+        let lhs = unsafe { vget_high_u16(self.0) };
+        let rhs = unsafe { vget_high_u16(other.0) };
 
         let zipped = unsafe { vzip_u16(lhs, rhs) };
         Self { neon: unsafe { vcombine_u16(zipped.0, zipped.1) } }
@@ -649,7 +649,7 @@ define_simd_unsigned! {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm_permutexvar_epi16;
         // TODO(safe_arch): Add `_mm_permutexvar_epi16`
-        Self { sse: unsafe { m128i(_mm_permutexvar_epi16(indices.sse.0, self.sse.0)) } }
+        Self { sse: unsafe { m128i(_mm_permutexvar_epi16(indices.0.0, self.0.0)) } }
       } else if #[cfg(any(
         target_feature = "ssse3",
         all(target_arch = "aarch64", target_feature = "neon"),
@@ -717,7 +717,7 @@ define_simd_unsigned! {
         // TODO(safe_arch): add `_mm_permutex2var_epi16`.
         u16x8 {
           sse: unsafe {
-            m128i(_mm_permutex2var_epi16(self[0].sse.0, indices.sse.0, self[1].sse.0))
+            m128i(_mm_permutex2var_epi16(self[0].0.0, indices.0.0, self[1].0.0))
           },
         }
       } else {
@@ -794,14 +794,14 @@ define_simd_unsigned! {
   pub fn transpose(data: [Self; 8]) -> [Self; 8] {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        let a1 = unpack_low_i16_m128i(data[0].sse, data[1].sse);
-        let a2 = unpack_high_i16_m128i(data[0].sse, data[1].sse);
-        let a3 = unpack_low_i16_m128i(data[2].sse, data[3].sse);
-        let a4 = unpack_high_i16_m128i(data[2].sse, data[3].sse);
-        let a5 = unpack_low_i16_m128i(data[4].sse, data[5].sse);
-        let a6 = unpack_high_i16_m128i(data[4].sse, data[5].sse);
-        let a7 = unpack_low_i16_m128i(data[6].sse, data[7].sse);
-        let a8 = unpack_high_i16_m128i(data[6].sse, data[7].sse);
+        let a1 = unpack_low_i16_m128i(data[0].0, data[1].0);
+        let a2 = unpack_high_i16_m128i(data[0].0, data[1].0);
+        let a3 = unpack_low_i16_m128i(data[2].0, data[3].0);
+        let a4 = unpack_high_i16_m128i(data[2].0, data[3].0);
+        let a5 = unpack_low_i16_m128i(data[4].0, data[5].0);
+        let a6 = unpack_high_i16_m128i(data[4].0, data[5].0);
+        let a7 = unpack_low_i16_m128i(data[6].0, data[7].0);
+        let a8 = unpack_high_i16_m128i(data[6].0, data[7].0);
 
         let b1 = unpack_low_i32_m128i(a1, a3);
         let b2 = unpack_high_i32_m128i(a1, a3);
@@ -833,10 +833,10 @@ define_simd_unsigned! {
           }
 
         unsafe {
-          let (q0,q2) = vtrq32(data[0].neon, data[2].neon);
-          let (q1,q3) = vtrq32(data[1].neon, data[3].neon);
-          let (q4,q6) = vtrq32(data[4].neon, data[6].neon);
-          let (q5,q7) = vtrq32(data[5].neon, data[7].neon);
+          let (q0,q2) = vtrq32(data[0].0, data[2].0);
+          let (q1,q3) = vtrq32(data[1].0, data[3].0);
+          let (q4,q6) = vtrq32(data[4].0, data[6].0);
+          let (q5,q7) = vtrq32(data[5].0, data[7].0);
 
           let b1 = vtrnq_u16(q0, q1);
           let b2 = vtrnq_u16(q2, q3);
@@ -865,14 +865,14 @@ define_simd_unsigned! {
         #[inline] fn lo_i64(a : v128, b : v128) -> v128 { u64x2_shuffle::<0, 2>(a,b) }
         #[inline] fn hi_i64(a : v128, b : v128) -> v128 { u64x2_shuffle::<1, 3>(a,b) }
 
-        let a1 = lo_i16(data[0].simd, data[1].simd);
-        let a2 = hi_i16(data[0].simd, data[1].simd);
-        let a3 = lo_i16(data[2].simd, data[3].simd);
-        let a4 = hi_i16(data[2].simd, data[3].simd);
-        let a5 = lo_i16(data[4].simd, data[5].simd);
-        let a6 = hi_i16(data[4].simd, data[5].simd);
-        let a7 = lo_i16(data[6].simd, data[7].simd);
-        let a8 = hi_i16(data[6].simd, data[7].simd);
+        let a1 = lo_i16(data[0].0, data[1].0);
+        let a2 = hi_i16(data[0].0, data[1].0);
+        let a3 = lo_i16(data[2].0, data[3].0);
+        let a4 = hi_i16(data[2].0, data[3].0);
+        let a5 = lo_i16(data[4].0, data[5].0);
+        let a6 = hi_i16(data[4].0, data[5].0);
+        let a7 = lo_i16(data[6].0, data[7].0);
+        let a8 = hi_i16(data[6].0, data[7].0);
 
         let b1 = lo_i32(a1, a3);
         let b2 = hi_i32(a1, a3);
@@ -933,14 +933,14 @@ define_simd_unsigned! {
         use core::arch::x86_64::_mm_sllv_epi16;
 
         // Mask `rhs` to 15 to match `wrapping_shl`.
-        let rhs = bitand_m128i(rhs.sse, set_splat_i16_m128i(15));
+        let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
         // TODO(safe_arch): Add `_mm_sllv_epi16`.
-        cast(unsafe { _mm_sllv_epi16(self.sse.0, rhs.0) })
+        cast(unsafe { _mm_sllv_epi16(self.0.0, rhs.0) })
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           // Mask `rhs` to 15 to match `wrapping_shl`.
-          let rhs = vreinterpretq_s16_u16(vandq_u16(rhs.neon, vmovq_n_u16(15)));
-          Self { neon: vshlq_u16(self.neon, rhs) }
+          let rhs = vreinterpretq_s16_u16(vandq_u16(rhs.0, vmovq_n_u16(15)));
+          Self { neon: vshlq_u16(self.0, rhs) }
         }
       } else {
         let self_array = self.to_array();
@@ -967,13 +967,13 @@ define_simd_unsigned! {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 15, 0]);
-        Self { sse: shl_all_u16_m128i(self.sse, shift) }
+        Self { sse: shl_all_u16_m128i(self.0, shift) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_shl(self.simd, rhs) }
+        Self { simd: u16x8_shl(self.0, rhs) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
-        unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs as i16 & 15)) }}
+        unsafe {Self { neon: vshlq_u16(self.0, vmovq_n_s16(rhs as i16 & 15)) }}
       } else {
         Self { arr: [
           self.arr[0].wrapping_shl(rhs),
@@ -999,15 +999,15 @@ define_simd_unsigned! {
         use core::arch::x86_64::_mm_srlv_epi16;
 
         // Mask `rhs` to 15 to match `wrapping_shr`.
-        let rhs = bitand_m128i(rhs.sse, set_splat_i16_m128i(15));
+        let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
         // TODO(safe_arch): Add `_mm_srlv_epi16`.
-        cast(unsafe { _mm_srlv_epi16(self.sse.0, rhs.0) })
+        cast(unsafe { _mm_srlv_epi16(self.0.0, rhs.0) })
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           // Mask `rhs` to 15 to match `wrapping_shr`, and negate it because
           // there is no shift-right intrinsic.
-          let neg_rhs = vnegq_s16(vreinterpretq_s16_u16(vandq_u16(rhs.neon, vmovq_n_u16(15))));
-          Self { neon: vshlq_u16(self.neon, neg_rhs) }
+          let neg_rhs = vnegq_s16(vreinterpretq_s16_u16(vandq_u16(rhs.0, vmovq_n_u16(15))));
+          Self { neon: vshlq_u16(self.0, neg_rhs) }
         }
       } else {
         let self_array = self.to_array();
@@ -1034,13 +1034,13 @@ define_simd_unsigned! {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 15, 0]);
-        Self { sse: shr_all_u16_m128i(self.sse, shift) }
+        Self { sse: shr_all_u16_m128i(self.0, shift) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_shr(self.simd, rhs) }
+        Self { simd: u16x8_shr(self.0, rhs) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
-        unsafe {Self { neon: vshlq_u16(self.neon, vmovq_n_s16( -(rhs as i16 & 15))) }}
+        unsafe {Self { neon: vshlq_u16(self.0, vmovq_n_s16( -(rhs as i16 & 15))) }}
       } else {
         Self { arr: [
           self.arr[0].wrapping_shr(rhs),
@@ -1060,11 +1060,11 @@ define_simd_unsigned! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: max_u16_m128i(self.sse, rhs.sse) }
+        Self { sse: max_u16_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_max(self.simd, rhs.simd) }
+        Self { simd: u16x8_max(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vmaxq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vmaxq_u16(self.0, rhs.0) }}
       } else {
         let arr: [u16; 8] = cast(self);
         let rhs: [u16; 8] = cast(rhs);
@@ -1086,11 +1086,11 @@ define_simd_unsigned! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
-        Self { sse: min_u16_m128i(self.sse, rhs.sse) }
+        Self { sse: min_u16_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_min(self.simd, rhs.simd) }
+        Self { simd: u16x8_min(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vminq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vminq_u16(self.0, rhs.0) }}
       } else {
         let arr: [u16; 8] = cast(self);
         let rhs: [u16; 8] = cast(rhs);
@@ -1112,15 +1112,15 @@ define_simd_unsigned! {
   pub fn reduce_max(self) -> u16 {
     pick! {
       if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
-        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
-        let sum64 = max_u16_m128i(self.sse, hi64);
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.0);
+        let sum64 = max_u16_m128i(self.0, hi64);
         let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
         let sum32 = max_u16_m128i(sum64, hi32);
         let lo16 = shr_imm_u32_m128i::<16>(sum32);
         let sum16 = max_u16_m128i(sum32, lo16);
         extract_i16_as_i32_m128i::<0>(sum16) as u16
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vmaxvq_u16(self.neon) }
+        unsafe { vmaxvq_u16(self.0) }
       } else {
         let arr: [u16; 8] = cast(self);
 
@@ -1141,15 +1141,15 @@ define_simd_unsigned! {
   pub fn reduce_min(self) -> u16 {
     pick! {
       if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
-        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.sse);
-        let sum64 = min_u16_m128i(self.sse, hi64);
+        let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.0);
+        let sum64 = min_u16_m128i(self.0, hi64);
         let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
         let sum32 = min_u16_m128i(sum64, hi32);
         let lo16 = shr_imm_u32_m128i::<16>(sum32);
         let sum16 = min_u16_m128i(sum32, lo16);
         extract_i16_as_i32_m128i::<0>(sum16) as u16
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vminvq_u16(self.neon) }
+        unsafe { vminvq_u16(self.0) }
       } else {
         let arr: [u16; 8] = cast(self);
 
@@ -1176,11 +1176,11 @@ define_simd_unsigned! {
         use core::arch::x86_64::_mm_sllv_epi16;
 
         // TODO(safe_arch): Add `_mm_sllv_epi16`.
-        cast(unsafe { _mm_sllv_epi16(self.sse.0, rhs.sse.0) })
+        cast(unsafe { _mm_sllv_epi16(self.0.0, rhs.0.0) })
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           // The intrinsic has different semantics so we need to mask ourselves.
-          Self { neon: vshlq_u16(self.neon, vreinterpretq_s16_u16(rhs.neon)) } & rhs.simd_lt(16)
+          Self { neon: vshlq_u16(self.0, vreinterpretq_s16_u16(rhs.0)) } & rhs.simd_lt(16)
         }
       } else {
         let self_array = self.to_array();
@@ -1204,13 +1204,13 @@ define_simd_unsigned! {
   pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: shl_all_u16_m128i(self.sse, cast([rhs as u64, 0])) }
+        Self { sse: shl_all_u16_m128i(self.0, cast([rhs as u64, 0])) }
       } else if #[cfg(target_feature="simd128")] {
         // The intrinsic performs wrapping shift so we need to mask the result.
-        if rhs >= 16 { Self::ZERO } else { Self { simd: u16x8_shl(self.simd, rhs) } }
+        if rhs >= 16 { Self::ZERO } else { Self { simd: u16x8_shl(self.0, rhs) } }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // The intrinsic has different semantics so we need to saturate `rhs`.
-        unsafe { Self { neon: vshlq_u16(self.neon, vmovq_n_s16(rhs.min(16) as i16)) } }
+        unsafe { Self { neon: vshlq_u16(self.0, vmovq_n_s16(rhs.min(16) as i16)) } }
       } else {
         Self { arr: [
           self.arr[0].unbounded_shl(rhs),
@@ -1236,12 +1236,12 @@ define_simd_unsigned! {
         use core::arch::x86_64::_mm_srlv_epi16;
 
         // TODO(safe_arch): Add `_mm_srlv_epi16`.
-        cast(unsafe { _mm_srlv_epi16(self.sse.0, rhs.sse.0) })
+        cast(unsafe { _mm_srlv_epi16(self.0.0, rhs.0.0) })
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // mask to hide `rhs` overflow.
-          Self { neon: vshlq_u16(self.neon, vnegq_s16(vreinterpretq_s16_u16(rhs.neon))) } & rhs.simd_lt(16)
+          Self { neon: vshlq_u16(self.0, vnegq_s16(vreinterpretq_s16_u16(rhs.0))) } & rhs.simd_lt(16)
         }
       } else {
         let self_array = self.to_array();
@@ -1265,14 +1265,14 @@ define_simd_unsigned! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: shr_all_u16_m128i(self.sse, cast([rhs as u64, 0])) }
+        Self { sse: shr_all_u16_m128i(self.0, cast([rhs as u64, 0])) }
       } else if #[cfg(target_feature="simd128")] {
-        if rhs < 16 { Self { simd: u16x8_shr(self.simd, rhs) } } else { Self::ZERO }
+        if rhs < 16 { Self { simd: u16x8_shr(self.0, rhs) } } else { Self::ZERO }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          Self { neon: vshlq_u16(self.neon, vmovq_n_s16(-rhs.min(16).cast_signed() as i16)) }
+          Self { neon: vshlq_u16(self.0, vmovq_n_s16(-rhs.min(16).cast_signed() as i16)) }
         }
       } else {
         Self {
@@ -1295,11 +1295,11 @@ define_simd_unsigned! {
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: add_saturating_u16_m128i(self.sse, rhs.sse) }
+        Self { sse: add_saturating_u16_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_add_sat(self.simd, rhs.simd) }
+        Self { simd: u16x8_add_sat(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vqaddq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vqaddq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           self.arr[0].saturating_add(rhs.arr[0]),
@@ -1319,11 +1319,11 @@ define_simd_unsigned! {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: sub_saturating_u16_m128i(self.sse, rhs.sse) }
+        Self { sse: sub_saturating_u16_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: u16x8_sub_sat(self.simd, rhs.simd) }
+        Self { simd: u16x8_sub_sat(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vqsubq_u16(self.neon, rhs.neon) }}
+        unsafe {Self { neon: vqsubq_u16(self.0, rhs.0) }}
       } else {
         Self { arr: [
           self.arr[0].saturating_sub(rhs.arr[0]),
@@ -1351,22 +1351,22 @@ define_simd_unsigned! {
     pub fn widening_mul(self, rhs: Self) -> u32x8 {
       pick! {
         if #[cfg(target_feature="avx2")] {
-          let a = convert_to_i32_m256i_from_u16_m128i(self.sse);
-          let b = convert_to_i32_m256i_from_u16_m128i(rhs.sse);
+          let a = convert_to_i32_m256i_from_u16_m128i(self.0);
+          let b = convert_to_i32_m256i_from_u16_m128i(rhs.0);
           u32x8 { avx2: mul_i32_keep_low_m256i(a,b) }
         } else if #[cfg(target_feature="sse2")] {
-          let low = mul_i16_keep_low_m128i(self.sse, rhs.sse);
-          let high = mul_u16_keep_high_m128i(self.sse, rhs.sse);
+          let low = mul_i16_keep_low_m128i(self.0, rhs.0);
+          let high = mul_u16_keep_high_m128i(self.0, rhs.0);
           u32x8 {
             a: u32x4 { sse:unpack_low_i16_m128i(low, high) },
             b: u32x4 { sse:unpack_high_i16_m128i(low, high) }
           }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-          let lhs_low = unsafe { vget_low_u16(self.neon) };
-          let rhs_low = unsafe { vget_low_u16(rhs.neon) };
+          let lhs_low = unsafe { vget_low_u16(self.0) };
+          let rhs_low = unsafe { vget_low_u16(rhs.0) };
 
-          let lhs_high = unsafe { vget_high_u16(self.neon) };
-          let rhs_high = unsafe { vget_high_u16(rhs.neon) };
+          let lhs_high = unsafe { vget_high_u16(self.0) };
+          let rhs_high = unsafe { vget_high_u16(rhs.0) };
 
           let low = unsafe { vmull_u16(lhs_low, rhs_low) };
           let high = unsafe { vmull_u16(lhs_high, rhs_high) };
@@ -1394,8 +1394,8 @@ define_simd_unsigned! {
   pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="simd128")] {
-        let low_wide_mul = u32x4_extmul_low_u16x8(self.simd, rhs.simd);
-        let high_wide_mul = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
+        let low_wide_mul = u32x4_extmul_low_u16x8(self.0, rhs.0);
+        let high_wide_mul = u32x4_extmul_high_u16x8(self.0, rhs.0);
         (
           Self { simd: u16x8_shuffle::<0, 2, 4, 6, 8, 10, 12, 14>(low_wide_mul, high_wide_mul) },
           Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low_wide_mul, high_wide_mul) },
@@ -1403,10 +1403,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
           let low_wide_mul = vreinterpretq_u16_u32(
-            vmull_u16(vget_low_u16(self.neon), vget_low_u16(rhs.neon)),
+            vmull_u16(vget_low_u16(self.0), vget_low_u16(rhs.0)),
           );
           let high_wide_mul = vreinterpretq_u16_u32(
-            vmull_u16(vget_high_u16(self.neon), vget_high_u16(rhs.neon)),
+            vmull_u16(vget_high_u16(self.0), vget_high_u16(rhs.0)),
           );
           let low_high = vuzpq_u16(low_wide_mul, high_wide_mul);
           (
@@ -1462,21 +1462,21 @@ define_simd_unsigned! {
   pub fn mul_keep_high(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self { sse: mul_u16_keep_high_m128i(self.sse, rhs.sse) }
+        Self { sse: mul_u16_keep_high_m128i(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        let lhs_low = unsafe { vget_low_u16(self.neon) };
-        let rhs_low = unsafe { vget_low_u16(rhs.neon) };
+        let lhs_low = unsafe { vget_low_u16(self.0) };
+        let rhs_low = unsafe { vget_low_u16(rhs.0) };
 
-        let lhs_high = unsafe { vget_high_u16(self.neon) };
-        let rhs_high = unsafe { vget_high_u16(rhs.neon) };
+        let lhs_high = unsafe { vget_high_u16(self.0) };
+        let rhs_high = unsafe { vget_high_u16(rhs.0) };
 
         let low = unsafe { vmull_u16(lhs_low, rhs_low) };
         let high = unsafe { vmull_u16(lhs_high, rhs_high) };
 
         u16x8 { neon: unsafe { vuzpq_u16(vreinterpretq_u16_u32(low), vreinterpretq_u16_u32(high)).1 } }
       } else if #[cfg(target_feature="simd128")] {
-        let low =  u32x4_extmul_low_u16x8(self.simd, rhs.simd);
-        let high = u32x4_extmul_high_u16x8(self.simd, rhs.simd);
+        let low =  u32x4_extmul_low_u16x8(self.0, rhs.0);
+        let high = u32x4_extmul_high_u16x8(self.0, rhs.0);
 
         Self { simd: u16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high) }
       } else {
@@ -1505,7 +1505,7 @@ impl u16x8 {
     pub fn from_u8x16_low(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self{ sse: unpack_low_i8_m128i(u.sse, m128i::zeroed()) }
+            Self{ sse: unpack_low_i8_m128i(u.0, m128i::zeroed()) }
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -1529,7 +1529,7 @@ impl u16x8 {
     pub fn from_u8x16_high(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self{ sse: unpack_high_i8_m128i(u.sse, m128i::zeroed()) }
+            Self{ sse: unpack_high_i8_m128i(u.0, m128i::zeroed()) }
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([

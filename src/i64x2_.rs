@@ -43,11 +43,11 @@ define_simd_signed! {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         // only has gt, so flip arguments around to get lt
-        Self { sse: cmp_gt_mask_i64_m128i( rhs.sse, self.sse) }
+        Self { sse: cmp_gt_mask_i64_m128i( rhs.0, self.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_lt(self.simd, rhs.simd) }
+        Self { simd: i64x2_lt(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s64_u64(vcltq_s64(self.neon, rhs.neon)) }}
+        unsafe {Self { neon: vreinterpretq_s64_u64(vcltq_s64(self.0, rhs.0)) }}
       } else {
         let s: [i64;2] = cast(self);
         let r: [i64;2] = cast(rhs);
@@ -63,11 +63,11 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
-        Self { sse: cmp_gt_mask_i64_m128i(self.sse, rhs.sse) }
+        Self { sse: cmp_gt_mask_i64_m128i(self.0, rhs.0) }
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_gt(self.simd, rhs.simd) }
+        Self { simd: i64x2_gt(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vreinterpretq_s64_u64(vcgtq_s64(self.neon, rhs.neon)) }}
+        unsafe {Self { neon: vreinterpretq_s64_u64(vcgtq_s64(self.0, rhs.0)) }}
       } else {
         let s: [i64;2] = cast(self);
         let r: [i64;2] = cast(rhs);
@@ -85,7 +85,7 @@ define_simd_signed! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_gt(rhs)
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_le(self.simd, rhs.simd) }
+        Self { simd: i64x2_le(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
@@ -105,7 +105,7 @@ define_simd_signed! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_lt(rhs)
       } else if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_ge(self.simd, rhs.simd) }
+        Self { simd: i64x2_ge(self.0, rhs.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
@@ -126,8 +126,8 @@ define_simd_signed! {
         unsafe {
           // mask the shift count to 63 to have same behavior on all platforms
           // no right shift, have to pass negative value to left shift on neon
-          let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.neon, vmovq_n_u64(63))));
-          Self { neon: vshlq_s64(self.neon, shift_by) }
+          let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.0, vmovq_n_u64(63))));
+          Self { neon: vshlq_s64(self.0, shift_by) }
         }
       } else {
         let arr: [i64; 2] = cast(self);
@@ -144,7 +144,7 @@ define_simd_signed! {
   fn shr(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_shr(self.simd, rhs) }
+        Self { simd: i64x2_shr(self.0, rhs) }
       } else {
         let arr: [i64; 2] = cast(self);
         cast([
@@ -172,7 +172,7 @@ define_simd_signed! {
         let array: [i64; 2] = cast(self);
         array[0].max(array[1])
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).max(vgetq_lane_s64(self.neon, 1)) }
+        unsafe { vgetq_lane_s64(self.0, 0).max(vgetq_lane_s64(self.0, 1)) }
       } else {
         self.arr[0].max(self.arr[1])
       }
@@ -186,7 +186,7 @@ define_simd_signed! {
         let array: [i64; 2] = cast(self);
         array[0].min(array[1])
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_s64(self.neon, 0).min(vgetq_lane_s64(self.neon, 1)) }
+        unsafe { vgetq_lane_s64(self.0, 0).min(vgetq_lane_s64(self.0, 1)) }
       } else {
         self.arr[0].min(self.arr[1])
       }
@@ -200,7 +200,7 @@ define_simd_signed! {
         unsafe {
           // Negate `rhs` because there is no direct shift-right intrinsic, and
           // restrict it to prevent overflow.
-          Self { neon: vshlq_s64(self.neon, vnegq_s64(vreinterpretq_s64_u64(rhs.min(u64x2::splat(64)).neon))) }
+          Self { neon: vshlq_s64(self.0, vnegq_s64(vreinterpretq_s64_u64(rhs.min(u64x2::splat(64)).0))) }
         }
       } else {
         // Cannot use scalar `unbounded_shl` because it takes `u32`, which is
@@ -217,7 +217,7 @@ define_simd_signed! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="simd128")] {
-        if rhs < 64 { Self { simd: i64x2_shr(self.simd, rhs) } } else { self.is_negative() }
+        if rhs < 64 { Self { simd: i64x2_shr(self.0, rhs) } } else { self.is_negative() }
       } else {
         let self_array = self.to_array();
 
@@ -240,7 +240,7 @@ define_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vqaddq_s64(self.neon, rhs.neon) } }
+        unsafe { Self { neon: vqaddq_s64(self.0, rhs.0) } }
       } else {
         Self {
           arr: [
@@ -263,7 +263,7 @@ define_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self { neon: vqsubq_s64(self.neon, rhs.neon) } }
+        unsafe { Self { neon: vqsubq_s64(self.0, rhs.0) } }
       } else {
         Self {
           arr: [
@@ -339,9 +339,9 @@ define_simd_signed! {
     pick! {
       // x86 doesn't have this builtin
       if #[cfg(target_feature="simd128")] {
-        Self { simd: i64x2_abs(self.simd) }
+        Self { simd: i64x2_abs(self.0) }
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self { neon: vabsq_s64(self.neon) }}
+        unsafe {Self { neon: vabsq_s64(self.0) }}
       } else {
         let arr: [i64; 2] = cast(self);
         cast(
@@ -357,7 +357,7 @@ define_simd_signed! {
   pub fn is_positive(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vreinterpretq_s64_u64(vcgtzq_s64(self.neon)) } }
+        Self { neon: unsafe { vreinterpretq_s64_u64(vcgtzq_s64(self.0)) } }
       } else {
         self.simd_gt(Self::ZERO)
       }
@@ -368,7 +368,7 @@ define_simd_signed! {
   pub fn is_negative(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self { neon: unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.neon)) } }
+        Self { neon: unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.0)) } }
       } else {
         self.simd_lt(Self::ZERO)
       }

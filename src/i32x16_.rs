@@ -34,7 +34,7 @@ define_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
       } else {
         Self {
           a : rhs.a.simd_gt(self.a),
@@ -48,7 +48,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_gt(rhs.a),
@@ -62,7 +62,7 @@ define_simd_signed! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Le)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_le(rhs.a),
@@ -76,7 +76,7 @@ define_simd_signed! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nlt)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_ge(rhs.a),
@@ -96,9 +96,9 @@ define_simd_signed! {
         use core::arch::x86_64::_mm512_srav_epi32;
 
         // Mask `rhs` to 31 to match `wrapping_shr`.
-        let rhs = bitand_m512i(rhs.avx512, set_splat_i32_m512i(31));
+        let rhs = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
         // TODO(safe_arch): Add `_mm512_srav_epi32`.
-        Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.avx512.0, rhs.0) }) }
+        Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0) }) }
       } else {
         Self {
           a: self.a >> rhs.a,
@@ -115,7 +115,7 @@ define_simd_signed! {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs & 31;
-        Self { avx512: shr_all_i32_m512i(self.avx512, shift) }
+        Self { avx512: shr_all_i32_m512i(self.0, shift) }
       } else {
         Self {
           a : self.a.shr(rhs),
@@ -129,7 +129,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: max_i32_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: max_i32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.a.max(rhs.a),
@@ -143,7 +143,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: min_i32_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: min_i32_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.a.min(rhs.a),
@@ -175,7 +175,7 @@ define_simd_signed! {
         use core::arch::x86_64::_mm512_srav_epi32;
 
         // TODO(safe_arch): Add `_mm512_srav_epi32`.
-        Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.avx512.0, rhs.avx512.0) }) }
+        Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0.0) }) }
       } else {
         Self {
           a: self.a.unbounded_shr(rhs.a),
@@ -189,7 +189,7 @@ define_simd_signed! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shr_all_i32_m512i(self.avx512, rhs) }
+        Self { avx512: shr_all_i32_m512i(self.0, rhs) }
       } else {
         Self {
           a: self.a.unbounded_shr_scalar(rhs),
@@ -259,10 +259,10 @@ define_simd_signed! {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
 
-        let even_wide_mul = mul_i32_wide_m512i(self.avx512, rhs.avx512);
+        let even_wide_mul = mul_i32_wide_m512i(self.0, rhs.0);
         let odd_wide_mul = mul_i32_wide_m512i(
-          shuffle_i32_m512i::<0b_00_11_00_01>(self.avx512),
-          shuffle_i32_m512i::<0b_00_11_00_01>(rhs.avx512),
+          shuffle_i32_m512i::<0b_00_11_00_01>(self.0),
+          shuffle_i32_m512i::<0b_00_11_00_01>(rhs.0),
         );
         let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
@@ -298,10 +298,10 @@ define_simd_signed! {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm512_unpackhi_epi64;
 
-        let even_wide_mul = mul_i32_wide_m512i(self.avx512, rhs.avx512);
+        let even_wide_mul = mul_i32_wide_m512i(self.0, rhs.0);
         let odd_wide_mul = mul_i32_wide_m512i(
-          shuffle_i32_m512i::<0b_00_11_00_01>(self.avx512),
-          shuffle_i32_m512i::<0b_00_11_00_01>(rhs.avx512),
+          shuffle_i32_m512i::<0b_00_11_00_01>(self.0),
+          shuffle_i32_m512i::<0b_00_11_00_01>(rhs.0),
         );
         let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
         let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
@@ -322,7 +322,7 @@ define_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: abs_i32_m512i(self.avx512) }
+        Self { avx512: abs_i32_m512i(self.0) }
       } else {
         Self {
           a : self.a.abs(),
@@ -379,7 +379,7 @@ impl i32x16 {
     pub fn from_i16x16(v: i16x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self { avx512: convert_to_i32_m512i_from_i16_m256i(v.avx2) }
+            Self { avx512: convert_to_i32_m512i_from_i16_m256i(v.0) }
           } else {
             let [a, b]: [i16x8; 2] = cast(v);
             Self {
@@ -396,7 +396,7 @@ impl i32x16 {
     pub fn round_float(self) -> f32x16 {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            cast(convert_to_m512_from_i32_m512i(self.avx512))
+            cast(convert_to_m512_from_i32_m512i(self.0))
           } else {
             f32x16 {
               a: self.a.round_float(),

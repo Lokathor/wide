@@ -34,7 +34,7 @@ define_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
       } else {
         Self {
           a : rhs.a.simd_gt(self.a),
@@ -48,7 +48,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_gt(rhs.a),
@@ -62,7 +62,7 @@ define_simd_signed! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Le)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_le(rhs.a),
@@ -76,7 +76,7 @@ define_simd_signed! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nlt)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i64_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_ge(rhs.a),
@@ -91,7 +91,7 @@ define_simd_signed! {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
-        // Self { avx512: shr_each_i64_m512i(self.avx512, rhs.avx512) }
+        // Self { avx512: shr_each_i64_m512i(self.0, rhs.0) }
         // Fallback for now:
         let a: [i64; 8] = cast(self);
         let r: [u64; 8] = cast(rhs);
@@ -122,7 +122,7 @@ define_simd_signed! {
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs as u64 & 63;
-        Self { avx512: shr_all_i64_m512i(self.avx512, shift) }
+        Self { avx512: shr_all_i64_m512i(self.0, shift) }
       } else {
         Self {
           a : self.a.shr(rhs),
@@ -136,7 +136,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: max_i64_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: max_i64_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.a.max(rhs.a),
@@ -150,7 +150,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: min_i64_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: min_i64_m512i(self.0, rhs.0) }
       } else {
         Self {
           a: self.a.min(rhs.a),
@@ -175,7 +175,7 @@ define_simd_signed! {
   #[inline]
   pub fn unbounded_shr(self, rhs: u64x8) -> Self {
     // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
-    // Self { avx512: shr_each_i64_m512i(self.avx512, rhs.avx512) }
+    // Self { avx512: shr_each_i64_m512i(self.0, rhs.0) }
     // Fallback for now:
 
     let [self_a, self_b] = cast::<i64x8, [i64x4; 2]>(self);
@@ -188,7 +188,7 @@ define_simd_signed! {
   pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
-        Self { avx512: shr_all_i64_m512i(self.avx512, rhs as u64) }
+        Self { avx512: shr_all_i64_m512i(self.0, rhs as u64) }
       } else {
         Self {
           a: self.a.unbounded_shr_scalar(rhs),

@@ -44,7 +44,7 @@ define_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i8_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i8_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_gt(rhs.a),
@@ -58,7 +58,7 @@ define_simd_signed! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i8_m512i::<{cmp_int_op!(Le)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i8_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_le(rhs.a),
@@ -72,7 +72,7 @@ define_simd_signed! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i8_m512i::<{cmp_int_op!(Nlt)}>(self.avx512, rhs.avx512) }
+        Self { avx512: cmp_op_mask_i8_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.simd_ge(rhs.a),
@@ -101,7 +101,7 @@ define_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: max_i8_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: max_i8_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.max(rhs.a),
@@ -115,7 +115,7 @@ define_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: min_i8_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: min_i8_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.min(rhs.a),
@@ -154,7 +154,7 @@ define_simd_signed! {
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: add_saturating_i8_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: add_saturating_i8_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.saturating_add(rhs.a),
@@ -168,7 +168,7 @@ define_simd_signed! {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: sub_saturating_i8_m512i(self.avx512, rhs.avx512) }
+        Self { avx512: sub_saturating_i8_m512i(self.0, rhs.0) }
       } else {
         Self {
           a : self.a.saturating_sub(rhs.a),
@@ -219,7 +219,7 @@ define_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: abs_i8_m512i(self.avx512) }
+        Self { avx512: abs_i8_m512i(self.0) }
       } else {
         Self {
           a : self.a.abs(),
