@@ -40,8 +40,8 @@ define_simd_signed! {
         Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : rhs.0.lo.simd_gt(self.0.lo),
-          b : rhs.0.hi.simd_gt(self.0.hi),
+          lo: rhs.0.lo.simd_gt(self.0.lo),
+          hi: rhs.0.hi.simd_gt(self.0.hi),
         })
       }
     }
@@ -54,8 +54,8 @@ define_simd_signed! {
         Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.simd_gt(rhs.0.lo),
-          b : self.0.hi.simd_gt(rhs.0.hi),
+          lo: self.0.lo.simd_gt(rhs.0.lo),
+          hi: self.0.hi.simd_gt(rhs.0.hi),
         })
       }
     }
@@ -68,8 +68,8 @@ define_simd_signed! {
         Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.simd_le(rhs.0.lo),
-          b : self.0.hi.simd_le(rhs.0.hi),
+          lo: self.0.lo.simd_le(rhs.0.lo),
+          hi: self.0.hi.simd_le(rhs.0.hi),
         })
       }
     }
@@ -82,8 +82,8 @@ define_simd_signed! {
         Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.simd_ge(rhs.0.lo),
-          b : self.0.hi.simd_ge(rhs.0.hi),
+          lo: self.0.lo.simd_ge(rhs.0.lo),
+          hi: self.0.hi.simd_ge(rhs.0.hi),
         })
       }
     }
@@ -121,8 +121,8 @@ define_simd_signed! {
         Self(shr_all_i16_m512i(self.0, shift))
       } else {
         Self(Inner {
-          a : self.0.lo.shr(rhs),
-          b : self.0.hi.shr(rhs),
+          lo: self.0.lo.shr(rhs),
+          hi: self.0.hi.shr(rhs),
         })
       }
     }
@@ -135,8 +135,8 @@ define_simd_signed! {
         Self(max_i16_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a: self.0.lo.max(rhs.0.lo),
-          b: self.0.hi.max(rhs.0.hi),
+          lo: self.0.lo.max(rhs.0.lo),
+          hi: self.0.hi.max(rhs.0.hi),
         })
       }
     }
@@ -149,8 +149,8 @@ define_simd_signed! {
         Self(min_i16_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a: self.0.lo.min(rhs.0.lo),
-          b: self.0.hi.min(rhs.0.hi),
+          lo: self.0.lo.min(rhs.0.lo),
+          hi: self.0.hi.min(rhs.0.hi),
         })
       }
     }
@@ -197,8 +197,8 @@ define_simd_signed! {
         Self(shr_all_i16_m512i(self.0, rhs.min(u16::MAX as u32) as u16))
       } else {
         Self(Inner {
-          a: self.0.lo.unbounded_shr_scalar(rhs),
-          b: self.0.hi.unbounded_shr_scalar(rhs),
+          lo: self.0.lo.unbounded_shr_scalar(rhs),
+          hi: self.0.hi.unbounded_shr_scalar(rhs),
         })
       }
     }
@@ -211,8 +211,8 @@ define_simd_signed! {
         Self(add_saturating_i16_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a: self.0.lo.saturating_add(rhs.0.lo),
-          b: self.0.hi.saturating_add(rhs.0.hi),
+          lo: self.0.lo.saturating_add(rhs.0.lo),
+          hi: self.0.hi.saturating_add(rhs.0.hi),
         })
       }
     }
@@ -225,8 +225,8 @@ define_simd_signed! {
         Self(sub_saturating_i16_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a: self.0.lo.saturating_sub(rhs.0.lo),
-          b: self.0.hi.saturating_sub(rhs.0.hi),
+          lo: self.0.lo.saturating_sub(rhs.0.lo),
+          hi: self.0.hi.saturating_sub(rhs.0.hi),
         })
       }
     }
@@ -276,8 +276,8 @@ define_simd_signed! {
         Self(abs_i16_m512i(self.0))
       } else {
         Self(Inner {
-          a : self.0.lo.abs(),
-          b : self.0.hi.abs(),
+          lo: self.0.lo.abs(),
+          hi: self.0.hi.abs(),
         })
       }
     }
@@ -289,8 +289,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
         Self(Inner {
-          a: self.0.lo.is_positive(),
-          b: self.0.hi.is_positive(),
+          lo: self.0.lo.is_positive(),
+          hi: self.0.hi.is_positive(),
         })
       } else {
         self.simd_gt(Self::ZERO)
@@ -304,8 +304,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
         Self(Inner {
-          a: self.0.lo.is_negative(),
-          b: self.0.hi.is_negative(),
+          lo: self.0.lo.is_negative(),
+          hi: self.0.hi.is_negative(),
         })
       } else {
         self.simd_lt(Self::ZERO)
@@ -335,8 +335,8 @@ impl i16x32 {
           } else {
             let [a, b]: [i8x16; 2] = cast(v);
             Self(Inner {
-              a: i16x16::from_i8x16(a),
-              b: i16x16::from_i8x16(b),
+              lo: i16x16::from_i8x16(a),
+              hi: i16x16::from_i8x16(b),
             })
           }
         }
@@ -355,8 +355,8 @@ impl i16x32 {
             i32x16(mul_i16_horizontal_add_m512i(self.0, rhs.0))
           } else {
             i32x16 {
-              a : self.0.lo.dot(rhs.0.lo),
-              b : self.0.hi.dot(rhs.0.hi),
+              lo: self.0.lo.dot(rhs.0.lo),
+              hi: self.0.hi.dot(rhs.0.hi),
             }
           }
         }

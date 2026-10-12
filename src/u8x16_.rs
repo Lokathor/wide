@@ -1521,8 +1521,8 @@ define_simd_unsigned! {
             let high_wide_mul = vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0));
 
             u16x16 {
-              a: u16x8(low_wide_mul),
-              b: u16x8(high_wide_mul),
+              lo: u16x8(low_wide_mul),
+              hi: u16x8(high_wide_mul),
             }
           }
         } else {

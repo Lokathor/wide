@@ -36,8 +36,8 @@ define_simd_unsigned! {
         Self(self.0.not())
       } else {
         Self(Inner {
-          a : self.0.lo.not(),
-          b : self.0.hi.not(),
+          lo: self.0.lo.not(),
+          hi: self.0.hi.not(),
         })
       }
     }
@@ -50,8 +50,8 @@ define_simd_unsigned! {
         Self(add_i32_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.add(rhs.0.lo),
-          b : self.0.hi.add(rhs.0.hi),
+          lo: self.0.lo.add(rhs.0.lo),
+          hi: self.0.hi.add(rhs.0.hi),
         })
       }
     }
@@ -64,8 +64,8 @@ define_simd_unsigned! {
         Self(sub_i32_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.sub(rhs.0.lo),
-          b : self.0.hi.sub(rhs.0.hi),
+          lo: self.0.lo.sub(rhs.0.lo),
+          hi: self.0.hi.sub(rhs.0.hi),
         })
       }
     }
@@ -78,8 +78,8 @@ define_simd_unsigned! {
         Self(mul_i32_keep_low_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.mul(rhs.0.lo),
-          b : self.0.hi.mul(rhs.0.hi),
+          lo: self.0.lo.mul(rhs.0.lo),
+          hi: self.0.hi.mul(rhs.0.hi),
         })
       }
     }
@@ -92,8 +92,8 @@ define_simd_unsigned! {
         Self(bitand_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.bitand(rhs.0.lo),
-          b : self.0.hi.bitand(rhs.0.hi),
+          lo: self.0.lo.bitand(rhs.0.lo),
+          hi: self.0.hi.bitand(rhs.0.hi),
         })
       }
     }
@@ -106,8 +106,8 @@ define_simd_unsigned! {
         Self(bitor_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.bitor(rhs.0.lo),
-          b : self.0.hi.bitor(rhs.0.hi),
+          lo: self.0.lo.bitor(rhs.0.lo),
+          hi: self.0.hi.bitor(rhs.0.hi),
         })
       }
     }
@@ -120,8 +120,8 @@ define_simd_unsigned! {
         Self(bitxor_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.bitxor(rhs.0.lo),
-          b : self.0.hi.bitxor(rhs.0.hi),
+          lo: self.0.lo.bitxor(rhs.0.lo),
+          hi: self.0.hi.bitxor(rhs.0.hi),
         })
       }
     }
@@ -134,8 +134,8 @@ define_simd_unsigned! {
         Self(cmp_eq_mask_i32_m256i(self.0, rhs.0 ))
       } else {
         Self(Inner {
-          a : self.0.lo.simd_eq(rhs.0.lo),
-          b : self.0.hi.simd_eq(rhs.0.hi),
+          lo: self.0.lo.simd_eq(rhs.0.lo),
+          hi: self.0.hi.simd_eq(rhs.0.hi),
         })
       }
     }
@@ -148,8 +148,8 @@ define_simd_unsigned! {
         !self.simd_eq(rhs)
       } else {
         Self(Inner {
-          a : self.0.lo.simd_ne(rhs.0.lo),
-          b : self.0.hi.simd_ne(rhs.0.hi),
+          lo: self.0.lo.simd_ne(rhs.0.lo),
+          hi: self.0.hi.simd_ne(rhs.0.hi),
         })
       }
     }
@@ -170,8 +170,8 @@ define_simd_unsigned! {
         Self(cmp_gt_mask_i32_m256i((self ^ highbit).0, (rhs ^ highbit).0 ))
       } else {
         Self(Inner {
-          a : self.0.lo.simd_gt(rhs.0.lo),
-          b : self.0.hi.simd_gt(rhs.0.hi),
+          lo: self.0.lo.simd_gt(rhs.0.lo),
+          hi: self.0.hi.simd_gt(rhs.0.hi),
         })
       }
     }
@@ -303,8 +303,8 @@ define_simd_unsigned! {
         ))
       } else {
         Self(Inner {
-          a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
-          b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
+          lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
+          hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
         })
       }
     }
@@ -317,8 +317,8 @@ define_simd_unsigned! {
         Self(blend_varying_i8_m256i(if_false.0, if_true.0, self.0))
       } else {
         Self(Inner {
-          a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
-          b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
+          lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
+          hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
         })
       }
     }
@@ -612,8 +612,8 @@ define_simd_unsigned! {
         Self(shl_each_u32_m256i(self.0, shift_by))
       } else {
         Self(Inner {
-          a : self.0.lo.shl(rhs.0.lo),
-          b : self.0.hi.shl(rhs.0.hi),
+          lo: self.0.lo.shl(rhs.0.lo),
+          hi: self.0.hi.shl(rhs.0.hi),
         })
       }
     }
@@ -629,8 +629,8 @@ define_simd_unsigned! {
         Self(shl_all_u32_m256i(self.0, shift))
       } else {
         Self(Inner {
-          a : self.0.lo.shl(rhs),
-          b : self.0.hi.shl(rhs),
+          lo: self.0.lo.shl(rhs),
+          hi: self.0.hi.shl(rhs),
         })
       }
     }
@@ -645,8 +645,8 @@ define_simd_unsigned! {
         Self(shr_each_u32_m256i(self.0, shift_by ))
       } else {
         Self(Inner {
-          a : self.0.lo.shr(rhs.0.lo),
-          b : self.0.hi.shr(rhs.0.hi),
+          lo: self.0.lo.shr(rhs.0.lo),
+          hi: self.0.hi.shr(rhs.0.hi),
         })
       }
     }
@@ -662,8 +662,8 @@ define_simd_unsigned! {
         Self(shr_all_u32_m256i(self.0, shift))
       } else {
         Self(Inner {
-          a : self.0.lo.shr(rhs),
-          b : self.0.hi.shr(rhs),
+          lo: self.0.lo.shr(rhs),
+          hi: self.0.hi.shr(rhs),
         })
       }
     }
@@ -676,8 +676,8 @@ define_simd_unsigned! {
         Self(max_u32_m256i(self.0, rhs.0 ))
       } else {
         Self(Inner {
-          a : self.0.lo.max(rhs.0.lo),
-          b : self.0.hi.max(rhs.0.hi),
+          lo: self.0.lo.max(rhs.0.lo),
+          hi: self.0.hi.max(rhs.0.hi),
         })
       }
     }
@@ -690,8 +690,8 @@ define_simd_unsigned! {
         Self(min_u32_m256i(self.0, rhs.0 ))
       } else {
         Self(Inner {
-          a : self.0.lo.min(rhs.0.lo),
-          b : self.0.hi.min(rhs.0.hi),
+          lo: self.0.lo.min(rhs.0.lo),
+          hi: self.0.hi.min(rhs.0.hi),
         })
       }
     }
@@ -716,8 +716,8 @@ define_simd_unsigned! {
         Self(shl_each_u32_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a: self.0.lo.unbounded_shl(rhs.0.lo),
-          b: self.0.hi.unbounded_shl(rhs.0.hi),
+          lo: self.0.lo.unbounded_shl(rhs.0.lo),
+          hi: self.0.hi.unbounded_shl(rhs.0.hi),
         })
       }
     }
@@ -730,8 +730,8 @@ define_simd_unsigned! {
         Self(shl_all_u32_m256i(self.0, cast([rhs as u64, 0])))
       } else {
         Self(Inner {
-          a: self.0.lo.unbounded_shl_scalar(rhs),
-          b: self.0.hi.unbounded_shl_scalar(rhs),
+          lo: self.0.lo.unbounded_shl_scalar(rhs),
+          hi: self.0.hi.unbounded_shl_scalar(rhs),
         })
       }
     }
@@ -744,8 +744,8 @@ define_simd_unsigned! {
         Self(shr_each_u32_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a: self.0.lo.unbounded_shr(rhs.0.lo),
-          b: self.0.hi.unbounded_shr(rhs.0.hi),
+          lo: self.0.lo.unbounded_shr(rhs.0.lo),
+          hi: self.0.hi.unbounded_shr(rhs.0.hi),
         })
       }
     }
@@ -758,8 +758,8 @@ define_simd_unsigned! {
         Self(shr_all_u32_m256i(self.0, cast([rhs as u64, 0])))
       } else {
         Self(Inner {
-          a: self.0.lo.unbounded_shr_scalar(rhs),
-          b: self.0.hi.unbounded_shr_scalar(rhs),
+          lo: self.0.lo.unbounded_shr_scalar(rhs),
+          hi: self.0.hi.unbounded_shr_scalar(rhs),
         })
       }
     }
@@ -775,8 +775,8 @@ define_simd_unsigned! {
         result | overflow
       } else {
         Self(Inner {
-          a: self.0.lo.saturating_add(rhs.0.lo),
-          b: self.0.hi.saturating_add(rhs.0.hi),
+          lo: self.0.lo.saturating_add(rhs.0.lo),
+          hi: self.0.hi.saturating_add(rhs.0.hi),
         })
       }
     }
@@ -792,8 +792,8 @@ define_simd_unsigned! {
         result & no_overflow
       } else {
         Self(Inner {
-          a: self.0.lo.saturating_sub(rhs.0.lo),
-          b: self.0.hi.saturating_sub(rhs.0.hi),
+          lo: self.0.lo.saturating_sub(rhs.0.lo),
+          hi: self.0.hi.saturating_sub(rhs.0.hi),
         })
       }
     }
@@ -873,8 +873,8 @@ define_simd_unsigned! {
         cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
       } else {
         Self(Inner {
-          a : self.0.lo.mul_keep_high(rhs.0.lo),
-          b : self.0.hi.mul_keep_high(rhs.0.hi),
+          lo: self.0.lo.mul_keep_high(rhs.0.lo),
+          hi: self.0.hi.mul_keep_high(rhs.0.hi),
         })
       }
     }
@@ -918,8 +918,8 @@ impl From<u16x8> for u32x8 {
             Self(convert_to_i32_m256i_from_u16_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
             Self(Inner {
-              a: u32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
-              b: u32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
+              lo: u32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
+              hi: u32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
             })
           } else {
             u32x8::new([

@@ -45,8 +45,8 @@ define_simd_signed! {
         Self(cmp_gt_mask_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.simd_gt(rhs.0.lo),
-          b : self.0.hi.simd_gt(rhs.0.hi),
+          lo: self.0.lo.simd_gt(rhs.0.lo),
+          hi: self.0.hi.simd_gt(rhs.0.hi),
         })
       }
     }
@@ -59,8 +59,8 @@ define_simd_signed! {
         !self.simd_gt(rhs)
       } else {
         Self(Inner {
-          a : self.0.lo.simd_le(rhs.0.lo),
-          b : self.0.hi.simd_le(rhs.0.hi),
+          lo: self.0.lo.simd_le(rhs.0.lo),
+          hi: self.0.hi.simd_le(rhs.0.hi),
         })
       }
     }
@@ -73,8 +73,8 @@ define_simd_signed! {
         !self.simd_lt(rhs)
       } else {
         Self(Inner {
-          a : self.0.lo.simd_ge(rhs.0.lo),
-          b : self.0.hi.simd_ge(rhs.0.hi),
+          lo: self.0.lo.simd_ge(rhs.0.lo),
+          hi: self.0.hi.simd_ge(rhs.0.hi),
         })
       }
     }
@@ -106,8 +106,8 @@ define_simd_signed! {
         Self(max_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.max(rhs.0.lo),
-          b : self.0.hi.max(rhs.0.hi),
+          lo: self.0.lo.max(rhs.0.lo),
+          hi: self.0.hi.max(rhs.0.hi),
         })
       }
     }
@@ -120,8 +120,8 @@ define_simd_signed! {
         Self(min_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.min(rhs.0.lo),
-          b : self.0.hi.min(rhs.0.hi),
+          lo: self.0.lo.min(rhs.0.lo),
+          hi: self.0.hi.min(rhs.0.hi),
         })
       }
     }
@@ -165,8 +165,8 @@ define_simd_signed! {
         Self(add_saturating_i8_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.saturating_add(rhs.0.lo),
-          b : self.0.hi.saturating_add(rhs.0.hi),
+          lo: self.0.lo.saturating_add(rhs.0.lo),
+          hi: self.0.hi.saturating_add(rhs.0.hi),
         })
       }
     }
@@ -179,8 +179,8 @@ define_simd_signed! {
         Self(sub_saturating_i8_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.saturating_sub(rhs.0.lo),
-          b : self.0.hi.saturating_sub(rhs.0.hi),
+          lo: self.0.lo.saturating_sub(rhs.0.lo),
+          hi: self.0.hi.saturating_sub(rhs.0.hi),
         })
       }
     }
@@ -239,8 +239,8 @@ define_simd_signed! {
         Self(abs_i8_m256i(self.0))
       } else {
         Self(Inner {
-          a : self.0.lo.abs(),
-          b : self.0.hi.abs(),
+          lo: self.0.lo.abs(),
+          hi: self.0.hi.abs(),
         })
       }
     }
@@ -252,8 +252,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
         Self(Inner {
-          a: self.0.lo.is_positive(),
-          b: self.0.hi.is_positive(),
+          lo: self.0.lo.is_positive(),
+          hi: self.0.hi.is_positive(),
         })
       } else {
         self.simd_gt(Self::ZERO)
@@ -267,8 +267,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
         Self(Inner {
-          a: self.0.lo.is_negative(),
-          b: self.0.hi.is_negative(),
+          lo: self.0.lo.is_negative(),
+          hi: self.0.hi.is_negative(),
         })
       } else {
         self.simd_lt(Self::ZERO)
@@ -295,8 +295,8 @@ impl i8x32 {
             Self(shuffle_av_i8z_half_m256i(self.0, add_saturating_u8_m256i(rhs.0, set_splat_i8_m256i(0x70))))
           } else {
               Self(Inner {
-                a : self.0.lo.shuffle_zeroing(rhs.0.lo.cast_unsigned()),
-                b : self.0.hi.shuffle_zeroing(rhs.0.hi.cast_unsigned()),
+                lo: self.0.lo.shuffle_zeroing(rhs.0.lo.cast_unsigned()),
+                hi: self.0.hi.shuffle_zeroing(rhs.0.hi.cast_unsigned()),
               })
           }
         }
@@ -318,8 +318,8 @@ impl i8x32 {
             Self(shuffle_av_i8z_half_m256i(self.0, rhs.0))
           } else {
             Self(Inner {
-              a : self.0.lo.shuffle(rhs.0.lo.cast_unsigned()),
-              b : self.0.hi.shuffle(rhs.0.hi.cast_unsigned()),
+              lo: self.0.lo.shuffle(rhs.0.lo.cast_unsigned()),
+              hi: self.0.hi.shuffle(rhs.0.hi.cast_unsigned()),
             })
           }
         }

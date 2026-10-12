@@ -39,8 +39,8 @@ define_simd_unsigned! {
         Self(self.0.not())
       } else {
         Self(Inner {
-          a : self.0.lo.not(),
-          b : self.0.hi.not(),
+          lo: self.0.lo.not(),
+          hi: self.0.hi.not(),
         })
       }
     }
@@ -53,8 +53,8 @@ define_simd_unsigned! {
         Self(add_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.add(rhs.0.lo),
-          b : self.0.hi.add(rhs.0.hi),
+          lo: self.0.lo.add(rhs.0.lo),
+          hi: self.0.hi.add(rhs.0.hi),
         })
       }
     }
@@ -67,8 +67,8 @@ define_simd_unsigned! {
         Self(sub_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.sub(rhs.0.lo),
-          b : self.0.hi.sub(rhs.0.hi),
+          lo: self.0.lo.sub(rhs.0.lo),
+          hi: self.0.hi.sub(rhs.0.hi),
         })
       }
     }
@@ -91,8 +91,8 @@ define_simd_unsigned! {
           Self(bitand_m256i(self.0,rhs.0))
       } else {
           Self(Inner {
-            a : self.0.lo.bitand(rhs.0.lo),
-            b : self.0.hi.bitand(rhs.0.hi),
+            lo: self.0.lo.bitand(rhs.0.lo),
+            hi: self.0.hi.bitand(rhs.0.hi),
           })
       }
     }
@@ -105,8 +105,8 @@ define_simd_unsigned! {
         Self(bitor_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.bitor(rhs.0.lo),
-          b : self.0.hi.bitor(rhs.0.hi),
+          lo: self.0.lo.bitor(rhs.0.lo),
+          hi: self.0.hi.bitor(rhs.0.hi),
         })
       }
     }
@@ -119,8 +119,8 @@ define_simd_unsigned! {
         Self(bitxor_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.bitxor(rhs.0.lo),
-          b : self.0.hi.bitxor(rhs.0.hi),
+          lo: self.0.lo.bitxor(rhs.0.lo),
+          hi: self.0.hi.bitxor(rhs.0.hi),
         })
       }
     }
@@ -133,8 +133,8 @@ define_simd_unsigned! {
         Self(cmp_eq_mask_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.simd_eq(rhs.0.lo),
-          b : self.0.hi.simd_eq(rhs.0.hi),
+          lo: self.0.lo.simd_eq(rhs.0.lo),
+          hi: self.0.hi.simd_eq(rhs.0.hi),
         })
       }
     }
@@ -147,8 +147,8 @@ define_simd_unsigned! {
         !self.simd_eq(rhs)
       } else {
         Self(Inner {
-          a : self.0.lo.simd_ne(rhs.0.lo),
-          b : self.0.hi.simd_ne(rhs.0.hi),
+          lo: self.0.lo.simd_ne(rhs.0.lo),
+          hi: self.0.hi.simd_ne(rhs.0.hi),
         })
       }
     }
@@ -338,8 +338,8 @@ define_simd_unsigned! {
         ))
       } else {
         Self(Inner {
-          a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
-          b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
+          lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
+          hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
         })
       }
     }
@@ -352,8 +352,8 @@ define_simd_unsigned! {
         Self(blend_varying_i8_m256i(if_false.0, if_true.0, self.0))
       } else {
         Self(Inner {
-          a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
-          b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
+          lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
+          hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
         })
       }
     }
@@ -425,8 +425,8 @@ define_simd_unsigned! {
         Self(blend_varying_i8_m256i(res_lo, res_hi, sel))
       } else {
         Self(Inner {
-          a: [self.0.lo, self.0.hi].shuffle(indices.0.lo),
-          b: [self.0.lo, self.0.hi].shuffle(indices.0.hi),
+          lo: [self.0.lo, self.0.hi].shuffle(indices.0.lo),
+          hi: [self.0.lo, self.0.hi].shuffle(indices.0.hi),
         })
       }
     }
@@ -456,8 +456,8 @@ define_simd_unsigned! {
         Self(blend_varying_i8_m256i(res_lo, res_hi, sel))
       } else {
         Self(Inner {
-          a: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.lo),
-          b: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.hi),
+          lo: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.lo),
+          hi: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.hi),
         })
       }
     }
@@ -472,8 +472,8 @@ define_simd_unsigned! {
         self.shuffle(indices & 31)
       } else {
         Self(Inner {
-          a: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.lo),
-          b: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.hi),
+          lo: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.lo),
+          hi: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.hi),
         })
       }
     }
@@ -495,8 +495,8 @@ define_simd_unsigned! {
         self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
       } else {
         u8x32 {
-          a: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.lo),
-          b: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.hi),
+          lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.lo),
+          hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.hi),
         }
       }
     }
@@ -511,8 +511,8 @@ define_simd_unsigned! {
         self.shuffle(indices)
       } else {
         u8x32 {
-          a: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.lo),
-          b: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.hi),
+          lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.lo),
+          hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.hi),
         }
       }
     }
@@ -705,8 +705,8 @@ define_simd_unsigned! {
         Self(max_u8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.max(rhs.0.lo),
-          b : self.0.hi.max(rhs.0.hi),
+          lo: self.0.lo.max(rhs.0.lo),
+          hi: self.0.hi.max(rhs.0.hi),
         })
       }
     }
@@ -719,8 +719,8 @@ define_simd_unsigned! {
         Self(min_u8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.min(rhs.0.lo),
-          b : self.0.hi.min(rhs.0.hi),
+          lo: self.0.lo.min(rhs.0.lo),
+          hi: self.0.hi.min(rhs.0.hi),
         })
       }
     }
@@ -801,8 +801,8 @@ define_simd_unsigned! {
         Self(add_saturating_u8_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.saturating_add(rhs.0.lo),
-          b : self.0.hi.saturating_add(rhs.0.hi),
+          lo: self.0.lo.saturating_add(rhs.0.lo),
+          hi: self.0.hi.saturating_add(rhs.0.hi),
         })
       }
     }
@@ -815,8 +815,8 @@ define_simd_unsigned! {
         Self(sub_saturating_u8_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          a : self.0.lo.saturating_sub(rhs.0.lo),
-          b : self.0.hi.saturating_sub(rhs.0.hi),
+          lo: self.0.lo.saturating_sub(rhs.0.lo),
+          hi: self.0.hi.saturating_sub(rhs.0.hi),
         })
       }
     }

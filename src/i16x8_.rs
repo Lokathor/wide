@@ -421,8 +421,8 @@ define_simd_signed! {
           let low = mul_i16_keep_low_m128i(self.0, rhs.0);
           let high = mul_i16_keep_high_m128i(self.0, rhs.0);
           i32x8 {
-            a: i32x4(unpack_low_i16_m128i(low, high)),
-            b: i32x4(unpack_high_i16_m128i(low, high))
+            lo: i32x4(unpack_low_i16_m128i(low, high)),
+            hi: i32x4(unpack_high_i16_m128i(low, high))
           }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
           let lhs_low = unsafe { vget_low_s16(self.0) };

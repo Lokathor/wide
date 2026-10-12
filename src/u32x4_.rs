@@ -1037,18 +1037,18 @@ define_simd_unsigned! {
             shr_imm_u64_m128i::<32>(rhs.0));
 
           u64x4 {
-            a: u64x2(unpack_low_i64_m128i(evenp, oddp)),
-            b: u64x2(unpack_high_i64_m128i(evenp, oddp))
+            lo: u64x2(unpack_low_i64_m128i(evenp, oddp)),
+            hi: u64x2(unpack_high_i64_m128i(evenp, oddp))
           }
         } else if #[cfg(target_feature="simd128")] {
           u64x4 {
-            a: u64x2(u64x2_extmul_low_u32x4(self.0, rhs.0)),
-            b: u64x2(u64x2_extmul_high_u32x4(self.0, rhs.0)),
+            lo: u64x2(u64x2_extmul_low_u32x4(self.0, rhs.0)),
+            hi: u64x2(u64x2_extmul_high_u32x4(self.0, rhs.0)),
           }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {
           u64x4 { a: u64x2(vmull_u32(vget_low_u32(self.0), vget_low_u32(rhs.0))),
-                  b: u64x2(vmull_u32(vget_high_u32(self.0), vget_high_u32(rhs.0))) }
+                  hi: u64x2(vmull_u32(vget_high_u32(self.0), vget_high_u32(rhs.0))) }
           }
         } else {
           let a: [u32; 4] = cast(self);
