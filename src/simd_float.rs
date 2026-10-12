@@ -725,6 +725,10 @@ macro_rules! define_simd_float {
       ///
       /// # Unspecified precision
       ///
+      /// This currently performs a deterministic multiplication by a constant.
+      /// However, this is not made as a guarantee, because the equivalent `std`
+      /// float function has unspecified precision.
+      ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
       /// execution from one invocation to the next.
@@ -738,6 +742,10 @@ macro_rules! define_simd_float {
       /// Converts degrees to radians.
       ///
       /// # Unspecified precision
+      ///
+      /// This currently performs a deterministic multiplication by a constant.
+      /// However, this is not made as a guarantee, because the equivalent `std`
+      /// float function has unspecified precision.
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
