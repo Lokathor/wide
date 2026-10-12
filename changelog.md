@@ -14,6 +14,9 @@
 * [#330](https://github.com/Lokathor/wide/pull/330): Add optimized `sse2` path
   for `f32x4::floor` and `f32x4::ceil`
 
+* [#340](https://github.com/Lokathor/wide/pull/340): Make documentation about
+  the precision and determinism of float functions less vague
+
 * [#333](https://github.com/Lokathor/wide/pull/333): Switch to a custom
   implementation of `serde::Deserialize`. This could slightly change the
   function's behavior
