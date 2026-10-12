@@ -54,10 +54,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vnegq_f64(self.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           -self.0.arr[0],
           -self.0.arr[1],
-        ]}
+        ])
       }
     }
   }
@@ -72,10 +72,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_f64(self.0))) }}
       } else {
-        Self { arr: [
+        Self::new([
           f64::from_bits(!self.0.arr[0].to_bits()),
           f64::from_bits(!self.0.arr[1].to_bits()),
-        ]}
+        ])
       }
     }
   }
@@ -90,10 +90,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vaddq_f64(self.0, rhs.0) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0] + rhs.0.arr[0],
           self.0.arr[1] + rhs.0.arr[1],
-        ]}
+        ])
       }
     }
   }
@@ -108,10 +108,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vsubq_f64(self.0, rhs.0) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0] - rhs.0.arr[0],
           self.0.arr[1] - rhs.0.arr[1],
-        ]}
+        ])
       }
     }
   }
@@ -126,10 +126,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmulq_f64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0] * rhs.0.arr[0],
           self.0.arr[1] * rhs.0.arr[1],
-        ]}
+        ])
       }
     }
   }
@@ -144,10 +144,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vdivq_f64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0] / rhs.0.arr[0],
           self.0.arr[1] / rhs.0.arr[1],
-        ]}
+        ])
       }
     }
   }
@@ -170,10 +170,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
-        Self { arr: [
+        Self::new([
           f64::from_bits(self.0.arr[0].to_bits() & rhs.0.arr[0].to_bits()),
           f64::from_bits(self.0.arr[1].to_bits() & rhs.0.arr[1].to_bits()),
-        ]}
+        ])
       }
     }
   }
@@ -188,10 +188,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vorrq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
-        Self { arr: [
+        Self::new([
           f64::from_bits(self.0.arr[0].to_bits() | rhs.0.arr[0].to_bits()),
           f64::from_bits(self.0.arr[1].to_bits() | rhs.0.arr[1].to_bits()),
-        ]}
+        ])
       }
     }
   }
@@ -206,10 +206,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
-        Self { arr: [
+        Self::new([
           f64::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
           f64::from_bits(self.0.arr[1].to_bits() ^ rhs.0.arr[1].to_bits()),
-        ]}
+        ])
       }
     }
   }
@@ -224,10 +224,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] == rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        ])
       }
     }
   }
@@ -242,10 +242,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }.not() }
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] != rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        ])
       }
     }
   }
@@ -260,10 +260,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] < rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        ])
       }
     }
   }
@@ -280,10 +280,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] > rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        ])
       }
     }
   }
@@ -298,10 +298,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] <= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        ])
       }
     }
   }
@@ -316,10 +316,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] >= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        ])
       }
     }
   }
@@ -484,10 +484,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, self.0)) }.not() }
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-        ]}
+        ])
       }
     }
   }
@@ -589,10 +589,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmaxnmq_f64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].max(rhs.0.arr[0]),
           self.0.arr[1].max(rhs.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -609,10 +609,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vmaxq_f64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { rhs.0.arr[0] } else { self.0.arr[0] },
           if self.0.arr[1] < rhs.0.arr[1] { rhs.0.arr[1] } else { self.0.arr[1] },
-        ]}
+        ])
       }
     }
   }
@@ -642,10 +642,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminnmq_f64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].min(rhs.0.arr[0]),
           self.0.arr[1].min(rhs.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -662,10 +662,10 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vminq_f64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { self.0.arr[0] } else { rhs.0.arr[0] },
           if self.0.arr[1] < rhs.0.arr[1] { self.0.arr[1] } else { rhs.0.arr[1] },
-        ]}
+        ])
       }
     }
   }
@@ -1224,15 +1224,15 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vsqrtq_f64(self.0) }}
       } else if #[cfg(feature="std")] {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].sqrt(),
           self.0.arr[1].sqrt(),
-        ]}
+        ])
       } else {
-        Self { arr: [
+        Self::new([
           software_sqrt(self.0.arr[0]),
           software_sqrt(self.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -2156,10 +2156,10 @@ impl f64x2 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             Self { neon: unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.0))) }}
           } else {
-            Self { arr: [
+            Self::new([
                 v.as_array()[0] as f64,
                 v.as_array()[1] as f64,
-            ]}
+            ])
           }
         }
     }

@@ -48,12 +48,12 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_s32_u32(vcltq_s32(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] < rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] < rhs.0.arr[2] { -1 } else { 0 },
           if self.0.arr[3] < rhs.0.arr[3] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -68,12 +68,12 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_s32_u32(vcgtq_s32(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] > rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] > rhs.0.arr[2] { -1 } else { 0 },
           if self.0.arr[3] > rhs.0.arr[3] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -88,12 +88,12 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] <= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] <= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] <= rhs.0.arr[2] { -1 } else { 0 },
           if self.0.arr[3] <= rhs.0.arr[3] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -108,12 +108,12 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] >= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] >= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] >= rhs.0.arr[2] { -1 } else { 0 },
           if self.0.arr[3] >= rhs.0.arr[3] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -160,12 +160,12 @@ define_simd_signed! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self { neon: vshlq_s32(self.0, vmovq_n_s32( -(rhs as i32 & 31))) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_shr(rhs),
           self.0.arr[1].wrapping_shr(rhs),
           self.0.arr[2].wrapping_shr(rhs),
           self.0.arr[3].wrapping_shr(rhs),
-        ]}
+        ])
       }
     }
   }

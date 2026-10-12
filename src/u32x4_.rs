@@ -52,12 +52,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vaddq_u32(self.0, rhs.0) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_add(rhs.0.arr[0]),
           self.0.arr[1].wrapping_add(rhs.0.arr[1]),
           self.0.arr[2].wrapping_add(rhs.0.arr[2]),
           self.0.arr[3].wrapping_add(rhs.0.arr[3]),
-        ]}
+        ])
       }
     }
   }
@@ -72,12 +72,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vsubq_u32(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
           self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
           self.0.arr[2].wrapping_sub(rhs.0.arr[2]),
           self.0.arr[3].wrapping_sub(rhs.0.arr[3]),
-        ]}
+        ])
       }
     }
   }
@@ -114,12 +114,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vandq_u32(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].bitand(rhs.0.arr[0]),
           self.0.arr[1].bitand(rhs.0.arr[1]),
           self.0.arr[2].bitand(rhs.0.arr[2]),
           self.0.arr[3].bitand(rhs.0.arr[3]),
-        ]}
+        ])
       }
     }
   }
@@ -134,12 +134,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vorrq_u32(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].bitor(rhs.0.arr[0]),
           self.0.arr[1].bitor(rhs.0.arr[1]),
           self.0.arr[2].bitor(rhs.0.arr[2]),
           self.0.arr[3].bitor(rhs.0.arr[3]),
-        ]}
+        ])
       }
     }
   }
@@ -154,12 +154,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: veorq_u32(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].bitxor(rhs.0.arr[0]),
           self.0.arr[1].bitxor(rhs.0.arr[1]),
           self.0.arr[2].bitxor(rhs.0.arr[2]),
           self.0.arr[3].bitxor(rhs.0.arr[3]),
-        ]}
+        ])
       }
     }
   }
@@ -174,12 +174,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vceqq_u32(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] == rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] == rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] == rhs.0.arr[2] { u32::MAX } else { 0 },
           if self.0.arr[3] == rhs.0.arr[3] { u32::MAX } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -194,12 +194,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_eq(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] != rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] != rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] != rhs.0.arr[2] { u32::MAX } else { 0 },
           if self.0.arr[3] != rhs.0.arr[3] { u32::MAX } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -222,12 +222,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {Self { neon: vcgtq_u32(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] > rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] > rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] > rhs.0.arr[2] { u32::MAX } else { 0 },
           if self.0.arr[3] > rhs.0.arr[3] { u32::MAX } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -242,12 +242,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] <= rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] <= rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] <= rhs.0.arr[2] { u32::MAX } else { 0 },
           if self.0.arr[3] <= rhs.0.arr[3] { u32::MAX } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -262,12 +262,12 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] >= rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] >= rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] >= rhs.0.arr[2] { u32::MAX } else { 0 },
           if self.0.arr[3] >= rhs.0.arr[3] { u32::MAX } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -761,12 +761,12 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self { neon: vshlq_u32(self.0, vmovq_n_s32(rhs as i32 & 31)) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_shl(rhs),
           self.0.arr[1].wrapping_shl(rhs),
           self.0.arr[2].wrapping_shl(rhs),
           self.0.arr[3].wrapping_shl(rhs),
-        ]}
+        ])
       }
     }
   }
@@ -813,12 +813,12 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self { neon: vshlq_u32(self.0, vmovq_n_s32( -(rhs as i32 & 31))) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_shr(rhs),
           self.0.arr[1].wrapping_shr(rhs),
           self.0.arr[2].wrapping_shr(rhs),
           self.0.arr[3].wrapping_shr(rhs),
-        ]}
+        ])
       }
     }
   }
@@ -917,12 +917,12 @@ define_simd_unsigned! {
         // The intrinsic has different semantics so we need to saturate `rhs`.
         unsafe { Self { neon: vshlq_u32(self.0, vmovq_n_s32(rhs.min(32) as i32)) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].unbounded_shl(rhs),
           self.0.arr[1].unbounded_shl(rhs),
           self.0.arr[2].unbounded_shl(rhs),
           self.0.arr[3].unbounded_shl(rhs),
-        ]}
+        ])
       }
     }
   }

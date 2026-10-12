@@ -48,7 +48,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_s16_u16(vcltq_s16(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] < rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] < rhs.0.arr[2] { -1 } else { 0 },
@@ -57,7 +57,7 @@ define_simd_signed! {
           if self.0.arr[5] < rhs.0.arr[5] { -1 } else { 0 },
           if self.0.arr[6] < rhs.0.arr[6] { -1 } else { 0 },
           if self.0.arr[7] < rhs.0.arr[7] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -72,7 +72,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_s16_u16(vcgtq_s16(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] > rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] > rhs.0.arr[2] { -1 } else { 0 },
@@ -81,7 +81,7 @@ define_simd_signed! {
           if self.0.arr[5] > rhs.0.arr[5] { -1 } else { 0 },
           if self.0.arr[6] > rhs.0.arr[6] { -1 } else { 0 },
           if self.0.arr[7] > rhs.0.arr[7] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -96,7 +96,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] <= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] <= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] <= rhs.0.arr[2] { -1 } else { 0 },
@@ -105,7 +105,7 @@ define_simd_signed! {
           if self.0.arr[5] <= rhs.0.arr[5] { -1 } else { 0 },
           if self.0.arr[6] <= rhs.0.arr[6] { -1 } else { 0 },
           if self.0.arr[7] <= rhs.0.arr[7] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -120,7 +120,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] >= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] >= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] >= rhs.0.arr[2] { -1 } else { 0 },
@@ -129,7 +129,7 @@ define_simd_signed! {
           if self.0.arr[5] >= rhs.0.arr[5] { -1 } else { 0 },
           if self.0.arr[6] >= rhs.0.arr[6] { -1 } else { 0 },
           if self.0.arr[7] >= rhs.0.arr[7] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -187,7 +187,7 @@ define_simd_signed! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self { neon: vshlq_s16(self.0, vmovq_n_s16( -(rhs as i16 & 15))) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_shr(rhs),
           self.0.arr[1].wrapping_shr(rhs),
           self.0.arr[2].wrapping_shr(rhs),
@@ -196,7 +196,7 @@ define_simd_signed! {
           self.0.arr[5].wrapping_shr(rhs),
           self.0.arr[6].wrapping_shr(rhs),
           self.0.arr[7].wrapping_shr(rhs),
-        ]}
+        ])
       }
     }
   }
@@ -364,7 +364,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vqaddq_s16(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].saturating_add(rhs.0.arr[0]),
           self.0.arr[1].saturating_add(rhs.0.arr[1]),
           self.0.arr[2].saturating_add(rhs.0.arr[2]),
@@ -373,7 +373,7 @@ define_simd_signed! {
           self.0.arr[5].saturating_add(rhs.0.arr[5]),
           self.0.arr[6].saturating_add(rhs.0.arr[6]),
           self.0.arr[7].saturating_add(rhs.0.arr[7]),
-        ]}
+        ])
       }
     }
   }
@@ -388,7 +388,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s16(self.0, rhs.0) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].saturating_sub(rhs.0.arr[0]),
           self.0.arr[1].saturating_sub(rhs.0.arr[1]),
           self.0.arr[2].saturating_sub(rhs.0.arr[2]),
@@ -397,7 +397,7 @@ define_simd_signed! {
           self.0.arr[5].saturating_sub(rhs.0.arr[5]),
           self.0.arr[6].saturating_sub(rhs.0.arr[6]),
           self.0.arr[7].saturating_sub(rhs.0.arr[7]),
-        ]}
+        ])
       }
     }
   }
@@ -831,7 +831,7 @@ impl i16x8 {
             unsafe { Self { neon: vqrdmulhq_s16(self.0, rhs.0) } }
           } else {
             // compiler does a surprisingly good job of vectorizing this
-            Self { arr: [
+            Self::new([
               ((i32::from(self.0.arr[0]) * i32::from(rhs.0.arr[0]) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[1]) * i32::from(rhs.0.arr[1]) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[2]) * i32::from(rhs.0.arr[2]) + 0x4000) >> 15) as i16,
@@ -840,7 +840,7 @@ impl i16x8 {
               ((i32::from(self.0.arr[5]) * i32::from(rhs.0.arr[5]) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[6]) * i32::from(rhs.0.arr[6]) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[7]) * i32::from(rhs.0.arr[7]) + 0x4000) >> 15) as i16,
-            ]}
+            ])
           }
         }
     }
@@ -876,7 +876,7 @@ impl i16x8 {
             unsafe { Self { neon: vqrdmulhq_n_s16(self.0, rhs) } }
           } else {
             // compiler does a surprisingly good job of vectorizing this
-            Self { arr: [
+            Self::new([
               ((i32::from(self.0.arr[0]) * i32::from(rhs) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[1]) * i32::from(rhs) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[2]) * i32::from(rhs) + 0x4000) >> 15) as i16,
@@ -885,7 +885,7 @@ impl i16x8 {
               ((i32::from(self.0.arr[5]) * i32::from(rhs) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[6]) * i32::from(rhs) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[7]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-            ]}
+            ])
           }
         }
     }

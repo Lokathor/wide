@@ -52,10 +52,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vaddq_u64(self.0, rhs.0) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_add(rhs.0.arr[0]),
           self.0.arr[1].wrapping_add(rhs.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -70,10 +70,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vsubq_u64(self.0, rhs.0) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
           self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -105,10 +105,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vandq_u64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].bitand(rhs.0.arr[0]),
           self.0.arr[1].bitand(rhs.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -123,10 +123,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vorrq_u64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].bitor(rhs.0.arr[0]),
           self.0.arr[1].bitor(rhs.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -141,10 +141,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: veorq_u64(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].bitxor(rhs.0.arr[0]),
           self.0.arr[1].bitxor(rhs.0.arr[1]),
-        ]}
+        ])
       }
     }
   }
@@ -668,10 +668,10 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self { neon: vshlq_u64(self.0, vmovq_n_s64(rhs as i64 & 63)) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_shl(rhs),
           self.0.arr[1].wrapping_shl(rhs),
-        ]}
+        ])
       }
     }
   }
@@ -716,10 +716,10 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self { neon: vshlq_u64(self.0, vmovq_n_s64(-(rhs as i64 & 63))) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].wrapping_shr(rhs),
           self.0.arr[1].wrapping_shr(rhs),
-        ]}
+        ])
       }
     }
   }
@@ -791,10 +791,10 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vshlq_u64(self.0, vmovq_n_s64(rhs.min(64) as i64)) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].unbounded_shl(rhs),
           self.0.arr[1].unbounded_shl(rhs),
-        ]}
+        ])
       }
     }
   }

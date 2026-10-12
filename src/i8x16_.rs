@@ -48,7 +48,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_s8_u8(vcltq_s8(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] < rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] < rhs.0.arr[2] { -1 } else { 0 },
@@ -65,7 +65,7 @@ define_simd_signed! {
           if self.0.arr[13] < rhs.0.arr[13] { -1 } else { 0 },
           if self.0.arr[14] < rhs.0.arr[14] { -1 } else { 0 },
           if self.0.arr[15] < rhs.0.arr[15] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -80,7 +80,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vreinterpretq_s8_u8(vcgtq_s8(self.0, rhs.0)) }}
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] > rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] > rhs.0.arr[2] { -1 } else { 0 },
@@ -97,7 +97,7 @@ define_simd_signed! {
           if self.0.arr[13] > rhs.0.arr[13] { -1 } else { 0 },
           if self.0.arr[14] > rhs.0.arr[14] { -1 } else { 0 },
           if self.0.arr[15] > rhs.0.arr[15] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -112,7 +112,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] <= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] <= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] <= rhs.0.arr[2] { -1 } else { 0 },
@@ -129,7 +129,7 @@ define_simd_signed! {
           if self.0.arr[13] <= rhs.0.arr[13] { -1 } else { 0 },
           if self.0.arr[14] <= rhs.0.arr[14] { -1 } else { 0 },
           if self.0.arr[15] <= rhs.0.arr[15] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -144,7 +144,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
-        Self { arr: [
+        Self::new([
           if self.0.arr[0] >= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] >= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] >= rhs.0.arr[2] { -1 } else { 0 },
@@ -161,7 +161,7 @@ define_simd_signed! {
           if self.0.arr[13] >= rhs.0.arr[13] { -1 } else { 0 },
           if self.0.arr[14] >= rhs.0.arr[14] { -1 } else { 0 },
           if self.0.arr[15] >= rhs.0.arr[15] { -1 } else { 0 },
-        ]}
+        ])
       }
     }
   }
@@ -475,7 +475,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self { neon: vqaddq_s8(self.0, rhs.0) }}
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].saturating_add(rhs.0.arr[0]),
           self.0.arr[1].saturating_add(rhs.0.arr[1]),
           self.0.arr[2].saturating_add(rhs.0.arr[2]),
@@ -492,7 +492,7 @@ define_simd_signed! {
           self.0.arr[13].saturating_add(rhs.0.arr[13]),
           self.0.arr[14].saturating_add(rhs.0.arr[14]),
           self.0.arr[15].saturating_add(rhs.0.arr[15]),
-        ]}
+        ])
       }
     }
   }
@@ -507,7 +507,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self { neon: vqsubq_s8(self.0, rhs.0) } }
       } else {
-        Self { arr: [
+        Self::new([
           self.0.arr[0].saturating_sub(rhs.0.arr[0]),
           self.0.arr[1].saturating_sub(rhs.0.arr[1]),
           self.0.arr[2].saturating_sub(rhs.0.arr[2]),
@@ -524,7 +524,7 @@ define_simd_signed! {
           self.0.arr[13].saturating_sub(rhs.0.arr[13]),
           self.0.arr[14].saturating_sub(rhs.0.arr[14]),
           self.0.arr[15].saturating_sub(rhs.0.arr[15]),
-        ]}
+        ])
       }
     }
   }
