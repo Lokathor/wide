@@ -882,14 +882,14 @@ impl From<u16x16> for u32x16 {
             })
           } else if #[cfg(target_feature = "sse2")] {
             Self(Inner {
-              lo: u32x8 {
+              lo: u32x8(crate::u32x8_::Inner {
                 lo: u32x4(shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.lo.0, v.0.lo.0))),
                 hi: u32x4(shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.lo.0, v.0.lo.0))),
-              },
-              hi: u32x8 {
+              }),
+              hi: u32x8(crate::u32x8_::Inner {
                 lo: u32x4(shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.hi.0, v.0.hi.0))),
                 hi: u32x4(shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.hi.0, v.0.hi.0))),
-              },
+              }),
             })
           } else {
             // Portable fallback

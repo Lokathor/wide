@@ -1520,10 +1520,10 @@ define_simd_unsigned! {
             let low_wide_mul = vmull_u8(vget_low_u8(self.0), vget_low_u8(rhs.0));
             let high_wide_mul = vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0));
 
-            u16x16 {
+            u16x16(crate::u16x16_::Inner {
               lo: u16x8(low_wide_mul),
               hi: u16x8(high_wide_mul),
-            }
+            })
           }
         } else {
           let self_array = self.to_array();

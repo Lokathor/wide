@@ -704,10 +704,10 @@ define_simd_float! {
         let cast: i32x16 = cast(convert_to_i32_m512i_from_m512(non_nan.0));
         flip_to_max ^ cast
       } else {
-        i32x16 {
+        i32x16(crate::i32x16_::Inner {
           lo: self.0.lo.round_int(),
           hi: self.0.hi.round_int(),
-        }
+        })
       }
     }
   }
@@ -718,10 +718,10 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         cast(convert_to_i32_m512i_from_m512(self.0))
       } else {
-        i32x16 {
+        i32x16(crate::i32x16_::Inner {
           lo: self.0.lo.fast_round_int(),
           hi: self.0.hi.fast_round_int(),
-        }
+        })
       }
     }
   }

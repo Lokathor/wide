@@ -885,10 +885,10 @@ impl From<u8x16> for u16x16 {
           if #[cfg(target_feature="avx2")] {
             u16x16(convert_to_i16_m256i_from_u8_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
-            u16x16 {
+            Self(Inner {
               lo: u16x8(shr_imm_u16_m128i::<8>(unpack_low_i8_m128i(v.0, v.0))),
               hi: u16x8(shr_imm_u16_m128i::<8>(unpack_high_i8_m128i(v.0, v.0))),
-            }
+            })
           } else {
 
             u16x16::new([

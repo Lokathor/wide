@@ -347,15 +347,15 @@ impl i16x16 {
           if #[cfg(target_feature="avx2")] {
             i16x16(convert_to_i16_m256i_from_i8_m128i(v.0))
           } else if #[cfg(target_feature="sse4.1")] {
-            i16x16 {
+            Self(Inner {
               lo: i16x8(convert_to_i16_m128i_from_lower8_i8_m128i(v.0)),
               hi: i16x8(convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.0, v.0)))
-            }
+            })
           } else if #[cfg(target_feature="sse2")] {
-            i16x16 {
+            Self(Inner {
               lo: i16x8(shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.0, v.0))),
               hi: i16x8(shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.0, v.0))),
-            }
+            })
           } else {
 
             i16x16::new([
@@ -392,10 +392,10 @@ impl i16x16 {
           if #[cfg(target_feature="avx2")] {
             i32x8( mul_i16_horizontal_add_m256i(self.0, rhs.0))
           } else {
-            i32x8 {
+            i32x8(crate::i32x8_::Inner {
               lo: self.0.lo.dot(rhs.0.lo),
               hi: self.0.hi.dot(rhs.0.hi),
-            }
+            })
           }
         }
     }

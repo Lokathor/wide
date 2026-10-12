@@ -494,10 +494,10 @@ define_simd_unsigned! {
       } else if #[cfg(target_feature="avx2")] {
         self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
       } else {
-        u8x32 {
+        u8x32(Inner {
           lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.lo),
           hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.hi),
-        }
+        })
       }
     }
   }
@@ -510,10 +510,10 @@ define_simd_unsigned! {
       } else if #[cfg(target_feature="avx2")] {
         self.shuffle(indices)
       } else {
-        u8x32 {
+        u8x32(Inner {
           lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.lo),
           hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.hi),
-        }
+        })
       }
     }
   }

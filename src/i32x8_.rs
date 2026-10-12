@@ -386,10 +386,10 @@ impl i32x8 {
           if #[cfg(target_feature="avx2")] {
             i32x8(convert_to_i32_m256i_from_i16_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
-            i32x8 {
+            Self(Inner {
               lo: i32x4(shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
               hi: i32x4(shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
-            }
+            })
           } else {
             i32x8::new([
               i32::from(v.as_array()[0]),
@@ -413,10 +413,10 @@ impl i32x8 {
           if #[cfg(target_feature="avx2")] {
             i32x8(convert_to_i32_m256i_from_u16_m128i(v.0))
           } else if #[cfg(target_feature="sse2")] {
-            i32x8 {
+            Self(Inner {
               lo: i32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
               hi: i32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
-            }
+            })
           } else {
             i32x8::new([
               i32::from(v.as_array()[0]),

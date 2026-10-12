@@ -420,10 +420,10 @@ define_simd_signed! {
         } else if #[cfg(target_feature="sse2")] {
           let low = mul_i16_keep_low_m128i(self.0, rhs.0);
           let high = mul_i16_keep_high_m128i(self.0, rhs.0);
-          i32x8 {
+          i32x8(crate::i32x8_::Inner {
             lo: i32x4(unpack_low_i16_m128i(low, high)),
             hi: i32x4(unpack_high_i16_m128i(low, high))
-          }
+          })
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
           let lhs_low = unsafe { vget_low_s16(self.0) };
           let rhs_low = unsafe { vget_low_s16(rhs.0) };
@@ -434,7 +434,7 @@ define_simd_signed! {
           let low = unsafe { vmull_s16(lhs_low, rhs_low) };
           let high = unsafe { vmull_s16(lhs_high, rhs_high) };
 
-          i32x8 { lo: i32x4(low), b: i32x4(high) }
+          i32x8(crate::i32x8_::Inner { lo: i32x4(low), hi: i32x4(high) })
         } else {
           let a = self.as_array();
           let b = rhs.as_array();

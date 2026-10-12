@@ -354,10 +354,10 @@ impl i16x32 {
           if #[cfg(target_feature="avx512bw")] {
             i32x16(mul_i16_horizontal_add_m512i(self.0, rhs.0))
           } else {
-            i32x16 {
+            i32x16(crate::i32x16_::Inner {
               lo: self.0.lo.dot(rhs.0.lo),
               hi: self.0.hi.dot(rhs.0.hi),
-            }
+            })
           }
         }
     }

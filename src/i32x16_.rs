@@ -392,10 +392,10 @@ impl i32x16 {
           if #[cfg(target_feature="avx512f")] {
             cast(convert_to_m512_from_i32_m512i(self.0))
           } else {
-            f32x16 {
+            f32x16(crate::f32x16_::Inner {
               lo: self.0.lo.round_float(),
               hi: self.0.hi.round_float(),
-            }
+            })
           }
         }
     }
