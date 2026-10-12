@@ -28,7 +28,6 @@ define_simd_float! {
     T = f32,
     N = 4,
     N_STR = "four",
-    SIZE_OF_SELF = 16,
     Simd = f32x4,
     SignedSimd = i32x4,
     UnsignedT = u32,

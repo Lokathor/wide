@@ -354,7 +354,6 @@ macro_rules! define_simd {
       T = $T:ident,
       N = $N:literal,
       N_STR = $N_STR:literal,
-      SIZE_OF_SELF = $SIZE_OF_SELF:literal,
       Simd = $Simd:ident,
       UnsignedSimd = $UnsignedSimd:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },

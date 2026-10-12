@@ -18,7 +18,6 @@ define_simd_signed! {
     T = i32,
     N = 16,
     N_STR = "16",
-    SIZE_OF_SELF = 64,
     Simd = i32x16,
     UnsignedSimd = u32x16,
     T_BITS = 32,

@@ -25,7 +25,6 @@ define_simd_float! {
     T = f64,
     N = 8,
     N_STR = "eight",
-    SIZE_OF_SELF = 64,
     Simd = f64x8,
     SignedSimd = i64x8,
     UnsignedT = u64,
