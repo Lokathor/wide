@@ -45,7 +45,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.neg(),
           b : self.0.hi.neg(),
-        }
+        })
       }
     }
   }
@@ -59,7 +59,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.not(),
           b : self.0.hi.not(),
-        }
+        })
       }
     }
   }
@@ -73,7 +73,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.add(rhs.0.lo),
           b : self.0.hi.add(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -87,7 +87,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.sub(rhs.0.lo),
           b : self.0.hi.sub(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -101,7 +101,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.mul(rhs.0.lo),
           b : self.0.hi.mul(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -115,7 +115,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.div(rhs.0.lo),
           b : self.0.hi.div(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -139,7 +139,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.bitand(rhs.0.lo),
           b : self.0.hi.bitand(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -153,7 +153,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.bitor(rhs.0.lo),
           b : self.0.hi.bitor(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -167,7 +167,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.bitxor(rhs.0.lo),
           b : self.0.hi.bitxor(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -181,7 +181,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.simd_eq(rhs.0.lo),
           b : self.0.hi.simd_eq(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -195,7 +195,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.simd_ne(rhs.0.lo),
           b : self.0.hi.simd_ne(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -209,7 +209,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.simd_lt(rhs.0.lo),
           b : self.0.hi.simd_lt(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -223,7 +223,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.simd_gt(rhs.0.lo),
           b : self.0.hi.simd_gt(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -237,7 +237,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.simd_le(rhs.0.lo),
           b : self.0.hi.simd_le(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -251,7 +251,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.simd_ge(rhs.0.lo),
           b : self.0.hi.simd_ge(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -302,7 +302,7 @@ define_simd_float! {
         Self(Inner {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
           b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
-        }
+        })
       }
     }
   }
@@ -316,7 +316,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
           b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
-        }
+        })
       }
     }
   }
@@ -364,7 +364,7 @@ define_simd_float! {
         let [ba, _]: [f64x2; 2] = cast(other);
         cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
       } else {
-        Self(Inner { a: self.0.lo.unpack_lo(other.0.lo), b: self.0.lo.unpack_hi(other.0.lo) }
+        Self(Inner { a: self.0.lo.unpack_lo(other.0.lo), b: self.0.lo.unpack_hi(other.0.lo) })
       }
     }
   }
@@ -379,7 +379,7 @@ define_simd_float! {
         let [_, bb]: [f64x2; 2] = cast(other);
         cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
       } else {
-        Self(Inner { a: self.0.hi.unpack_lo(other.0.hi), b: self.0.hi.unpack_hi(other.0.hi) }
+        Self(Inner { a: self.0.hi.unpack_lo(other.0.hi), b: self.0.hi.unpack_hi(other.0.hi) })
       }
     }
   }
@@ -431,7 +431,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.is_nan(),
           b : self.0.hi.is_nan(),
-        }
+        })
       }
     }
   }
@@ -500,7 +500,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.max(rhs.0.lo),
           b : self.0.hi.max(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -514,7 +514,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.fast_max(rhs.0.lo),
           b : self.0.hi.fast_max(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -531,7 +531,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.min(rhs.0.lo),
           b : self.0.hi.min(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -545,7 +545,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.fast_min(rhs.0.lo),
           b : self.0.hi.fast_min(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -561,7 +561,7 @@ define_simd_float! {
         Self(Inner {
           a: self.0.lo.clamp(min.0.lo, max.0.lo),
           b: self.0.hi.clamp(min.0.hi, max.0.hi),
-        }
+        })
       }
     }
   }
@@ -577,7 +577,7 @@ define_simd_float! {
         Self(Inner {
           a: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
           b: self.0.hi.fast_clamp(min.0.hi, max.0.hi),
-        }
+        })
       }
     }
   }
@@ -616,7 +616,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.abs(),
           b : self.0.hi.abs(),
-        }
+        })
       }
     }
   }
@@ -630,7 +630,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.floor(),
           b : self.0.hi.floor(),
-        }
+        })
       }
     }
   }
@@ -644,7 +644,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.ceil(),
           b : self.0.hi.ceil(),
-        }
+        })
       }
     }
   }
@@ -727,7 +727,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.round_ties_even(),
           b : self.0.hi.round_ties_even(),
-        }
+        })
       }
     }
   }
@@ -741,7 +741,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.trunc(),
           b : self.0.hi.trunc(),
-        }
+        })
       }
     }
   }
@@ -807,7 +807,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.mul_add(a.0.lo, b.0.lo),
           b : self.0.hi.mul_add(a.0.hi, b.0.hi),
-        }
+        })
       }
     }
   }
@@ -831,7 +831,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.mul_sub(a.0.lo, b.0.lo),
           b : self.0.hi.mul_sub(a.0.hi, b.0.hi),
-        }
+        })
       }
     }
   }
@@ -855,7 +855,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.mul_neg_add(a.0.lo, b.0.lo),
           b : self.0.hi.mul_neg_add(a.0.hi, b.0.hi),
-        }
+        })
       }
     }
   }
@@ -879,7 +879,7 @@ define_simd_float! {
          Self(Inner {
            a : self.0.lo.mul_neg_sub(a.0.lo, b.0.lo),
            b : self.0.hi.mul_neg_sub(a.0.hi, b.0.hi),
-         }
+         })
        }
     }
   }
@@ -1012,7 +1012,7 @@ define_simd_float! {
         Self(Inner {
           a : self.0.lo.sqrt(),
           b : self.0.hi.sqrt(),
-        }
+        })
       }
     }
   }

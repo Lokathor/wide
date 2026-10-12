@@ -41,7 +41,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.not(),
           b : self.0.hi.not(),
-        }
+        })
       }
     }
   }
@@ -55,7 +55,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.add(rhs.0.lo),
           b : self.0.hi.add(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -69,7 +69,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.sub(rhs.0.lo),
           b : self.0.hi.sub(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -93,7 +93,7 @@ define_simd_unsigned! {
           Self(Inner {
             a : self.0.lo.bitand(rhs.0.lo),
             b : self.0.hi.bitand(rhs.0.hi),
-          }
+          })
       }
     }
   }
@@ -107,7 +107,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.bitor(rhs.0.lo),
           b : self.0.hi.bitor(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -121,7 +121,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.bitxor(rhs.0.lo),
           b : self.0.hi.bitxor(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -135,7 +135,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.simd_eq(rhs.0.lo),
           b : self.0.hi.simd_eq(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -149,7 +149,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.simd_ne(rhs.0.lo),
           b : self.0.hi.simd_ne(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -164,7 +164,7 @@ define_simd_unsigned! {
         let rhs_i8 = rhs.bitxor(offset).0;
         Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8))
       } else {
-        Self(Inner { a: self.0.lo.simd_lt(rhs.0.lo), b: self.0.hi.simd_lt(rhs.0.hi) }
+        Self(Inner { a: self.0.lo.simd_lt(rhs.0.lo), b: self.0.hi.simd_lt(rhs.0.hi) })
       }
     }
   }
@@ -179,7 +179,7 @@ define_simd_unsigned! {
         let rhs_i8 = rhs.bitxor(offset).0;
         Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8))
       } else {
-        Self(Inner { a: self.0.lo.simd_gt(rhs.0.lo), b: self.0.hi.simd_gt(rhs.0.hi) }
+        Self(Inner { a: self.0.lo.simd_gt(rhs.0.lo), b: self.0.hi.simd_gt(rhs.0.hi) })
       }
     }
   }
@@ -195,7 +195,7 @@ define_simd_unsigned! {
         let gt_mask = Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8));
         Self(gt_mask.bitxor(Self::splat(0xFF)).0)
       } else {
-        Self(Inner { a: self.0.lo.simd_le(rhs.0.lo), b: self.0.hi.simd_le(rhs.0.hi) }
+        Self(Inner { a: self.0.lo.simd_le(rhs.0.lo), b: self.0.hi.simd_le(rhs.0.hi) })
       }
     }
   }
@@ -211,7 +211,7 @@ define_simd_unsigned! {
         let lt_mask = Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8));
         Self(lt_mask.bitxor(Self::splat(0xFF)).0)
       } else {
-        Self(Inner { a: self.0.lo.simd_ge(rhs.0.lo), b: self.0.hi.simd_ge(rhs.0.hi) }
+        Self(Inner { a: self.0.lo.simd_ge(rhs.0.lo), b: self.0.hi.simd_ge(rhs.0.hi) })
       }
     }
   }
@@ -340,7 +340,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
           b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
-        }
+        })
       }
     }
   }
@@ -354,7 +354,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
           b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
-        }
+        })
       }
     }
   }
@@ -427,7 +427,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: [self.0.lo, self.0.hi].shuffle(indices.0.lo),
           b: [self.0.lo, self.0.hi].shuffle(indices.0.hi),
-        }
+        })
       }
     }
   }
@@ -458,7 +458,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.lo),
           b: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.hi),
-        }
+        })
       }
     }
   }
@@ -474,7 +474,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.lo),
           b: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.hi),
-        }
+        })
       }
     }
   }
@@ -707,7 +707,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.max(rhs.0.lo),
           b : self.0.hi.max(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -721,7 +721,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.min(rhs.0.lo),
           b : self.0.hi.min(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -803,7 +803,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.saturating_add(rhs.0.lo),
           b : self.0.hi.saturating_add(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -817,7 +817,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.saturating_sub(rhs.0.lo),
           b : self.0.hi.saturating_sub(rhs.0.hi),
-        }
+        })
       }
     }
   }

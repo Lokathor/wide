@@ -41,7 +41,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.not(),
           b : self.0.hi.not(),
-        }
+        })
       }
     }
   }
@@ -55,7 +55,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.add(rhs.0.lo),
           b : self.0.hi.add(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -69,7 +69,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.sub(rhs.0.lo),
           b : self.0.hi.sub(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -80,7 +80,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="avx512bw")] {
         Self(mul_i16_keep_low_m512i(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.mul(rhs.0.lo), b: self.0.hi.mul(rhs.0.hi) }
+        Self(Inner { a: self.0.lo.mul(rhs.0.lo), b: self.0.hi.mul(rhs.0.hi) })
       }
     }
   }
@@ -94,7 +94,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.bitand(rhs.0.lo),
           b : self.0.hi.bitand(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -108,7 +108,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.bitor(rhs.0.lo),
           b : self.0.hi.bitor(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -122,7 +122,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.bitxor(rhs.0.lo),
           b : self.0.hi.bitxor(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -136,7 +136,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.simd_eq(rhs.0.lo),
           b : self.0.hi.simd_eq(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -150,7 +150,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.simd_ne(rhs.0.lo),
           b : self.0.hi.simd_ne(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -164,7 +164,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : rhs.0.lo.simd_gt(self.0.lo),
           b : rhs.0.hi.simd_gt(self.0.hi),
-        }
+        })
       }
     }
   }
@@ -178,7 +178,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.simd_gt(rhs.0.lo),
           b : self.0.hi.simd_gt(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -192,7 +192,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.simd_le(rhs.0.lo),
           b : self.0.hi.simd_le(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -206,7 +206,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.simd_ge(rhs.0.lo),
           b : self.0.hi.simd_ge(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -357,7 +357,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
           b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
-        }
+        })
       }
     }
   }
@@ -371,7 +371,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
           b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
-        }
+        })
       }
     }
   }
@@ -655,7 +655,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.shl(rhs),
           b : self.0.hi.shl(rhs),
-        }
+        })
       }
     }
   }
@@ -688,7 +688,7 @@ define_simd_unsigned! {
         Self(Inner {
           a : self.0.lo.shr(rhs),
           b : self.0.hi.shr(rhs),
-        }
+        })
       }
     }
   }
@@ -702,7 +702,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.max(rhs.0.lo),
           b: self.0.hi.max(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -716,7 +716,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.min(rhs.0.lo),
           b: self.0.hi.min(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -758,7 +758,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.unbounded_shl_scalar(rhs),
           b: self.0.hi.unbounded_shl_scalar(rhs),
-        }
+        })
       }
     }
   }
@@ -788,7 +788,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.unbounded_shr_scalar(rhs),
           b: self.0.hi.unbounded_shr_scalar(rhs),
-        }
+        })
       }
     }
   }
@@ -802,7 +802,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.saturating_add(rhs.0.lo),
           b: self.0.hi.saturating_add(rhs.0.hi),
-        }
+        })
       }
     }
   }
@@ -816,7 +816,7 @@ define_simd_unsigned! {
         Self(Inner {
           a: self.0.lo.saturating_sub(rhs.0.lo),
           b: self.0.hi.saturating_sub(rhs.0.hi),
-        }
+        })
       }
     }
   }
