@@ -334,9 +334,8 @@ trait Sealed {}
 /// Defines a SIMD type and functionality shared by all SIMD types.
 ///
 /// Modules invoking this macro must define an `Inner` type alias, which is used
-/// as the internal representation of the SIMD type. This type must have the
-/// size `size_of::<T>() * N`, but can have a lower alignment since the outer
-/// struct is defined with `repr(align($size_of_self))`.
+/// as the internal representation of the SIMD type. `Inner` must have a size
+/// and alignment of `size_of::<T>() * N` bytes.
 ///
 /// Functions that need a separate implementation for each type (for
 /// performance) use `$fn_{name}:item` syntax, and functions that have one
