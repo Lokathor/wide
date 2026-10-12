@@ -55,8 +55,8 @@ define_simd_float! {
         unsafe {Self { neon: vnegq_f64(self.0) }}
       } else {
         Self { arr: [
-          -self.arr[0],
-          -self.arr[1],
+          -self.0.arr[0],
+          -self.0.arr[1],
         ]}
       }
     }
@@ -73,8 +73,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_f64(self.0))) }}
       } else {
         Self { arr: [
-          f64::from_bits(!self.arr[0].to_bits()),
-          f64::from_bits(!self.arr[1].to_bits()),
+          f64::from_bits(!self.0.arr[0].to_bits()),
+          f64::from_bits(!self.0.arr[1].to_bits()),
         ]}
       }
     }
@@ -91,8 +91,8 @@ define_simd_float! {
         unsafe { Self { neon: vaddq_f64(self.0, rhs.0) } }
       } else {
         Self { arr: [
-          self.arr[0] + rhs.arr[0],
-          self.arr[1] + rhs.arr[1],
+          self.0.arr[0] + rhs.0.arr[0],
+          self.0.arr[1] + rhs.0.arr[1],
         ]}
       }
     }
@@ -109,8 +109,8 @@ define_simd_float! {
         unsafe { Self { neon: vsubq_f64(self.0, rhs.0) } }
       } else {
         Self { arr: [
-          self.arr[0] - rhs.arr[0],
-          self.arr[1] - rhs.arr[1],
+          self.0.arr[0] - rhs.0.arr[0],
+          self.0.arr[1] - rhs.0.arr[1],
         ]}
       }
     }
@@ -127,8 +127,8 @@ define_simd_float! {
         unsafe {Self { neon: vmulq_f64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0] * rhs.arr[0],
-          self.arr[1] * rhs.arr[1],
+          self.0.arr[0] * rhs.0.arr[0],
+          self.0.arr[1] * rhs.0.arr[1],
         ]}
       }
     }
@@ -145,8 +145,8 @@ define_simd_float! {
         unsafe {Self { neon: vdivq_f64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0] / rhs.arr[0],
-          self.arr[1] / rhs.arr[1],
+          self.0.arr[0] / rhs.0.arr[0],
+          self.0.arr[1] / rhs.0.arr[1],
         ]}
       }
     }
@@ -171,8 +171,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
         Self { arr: [
-          f64::from_bits(self.arr[0].to_bits() & rhs.arr[0].to_bits()),
-          f64::from_bits(self.arr[1].to_bits() & rhs.arr[1].to_bits()),
+          f64::from_bits(self.0.arr[0].to_bits() & rhs.0.arr[0].to_bits()),
+          f64::from_bits(self.0.arr[1].to_bits() & rhs.0.arr[1].to_bits()),
         ]}
       }
     }
@@ -189,8 +189,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vorrq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
         Self { arr: [
-          f64::from_bits(self.arr[0].to_bits() | rhs.arr[0].to_bits()),
-          f64::from_bits(self.arr[1].to_bits() | rhs.arr[1].to_bits()),
+          f64::from_bits(self.0.arr[0].to_bits() | rhs.0.arr[0].to_bits()),
+          f64::from_bits(self.0.arr[1].to_bits() | rhs.0.arr[1].to_bits()),
         ]}
       }
     }
@@ -207,8 +207,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))) }}
       } else {
         Self { arr: [
-          f64::from_bits(self.arr[0].to_bits() ^ rhs.arr[0].to_bits()),
-          f64::from_bits(self.arr[1].to_bits() ^ rhs.arr[1].to_bits()),
+          f64::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
+          f64::from_bits(self.0.arr[1].to_bits() ^ rhs.0.arr[1].to_bits()),
         ]}
       }
     }
@@ -225,8 +225,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] == rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] == rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[1] == rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -243,8 +243,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)) }.not() }
       } else {
         Self { arr: [
-          if self.arr[0] != rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] != rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[1] != rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -261,8 +261,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] < rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[1] < rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -281,8 +281,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] > rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] > rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[1] > rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -299,8 +299,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] <= rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[1] <= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -317,8 +317,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1] >= rhs.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[1] >= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -336,7 +336,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { vgetq_lane_f64(self.0,0) + vgetq_lane_f64(self.0,1) }
       } else {
-        self.arr.iter().sum()
+        self.0.arr.iter().sum()
       }
     }
   }
@@ -397,8 +397,8 @@ define_simd_float! {
           (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
         }
       } else {
-        (((self.arr[0].to_bits() as i64) < 0) as u32) |
-        (((self.arr[1].to_bits() as i64) < 0) as u32) << 1
+        (((self.0.arr[0].to_bits() as i64) < 0) as u32) |
+        (((self.0.arr[1].to_bits() as i64) < 0) as u32) << 1
       }
     }
   }
@@ -485,8 +485,8 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f64_u64(vceqq_f64(self.0, self.0)) }.not() }
       } else {
         Self { arr: [
-          if self.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
-          if self.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
+          if self.0.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -590,8 +590,8 @@ define_simd_float! {
         unsafe {Self { neon: vmaxnmq_f64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].max(rhs.arr[0]),
-          self.arr[1].max(rhs.arr[1]),
+          self.0.arr[0].max(rhs.0.arr[0]),
+          self.0.arr[1].max(rhs.0.arr[1]),
         ]}
       }
     }
@@ -610,8 +610,8 @@ define_simd_float! {
         unsafe {Self { neon: vmaxq_f64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
-          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
+          if self.0.arr[0] < rhs.0.arr[0] { rhs.0.arr[0] } else { self.0.arr[0] },
+          if self.0.arr[1] < rhs.0.arr[1] { rhs.0.arr[1] } else { self.0.arr[1] },
         ]}
       }
     }
@@ -643,8 +643,8 @@ define_simd_float! {
         unsafe {Self { neon: vminnmq_f64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].min(rhs.arr[0]),
-          self.arr[1].min(rhs.arr[1]),
+          self.0.arr[0].min(rhs.0.arr[0]),
+          self.0.arr[1].min(rhs.0.arr[1]),
         ]}
       }
     }
@@ -663,8 +663,8 @@ define_simd_float! {
         unsafe {Self { neon: vminq_f64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
-          if self.arr[1] < rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
+          if self.0.arr[0] < rhs.0.arr[0] { self.0.arr[0] } else { rhs.0.arr[0] },
+          if self.0.arr[1] < rhs.0.arr[1] { self.0.arr[1] } else { rhs.0.arr[1] },
         ]}
       }
     }
@@ -1225,13 +1225,13 @@ define_simd_float! {
         unsafe {Self { neon: vsqrtq_f64(self.0) }}
       } else if #[cfg(feature="std")] {
         Self { arr: [
-          self.arr[0].sqrt(),
-          self.arr[1].sqrt(),
+          self.0.arr[0].sqrt(),
+          self.0.arr[1].sqrt(),
         ]}
       } else {
         Self { arr: [
-          software_sqrt(self.arr[0]),
-          software_sqrt(self.arr[1]),
+          software_sqrt(self.0.arr[0]),
+          software_sqrt(self.0.arr[1]),
         ]}
       }
     }

@@ -37,8 +37,8 @@ define_simd_signed! {
         Self { avx2: !(cmp_gt_mask_i64_m256i(self.0, rhs.0) ^ cmp_eq_mask_i64_m256i(self.0, rhs.0)) }
       } else {
         Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
+          a : self.0.lo.simd_lt(rhs.0.lo),
+          b : self.0.hi.simd_lt(rhs.0.hi),
         }
       }
     }
@@ -51,8 +51,8 @@ define_simd_signed! {
         Self { avx2: cmp_gt_mask_i64_m256i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a : self.0.lo.simd_gt(rhs.0.lo),
+          b : self.0.hi.simd_gt(rhs.0.hi),
         }
       }
     }
@@ -65,8 +65,8 @@ define_simd_signed! {
         !self.simd_gt(rhs)
       } else {
         Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
+          a : self.0.lo.simd_le(rhs.0.lo),
+          b : self.0.hi.simd_le(rhs.0.hi),
         }
       }
     }
@@ -79,8 +79,8 @@ define_simd_signed! {
         !self.simd_lt(rhs)
       } else {
         Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
+          a : self.0.lo.simd_ge(rhs.0.lo),
+          b : self.0.hi.simd_ge(rhs.0.hi),
         }
       }
     }
@@ -100,8 +100,8 @@ define_simd_signed! {
         ])
       } else {
         Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
+          a : self.0.lo.shr(rhs.0.lo),
+          b : self.0.hi.shr(rhs.0.hi),
         }
       }
     }
@@ -163,8 +163,8 @@ define_simd_signed! {
         overflow.select(Self::MAX ^ negative, result)
       } else {
         Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
+          a: self.0.lo.saturating_add(rhs.0.lo),
+          b: self.0.hi.saturating_add(rhs.0.hi),
         }
       }
     }
@@ -182,8 +182,8 @@ define_simd_signed! {
         overflow.select(Self::MAX ^ negative, result)
       } else {
         Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
+          a: self.0.lo.saturating_sub(rhs.0.lo),
+          b: self.0.hi.saturating_sub(rhs.0.hi),
         }
       }
     }
@@ -278,8 +278,8 @@ define_simd_signed! {
           ])
       } else {
         Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
+          a : self.0.lo.abs(),
+          b : self.0.hi.abs(),
         }
       }
     }
@@ -291,8 +291,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
         Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
+          a: self.0.lo.is_positive(),
+          b: self.0.hi.is_positive(),
         }
       } else {
         self.simd_gt(Self::ZERO)
@@ -306,8 +306,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
         Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
+          a: self.0.lo.is_negative(),
+          b: self.0.hi.is_negative(),
         }
       } else {
         self.simd_lt(Self::ZERO)

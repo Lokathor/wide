@@ -49,14 +49,14 @@ define_simd_signed! {
         unsafe {Self { neon: vreinterpretq_s16_u16(vcltq_s16(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] < rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] < rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] < rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] < rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] < rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] < rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] < rhs.arr[7] { -1 } else { 0 },
+          if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] < rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] < rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] < rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] < rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] < rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] < rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] < rhs.0.arr[7] { -1 } else { 0 },
         ]}
       }
     }
@@ -73,14 +73,14 @@ define_simd_signed! {
         unsafe {Self { neon: vreinterpretq_s16_u16(vcgtq_s16(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] > rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] > rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] > rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] > rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] > rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] > rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] > rhs.arr[7] { -1 } else { 0 },
+          if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] > rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] > rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] > rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] > rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] > rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] > rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] > rhs.0.arr[7] { -1 } else { 0 },
         ]}
       }
     }
@@ -97,14 +97,14 @@ define_simd_signed! {
         !self.simd_gt(rhs)
       } else {
         Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] <= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] <= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] <= rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] <= rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] <= rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] <= rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] <= rhs.arr[7] { -1 } else { 0 },
+          if self.0.arr[0] <= rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] <= rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] <= rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] <= rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] <= rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] <= rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] <= rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] <= rhs.0.arr[7] { -1 } else { 0 },
         ]}
       }
     }
@@ -121,14 +121,14 @@ define_simd_signed! {
         !self.simd_lt(rhs)
       } else {
         Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] >= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] >= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] >= rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] >= rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] >= rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] >= rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] >= rhs.arr[7] { -1 } else { 0 },
+          if self.0.arr[0] >= rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] >= rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] >= rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] >= rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] >= rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] >= rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] >= rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] >= rhs.0.arr[7] { -1 } else { 0 },
         ]}
       }
     }
@@ -188,14 +188,14 @@ define_simd_signed! {
         unsafe {Self { neon: vshlq_s16(self.0, vmovq_n_s16( -(rhs as i16 & 15))) }}
       } else {
         Self { arr: [
-          self.arr[0].wrapping_shr(rhs),
-          self.arr[1].wrapping_shr(rhs),
-          self.arr[2].wrapping_shr(rhs),
-          self.arr[3].wrapping_shr(rhs),
-          self.arr[4].wrapping_shr(rhs),
-          self.arr[5].wrapping_shr(rhs),
-          self.arr[6].wrapping_shr(rhs),
-          self.arr[7].wrapping_shr(rhs),
+          self.0.arr[0].wrapping_shr(rhs),
+          self.0.arr[1].wrapping_shr(rhs),
+          self.0.arr[2].wrapping_shr(rhs),
+          self.0.arr[3].wrapping_shr(rhs),
+          self.0.arr[4].wrapping_shr(rhs),
+          self.0.arr[5].wrapping_shr(rhs),
+          self.0.arr[6].wrapping_shr(rhs),
+          self.0.arr[7].wrapping_shr(rhs),
         ]}
       }
     }
@@ -340,14 +340,14 @@ define_simd_signed! {
       } else {
         Self {
           arr: [
-            self.arr[0].unbounded_shr(rhs),
-            self.arr[1].unbounded_shr(rhs),
-            self.arr[2].unbounded_shr(rhs),
-            self.arr[3].unbounded_shr(rhs),
-            self.arr[4].unbounded_shr(rhs),
-            self.arr[5].unbounded_shr(rhs),
-            self.arr[6].unbounded_shr(rhs),
-            self.arr[7].unbounded_shr(rhs),
+            self.0.arr[0].unbounded_shr(rhs),
+            self.0.arr[1].unbounded_shr(rhs),
+            self.0.arr[2].unbounded_shr(rhs),
+            self.0.arr[3].unbounded_shr(rhs),
+            self.0.arr[4].unbounded_shr(rhs),
+            self.0.arr[5].unbounded_shr(rhs),
+            self.0.arr[6].unbounded_shr(rhs),
+            self.0.arr[7].unbounded_shr(rhs),
           ]
         }
       }
@@ -365,14 +365,14 @@ define_simd_signed! {
         unsafe {Self { neon: vqaddq_s16(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].saturating_add(rhs.arr[0]),
-          self.arr[1].saturating_add(rhs.arr[1]),
-          self.arr[2].saturating_add(rhs.arr[2]),
-          self.arr[3].saturating_add(rhs.arr[3]),
-          self.arr[4].saturating_add(rhs.arr[4]),
-          self.arr[5].saturating_add(rhs.arr[5]),
-          self.arr[6].saturating_add(rhs.arr[6]),
-          self.arr[7].saturating_add(rhs.arr[7]),
+          self.0.arr[0].saturating_add(rhs.0.arr[0]),
+          self.0.arr[1].saturating_add(rhs.0.arr[1]),
+          self.0.arr[2].saturating_add(rhs.0.arr[2]),
+          self.0.arr[3].saturating_add(rhs.0.arr[3]),
+          self.0.arr[4].saturating_add(rhs.0.arr[4]),
+          self.0.arr[5].saturating_add(rhs.0.arr[5]),
+          self.0.arr[6].saturating_add(rhs.0.arr[6]),
+          self.0.arr[7].saturating_add(rhs.0.arr[7]),
         ]}
       }
     }
@@ -389,14 +389,14 @@ define_simd_signed! {
         unsafe { Self { neon: vqsubq_s16(self.0, rhs.0) } }
       } else {
         Self { arr: [
-          self.arr[0].saturating_sub(rhs.arr[0]),
-          self.arr[1].saturating_sub(rhs.arr[1]),
-          self.arr[2].saturating_sub(rhs.arr[2]),
-          self.arr[3].saturating_sub(rhs.arr[3]),
-          self.arr[4].saturating_sub(rhs.arr[4]),
-          self.arr[5].saturating_sub(rhs.arr[5]),
-          self.arr[6].saturating_sub(rhs.arr[6]),
-          self.arr[7].saturating_sub(rhs.arr[7]),
+          self.0.arr[0].saturating_sub(rhs.0.arr[0]),
+          self.0.arr[1].saturating_sub(rhs.0.arr[1]),
+          self.0.arr[2].saturating_sub(rhs.0.arr[2]),
+          self.0.arr[3].saturating_sub(rhs.0.arr[3]),
+          self.0.arr[4].saturating_sub(rhs.0.arr[4]),
+          self.0.arr[5].saturating_sub(rhs.0.arr[5]),
+          self.0.arr[6].saturating_sub(rhs.0.arr[6]),
+          self.0.arr[7].saturating_sub(rhs.0.arr[7]),
         ]}
       }
     }
@@ -679,16 +679,16 @@ impl i16x8 {
           if #[cfg(target_feature="avx2")] {
             i16x8 { sse: pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(v.0), extract_m128i_from_m256i::<1>(v.0))  }
           } else if #[cfg(target_feature="sse2")] {
-            i16x8 { sse: pack_i32_to_i16_m128i( v.a.0, v.b.0 ) }
+            i16x8 { sse: pack_i32_to_i16_m128i( v.0.lo.0, v.0.hi.0 ) }
           } else if #[cfg(target_feature="simd128")] {
             use core::arch::wasm32::*;
 
-            i16x8 { simd: i16x8_narrow_i32x4(v.a.0, v.b.0) }
+            i16x8 { simd: i16x8_narrow_i32x4(v.0.lo.0, v.0.hi.0) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             use core::arch::aarch64::*;
 
             unsafe {
-              i16x8 { neon: vcombine_s16(vqmovn_s32(v.a.0), vqmovn_s32(v.b.0)) }
+              i16x8 { neon: vcombine_s16(vqmovn_s32(v.0.lo.0), vqmovn_s32(v.0.hi.0)) }
             }
           } else {
             fn clamp(a : i32) -> i16 {
@@ -728,8 +728,8 @@ impl i16x8 {
             let a = v.0.bitand(set_splat_i32_m256i(0xffff));
             i16x8 { sse: pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ) }
           } else if #[cfg(target_feature="sse2")] {
-            let a = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.a.0));
-            let b = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.b.0));
+            let a = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.0.lo.0));
+            let b = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.0.hi.0));
 
             i16x8 { sse: pack_i32_to_i16_m128i( a, b)  }
           } else {
@@ -792,10 +792,10 @@ impl i16x8 {
             }
           } else {
             i32x4 { arr: [
-              (i32::from(self.arr[0]) * i32::from(rhs.arr[0])) + (i32::from(self.arr[1]) * i32::from(rhs.arr[1])),
-              (i32::from(self.arr[2]) * i32::from(rhs.arr[2])) + (i32::from(self.arr[3]) * i32::from(rhs.arr[3])),
-              (i32::from(self.arr[4]) * i32::from(rhs.arr[4])) + (i32::from(self.arr[5]) * i32::from(rhs.arr[5])),
-              (i32::from(self.arr[6]) * i32::from(rhs.arr[6])) + (i32::from(self.arr[7]) * i32::from(rhs.arr[7])),
+              (i32::from(self.0.arr[0]) * i32::from(rhs.0.arr[0])) + (i32::from(self.0.arr[1]) * i32::from(rhs.0.arr[1])),
+              (i32::from(self.0.arr[2]) * i32::from(rhs.0.arr[2])) + (i32::from(self.0.arr[3]) * i32::from(rhs.0.arr[3])),
+              (i32::from(self.0.arr[4]) * i32::from(rhs.0.arr[4])) + (i32::from(self.0.arr[5]) * i32::from(rhs.0.arr[5])),
+              (i32::from(self.0.arr[6]) * i32::from(rhs.0.arr[6])) + (i32::from(self.0.arr[7]) * i32::from(rhs.0.arr[7])),
             ] }
           }
         }
@@ -832,14 +832,14 @@ impl i16x8 {
           } else {
             // compiler does a surprisingly good job of vectorizing this
             Self { arr: [
-              ((i32::from(self.arr[0]) * i32::from(rhs.arr[0]) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[1]) * i32::from(rhs.arr[1]) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[2]) * i32::from(rhs.arr[2]) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[3]) * i32::from(rhs.arr[3]) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[4]) * i32::from(rhs.arr[4]) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[5]) * i32::from(rhs.arr[5]) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[6]) * i32::from(rhs.arr[6]) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[7]) * i32::from(rhs.arr[7]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[0]) * i32::from(rhs.0.arr[0]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[1]) * i32::from(rhs.0.arr[1]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[2]) * i32::from(rhs.0.arr[2]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[3]) * i32::from(rhs.0.arr[3]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[4]) * i32::from(rhs.0.arr[4]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[5]) * i32::from(rhs.0.arr[5]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[6]) * i32::from(rhs.0.arr[6]) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[7]) * i32::from(rhs.0.arr[7]) + 0x4000) >> 15) as i16,
             ]}
           }
         }
@@ -877,14 +877,14 @@ impl i16x8 {
           } else {
             // compiler does a surprisingly good job of vectorizing this
             Self { arr: [
-              ((i32::from(self.arr[0]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[1]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[2]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[3]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[4]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[5]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[6]) * i32::from(rhs) + 0x4000) >> 15) as i16,
-              ((i32::from(self.arr[7]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[0]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[1]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[2]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[3]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[4]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[5]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[6]) * i32::from(rhs) + 0x4000) >> 15) as i16,
+              ((i32::from(self.0.arr[7]) * i32::from(rhs) + 0x4000) >> 15) as i16,
             ]}
           }
         }

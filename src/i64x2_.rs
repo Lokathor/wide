@@ -174,7 +174,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { vgetq_lane_s64(self.0, 0).max(vgetq_lane_s64(self.0, 1)) }
       } else {
-        self.arr[0].max(self.arr[1])
+        self.0.arr[0].max(self.0.arr[1])
       }
     }
   }
@@ -188,7 +188,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { vgetq_lane_s64(self.0, 0).min(vgetq_lane_s64(self.0, 1)) }
       } else {
-        self.arr[0].min(self.arr[1])
+        self.0.arr[0].min(self.0.arr[1])
       }
     }
   }
@@ -244,8 +244,8 @@ define_simd_signed! {
       } else {
         Self {
           arr: [
-            self.arr[0].saturating_add(rhs.arr[0]),
-            self.arr[1].saturating_add(rhs.arr[1]),
+            self.0.arr[0].saturating_add(rhs.0.arr[0]),
+            self.0.arr[1].saturating_add(rhs.0.arr[1]),
           ],
         }
       }
@@ -267,8 +267,8 @@ define_simd_signed! {
       } else {
         Self {
           arr: [
-            self.arr[0].saturating_sub(rhs.arr[0]),
-            self.arr[1].saturating_sub(rhs.arr[1]),
+            self.0.arr[0].saturating_sub(rhs.0.arr[0]),
+            self.0.arr[1].saturating_sub(rhs.0.arr[1]),
           ],
         }
       }

@@ -49,22 +49,22 @@ define_simd_signed! {
         unsafe {Self { neon: vreinterpretq_s8_u8(vcltq_s8(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] < rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] < rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] < rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] < rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] < rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] < rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] < rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] < rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] < rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] < rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] < rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] < rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] < rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] < rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] < rhs.arr[15] { -1 } else { 0 },
+          if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] < rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] < rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] < rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] < rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] < rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] < rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] < rhs.0.arr[7] { -1 } else { 0 },
+          if self.0.arr[8] < rhs.0.arr[8] { -1 } else { 0 },
+          if self.0.arr[9] < rhs.0.arr[9] { -1 } else { 0 },
+          if self.0.arr[10] < rhs.0.arr[10] { -1 } else { 0 },
+          if self.0.arr[11] < rhs.0.arr[11] { -1 } else { 0 },
+          if self.0.arr[12] < rhs.0.arr[12] { -1 } else { 0 },
+          if self.0.arr[13] < rhs.0.arr[13] { -1 } else { 0 },
+          if self.0.arr[14] < rhs.0.arr[14] { -1 } else { 0 },
+          if self.0.arr[15] < rhs.0.arr[15] { -1 } else { 0 },
         ]}
       }
     }
@@ -81,22 +81,22 @@ define_simd_signed! {
         unsafe {Self { neon: vreinterpretq_s8_u8(vcgtq_s8(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] > rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] > rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] > rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] > rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] > rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] > rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] > rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] > rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] > rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] > rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] > rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] > rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] > rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] > rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] > rhs.arr[15] { -1 } else { 0 },
+          if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] > rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] > rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] > rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] > rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] > rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] > rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] > rhs.0.arr[7] { -1 } else { 0 },
+          if self.0.arr[8] > rhs.0.arr[8] { -1 } else { 0 },
+          if self.0.arr[9] > rhs.0.arr[9] { -1 } else { 0 },
+          if self.0.arr[10] > rhs.0.arr[10] { -1 } else { 0 },
+          if self.0.arr[11] > rhs.0.arr[11] { -1 } else { 0 },
+          if self.0.arr[12] > rhs.0.arr[12] { -1 } else { 0 },
+          if self.0.arr[13] > rhs.0.arr[13] { -1 } else { 0 },
+          if self.0.arr[14] > rhs.0.arr[14] { -1 } else { 0 },
+          if self.0.arr[15] > rhs.0.arr[15] { -1 } else { 0 },
         ]}
       }
     }
@@ -113,22 +113,22 @@ define_simd_signed! {
         !self.simd_gt(rhs)
       } else {
         Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] <= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] <= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] <= rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] <= rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] <= rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] <= rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] <= rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] <= rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] <= rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] <= rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] <= rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] <= rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] <= rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] <= rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] <= rhs.arr[15] { -1 } else { 0 },
+          if self.0.arr[0] <= rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] <= rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] <= rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] <= rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] <= rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] <= rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] <= rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] <= rhs.0.arr[7] { -1 } else { 0 },
+          if self.0.arr[8] <= rhs.0.arr[8] { -1 } else { 0 },
+          if self.0.arr[9] <= rhs.0.arr[9] { -1 } else { 0 },
+          if self.0.arr[10] <= rhs.0.arr[10] { -1 } else { 0 },
+          if self.0.arr[11] <= rhs.0.arr[11] { -1 } else { 0 },
+          if self.0.arr[12] <= rhs.0.arr[12] { -1 } else { 0 },
+          if self.0.arr[13] <= rhs.0.arr[13] { -1 } else { 0 },
+          if self.0.arr[14] <= rhs.0.arr[14] { -1 } else { 0 },
+          if self.0.arr[15] <= rhs.0.arr[15] { -1 } else { 0 },
         ]}
       }
     }
@@ -145,22 +145,22 @@ define_simd_signed! {
         !self.simd_lt(rhs)
       } else {
         Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] >= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] >= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] >= rhs.arr[3] { -1 } else { 0 },
-          if self.arr[4] >= rhs.arr[4] { -1 } else { 0 },
-          if self.arr[5] >= rhs.arr[5] { -1 } else { 0 },
-          if self.arr[6] >= rhs.arr[6] { -1 } else { 0 },
-          if self.arr[7] >= rhs.arr[7] { -1 } else { 0 },
-          if self.arr[8] >= rhs.arr[8] { -1 } else { 0 },
-          if self.arr[9] >= rhs.arr[9] { -1 } else { 0 },
-          if self.arr[10] >= rhs.arr[10] { -1 } else { 0 },
-          if self.arr[11] >= rhs.arr[11] { -1 } else { 0 },
-          if self.arr[12] >= rhs.arr[12] { -1 } else { 0 },
-          if self.arr[13] >= rhs.arr[13] { -1 } else { 0 },
-          if self.arr[14] >= rhs.arr[14] { -1 } else { 0 },
-          if self.arr[15] >= rhs.arr[15] { -1 } else { 0 },
+          if self.0.arr[0] >= rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] >= rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] >= rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] >= rhs.0.arr[3] { -1 } else { 0 },
+          if self.0.arr[4] >= rhs.0.arr[4] { -1 } else { 0 },
+          if self.0.arr[5] >= rhs.0.arr[5] { -1 } else { 0 },
+          if self.0.arr[6] >= rhs.0.arr[6] { -1 } else { 0 },
+          if self.0.arr[7] >= rhs.0.arr[7] { -1 } else { 0 },
+          if self.0.arr[8] >= rhs.0.arr[8] { -1 } else { 0 },
+          if self.0.arr[9] >= rhs.0.arr[9] { -1 } else { 0 },
+          if self.0.arr[10] >= rhs.0.arr[10] { -1 } else { 0 },
+          if self.0.arr[11] >= rhs.0.arr[11] { -1 } else { 0 },
+          if self.0.arr[12] >= rhs.0.arr[12] { -1 } else { 0 },
+          if self.0.arr[13] >= rhs.0.arr[13] { -1 } else { 0 },
+          if self.0.arr[14] >= rhs.0.arr[14] { -1 } else { 0 },
+          if self.0.arr[15] >= rhs.0.arr[15] { -1 } else { 0 },
         ]}
       }
     }
@@ -476,22 +476,22 @@ define_simd_signed! {
         unsafe {Self { neon: vqaddq_s8(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].saturating_add(rhs.arr[0]),
-          self.arr[1].saturating_add(rhs.arr[1]),
-          self.arr[2].saturating_add(rhs.arr[2]),
-          self.arr[3].saturating_add(rhs.arr[3]),
-          self.arr[4].saturating_add(rhs.arr[4]),
-          self.arr[5].saturating_add(rhs.arr[5]),
-          self.arr[6].saturating_add(rhs.arr[6]),
-          self.arr[7].saturating_add(rhs.arr[7]),
-          self.arr[8].saturating_add(rhs.arr[8]),
-          self.arr[9].saturating_add(rhs.arr[9]),
-          self.arr[10].saturating_add(rhs.arr[10]),
-          self.arr[11].saturating_add(rhs.arr[11]),
-          self.arr[12].saturating_add(rhs.arr[12]),
-          self.arr[13].saturating_add(rhs.arr[13]),
-          self.arr[14].saturating_add(rhs.arr[14]),
-          self.arr[15].saturating_add(rhs.arr[15]),
+          self.0.arr[0].saturating_add(rhs.0.arr[0]),
+          self.0.arr[1].saturating_add(rhs.0.arr[1]),
+          self.0.arr[2].saturating_add(rhs.0.arr[2]),
+          self.0.arr[3].saturating_add(rhs.0.arr[3]),
+          self.0.arr[4].saturating_add(rhs.0.arr[4]),
+          self.0.arr[5].saturating_add(rhs.0.arr[5]),
+          self.0.arr[6].saturating_add(rhs.0.arr[6]),
+          self.0.arr[7].saturating_add(rhs.0.arr[7]),
+          self.0.arr[8].saturating_add(rhs.0.arr[8]),
+          self.0.arr[9].saturating_add(rhs.0.arr[9]),
+          self.0.arr[10].saturating_add(rhs.0.arr[10]),
+          self.0.arr[11].saturating_add(rhs.0.arr[11]),
+          self.0.arr[12].saturating_add(rhs.0.arr[12]),
+          self.0.arr[13].saturating_add(rhs.0.arr[13]),
+          self.0.arr[14].saturating_add(rhs.0.arr[14]),
+          self.0.arr[15].saturating_add(rhs.0.arr[15]),
         ]}
       }
     }
@@ -508,22 +508,22 @@ define_simd_signed! {
         unsafe { Self { neon: vqsubq_s8(self.0, rhs.0) } }
       } else {
         Self { arr: [
-          self.arr[0].saturating_sub(rhs.arr[0]),
-          self.arr[1].saturating_sub(rhs.arr[1]),
-          self.arr[2].saturating_sub(rhs.arr[2]),
-          self.arr[3].saturating_sub(rhs.arr[3]),
-          self.arr[4].saturating_sub(rhs.arr[4]),
-          self.arr[5].saturating_sub(rhs.arr[5]),
-          self.arr[6].saturating_sub(rhs.arr[6]),
-          self.arr[7].saturating_sub(rhs.arr[7]),
-          self.arr[8].saturating_sub(rhs.arr[8]),
-          self.arr[9].saturating_sub(rhs.arr[9]),
-          self.arr[10].saturating_sub(rhs.arr[10]),
-          self.arr[11].saturating_sub(rhs.arr[11]),
-          self.arr[12].saturating_sub(rhs.arr[12]),
-          self.arr[13].saturating_sub(rhs.arr[13]),
-          self.arr[14].saturating_sub(rhs.arr[14]),
-          self.arr[15].saturating_sub(rhs.arr[15]),
+          self.0.arr[0].saturating_sub(rhs.0.arr[0]),
+          self.0.arr[1].saturating_sub(rhs.0.arr[1]),
+          self.0.arr[2].saturating_sub(rhs.0.arr[2]),
+          self.0.arr[3].saturating_sub(rhs.0.arr[3]),
+          self.0.arr[4].saturating_sub(rhs.0.arr[4]),
+          self.0.arr[5].saturating_sub(rhs.0.arr[5]),
+          self.0.arr[6].saturating_sub(rhs.0.arr[6]),
+          self.0.arr[7].saturating_sub(rhs.0.arr[7]),
+          self.0.arr[8].saturating_sub(rhs.0.arr[8]),
+          self.0.arr[9].saturating_sub(rhs.0.arr[9]),
+          self.0.arr[10].saturating_sub(rhs.0.arr[10]),
+          self.0.arr[11].saturating_sub(rhs.0.arr[11]),
+          self.0.arr[12].saturating_sub(rhs.0.arr[12]),
+          self.0.arr[13].saturating_sub(rhs.0.arr[13]),
+          self.0.arr[14].saturating_sub(rhs.0.arr[14]),
+          self.0.arr[15].saturating_sub(rhs.0.arr[15]),
         ]}
       }
     }
@@ -773,17 +773,17 @@ impl i8x16 {
           if #[cfg(target_feature="avx2")] {
             i8x16 { sse: pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(v.0), extract_m128i_from_m256i::<1>(v.0))  }
           } else if #[cfg(target_feature="sse2")] {
-            i8x16 { sse: pack_i16_to_i8_m128i( v.a.0, v.b.0 ) }
+            i8x16 { sse: pack_i16_to_i8_m128i( v.0.lo.0, v.0.hi.0 ) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             use core::arch::aarch64::*;
 
             unsafe {
-              i8x16 { neon: vcombine_s8(vqmovn_s16(v.a.0), vqmovn_s16(v.b.0)) }
+              i8x16 { neon: vcombine_s8(vqmovn_s16(v.0.lo.0), vqmovn_s16(v.0.hi.0)) }
             }
           } else if #[cfg(target_feature="simd128")] {
             use core::arch::wasm32::*;
 
-            i8x16 { simd: i8x16_narrow_i16x8(v.a.0, v.b.0) }
+            i8x16 { simd: i8x16_narrow_i16x8(v.0.lo.0, v.0.hi.0) }
           } else {
             fn clamp(a : i16) -> i8 {
                 if a < i8::MIN as i16 {
@@ -831,7 +831,7 @@ impl i8x16 {
             i8x16 { sse: pack_i16_to_u8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a))  }
           } else if #[cfg(target_feature="sse2")] {
             let mask = set_splat_i16_m128i(0xff);
-            i8x16 { sse: pack_i16_to_u8_m128i( v.a.0.bitand(mask), v.b.0.bitand(mask) ) }
+            i8x16 { sse: pack_i16_to_u8_m128i( v.0.lo.0.bitand(mask), v.0.hi.0.bitand(mask) ) }
           } else {
             // no super good intrinsics on other platforms... plain old codegen does a reasonable job
             i8x16::new([

@@ -43,8 +43,8 @@ define_simd_float! {
         Self { avx512: bitxor_m512d(self.0, Self::splat(-0.0).0) }
       } else {
         Self {
-          a : self.a.neg(),
-          b : self.b.neg(),
+          a : self.0.lo.neg(),
+          b : self.0.hi.neg(),
         }
       }
     }
@@ -57,8 +57,8 @@ define_simd_float! {
         Self { avx512: bitxor_m512d(self.0, set_splat_m512d(f64::from_bits(u64::MAX))) }
       } else {
         Self {
-          a : self.a.not(),
-          b : self.b.not(),
+          a : self.0.lo.not(),
+          b : self.0.hi.not(),
         }
       }
     }
@@ -71,8 +71,8 @@ define_simd_float! {
         Self { avx512: add_m512d(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
+          a : self.0.lo.add(rhs.0.lo),
+          b : self.0.hi.add(rhs.0.hi),
         }
       }
     }
@@ -85,8 +85,8 @@ define_simd_float! {
         Self { avx512: sub_m512d(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
+          a : self.0.lo.sub(rhs.0.lo),
+          b : self.0.hi.sub(rhs.0.hi),
         }
       }
     }
@@ -98,7 +98,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: mul_m512d(self.0, rhs.0) }
       } else {
-        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
+        Self { a: self.0.lo.mul(rhs.0.lo), b: self.0.hi.mul(rhs.0.hi) }
       }
     }
   }
@@ -109,7 +109,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         Self { avx512: div_m512d(self.0, rhs.0) }
       } else {
-        Self { a: self.a.div(rhs.a), b: self.b.div(rhs.b) }
+        Self { a: self.0.lo.div(rhs.0.lo), b: self.0.hi.div(rhs.0.hi) }
       }
     }
   }
@@ -135,8 +135,8 @@ define_simd_float! {
         Self { avx512: bitand_m512d(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
+          a : self.0.lo.bitand(rhs.0.lo),
+          b : self.0.hi.bitand(rhs.0.hi),
         }
       }
     }
@@ -149,8 +149,8 @@ define_simd_float! {
         Self { avx512: bitor_m512d(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
+          a : self.0.lo.bitor(rhs.0.lo),
+          b : self.0.hi.bitor(rhs.0.hi),
         }
       }
     }
@@ -163,8 +163,8 @@ define_simd_float! {
         Self { avx512: bitxor_m512d(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
+          a : self.0.lo.bitxor(rhs.0.lo),
+          b : self.0.hi.bitxor(rhs.0.hi),
         }
       }
     }
@@ -177,8 +177,8 @@ define_simd_float! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
+          a : self.0.lo.simd_eq(rhs.0.lo),
+          b : self.0.hi.simd_eq(rhs.0.hi),
         }
       }
     }
@@ -191,8 +191,8 @@ define_simd_float! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
+          a : self.0.lo.simd_ne(rhs.0.lo),
+          b : self.0.hi.simd_ne(rhs.0.hi),
         }
       }
     }
@@ -205,8 +205,8 @@ define_simd_float! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
+          a : self.0.lo.simd_lt(rhs.0.lo),
+          b : self.0.hi.simd_lt(rhs.0.hi),
         }
       }
     }
@@ -219,8 +219,8 @@ define_simd_float! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a : self.0.lo.simd_gt(rhs.0.lo),
+          b : self.0.hi.simd_gt(rhs.0.hi),
         }
       }
     }
@@ -233,8 +233,8 @@ define_simd_float! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
+          a : self.0.lo.simd_le(rhs.0.lo),
+          b : self.0.hi.simd_le(rhs.0.hi),
         }
       }
     }
@@ -247,8 +247,8 @@ define_simd_float! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
+          a : self.0.lo.simd_ge(rhs.0.lo),
+          b : self.0.hi.simd_ge(rhs.0.hi),
         }
       }
     }
@@ -268,7 +268,7 @@ define_simd_float! {
         let s  = add_m128d(lo, hi);                // [sum, ...]
         get_f64_from_m128d_s(s)
       } else {
-        self.a.reduce_add() + self.b.reduce_add()
+        self.0.lo.reduce_add() + self.0.hi.reduce_add()
       }
     }
   }
@@ -288,7 +288,7 @@ define_simd_float! {
         let product = mul_m128d_s(lo,hi64);
         get_f64_from_m128d_s(product)
       } else {
-        self.a.reduce_mul() * self.b.reduce_mul()
+        self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
       }
     }
   }
@@ -305,8 +305,8 @@ define_simd_float! {
         }
       } else {
         Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
+          a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
+          b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
         }
       }
     }
@@ -319,8 +319,8 @@ define_simd_float! {
         Self { avx512: blend_varying_m512d(if_false.0, if_true.0, movepi64_mask_m512d(self.0)) }
       } else {
         Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
+          a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
+          b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
         }
       }
     }
@@ -332,7 +332,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(self.0) as u32
       } else {
-        (self.b.to_bitmask() << 4) | self.a.to_bitmask()
+        (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
       }
     }
   }
@@ -343,7 +343,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(self.0) != 0
       } else {
-        self.a.any() || self.b.any()
+        self.0.lo.any() || self.0.hi.any()
       }
     }
   }
@@ -354,7 +354,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(self.0) == 0b11111111
       } else {
-        self.a.all() && self.b.all()
+        self.0.lo.all() && self.0.hi.all()
       }
     }
   }
@@ -408,8 +408,8 @@ define_simd_float! {
         Self { avx512: cmp_op_mask_m512d::<{cmp_op!(Unordered)}>(self.0, self.0) }
       } else {
         Self {
-          a: self.a.is_nan(),
-          b: self.b.is_nan(),
+          a: self.0.lo.is_nan(),
+          b: self.0.hi.is_nan(),
         }
       }
     }
@@ -474,8 +474,8 @@ define_simd_float! {
         rhs.is_nan().select(self, Self { avx512: max_m512d(self.0, rhs.0) })
       } else {
         Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
+          a: self.0.lo.max(rhs.0.lo),
+          b: self.0.hi.max(rhs.0.hi),
         }
       }
     }
@@ -488,8 +488,8 @@ define_simd_float! {
         Self { avx512: max_m512d(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.fast_max(rhs.a),
-          b : self.b.fast_max(rhs.b),
+          a : self.0.lo.fast_max(rhs.0.lo),
+          b : self.0.hi.fast_max(rhs.0.hi),
         }
       }
     }
@@ -502,8 +502,8 @@ define_simd_float! {
         rhs.is_nan().select(self, Self { avx512: min_m512d(self.0, rhs.0) })
       } else {
         Self {
-          a: self.a.min(rhs.a),
-          b: self.b.min(rhs.b),
+          a: self.0.lo.min(rhs.0.lo),
+          b: self.0.hi.min(rhs.0.hi),
         }
       }
     }
@@ -516,8 +516,8 @@ define_simd_float! {
         Self { avx512: min_m512d(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.fast_min(rhs.a),
-          b : self.b.fast_min(rhs.b),
+          a : self.0.lo.fast_min(rhs.0.lo),
+          b : self.0.hi.fast_min(rhs.0.hi),
         }
       }
     }
@@ -532,8 +532,8 @@ define_simd_float! {
       } else {
         // Some targets have better implementations than the above one.
         Self {
-          a: self.a.clamp(min.a, max.a),
-          b: self.b.clamp(min.b, max.b),
+          a: self.0.lo.clamp(min.0.lo, max.0.lo),
+          b: self.0.hi.clamp(min.0.hi, max.0.hi),
         }
       }
     }
@@ -548,8 +548,8 @@ define_simd_float! {
         Self { avx512: max_m512d(min.0, min_m512d(max.0, self.0)) }
       } else {
         Self {
-          a: self.a.fast_clamp(min.a, max.a),
-          b: self.b.fast_clamp(min.b, max.b),
+          a: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
+          b: self.0.hi.fast_clamp(min.0.hi, max.0.hi),
         }
       }
     }
@@ -587,8 +587,8 @@ define_simd_float! {
         self & non_sign_bits
       } else {
         Self {
-          a: self.a.abs(),
-          b: self.b.abs(),
+          a: self.0.lo.abs(),
+          b: self.0.hi.abs(),
         }
       }
     }
@@ -601,8 +601,8 @@ define_simd_float! {
         Self { avx512: round_m512d::<{round_op!(NegInf)}>(self.0) }
       } else {
         Self {
-          a : self.a.floor(),
-          b : self.b.floor(),
+          a : self.0.lo.floor(),
+          b : self.0.hi.floor(),
         }
       }
     }
@@ -615,8 +615,8 @@ define_simd_float! {
         Self { avx512: round_m512d::<{round_op!(PosInf)}>(self.0) }
       } else {
         Self {
-          a : self.a.ceil(),
-          b : self.b.ceil(),
+          a : self.0.lo.ceil(),
+          b : self.0.hi.ceil(),
         }
       }
     }
@@ -647,8 +647,8 @@ define_simd_float! {
         bounds_mask.abs().bitselect(result_abs, self)
       } else {
         Self {
-          a: self.a.round(),
-          b: self.b.round(),
+          a: self.0.lo.round(),
+          b: self.0.hi.round(),
         }
       }
     }
@@ -710,8 +710,8 @@ define_simd_float! {
         Self { avx512: round_m512d::<{round_op!(Nearest)}>(self.0) }
       } else {
         Self {
-          a: self.a.round_ties_even(),
-          b: self.b.round_ties_even(),
+          a: self.0.lo.round_ties_even(),
+          b: self.0.hi.round_ties_even(),
         }
       }
     }
@@ -724,8 +724,8 @@ define_simd_float! {
         Self { avx512: round_m512d::<{round_op!(Zero)}>(self.0) }
       } else {
         Self {
-          a: self.a.trunc(),
-          b: self.b.trunc(),
+          a: self.0.lo.trunc(),
+          b: self.0.hi.trunc(),
         }
       }
     }
@@ -797,8 +797,8 @@ define_simd_float! {
         (self * a) + b
       } else {
         Self {
-          a : self.a.mul_add(a.a, b.a),
-          b : self.b.mul_add(a.b, b.b),
+          a : self.0.lo.mul_add(a.0.lo, b.0.lo),
+          b : self.0.hi.mul_add(a.0.hi, b.0.hi),
         }
       }
     }
@@ -822,8 +822,8 @@ define_simd_float! {
         (self * a) - b
       } else {
         Self {
-          a : self.a.mul_sub(a.a, b.a),
-          b : self.b.mul_sub(a.b, b.b),
+          a : self.0.lo.mul_sub(a.0.lo, b.0.lo),
+          b : self.0.hi.mul_sub(a.0.hi, b.0.hi),
         }
       }
     }
@@ -847,8 +847,8 @@ define_simd_float! {
         b - (self * a)
       } else {
         Self {
-          a : self.a.mul_neg_add(a.a, b.a),
-          b : self.b.mul_neg_add(a.b, b.b),
+          a : self.0.lo.mul_neg_add(a.0.lo, b.0.lo),
+          b : self.0.hi.mul_neg_add(a.0.hi, b.0.hi),
         }
       }
     }
@@ -872,8 +872,8 @@ define_simd_float! {
           -(self * a) - b
         } else {
          Self {
-           a : self.a.mul_neg_sub(a.a, b.a),
-           b : self.b.mul_neg_sub(a.b, b.b),
+           a : self.0.lo.mul_neg_sub(a.0.lo, b.0.lo),
+           b : self.0.hi.mul_neg_sub(a.0.hi, b.0.hi),
          }
        }
     }
@@ -1005,8 +1005,8 @@ define_simd_float! {
         Self { avx512: sqrt_m512d(self.0) }
       } else {
         Self {
-          a : self.a.sqrt(),
-          b : self.b.sqrt(),
+          a : self.0.lo.sqrt(),
+          b : self.0.hi.sqrt(),
         }
       }
     }

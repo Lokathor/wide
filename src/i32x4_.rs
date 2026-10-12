@@ -49,10 +49,10 @@ define_simd_signed! {
         unsafe {Self { neon: vreinterpretq_s32_u32(vcltq_s32(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] < rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] < rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] < rhs.arr[3] { -1 } else { 0 },
+          if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] < rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] < rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] < rhs.0.arr[3] { -1 } else { 0 },
         ]}
       }
     }
@@ -69,10 +69,10 @@ define_simd_signed! {
         unsafe {Self { neon: vreinterpretq_s32_u32(vcgtq_s32(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] > rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] > rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] > rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] > rhs.arr[3] { -1 } else { 0 },
+          if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] > rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] > rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] > rhs.0.arr[3] { -1 } else { 0 },
         ]}
       }
     }
@@ -89,10 +89,10 @@ define_simd_signed! {
         !self.simd_gt(rhs)
       } else {
         Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] <= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] <= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] <= rhs.arr[3] { -1 } else { 0 },
+          if self.0.arr[0] <= rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] <= rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] <= rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] <= rhs.0.arr[3] { -1 } else { 0 },
         ]}
       }
     }
@@ -109,10 +109,10 @@ define_simd_signed! {
         !self.simd_lt(rhs)
       } else {
         Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { -1 } else { 0 },
-          if self.arr[1] >= rhs.arr[1] { -1 } else { 0 },
-          if self.arr[2] >= rhs.arr[2] { -1 } else { 0 },
-          if self.arr[3] >= rhs.arr[3] { -1 } else { 0 },
+          if self.0.arr[0] >= rhs.0.arr[0] { -1 } else { 0 },
+          if self.0.arr[1] >= rhs.0.arr[1] { -1 } else { 0 },
+          if self.0.arr[2] >= rhs.0.arr[2] { -1 } else { 0 },
+          if self.0.arr[3] >= rhs.0.arr[3] { -1 } else { 0 },
         ]}
       }
     }
@@ -161,10 +161,10 @@ define_simd_signed! {
         unsafe {Self { neon: vshlq_s32(self.0, vmovq_n_s32( -(rhs as i32 & 31))) }}
       } else {
         Self { arr: [
-          self.arr[0].wrapping_shr(rhs),
-          self.arr[1].wrapping_shr(rhs),
-          self.arr[2].wrapping_shr(rhs),
-          self.arr[3].wrapping_shr(rhs),
+          self.0.arr[0].wrapping_shr(rhs),
+          self.0.arr[1].wrapping_shr(rhs),
+          self.0.arr[2].wrapping_shr(rhs),
+          self.0.arr[3].wrapping_shr(rhs),
         ]}
       }
     }
@@ -253,10 +253,10 @@ define_simd_signed! {
       } else {
         Self {
           arr: [
-            self.arr[0].unbounded_shr(rhs),
-            self.arr[1].unbounded_shr(rhs),
-            self.arr[2].unbounded_shr(rhs),
-            self.arr[3].unbounded_shr(rhs),
+            self.0.arr[0].unbounded_shr(rhs),
+            self.0.arr[1].unbounded_shr(rhs),
+            self.0.arr[2].unbounded_shr(rhs),
+            self.0.arr[3].unbounded_shr(rhs),
           ]
         }
       }
@@ -278,10 +278,10 @@ define_simd_signed! {
       } else {
         Self {
           arr: [
-            self.arr[0].saturating_add(rhs.arr[0]),
-            self.arr[1].saturating_add(rhs.arr[1]),
-            self.arr[2].saturating_add(rhs.arr[2]),
-            self.arr[3].saturating_add(rhs.arr[3]),
+            self.0.arr[0].saturating_add(rhs.0.arr[0]),
+            self.0.arr[1].saturating_add(rhs.0.arr[1]),
+            self.0.arr[2].saturating_add(rhs.0.arr[2]),
+            self.0.arr[3].saturating_add(rhs.0.arr[3]),
           ],
         }
       }
@@ -303,10 +303,10 @@ define_simd_signed! {
       } else {
         Self {
           arr: [
-            self.arr[0].saturating_sub(rhs.arr[0]),
-            self.arr[1].saturating_sub(rhs.arr[1]),
-            self.arr[2].saturating_sub(rhs.arr[2]),
-            self.arr[3].saturating_sub(rhs.arr[3]),
+            self.0.arr[0].saturating_sub(rhs.0.arr[0]),
+            self.0.arr[1].saturating_sub(rhs.0.arr[1]),
+            self.0.arr[2].saturating_sub(rhs.0.arr[2]),
+            self.0.arr[3].saturating_sub(rhs.0.arr[3]),
           ],
         }
       }

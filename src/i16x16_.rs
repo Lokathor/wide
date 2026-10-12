@@ -37,8 +37,8 @@ define_simd_signed! {
         Self { avx2: !cmp_gt_mask_i16_m256i(self.0, rhs.0) ^ cmp_eq_mask_i16_m256i(self.0,rhs.0) }
       } else {
         Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
+          a : self.0.lo.simd_lt(rhs.0.lo),
+          b : self.0.hi.simd_lt(rhs.0.hi),
         }
       }
     }
@@ -51,8 +51,8 @@ define_simd_signed! {
         Self { avx2: cmp_gt_mask_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a : self.0.lo.simd_gt(rhs.0.lo),
+          b : self.0.hi.simd_gt(rhs.0.hi),
         }
       }
     }
@@ -65,8 +65,8 @@ define_simd_signed! {
         !self.simd_gt(rhs)
       } else {
         Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
+          a : self.0.lo.simd_le(rhs.0.lo),
+          b : self.0.hi.simd_le(rhs.0.hi),
         }
       }
     }
@@ -79,8 +79,8 @@ define_simd_signed! {
         !self.simd_lt(rhs)
       } else {
         Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
+          a : self.0.lo.simd_ge(rhs.0.lo),
+          b : self.0.hi.simd_ge(rhs.0.hi),
         }
       }
     }
@@ -118,8 +118,8 @@ define_simd_signed! {
         Self { avx2: shr_all_i16_m256i(self.0, shift) }
       } else {
         Self {
-          a : self.a.shr(rhs),
-          b : self.b.shr(rhs),
+          a : self.0.lo.shr(rhs),
+          b : self.0.hi.shr(rhs),
         }
       }
     }
@@ -132,8 +132,8 @@ define_simd_signed! {
         Self { avx2: max_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
+          a : self.0.lo.max(rhs.0.lo),
+          b : self.0.hi.max(rhs.0.hi),
         }
       }
     }
@@ -146,8 +146,8 @@ define_simd_signed! {
         Self { avx2: min_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
+          a : self.0.lo.min(rhs.0.lo),
+          b : self.0.hi.min(rhs.0.hi),
         }
       }
     }
@@ -194,8 +194,8 @@ define_simd_signed! {
         Self { avx2: shr_all_i16_m256i(self.0, cast([rhs as u64, 0])) }
       } else {
         Self {
-          a: self.a.unbounded_shr_scalar(rhs),
-          b: self.b.unbounded_shr_scalar(rhs),
+          a: self.0.lo.unbounded_shr_scalar(rhs),
+          b: self.0.hi.unbounded_shr_scalar(rhs),
         }
       }
     }
@@ -208,8 +208,8 @@ define_simd_signed! {
         Self { avx2: add_saturating_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.saturating_add(rhs.a),
-          b : self.b.saturating_add(rhs.b),
+          a : self.0.lo.saturating_add(rhs.0.lo),
+          b : self.0.hi.saturating_add(rhs.0.hi),
         }
       }
     }
@@ -222,8 +222,8 @@ define_simd_signed! {
         Self { avx2: sub_saturating_i16_m256i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.saturating_sub(rhs.a),
-          b : self.b.saturating_sub(rhs.b),
+          a : self.0.lo.saturating_sub(rhs.0.lo),
+          b : self.0.hi.saturating_sub(rhs.0.hi),
         }
       }
     }
@@ -282,8 +282,8 @@ define_simd_signed! {
         Self { avx2: abs_i16_m256i(self.0) }
       } else {
         Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
+          a : self.0.lo.abs(),
+          b : self.0.hi.abs(),
         }
       }
     }
@@ -295,8 +295,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
         Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
+          a: self.0.lo.is_positive(),
+          b: self.0.hi.is_positive(),
         }
       } else {
         self.simd_gt(Self::ZERO)
@@ -310,8 +310,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
         Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
+          a: self.0.lo.is_negative(),
+          b: self.0.hi.is_negative(),
         }
       } else {
         self.simd_lt(Self::ZERO)
@@ -393,8 +393,8 @@ impl i16x16 {
             i32x8 { avx2:  mul_i16_horizontal_add_m256i(self.0, rhs.0) }
           } else {
             i32x8 {
-              a : self.a.dot(rhs.a),
-              b : self.b.dot(rhs.b),
+              a : self.0.lo.dot(rhs.0.lo),
+              b : self.0.hi.dot(rhs.0.hi),
             }
           }
         }
@@ -415,8 +415,8 @@ impl i16x16 {
             Self { avx2: mul_i16_scale_round_m256i(self.0, rhs.0) }
           } else {
             Self {
-              a : self.a.mul_scale_round(rhs.a),
-              b : self.b.mul_scale_round(rhs.b),
+              a : self.0.lo.mul_scale_round(rhs.0.lo),
+              b : self.0.hi.mul_scale_round(rhs.0.hi),
             }
           }
         }
@@ -437,8 +437,8 @@ impl i16x16 {
             Self { avx2: mul_i16_scale_round_m256i(self.0, set_splat_i16_m256i(rhs)) }
           } else {
             Self {
-              a : self.a.mul_scale_round_n(rhs),
-              b : self.b.mul_scale_round_n(rhs),
+              a : self.0.lo.mul_scale_round_n(rhs),
+              b : self.0.hi.mul_scale_round_n(rhs),
             }
           }
         }

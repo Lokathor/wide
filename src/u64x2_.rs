@@ -53,8 +53,8 @@ define_simd_unsigned! {
         unsafe { Self { neon: vaddq_u64(self.0, rhs.0) } }
       } else {
         Self { arr: [
-          self.arr[0].wrapping_add(rhs.arr[0]),
-          self.arr[1].wrapping_add(rhs.arr[1]),
+          self.0.arr[0].wrapping_add(rhs.0.arr[0]),
+          self.0.arr[1].wrapping_add(rhs.0.arr[1]),
         ]}
       }
     }
@@ -71,8 +71,8 @@ define_simd_unsigned! {
         unsafe { Self { neon: vsubq_u64(self.0, rhs.0) } }
       } else {
         Self { arr: [
-          self.arr[0].wrapping_sub(rhs.arr[0]),
-          self.arr[1].wrapping_sub(rhs.arr[1]),
+          self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
+          self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
         ]}
       }
     }
@@ -106,8 +106,8 @@ define_simd_unsigned! {
         unsafe {Self { neon: vandq_u64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].bitand(rhs.arr[0]),
-          self.arr[1].bitand(rhs.arr[1]),
+          self.0.arr[0].bitand(rhs.0.arr[0]),
+          self.0.arr[1].bitand(rhs.0.arr[1]),
         ]}
       }
     }
@@ -124,8 +124,8 @@ define_simd_unsigned! {
         unsafe {Self { neon: vorrq_u64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].bitor(rhs.arr[0]),
-          self.arr[1].bitor(rhs.arr[1]),
+          self.0.arr[0].bitor(rhs.0.arr[0]),
+          self.0.arr[1].bitor(rhs.0.arr[1]),
         ]}
       }
     }
@@ -142,8 +142,8 @@ define_simd_unsigned! {
         unsafe {Self { neon: veorq_u64(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].bitxor(rhs.arr[0]),
-          self.arr[1].bitxor(rhs.arr[1]),
+          self.0.arr[0].bitxor(rhs.0.arr[0]),
+          self.0.arr[1].bitxor(rhs.0.arr[1]),
         ]}
       }
     }
@@ -356,7 +356,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { vgetq_lane_u64(self.0, 0).wrapping_add(vgetq_lane_u64(self.0, 1)) }
       } else {
-        self.arr[0].wrapping_add(self.arr[1])
+        self.0.arr[0].wrapping_add(self.0.arr[1])
       }
     }
   }
@@ -370,7 +370,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { vgetq_lane_u64(self.0, 0).wrapping_mul(vgetq_lane_u64(self.0, 1)) }
       } else {
-        self.arr[0].wrapping_mul(self.arr[1])
+        self.0.arr[0].wrapping_mul(self.0.arr[1])
       }
     }
   }
@@ -669,8 +669,8 @@ define_simd_unsigned! {
         unsafe {Self { neon: vshlq_u64(self.0, vmovq_n_s64(rhs as i64 & 63)) }}
       } else {
         Self { arr: [
-          self.arr[0].wrapping_shl(rhs),
-          self.arr[1].wrapping_shl(rhs),
+          self.0.arr[0].wrapping_shl(rhs),
+          self.0.arr[1].wrapping_shl(rhs),
         ]}
       }
     }
@@ -717,8 +717,8 @@ define_simd_unsigned! {
         unsafe {Self { neon: vshlq_u64(self.0, vmovq_n_s64(-(rhs as i64 & 63))) }}
       } else {
         Self { arr: [
-          self.arr[0].wrapping_shr(rhs),
-          self.arr[1].wrapping_shr(rhs),
+          self.0.arr[0].wrapping_shr(rhs),
+          self.0.arr[1].wrapping_shr(rhs),
         ]}
       }
     }
@@ -743,7 +743,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { vgetq_lane_u64(self.0, 0).max(vgetq_lane_u64(self.0, 1)) }
       } else {
-        self.arr[0].max(self.arr[1])
+        self.0.arr[0].max(self.0.arr[1])
       }
     }
   }
@@ -757,7 +757,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { vgetq_lane_u64(self.0, 0).min(vgetq_lane_u64(self.0, 1)) }
       } else {
-        self.arr[0].min(self.arr[1])
+        self.0.arr[0].min(self.0.arr[1])
       }
     }
   }
@@ -792,8 +792,8 @@ define_simd_unsigned! {
         unsafe { Self { neon: vshlq_u64(self.0, vmovq_n_s64(rhs.min(64) as i64)) } }
       } else {
         Self { arr: [
-          self.arr[0].unbounded_shl(rhs),
-          self.arr[1].unbounded_shl(rhs),
+          self.0.arr[0].unbounded_shl(rhs),
+          self.0.arr[1].unbounded_shl(rhs),
         ]}
       }
     }
@@ -834,8 +834,8 @@ define_simd_unsigned! {
       } else {
         Self {
           arr: [
-            self.arr[0].unbounded_shr(rhs),
-            self.arr[1].unbounded_shr(rhs),
+            self.0.arr[0].unbounded_shr(rhs),
+            self.0.arr[1].unbounded_shr(rhs),
           ],
         }
       }
@@ -855,8 +855,8 @@ define_simd_unsigned! {
       } else {
         Self {
           arr: [
-            self.arr[0].saturating_add(rhs.arr[0]),
-            self.arr[1].saturating_add(rhs.arr[1]),
+            self.0.arr[0].saturating_add(rhs.0.arr[0]),
+            self.0.arr[1].saturating_add(rhs.0.arr[1]),
           ],
         }
       }
@@ -876,8 +876,8 @@ define_simd_unsigned! {
       } else {
         Self {
           arr: [
-            self.arr[0].saturating_sub(rhs.arr[0]),
-            self.arr[1].saturating_sub(rhs.arr[1]),
+            self.0.arr[0].saturating_sub(rhs.0.arr[0]),
+            self.0.arr[1].saturating_sub(rhs.0.arr[1]),
           ],
         }
       }

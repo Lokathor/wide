@@ -36,8 +36,8 @@ define_simd_unsigned! {
         Self { avx512: bitxor_m512i(self.0, set_splat_i64_m512i(-1)) }
       } else {
         Self {
-          a : self.a.not(),
-          b : self.b.not(),
+          a : self.0.lo.not(),
+          b : self.0.hi.not(),
         }
       }
     }
@@ -50,8 +50,8 @@ define_simd_unsigned! {
         Self { avx512: add_i64_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
+          a : self.0.lo.add(rhs.0.lo),
+          b : self.0.hi.add(rhs.0.hi),
         }
       }
     }
@@ -64,8 +64,8 @@ define_simd_unsigned! {
         Self { avx512: sub_i64_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
+          a : self.0.lo.sub(rhs.0.lo),
+          b : self.0.hi.sub(rhs.0.hi),
         }
       }
     }
@@ -88,7 +88,7 @@ define_simd_unsigned! {
           arr1[7].wrapping_mul(arr2[7]),
         ])
       } else {
-        Self { a: self.a.mul(rhs.a), b: self.b.mul(rhs.b) }
+        Self { a: self.0.lo.mul(rhs.0.lo), b: self.0.hi.mul(rhs.0.hi) }
       }
     }
   }
@@ -100,8 +100,8 @@ define_simd_unsigned! {
         Self { avx512: bitand_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.bitand(rhs.a),
-          b : self.b.bitand(rhs.b),
+          a : self.0.lo.bitand(rhs.0.lo),
+          b : self.0.hi.bitand(rhs.0.hi),
         }
       }
     }
@@ -114,8 +114,8 @@ define_simd_unsigned! {
         Self { avx512: bitor_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
+          a : self.0.lo.bitor(rhs.0.lo),
+          b : self.0.hi.bitor(rhs.0.hi),
         }
       }
     }
@@ -128,8 +128,8 @@ define_simd_unsigned! {
         Self { avx512: bitxor_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
+          a : self.0.lo.bitxor(rhs.0.lo),
+          b : self.0.hi.bitxor(rhs.0.hi),
         }
       }
     }
@@ -142,8 +142,8 @@ define_simd_unsigned! {
         Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Eq)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
+          a : self.0.lo.simd_eq(rhs.0.lo),
+          b : self.0.hi.simd_eq(rhs.0.hi),
         }
       }
     }
@@ -156,8 +156,8 @@ define_simd_unsigned! {
         Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Ne)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
+          a : self.0.lo.simd_ne(rhs.0.lo),
+          b : self.0.hi.simd_ne(rhs.0.hi),
         }
       }
     }
@@ -170,8 +170,8 @@ define_simd_unsigned! {
         Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
+          a : self.0.lo.simd_lt(rhs.0.lo),
+          b : self.0.hi.simd_lt(rhs.0.hi),
         }
       }
     }
@@ -184,8 +184,8 @@ define_simd_unsigned! {
         Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a : self.0.lo.simd_gt(rhs.0.lo),
+          b : self.0.hi.simd_gt(rhs.0.hi),
         }
       }
     }
@@ -198,8 +198,8 @@ define_simd_unsigned! {
         Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
+          a : self.0.lo.simd_le(rhs.0.lo),
+          b : self.0.hi.simd_le(rhs.0.hi),
         }
       }
     }
@@ -212,8 +212,8 @@ define_simd_unsigned! {
         Self { avx512: cmp_op_mask_u64_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
+          a : self.0.lo.simd_ge(rhs.0.lo),
+          b : self.0.hi.simd_ge(rhs.0.hi),
         }
       }
     }
@@ -354,8 +354,8 @@ define_simd_unsigned! {
         }
       } else {
         Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
+          a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
+          b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
         }
       }
     }
@@ -368,8 +368,8 @@ define_simd_unsigned! {
         Self { avx512: blend_varying_i8_m512i(if_false.0,if_true.0,movepi8_mask_m512i(self.0)) }
       } else {
         Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
+          a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
+          b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
         }
       }
     }
@@ -421,7 +421,7 @@ define_simd_unsigned! {
         let [ba, _]: [u64x4; 2] = cast(other);
         cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
       } else {
-        Self { a: self.a.unpack_lo(other.a), b: self.a.unpack_hi(other.a) }
+        Self { a: self.0.lo.unpack_lo(other.0.lo), b: self.0.lo.unpack_hi(other.0.lo) }
       }
     }
   }
@@ -436,7 +436,7 @@ define_simd_unsigned! {
         let [_, bb]: [u64x4; 2] = cast(other);
         cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
       } else {
-        Self { a: self.b.unpack_lo(other.b), b: self.b.unpack_hi(other.b) }
+        Self { a: self.0.hi.unpack_lo(other.0.hi), b: self.0.hi.unpack_hi(other.0.hi) }
       }
     }
   }
@@ -589,8 +589,8 @@ define_simd_unsigned! {
         Self { avx512: shl_each_u64_m512i(self.0, rhs) }
       } else {
         Self {
-          a : self.a.shl(rhs.a),
-          b : self.b.shl(rhs.b),
+          a : self.0.lo.shl(rhs.0.lo),
+          b : self.0.hi.shl(rhs.0.hi),
         }
       }
     }
@@ -606,8 +606,8 @@ define_simd_unsigned! {
         Self { avx512: shl_all_u64_m512i(self.0, shift) }
       } else {
         Self {
-          a : self.a.shl(rhs),
-          b : self.b.shl(rhs),
+          a : self.0.lo.shl(rhs),
+          b : self.0.hi.shl(rhs),
         }
       }
     }
@@ -622,8 +622,8 @@ define_simd_unsigned! {
         Self { avx512: shr_each_u64_m512i(self.0, rhs) }
       } else {
         Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
+          a : self.0.lo.shr(rhs.0.lo),
+          b : self.0.hi.shr(rhs.0.hi),
         }
       }
     }
@@ -639,8 +639,8 @@ define_simd_unsigned! {
         Self { avx512: shr_all_u64_m512i(self.0, shift) }
       } else {
         Self {
-          a : self.a.shr(rhs),
-          b : self.b.shr(rhs),
+          a : self.0.lo.shr(rhs),
+          b : self.0.hi.shr(rhs),
         }
       }
     }
@@ -653,8 +653,8 @@ define_simd_unsigned! {
         Self { avx512: max_u64_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
+          a: self.0.lo.max(rhs.0.lo),
+          b: self.0.hi.max(rhs.0.hi),
         }
       }
     }
@@ -667,8 +667,8 @@ define_simd_unsigned! {
         Self { avx512: min_u64_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a: self.a.min(rhs.a),
-          b: self.b.min(rhs.b),
+          a: self.0.lo.min(rhs.0.lo),
+          b: self.0.hi.min(rhs.0.hi),
         }
       }
     }
@@ -693,8 +693,8 @@ define_simd_unsigned! {
         Self { avx512: shl_each_u64_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a: self.a.unbounded_shl(rhs.a),
-          b: self.b.unbounded_shl(rhs.b),
+          a: self.0.lo.unbounded_shl(rhs.0.lo),
+          b: self.0.hi.unbounded_shl(rhs.0.hi),
         }
       }
     }
@@ -707,8 +707,8 @@ define_simd_unsigned! {
         Self { avx512: shl_all_u64_m512i(self.0, rhs as u64) }
       } else {
         Self {
-          a: self.a.unbounded_shl_scalar(rhs),
-          b: self.b.unbounded_shl_scalar(rhs),
+          a: self.0.lo.unbounded_shl_scalar(rhs),
+          b: self.0.hi.unbounded_shl_scalar(rhs),
         }
       }
     }
@@ -721,8 +721,8 @@ define_simd_unsigned! {
         Self { avx512: shr_each_u64_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a: self.a.unbounded_shr(rhs.a),
-          b: self.b.unbounded_shr(rhs.b),
+          a: self.0.lo.unbounded_shr(rhs.0.lo),
+          b: self.0.hi.unbounded_shr(rhs.0.hi),
         }
       }
     }
@@ -735,8 +735,8 @@ define_simd_unsigned! {
         Self { avx512: shr_all_u64_m512i(self.0, rhs as u64) }
       } else {
         Self {
-          a: self.a.unbounded_shr_scalar(rhs),
-          b: self.b.unbounded_shr_scalar(rhs),
+          a: self.0.lo.unbounded_shr_scalar(rhs),
+          b: self.0.hi.unbounded_shr_scalar(rhs),
         }
       }
     }
@@ -752,8 +752,8 @@ define_simd_unsigned! {
         result | overflow
       } else {
         Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
+          a: self.0.lo.saturating_add(rhs.0.lo),
+          b: self.0.hi.saturating_add(rhs.0.hi),
         }
       }
     }
@@ -769,8 +769,8 @@ define_simd_unsigned! {
         result & no_overflow
       } else {
         Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
+          a: self.0.lo.saturating_sub(rhs.0.lo),
+          b: self.0.hi.saturating_sub(rhs.0.hi),
         }
       }
     }
@@ -884,8 +884,8 @@ define_simd_unsigned! {
         ])
       } else {
         Self {
-          a: self.a.mul_keep_high(rhs.a),
-          b: self.b.mul_keep_high(rhs.b),
+          a: self.0.lo.mul_keep_high(rhs.0.lo),
+          b: self.0.hi.mul_keep_high(rhs.0.hi),
         }
       }
     }
@@ -918,8 +918,8 @@ impl u64x8 {
           } else {
             // Lane-wise, so each half is independent.
             Self {
-              a: u64x4::mul_masked::<W>(a.a, b.a),
-              b: u64x4::mul_masked::<W>(a.b, b.b),
+              a: u64x4::mul_masked::<W>(a.0.lo, b.0.lo),
+              b: u64x4::mul_masked::<W>(a.0.hi, b.0.hi),
             }
           }
         }

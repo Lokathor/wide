@@ -37,8 +37,8 @@ define_simd_signed! {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : rhs.a.simd_gt(self.a),
-          b : rhs.b.simd_gt(self.b),
+          a : rhs.0.lo.simd_gt(self.0.lo),
+          b : rhs.0.hi.simd_gt(self.0.hi),
         }
       }
     }
@@ -51,8 +51,8 @@ define_simd_signed! {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
+          a : self.0.lo.simd_gt(rhs.0.lo),
+          b : self.0.hi.simd_gt(rhs.0.hi),
         }
       }
     }
@@ -65,8 +65,8 @@ define_simd_signed! {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
+          a : self.0.lo.simd_le(rhs.0.lo),
+          b : self.0.hi.simd_le(rhs.0.hi),
         }
       }
     }
@@ -79,8 +79,8 @@ define_simd_signed! {
         Self { avx512: cmp_op_mask_i32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0) }
       } else {
         Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
+          a : self.0.lo.simd_ge(rhs.0.lo),
+          b : self.0.hi.simd_ge(rhs.0.hi),
         }
       }
     }
@@ -101,8 +101,8 @@ define_simd_signed! {
         Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0) }) }
       } else {
         Self {
-          a: self.a >> rhs.a,
-          b: self.b >> rhs.b,
+          a: self.0.lo >> rhs.0.lo,
+          b: self.0.hi >> rhs.0.hi,
         }
       }
     }
@@ -118,8 +118,8 @@ define_simd_signed! {
         Self { avx512: shr_all_i32_m512i(self.0, shift) }
       } else {
         Self {
-          a : self.a.shr(rhs),
-          b : self.b.shr(rhs),
+          a : self.0.lo.shr(rhs),
+          b : self.0.hi.shr(rhs),
         }
       }
     }
@@ -132,8 +132,8 @@ define_simd_signed! {
         Self { avx512: max_i32_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
+          a: self.0.lo.max(rhs.0.lo),
+          b: self.0.hi.max(rhs.0.hi),
         }
       }
     }
@@ -146,8 +146,8 @@ define_simd_signed! {
         Self { avx512: min_i32_m512i(self.0, rhs.0) }
       } else {
         Self {
-          a: self.a.min(rhs.a),
-          b: self.b.min(rhs.b),
+          a: self.0.lo.min(rhs.0.lo),
+          b: self.0.hi.min(rhs.0.hi),
         }
       }
     }
@@ -178,8 +178,8 @@ define_simd_signed! {
         Self { avx512: m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0.0) }) }
       } else {
         Self {
-          a: self.a.unbounded_shr(rhs.a),
-          b: self.b.unbounded_shr(rhs.b),
+          a: self.0.lo.unbounded_shr(rhs.0.lo),
+          b: self.0.hi.unbounded_shr(rhs.0.hi),
         }
       }
     }
@@ -192,8 +192,8 @@ define_simd_signed! {
         Self { avx512: shr_all_i32_m512i(self.0, rhs) }
       } else {
         Self {
-          a: self.a.unbounded_shr_scalar(rhs),
-          b: self.b.unbounded_shr_scalar(rhs),
+          a: self.0.lo.unbounded_shr_scalar(rhs),
+          b: self.0.hi.unbounded_shr_scalar(rhs),
         }
       }
     }
@@ -211,8 +211,8 @@ define_simd_signed! {
         overflow.select(Self::MAX ^ negative, result)
       } else {
         Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
+          a: self.0.lo.saturating_add(rhs.0.lo),
+          b: self.0.hi.saturating_add(rhs.0.hi),
         }
       }
     }
@@ -230,8 +230,8 @@ define_simd_signed! {
         overflow.select(Self::MAX ^ negative, result)
       } else {
         Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
+          a: self.0.lo.saturating_sub(rhs.0.lo),
+          b: self.0.hi.saturating_sub(rhs.0.hi),
         }
       }
     }
@@ -325,8 +325,8 @@ define_simd_signed! {
         Self { avx512: abs_i32_m512i(self.0) }
       } else {
         Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
+          a : self.0.lo.abs(),
+          b : self.0.hi.abs(),
         }
       }
     }
@@ -338,8 +338,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
         Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
+          a: self.0.lo.is_positive(),
+          b: self.0.hi.is_positive(),
         }
       } else {
         self.simd_gt(Self::ZERO)
@@ -353,8 +353,8 @@ define_simd_signed! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
         Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
+          a: self.0.lo.is_negative(),
+          b: self.0.hi.is_negative(),
         }
       } else {
         self.simd_lt(Self::ZERO)
@@ -399,8 +399,8 @@ impl i32x16 {
             cast(convert_to_m512_from_i32_m512i(self.0))
           } else {
             f32x16 {
-              a: self.a.round_float(),
-              b: self.b.round_float(),
+              a: self.0.lo.round_float(),
+              b: self.0.hi.round_float(),
             }
           }
         }

@@ -55,10 +55,10 @@ define_simd_float! {
         unsafe {Self { neon: vnegq_f32(self.0) }}
       } else {
         Self { arr: [
-          -self.arr[0],
-          -self.arr[1],
-          -self.arr[2],
-          -self.arr[3],
+          -self.0.arr[0],
+          -self.0.arr[1],
+          -self.0.arr[2],
+          -self.0.arr[3],
         ]}
       }
     }
@@ -80,10 +80,10 @@ define_simd_float! {
         unsafe { Self { neon: vaddq_f32(self.0, rhs.0) } }
       } else {
         Self { arr: [
-          self.arr[0] + rhs.arr[0],
-          self.arr[1] + rhs.arr[1],
-          self.arr[2] + rhs.arr[2],
-          self.arr[3] + rhs.arr[3],
+          self.0.arr[0] + rhs.0.arr[0],
+          self.0.arr[1] + rhs.0.arr[1],
+          self.0.arr[2] + rhs.0.arr[2],
+          self.0.arr[3] + rhs.0.arr[3],
         ]}
       }
     }
@@ -100,10 +100,10 @@ define_simd_float! {
         unsafe {Self { neon: vsubq_f32(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0] - rhs.arr[0],
-          self.arr[1] - rhs.arr[1],
-          self.arr[2] - rhs.arr[2],
-          self.arr[3] - rhs.arr[3],
+          self.0.arr[0] - rhs.0.arr[0],
+          self.0.arr[1] - rhs.0.arr[1],
+          self.0.arr[2] - rhs.0.arr[2],
+          self.0.arr[3] - rhs.0.arr[3],
         ]}
       }
     }
@@ -120,10 +120,10 @@ define_simd_float! {
         unsafe {Self { neon: vmulq_f32(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0] * rhs.arr[0],
-          self.arr[1] * rhs.arr[1],
-          self.arr[2] * rhs.arr[2],
-          self.arr[3] * rhs.arr[3],
+          self.0.arr[0] * rhs.0.arr[0],
+          self.0.arr[1] * rhs.0.arr[1],
+          self.0.arr[2] * rhs.0.arr[2],
+          self.0.arr[3] * rhs.0.arr[3],
         ]}
       }
     }
@@ -140,10 +140,10 @@ define_simd_float! {
         unsafe {Self { neon: vdivq_f32(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0] / rhs.arr[0],
-          self.arr[1] / rhs.arr[1],
-          self.arr[2] / rhs.arr[2],
-          self.arr[3] / rhs.arr[3],
+          self.0.arr[0] / rhs.0.arr[0],
+          self.0.arr[1] / rhs.0.arr[1],
+          self.0.arr[2] / rhs.0.arr[2],
+          self.0.arr[3] / rhs.0.arr[3],
         ]}
       }
     }
@@ -170,10 +170,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(self.0), vreinterpretq_u32_f32(rhs.0))) }}
       } else {
         Self { arr: [
-          f32::from_bits(self.arr[0].to_bits() & rhs.arr[0].to_bits()),
-          f32::from_bits(self.arr[1].to_bits() & rhs.arr[1].to_bits()),
-          f32::from_bits(self.arr[2].to_bits() & rhs.arr[2].to_bits()),
-          f32::from_bits(self.arr[3].to_bits() & rhs.arr[3].to_bits()),
+          f32::from_bits(self.0.arr[0].to_bits() & rhs.0.arr[0].to_bits()),
+          f32::from_bits(self.0.arr[1].to_bits() & rhs.0.arr[1].to_bits()),
+          f32::from_bits(self.0.arr[2].to_bits() & rhs.0.arr[2].to_bits()),
+          f32::from_bits(self.0.arr[3].to_bits() & rhs.0.arr[3].to_bits()),
         ]}
       }
     }
@@ -190,10 +190,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(self.0), vreinterpretq_u32_f32(rhs.0))) }}
       } else {
         Self { arr: [
-          f32::from_bits(self.arr[0].to_bits() | rhs.arr[0].to_bits()),
-          f32::from_bits(self.arr[1].to_bits() | rhs.arr[1].to_bits()),
-          f32::from_bits(self.arr[2].to_bits() | rhs.arr[2].to_bits()),
-          f32::from_bits(self.arr[3].to_bits() | rhs.arr[3].to_bits()),
+          f32::from_bits(self.0.arr[0].to_bits() | rhs.0.arr[0].to_bits()),
+          f32::from_bits(self.0.arr[1].to_bits() | rhs.0.arr[1].to_bits()),
+          f32::from_bits(self.0.arr[2].to_bits() | rhs.0.arr[2].to_bits()),
+          f32::from_bits(self.0.arr[3].to_bits() | rhs.0.arr[3].to_bits()),
         ]}
       }
     }
@@ -210,10 +210,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(veorq_u32(vreinterpretq_u32_f32(self.0), vreinterpretq_u32_f32(rhs.0))) }}
       } else {
         Self { arr: [
-          f32::from_bits(self.arr[0].to_bits() ^ rhs.arr[0].to_bits()),
-          f32::from_bits(self.arr[1].to_bits() ^ rhs.arr[1].to_bits()),
-          f32::from_bits(self.arr[2].to_bits() ^ rhs.arr[2].to_bits()),
-          f32::from_bits(self.arr[3].to_bits() ^ rhs.arr[3].to_bits()),
+          f32::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
+          f32::from_bits(self.0.arr[1].to_bits() ^ rhs.0.arr[1].to_bits()),
+          f32::from_bits(self.0.arr[2].to_bits() ^ rhs.0.arr[2].to_bits()),
+          f32::from_bits(self.0.arr[3].to_bits() ^ rhs.0.arr[3].to_bits()),
         ]}
       }
     }
@@ -230,10 +230,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vceqq_f32(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] == rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] == rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] == rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] == rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[0] == rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[1] == rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[2] == rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[3] == rhs.0.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -250,10 +250,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(self.0, rhs.0))) }}
       } else {
         Self { arr: [
-          if self.arr[0] != rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] != rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] != rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] != rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[0] != rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[1] != rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[2] != rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[3] != rhs.0.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -270,10 +270,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vcltq_f32(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] < rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] < rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] < rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[0] < rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[1] < rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[2] < rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[3] < rhs.0.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -290,10 +290,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vcgtq_f32(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] > rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] > rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] > rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] > rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[0] > rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[1] > rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[2] > rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[3] > rhs.0.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -310,10 +310,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vcleq_f32(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] <= rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] <= rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] <= rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] <= rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[0] <= rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[1] <= rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[2] <= rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[3] <= rhs.0.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -330,10 +330,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vcgeq_f32(self.0, rhs.0)) }}
       } else {
         Self { arr: [
-          if self.arr[0] >= rhs.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1] >= rhs.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2] >= rhs.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3] >= rhs.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[0] >= rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[1] >= rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[2] >= rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[3] >= rhs.0.arr[3] { f32::from_bits(u32::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -407,10 +407,10 @@ define_simd_float! {
           vaddvq_u32(r) as u32
         }
       } else {
-        (((self.arr[0].to_bits() as i32) < 0) as u32) |
-        (((self.arr[1].to_bits() as i32) < 0) as u32) << 1 |
-        (((self.arr[2].to_bits() as i32) < 0) as u32) << 2 |
-        (((self.arr[3].to_bits() as i32) < 0) as u32) << 3
+        (((self.0.arr[0].to_bits() as i32) < 0) as u32) |
+        (((self.0.arr[1].to_bits() as i32) < 0) as u32) << 1 |
+        (((self.0.arr[2].to_bits() as i32) < 0) as u32) << 2 |
+        (((self.0.arr[3].to_bits() as i32) < 0) as u32) << 3
       }
     }
   }
@@ -451,10 +451,10 @@ define_simd_float! {
         unsafe {Self { neon: vzip1q_f32(self.0, other.0) }}
       } else {
         Self { arr: [
-          self.arr[0],
-          other.arr[0],
-          self.arr[1],
-          other.arr[1],
+          self.0.arr[0],
+          other.0.arr[0],
+          self.0.arr[1],
+          other.0.arr[1],
         ]}
       }
     }
@@ -473,10 +473,10 @@ define_simd_float! {
         unsafe {Self { neon: vzip2q_f32(self.0, other.0) }}
       } else {
         Self { arr: [
-          self.arr[2],
-          other.arr[2],
-          self.arr[3],
-          other.arr[3],
+          self.0.arr[2],
+          other.0.arr[2],
+          self.0.arr[3],
+          other.0.arr[3],
         ]}
       }
     }
@@ -540,10 +540,10 @@ define_simd_float! {
         unsafe {Self { neon: vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(self.0, self.0))) }}
       } else {
         Self { arr: [
-          if self.arr[0].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[1].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[2].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
-          if self.arr[3].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[0].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[1].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[2].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
+          if self.0.arr[3].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
         ]}
       }
     }
@@ -598,10 +598,10 @@ define_simd_float! {
         unsafe {Self { neon: vdivq_f32(vdupq_n_f32(1.0), self.0) }}
       } else {
         Self { arr: [
-          1.0 / self.arr[0],
-          1.0 / self.arr[1],
-          1.0 / self.arr[2],
-          1.0 / self.arr[3],
+          1.0 / self.0.arr[0],
+          1.0 / self.0.arr[1],
+          1.0 / self.0.arr[2],
+          1.0 / self.0.arr[3],
         ]}
       }
     }
@@ -618,17 +618,17 @@ define_simd_float! {
         unsafe {Self { neon: vdivq_f32(vdupq_n_f32(1.0), vsqrtq_f32(self.0)) }}
       } else if #[cfg(feature="std")] {
         Self { arr: [
-          1.0 / self.arr[0].sqrt(),
-          1.0 / self.arr[1].sqrt(),
-          1.0 / self.arr[2].sqrt(),
-          1.0 / self.arr[3].sqrt(),
+          1.0 / self.0.arr[0].sqrt(),
+          1.0 / self.0.arr[1].sqrt(),
+          1.0 / self.0.arr[2].sqrt(),
+          1.0 / self.0.arr[3].sqrt(),
         ]}
       } else {
         Self { arr: [
-          1.0 / software_sqrt(self.arr[0] as f64) as f32,
-          1.0 / software_sqrt(self.arr[1] as f64) as f32,
-          1.0 / software_sqrt(self.arr[2] as f64) as f32,
-          1.0 / software_sqrt(self.arr[3] as f64) as f32,
+          1.0 / software_sqrt(self.0.arr[0] as f64) as f32,
+          1.0 / software_sqrt(self.0.arr[1] as f64) as f32,
+          1.0 / software_sqrt(self.0.arr[2] as f64) as f32,
+          1.0 / software_sqrt(self.0.arr[3] as f64) as f32,
         ]}
       }
     }
@@ -660,10 +660,10 @@ define_simd_float! {
         unsafe {Self { neon: vmaxnmq_f32(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].max(rhs.arr[0]),
-          self.arr[1].max(rhs.arr[1]),
-          self.arr[2].max(rhs.arr[2]),
-          self.arr[3].max(rhs.arr[3]),
+          self.0.arr[0].max(rhs.0.arr[0]),
+          self.0.arr[1].max(rhs.0.arr[1]),
+          self.0.arr[2].max(rhs.0.arr[2]),
+          self.0.arr[3].max(rhs.0.arr[3]),
         ]}
       }
     }
@@ -682,10 +682,10 @@ define_simd_float! {
         unsafe {Self { neon: vmaxq_f32(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { rhs.arr[0] } else { self.arr[0] },
-          if self.arr[1] < rhs.arr[1] { rhs.arr[1] } else { self.arr[1] },
-          if self.arr[2] < rhs.arr[2] { rhs.arr[2] } else { self.arr[2] },
-          if self.arr[3] < rhs.arr[3] { rhs.arr[3] } else { self.arr[3] },
+          if self.0.arr[0] < rhs.0.arr[0] { rhs.0.arr[0] } else { self.0.arr[0] },
+          if self.0.arr[1] < rhs.0.arr[1] { rhs.0.arr[1] } else { self.0.arr[1] },
+          if self.0.arr[2] < rhs.0.arr[2] { rhs.0.arr[2] } else { self.0.arr[2] },
+          if self.0.arr[3] < rhs.0.arr[3] { rhs.0.arr[3] } else { self.0.arr[3] },
         ]}
       }
     }
@@ -717,10 +717,10 @@ define_simd_float! {
         unsafe {Self { neon: vminnmq_f32(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          self.arr[0].min(rhs.arr[0]),
-          self.arr[1].min(rhs.arr[1]),
-          self.arr[2].min(rhs.arr[2]),
-          self.arr[3].min(rhs.arr[3]),
+          self.0.arr[0].min(rhs.0.arr[0]),
+          self.0.arr[1].min(rhs.0.arr[1]),
+          self.0.arr[2].min(rhs.0.arr[2]),
+          self.0.arr[3].min(rhs.0.arr[3]),
         ]}
       }
     }
@@ -739,10 +739,10 @@ define_simd_float! {
         unsafe {Self { neon: vminq_f32(self.0, rhs.0) }}
       } else {
         Self { arr: [
-          if self.arr[0] < rhs.arr[0] { self.arr[0] } else { rhs.arr[0] },
-          if self.arr[1] < rhs.arr[1] { self.arr[1] } else { rhs.arr[1] },
-          if self.arr[2] < rhs.arr[2] { self.arr[2] } else { rhs.arr[2] },
-          if self.arr[3] < rhs.arr[3] { self.arr[3] } else { rhs.arr[3] },
+          if self.0.arr[0] < rhs.0.arr[0] { self.0.arr[0] } else { rhs.0.arr[0] },
+          if self.0.arr[1] < rhs.0.arr[1] { self.0.arr[1] } else { rhs.0.arr[1] },
+          if self.0.arr[2] < rhs.0.arr[2] { self.0.arr[2] } else { rhs.0.arr[2] },
+          if self.0.arr[3] < rhs.0.arr[3] { self.0.arr[3] } else { rhs.0.arr[3] },
         ]}
       }
     }
@@ -1414,17 +1414,17 @@ define_simd_float! {
         unsafe {Self { neon: vsqrtq_f32(self.0) }}
       } else if #[cfg(feature="std")] {
         Self { arr: [
-          self.arr[0].sqrt(),
-          self.arr[1].sqrt(),
-          self.arr[2].sqrt(),
-          self.arr[3].sqrt(),
+          self.0.arr[0].sqrt(),
+          self.0.arr[1].sqrt(),
+          self.0.arr[2].sqrt(),
+          self.0.arr[3].sqrt(),
         ]}
       } else {
         Self { arr: [
-          software_sqrt(self.arr[0] as f64) as f32,
-          software_sqrt(self.arr[1] as f64) as f32,
-          software_sqrt(self.arr[2] as f64) as f32,
-          software_sqrt(self.arr[3] as f64) as f32,
+          software_sqrt(self.0.arr[0] as f64) as f32,
+          software_sqrt(self.0.arr[1] as f64) as f32,
+          software_sqrt(self.0.arr[2] as f64) as f32,
+          software_sqrt(self.0.arr[3] as f64) as f32,
         ]}
       }
     }
