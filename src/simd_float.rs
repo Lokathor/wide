@@ -79,10 +79,10 @@ macro_rules! define_simd_float {
     $fn_trunc:item
     $fn_trunc_int:item
     $fn_fast_trunc_int:item
-    $fn_mul_add:item
-    $fn_mul_sub:item
-    $fn_mul_neg_add:item
-    $fn_mul_neg_sub:item
+    $fn_fast_mul_add:item
+    $fn_fast_mul_sub:item
+    $fn_fast_mul_neg_add:item
+    $fn_fast_mul_neg_sub:item
     $fn_powf_simd:item
     $fn_sqrt:item
     $fn_exp:item
@@ -1071,41 +1071,33 @@ macro_rules! define_simd_float {
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_add
+      $fn_fast_mul_add
 
       /// Fused multiply-sub. Computes `(self * a) - b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_sub
+      $fn_fast_mul_sub
 
       /// Fused multiply-negate-add. Computes `-(self * a) + b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_neg_add
+      $fn_fast_mul_neg_add
 
       /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_neg_sub
+      $fn_fast_mul_neg_sub
 
       /// Calculates Euclidean division, the matching function for
       /// [`rem_euclid`].
@@ -1438,6 +1430,70 @@ macro_rules! define_simd_float {
       #[deprecated(since = "1.8.0", note = "renamed to `flipsign`")]
       pub fn flip_signs(self, sign: Self) -> Self {
         self.flipsign(sign)
+      }
+
+      /// Fused multiply-add. Computes `(self * a) + b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_add`].
+      ///
+      /// [`fast_mul_add`]: Self::fast_mul_add
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_add`")]
+      pub fn mul_add(self, a: Self, b: Self) -> Self {
+        self.fast_mul_add(a, b)
+      }
+
+      /// Fused multiply-sub. Computes `(self * a) - b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_sub`].
+      ///
+      /// [`fast_mul_sub`]: Self::fast_mul_sub
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_sub`")]
+      pub fn mul_sub(self, a: Self, b: Self) -> Self {
+        self.fast_mul_sub(a, b)
+      }
+
+      /// Fused multiply-negate-add. Computes `-(self * a) + b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_neg_add`].
+      ///
+      /// [`fast_mul_neg_add`]: Self::fast_mul_neg_add
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_neg_add`")]
+      pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
+        self.fast_mul_neg_add(a, b)
+      }
+
+      /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_neg_sub`].
+      ///
+      /// [`fast_mul_neg_sub`]: Self::fast_mul_neg_sub
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_neg_sub`")]
+      pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
+        self.fast_mul_neg_sub(a, b)
       }
 
       /// Raises each element of the number `self` to the corresponding element

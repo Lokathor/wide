@@ -820,7 +820,7 @@ define_simd_float! {
   /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) + a` (two roundings)
   /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
-  pub fn mul_add(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self(fused_mul_add_m256(self.0, a.0, b.0))
@@ -829,8 +829,8 @@ define_simd_float! {
         (self * a) + b
       } else {
         Self(Inner {
-          lo: self.0.lo.mul_add(a.0.lo, b.0.lo),
-          hi: self.0.hi.mul_add(a.0.hi, b.0.hi),
+          lo: self.0.lo.fast_mul_add(a.0.lo, b.0.lo),
+          hi: self.0.hi.fast_mul_add(a.0.hi, b.0.hi),
         })
       }
     }
@@ -844,7 +844,7 @@ define_simd_float! {
   /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) - s` (two roundings)
   /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
-  pub fn mul_sub(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self(fused_mul_sub_m256(self.0, a.0, b.0))
@@ -853,8 +853,8 @@ define_simd_float! {
         (self * a) - b
       } else {
         Self(Inner {
-          lo: self.0.lo.mul_sub(a.0.lo, b.0.lo),
-          hi: self.0.hi.mul_sub(a.0.hi, b.0.hi),
+          lo: self.0.lo.fast_mul_sub(a.0.lo, b.0.lo),
+          hi: self.0.hi.fast_mul_sub(a.0.hi, b.0.hi),
         })
       }
     }
@@ -868,7 +868,7 @@ define_simd_float! {
   /// - On `x86`/`x86_64` with AVX only: Uses `a - (self * m)` (two roundings)
   /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
-  pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self(fused_mul_neg_add_m256(self.0, a.0, b.0))
@@ -877,8 +877,8 @@ define_simd_float! {
         b - (self * a)
       } else {
         Self(Inner {
-          lo: self.0.lo.mul_neg_add(a.0.lo, b.0.lo),
-          hi: self.0.hi.mul_neg_add(a.0.hi, b.0.hi),
+          lo: self.0.lo.fast_mul_neg_add(a.0.lo, b.0.lo),
+          hi: self.0.hi.fast_mul_neg_add(a.0.hi, b.0.hi),
         })
       }
     }
@@ -892,7 +892,7 @@ define_simd_float! {
   /// - On `x86`/`x86_64` with AVX only: Uses `-(self * m) - s` (two roundings)
   /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
-  pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx",target_feature="fma"))] {
         Self(fused_mul_neg_sub_m256(self.0, a.0, b.0))
@@ -901,8 +901,8 @@ define_simd_float! {
         -(self * a) - b
       } else {
         Self(Inner {
-          lo: self.0.lo.mul_neg_sub(a.0.lo, b.0.lo),
-          hi: self.0.hi.mul_neg_sub(a.0.hi, b.0.hi),
+          lo: self.0.lo.fast_mul_neg_sub(a.0.lo, b.0.lo),
+          hi: self.0.hi.fast_mul_neg_sub(a.0.hi, b.0.hi),
         })
       }
     }
@@ -944,22 +944,22 @@ define_simd_float! {
     let ef = x1.exponent();
     let ef = mask.select(ef + f32x8::ONE, ef);
     let e1 = (ef * n).round_ties_even();
-    let yr = ef.mul_sub(n, e1);
+    let yr = ef.fast_mul_sub(n, e1);
 
-    let lg = f32x8::HALF.mul_neg_add(x2, x) + lg1;
-    let x2_err = (f32x8::HALF * x).mul_sub(x, f32x8::HALF * x2);
-    let lg_err = f32x8::HALF.mul_add(x2, lg - x) - lg1;
+    let lg = f32x8::HALF.fast_mul_neg_add(x2, x) + lg1;
+    let x2_err = (f32x8::HALF * x).fast_mul_sub(x, f32x8::HALF * x2);
+    let lg_err = f32x8::HALF.fast_mul_add(x2, lg - x) - lg1;
 
     let e2 = (lg * n * f32x8::LOG2_E).round_ties_even();
-    let v = lg.mul_sub(n, e2 * ln2f_hi);
-    let v = e2.mul_neg_add(ln2f_lo, v);
-    let v = v - (lg_err + x2_err).mul_sub(n, yr * f32x8::LN_2);
+    let v = lg.fast_mul_sub(n, e2 * ln2f_hi);
+    let v = e2.fast_mul_neg_add(ln2f_lo, v);
+    let v = v - (lg_err + x2_err).fast_mul_sub(n, yr * f32x8::LN_2);
 
     let x = v;
     let e3 = (x * f32x8::LOG2_E).round_ties_even();
-    let x = e3.mul_neg_add(f32x8::LN_2, x);
+    let x = e3.fast_mul_neg_add(f32x8::LN_2, x);
     let x2 = x * x;
-    let z = x2.mul_add(
+    let z = x2.fast_mul_add(
       polynomial_5!(x, p2expf, p3expf, p4expf, p5expf, p6expf, p7expf),
       x + f32x8::ONE,
     );
@@ -1063,11 +1063,11 @@ define_simd_float! {
     let excess = r - max_r;
     let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
+    let x = r.fast_mul_neg_add(LN2D_HI, self);
+    let x = r.fast_mul_neg_add(LN2D_LO, x);
     let z = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
     let x2 = x * x;
-    let z = z.mul_add(x2, x);
+    let z = z.fast_mul_add(x2, x);
     let n2 = Self::vm_pow2n(r_safe);
     let z = (z + Self::ONE) * scale * n2;
     let nan_mask = self.is_nan();
@@ -1112,7 +1112,7 @@ define_simd_float! {
     let fract = (self - round) * Self::LN_2;
     let fract_partial_exp2 = polynomial_5!(fract, P2, P3, P4, P5, P6, P7);
     let fract2 = fract * fract;
-    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+    let fract_exp2 = fract_partial_exp2.fast_mul_add(fract2, fract) + Self::ONE;
 
     let n2 = Self::vm_pow2n(r_safe);
     let result = fract_exp2 * scale * n2;
@@ -1155,9 +1155,9 @@ define_simd_float! {
     let res = polynomial_8!(x, P0, P1, P2, P3, P4, P5, P6, P7, P8);
     let x2 = x * x;
     let res = x2 * x * res;
-    let res = fe.mul_add(LN2F_LO, res);
-    let res = res + x2.mul_neg_add(HALF, x);
-    let res = fe.mul_add(LN2F_HI, res);
+    let res = fe.fast_mul_add(LN2F_LO, res);
+    let res = res + x2.fast_mul_neg_add(HALF, x);
+    let res = fe.fast_mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
     let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
@@ -1211,7 +1211,7 @@ define_simd_float! {
 
     let x2 = x * x;
     let x4 = x2 * x2;
-    x = x - d.mul_add(x4, -x) * Self::from(1.0 / 3.0);
+    x = x - d.fast_mul_add(x4, -x) * Self::from(1.0 / 3.0);
     // cbrt(d) = d * x² with refinement
     let mut y = (d * x) * x;
     let yx = y * x;
@@ -1261,7 +1261,7 @@ define_simd_float! {
     let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
+    let z = z.fast_mul_add(x3 * x4, x4);
 
     let z1 = z + z;
 
@@ -1295,7 +1295,7 @@ define_simd_float! {
     let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
+    let z = z.fast_mul_add(x3 * x4, x4);
 
     let z1 = z + z;
 
@@ -1337,7 +1337,7 @@ define_simd_float! {
 
     // Taylor expansion
     let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
-    re = re.mul_add(zz * z, z) + s;
+    re = re.fast_mul_add(zz * z, z) + s;
 
     // get sign bit
     re = (self.is_sign_negative()).select(-re, re);
@@ -1388,7 +1388,7 @@ define_simd_float! {
 
     // Taylor expansion
     let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
-    re = re.mul_add(zz * z, z) + s;
+    re = re.fast_mul_add(zz * z, z) + s;
 
     // move back in place
     re = swapxy.select(Self::FRAC_PI_2 - re, re);
@@ -1426,12 +1426,12 @@ define_simd_float! {
     let y = (xa * TWO_OVER_PI).round_ties_even();
     let q: i32x8 = y.round_int();
 
-    let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
+    let x = y.fast_mul_neg_add(DP3F, y.fast_mul_neg_add(DP2F, y.fast_mul_neg_add(DP1F, xa)));
 
     let x2 = x * x;
     let mut s = polynomial_2!(x2, P0sinf, P1sinf, P2sinf) * (x * x2) + x;
     let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
-      + f32x8::from(0.5).mul_neg_add(x2, f32x8::from(1.0));
+      + f32x8::from(0.5).fast_mul_neg_add(x2, f32x8::from(1.0));
 
     let swap = !(q & i32x8::from(1)).simd_eq(i32x8::from(0));
 
@@ -1481,7 +1481,7 @@ define_simd_float! {
     let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
+    let z = z.fast_mul_add(x3 * x4, x4);
 
     let z1 = z + z;
 
@@ -1531,11 +1531,11 @@ define_simd_float! {
     let excess = r - max_r;
     let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
+    let x = r.fast_mul_neg_add(LN2D_HI, self);
+    let x = r.fast_mul_neg_add(LN2D_LO, x);
     let z = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
     let x2 = x * x;
-    let z = z.mul_add(x2, x);
+    let z = z.fast_mul_add(x2, x);
     let n2 = Self::vm_pow2n(r_safe);
     let exp_val = (z + Self::ONE) * scale * n2;
     let r_is_zero = r.simd_eq(Self::ZERO);
