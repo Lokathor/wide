@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* [#339](https://github.com/Lokathor/wide/pull/339): Rename various functions
+  (for a precise list, see the PR description)
+
 * [#332](https://github.com/Lokathor/wide/pull/332): Add `replace_const` and
   `extract_const` functions
 
