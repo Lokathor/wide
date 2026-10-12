@@ -46,7 +46,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_gt(rhs.0.lo),
           b : self.0.hi.simd_gt(rhs.0.hi),
         }
@@ -60,7 +60,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_le(rhs.0.lo),
           b : self.0.hi.simd_le(rhs.0.hi),
         }
@@ -74,7 +74,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_ge(rhs.0.lo),
           b : self.0.hi.simd_ge(rhs.0.hi),
         }
@@ -103,7 +103,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(max_i8_m512i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.max(rhs.0.lo),
           b : self.0.hi.max(rhs.0.hi),
         }
@@ -117,7 +117,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(min_i8_m512i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.min(rhs.0.lo),
           b : self.0.hi.min(rhs.0.hi),
         }
@@ -156,7 +156,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(add_saturating_i8_m512i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.saturating_add(rhs.0.lo),
           b : self.0.hi.saturating_add(rhs.0.hi),
         }
@@ -170,7 +170,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(sub_saturating_i8_m512i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.saturating_sub(rhs.0.lo),
           b : self.0.hi.saturating_sub(rhs.0.hi),
         }
@@ -221,7 +221,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         Self(abs_i8_m512i(self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.abs(),
           b : self.0.hi.abs(),
         }
@@ -235,7 +235,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         self.simd_gt(Self::ZERO)
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.is_positive(),
           b : self.0.hi.is_positive(),
         }
@@ -249,7 +249,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         self.simd_lt(Self::ZERO)
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.is_negative(),
           b : self.0.hi.is_negative(),
         }

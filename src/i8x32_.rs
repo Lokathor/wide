@@ -44,7 +44,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i8_m256i(self.0,rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_gt(rhs.0.lo),
           b : self.0.hi.simd_gt(rhs.0.hi),
         }
@@ -58,7 +58,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_gt(rhs)
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_le(rhs.0.lo),
           b : self.0.hi.simd_le(rhs.0.hi),
         }
@@ -72,7 +72,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_lt(rhs)
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_ge(rhs.0.lo),
           b : self.0.hi.simd_ge(rhs.0.hi),
         }
@@ -105,7 +105,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(max_i8_m256i(self.0,rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.max(rhs.0.lo),
           b : self.0.hi.max(rhs.0.hi),
         }
@@ -119,7 +119,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(min_i8_m256i(self.0,rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.min(rhs.0.lo),
           b : self.0.hi.min(rhs.0.hi),
         }
@@ -164,7 +164,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(add_saturating_i8_m256i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.saturating_add(rhs.0.lo),
           b : self.0.hi.saturating_add(rhs.0.hi),
         }
@@ -178,7 +178,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(sub_saturating_i8_m256i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.saturating_sub(rhs.0.lo),
           b : self.0.hi.saturating_sub(rhs.0.hi),
         }
@@ -238,7 +238,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(abs_i8_m256i(self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.abs(),
           b : self.0.hi.abs(),
         }
@@ -251,7 +251,7 @@ define_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
+        Self(Inner {
           a: self.0.lo.is_positive(),
           b: self.0.hi.is_positive(),
         }
@@ -266,7 +266,7 @@ define_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
-        Self {
+        Self(Inner {
           a: self.0.lo.is_negative(),
           b: self.0.hi.is_negative(),
         }
@@ -294,7 +294,7 @@ impl i8x32 {
           if #[cfg(target_feature="avx2")] {
             Self(shuffle_av_i8z_half_m256i(self.0, add_saturating_u8_m256i(rhs.0, set_splat_i8_m256i(0x70))))
           } else {
-              Self {
+              Self(Inner {
                 a : self.0.lo.shuffle_zeroing(rhs.0.lo.cast_unsigned()),
                 b : self.0.hi.shuffle_zeroing(rhs.0.hi.cast_unsigned()),
               }
@@ -317,7 +317,7 @@ impl i8x32 {
           if #[cfg(target_feature="avx2")] {
             Self(shuffle_av_i8z_half_m256i(self.0, rhs.0))
           } else {
-            Self {
+            Self(Inner {
               a : self.0.lo.shuffle(rhs.0.lo.cast_unsigned()),
               b : self.0.hi.shuffle(rhs.0.hi.cast_unsigned()),
             }

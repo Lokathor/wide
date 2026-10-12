@@ -36,7 +36,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(!(cmp_gt_mask_i64_m256i(self.0, rhs.0) ^ cmp_eq_mask_i64_m256i(self.0, rhs.0)))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_lt(rhs.0.lo),
           b : self.0.hi.simd_lt(rhs.0.hi),
         }
@@ -50,7 +50,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i64_m256i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_gt(rhs.0.lo),
           b : self.0.hi.simd_gt(rhs.0.hi),
         }
@@ -64,7 +64,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_gt(rhs)
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_le(rhs.0.lo),
           b : self.0.hi.simd_le(rhs.0.hi),
         }
@@ -78,7 +78,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_lt(rhs)
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_ge(rhs.0.lo),
           b : self.0.hi.simd_ge(rhs.0.hi),
         }
@@ -99,7 +99,7 @@ define_simd_signed! {
           arr[3].wrapping_shr(rhs[3] as u32),
         ])
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.shr(rhs.0.lo),
           b : self.0.hi.shr(rhs.0.hi),
         }
@@ -162,7 +162,7 @@ define_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.saturating_add(rhs.0.lo),
           b: self.0.hi.saturating_add(rhs.0.hi),
         }
@@ -181,7 +181,7 @@ define_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.saturating_sub(rhs.0.lo),
           b: self.0.hi.saturating_sub(rhs.0.hi),
         }
@@ -277,7 +277,7 @@ define_simd_signed! {
             arr[3].wrapping_abs(),
           ])
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.abs(),
           b : self.0.hi.abs(),
         }
@@ -290,7 +290,7 @@ define_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
+        Self(Inner {
           a: self.0.lo.is_positive(),
           b: self.0.hi.is_positive(),
         }
@@ -305,7 +305,7 @@ define_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
-        Self {
+        Self(Inner {
           a: self.0.lo.is_negative(),
           b: self.0.hi.is_negative(),
         }

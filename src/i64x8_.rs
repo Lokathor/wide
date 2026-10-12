@@ -36,7 +36,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : rhs.0.lo.simd_gt(self.0.lo),
           b : rhs.0.hi.simd_gt(self.0.hi),
         }
@@ -50,7 +50,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_gt(rhs.0.lo),
           b : self.0.hi.simd_gt(rhs.0.hi),
         }
@@ -64,7 +64,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_le(rhs.0.lo),
           b : self.0.hi.simd_le(rhs.0.hi),
         }
@@ -78,7 +78,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_ge(rhs.0.lo),
           b : self.0.hi.simd_ge(rhs.0.hi),
         }
@@ -107,7 +107,7 @@ define_simd_signed! {
         ])
       } else {
         // widen via two halves
-        Self {
+        Self(Inner {
           a: self.0.lo.shr(rhs.0.lo),
           b: self.0.hi.shr(rhs.0.hi),
         }
@@ -124,7 +124,7 @@ define_simd_signed! {
         let shift = rhs as u64 & 63;
         Self(shr_all_i64_m512i(self.0, shift))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.shr(rhs),
           b : self.0.hi.shr(rhs),
         }
@@ -138,7 +138,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512f")] {
         Self(max_i64_m512i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.max(rhs.0.lo),
           b: self.0.hi.max(rhs.0.hi),
         }
@@ -152,7 +152,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512f")] {
         Self(min_i64_m512i(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.min(rhs.0.lo),
           b: self.0.hi.min(rhs.0.hi),
         }
@@ -190,7 +190,7 @@ define_simd_signed! {
       if #[cfg(target_feature="avx512f")] {
         Self(shr_all_i64_m512i(self.0, rhs as u64))
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.unbounded_shr_scalar(rhs),
           b: self.0.hi.unbounded_shr_scalar(rhs),
         }
@@ -209,7 +209,7 @@ define_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.saturating_add(rhs.0.lo),
           b: self.0.hi.saturating_add(rhs.0.hi),
         }
@@ -228,7 +228,7 @@ define_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.saturating_sub(rhs.0.lo),
           b: self.0.hi.saturating_sub(rhs.0.hi),
         }
@@ -361,7 +361,7 @@ define_simd_signed! {
             arr[7].wrapping_abs(),
           ])
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.abs(),
           b : self.0.hi.abs(),
         }
@@ -374,7 +374,7 @@ define_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
+        Self(Inner {
           a: self.0.lo.is_positive(),
           b: self.0.hi.is_positive(),
         }
@@ -389,7 +389,7 @@ define_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
-        Self {
+        Self(Inner {
           a: self.0.lo.is_negative(),
           b: self.0.hi.is_negative(),
         }

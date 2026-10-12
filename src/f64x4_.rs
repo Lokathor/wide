@@ -42,7 +42,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(bitxor_m256d(self.0, Self::splat(-0.0).0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.neg(),
           b : self.0.hi.neg(),
         }
@@ -56,7 +56,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(self.0.not())
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.not(),
           b : self.0.hi.not(),
         }
@@ -70,7 +70,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(add_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.add(rhs.0.lo),
           b : self.0.hi.add(rhs.0.hi),
         }
@@ -84,7 +84,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(sub_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.sub(rhs.0.lo),
           b : self.0.hi.sub(rhs.0.hi),
         }
@@ -98,7 +98,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(mul_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.mul(rhs.0.lo),
           b : self.0.hi.mul(rhs.0.hi),
         }
@@ -112,7 +112,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(div_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.div(rhs.0.lo),
           b : self.0.hi.div(rhs.0.hi),
         }
@@ -136,7 +136,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(bitand_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.bitand(rhs.0.lo),
           b : self.0.hi.bitand(rhs.0.hi),
         }
@@ -150,7 +150,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(bitor_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.bitor(rhs.0.lo),
           b : self.0.hi.bitor(rhs.0.hi),
         }
@@ -164,7 +164,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(bitxor_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.bitxor(rhs.0.lo),
           b : self.0.hi.bitxor(rhs.0.hi),
         }
@@ -178,7 +178,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")]{
         Self(cmp_op_mask_m256d::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_eq(rhs.0.lo),
           b : self.0.hi.simd_eq(rhs.0.hi),
         }
@@ -192,7 +192,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")]{
         Self(cmp_op_mask_m256d::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_ne(rhs.0.lo),
           b : self.0.hi.simd_ne(rhs.0.hi),
         }
@@ -206,7 +206,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")]{
         Self(cmp_op_mask_m256d::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_lt(rhs.0.lo),
           b : self.0.hi.simd_lt(rhs.0.hi),
         }
@@ -220,7 +220,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")]{
         Self(cmp_op_mask_m256d::<{cmp_op!( GreaterThanOrdered)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_gt(rhs.0.lo),
           b : self.0.hi.simd_gt(rhs.0.hi),
         }
@@ -234,7 +234,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")]{
         Self(cmp_op_mask_m256d::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_le(rhs.0.lo),
           b : self.0.hi.simd_le(rhs.0.hi),
         }
@@ -248,7 +248,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")]{
         Self(cmp_op_mask_m256d::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.simd_ge(rhs.0.lo),
           b : self.0.hi.simd_ge(rhs.0.hi),
         }
@@ -299,7 +299,7 @@ define_simd_float! {
             bitandnot_m256d(self.0, if_zero.0),
         ))
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
           b: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
         }
@@ -313,7 +313,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(blend_varying_m256d(if_false.0, if_true.0, self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.select(if_true.0.lo, if_false.0.lo),
           b : self.0.hi.select(if_true.0.hi, if_false.0.hi),
         }
@@ -364,7 +364,7 @@ define_simd_float! {
         let [ba, _]: [f64x2; 2] = cast(other);
         cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
       } else {
-        Self { a: self.0.lo.unpack_lo(other.0.lo), b: self.0.lo.unpack_hi(other.0.lo) }
+        Self(Inner { a: self.0.lo.unpack_lo(other.0.lo), b: self.0.lo.unpack_hi(other.0.lo) }
       }
     }
   }
@@ -379,7 +379,7 @@ define_simd_float! {
         let [_, bb]: [f64x2; 2] = cast(other);
         cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
       } else {
-        Self { a: self.0.hi.unpack_lo(other.0.hi), b: self.0.hi.unpack_hi(other.0.hi) }
+        Self(Inner { a: self.0.hi.unpack_lo(other.0.hi), b: self.0.hi.unpack_hi(other.0.hi) }
       }
     }
   }
@@ -428,7 +428,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(cmp_op_mask_m256d::<{cmp_op!(Unordered)}>(self.0, self.0 ))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.is_nan(),
           b : self.0.hi.is_nan(),
         }
@@ -497,7 +497,7 @@ define_simd_float! {
         // NaN.
         rhs.is_nan().select(self, Self(max_m256d(self.0, rhs.0)))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.max(rhs.0.lo),
           b : self.0.hi.max(rhs.0.hi),
         }
@@ -511,7 +511,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(max_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.fast_max(rhs.0.lo),
           b : self.0.hi.fast_max(rhs.0.hi),
         }
@@ -528,7 +528,7 @@ define_simd_float! {
         // NaN.
         rhs.is_nan().select(self, Self(min_m256d(self.0, rhs.0)))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.min(rhs.0.lo),
           b : self.0.hi.min(rhs.0.hi),
         }
@@ -542,7 +542,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(min_m256d(self.0, rhs.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.fast_min(rhs.0.lo),
           b : self.0.hi.fast_min(rhs.0.hi),
         }
@@ -558,7 +558,7 @@ define_simd_float! {
         self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
       } else {
         // Some targets have better implementations than the above one.
-        Self {
+        Self(Inner {
           a: self.0.lo.clamp(min.0.lo, max.0.lo),
           b: self.0.hi.clamp(min.0.hi, max.0.hi),
         }
@@ -574,7 +574,7 @@ define_simd_float! {
         // chosen. For `self` to be chosen, `self` must be the second argument.
         Self(max_m256d(min.0, min_m256d(max.0, self.0)))
       } else {
-        Self {
+        Self(Inner {
           a: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
           b: self.0.hi.fast_clamp(min.0.hi, max.0.hi),
         }
@@ -613,7 +613,7 @@ define_simd_float! {
         let non_sign_bits = f64x4::from(f64::from_bits(i64::MAX as u64));
         self & non_sign_bits
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.abs(),
           b : self.0.hi.abs(),
         }
@@ -627,7 +627,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(floor_m256d(self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.floor(),
           b : self.0.hi.floor(),
         }
@@ -641,7 +641,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(ceil_m256d(self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.ceil(),
           b : self.0.hi.ceil(),
         }
@@ -724,7 +724,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(round_m256d::<{round_op!(Nearest)}>(self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.round_ties_even(),
           b : self.0.hi.round_ties_even(),
         }
@@ -738,7 +738,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(round_m256d::<{round_op!(Zero)}>(self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.trunc(),
           b : self.0.hi.trunc(),
         }
@@ -804,7 +804,7 @@ define_simd_float! {
         // still want to use 256 bit ops
         (self * a) + b
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.mul_add(a.0.lo, b.0.lo),
           b : self.0.hi.mul_add(a.0.hi, b.0.hi),
         }
@@ -828,7 +828,7 @@ define_simd_float! {
         // still want to use 256 bit ops
         (self * a) - b
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.mul_sub(a.0.lo, b.0.lo),
           b : self.0.hi.mul_sub(a.0.hi, b.0.hi),
         }
@@ -852,7 +852,7 @@ define_simd_float! {
         // still want to use 256 bit ops
         b - (self * a)
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.mul_neg_add(a.0.lo, b.0.lo),
           b : self.0.hi.mul_neg_add(a.0.hi, b.0.hi),
         }
@@ -876,7 +876,7 @@ define_simd_float! {
           // still want to use 256 bit ops
           -(self * a) - b
         } else {
-         Self {
+         Self(Inner {
            a : self.0.lo.mul_neg_sub(a.0.lo, b.0.lo),
            b : self.0.hi.mul_neg_sub(a.0.hi, b.0.hi),
          }
@@ -1009,7 +1009,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx")] {
         Self(sqrt_m256d(self.0))
       } else {
-        Self {
+        Self(Inner {
           a : self.0.lo.sqrt(),
           b : self.0.hi.sqrt(),
         }
