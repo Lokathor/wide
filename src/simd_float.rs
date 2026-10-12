@@ -965,7 +965,7 @@ macro_rules! define_simd_float {
       /// based on the sign bit of `sign`.
       #[inline]
       #[must_use]
-      pub fn flip_signs(self, sign: Self) -> Self {
+      pub fn flipsign(self, sign: Self) -> Self {
         self ^ (sign & Self::from(-0.0))
       }
 
@@ -1421,6 +1421,23 @@ macro_rules! define_simd_float {
       #[deprecated(since = "1.8.0", note = "renamed to `is_infinite`")]
       pub fn is_inf(self) -> Self {
         self.is_infinite()
+      }
+
+      /// Flips the sign of `self` based on the sign of `sign`.
+      ///
+      /// If `sign` has a positive sign, the result is `self`. If `sign` has a
+      /// negative sign, the result is `-self`. Even if `self` or `sign` are
+      /// NaN, the result is the exact bit pattern of `self` with a sign flipped
+      /// based on the sign bit of `sign`.
+      ///
+      /// This function has been deprecated and renamed to [`flipsign`].
+      ///
+      /// [`flipsign`]: Self::flipsign
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `flipsign`")]
+      pub fn flip_signs(self, sign: Self) -> Self {
+        self.flipsign(sign)
       }
 
       /// Raises each element of the number `self` to the corresponding element

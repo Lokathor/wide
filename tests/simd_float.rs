@@ -1133,7 +1133,7 @@ fn test_rem_euclid() {
 }
 
 #[test]
-fn test_flip_signs() {
+fn test_flipsign() {
     for_simd_types!(|T: Float, N| {
         for [value, sign] in simd_chunks!(
             [
@@ -1152,7 +1152,7 @@ fn test_flip_signs() {
                     value[i]
                 }
             }));
-            let actual = Simd::new(value).flip_signs(Simd::new(sign));
+            let actual = Simd::new(value).flipsign(Simd::new(sign));
 
             assert_eq!(actual, expected);
         }

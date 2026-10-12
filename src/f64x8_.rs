@@ -1229,7 +1229,7 @@ define_simd_float! {
     y *= Self::vm_pow2n(k);
     y = tiny.select(y / Self::from(SUBN_CBRT), y);
 
-    let result = y.flip_signs(self);
+    let result = y.flipsign(self);
     let result = nan.select(self, result);
     let result = zero.select(self, result);
     let result = inf.select(self, result);
@@ -1317,7 +1317,7 @@ define_simd_float! {
     // asin
     let z3 = f64x8::FRAC_PI_2 - z1;
     let asin = big.select(z3, z2);
-    let asin = asin.flip_signs(self);
+    let asin = asin.flipsign(self);
 
     asin
   }
@@ -1402,7 +1402,7 @@ define_simd_float! {
 
     // acos
     let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
-    let z4 = f64x8::FRAC_PI_2 - z2.flip_signs(self);
+    let z4 = f64x8::FRAC_PI_2 - z2.flipsign(self);
     let acos = big.select(z3, z4);
 
     acos
@@ -1593,7 +1593,7 @@ define_simd_float! {
     // calc sin
     let mut sin1 = cast::<_, f64x8>(swap).select(c, s);
     let sign_sin: i64x8 = (q << 62) ^ cast::<_, i64x8>(self);
-    sin1 = sin1.flip_signs(cast(sign_sin));
+    sin1 = sin1.flipsign(cast(sign_sin));
 
     // calc cos
     let mut cos1 = cast::<_, f64x8>(swap).select(s, c);
@@ -1691,11 +1691,11 @@ define_simd_float! {
     // asin
     let z3 = f64x8::FRAC_PI_2 - z1;
     let asin = big.select(z3, z2);
-    let asin = asin.flip_signs(self);
+    let asin = asin.flipsign(self);
 
     // acos
     let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
-    let z4 = f64x8::FRAC_PI_2 - z2.flip_signs(self);
+    let z4 = f64x8::FRAC_PI_2 - z2.flipsign(self);
     let acos = big.select(z3, z4);
 
     (asin, acos)
@@ -1801,7 +1801,7 @@ define_simd_float! {
       (e - Self::ONE / e) * Self::HALF
     };
     let result = small.select(poly, exp_based);
-    result.flip_signs(self)
+    result.flipsign(self)
   }
 
   #[inline]
@@ -1834,16 +1834,16 @@ define_simd_float! {
     let a = self.abs();
     let large = a.simd_gt(f64x8::from(19.062));
     if large.all() {
-      return Self::ONE.flip_signs(self);
+      return Self::ONE.flipsign(self);
     }
     let small = a.simd_lt(f64x8::from(5e-8));
     let exp_based = {
       let t = (Self::from(-2.0) * a).exp_m1();
       let pos = -t / (t + Self::from(2.0));
-      pos.flip_signs(self)
+      pos.flipsign(self)
     };
     let result = small.select(self, exp_based);
-    large.select(Self::ONE.flip_signs(self), result)
+    large.select(Self::ONE.flipsign(self), result)
   }
 }
 
