@@ -331,7 +331,11 @@ where
 
 trait Sealed {}
 
-/// Emits functionality shared by all SIMD types.
+/// Defines a SIMD type and functionality shared by all SIMD types.
+///
+/// Modules invoking this macro must define an `Inner` type alias, which is used
+/// as the internal representation of the SIMD type. `Inner` must have a size
+/// and alignment of `size_of::<T>() * N` bytes.
 ///
 /// Functions that need a separate implementation for each type (for
 /// performance) use `$fn_{name}:item` syntax, and functions that have one
@@ -343,18 +347,12 @@ trait Sealed {}
 /// boilerplate for functions that have one shared implementation for one
 /// numerical category (float, signed-integer, unsigned-integer), but not one
 /// implementation for *all* SIMD types.
-macro_rules! impl_simd {
+macro_rules! define_simd {
   (
-    // SAFETY: The contents of this macro assume that:
-    //
-    // - `T` implements `Pod`
-    // - `Pod` can be implemented for `Simd`
-    // - `size_of::<Simd>()` is `size_of::<T>() * N`
-    // - `align_of::<Simd>()` is `size_of::<Simd>()`
-    // - `Pod` can be implemented for the optional native SIMD types
     unsafe {
       T = $T:ident,
       N = $N:literal,
+      N_STR = $N_STR:literal,
       Simd = $Simd:ident,
       UnsignedSimd = $UnsignedSimd:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
@@ -393,6 +391,32 @@ macro_rules! impl_simd {
     $fn_shuffle_wrapping_4:item
     $fn_transpose:item
   ) => {
+    #[doc = concat!("A SIMD vector with ", $N_STR, " elements of type [`", stringify!($T), "`].")]
+    ///
+    /// See the [crate level documentation] for more information about SIMD
+    /// vectors.
+    ///
+    /// [crate level documentation]: crate
+    #[repr(transparent)]
+    #[derive(Clone, Copy)]
+    pub struct $Simd(pub(crate) Inner);
+
+    impl PartialEq for $Simd {
+      #[inline]
+      fn eq(&self, other: &Self) -> bool {
+        self.simd_eq(*other).all()
+      }
+    }
+
+    impl Default for $Simd {
+      #[inline]
+      fn default() -> Self {
+        // Currently, all supported `T` types have a default value where all
+        // bits equal zero.
+        Self::zeroed()
+      }
+    }
+
     impl From<[$T; $N]> for $Simd {
       /// Converts an array to a SIMD vector.
       #[inline]

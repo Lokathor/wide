@@ -2,32 +2,22 @@ use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    /// A SIMD vector with four elements of type [`i64`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
-    #[repr(C, align(32))]
-    pub struct i64x4 { pub(crate) avx2: m256i }
+    type Inner = m256i;
   } else {
-    /// A SIMD vector with four elements of type [`i64`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct i64x4 { pub(crate) a : i64x2, pub(crate) b : i64x2 }
+    #[derive(Clone, Copy)]
+    pub(crate) struct Inner {
+      pub lo: i64x2,
+      pub hi: i64x2,
+    }
   }
 }
 
-impl_simd_signed! {
+define_simd_signed! {
   unsafe {
     T = i64,
     N = 4,
+    N_STR = "four",
     Simd = i64x4,
     UnsignedSimd = u64x4,
     T_BITS = 64,
@@ -43,12 +33,12 @@ impl_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: !(cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) ^ cmp_eq_mask_i64_m256i(self.avx2, rhs.avx2)) }
+        Self(!(cmp_gt_mask_i64_m256i(self.0, rhs.0) ^ cmp_eq_mask_i64_m256i(self.0, rhs.0)))
       } else {
-        Self {
-          a : self.a.simd_lt(rhs.a),
-          b : self.b.simd_lt(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_lt(rhs.0.lo),
+          hi: self.0.hi.simd_lt(rhs.0.hi),
+        })
       }
     }
   }
@@ -57,12 +47,12 @@ impl_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx2: cmp_gt_mask_i64_m256i(self.avx2, rhs.avx2) }
+        Self(cmp_gt_mask_i64_m256i(self.0, rhs.0))
       } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_gt(rhs.0.lo),
+          hi: self.0.hi.simd_gt(rhs.0.hi),
+        })
       }
     }
   }
@@ -73,10 +63,10 @@ impl_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_gt(rhs)
       } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_le(rhs.0.lo),
+          hi: self.0.hi.simd_le(rhs.0.hi),
+        })
       }
     }
   }
@@ -87,10 +77,10 @@ impl_simd_signed! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_lt(rhs)
       } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_ge(rhs.0.lo),
+          hi: self.0.hi.simd_ge(rhs.0.hi),
+        })
       }
     }
   }
@@ -108,10 +98,10 @@ impl_simd_signed! {
           arr[3].wrapping_shr(rhs[3] as u32),
         ])
       } else {
-        Self {
-          a : self.a.shr(rhs.a),
-          b : self.b.shr(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.shr(rhs.0.lo),
+          hi: self.0.hi.shr(rhs.0.hi),
+        })
       }
     }
   }
@@ -171,10 +161,10 @@ impl_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else {
-        Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.saturating_add(rhs.0.lo),
+          hi: self.0.hi.saturating_add(rhs.0.hi),
+        })
       }
     }
   }
@@ -190,10 +180,10 @@ impl_simd_signed! {
         // If overflow occurs return `MAX` if positive or `MIN` if negative.
         overflow.select(Self::MAX ^ negative, result)
       } else {
-        Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.saturating_sub(rhs.0.lo),
+          hi: self.0.hi.saturating_sub(rhs.0.hi),
+        })
       }
     }
   }
@@ -286,10 +276,10 @@ impl_simd_signed! {
             arr[3].wrapping_abs(),
           ])
       } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
+        Self(Inner {
+          lo: self.0.lo.abs(),
+          hi: self.0.hi.abs(),
+        })
       }
     }
   }
@@ -299,10 +289,10 @@ impl_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
-        }
+        Self(Inner {
+          lo: self.0.lo.is_positive(),
+          hi: self.0.hi.is_positive(),
+        })
       } else {
         self.simd_gt(Self::ZERO)
       }
@@ -314,10 +304,10 @@ impl_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
-        Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
-        }
+        Self(Inner {
+          lo: self.0.lo.is_negative(),
+          hi: self.0.hi.is_negative(),
+        })
       } else {
         self.simd_lt(Self::ZERO)
       }

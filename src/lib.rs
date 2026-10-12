@@ -252,6 +252,10 @@ mod imports {
         SubAssign,
     };
 
+    #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
+    pub use core::arch::aarch64::*;
+    #[cfg(target_feature = "simd128")]
+    pub use core::arch::wasm32::*;
     #[allow(unused_imports)]
     #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
     pub use safe_arch::*;

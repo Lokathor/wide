@@ -2,32 +2,22 @@ use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    /// A SIMD vector with 32 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
-    #[repr(C, align(32))]
-    pub struct u8x32 { pub(crate) avx: m256i }
+    type Inner = m256i;
   } else {
-    /// A SIMD vector with 32 elements of type [`u8`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(32))]
-    pub struct u8x32 { pub(crate) a : u8x16, pub(crate) b : u8x16 }
+    #[derive(Clone, Copy)]
+    pub(crate) struct Inner {
+      pub lo: u8x16,
+      pub hi: u8x16,
+    }
   }
 }
 
-impl_simd_unsigned! {
+define_simd_unsigned! {
   unsafe {
     T = u8,
     N = 32,
+    N_STR = "32",
     Simd = u8x32,
     SignedSimd = i8x32,
     T_BITS = 8,
@@ -45,12 +35,12 @@ impl_simd_unsigned! {
   fn not(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: self.avx.not()  }
+        Self(self.0.not())
       } else {
-        Self {
-          a : self.a.not(),
-          b : self.b.not(),
-        }
+        Self(Inner {
+          lo: self.0.lo.not(),
+          hi: self.0.hi.not(),
+        })
       }
     }
   }
@@ -59,12 +49,12 @@ impl_simd_unsigned! {
   fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: add_i8_m256i(self.avx,rhs.avx) }
+        Self(add_i8_m256i(self.0,rhs.0))
       } else {
-        Self {
-          a : self.a.add(rhs.a),
-          b : self.b.add(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.add(rhs.0.lo),
+          hi: self.0.hi.add(rhs.0.hi),
+        })
       }
     }
   }
@@ -73,12 +63,12 @@ impl_simd_unsigned! {
   fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: sub_i8_m256i(self.avx,rhs.avx) }
+        Self(sub_i8_m256i(self.0,rhs.0))
       } else {
-        Self {
-          a : self.a.sub(rhs.a),
-          b : self.b.sub(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.sub(rhs.0.lo),
+          hi: self.0.hi.sub(rhs.0.hi),
+        })
       }
     }
   }
@@ -97,12 +87,12 @@ impl_simd_unsigned! {
   fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-          Self { avx : bitand_m256i(self.avx,rhs.avx) }
+          Self(bitand_m256i(self.0,rhs.0))
       } else {
-          Self {
-            a : self.a.bitand(rhs.a),
-            b : self.b.bitand(rhs.b),
-          }
+          Self(Inner {
+            lo: self.0.lo.bitand(rhs.0.lo),
+            hi: self.0.hi.bitand(rhs.0.hi),
+          })
       }
     }
   }
@@ -111,12 +101,12 @@ impl_simd_unsigned! {
   fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : bitor_m256i(self.avx,rhs.avx) }
+        Self(bitor_m256i(self.0,rhs.0))
       } else {
-        Self {
-          a : self.a.bitor(rhs.a),
-          b : self.b.bitor(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.bitor(rhs.0.lo),
+          hi: self.0.hi.bitor(rhs.0.hi),
+        })
       }
     }
   }
@@ -125,12 +115,12 @@ impl_simd_unsigned! {
   fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : bitxor_m256i(self.avx,rhs.avx) }
+        Self(bitxor_m256i(self.0,rhs.0))
       } else {
-        Self {
-          a : self.a.bitxor(rhs.a),
-          b : self.b.bitxor(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.bitxor(rhs.0.lo),
+          hi: self.0.hi.bitxor(rhs.0.hi),
+        })
       }
     }
   }
@@ -139,12 +129,12 @@ impl_simd_unsigned! {
   fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_eq_mask_i8_m256i(self.avx,rhs.avx) }
+        Self(cmp_eq_mask_i8_m256i(self.0,rhs.0))
       } else {
-        Self {
-          a : self.a.simd_eq(rhs.a),
-          b : self.b.simd_eq(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_eq(rhs.0.lo),
+          hi: self.0.hi.simd_eq(rhs.0.hi),
+        })
       }
     }
   }
@@ -155,10 +145,10 @@ impl_simd_unsigned! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_eq(rhs)
       } else {
-        Self {
-          a : self.a.simd_ne(rhs.a),
-          b : self.b.simd_ne(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_ne(rhs.0.lo),
+          hi: self.0.hi.simd_ne(rhs.0.hi),
+        })
       }
     }
   }
@@ -169,11 +159,11 @@ impl_simd_unsigned! {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).avx;
-        let rhs_i8 = rhs.bitxor(offset).avx;
-        Self { avx: cmp_gt_mask_i8_m256i(rhs_i8, self_i8)}
+        let self_i8 = self.bitxor(offset).0;
+        let rhs_i8 = rhs.bitxor(offset).0;
+        Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8))
       } else {
-        Self { a: self.a.simd_lt(rhs.a), b: self.b.simd_lt(rhs.b) }
+        Self(Inner { lo: self.0.lo.simd_lt(rhs.0.lo), hi: self.0.hi.simd_lt(rhs.0.hi) })
       }
     }
   }
@@ -184,11 +174,11 @@ impl_simd_unsigned! {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).avx;
-        let rhs_i8 = rhs.bitxor(offset).avx;
-        Self { avx : cmp_gt_mask_i8_m256i(self_i8,rhs_i8) }
+        let self_i8 = self.bitxor(offset).0;
+        let rhs_i8 = rhs.bitxor(offset).0;
+        Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8))
       } else {
-        Self { a: self.a.simd_gt(rhs.a), b: self.b.simd_gt(rhs.b) }
+        Self(Inner { lo: self.0.lo.simd_gt(rhs.0.lo), hi: self.0.hi.simd_gt(rhs.0.hi) })
       }
     }
   }
@@ -199,12 +189,12 @@ impl_simd_unsigned! {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).avx;
-        let rhs_i8 = rhs.bitxor(offset).avx;
-        let gt_mask = Self { avx : cmp_gt_mask_i8_m256i(self_i8,rhs_i8) };
-        Self { avx: gt_mask.bitxor(Self::splat(0xFF)).avx }
+        let self_i8 = self.bitxor(offset).0;
+        let rhs_i8 = rhs.bitxor(offset).0;
+        let gt_mask = Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8));
+        Self(gt_mask.bitxor(Self::splat(0xFF)).0)
       } else {
-        Self { a: self.a.simd_le(rhs.a), b: self.b.simd_le(rhs.b) }
+        Self(Inner { lo: self.0.lo.simd_le(rhs.0.lo), hi: self.0.hi.simd_le(rhs.0.hi) })
       }
     }
   }
@@ -215,12 +205,12 @@ impl_simd_unsigned! {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).avx;
-        let rhs_i8 = rhs.bitxor(offset).avx;
-        let lt_mask = Self { avx: cmp_gt_mask_i8_m256i(rhs_i8, self_i8)};
-        Self { avx: lt_mask.bitxor(Self::splat(0xFF)).avx }
+        let self_i8 = self.bitxor(offset).0;
+        let rhs_i8 = rhs.bitxor(offset).0;
+        let lt_mask = Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8));
+        Self(lt_mask.bitxor(Self::splat(0xFF)).0)
       } else {
-        Self { a: self.a.simd_ge(rhs.a), b: self.b.simd_ge(rhs.b) }
+        Self(Inner { lo: self.0.lo.simd_ge(rhs.0.lo), hi: self.0.hi.simd_ge(rhs.0.hi) })
       }
     }
   }
@@ -242,7 +232,7 @@ impl_simd_unsigned! {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             match INDEX {
-              $($INDEX => Self { avx: insert_i8_to_m256i::<$INDEX>(self.avx, value.cast_signed()) },)*
+              $($INDEX => Self(insert_i8_to_m256i::<$INDEX>(self.0, value.cast_signed())),)*
               32.. => unreachable!(),
             }
           } else {
@@ -294,7 +284,7 @@ impl_simd_unsigned! {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             match INDEX {
-              $($INDEX => extract_i8_as_i32_m256i::<$INDEX>(self.avx).cast_unsigned() as u8,)*
+              $($INDEX => extract_i8_as_i32_m256i::<$INDEX>(self.0).cast_unsigned() as u8,)*
               32.. => unreachable!(),
             }
           } else {
@@ -341,17 +331,15 @@ impl_simd_unsigned! {
   pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self {
-          avx: bitor_m256i(
-            bitand_m256i(if_one.avx, self.avx),
-            bitandnot_m256i(self.avx, if_zero.avx),
-          ),
-        }
+        Self(bitor_m256i(
+            bitand_m256i(if_one.0, self.0),
+            bitandnot_m256i(self.0, if_zero.0),
+        ))
       } else {
-        Self {
-          a: self.a.bitselect(if_one.a, if_zero.a),
-          b: self.b.bitselect(if_one.b, if_zero.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
+          hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
+        })
       }
     }
   }
@@ -360,12 +348,12 @@ impl_simd_unsigned! {
   fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: blend_varying_i8_m256i(if_false.avx, if_true.avx, self.avx) }
+        Self(blend_varying_i8_m256i(if_false.0, if_true.0, self.0))
       } else {
-        Self {
-          a : self.a.select(if_true.a, if_false.a),
-          b : self.b.select(if_true.b, if_false.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
+          hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
+        })
       }
     }
   }
@@ -374,9 +362,9 @@ impl_simd_unsigned! {
   pub fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) as u32
+        move_mask_i8_m256i(self.0) as u32
       } else {
-        self.a.to_bitmask() | (self.b.to_bitmask() << 16)
+        self.0.lo.to_bitmask() | (self.0.hi.to_bitmask() << 16)
       }
     }
   }
@@ -385,9 +373,9 @@ impl_simd_unsigned! {
   pub fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) != 0
+        move_mask_i8_m256i(self.0) != 0
       } else {
-        (self.a | self.b).any()
+        (self.0.lo | self.0.hi).any()
       }
     }
   }
@@ -396,9 +384,9 @@ impl_simd_unsigned! {
   pub fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        move_mask_i8_m256i(self.avx) == -1
+        move_mask_i8_m256i(self.0) == -1
       } else {
-        (self.a & self.b).all()
+        (self.0.lo & self.0.hi).all()
       }
     }
   }
@@ -425,20 +413,20 @@ impl_simd_unsigned! {
   pub fn shuffle(self, indices: u8x32) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
-        Self { avx: permute_i8_m256i(indices.avx, self.avx) }
+        Self(permute_i8_m256i(indices.0, self.0))
       } else if #[cfg(target_feature="avx2")] {
         // Same broadcast+blend as strict, but skip the 0x60 zeroing fold.
-        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.avx, self.avx);
-        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.avx, self.avx);
-        let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, indices.avx);
-        let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, indices.avx);
-        let sel = shl_imm_u16_m256i::<3>(indices.avx);
-        Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
+        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.0, self.0);
+        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.0, self.0);
+        let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, indices.0);
+        let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, indices.0);
+        let sel = shl_imm_u16_m256i::<3>(indices.0);
+        Self(blend_varying_i8_m256i(res_lo, res_hi, sel))
       } else {
-        Self {
-          a: [self.a, self.b].shuffle(indices.a),
-          b: [self.a, self.b].shuffle(indices.b),
-        }
+        Self(Inner {
+          lo: [self.0.lo, self.0.hi].shuffle(indices.0.lo),
+          hi: [self.0.lo, self.0.hi].shuffle(indices.0.hi),
+        })
       }
     }
   }
@@ -449,27 +437,27 @@ impl_simd_unsigned! {
       if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
         // vpermb takes the index mod 32 and never zeroes, so zero the
         // out-of-range lanes ourselves: (rhs & 0xE0) == 0  <=>  rhs < 32.
-        let permuted = permute_i8_m256i(indices.avx, self.avx);
-        let hi_bits = bitand_m256i(indices.avx, set_splat_i8_m256i(0xE0_u8 as i8));
+        let permuted = permute_i8_m256i(indices.0, self.0);
+        let hi_bits = bitand_m256i(indices.0, set_splat_i8_m256i(0xE0_u8 as i8));
         let in_range = cmp_eq_mask_i8_m256i(hi_bits, zeroed_m256i());
-        Self { avx: bitand_m256i(permuted, in_range) }
+        Self(bitand_m256i(permuted, in_range))
       } else if #[cfg(target_feature="avx2")] {
         // Broadcast each 16-byte table half into both 128-bit lanes, pshufb
         // each by the index, blend by index bit 4. Fold the >=32 zeroing into
         // pshufb with an unsigned saturating add of 0x60 (0x60 + 32 = 0x80).
-        let idx = add_saturating_u8_m256i(indices.avx, set_splat_i8_m256i(0x60));
-        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.avx, self.avx);
-        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.avx, self.avx);
+        let idx = add_saturating_u8_m256i(indices.0, set_splat_i8_m256i(0x60));
+        let tbl_lo = shuffle_abi_i128z_all_m256i::<0x00>(self.0, self.0);
+        let tbl_hi = shuffle_abi_i128z_all_m256i::<0x11>(self.0, self.0);
         let res_lo = shuffle_av_i8z_half_m256i(tbl_lo, idx);
         let res_hi = shuffle_av_i8z_half_m256i(tbl_hi, idx);
         // move index bit 4 into the sign bit (bit 7) for blendv.
-        let sel = shl_imm_u16_m256i::<3>(indices.avx);
-        Self { avx: blend_varying_i8_m256i(res_lo, res_hi, sel) }
+        let sel = shl_imm_u16_m256i::<3>(indices.0);
+        Self(blend_varying_i8_m256i(res_lo, res_hi, sel))
       } else {
-        Self {
-          a: [self.a, self.b].shuffle_zeroing(indices.a),
-          b: [self.a, self.b].shuffle_zeroing(indices.b),
-        }
+        Self(Inner {
+          lo: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.lo),
+          hi: [self.0.lo, self.0.hi].shuffle_zeroing(indices.0.hi),
+        })
       }
     }
   }
@@ -478,14 +466,14 @@ impl_simd_unsigned! {
   pub fn shuffle_wrapping(self, indices: u8x32) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512vbmi", target_feature="avx512vl"))] {
-        Self { avx: permute_i8_m256i(indices.avx, self.avx) }
+        Self(permute_i8_m256i(indices.0, self.0))
       } else if #[cfg(target_feature="avx2")] {
         self.shuffle(indices & 31)
       } else {
-        Self {
-          a: [self.a, self.b].shuffle_wrapping(indices.a),
-          b: [self.a, self.b].shuffle_wrapping(indices.b),
-        }
+        Self(Inner {
+          lo: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.lo),
+          hi: [self.0.lo, self.0.hi].shuffle_wrapping(indices.0.hi),
+        })
       }
     }
   }
@@ -499,18 +487,16 @@ impl_simd_unsigned! {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm256_permutex2var_epi8;
         // TODO(safe_arch): add `_mm256_permutex2var_epi8`.
-        u8x32 {
-          avx: unsafe {
-            m256i(_mm256_permutex2var_epi8(self[0].avx.0, indices.avx.0, self[1].avx.0))
-          },
-        }
+        u8x32(unsafe {
+            m256i(_mm256_permutex2var_epi8(self[0].0.0, indices.0.0, self[1].0.0))
+        })
       } else if #[cfg(target_feature="avx2")] {
         self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
       } else {
-        u8x32 {
-          a: [self[0].a, self[0].b, self[1].a, self[1].b].shuffle(indices.a),
-          b: [self[0].a, self[0].b, self[1].a, self[1].b].shuffle(indices.b),
-        }
+        u8x32(Inner {
+          lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.lo),
+          hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.hi),
+        })
       }
     }
   }
@@ -523,10 +509,10 @@ impl_simd_unsigned! {
       } else if #[cfg(target_feature="avx2")] {
         self.shuffle(indices)
       } else {
-        u8x32 {
-          a: [self[0].a, self[0].b, self[1].a, self[1].b].shuffle_zeroing(indices.a),
-          b: [self[0].a, self[0].b, self[1].a, self[1].b].shuffle_zeroing(indices.b),
-        }
+        u8x32(Inner {
+          lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.lo),
+          hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.hi),
+        })
       }
     }
   }
@@ -657,7 +643,7 @@ impl_simd_unsigned! {
   fn shl(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-        self.shift_each_u16(rhs.avx, false, false)
+        self.shift_each_u16(rhs.0, false, false)
       } else {
         let [self_a, self_b]: [u8x16; 2] = cast(self);
         let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
@@ -686,7 +672,7 @@ impl_simd_unsigned! {
   fn shr(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-        self.shift_each_u16(rhs.avx, true, false)
+        self.shift_each_u16(rhs.0, true, false)
       } else {
         let [self_a, self_b]: [u8x16; 2] = cast(self);
         let [rhs_a, rhs_b]: [u8x16; 2] = cast(rhs);
@@ -715,12 +701,12 @@ impl_simd_unsigned! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: max_u8_m256i(self.avx,rhs.avx) }
+        Self(max_u8_m256i(self.0,rhs.0))
       } else {
-        Self {
-          a : self.a.max(rhs.a),
-          b : self.b.max(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.max(rhs.0.lo),
+          hi: self.0.hi.max(rhs.0.hi),
+        })
       }
     }
   }
@@ -729,12 +715,12 @@ impl_simd_unsigned! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: min_u8_m256i(self.avx,rhs.avx) }
+        Self(min_u8_m256i(self.0,rhs.0))
       } else {
-        Self {
-          a : self.a.min(rhs.a),
-          b : self.b.min(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.min(rhs.0.lo),
+          hi: self.0.hi.min(rhs.0.hi),
+        })
       }
     }
   }
@@ -755,7 +741,7 @@ impl_simd_unsigned! {
   pub fn unbounded_shl(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-        self.shift_each_u16(rhs.avx, false, true)
+        self.shift_each_u16(rhs.0, false, true)
       } else {
         let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
@@ -783,7 +769,7 @@ impl_simd_unsigned! {
   pub fn unbounded_shr(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-        self.shift_each_u16(rhs.avx, true, true)
+        self.shift_each_u16(rhs.0, true, true)
       } else {
         let [self_a, self_b] = cast::<u8x32, [u8x16; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
@@ -811,12 +797,12 @@ impl_simd_unsigned! {
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: add_saturating_u8_m256i(self.avx, rhs.avx) }
+        Self(add_saturating_u8_m256i(self.0, rhs.0))
       } else {
-        Self {
-          a : self.a.saturating_add(rhs.a),
-          b : self.b.saturating_add(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.saturating_add(rhs.0.lo),
+          hi: self.0.hi.saturating_add(rhs.0.hi),
+        })
       }
     }
   }
@@ -825,12 +811,12 @@ impl_simd_unsigned! {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx: sub_saturating_u8_m256i(self.avx, rhs.avx) }
+        Self(sub_saturating_u8_m256i(self.0, rhs.0))
       } else {
-        Self {
-          a : self.a.saturating_sub(rhs.a),
-          b : self.b.saturating_sub(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.saturating_sub(rhs.0.lo),
+          hi: self.0.hi.saturating_sub(rhs.0.hi),
+        })
       }
     }
   }
@@ -946,7 +932,7 @@ impl u8x32 {
     #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
     #[inline]
     fn shift_each_u16(self, rhs: m256i, right: bool, unbounded: bool) -> Self {
-        let self16 = convert_to_i16_m512i_from_u8_m256i(self.avx);
+        let self16 = convert_to_i16_m512i_from_u8_m256i(self.0);
         let count16 = if unbounded {
             convert_to_u16_m512i_from_u8_m256i(min_u8_m256i(rhs, set_splat_i8_m256i(8)))
         } else {
@@ -961,12 +947,10 @@ impl u8x32 {
             shl_each_u16_m512i(self16, count16)
         };
         let shifted = bitand_m512i(shifted, set_splat_i16_m512i(0xFF));
-        Self {
-            avx: Self::pack_u16_halves(
-                extract_m256i_from_m512i::<0>(shifted),
-                extract_m256i_from_m512i::<1>(shifted),
-            ),
-        }
+        Self(Self::pack_u16_halves(
+            extract_m256i_from_m512i::<0>(shifted),
+            extract_m256i_from_m512i::<1>(shifted),
+        ))
     }
 
     // `pack_i16_to_u8_m256i` packs 128 bits at a time, which scrambles the lane

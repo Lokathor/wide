@@ -2,32 +2,22 @@ use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="avx512bw")] {
-    /// A SIMD vector with 32 elements of type [`i16`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
-    #[repr(C, align(64))]
-    pub struct i16x32 { pub(crate) avx512: m512i }
+    type Inner = m512i;
   } else {
-    /// A SIMD vector with 32 elements of type [`i16`].
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     #[repr(C, align(64))]
-    pub struct i16x32 { pub(crate) a : i16x16, pub(crate) b : i16x16 }
+    #[derive(Clone, Copy)]
+    pub(crate) struct Inner {
+      pub lo: i16x16,
+      pub hi: i16x16,
+    }
   }
 }
 
-impl_simd_signed! {
+define_simd_signed! {
   unsafe {
     T = i16,
     N = 32,
+    N_STR = "32",
     Simd = i16x32,
     UnsignedSimd = u16x32,
     T_BITS = 16,
@@ -46,12 +36,12 @@ impl_simd_signed! {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Lt)}>(self.avx512, rhs.avx512) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
       } else {
-        Self {
-          a : rhs.a.simd_gt(self.a),
-          b : rhs.b.simd_gt(self.b),
-        }
+        Self(Inner {
+          lo: rhs.0.lo.simd_gt(self.0.lo),
+          hi: rhs.0.hi.simd_gt(self.0.hi),
+        })
       }
     }
   }
@@ -60,12 +50,12 @@ impl_simd_signed! {
   fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Nle)}>(self.avx512, rhs.avx512) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
       } else {
-        Self {
-          a : self.a.simd_gt(rhs.a),
-          b : self.b.simd_gt(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_gt(rhs.0.lo),
+          hi: self.0.hi.simd_gt(rhs.0.hi),
+        })
       }
     }
   }
@@ -74,12 +64,12 @@ impl_simd_signed! {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Le)}>(self.avx512, rhs.avx512) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
       } else {
-        Self {
-          a : self.a.simd_le(rhs.a),
-          b : self.b.simd_le(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_le(rhs.0.lo),
+          hi: self.0.hi.simd_le(rhs.0.hi),
+        })
       }
     }
   }
@@ -88,12 +78,12 @@ impl_simd_signed! {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: cmp_op_mask_i16_m512i::<{cmp_int_op!(Nlt)}>(self.avx512, rhs.avx512) }
+        Self(cmp_op_mask_i16_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
       } else {
-        Self {
-          a : self.a.simd_ge(rhs.a),
-          b : self.b.simd_ge(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.simd_ge(rhs.0.lo),
+          hi: self.0.hi.simd_ge(rhs.0.hi),
+        })
       }
     }
   }
@@ -108,9 +98,9 @@ impl_simd_signed! {
         use core::arch::x86_64::_mm512_srav_epi16;
 
         // Mask `rhs` to 15 to match `wrapping_shr`.
-        let rhs = bitand_m512i(rhs.avx512, set_splat_i16_m512i(15));
+        let rhs = bitand_m512i(rhs.0, set_splat_i16_m512i(15));
         // TODO(safe_arch): Add `_mm512_srav_epi16`.
-        Self { avx512: m512i(unsafe { _mm512_srav_epi16(self.avx512.0, rhs.0) }) }
+        Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0) }))
       } else {
         let [self_a, self_b]: [i16x16; 2] = cast(self);
         let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
@@ -127,12 +117,12 @@ impl_simd_signed! {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
         #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs as u16 & 15;
-        Self { avx512: shr_all_i16_m512i(self.avx512, shift) }
+        Self(shr_all_i16_m512i(self.0, shift))
       } else {
-        Self {
-          a : self.a.shr(rhs),
-          b : self.b.shr(rhs),
-        }
+        Self(Inner {
+          lo: self.0.lo.shr(rhs),
+          hi: self.0.hi.shr(rhs),
+        })
       }
     }
   }
@@ -141,12 +131,12 @@ impl_simd_signed! {
   pub fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: max_i16_m512i(self.avx512, rhs.avx512) }
+        Self(max_i16_m512i(self.0, rhs.0))
       } else {
-        Self {
-          a: self.a.max(rhs.a),
-          b: self.b.max(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.max(rhs.0.lo),
+          hi: self.0.hi.max(rhs.0.hi),
+        })
       }
     }
   }
@@ -155,12 +145,12 @@ impl_simd_signed! {
   pub fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: min_i16_m512i(self.avx512, rhs.avx512) }
+        Self(min_i16_m512i(self.0, rhs.0))
       } else {
-        Self {
-          a: self.a.min(rhs.a),
-          b: self.b.min(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.min(rhs.0.lo),
+          hi: self.0.hi.min(rhs.0.hi),
+        })
       }
     }
   }
@@ -187,7 +177,7 @@ impl_simd_signed! {
         use core::arch::x86_64::_mm512_srav_epi16;
 
         // TODO(safe_arch): Add `_mm512_srav_epi16`.
-        Self { avx512: m512i(unsafe { _mm512_srav_epi16(self.avx512.0, rhs.avx512.0) }) }
+        Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0.0) }))
       } else {
         let [self_a, self_b] = cast::<i16x32, [i16x16; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
@@ -203,12 +193,12 @@ impl_simd_signed! {
       if #[cfg(target_feature="avx512bw")] {
         // `u32 as u16` truncates the higher half so we need to manually
         // saturate.
-        Self { avx512: shr_all_i16_m512i(self.avx512, rhs.min(u16::MAX as u32) as u16) }
+        Self(shr_all_i16_m512i(self.0, rhs.min(u16::MAX as u32) as u16))
       } else {
-        Self {
-          a: self.a.unbounded_shr_scalar(rhs),
-          b: self.b.unbounded_shr_scalar(rhs),
-        }
+        Self(Inner {
+          lo: self.0.lo.unbounded_shr_scalar(rhs),
+          hi: self.0.hi.unbounded_shr_scalar(rhs),
+        })
       }
     }
   }
@@ -217,12 +207,12 @@ impl_simd_signed! {
   pub fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: add_saturating_i16_m512i(self.avx512, rhs.avx512) }
+        Self(add_saturating_i16_m512i(self.0, rhs.0))
       } else {
-        Self {
-          a: self.a.saturating_add(rhs.a),
-          b: self.b.saturating_add(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.saturating_add(rhs.0.lo),
+          hi: self.0.hi.saturating_add(rhs.0.hi),
+        })
       }
     }
   }
@@ -231,12 +221,12 @@ impl_simd_signed! {
   pub fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: sub_saturating_i16_m512i(self.avx512, rhs.avx512) }
+        Self(sub_saturating_i16_m512i(self.0, rhs.0))
       } else {
-        Self {
-          a: self.a.saturating_sub(rhs.a),
-          b: self.b.saturating_sub(rhs.b),
-        }
+        Self(Inner {
+          lo: self.0.lo.saturating_sub(rhs.0.lo),
+          hi: self.0.hi.saturating_sub(rhs.0.hi),
+        })
       }
     }
   }
@@ -282,12 +272,12 @@ impl_simd_signed! {
   pub fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
-        Self { avx512: abs_i16_m512i(self.avx512) }
+        Self(abs_i16_m512i(self.0))
       } else {
-        Self {
-          a : self.a.abs(),
-          b : self.b.abs(),
-        }
+        Self(Inner {
+          lo: self.0.lo.abs(),
+          hi: self.0.hi.abs(),
+        })
       }
     }
   }
@@ -297,10 +287,10 @@ impl_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
-        Self {
-          a: self.a.is_positive(),
-          b: self.b.is_positive(),
-        }
+        Self(Inner {
+          lo: self.0.lo.is_positive(),
+          hi: self.0.hi.is_positive(),
+        })
       } else {
         self.simd_gt(Self::ZERO)
       }
@@ -312,10 +302,10 @@ impl_simd_signed! {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
-        Self {
-          a: self.a.is_negative(),
-          b: self.b.is_negative(),
-        }
+        Self(Inner {
+          lo: self.0.lo.is_negative(),
+          hi: self.0.hi.is_negative(),
+        })
       } else {
         self.simd_lt(Self::ZERO)
       }
@@ -340,13 +330,13 @@ impl i16x32 {
     pub fn from_i8x32(v: i8x32) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self { avx512: convert_to_i16_m512i_from_i8_m256i(cast(v)) }
+            Self(convert_to_i16_m512i_from_i8_m256i(cast(v)))
           } else {
             let [a, b]: [i8x16; 2] = cast(v);
-            Self {
-              a: i16x16::from_i8x16(a),
-              b: i16x16::from_i8x16(b),
-            }
+            Self(Inner {
+              lo: i16x16::from_i8x16(a),
+              hi: i16x16::from_i8x16(b),
+            })
           }
         }
     }
@@ -361,12 +351,12 @@ impl i16x32 {
     pub fn dot(self, rhs: Self) -> i32x16 {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            i32x16 { avx512: mul_i16_horizontal_add_m512i(self.avx512, rhs.avx512) }
+            i32x16(mul_i16_horizontal_add_m512i(self.0, rhs.0))
           } else {
-            i32x16 {
-              a : self.a.dot(rhs.a),
-              b : self.b.dot(rhs.b),
-            }
+            i32x16(crate::i32x16_::Inner {
+              lo: self.0.lo.dot(rhs.0.lo),
+              hi: self.0.hi.dot(rhs.0.hi),
+            })
           }
         }
     }

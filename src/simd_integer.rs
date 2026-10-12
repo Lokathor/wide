@@ -1,12 +1,5 @@
 macro_rules! impl_simd_integer {
     (
-        // SAFETY: The contents of this macro assume that:
-        //
-        // - `T` implements `Pod`
-        // - `Pod` can be implemented for `Simd`
-        // - `size_of::<Simd>()` is `size_of::<T>() * N`
-        // - `align_of::<Simd>()` is `size_of::<Simd>()`
-        // - `Pod` can be implemented for the optional native SIMD types
         unsafe {
             T = $T:ident,
             N = $N:literal,
@@ -52,6 +45,8 @@ macro_rules! impl_simd_integer {
         $fn_mul_keep_low_high:item
         $fn_mul_keep_high:item
     ) => {
+        impl Eq for $Simd {}
+
         impl_unary_operator!(
             $Simd,
             Neg,
