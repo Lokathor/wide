@@ -6,8 +6,8 @@ use crate::utils::{for_simd_types, random_iter, simd_chunks};
 fn test_is_positive() {
     for_simd_types!(|T: Signed, N| {
         for value in simd_chunks!([1, -1, 2, 3, -2, -5, 0, 6, 9, -4, 0, T::MIN, T::MAX]) {
-            let expected = Simd::new(value.map(|x| if x.is_positive() { !0 } else { 0 }));
-            let actual = Simd::new(value).is_positive();
+            let expected = Simd::from_array(value.map(|x| if x.is_positive() { !0 } else { 0 }));
+            let actual = Simd::from_array(value).is_positive();
 
             assert_eq!(actual, expected);
         }
@@ -18,8 +18,8 @@ fn test_is_positive() {
 fn test_is_negative() {
     for_simd_types!(|T: Signed, N| {
         for value in simd_chunks!([1, -1, 2, 3, -2, -5, 0, 6, 9, -4, 0, T::MIN, T::MAX]) {
-            let expected = Simd::new(value.map(|x| if x.is_negative() { !0 } else { 0 }));
-            let actual = Simd::new(value).is_negative();
+            let expected = Simd::from_array(value.map(|x| if x.is_negative() { !0 } else { 0 }));
+            let actual = Simd::from_array(value).is_negative();
 
             assert_eq!(actual, expected);
         }
@@ -32,8 +32,8 @@ fn test_abs() {
         for value in
             simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::wrapping_abs));
-            let actual = Simd::new(value).abs();
+            let expected = Simd::from_array(value.map(T::wrapping_abs));
+            let actual = Simd::from_array(value).abs();
 
             assert_eq!(actual, expected);
         }
@@ -46,8 +46,8 @@ fn test_unsigned_abs() {
         for value in
             simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(random_iter())
         {
-            let expected = SimdUnsigned::new(value.map(T::unsigned_abs));
-            let actual = Simd::new(value).unsigned_abs();
+            let expected = SimdUnsigned::from_array(value.map(T::unsigned_abs));
+            let actual = Simd::from_array(value).unsigned_abs();
 
             assert_eq!(actual, expected);
         }
@@ -60,8 +60,8 @@ fn test_signum() {
         for value in
             simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::signum));
-            let actual = Simd::new(value).signum();
+            let expected = Simd::from_array(value.map(T::signum));
+            let actual = Simd::from_array(value).signum();
 
             assert_eq!(actual, expected);
         }
@@ -72,10 +72,10 @@ fn test_signum() {
 fn test_mul_scale_round() {
     // `mul_scale_round` is inconsistently missing from types.
 
-    let a = i16x8::new([100, 200, 300, 400, 500, -600, 700, -800]);
-    let b = i16x8::new([900, 1000, 1100, 1200, 1300, -1400, -1500, 1600]);
+    let a = i16x8::from_array([100, 200, 300, 400, 500, -600, 700, -800]);
+    let b = i16x8::from_array([900, 1000, 1100, 1200, 1300, -1400, -1500, 1600]);
     let actual = a.mul_scale_round(b);
-    let expected = i16x8::new([3, 6, 10, 15, 20, 26, -32, -39]);
+    let expected = i16x8::from_array([3, 6, 10, 15, 20, 26, -32, -39]);
     assert_eq!(actual, expected);
 
     let a = i16x16::from([
@@ -93,9 +93,9 @@ fn test_mul_scale_round() {
 fn test_mul_scale_round_n() {
     // `mul_scale_round_n` is inconsistently missing from types.
 
-    let a = i16x8::new([100, 200, 300, 400, 500, -600, 700, -800]);
+    let a = i16x8::from_array([100, 200, 300, 400, 500, -600, 700, -800]);
     let actual = a.mul_scale_round_n(0x4000);
-    let expected = i16x8::new([50, 100, 150, 200, 250, -300, 350, -400]);
+    let expected = i16x8::from_array([50, 100, 150, 200, 250, -300, 350, -400]);
     assert_eq!(actual, expected);
 
     let a = i16x16::from([
@@ -113,13 +113,13 @@ fn test_mul_scale_round_n() {
 fn test_dot() {
     // `dot` is inconsistently missing from types.
 
-    let value = i16x8::new([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
-    let other = i16x8::new([17, -18, 190, -20, 21, -22, 3, 2]);
-    let expected = i32x4::new([-19, 490, -27, -163837]);
+    let value = i16x8::from_array([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]);
+    let other = i16x8::from_array([17, -18, 190, -20, 21, -22, 3, 2]);
+    let expected = i32x4::from_array([-19, 490, -27, -163837]);
     let actual = value.dot(other);
     assert_eq!(actual, expected);
 
-    let value = i16x16::new([
+    let value = i16x16::from_array([
         1,
         2,
         3,
@@ -137,10 +137,10 @@ fn test_dot() {
         i16::MAX - 1,
         i16::MAX,
     ]);
-    let other = i16x16::new([
+    let other = i16x16::from_array([
         17, -18, 190, -20, 21, -22, 3, 2, 170, -180, 1900, -200, 210, -220, 30, 20,
     ]);
-    let expected = i32x8::new([-19, 490, -27, -163837, -1900, 49000, -2700, 1638320]);
+    let expected = i32x8::from_array([-19, 490, -27, -163837, -1900, 49000, -2700, 1638320]);
     let actual = value.dot(other);
     assert_eq!(actual, expected);
 

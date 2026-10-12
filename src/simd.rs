@@ -33,15 +33,15 @@ use bytemuck::{Pod, pod_align_to, pod_align_to_mut};
 ///     }
 /// }
 ///
-/// let mask = u32x4::new([0, !0, !0, 0]);
+/// let mask = u32x4::from_array([0, !0, !0, 0]);
 /// let if_true = Point { x: u32x4::splat(2), y: u32x4::ZERO };
 /// let if_false = Point { x: u32x4::ZERO, y: u32x4::splat(5) };
 ///
 /// assert_eq!(
 ///     mask.select(if_true, if_false),
 ///     Point {
-///         x: u32x4::new([0, 2, 2, 0]),
-///         y: u32x4::new([5, 0, 0, 5]),
+///         x: u32x4::from_array([0, 2, 2, 0]),
+///         y: u32x4::from_array([5, 0, 0, 5]),
 ///     },
 /// );
 /// ```
@@ -74,13 +74,13 @@ pub trait Select<T> {
 /// ```
 /// use wide::{f32x4, ShuffleExt, u32x4};
 ///
-/// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-/// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+/// let simd_a = f32x4::from_array([0.0, 1.0, 2.0, 3.0]);
+/// let simd_b = f32x4::from_array([100.0, 101.0, 102.0, 103.0]);
 ///
 /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-/// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
+/// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::from_array([2, 3, 4, 5]));
 ///
-/// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+/// assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 100.0, 101.0]));
 /// ```
 #[expect(private_bounds)]
 pub trait ShuffleExt: Sealed {
@@ -110,13 +110,13 @@ pub trait ShuffleExt: Sealed {
     /// ```
     /// use wide::{f32x4, ShuffleExt, u32x4};
     ///
-    /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-    /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+    /// let simd_a = f32x4::from_array([0.0, 1.0, 2.0, 3.0]);
+    /// let simd_b = f32x4::from_array([100.0, 101.0, 102.0, 103.0]);
     ///
     /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-    /// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
+    /// let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::from_array([2, 3, 4, 5]));
     ///
-    /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+    /// assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 100.0, 101.0]));
     /// ```
     ///
     /// # Type-specific guarantees
@@ -142,13 +142,13 @@ pub trait ShuffleExt: Sealed {
     /// ```
     /// use wide::{f32x4, ShuffleExt, u32x4};
     ///
-    /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-    /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+    /// let simd_a = f32x4::from_array([0.0, 1.0, 2.0, 3.0]);
+    /// let simd_b = f32x4::from_array([100.0, 101.0, 102.0, 103.0]);
     ///
     /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-    /// let from_two_vectors = [simd_a, simd_b].shuffle_zeroing(u32x4::new([2, 3, 100, 5]));
+    /// let from_two_vectors = [simd_a, simd_b].shuffle_zeroing(u32x4::from_array([2, 3, 100, 5]));
     ///
-    /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 0.0, 101.0]));
+    /// assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 0.0, 101.0]));
     /// ```
     #[must_use]
     fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
@@ -167,13 +167,13 @@ pub trait ShuffleExt: Sealed {
     /// ```
     /// use wide::{f32x4, ShuffleExt, u32x4};
     ///
-    /// let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-    /// let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+    /// let simd_a = f32x4::from_array([0.0, 1.0, 2.0, 3.0]);
+    /// let simd_b = f32x4::from_array([100.0, 101.0, 102.0, 103.0]);
     ///
     /// // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-    /// let from_two_vectors = [simd_a, simd_b].shuffle_wrapping(u32x4::new([2, 3, 9, 5]));
+    /// let from_two_vectors = [simd_a, simd_b].shuffle_wrapping(u32x4::from_array([2, 3, 9, 5]));
     ///
-    /// assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 1.0, 101.0]));
+    /// assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 1.0, 101.0]));
     /// ```
     #[must_use]
     fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output;
@@ -375,8 +375,8 @@ macro_rules! define_simd {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
-    $fn_unpack_lo:item
-    $fn_unpack_hi:item
+    $fn_interleave_low:item
+    $fn_interleave_high:item
     $fn_shuffle:item
     $fn_shuffle_zeroing:item
     $fn_shuffle_wrapping:item
@@ -421,7 +421,7 @@ macro_rules! define_simd {
       /// Converts an array to a SIMD vector.
       #[inline]
       fn from(arr: [$T; $N]) -> Self {
-        Self::new(arr)
+        Self::from_array(arr)
       }
     }
 
@@ -741,7 +741,7 @@ macro_rules! define_simd {
       /// Converts an array to a SIMD vector.
       #[inline]
       #[must_use]
-      pub const fn new(array: [$T; $N]) -> Self {
+      pub const fn from_array(array: [$T; $N]) -> Self {
         unsafe { core::mem::transmute::<[$T; $N], $Simd>(array) }
       }
 
@@ -1013,7 +1013,7 @@ macro_rules! define_simd {
       ///
       /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
       #[must_use]
-      $fn_unpack_lo
+      $fn_interleave_low
 
       /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
       /// halfs.
@@ -1021,7 +1021,7 @@ macro_rules! define_simd {
       /// Equivalent to
       /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
       #[must_use]
-      $fn_unpack_hi
+      $fn_interleave_high
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.
@@ -1072,6 +1072,18 @@ macro_rules! define_simd {
       #[must_use]
       $fn_transpose
 
+      /// Converts an array to a SIMD vector.
+      ///
+      /// This function has been deprecated and renamed to [`from_array`].
+      ///
+      /// [`from_array`]: Self::from_array
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `from_array`")]
+      pub const fn new(array: [$T; $N]) -> Self {
+        Self::from_array(array)
+      }
+
       /// Elementwise selection.
       ///
       /// For each element of `self`:
@@ -1097,6 +1109,37 @@ macro_rules! define_simd {
       #[must_use]
       pub fn blend(self, if_true: Self, if_false: Self) -> Self {
         self.select(if_true, if_false)
+      }
+
+      /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+      /// halfs.
+      ///
+      /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+      ///
+      /// This function has been deprecated and renamed to [`interleave_low`].
+      ///
+      /// [`interleave_low`]: Self::interleave_low
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
+      pub fn unpack_lo(self, other: Self) -> Self {
+        self.interleave_low(other)
+      }
+
+      /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+      /// halfs.
+      ///
+      /// Equivalent to
+      /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+      ///
+      /// This function has been deprecated and renamed to [`interleave_high`].
+      ///
+      /// [`interleave_high`]: Self::interleave_high
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
+      pub fn unpack_hi(self, other: Self) -> Self {
+        self.interleave_high(other)
       }
     }
 

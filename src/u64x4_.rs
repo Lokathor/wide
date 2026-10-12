@@ -388,31 +388,31 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // `unpack_low_i64_m256i` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [aa, _]: [u64x2; 2] = cast(self);
         let [ba, _]: [u64x2; 2] = cast(other);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+        cast([aa.interleave_low(ba), aa.interleave_high(ba)])
       } else {
-        Self(Inner { lo: self.0.lo.unpack_lo(other.0.lo), hi: self.0.lo.unpack_hi(other.0.lo) })
+        Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
       }
     }
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // `unpack_high_i64_m256i` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [_, ab]: [u64x2; 2] = cast(self);
         let [_, bb]: [u64x2; 2] = cast(other);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+        cast([ab.interleave_low(bb), ab.interleave_high(bb)])
       } else {
-        Self(Inner { lo: self.0.hi.unpack_lo(other.0.hi), hi: self.0.hi.unpack_hi(other.0.hi) })
+        Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
       }
     }
   }
@@ -448,7 +448,7 @@ define_simd_unsigned! {
           }
         }
 
-        Self::new(result)
+        Self::from_array(result)
       }
     }
   }
@@ -564,20 +564,20 @@ define_simd_unsigned! {
       if #[cfg(target_feature="avx2")] {
         // Can this be optimized?
         // TODO: Once unpack functions are added, remove these casts
-        let a = data[0].cast_signed().unpack_lo(data[2].cast_signed());
-        let b = data[1].cast_signed().unpack_lo(data[3].cast_signed());
-        let c = data[0].cast_signed().unpack_hi(data[2].cast_signed());
-        let d = data[1].cast_signed().unpack_hi(data[3].cast_signed());
+        let a = data[0].cast_signed().interleave_low(data[2].cast_signed());
+        let b = data[1].cast_signed().interleave_low(data[3].cast_signed());
+        let c = data[0].cast_signed().interleave_high(data[2].cast_signed());
+        let d = data[1].cast_signed().interleave_high(data[3].cast_signed());
         [
-          a.unpack_lo(b).cast_unsigned(),
-          a.unpack_hi(b).cast_unsigned(),
-          c.unpack_lo(d).cast_unsigned(),
-          c.unpack_hi(d).cast_unsigned(),
+          a.interleave_low(b).cast_unsigned(),
+          a.interleave_high(b).cast_unsigned(),
+          c.interleave_low(d).cast_unsigned(),
+          c.interleave_high(d).cast_unsigned(),
         ]
       } else {
         #[inline(always)]
         fn transpose_column(data: &[u64x4; 4], index: usize) -> u64x4 {
-          u64x4::new([
+          u64x4::from_array([
             data[0].as_array()[index],
             data[1].as_array()[index],
             data[2].as_array()[index],
@@ -789,8 +789,8 @@ define_simd_unsigned! {
       self_array[3].overflowing_mul(rhs_array[3]),
     ];
     (
-      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
-      Self::new([
+      Self::from_array([result[0].0, result[1].0, result[2].0, result[3].0]),
+      Self::from_array([
         -(result[0].1 as i64) as u64,
         -(result[1].1 as i64) as u64,
         -(result[2].1 as i64) as u64,
@@ -819,13 +819,13 @@ define_simd_unsigned! {
     ];
 
     (
-      Self::new([
+      Self::from_array([
         widening_mul[0] as u64,
         widening_mul[1] as u64,
         widening_mul[2] as u64,
         widening_mul[3] as u64,
       ]),
-      Self::new([
+      Self::from_array([
         (widening_mul[0] >> 64) as u64,
         (widening_mul[1] >> 64) as u64,
         (widening_mul[2] >> 64) as u64,
@@ -909,7 +909,7 @@ impl u64x4 {
             let mask = add_mul_operand_mask_u64::<W>();
             let a = a.to_array();
             let b = b.to_array();
-            Self::new(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
+            Self::from_array(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
           }
         }
     }
@@ -938,7 +938,7 @@ impl u64x4 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -966,7 +966,7 @@ impl u64x4 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }

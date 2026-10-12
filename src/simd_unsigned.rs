@@ -46,8 +46,8 @@ macro_rules! define_simd_unsigned {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
-    $fn_unpack_lo:item
-    $fn_unpack_hi:item
+    $fn_interleave_low:item
+    $fn_interleave_high:item
     $fn_shuffle:item
     $fn_shuffle_zeroing:item
     $fn_shuffle_wrapping:item
@@ -124,9 +124,9 @@ macro_rules! define_simd_unsigned {
 
       $fn_all
 
-      $fn_unpack_lo
+      $fn_interleave_low
 
-      $fn_unpack_hi
+      $fn_interleave_high
 
       $fn_shuffle
 

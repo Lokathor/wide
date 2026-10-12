@@ -73,7 +73,7 @@ macro_rules! impl_simd_integer {
                 let self_array = self.to_array();
                 let rhs_array = rhs.to_array();
 
-                Self::new([$(self_array[$index].wrapping_div(rhs_array[$index])),*])
+                Self::from_array([$(self_array[$index].wrapping_div(rhs_array[$index])),*])
             },
             /// Divides each element of `left` by the corresponding element `right`.
             ///
@@ -114,7 +114,7 @@ macro_rules! impl_simd_integer {
                 let self_array = self.to_array();
                 let rhs_array = rhs.to_array();
 
-                Self::new([$(self_array[$index].wrapping_rem(rhs_array[$index])),*])
+                Self::from_array([$(self_array[$index].wrapping_rem(rhs_array[$index])),*])
             },
             /// Returns the remainder of each element of `left` divided by the
             /// corresponding element `right`.
@@ -468,7 +468,7 @@ macro_rules! impl_simd_integer {
                 let self_array = self.to_array();
                 let rhs_array = rhs.to_array();
 
-                Self::new([$(self_array[$index].saturating_div(rhs_array[$index])),*])
+                Self::from_array([$(self_array[$index].saturating_div(rhs_array[$index])),*])
             }
 
             /// Returns `self + rhs` and whether an overflow occured.

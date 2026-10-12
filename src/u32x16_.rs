@@ -405,31 +405,31 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // `_mm512_unpacklo_epi32` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [aa, _]: [u32x8; 2] = cast(self);
         let [ba, _]: [u32x8; 2] = cast(other);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+        cast([aa.interleave_low(ba), aa.interleave_high(ba)])
       } else {
-        Self(Inner { lo: self.0.lo.unpack_lo(other.0.lo), hi: self.0.lo.unpack_hi(other.0.lo) })
+        Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
       }
     }
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // `_mm512_unpackhi_epi32` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [_, ab]: [u32x8; 2] = cast(self);
         let [_, bb]: [u32x8; 2] = cast(other);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+        cast([ab.interleave_low(bb), ab.interleave_high(bb)])
       } else {
-        Self(Inner { lo: self.0.hi.unpack_lo(other.0.hi), hi: self.0.hi.unpack_hi(other.0.hi) })
+        Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
       }
     }
   }
@@ -549,7 +549,7 @@ define_simd_unsigned! {
 
     #[inline(always)]
     fn transpose_column(data: &[u32x16; 16], index: usize) -> u32x16 {
-      u32x16::new([
+      u32x16::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
@@ -893,7 +893,7 @@ impl From<u16x16> for u32x16 {
           } else {
             // Portable fallback
             let arr = v.as_array();
-            Self::new([
+            Self::from_array([
               arr[0] as u32,  arr[1] as u32,  arr[2] as u32,  arr[3] as u32,
               arr[4] as u32,  arr[5] as u32,  arr[6] as u32,  arr[7] as u32,
               arr[8] as u32,  arr[9] as u32,  arr[10] as u32, arr[11] as u32,
@@ -924,7 +924,7 @@ impl u32x16 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -944,7 +944,7 @@ impl u32x16 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }

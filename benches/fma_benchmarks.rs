@@ -16,7 +16,7 @@ fn bench_f32x4_mul_add_chain(c: &mut Criterion) {
             |(mut acc, mul, add)| {
                 // Chain of FMA operations to test throughput
                 for _ in 0..100 {
-                    acc = acc.mul_add(mul, add);
+                    acc = acc.fast_mul_add(mul, add);
                 }
                 black_box(acc)
             },
@@ -37,7 +37,7 @@ fn bench_f32x8_mul_add_chain(c: &mut Criterion) {
             },
             |(mut acc, mul, add)| {
                 for _ in 0..100 {
-                    acc = acc.mul_add(mul, add);
+                    acc = acc.fast_mul_add(mul, add);
                 }
                 black_box(acc)
             },
@@ -58,7 +58,7 @@ fn bench_f64x2_mul_add_chain(c: &mut Criterion) {
             },
             |(mut acc, mul, add)| {
                 for _ in 0..100 {
-                    acc = acc.mul_add(mul, add);
+                    acc = acc.fast_mul_add(mul, add);
                 }
                 black_box(acc)
             },
@@ -79,7 +79,7 @@ fn bench_f64x4_mul_add_chain(c: &mut Criterion) {
             },
             |(mut acc, mul, add)| {
                 for _ in 0..100 {
-                    acc = acc.mul_add(mul, add);
+                    acc = acc.fast_mul_add(mul, add);
                 }
                 black_box(acc)
             },
@@ -100,7 +100,7 @@ fn bench_f64x8_mul_add_chain(c: &mut Criterion) {
             },
             |(mut acc, mul, add)| {
                 for _ in 0..100 {
-                    acc = acc.mul_add(mul, add);
+                    acc = acc.fast_mul_add(mul, add);
                 }
                 black_box(acc)
             },

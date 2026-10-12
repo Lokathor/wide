@@ -403,13 +403,13 @@ fn generate_branch_free_divide_magic_shift(denom: u32x8) -> (u32x8, u32x8) {
 #[test]
 fn impl_u32x8_branch_free_divide() {
     for [a, b] in random_iter::<[[u32; 8]; 2]>() {
-        let expected = u32x8::new(std::array::from_fn(|i| a[i] / b[i].max(2)));
+        let expected = u32x8::from_array(std::array::from_fn(|i| a[i] / b[i].max(2)));
 
         // never divide by 0 or 1 (since the branch free division doesn't support
         // division by 1)
-        let b = u32x8::new(b).max(u32x8::splat(2));
+        let b = u32x8::from_array(b).max(u32x8::splat(2));
         let (magic, shift) = generate_branch_free_divide_magic_shift(b);
-        let actual = branch_free_divide(u32x8::new(a), magic, shift);
+        let actual = branch_free_divide(u32x8::from_array(a), magic, shift);
 
         assert_eq!(actual, expected);
     }
@@ -467,13 +467,13 @@ fn branch_free_divide_u64(numerator: u64x8, magic: u64x8, shift: u64x8) -> u64x8
 #[test]
 fn impl_u64x8_branch_free_divide() {
     for [a, b] in random_iter::<[[u64; 8]; 2]>() {
-        let expected = u64x8::new(std::array::from_fn(|i| a[i] / b[i].max(2)));
+        let expected = u64x8::from_array(std::array::from_fn(|i| a[i] / b[i].max(2)));
 
         // never divide by 0 or 1 (since the branch free division doesn't support
         // division by 1)
-        let b = u64x8::new(b).max(u64x8::splat(2));
+        let b = u64x8::from_array(b).max(u64x8::splat(2));
         let (magic, shift) = generate_branch_free_divide_magic_shift_u64(b);
-        let actual = branch_free_divide_u64(u64x8::new(a), magic, shift);
+        let actual = branch_free_divide_u64(u64x8::from_array(a), magic, shift);
 
         assert_eq!(actual, expected);
     }
@@ -586,13 +586,13 @@ fn branch_free_divide_u32x16(numerator: u32x16, magic: u32x16, shift: u32x16) ->
 #[test]
 fn impl_u32x16_branch_free_divide() {
     for [a, b] in random_iter::<[[u32; 16]; 2]>() {
-        let expected = u32x16::new(std::array::from_fn(|i| a[i] / b[i].max(2)));
+        let expected = u32x16::from_array(std::array::from_fn(|i| a[i] / b[i].max(2)));
 
         // never divide by 0 or 1 (since the branch free division doesn't support
         // division by 1)
-        let b = u32x16::new(b).max(u32x16::splat(2));
+        let b = u32x16::from_array(b).max(u32x16::splat(2));
         let (magic, shift) = generate_branch_free_divide_magic_shift_u32x16(b);
-        let actual = branch_free_divide_u32x16(u32x16::new(a), magic, shift);
+        let actual = branch_free_divide_u32x16(u32x16::from_array(a), magic, shift);
 
         assert_eq!(actual, expected);
     }

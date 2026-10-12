@@ -25,8 +25,8 @@ fn test_abs() {
         ])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::abs));
-            let actual = Simd::new(value).abs();
+            let expected = Simd::from_array(value.map(T::abs));
+            let actual = Simd::from_array(value).abs();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -59,8 +59,8 @@ fn test_signum() {
         ])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::signum));
-            let actual = Simd::new(value).signum();
+            let expected = Simd::from_array(value.map(T::signum));
+            let actual = Simd::from_array(value).signum();
 
             assert!(
                 (actual.simd_eq(expected) | actual.is_nan() & expected.is_nan()).all(),
@@ -101,8 +101,8 @@ fn test_floor() {
         ])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::floor));
-            let actual = Simd::new(value).floor();
+            let expected = Simd::from_array(value.map(T::floor));
+            let actual = Simd::from_array(value).floor();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -143,8 +143,8 @@ fn test_ceil() {
         ])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::ceil));
-            let actual = Simd::new(value).ceil();
+            let expected = Simd::from_array(value.map(T::ceil));
+            let actual = Simd::from_array(value).ceil();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -185,8 +185,8 @@ fn test_fast_max() {
                 3.0
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| value[i].max(other[i])));
-            let actual = Simd::new(value).fast_max(Simd::new(other));
+            let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
+            let actual = Simd::from_array(value).fast_max(Simd::from_array(other));
 
             assert_eq!(
                 actual ^ expected,
@@ -230,8 +230,8 @@ fn test_max() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| value[i].max(other[i])));
-            let actual = Simd::new(value).max(Simd::new(other));
+            let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
+            let actual = Simd::from_array(value).max(Simd::from_array(other));
 
             assert_eq!(
                 actual ^ expected,
@@ -273,8 +273,8 @@ fn test_fast_min() {
                 3.0
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| value[i].min(other[i])));
-            let actual = Simd::new(value).fast_min(Simd::new(other));
+            let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
+            let actual = Simd::from_array(value).fast_min(Simd::from_array(other));
 
             assert_eq!(
                 actual ^ expected,
@@ -318,8 +318,8 @@ fn test_min() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| value[i].min(other[i])));
-            let actual = Simd::new(value).min(Simd::new(other));
+            let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
+            let actual = Simd::from_array(value).min(Simd::from_array(other));
 
             assert_eq!(
                 actual ^ expected,
@@ -340,7 +340,7 @@ fn test_clamp() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 if value[i].is_nan() || min[i].is_nan() || max[i].is_nan() {
                     T::NAN
                 } else if min[i] > max[i] {
@@ -349,7 +349,8 @@ fn test_clamp() {
                     value[i].clamp(min[i], max[i])
                 }
             }));
-            let actual = Simd::new(value).clamp(Simd::new(min), Simd::new(max));
+            let actual =
+                Simd::from_array(value).clamp(Simd::from_array(min), Simd::from_array(max));
 
             assert!(
                 (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
@@ -378,7 +379,7 @@ fn test_fast_clamp() {
                 }
             }
 
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 if value[i].is_nan() {
                     T::NAN
                 } else if min[i] > max[i] {
@@ -387,7 +388,8 @@ fn test_fast_clamp() {
                     value[i].clamp(min[i], max[i])
                 }
             }));
-            let actual = Simd::new(value).fast_clamp(Simd::new(min), Simd::new(max));
+            let actual =
+                Simd::from_array(value).fast_clamp(Simd::from_array(min), Simd::from_array(max));
 
             assert!(
                 (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
@@ -401,7 +403,7 @@ fn test_fast_clamp() {
 fn test_reduce_max() {
     for_simd_types!(|T: Float, N| {
         for value in random_iter::<[T; N]>() {
-            let actual = Simd::new(value).reduce_max();
+            let actual = Simd::from_array(value).reduce_max();
             let expected = value.into_iter().reduce(T::max).unwrap();
 
             assert!(
@@ -416,7 +418,7 @@ fn test_reduce_max() {
 fn test_fast_reduce_max() {
     for_simd_types!(|T: Float, N| {
         for value in random_iter::<[T; N]>() {
-            let actual = Simd::new(value).fast_reduce_max();
+            let actual = Simd::from_array(value).fast_reduce_max();
             let expected = value.into_iter().reduce(T::max).unwrap();
 
             assert!(
@@ -433,7 +435,7 @@ fn test_fast_reduce_max() {
 fn test_reduce_min() {
     for_simd_types!(|T: Float, N| {
         for value in random_iter::<[T; N]>() {
-            let actual = Simd::new(value).reduce_min();
+            let actual = Simd::from_array(value).reduce_min();
             let expected = value.into_iter().reduce(T::min).unwrap();
 
             assert!(
@@ -448,7 +450,7 @@ fn test_reduce_min() {
 fn test_fast_reduce_min() {
     for_simd_types!(|T: Float, N| {
         for value in random_iter::<[T; N]>() {
-            let actual = Simd::new(value).fast_reduce_min();
+            let actual = Simd::from_array(value).fast_reduce_min();
             let expected = value.into_iter().reduce(T::min).unwrap();
 
             assert!(
@@ -488,8 +490,8 @@ fn test_midpoint() {
                 5.2,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| value[i].midpoint(other[i])));
-            let actual = Simd::new(value).midpoint(Simd::new(other));
+            let expected = Simd::from_array(std::array::from_fn(|i| value[i].midpoint(other[i])));
+            let actual = Simd::from_array(value).midpoint(Simd::from_array(other));
 
             assert_eq!(actual, expected);
         }
@@ -514,8 +516,8 @@ fn test_is_nan() {
         .chain(random_iter())
         {
             let expected =
-                Simd::new(value.map(|x| if x.is_nan() { T::from_bits(!0) } else { 0.0 }));
-            let actual = Simd::new(value).is_nan();
+                Simd::from_array(value.map(|x| if x.is_nan() { T::from_bits(!0) } else { 0.0 }));
+            let actual = Simd::from_array(value).is_nan();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -543,8 +545,8 @@ fn test_is_finite() {
         .chain(random_iter())
         {
             let expected =
-                Simd::new(value.map(|x| if x.is_finite() { T::from_bits(!0) } else { 0.0 }));
-            let actual = Simd::new(value).is_finite();
+                Simd::from_array(value.map(|x| if x.is_finite() { T::from_bits(!0) } else { 0.0 }));
+            let actual = Simd::from_array(value).is_finite();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -555,7 +557,7 @@ fn test_is_finite() {
 }
 
 #[test]
-fn test_is_inf() {
+fn test_is_infinite() {
     for_simd_types!(|T: Float, N| {
         for value in simd_chunks!([
             -1.0,
@@ -571,14 +573,14 @@ fn test_is_inf() {
         ])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(|x| {
+            let expected = Simd::from_array(value.map(|x| {
                 if x.is_infinite() {
                     T::from_bits(!0)
                 } else {
                     0.0
                 }
             }));
-            let actual = Simd::new(value).is_inf();
+            let actual = Simd::from_array(value).is_infinite();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -614,8 +616,8 @@ fn test_round() {
         .flat_map(|x| [x, x.map(|x| -x)])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::round));
-            let actual = Simd::new(value).round();
+            let expected = Simd::from_array(value.map(T::round));
+            let actual = Simd::from_array(value).round();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -651,8 +653,8 @@ fn test_round_ties_even() {
         .flat_map(|x| [x, x.map(|x| -x)])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::round_ties_even));
-            let actual = Simd::new(value).round_ties_even();
+            let expected = Simd::from_array(value.map(T::round_ties_even));
+            let actual = Simd::from_array(value).round_ties_even();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -669,8 +671,8 @@ fn test_fast_round_int() {
             0.0, 0.1, 0.5, 0.7, -0.0, -0.1, -0.5, -0.7, 2.0, 2.1, 2.5, 2.7, -2.0, -2.1, -2.5, -2.7,
             5.0, 5.1, 5.5, 5.7, -5.0, -5.1, -5.5, -5.7,
         ]) {
-            let expected = Simd::new(value).round_int();
-            let actual = Simd::new(value).fast_round_int();
+            let expected = Simd::from_array(value).round_int();
+            let actual = Simd::from_array(value).fast_round_int();
 
             assert_eq!(actual, expected);
         }
@@ -715,14 +717,14 @@ fn test_round_int() {
         {
             // TODO:  Currently `round` actually behaves like `round_ties_even`.
             // Decide the correct behavior then add documentation.
-            let expected_1 = SimdSigned::new(
+            let expected_1 = SimdSigned::from_array(
                 value.map(|x| x.round().clamp(Signed::MIN as T, Signed::MAX as T) as Signed),
             );
-            let expected_2 = SimdSigned::new(value.map(|x| {
+            let expected_2 = SimdSigned::from_array(value.map(|x| {
                 x.round_ties_even()
                     .clamp(Signed::MIN as T, Signed::MAX as T) as Signed
             }));
-            let actual = Simd::new(value).round_int();
+            let actual = Simd::from_array(value).round_int();
 
             assert!(
                 (actual.simd_eq(expected_1) | actual.simd_eq(expected_2)).all(),
@@ -776,8 +778,8 @@ fn test_trunc() {
         ])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::trunc));
-            let actual = Simd::new(value).trunc();
+            let expected = Simd::from_array(value.map(T::trunc));
+            let actual = Simd::from_array(value).trunc();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -794,8 +796,8 @@ fn test_fast_trunc_int() {
             0.0, 0.1, 0.5, 0.7, -0.0, -0.1, -0.5, -0.7, 2.0, 2.1, 2.5, 2.7, -2.0, -2.1, -2.5, -2.7,
             5.0, 5.1, 5.5, 5.7, -5.0, -5.1, -5.5, -5.7,
         ]) {
-            let expected = SimdSigned::new(value.map(|x| x.trunc() as Signed));
-            let actual = Simd::new(value).fast_trunc_int();
+            let expected = SimdSigned::from_array(value.map(|x| x.trunc() as Signed));
+            let actual = Simd::from_array(value).fast_trunc_int();
 
             assert_eq!(actual, expected);
         }
@@ -846,10 +848,10 @@ fn test_trunc_int() {
         ])
         .chain(random_iter())
         {
-            let expected = SimdSigned::new(
+            let expected = SimdSigned::from_array(
                 value.map(|x| x.trunc().clamp(Signed::MIN as T, Signed::MAX as T) as Signed),
             );
-            let actual = Simd::new(value).trunc_int();
+            let actual = Simd::from_array(value).trunc_int();
 
             assert!(
                 actual == expected,
@@ -895,8 +897,8 @@ fn test_fract() {
         ])
         .chain(random_iter())
         {
-            let expected = Simd::new(value.map(T::fract));
-            let actual = Simd::new(value).fract();
+            let expected = Simd::from_array(value.map(T::fract));
+            let actual = Simd::from_array(value).fract();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -907,7 +909,7 @@ fn test_fract() {
 }
 
 #[test]
-fn test_mul_add() {
+fn test_fast_mul_add() {
     for_simd_types!(|T: Float, N| {
         for [value, a, b] in simd_chunks!(
             [
@@ -935,8 +937,9 @@ fn test_mul_add() {
                 1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| value[i].mul_add(a[i], b[i])));
-            let actual = Simd::new(value).mul_add(Simd::new(a), Simd::new(b));
+            let expected = Simd::from_array(std::array::from_fn(|i| value[i].mul_add(a[i], b[i])));
+            let actual =
+                Simd::from_array(value).fast_mul_add(Simd::from_array(a), Simd::from_array(b));
 
             assert!(
                 (actual - expected)
@@ -962,7 +965,7 @@ fn test_mul_add() {
 }
 
 #[test]
-fn test_mul_neg_add() {
+fn test_fast_mul_neg_add() {
     for_simd_types!(|T: Float, N| {
         for [value, a, b] in simd_chunks!(
             [
@@ -990,8 +993,9 @@ fn test_mul_neg_add() {
                 1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| b[i] - value[i] * a[i]));
-            let actual = Simd::new(value).mul_neg_add(Simd::new(a), Simd::new(b));
+            let expected = Simd::from_array(std::array::from_fn(|i| b[i] - value[i] * a[i]));
+            let actual =
+                Simd::from_array(value).fast_mul_neg_add(Simd::from_array(a), Simd::from_array(b));
 
             assert!(
                 (actual - expected)
@@ -1005,7 +1009,7 @@ fn test_mul_neg_add() {
 }
 
 #[test]
-fn test_mul_sub() {
+fn test_fast_mul_sub() {
     for_simd_types!(|T: Float, N| {
         for [value, a, b] in simd_chunks!(
             [
@@ -1033,8 +1037,9 @@ fn test_mul_sub() {
                 1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| value[i] * a[i] - b[i]));
-            let actual = Simd::new(value).mul_sub(Simd::new(a), Simd::new(b));
+            let expected = Simd::from_array(std::array::from_fn(|i| value[i] * a[i] - b[i]));
+            let actual =
+                Simd::from_array(value).fast_mul_sub(Simd::from_array(a), Simd::from_array(b));
 
             assert!(
                 (actual - expected)
@@ -1048,7 +1053,7 @@ fn test_mul_sub() {
 }
 
 #[test]
-fn test_mul_neg_sub() {
+fn test_fast_mul_neg_sub() {
     for_simd_types!(|T: Float, N| {
         for [value, a, b] in simd_chunks!(
             [
@@ -1076,8 +1081,9 @@ fn test_mul_neg_sub() {
                 1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| -value[i] * a[i] - b[i]));
-            let actual = Simd::new(value).mul_neg_sub(Simd::new(a), Simd::new(b));
+            let expected = Simd::from_array(std::array::from_fn(|i| -value[i] * a[i] - b[i]));
+            let actual =
+                Simd::from_array(value).fast_mul_neg_sub(Simd::from_array(a), Simd::from_array(b));
 
             assert!(
                 (actual - expected)
@@ -1103,8 +1109,8 @@ fn test_div_euclid() {
                 -16.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].div_euclid(right[i])));
-            let actual = Simd::new(left).div_euclid(Simd::new(right));
+            let expected = Simd::from_array(std::array::from_fn(|i| left[i].div_euclid(right[i])));
+            let actual = Simd::from_array(left).div_euclid(Simd::from_array(right));
 
             assert_eq!(actual, expected);
         }
@@ -1124,8 +1130,8 @@ fn test_rem_euclid() {
                 -16.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].rem_euclid(right[i])));
-            let actual = Simd::new(left).rem_euclid(Simd::new(right));
+            let expected = Simd::from_array(std::array::from_fn(|i| left[i].rem_euclid(right[i])));
+            let actual = Simd::from_array(left).rem_euclid(Simd::from_array(right));
 
             assert_eq!(actual, expected);
         }
@@ -1133,7 +1139,7 @@ fn test_rem_euclid() {
 }
 
 #[test]
-fn test_flip_signs() {
+fn test_flipsign() {
     for_simd_types!(|T: Float, N| {
         for [value, sign] in simd_chunks!(
             [
@@ -1145,14 +1151,14 @@ fn test_flip_signs() {
                 -6.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 if sign[i].is_sign_negative() {
                     -value[i]
                 } else {
                     value[i]
                 }
             }));
-            let actual = Simd::new(value).flip_signs(Simd::new(sign));
+            let actual = Simd::from_array(value).flipsign(Simd::from_array(sign));
 
             assert_eq!(actual, expected);
         }
@@ -1172,14 +1178,14 @@ fn test_copysign() {
                 -6.0,
             ],
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 if sign[i].is_sign_negative() {
                     -value[i].abs()
                 } else {
                     value[i].abs()
                 }
             }));
-            let actual = Simd::new(value).copysign(Simd::new(sign));
+            let actual = Simd::from_array(value).copysign(Simd::from_array(sign));
 
             assert_eq!(actual, expected);
         }
@@ -1202,8 +1208,11 @@ fn test_asin_acos() {
                 base + 6.0 * inc,
                 base + 7.0 * inc,
             ]) {
-                let expected = (Simd::new(value.map(T::asin)), Simd::new(value.map(T::acos)));
-                let actual = Simd::new(value).asin_acos();
+                let expected = (
+                    Simd::from_array(value.map(T::asin)),
+                    Simd::from_array(value.map(T::acos)),
+                );
+                let actual = Simd::from_array(value).asin_acos();
 
                 assert!(
                     (actual.0 - expected.0).abs().simd_le(6e-7).all()
@@ -1231,8 +1240,8 @@ fn test_asin() {
                 base + 6.0 * inc,
                 base + 7.0 * inc,
             ]) {
-                let expected = Simd::new(value.map(T::asin));
-                let actual = Simd::new(value).asin();
+                let expected = Simd::from_array(value.map(T::asin));
+                let actual = Simd::from_array(value).asin();
 
                 assert!(
                     (actual - expected).abs().simd_le(6e-7).all(),
@@ -1259,8 +1268,8 @@ fn test_acos() {
                 base + 6.0 * inc,
                 base + 7.0 * inc,
             ]) {
-                let expected = Simd::new(value.map(T::acos));
-                let actual = Simd::new(value).acos();
+                let expected = Simd::from_array(value.map(T::acos));
+                let actual = Simd::from_array(value).acos();
 
                 assert!(
                     (actual - expected).abs().simd_le(6e-7).all(),
@@ -1287,8 +1296,8 @@ fn test_atan() {
                 base + 6.0 * inc,
                 base + 7.0 * inc,
             ]) {
-                let expected = Simd::new(value.map(T::atan));
-                let actual = Simd::new(value).atan();
+                let expected = Simd::from_array(value.map(T::atan));
+                let actual = Simd::from_array(value).atan();
 
                 let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
                 assert!(
@@ -1323,8 +1332,9 @@ fn test_atan2() {
                         base_x + 3.0 * inc_x
                     ],
                 ) {
-                    let expected = Simd::new(std::array::from_fn(|i| value[i].atan2(other[i])));
-                    let actual = Simd::new(value).atan2(Simd::new(other));
+                    let expected =
+                        Simd::from_array(std::array::from_fn(|i| value[i].atan2(other[i])));
+                    let actual = Simd::from_array(value).atan2(Simd::from_array(other));
 
                     let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
                     assert!(
@@ -1352,8 +1362,11 @@ fn test_sin_cos() {
                 base + 6.0,
                 base + 7.0,
             ]) {
-                let expected = (Simd::new(angles.map(T::sin)), Simd::new(angles.map(T::cos)));
-                let actual = Simd::new(angles).sin_cos();
+                let expected = (
+                    Simd::from_array(angles.map(T::sin)),
+                    Simd::from_array(angles.map(T::cos)),
+                );
+                let actual = Simd::from_array(angles).sin_cos();
 
                 let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
                 assert!(
@@ -1381,8 +1394,8 @@ fn test_sin() {
                 base + 6.0,
                 base + 7.0,
             ]) {
-                let expected = Simd::new(angles.map(T::sin));
-                let actual = Simd::new(angles).sin();
+                let expected = Simd::from_array(angles.map(T::sin));
+                let actual = Simd::from_array(angles).sin();
 
                 let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
                 assert!(
@@ -1409,8 +1422,8 @@ fn test_cos() {
                 base + 6.0,
                 base + 7.0,
             ]) {
-                let expected = Simd::new(angles.map(T::cos));
-                let actual = Simd::new(angles).cos();
+                let expected = Simd::from_array(angles.map(T::cos));
+                let actual = Simd::from_array(angles).cos();
 
                 let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
                 assert!(
@@ -1437,8 +1450,8 @@ fn test_tan() {
                 base + 6.0,
                 base + 7.0,
             ]) {
-                let expected = Simd::new(angles.map(T::tan));
-                let actual = Simd::new(angles).tan();
+                let expected = Simd::from_array(angles.map(T::tan));
+                let actual = Simd::from_array(angles).tan();
 
                 assert!(
                     (actual - expected)
@@ -1473,8 +1486,8 @@ fn test_to_degrees() {
             9.5,
             -3.0,
         ]) {
-            let expected = Simd::new(value.map(T::to_degrees));
-            let actual = Simd::new(value).to_degrees();
+            let expected = Simd::from_array(value.map(T::to_degrees));
+            let actual = Simd::from_array(value).to_degrees();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-6)
@@ -1507,8 +1520,8 @@ fn test_to_radians() {
             9.5,
             -3.0,
         ]) {
-            let expected = Simd::new(value.map(T::to_radians));
-            let actual = Simd::new(value).to_radians();
+            let expected = Simd::from_array(value.map(T::to_radians));
+            let actual = Simd::from_array(value).to_radians();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-6)
@@ -1541,8 +1554,8 @@ fn test_recip() {
             9.5,
             -3.0,
         ]) {
-            let expected = Simd::new(value.map(T::recip));
-            let actual = Simd::new(value).recip();
+            let expected = Simd::from_array(value.map(T::recip));
+            let actual = Simd::from_array(value).recip();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-3)
@@ -1575,8 +1588,8 @@ fn test_recip_sqrt() {
             9.5,
             -3.0,
         ]) {
-            let expected = Simd::new(value.map(|x| x.sqrt().recip()));
-            let actual = Simd::new(value).recip_sqrt();
+            let expected = Simd::from_array(value.map(|x| x.sqrt().recip()));
+            let actual = Simd::from_array(value).recip_sqrt();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-3)
@@ -1609,8 +1622,8 @@ fn test_sqrt() {
             9.5,
             -3.0,
         ]) {
-            let expected = Simd::new(value.map(T::sqrt));
-            let actual = Simd::new(value).sqrt();
+            let expected = Simd::from_array(value.map(T::sqrt));
+            let actual = Simd::from_array(value).sqrt();
 
             assert_eq!(
                 actual ^ expected,
@@ -1637,8 +1650,8 @@ fn test_exp() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::exp));
-            let actual = Simd::new(value).exp();
+            let expected = Simd::from_array(value.map(T::exp));
+            let actual = Simd::from_array(value).exp();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
@@ -1673,8 +1686,8 @@ fn test_exp2() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::exp2));
-            let actual = Simd::new(value).exp2();
+            let expected = Simd::from_array(value.map(T::exp2));
+            let actual = Simd::from_array(value).exp2();
 
             let tol = if size_of::<T>() == 8 { 1e-12 } else { 1e-7 };
             let min_tol = if size_of::<T>() == 8 { 5e-324 } else { 1e-45 };
@@ -1710,8 +1723,8 @@ fn test_ln() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::ln));
-            let actual = Simd::new(value).ln();
+            let expected = Simd::from_array(value.map(T::ln));
+            let actual = Simd::from_array(value).ln();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
@@ -1743,8 +1756,8 @@ fn test_log2() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::log2));
-            let actual = Simd::new(value).log2();
+            let expected = Simd::from_array(value.map(T::log2));
+            let actual = Simd::from_array(value).log2();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
@@ -1776,8 +1789,8 @@ fn test_log10() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::log10));
-            let actual = Simd::new(value).log10();
+            let expected = Simd::from_array(value.map(T::log10));
+            let actual = Simd::from_array(value).log10();
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
@@ -1818,8 +1831,8 @@ fn test_powf_simd() {
                 .map(move |n| [x, [n; N]])
             }),
         ) {
-            let expected = Simd::new(std::array::from_fn(|i| x[i].powf(n[i])));
-            let actual = Simd::new(x).powf_simd(Simd::new(n));
+            let expected = Simd::from_array(std::array::from_fn(|i| x[i].powf(n[i])));
+            let actual = Simd::from_array(x).powf_simd(Simd::from_array(n));
 
             assert!(
                 ((actual - expected).abs().simd_le(expected.abs() * 1e-6)
@@ -1837,14 +1850,14 @@ fn test_is_sign_positive() {
         for value in
             simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(random_iter())
         {
-            let expected = Simd::new(value.map(|x| {
+            let expected = Simd::from_array(value.map(|x| {
                 if x.is_sign_positive() {
                     T::from_bits(!0)
                 } else {
                     0.0
                 }
             }));
-            let actual = Simd::new(value).is_sign_positive();
+            let actual = Simd::from_array(value).is_sign_positive();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -1860,14 +1873,14 @@ fn test_is_sign_negative() {
         for value in
             simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(random_iter())
         {
-            let expected = Simd::new(value.map(|x| {
+            let expected = Simd::from_array(value.map(|x| {
                 if x.is_sign_negative() {
                     T::from_bits(!0)
                 } else {
                     0.0
                 }
             }));
-            let actual = Simd::new(value).is_sign_negative();
+            let actual = Simd::from_array(value).is_sign_negative();
 
             assert!(
                 actual ^ expected == Simd::ZERO,
@@ -1881,18 +1894,18 @@ fn test_is_sign_negative() {
 fn test_from_signed() {
     // `from_{signed}` is inconsistently missing from types.
 
-    let signed = i32x4::new([1, 2, 3, 4]);
-    let expected = f32x4::new([1.0, 2.0, 3.0, 4.0]);
+    let signed = i32x4::from_array([1, 2, 3, 4]);
+    let expected = f32x4::from_array([1.0, 2.0, 3.0, 4.0]);
     let actual = f32x4::from_i32x4(signed);
     assert_eq!(actual, expected);
 
-    let signed = i32x8::new([1, 2, 3, 4, 5, 6, 7, 8]);
-    let expected = f32x8::new([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
+    let signed = i32x8::from_array([1, 2, 3, 4, 5, 6, 7, 8]);
+    let expected = f32x8::from_array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
     let actual = f32x8::from_i32x8(signed);
     assert_eq!(actual, expected);
 
-    let signed = i32x16::new([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-    let expected = f32x16::new([
+    let signed = i32x16::from_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+    let expected = f32x16::from_array([
         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
     ]);
     let actual = f32x16::from_i32x16(signed);
@@ -1918,8 +1931,8 @@ fn test_from_small_signed() {
 fn test_from_i32x4_lower2() {
     // `from_i32x4_lower2` only exists for `f64x2`.
 
-    let value = i32x4::new([1, 2, 3, 4]);
-    let expected = f64x2::new([1.0, 2.0]);
+    let value = i32x4::from_array([1, 2, 3, 4]);
+    let expected = f64x2::from_array([1.0, 2.0]);
     let actual = f64x2::from_i32x4_lower2(value);
     assert_eq!(actual, expected);
 }
@@ -1939,8 +1952,8 @@ fn test_exp_m1() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::exp_m1));
-            let actual = Simd::new(value).exp_m1();
+            let expected = Simd::from_array(value.map(T::exp_m1));
+            let actual = Simd::from_array(value).exp_m1();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 2.0);
 
             assert!(
@@ -2023,8 +2036,8 @@ fn test_ln_1p() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::ln_1p));
-            let actual = Simd::new(value).ln_1p();
+            let expected = Simd::from_array(value.map(T::ln_1p));
+            let actual = Simd::from_array(value).ln_1p();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
             assert!(
@@ -2131,8 +2144,8 @@ fn test_sinh() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::sinh));
-            let actual = Simd::new(value).sinh();
+            let expected = Simd::from_array(value.map(T::sinh));
+            let actual = Simd::from_array(value).sinh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
             assert!(
@@ -2201,8 +2214,8 @@ fn test_cosh() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::cosh));
-            let actual = Simd::new(value).cosh();
+            let expected = Simd::from_array(value.map(T::cosh));
+            let actual = Simd::from_array(value).cosh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
             assert!(
@@ -2271,8 +2284,8 @@ fn test_tanh() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::tanh));
-            let actual = Simd::new(value).tanh();
+            let expected = Simd::from_array(value.map(T::tanh));
+            let actual = Simd::from_array(value).tanh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
             assert!(
@@ -2332,8 +2345,8 @@ fn test_cbrt() {
             T::INFINITY,
             T::NEG_INFINITY,
         ]) {
-            let expected = Simd::new(value.map(T::cbrt));
-            let actual = Simd::new(value).cbrt();
+            let expected = Simd::from_array(value.map(T::cbrt));
+            let actual = Simd::from_array(value).cbrt();
             // SLEEF polynomial + 1 Newton step on 1/cbrt + 1 polish on cbrt.
             // Accumulated roundoff in the scaling (r = e - 3k) and refinement
             // steps keeps this at 2 ULP worst-case rather than 1 ULP.

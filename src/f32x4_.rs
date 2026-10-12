@@ -19,7 +19,7 @@ pick! {
 macro_rules! const_f32_as_f32x4 {
     ($i:ident, $f:expr) => {
         #[allow(non_upper_case_globals)]
-        pub const $i: f32x4 = f32x4::new([$f; 4]);
+        pub const $i: f32x4 = f32x4::from_array([$f; 4]);
     };
 }
 
@@ -48,7 +48,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vnegq_f32(self.0))}
       } else {
-        Self::new([
+        Self::from_array([
           -self.0.arr[0],
           -self.0.arr[1],
           -self.0.arr[2],
@@ -73,7 +73,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vaddq_f32(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] + rhs.0.arr[0],
           self.0.arr[1] + rhs.0.arr[1],
           self.0.arr[2] + rhs.0.arr[2],
@@ -93,7 +93,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vsubq_f32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] - rhs.0.arr[0],
           self.0.arr[1] - rhs.0.arr[1],
           self.0.arr[2] - rhs.0.arr[2],
@@ -113,7 +113,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmulq_f32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] * rhs.0.arr[0],
           self.0.arr[1] * rhs.0.arr[1],
           self.0.arr[2] * rhs.0.arr[2],
@@ -133,7 +133,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vdivq_f32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] / rhs.0.arr[0],
           self.0.arr[1] / rhs.0.arr[1],
           self.0.arr[2] / rhs.0.arr[2],
@@ -145,7 +145,7 @@ define_simd_float! {
 
   #[inline]
   fn rem(self, rhs: Self) -> Self::Output {
-    Self::new([
+    Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
       self.to_array()[2] % rhs.to_array()[2],
@@ -163,7 +163,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(self.0), vreinterpretq_u32_f32(rhs.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           f32::from_bits(self.0.arr[0].to_bits() & rhs.0.arr[0].to_bits()),
           f32::from_bits(self.0.arr[1].to_bits() & rhs.0.arr[1].to_bits()),
           f32::from_bits(self.0.arr[2].to_bits() & rhs.0.arr[2].to_bits()),
@@ -183,7 +183,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(self.0), vreinterpretq_u32_f32(rhs.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           f32::from_bits(self.0.arr[0].to_bits() | rhs.0.arr[0].to_bits()),
           f32::from_bits(self.0.arr[1].to_bits() | rhs.0.arr[1].to_bits()),
           f32::from_bits(self.0.arr[2].to_bits() | rhs.0.arr[2].to_bits()),
@@ -203,7 +203,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(veorq_u32(vreinterpretq_u32_f32(self.0), vreinterpretq_u32_f32(rhs.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           f32::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
           f32::from_bits(self.0.arr[1].to_bits() ^ rhs.0.arr[1].to_bits()),
           f32::from_bits(self.0.arr[2].to_bits() ^ rhs.0.arr[2].to_bits()),
@@ -223,7 +223,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vceqq_f32(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] == rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[1] == rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[2] == rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -243,7 +243,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(self.0, rhs.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] != rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[1] != rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[2] != rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -263,7 +263,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vcltq_f32(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[1] < rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[2] < rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -283,7 +283,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vcgtq_f32(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] > rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[1] > rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[2] > rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -303,7 +303,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vcleq_f32(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] <= rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[1] <= rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[2] <= rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -323,7 +323,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vcgeq_f32(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] >= rhs.0.arr[0] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[1] >= rhs.0.arr[1] { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[2] >= rhs.0.arr[2] { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -428,7 +428,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(unpack_low_m128(self.0, other.0))
@@ -437,7 +437,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))]{
         unsafe {Self(vzip1q_f32(self.0, other.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0],
           other.0.arr[0],
           self.0.arr[1],
@@ -448,7 +448,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(unpack_high_m128(self.0, other.0))
@@ -457,7 +457,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vzip2q_f32(self.0, other.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[2],
           other.0.arr[2],
           self.0.arr[3],
@@ -482,21 +482,21 @@ define_simd_float! {
 
         [e0, e1, e2, e3]
       } else if #[cfg(any(all(target_feature="neon",target_arch="aarch64"), target_feature="simd128"))] {
-        let a = data[0].unpack_lo(data[2]);
-        let b = data[1].unpack_lo(data[3]);
-        let c = data[0].unpack_hi(data[2]);
-        let d = data[1].unpack_hi(data[3]);
+        let a = data[0].interleave_low(data[2]);
+        let b = data[1].interleave_low(data[3]);
+        let c = data[0].interleave_high(data[2]);
+        let d = data[1].interleave_high(data[3]);
 
         [
-          a.unpack_lo(b),
-          a.unpack_hi(b),
-          c.unpack_lo(d),
-          c.unpack_hi(d),
+          a.interleave_low(b),
+          a.interleave_high(b),
+          c.interleave_low(d),
+          c.interleave_high(d),
         ]
       } else {
         #[inline(always)]
         fn transpose_column(data: &[f32x4; 4], index: usize) -> f32x4 {
-          f32x4::new([
+          f32x4::from_array([
             data[0].as_array()[index],
             data[1].as_array()[index],
             data[2].as_array()[index],
@@ -524,7 +524,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(self.0, self.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[1].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
           if self.0.arr[2].is_nan() { f32::from_bits(u32::MAX) } else { 0.0 },
@@ -535,7 +535,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn is_inf(self) -> Self {
+  pub fn is_infinite(self) -> Self {
     let shifted_inf = u32x4::from(0xFF000000);
     let u: u32x4 = cast(self);
     let shift_u = u << 1_u64;
@@ -582,7 +582,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vdivq_f32(vdupq_n_f32(1.0), self.0))}
       } else {
-        Self::new([
+        Self::from_array([
           1.0 / self.0.arr[0],
           1.0 / self.0.arr[1],
           1.0 / self.0.arr[2],
@@ -602,14 +602,14 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vdivq_f32(vdupq_n_f32(1.0), vsqrtq_f32(self.0)))}
       } else if #[cfg(feature="std")] {
-        Self::new([
+        Self::from_array([
           1.0 / self.0.arr[0].sqrt(),
           1.0 / self.0.arr[1].sqrt(),
           1.0 / self.0.arr[2].sqrt(),
           1.0 / self.0.arr[3].sqrt(),
         ])
       } else {
-        Self::new([
+        Self::from_array([
           1.0 / software_sqrt(self.0.arr[0] as f64) as f32,
           1.0 / software_sqrt(self.0.arr[1] as f64) as f32,
           1.0 / software_sqrt(self.0.arr[2] as f64) as f32,
@@ -642,7 +642,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxnmq_f32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].max(rhs.0.arr[0]),
           self.0.arr[1].max(rhs.0.arr[1]),
           self.0.arr[2].max(rhs.0.arr[2]),
@@ -662,7 +662,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxq_f32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { rhs.0.arr[0] } else { self.0.arr[0] },
           if self.0.arr[1] < rhs.0.arr[1] { rhs.0.arr[1] } else { self.0.arr[1] },
           if self.0.arr[2] < rhs.0.arr[2] { rhs.0.arr[2] } else { self.0.arr[2] },
@@ -695,7 +695,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminnmq_f32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].min(rhs.0.arr[0]),
           self.0.arr[1].min(rhs.0.arr[1]),
           self.0.arr[2].min(rhs.0.arr[2]),
@@ -715,7 +715,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminq_f32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { self.0.arr[0] } else { rhs.0.arr[0] },
           if self.0.arr[1] < rhs.0.arr[1] { self.0.arr[1] } else { rhs.0.arr[1] },
           if self.0.arr[2] < rhs.0.arr[2] { self.0.arr[2] } else { rhs.0.arr[2] },
@@ -998,7 +998,7 @@ define_simd_float! {
         let self_abs = self.abs();
 
         let adjusted_self = (self_abs + Self::HALF).to_array();
-        let result_abs = Self::new([
+        let result_abs = Self::from_array([
           adjusted_self[0] as u32 as f32,
           adjusted_self[1] as u32 as f32,
           adjusted_self[2] as u32 as f32,
@@ -1186,7 +1186,7 @@ define_simd_float! {
   /// - On ARM64 with NEON: Uses `vfmaq_f32` (single rounding, best accuracy)
   /// - Without FMA support: Uses `(self * m) + a` (two roundings)
   #[inline]
-  pub fn mul_add(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self(fused_mul_add_m128(self.0, a.0, b.0))
@@ -1207,7 +1207,7 @@ define_simd_float! {
   ///   accuracy)
   /// - Without FMA support: Uses `(self * m) - s` (two roundings)
   #[inline]
-  pub fn mul_sub(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self(fused_mul_sub_m128(self.0, a.0, b.0))
@@ -1227,7 +1227,7 @@ define_simd_float! {
   /// - On ARM64 with NEON: Uses `vfmsq_f32` (single rounding, best accuracy)
   /// - Without FMA support: Uses `a - (self * m)` (two roundings)
   #[inline]
-  pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self(fused_mul_neg_add_m128(self.0, a.0, b.0))
@@ -1248,7 +1248,7 @@ define_simd_float! {
   ///   best accuracy)
   /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
   #[inline]
-  pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
         Self(fused_mul_neg_sub_m128(self.0, a.0, b.0))
@@ -1298,22 +1298,22 @@ define_simd_float! {
     let ef = mask.select(ef + f32x4::ONE, ef);
 
     let e1 = (ef * n).round_ties_even();
-    let yr = ef.mul_sub(n, e1);
+    let yr = ef.fast_mul_sub(n, e1);
 
-    let lg = f32x4::HALF.mul_neg_add(x2, x) + lg1;
-    let x2_err = (f32x4::HALF * x).mul_sub(x, f32x4::HALF * x2);
-    let lg_err = f32x4::HALF.mul_add(x2, lg - x) - lg1;
+    let lg = f32x4::HALF.fast_mul_neg_add(x2, x) + lg1;
+    let x2_err = (f32x4::HALF * x).fast_mul_sub(x, f32x4::HALF * x2);
+    let lg_err = f32x4::HALF.fast_mul_add(x2, lg - x) - lg1;
 
     let e2 = (lg * n * f32x4::LOG2_E).round_ties_even();
-    let v = lg.mul_sub(n, e2 * ln2f_hi);
-    let v = e2.mul_neg_add(ln2f_lo, v);
-    let v = v - (lg_err + x2_err).mul_sub(n, yr * f32x4::LN_2);
+    let v = lg.fast_mul_sub(n, e2 * ln2f_hi);
+    let v = e2.fast_mul_neg_add(ln2f_lo, v);
+    let v = v - (lg_err + x2_err).fast_mul_sub(n, yr * f32x4::LN_2);
 
     let x = v;
     let e3 = (x * f32x4::LOG2_E).round_ties_even();
-    let x = e3.mul_neg_add(f32x4::LN_2, x);
+    let x = e3.fast_mul_neg_add(f32x4::LN_2, x);
     let x2 = x * x;
-    let z = x2.mul_add(
+    let z = x2.fast_mul_add(
       polynomial_5!(x, p2expf, p3expf, p4expf, p5expf, p6expf, p7expf),
       x + f32x4::ONE,
     );
@@ -1382,14 +1382,14 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vsqrtq_f32(self.0))}
       } else if #[cfg(feature="std")] {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].sqrt(),
           self.0.arr[1].sqrt(),
           self.0.arr[2].sqrt(),
           self.0.arr[3].sqrt(),
         ])
       } else {
-        Self::new([
+        Self::from_array([
           software_sqrt(self.0.arr[0] as f64) as f32,
           software_sqrt(self.0.arr[1] as f64) as f32,
           software_sqrt(self.0.arr[2] as f64) as f32,
@@ -1433,11 +1433,11 @@ define_simd_float! {
     let excess = r - max_r;
     let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
+    let x = r.fast_mul_neg_add(LN2D_HI, self);
+    let x = r.fast_mul_neg_add(LN2D_LO, x);
     let z = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
     let x2 = x * x;
-    let z = z.mul_add(x2, x);
+    let z = z.fast_mul_add(x2, x);
     let n2 = Self::vm_pow2n(r_safe);
     let z = (z + Self::ONE) * scale * n2;
     let nan_mask = self.is_nan();
@@ -1482,7 +1482,7 @@ define_simd_float! {
     let fract = (self - round) * Self::LN_2;
     let fract_partial_exp2 = polynomial_5!(fract, P2, P3, P4, P5, P6, P7);
     let fract2 = fract * fract;
-    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+    let fract_exp2 = fract_partial_exp2.fast_mul_add(fract2, fract) + Self::ONE;
 
     let n2 = Self::vm_pow2n(r_safe);
     let result = fract_exp2 * scale * n2;
@@ -1525,9 +1525,9 @@ define_simd_float! {
     let res = polynomial_8!(x, P0, P1, P2, P3, P4, P5, P6, P7, P8);
     let x2 = x * x;
     let res = x2 * x * res;
-    let res = fe.mul_add(LN2F_LO, res);
-    let res = res + x2.mul_neg_add(HALF, x);
-    let res = fe.mul_add(LN2F_HI, res);
+    let res = fe.fast_mul_add(LN2F_LO, res);
+    let res = res + x2.fast_mul_neg_add(HALF, x);
+    let res = fe.fast_mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
     let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
@@ -1556,7 +1556,7 @@ define_simd_float! {
     if zero.all() {
       return self; // preserves -0.0
     }
-    let inf = a.is_inf();
+    let inf = a.is_infinite();
     let nan = self.is_nan();
 
     let tiny = a.simd_lt(Self::from(f32::MIN_POSITIVE));
@@ -1581,7 +1581,7 @@ define_simd_float! {
 
     let x2 = x * x;
     let x4 = x2 * x2;
-    x = x - d.mul_add(x4, -x) * Self::from(1.0 / 3.0);
+    x = x - d.fast_mul_add(x4, -x) * Self::from(1.0 / 3.0);
     // cbrt(d) = d * x² with refinement
     let mut y = (d * x) * x;
     let yx = y * x;
@@ -1602,7 +1602,7 @@ define_simd_float! {
     y *= Self::vm_pow2n(k);
     y = tiny.select(y / Self::from(256.0_f32), y);
 
-    let result = y.flip_signs(self);
+    let result = y.flipsign(self);
     let result = nan.select(self, result);
     let result = zero.select(self, result);
     let result = inf.select(self, result);
@@ -1631,14 +1631,14 @@ define_simd_float! {
     let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
+    let z = z.fast_mul_add(x3 * x4, x4);
 
     let z1 = z + z;
 
     // asin
     let z3 = f32x4::FRAC_PI_2 - z1;
     let asin = big.select(z3, z);
-    let asin = asin.flip_signs(self);
+    let asin = asin.flipsign(self);
 
     asin
   }
@@ -1665,13 +1665,13 @@ define_simd_float! {
     let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
+    let z = z.fast_mul_add(x3 * x4, x4);
 
     let z1 = z + z;
 
     // acos
     let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
-    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
+    let z4 = f32x4::FRAC_PI_2 - z.flipsign(self);
     let acos = big.select(z3, z4);
 
     acos
@@ -1707,7 +1707,7 @@ define_simd_float! {
 
     // Taylor expansion
     let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
-    re = re.mul_add(zz * z, z) + s;
+    re = re.fast_mul_add(zz * z, z) + s;
 
     // get sign bit
     re = (self.is_sign_negative()).select(-re, re);
@@ -1735,7 +1735,7 @@ define_simd_float! {
     let mut y2 = swapxy.select(x1, y1);
 
     // check for special case: x and y are both +/- INF
-    let both_infinite = x.is_inf() & y.is_inf();
+    let both_infinite = x.is_infinite() & y.is_infinite();
     if both_infinite.any() {
       let minus_one = -Self::ONE;
       x2 = both_infinite.select(x2 & minus_one, x2);
@@ -1758,7 +1758,7 @@ define_simd_float! {
 
     // Taylor expansion
     let mut re = polynomial_3!(zz, P0atanf, P1atanf, P2atanf, P3atanf);
-    re = re.mul_add(zz * z, z) + s;
+    re = re.fast_mul_add(zz * z, z) + s;
 
     // move back in place
     re = swapxy.select(Self::FRAC_PI_2 - re, re);
@@ -1796,12 +1796,12 @@ define_simd_float! {
     let y = (xa * TWO_OVER_PI).round_ties_even();
     let q: i32x4 = y.round_int();
 
-    let x = y.mul_neg_add(DP3F, y.mul_neg_add(DP2F, y.mul_neg_add(DP1F, xa)));
+    let x = y.fast_mul_neg_add(DP3F, y.fast_mul_neg_add(DP2F, y.fast_mul_neg_add(DP1F, xa)));
 
     let x2 = x * x;
     let mut s = polynomial_2!(x2, P0sinf, P1sinf, P2sinf) * (x * x2) + x;
     let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
-      + f32x4::from(0.5).mul_neg_add(x2, f32x4::from(1.0));
+      + f32x4::from(0.5).fast_mul_neg_add(x2, f32x4::from(1.0));
 
     let swap = !(q & i32x4::from(1)).simd_eq(i32x4::from(0));
 
@@ -1813,7 +1813,7 @@ define_simd_float! {
     // calc sin
     let mut sin1 = cast::<_, f32x4>(swap).select(c, s);
     let sign_sin: i32x4 = (q << 30) ^ cast::<_, i32x4>(self);
-    sin1 = sin1.flip_signs(cast(sign_sin));
+    sin1 = sin1.flipsign(cast(sign_sin));
 
     // calc cos
     let mut cos1 = cast::<_, f32x4>(swap).select(s, c);
@@ -1851,19 +1851,19 @@ define_simd_float! {
     let x4 = big.select(xb, xa);
 
     let z = polynomial_4!(x3, P0asinf, P1asinf, P2asinf, P3asinf, P4asinf);
-    let z = z.mul_add(x3 * x4, x4);
+    let z = z.fast_mul_add(x3 * x4, x4);
 
     let z1 = z + z;
 
     // acos
     let z3 = self.simd_lt(f32x4::ZERO).select(f32x4::PI - z1, z1);
-    let z4 = f32x4::FRAC_PI_2 - z.flip_signs(self);
+    let z4 = f32x4::FRAC_PI_2 - z.flipsign(self);
     let acos = big.select(z3, z4);
 
     // asin
     let z3 = f32x4::FRAC_PI_2 - z1;
     let asin = big.select(z3, z);
-    let asin = asin.flip_signs(self);
+    let asin = asin.flipsign(self);
 
     (asin, acos)
   }
@@ -1901,11 +1901,11 @@ define_simd_float! {
     let excess = r - max_r;
     let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
+    let x = r.fast_mul_neg_add(LN2D_HI, self);
+    let x = r.fast_mul_neg_add(LN2D_LO, x);
     let z = polynomial_5!(x, P0, P1, P2, P3, P4, P5);
     let x2 = x * x;
-    let z = z.mul_add(x2, x);
+    let z = z.fast_mul_add(x2, x);
     let n2 = Self::vm_pow2n(r_safe);
     let exp_val = (z + Self::ONE) * scale * n2;
     let r_is_zero = r.simd_eq(Self::ZERO);
@@ -1940,7 +1940,7 @@ define_simd_float! {
     let ln_u = Self::ln(u);
     let correction = self * (ln_u / (u - Self::ONE));
     let result = eq.select(self, correction);
-    let over = u.is_inf();
+    let over = u.is_infinite();
     over.select(ln_u, result)
   }
 
@@ -1960,7 +1960,7 @@ define_simd_float! {
       (e - Self::ONE / e) * Self::HALF
     };
     let result = small.select(poly, exp_based);
-    result.flip_signs(self)
+    result.flipsign(self)
   }
 
   #[inline]
@@ -1989,16 +1989,16 @@ define_simd_float! {
     let a = self.abs();
     let large = a.simd_gt(f32x4::from(9.011));
     if large.all() {
-      return Self::ONE.flip_signs(self);
+      return Self::ONE.flipsign(self);
     }
     let small = a.simd_lt(f32x4::from(2e-4));
     let exp_based = {
       let t = (Self::from(-2.0) * a).exp_m1();
       let pos = -t / (t + Self::from(2.0));
-      pos.flip_signs(self)
+      pos.flipsign(self)
     };
     let result = small.select(self, exp_based);
-    large.select(Self::ONE.flip_signs(self), result)
+    large.select(Self::ONE.flipsign(self), result)
   }
 }
 
@@ -2092,7 +2092,7 @@ impl f32x4 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             Self(unsafe { vcvtq_f32_s32(v.0) })
           } else {
-            Self::new([
+            Self::from_array([
                 v.as_array()[0] as f32,
                 v.as_array()[1] as f32,
                 v.as_array()[2] as f32,

@@ -19,7 +19,7 @@ pick! {
 macro_rules! const_f64_as_f64x2 {
     ($i:ident, $f:expr) => {
         #[allow(non_upper_case_globals)]
-        pub const $i: f64x2 = f64x2::new([$f; 2]);
+        pub const $i: f64x2 = f64x2::from_array([$f; 2]);
     };
 }
 
@@ -48,7 +48,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vnegq_f64(self.0))}
       } else {
-        Self::new([
+        Self::from_array([
           -self.0.arr[0],
           -self.0.arr[1],
         ])
@@ -66,7 +66,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_f64(self.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           f64::from_bits(!self.0.arr[0].to_bits()),
           f64::from_bits(!self.0.arr[1].to_bits()),
         ])
@@ -84,7 +84,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vaddq_f64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] + rhs.0.arr[0],
           self.0.arr[1] + rhs.0.arr[1],
         ])
@@ -102,7 +102,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vsubq_f64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] - rhs.0.arr[0],
           self.0.arr[1] - rhs.0.arr[1],
         ])
@@ -120,7 +120,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmulq_f64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] * rhs.0.arr[0],
           self.0.arr[1] * rhs.0.arr[1],
         ])
@@ -138,7 +138,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vdivq_f64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0] / rhs.0.arr[0],
           self.0.arr[1] / rhs.0.arr[1],
         ])
@@ -148,7 +148,7 @@ define_simd_float! {
 
   #[inline]
   fn rem(self, rhs: Self) -> Self::Output {
-    Self::new([
+    Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
     ])
@@ -164,7 +164,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           f64::from_bits(self.0.arr[0].to_bits() & rhs.0.arr[0].to_bits()),
           f64::from_bits(self.0.arr[1].to_bits() & rhs.0.arr[1].to_bits()),
         ])
@@ -182,7 +182,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vorrq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           f64::from_bits(self.0.arr[0].to_bits() | rhs.0.arr[0].to_bits()),
           f64::from_bits(self.0.arr[1].to_bits() | rhs.0.arr[1].to_bits()),
         ])
@@ -200,7 +200,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))}
       } else {
-        Self::new([
+        Self::from_array([
           f64::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
           f64::from_bits(self.0.arr[1].to_bits() ^ rhs.0.arr[1].to_bits()),
         ])
@@ -218,7 +218,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] == rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ])
@@ -236,7 +236,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0))).not() }
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] != rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ])
@@ -254,7 +254,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] < rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ])
@@ -274,7 +274,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] > rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ])
@@ -292,7 +292,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] <= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ])
@@ -310,7 +310,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1] >= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
         ])
@@ -416,7 +416,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_low_m128d(self.0, other.0))
@@ -425,13 +425,13 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         Self(unsafe { vzip1q_f64(self.0, other.0) })
       } else {
-        Self::new([self.as_array()[0], other.as_array()[0]])
+        Self::from_array([self.as_array()[0], other.as_array()[0]])
       }
     }
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_high_m128d(self.0, other.0))
@@ -440,7 +440,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         Self(unsafe { vzip2q_f64(self.0, other.0) })
       } else {
-        Self::new([self.as_array()[1], other.as_array()[1]])
+        Self::from_array([self.as_array()[1], other.as_array()[1]])
       }
     }
   }
@@ -455,7 +455,7 @@ define_simd_float! {
         all(target_feature="neon",target_arch="aarch64"),
         target_feature="simd128",
       ))] {
-        [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
+        [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
       } else {
         let [x, y, z, w]: [f64; 4] = cast(data);
         cast([x, z, y, w])
@@ -473,7 +473,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, self.0))).not() }
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
           if self.0.arr[1].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
         ])
@@ -482,7 +482,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn is_inf(self) -> Self {
+  pub fn is_infinite(self) -> Self {
     let shifted_inf = u64x2::from(0xFFE0000000000000);
     let u: u64x2 = cast(self);
     let shift_u = u << 1_u64;
@@ -576,7 +576,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxnmq_f64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].max(rhs.0.arr[0]),
           self.0.arr[1].max(rhs.0.arr[1]),
         ])
@@ -594,7 +594,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxq_f64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { rhs.0.arr[0] } else { self.0.arr[0] },
           if self.0.arr[1] < rhs.0.arr[1] { rhs.0.arr[1] } else { self.0.arr[1] },
         ])
@@ -625,7 +625,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminnmq_f64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].min(rhs.0.arr[0]),
           self.0.arr[1].min(rhs.0.arr[1]),
         ])
@@ -643,7 +643,7 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminq_f64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { self.0.arr[0] } else { rhs.0.arr[0] },
           if self.0.arr[1] < rhs.0.arr[1] { self.0.arr[1] } else { rhs.0.arr[1] },
         ])
@@ -841,7 +841,7 @@ define_simd_float! {
         let self_abs = self.abs();
 
         let adjusted_self = (self_abs + Self::HALF).to_array();
-        let result_abs = Self::new([
+        let result_abs = Self::from_array([
           adjusted_self[0] as u64 as f64,
           adjusted_self[1] as u64 as f64,
         ]);
@@ -1003,7 +1003,7 @@ define_simd_float! {
   /// - On ARM64 with NEON: Uses `vfmaq_f64` (single rounding, best accuracy)
   /// - Without FMA support: Uses `(self * m) + a` (two roundings)
   #[inline]
-  pub fn mul_add(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="fma"))] {
         Self(fused_mul_add_m128d(self.0, a.0, b.0))
@@ -1024,7 +1024,7 @@ define_simd_float! {
   ///   accuracy)
   /// - Without FMA support: Uses `(self * m) - s` (two roundings)
   #[inline]
-  pub fn mul_sub(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="fma"))] {
         Self(fused_mul_sub_m128d(self.0, a.0, b.0))
@@ -1044,7 +1044,7 @@ define_simd_float! {
   /// - On ARM64 with NEON: Uses `vfmsq_f64` (single rounding, best accuracy)
   /// - Without FMA support: Uses `a - (self * m)` (two roundings)
   #[inline]
-  pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
         if #[cfg(all(target_feature="fma"))] {
           Self(fused_mul_neg_add_m128d(self.0, a.0, b.0))
@@ -1065,7 +1065,7 @@ define_simd_float! {
   ///   best accuracy)
   /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
   #[inline]
-  pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
+  pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
         if #[cfg(all(target_feature="fma"))] {
           Self(fused_mul_neg_sub_m128d(self.0, a.0, b.0))
@@ -1123,20 +1123,20 @@ define_simd_float! {
     let ef = x1.exponent();
     let ef = mask.select(ef + f64x2::ONE, ef);
     let e1 = (ef * n).round_ties_even();
-    let yr = ef.mul_sub(n, e1);
+    let yr = ef.fast_mul_sub(n, e1);
 
-    let lg = f64x2::HALF.mul_neg_add(x2, x) + lg1;
-    let x2err = (f64x2::HALF * x).mul_sub(x, f64x2::HALF * x2);
-    let lg_err = f64x2::HALF.mul_add(x2, lg - x) - lg1;
+    let lg = f64x2::HALF.fast_mul_neg_add(x2, x) + lg1;
+    let x2err = (f64x2::HALF * x).fast_mul_sub(x, f64x2::HALF * x2);
+    let lg_err = f64x2::HALF.fast_mul_add(x2, lg - x) - lg1;
 
     let e2 = (lg * n * f64x2::LOG2_E).round_ties_even();
-    let v = lg.mul_sub(n, e2 * ln2d_hi);
-    let v = e2.mul_neg_add(ln2d_lo, v);
-    let v = v - (lg_err + x2err).mul_sub(n, yr * f64x2::LN_2);
+    let v = lg.fast_mul_sub(n, e2 * ln2d_hi);
+    let v = e2.fast_mul_neg_add(ln2d_lo, v);
+    let v = v - (lg_err + x2err).fast_mul_sub(n, yr * f64x2::LN_2);
 
     let x = v;
     let e3 = (x * f64x2::LOG2_E).round_ties_even();
-    let x = e3.mul_neg_add(f64x2::LN_2, x);
+    let x = e3.fast_mul_neg_add(f64x2::LN_2, x);
     let z =
       polynomial_13!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
         + f64x2::ONE;
@@ -1205,12 +1205,12 @@ define_simd_float! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vsqrtq_f64(self.0))}
       } else if #[cfg(feature="std")] {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].sqrt(),
           self.0.arr[1].sqrt(),
         ])
       } else {
-        Self::new([
+        Self::from_array([
           software_sqrt(self.0.arr[0]),
           software_sqrt(self.0.arr[1]),
         ])
@@ -1253,8 +1253,8 @@ define_simd_float! {
     let excess = r - max_r;
     let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
+    let x = r.fast_mul_neg_add(LN2D_HI, self);
+    let x = r.fast_mul_neg_add(LN2D_LO, x);
     let z =
       polynomial_13!(x, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13);
     let n2 = Self::vm_pow2n(r_safe);
@@ -1305,7 +1305,7 @@ define_simd_float! {
     let fract_partial_exp2 =
       polynomial_8!(fract, P2, P3, P4, P5, P6, P7, P8, P9, P10);
     let fract2 = fract * fract;
-    let fract_exp2 = fract_partial_exp2.mul_add(fract2, fract) + Self::ONE;
+    let fract_exp2 = fract_partial_exp2.fast_mul_add(fract2, fract) + Self::ONE;
 
     let n2 = Self::vm_pow2n(r_safe);
     let result = fract_exp2 * scale * n2;
@@ -1358,9 +1358,9 @@ define_simd_float! {
     let px = x2 * x * px;
     let qx = polynomial_5n!(x, Q0, Q1, Q2, Q3, Q4);
     let res = px / qx;
-    let res = fe.mul_add(LN2F_LO, res);
-    let res = res + x2.mul_neg_add(f64x2::HALF, x);
-    let res = fe.mul_add(LN2F_HI, res);
+    let res = fe.fast_mul_add(LN2F_LO, res);
+    let res = res + x2.fast_mul_neg_add(f64x2::HALF, x);
+    let res = fe.fast_mul_add(LN2F_HI, res);
     let overflow = !self.is_finite();
     let underflow = x1.simd_lt(VM_SMALLEST_NORMAL);
     let mask = overflow | underflow;
@@ -1389,7 +1389,7 @@ define_simd_float! {
     if zero.all() {
       return self; // preserves -0.0
     }
-    let inf = a.is_inf();
+    let inf = a.is_infinite();
     let nan = self.is_nan();
 
     const SUBN_SCALE: f64 = 1.8014398509481984e16;
@@ -1415,7 +1415,7 @@ define_simd_float! {
     // Newton for 1/cbrt: x = x - (d * x^4 - x) / 3.
     let x2 = x * x;
     let x4 = x2 * x2;
-    x = x - d.mul_add(x4, -x) * Self::from(1.0 / 3.0);
+    x = x - d.fast_mul_add(x4, -x) * Self::from(1.0 / 3.0);
 
     // cbrt(d) = d * x^2, then polish
     let mut y = (d * x) * x;
@@ -1437,7 +1437,7 @@ define_simd_float! {
     y *= Self::vm_pow2n(k);
     y = tiny.select(y / Self::from(SUBN_CBRT), y);
 
-    let result = y.flip_signs(self);
+    let result = y.flipsign(self);
     let result = nan.select(self, result);
     let result = zero.select(self, result);
     let result = inf.select(self, result);
@@ -1492,18 +1492,18 @@ define_simd_float! {
     let mut qx = f64x2::default();
 
     if do_big {
-      rx = x3.mul_add(R3asin, x2 * R2asin)
-        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      rx = x3.fast_mul_add(R3asin, x2 * R2asin)
+        + x4.fast_mul_add(R4asin, x1.fast_mul_add(R1asin, R0asin));
       sx =
-        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+        x3.fast_mul_add(S3asin, x4) + x2.fast_mul_add(S2asin, x1.fast_mul_add(S1asin, S0asin));
     }
     if do_small {
-      px = x3.mul_add(P3asin, P0asin)
-        + x4.mul_add(P4asin, x1 * P1asin)
-        + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5)
-        + x3.mul_add(Q3asin, x1 * Q1asin)
-        + x2.mul_add(Q2asin, Q0asin);
+      px = x3.fast_mul_add(P3asin, P0asin)
+        + x4.fast_mul_add(P4asin, x1 * P1asin)
+        + x5.fast_mul_add(P5asin, x2 * P2asin);
+      qx = x4.fast_mul_add(Q4asin, x5)
+        + x3.fast_mul_add(Q3asin, x1 * Q1asin)
+        + x2.fast_mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.select(rx, px);
@@ -1515,17 +1515,17 @@ define_simd_float! {
     let mut z2 = f64x2::default();
     if do_big {
       let xb = (x1 + x1).sqrt();
-      z1 = xb.mul_add(y1, xb);
+      z1 = xb.fast_mul_add(y1, xb);
     }
 
     if do_small {
-      z2 = xa.mul_add(y1, xa);
+      z2 = xa.fast_mul_add(y1, xa);
     }
 
     // asin
     let z3 = f64x2::FRAC_PI_2 - z1;
     let asin = big.select(z3, z2);
-    let asin = asin.flip_signs(self);
+    let asin = asin.flipsign(self);
 
     asin
   }
@@ -1578,18 +1578,18 @@ define_simd_float! {
     let mut qx = f64x2::default();
 
     if do_big {
-      rx = x3.mul_add(R3asin, x2 * R2asin)
-        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      rx = x3.fast_mul_add(R3asin, x2 * R2asin)
+        + x4.fast_mul_add(R4asin, x1.fast_mul_add(R1asin, R0asin));
       sx =
-        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+        x3.fast_mul_add(S3asin, x4) + x2.fast_mul_add(S2asin, x1.fast_mul_add(S1asin, S0asin));
     }
     if do_small {
-      px = x3.mul_add(P3asin, P0asin)
-        + x4.mul_add(P4asin, x1 * P1asin)
-        + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5)
-        + x3.mul_add(Q3asin, x1 * Q1asin)
-        + x2.mul_add(Q2asin, Q0asin);
+      px = x3.fast_mul_add(P3asin, P0asin)
+        + x4.fast_mul_add(P4asin, x1 * P1asin)
+        + x5.fast_mul_add(P5asin, x2 * P2asin);
+      qx = x4.fast_mul_add(Q4asin, x5)
+        + x3.fast_mul_add(Q3asin, x1 * Q1asin)
+        + x2.fast_mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.select(rx, px);
@@ -1601,16 +1601,16 @@ define_simd_float! {
     let mut z2 = f64x2::default();
     if do_big {
       let xb = (x1 + x1).sqrt();
-      z1 = xb.mul_add(y1, xb);
+      z1 = xb.fast_mul_add(y1, xb);
     }
 
     if do_small {
-      z2 = xa.mul_add(y1, xa);
+      z2 = xa.fast_mul_add(y1, xa);
     }
 
     // acos
     let z3 = self.simd_lt(f64x2::ZERO).select(f64x2::PI - z1, z1);
-    let z4 = f64x2::FRAC_PI_2 - z2.flip_signs(self);
+    let z4 = f64x2::FRAC_PI_2 - z2.flipsign(self);
     let acos = big.select(z3, z4);
 
     acos
@@ -1663,7 +1663,7 @@ define_simd_float! {
     let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
     let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
 
-    let mut re = (px / qx).mul_add(z * zz, z);
+    let mut re = (px / qx).fast_mul_add(z * zz, z);
     re += s + fac;
 
     // get sign bit
@@ -1703,7 +1703,7 @@ define_simd_float! {
     let mut y2 = swapxy.select(x1, y1);
 
     // check for special case: x and y are both +/- INF
-    let both_infinite = x.is_inf() & y.is_inf();
+    let both_infinite = x.is_infinite() & y.is_infinite();
     if both_infinite.any() {
       let minus_one = -Self::ONE;
       x2 = both_infinite.select(x2 & minus_one, x2);
@@ -1738,7 +1738,7 @@ define_simd_float! {
     let px = polynomial_4!(zz, P0atan, P1atan, P2atan, P3atan, P4atan);
     let qx = polynomial_5n!(zz, Q0atan, Q1atan, Q2atan, Q3atan, Q4atan);
 
-    let mut re = (px / qx).mul_add(z * zz, z);
+    let mut re = (px / qx).fast_mul_add(z * zz, z);
     re += s + fac;
 
     // move back in place
@@ -1782,14 +1782,14 @@ define_simd_float! {
     let y = (xa * TWO_OVER_PI).round_ties_even();
     let q = y.round_int();
 
-    let x = y.mul_neg_add(DP3, y.mul_neg_add(DP2, y.mul_neg_add(DP1, xa)));
+    let x = y.fast_mul_neg_add(DP3, y.fast_mul_neg_add(DP2, y.fast_mul_neg_add(DP1, xa)));
 
     let x2 = x * x;
     let mut s = polynomial_5!(x2, P0sin, P1sin, P2sin, P3sin, P4sin, P5sin);
     let mut c = polynomial_5!(x2, P0cos, P1cos, P2cos, P3cos, P4cos, P5cos);
-    s = (x * x2).mul_add(s, x);
+    s = (x * x2).fast_mul_add(s, x);
     c =
-      (x2 * x2).mul_add(c, x2.mul_neg_add(f64x2::from(0.5), f64x2::from(1.0)));
+      (x2 * x2).fast_mul_add(c, x2.fast_mul_neg_add(f64x2::from(0.5), f64x2::from(1.0)));
 
     let swap = !((q & i64x2::from(1)).simd_eq(i64x2::from(0)));
 
@@ -1801,7 +1801,7 @@ define_simd_float! {
     // calc sin
     let mut sin1 = cast::<_, f64x2>(swap).select(c, s);
     let sign_sin: i64x2 = (q << 62) ^ cast::<_, i64x2>(self);
-    sin1 = sin1.flip_signs(cast(sign_sin));
+    sin1 = sin1.flipsign(cast(sign_sin));
 
     // calc cos
     let mut cos1 = cast::<_, f64x2>(swap).select(s, c);
@@ -1865,18 +1865,18 @@ define_simd_float! {
     let mut qx = f64x2::default();
 
     if do_big {
-      rx = x3.mul_add(R3asin, x2 * R2asin)
-        + x4.mul_add(R4asin, x1.mul_add(R1asin, R0asin));
+      rx = x3.fast_mul_add(R3asin, x2 * R2asin)
+        + x4.fast_mul_add(R4asin, x1.fast_mul_add(R1asin, R0asin));
       sx =
-        x3.mul_add(S3asin, x4) + x2.mul_add(S2asin, x1.mul_add(S1asin, S0asin));
+        x3.fast_mul_add(S3asin, x4) + x2.fast_mul_add(S2asin, x1.fast_mul_add(S1asin, S0asin));
     }
     if do_small {
-      px = x3.mul_add(P3asin, P0asin)
-        + x4.mul_add(P4asin, x1 * P1asin)
-        + x5.mul_add(P5asin, x2 * P2asin);
-      qx = x4.mul_add(Q4asin, x5)
-        + x3.mul_add(Q3asin, x1 * Q1asin)
-        + x2.mul_add(Q2asin, Q0asin);
+      px = x3.fast_mul_add(P3asin, P0asin)
+        + x4.fast_mul_add(P4asin, x1 * P1asin)
+        + x5.fast_mul_add(P5asin, x2 * P2asin);
+      qx = x4.fast_mul_add(Q4asin, x5)
+        + x3.fast_mul_add(Q3asin, x1 * Q1asin)
+        + x2.fast_mul_add(Q2asin, Q0asin);
     };
 
     let vx = big.select(rx, px);
@@ -1888,21 +1888,21 @@ define_simd_float! {
     let mut z2 = f64x2::default();
     if do_big {
       let xb = (x1 + x1).sqrt();
-      z1 = xb.mul_add(y1, xb);
+      z1 = xb.fast_mul_add(y1, xb);
     }
 
     if do_small {
-      z2 = xa.mul_add(y1, xa);
+      z2 = xa.fast_mul_add(y1, xa);
     }
 
     // asin
     let z3 = f64x2::FRAC_PI_2 - z1;
     let asin = big.select(z3, z2);
-    let asin = asin.flip_signs(self);
+    let asin = asin.flipsign(self);
 
     // acos
     let z3 = self.simd_lt(f64x2::ZERO).select(f64x2::PI - z1, z1);
-    let z4 = f64x2::FRAC_PI_2 - z2.flip_signs(self);
+    let z4 = f64x2::FRAC_PI_2 - z2.flipsign(self);
     let acos = big.select(z3, z4);
 
     (asin, acos)
@@ -1944,8 +1944,8 @@ define_simd_float! {
     let excess = r - max_r;
     let excess = big.select(excess, Self::ZERO);
     let scale = Self::vm_pow2n(excess);
-    let x = r.mul_neg_add(LN2D_HI, self);
-    let x = r.mul_neg_add(LN2D_LO, x);
+    let x = r.fast_mul_neg_add(LN2D_HI, self);
+    let x = r.fast_mul_neg_add(LN2D_LO, x);
     let z =
       polynomial_13!(x, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13);
     let n2 = Self::vm_pow2n(r_safe);
@@ -1985,7 +1985,7 @@ define_simd_float! {
     let ln_u = Self::ln(u);
     let correction = self * (ln_u / (u - Self::ONE));
     let result = eq.select(self, correction);
-    let over = u.is_inf();
+    let over = u.is_infinite();
     over.select(ln_u, result)
   }
 
@@ -2008,7 +2008,7 @@ define_simd_float! {
       (e - Self::ONE / e) * Self::HALF
     };
     let result = small.select(poly, exp_based);
-    result.flip_signs(self)
+    result.flipsign(self)
   }
 
   #[inline]
@@ -2041,16 +2041,16 @@ define_simd_float! {
     let a = self.abs();
     let large = a.simd_gt(f64x2::from(19.062));
     if large.all() {
-      return Self::ONE.flip_signs(self);
+      return Self::ONE.flipsign(self);
     }
     let small = a.simd_lt(f64x2::from(5e-8));
     let exp_based = {
       let t = (Self::from(-2.0) * a).exp_m1();
       let pos = -t / (t + Self::from(2.0));
-      pos.flip_signs(self)
+      pos.flipsign(self)
     };
     let result = small.select(self, exp_based);
-    large.select(Self::ONE.flip_signs(self), result)
+    large.select(Self::ONE.flipsign(self), result)
   }
 }
 
@@ -2137,7 +2137,7 @@ impl f64x2 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             Self(unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.0))) })
           } else {
-            Self::new([
+            Self::from_array([
                 v.as_array()[0] as f64,
                 v.as_array()[1] as f64,
             ])

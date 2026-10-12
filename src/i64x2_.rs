@@ -215,7 +215,7 @@ define_simd_signed! {
       } else {
         let self_array = self.to_array();
 
-        Self::new([
+        Self::from_array([
           self_array[0].unbounded_shr(rhs),
           self_array[1].unbounded_shr(rhs),
         ])
@@ -236,7 +236,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqaddq_s64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].saturating_add(rhs.0.arr[0]),
             self.0.arr[1].saturating_add(rhs.0.arr[1]),
         ])
@@ -257,7 +257,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_s64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].saturating_sub(rhs.0.arr[0]),
             self.0.arr[1].saturating_sub(rhs.0.arr[1]),
         ])
@@ -279,8 +279,8 @@ define_simd_signed! {
       self_array[1].overflowing_mul(rhs_array[1]),
     ];
     (
-      Self::new([result[0].0, result[1].0]),
-      Self::new([-(result[0].1 as i64), -(result[1].1 as i64)]),
+      Self::from_array([result[0].0, result[1].0]),
+      Self::from_array([-(result[0].1 as i64), -(result[1].1 as i64)]),
     )
   }
 
@@ -302,11 +302,11 @@ define_simd_signed! {
     ];
 
     (
-      u64x2::new([
+      u64x2::from_array([
         widening_mul[0] as u64,
         widening_mul[1] as u64,
       ]),
-      i64x2::new([
+      i64x2::from_array([
         (widening_mul[0] >> 64) as i64,
         (widening_mul[1] >> 64) as i64,
       ]),
@@ -318,7 +318,7 @@ define_simd_signed! {
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
 
-    Self::new([
+    Self::from_array([
       ((self_array[0] as i128).wrapping_mul(rhs_array[0] as i128) >> 64) as i64,
       ((self_array[1] as i128).wrapping_mul(rhs_array[1] as i128) >> 64) as i64,
     ])

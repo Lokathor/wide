@@ -204,8 +204,8 @@ define_simd_signed! {
       self_array[3].overflowing_mul(rhs_array[3]),
     ];
     (
-      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
-      Self::new([
+      Self::from_array([result[0].0, result[1].0, result[2].0, result[3].0]),
+      Self::from_array([
         -(result[0].1 as i64),
         -(result[1].1 as i64),
         -(result[2].1 as i64),
@@ -234,13 +234,13 @@ define_simd_signed! {
     ];
 
     (
-      u64x4::new([
+      u64x4::from_array([
         widening_mul[0] as u64,
         widening_mul[1] as u64,
         widening_mul[2] as u64,
         widening_mul[3] as u64,
       ]),
-      i64x4::new([
+      i64x4::from_array([
         (widening_mul[0] >> 64) as i64,
         (widening_mul[1] >> 64) as i64,
         (widening_mul[2] >> 64) as i64,
@@ -254,7 +254,7 @@ define_simd_signed! {
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
 
-    Self::new([
+    Self::from_array([
       ((self_array[0] as i128).wrapping_mul(rhs_array[0] as i128) >> 64) as i64,
       ((self_array[1] as i128).wrapping_mul(rhs_array[1] as i128) >> 64) as i64,
       ((self_array[2] as i128).wrapping_mul(rhs_array[2] as i128) >> 64) as i64,

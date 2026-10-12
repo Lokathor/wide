@@ -380,21 +380,21 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     // `_mm256_unpacklo_epi16` cannot be used because it acts within each
     // 128-bit lane, which is a different operation.
     let [self_a, _] = cast::<u16x16, [u16x8; 2]>(self);
     let [other_a, _] = cast::<u16x16, [u16x8; 2]>(other);
-    cast([self_a.unpack_lo(other_a), self_a.unpack_hi(other_a)])
+    cast([self_a.interleave_low(other_a), self_a.interleave_high(other_a)])
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     // `_mm256_unpackhi_epi16` cannot be used because it acts within each
     // 128-bit lane, which is a different operation.
     let [_, self_b] = cast::<u16x16, [u16x8; 2]>(self);
     let [_, other_b] = cast::<u16x16, [u16x8; 2]>(other);
-    cast([self_b.unpack_lo(other_b), self_b.unpack_hi(other_b)])
+    cast([self_b.interleave_low(other_b), self_b.interleave_high(other_b)])
   }
 
   #[inline]
@@ -428,7 +428,7 @@ define_simd_unsigned! {
           }
         }
 
-        Self::new(result)
+        Self::from_array(result)
       }
     }
   }
@@ -551,7 +551,7 @@ define_simd_unsigned! {
 
     #[inline(always)]
     fn transpose_column(data: &[u16x16; 16], index: usize) -> u16x16 {
-      u16x16::new([
+      u16x16::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
@@ -890,7 +890,7 @@ impl From<u8x16> for u16x16 {
             })
           } else {
 
-            u16x16::new([
+            u16x16::from_array([
               v.as_array()[0] as u16,
               v.as_array()[1] as u16,
               v.as_array()[2] as u16,

@@ -407,31 +407,31 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // `_mm512_unpacklo_epi64` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [aa, _]: [u64x4; 2] = cast(self);
         let [ba, _]: [u64x4; 2] = cast(other);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+        cast([aa.interleave_low(ba), aa.interleave_high(ba)])
       } else {
-        Self(Inner { lo: self.0.lo.unpack_lo(other.0.lo), hi: self.0.lo.unpack_hi(other.0.lo) })
+        Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
       }
     }
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // `_mm512_unpackhi_epi64` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [_, ab]: [u64x4; 2] = cast(self);
         let [_, bb]: [u64x4; 2] = cast(other);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+        cast([ab.interleave_low(bb), ab.interleave_high(bb)])
       } else {
-        Self(Inner { lo: self.0.hi.unpack_lo(other.0.hi), hi: self.0.hi.unpack_hi(other.0.hi) })
+        Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
       }
     }
   }
@@ -551,7 +551,7 @@ define_simd_unsigned! {
 
     #[inline(always)]
     fn transpose_column(data: &[u64x8; 8], index: usize) -> u64x8 {
-      u64x8::new([
+      u64x8::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
@@ -791,7 +791,7 @@ define_simd_unsigned! {
       self_array[7].overflowing_mul(rhs_array[7]),
     ];
     (
-      Self::new([
+      Self::from_array([
         result[0].0,
         result[1].0,
         result[2].0,
@@ -801,7 +801,7 @@ define_simd_unsigned! {
         result[6].0,
         result[7].0,
       ]),
-      Self::new([
+      Self::from_array([
         -(result[0].1 as i64) as u64,
         -(result[1].1 as i64) as u64,
         -(result[2].1 as i64) as u64,
@@ -838,7 +838,7 @@ define_simd_unsigned! {
     ];
 
     (
-      Self::new([
+      Self::from_array([
         widening_mul[0] as u64,
         widening_mul[1] as u64,
         widening_mul[2] as u64,
@@ -848,7 +848,7 @@ define_simd_unsigned! {
         widening_mul[6] as u64,
         widening_mul[7] as u64,
       ]),
-      Self::new([
+      Self::from_array([
         (widening_mul[0] >> 64) as u64,
         (widening_mul[1] >> 64) as u64,
         (widening_mul[2] >> 64) as u64,
@@ -944,7 +944,7 @@ impl u64x8 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -972,7 +972,7 @@ impl u64x8 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }

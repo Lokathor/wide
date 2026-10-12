@@ -47,13 +47,13 @@ macro_rules! define_simd_float {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
-    $fn_unpack_lo:item
-    $fn_unpack_hi:item
+    $fn_interleave_low:item
+    $fn_interleave_high:item
     $fn_transpose:item
 
     // Float-specific functions
     $fn_is_nan:item
-    $fn_is_inf:item
+    $fn_is_infinite:item
     $fn_is_finite:item
     $fn_is_sign_positive:item
     $fn_is_sign_negative:item
@@ -79,10 +79,10 @@ macro_rules! define_simd_float {
     $fn_trunc:item
     $fn_trunc_int:item
     $fn_fast_trunc_int:item
-    $fn_mul_add:item
-    $fn_mul_sub:item
-    $fn_mul_neg_add:item
-    $fn_mul_neg_sub:item
+    $fn_fast_mul_add:item
+    $fn_fast_mul_sub:item
+    $fn_fast_mul_neg_add:item
+    $fn_fast_mul_neg_sub:item
     $fn_powf_simd:item
     $fn_sqrt:item
     $fn_exp:item
@@ -161,9 +161,9 @@ macro_rules! define_simd_float {
 
       $fn_all
 
-      $fn_unpack_lo
+      $fn_interleave_low
 
-      $fn_unpack_hi
+      $fn_interleave_high
 
       #[inline]
       pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
@@ -668,7 +668,7 @@ macro_rules! define_simd_float {
       ///
       /// [mask]: crate#masks
       #[must_use]
-      $fn_is_inf
+      $fn_is_infinite
 
       /// Returns a [mask] that checks if each element is neither infinite nor
       /// NaN.
@@ -965,7 +965,7 @@ macro_rules! define_simd_float {
       /// based on the sign bit of `sign`.
       #[inline]
       #[must_use]
-      pub fn flip_signs(self, sign: Self) -> Self {
+      pub fn flipsign(self, sign: Self) -> Self {
         self ^ (sign & Self::from(-0.0))
       }
 
@@ -1071,41 +1071,33 @@ macro_rules! define_simd_float {
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_add
+      $fn_fast_mul_add
 
       /// Fused multiply-sub. Computes `(self * a) - b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_sub
+      $fn_fast_mul_sub
 
       /// Fused multiply-negate-add. Computes `-(self * a) + b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_neg_add
+      $fn_fast_mul_neg_add
 
       /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
-      /// add operations, resulting in two rounding errors. Note that in the
-      /// future, this function may change to always having one rounding error,
-      /// at the cost of worse performance.
+      /// add operations, resulting in two rounding errors.
       #[must_use]
-      $fn_mul_neg_sub
+      $fn_fast_mul_neg_sub
 
       /// Calculates Euclidean division, the matching function for
       /// [`rem_euclid`].
@@ -1407,6 +1399,111 @@ macro_rules! define_simd_float {
       /// execution from one invocation to the next.
       #[must_use]
       $fn_tanh
+
+      /// Returns a [mask] that checks if each element is infinity (either
+      /// positive or negative).
+      ///
+      /// This function has been deprecated and renamed to [`is_infinite`].
+      ///
+      /// [mask]: crate#masks
+      /// [`is_infinite`]: Self::is_infinite
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `is_infinite`")]
+      pub fn is_inf(self) -> Self {
+        self.is_infinite()
+      }
+
+      /// Flips the sign of `self` based on the sign of `sign`.
+      ///
+      /// If `sign` has a positive sign, the result is `self`. If `sign` has a
+      /// negative sign, the result is `-self`. Even if `self` or `sign` are
+      /// NaN, the result is the exact bit pattern of `self` with a sign flipped
+      /// based on the sign bit of `sign`.
+      ///
+      /// This function has been deprecated and renamed to [`flipsign`].
+      ///
+      /// [`flipsign`]: Self::flipsign
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `flipsign`")]
+      pub fn flip_signs(self, sign: Self) -> Self {
+        self.flipsign(sign)
+      }
+
+      /// Fused multiply-add. Computes `(self * a) + b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_add`]. The
+      /// name `mul_add` was problematic because the `std` function `mul_add`
+      /// has different behavior than this function.
+      ///
+      /// [`fast_mul_add`]: Self::fast_mul_add
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_add`")]
+      pub fn mul_add(self, a: Self, b: Self) -> Self {
+        self.fast_mul_add(a, b)
+      }
+
+      /// Fused multiply-sub. Computes `(self * a) - b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_sub`]. The
+      /// name `mul_sub` was problematic because the `std` function `mul_add`
+      /// has different behavior than this library's `mul_add` function.
+      ///
+      /// [`fast_mul_sub`]: Self::fast_mul_sub
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_sub`")]
+      pub fn mul_sub(self, a: Self, b: Self) -> Self {
+        self.fast_mul_sub(a, b)
+      }
+
+      /// Fused multiply-negate-add. Computes `-(self * a) + b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_neg_add`].
+      /// The name `mul_neg_add` was problematic because the `std` function
+      /// `mul_add` has different behavior than this library's `mul_add`
+      /// function.
+      ///
+      /// [`fast_mul_neg_add`]: Self::fast_mul_neg_add
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_neg_add`")]
+      pub fn mul_neg_add(self, a: Self, b: Self) -> Self {
+        self.fast_mul_neg_add(a, b)
+      }
+
+      /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
+      ///
+      /// If there is hardware FMA support, this computes the result with only
+      /// one rounding error. If not, this falls back to separate multiply and
+      /// add operations, resulting in two rounding errors.
+      ///
+      /// This function has been deprecated and renamed to [`fast_mul_neg_sub`].
+      /// The name `mul_neg_sub` was problematic because the `std` function
+      /// `mul_add` has different behavior than this library's `mul_add`
+      /// function.
+      ///
+      /// [`fast_mul_neg_sub`]: Self::fast_mul_neg_sub
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `fast_mul_neg_sub`")]
+      pub fn mul_neg_sub(self, a: Self, b: Self) -> Self {
+        self.fast_mul_neg_sub(a, b)
+      }
 
       /// Raises each element of the number `self` to the corresponding element
       /// of the floating point power `n`.

@@ -38,13 +38,13 @@ macro_rules! pick {
   };
 }
 
-// TODO: make these generic over `mul_add`? Worth it?
+// TODO: make these generic over `fast_mul_add`? Worth it?
 
 macro_rules! polynomial_2 {
     ($x:expr, $c0:expr, $c1:expr, $c2:expr $(,)?) => {{
         let x = $x;
         let x2 = x * x;
-        x2.mul_add($c2, x.mul_add($c1, $c0))
+        x2.fast_mul_add($c2, x.fast_mul_add($c1, $c0))
     }};
 }
 
@@ -52,7 +52,8 @@ macro_rules! polynomial_3 {
     ($x:expr, $c0:expr, $c1:expr, $c2:expr, $c3:expr $(,)?) => {{
         let x = $x;
         let x2 = x * x;
-        $c3.mul_add(x, $c2).mul_add(x2, $c1.mul_add(x, $c0))
+        $c3.fast_mul_add(x, $c2)
+            .fast_mul_add(x2, $c1.fast_mul_add(x, $c0))
     }};
 }
 
@@ -61,7 +62,9 @@ macro_rules! polynomial_4 {
         let x = $x;
         let x2 = x * x;
         let x4 = x2 * x2;
-        $c3.mul_add(x, $c2).mul_add(x2, $c1.mul_add(x, $c0)) + $c4 * x4
+        $c3.fast_mul_add(x, $c2)
+            .fast_mul_add(x2, $c1.fast_mul_add(x, $c0))
+            + $c4 * x4
     }};
 }
 
@@ -70,8 +73,11 @@ macro_rules! polynomial_5 {
         let x = $x;
         let x2 = x * x;
         let x4 = x2 * x2;
-        $c3.mul_add(x, $c2)
-            .mul_add(x2, $c5.mul_add(x, $c4).mul_add(x4, $c1.mul_add(x, $c0)))
+        $c3.fast_mul_add(x, $c2).fast_mul_add(
+            x2,
+            $c5.fast_mul_add(x, $c4)
+                .fast_mul_add(x4, $c1.fast_mul_add(x, $c0)),
+        )
     }};
 }
 
@@ -80,9 +86,9 @@ macro_rules! polynomial_5n {
         let x = $x;
         let x2 = x * x;
         let x4 = x2 * x2;
-        x2.mul_add(
-            x.mul_add($c3, $c2),
-            (x4.mul_add($c4 + x, x.mul_add($c1, $c0))),
+        x2.fast_mul_add(
+            x.fast_mul_add($c3, $c2),
+            (x4.fast_mul_add($c4 + x, x.fast_mul_add($c1, $c0))),
         )
     }};
 }
@@ -92,9 +98,9 @@ macro_rules! polynomial_6 {
         let x = $x;
         let x2 = x * x;
         let x4 = x2 * x2;
-        x4.mul_add(
-            x2.mul_add($c6, x.mul_add($c5, $c4)),
-            x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+        x4.fast_mul_add(
+            x2.fast_mul_add($c6, x.fast_mul_add($c5, $c4)),
+            x2.fast_mul_add(x.fast_mul_add($c3, $c2), x.fast_mul_add($c1, $c0)),
         )
     }};
 }
@@ -104,9 +110,9 @@ macro_rules! polynomial_6n {
         let x = $x;
         let x2 = x * x;
         let x4 = x2 * x2;
-        x4.mul_add(
-            x.mul_add($c5, x2 + $c4),
-            x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+        x4.fast_mul_add(
+            x.fast_mul_add($c5, x2 + $c4),
+            x2.fast_mul_add(x.fast_mul_add($c3, $c2), x.fast_mul_add($c1, $c0)),
         )
     }};
 }
@@ -116,9 +122,9 @@ macro_rules! polynomial_7 {
         let x = $x;
         let x2 = x * x;
         let x4 = x2 * x2;
-        x4.mul_add(
-            x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
-            x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0)),
+        x4.fast_mul_add(
+            x2.fast_mul_add(x.fast_mul_add($c7, $c6), x.fast_mul_add($c5, $c4)),
+            x2.fast_mul_add(x.fast_mul_add($c3, $c2), x.fast_mul_add($c1, $c0)),
         )
     }};
 }
@@ -129,9 +135,12 @@ macro_rules! polynomial_8 {
         let x2 = x * x;
         let x4 = x2 * x2;
         let x8 = x4 * x4;
-        x4.mul_add(
-            x2.mul_add($c7.mul_add(x, $c6), x.mul_add($c5, $c4)),
-            x8.mul_add($c8, x2.mul_add(x.mul_add($c3, $c2), x.mul_add($c1, $c0))),
+        x4.fast_mul_add(
+            x2.fast_mul_add($c7.fast_mul_add(x, $c6), x.fast_mul_add($c5, $c4)),
+            x8.fast_mul_add(
+                $c8,
+                x2.fast_mul_add(x.fast_mul_add($c3, $c2), x.fast_mul_add($c1, $c0)),
+            ),
         )
     }};
 }
@@ -143,14 +152,14 @@ macro_rules! polynomial_13 {
         let x2 = x * x;
         let x4 = x2 * x2;
         let x8 = x4 * x4;
-        x8.mul_add(
-            x4.mul_add(
-                x.mul_add($c13, $c12),
-                x2.mul_add(x.mul_add($c11, $c10), x.mul_add($c9, $c8)),
+        x8.fast_mul_add(
+            x4.fast_mul_add(
+                x.fast_mul_add($c13, $c12),
+                x2.fast_mul_add(x.fast_mul_add($c11, $c10), x.fast_mul_add($c9, $c8)),
             ),
-            x4.mul_add(
-                x2.mul_add(x.mul_add($c7, $c6), x.mul_add($c5, $c4)),
-                x2.mul_add(x.mul_add($c3, $c2), x),
+            x4.fast_mul_add(
+                x2.fast_mul_add(x.fast_mul_add($c7, $c6), x.fast_mul_add($c5, $c4)),
+                x2.fast_mul_add(x.fast_mul_add($c3, $c2), x),
             ),
         )
     }};
