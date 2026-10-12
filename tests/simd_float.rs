@@ -555,7 +555,7 @@ fn test_is_finite() {
 }
 
 #[test]
-fn test_is_inf() {
+fn test_is_infinite() {
     for_simd_types!(|T: Float, N| {
         for value in simd_chunks!([
             -1.0,
@@ -578,7 +578,7 @@ fn test_is_inf() {
                     0.0
                 }
             }));
-            let actual = Simd::new(value).is_inf();
+            let actual = Simd::new(value).is_infinite();
 
             assert!(
                 actual ^ expected == Simd::ZERO,

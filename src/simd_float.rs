@@ -53,7 +53,7 @@ macro_rules! define_simd_float {
 
     // Float-specific functions
     $fn_is_nan:item
-    $fn_is_inf:item
+    $fn_is_infinite:item
     $fn_is_finite:item
     $fn_is_sign_positive:item
     $fn_is_sign_negative:item
@@ -668,7 +668,7 @@ macro_rules! define_simd_float {
       ///
       /// [mask]: crate#masks
       #[must_use]
-      $fn_is_inf
+      $fn_is_infinite
 
       /// Returns a [mask] that checks if each element is neither infinite nor
       /// NaN.
@@ -1407,6 +1407,21 @@ macro_rules! define_simd_float {
       /// execution from one invocation to the next.
       #[must_use]
       $fn_tanh
+
+      /// Returns a [mask] that checks if each element is infinity (either
+      /// positive or negative).
+      ///
+      /// [mask]: crate#masks
+      ///
+      /// This function has been deprecated and renamed to [`is_infinite`].
+      ///
+      /// [`is_infinite`]: Self::is_infinite
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `is_infinite`")]
+      pub fn is_inf(self) -> Self {
+        self.is_infinite()
+      }
 
       /// Raises each element of the number `self` to the corresponding element
       /// of the floating point power `n`.

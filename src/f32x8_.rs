@@ -464,7 +464,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn is_inf(self) -> Self {
+  pub fn is_infinite(self) -> Self {
     let shifted_inf = u32x8::from(0xFF000000);
     let u: u32x8 = cast(self);
     let shift_u = u << 1_u64;
@@ -1186,7 +1186,7 @@ define_simd_float! {
     if zero.all() {
       return self; // preserves -0.0
     }
-    let inf = a.is_inf();
+    let inf = a.is_infinite();
     let nan = self.is_nan();
 
     let tiny = a.simd_lt(Self::from(f32::MIN_POSITIVE));
@@ -1365,7 +1365,7 @@ define_simd_float! {
     let mut y2 = swapxy.select(x1, y1);
 
     // check for special case: x and y are both +/- INF
-    let both_infinite = x.is_inf() & y.is_inf();
+    let both_infinite = x.is_infinite() & y.is_infinite();
     if both_infinite.any() {
       let minus_one = -Self::ONE;
       x2 = both_infinite.select(x2 & minus_one, x2);
@@ -1570,7 +1570,7 @@ define_simd_float! {
     let ln_u = Self::ln(u);
     let correction = self * (ln_u / (u - Self::ONE));
     let result = eq.select(self, correction);
-    let over = u.is_inf();
+    let over = u.is_infinite();
     over.select(ln_u, result)
   }
 
