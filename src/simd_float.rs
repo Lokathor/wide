@@ -1403,10 +1403,9 @@ macro_rules! define_simd_float {
       /// Returns a [mask] that checks if each element is infinity (either
       /// positive or negative).
       ///
-      /// [mask]: crate#masks
-      ///
       /// This function has been deprecated and renamed to [`is_infinite`].
       ///
+      /// [mask]: crate#masks
       /// [`is_infinite`]: Self::is_infinite
       #[inline]
       #[must_use]
