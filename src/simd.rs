@@ -411,6 +411,8 @@ macro_rules! define_simd {
     impl Default for $Simd {
       #[inline]
       fn default() -> Self {
+        // Currently, all supported `T` types have a default value where all
+        // bits equal zero.
         Self::zeroed()
       }
     }
