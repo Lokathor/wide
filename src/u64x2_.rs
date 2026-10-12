@@ -1,8 +1,3 @@
-#[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
-use core::arch::aarch64::*;
-#[cfg(target_feature = "simd128")]
-use core::arch::wasm32::*;
-
 use crate::imports::*;
 
 pick! {

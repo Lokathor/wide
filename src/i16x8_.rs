@@ -1,8 +1,3 @@
-#[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
-use core::arch::aarch64::*;
-#[cfg(target_feature = "simd128")]
-use core::arch::wasm32::*;
-
 use crate::imports::*;
 
 pick! {
@@ -677,8 +672,6 @@ impl i16x8 {
           } else if #[cfg(target_feature="sse2")] {
             i16x8(pack_i32_to_i16_m128i( v.0.lo.0, v.0.hi.0 ))
           } else if #[cfg(target_feature="simd128")] {
-            use core::arch::wasm32::*;
-
             i16x8(i16x8_narrow_i32x4(v.0.lo.0, v.0.hi.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             use core::arch::aarch64::*;
