@@ -239,7 +239,7 @@ define_simd_signed! {
     pub fn widening_mul(self, rhs: Self) -> i64x8 {
       pick! {
         if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
-          const SHUFFLE_INDICES: m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).0;
+          let shuffle_indices = const { i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).0 };
 
           let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
           let odd_wide_mul = mul_i64_low_bits_m256i(
@@ -247,7 +247,7 @@ define_simd_signed! {
             shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
           );
           let even_then_odd = cast::<[m256i; 2], m512i>([even_wide_mul, odd_wide_mul]);
-          i64x8(permute_i64_m512i(SHUFFLE_INDICES, even_then_odd))
+          i64x8(permute_i64_m512i(shuffle_indices, even_then_odd))
         } else if #[cfg(target_feature="avx2")] {
           let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
           let odd_wide_mul = mul_i64_low_bits_m256i(
