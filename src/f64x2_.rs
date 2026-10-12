@@ -416,7 +416,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_low_m128d(self.0, other.0))
@@ -431,7 +431,7 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_high_m128d(self.0, other.0))
@@ -455,7 +455,7 @@ define_simd_float! {
         all(target_feature="neon",target_arch="aarch64"),
         target_feature="simd128",
       ))] {
-        [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
+        [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
       } else {
         let [x, y, z, w]: [f64; 4] = cast(data);
         cast([x, z, y, w])

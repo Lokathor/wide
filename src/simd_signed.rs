@@ -133,13 +133,13 @@ macro_rules! define_simd_signed {
       }
 
       #[inline]
-      pub fn unpack_lo(self, other: Self) -> Self {
-        self.cast_unsigned().unpack_lo(other.cast_unsigned()).cast_signed()
+      pub fn interleave_low(self, other: Self) -> Self {
+        self.cast_unsigned().interleave_low(other.cast_unsigned()).cast_signed()
       }
 
       #[inline]
-      pub fn unpack_hi(self, other: Self) -> Self {
-        self.cast_unsigned().unpack_hi(other.cast_unsigned()).cast_signed()
+      pub fn interleave_high(self, other: Self) -> Self {
+        self.cast_unsigned().interleave_high(other.cast_unsigned()).cast_signed()
       }
 
       #[inline]

@@ -508,7 +508,7 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_low_i32_m128i(self.0, other.0))
@@ -525,7 +525,7 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_high_i32_m128i(self.0, other.0))

@@ -446,7 +446,7 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_low_i64_m128i(self.0, other.0))
@@ -461,7 +461,7 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_high_i64_m128i(self.0, other.0))
@@ -606,10 +606,10 @@ define_simd_unsigned! {
         target_feature="simd128",
       ))] {
         // TODO: Remove the casts once unpack functions exist for `Self`.
-        // [data[0].unpack_lo(data[1]), data[0].unpack_hi(data[1])]
+        // [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
         [
-          data[0].cast_signed().unpack_lo(data[1].cast_signed()).cast_unsigned(),
-          data[0].cast_signed().unpack_hi(data[1].cast_signed()).cast_unsigned(),
+          data[0].cast_signed().interleave_low(data[1].cast_signed()).cast_unsigned(),
+          data[0].cast_signed().interleave_high(data[1].cast_signed()).cast_unsigned(),
         ]
       } else {
         let [x, y, z, w]: [u64; 4] = cast(data);

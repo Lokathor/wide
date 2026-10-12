@@ -763,7 +763,7 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
         if #[cfg(target_feature = "sse2")] {
             u8x16(unpack_low_i8_m128i(self.0, other.0))
@@ -791,7 +791,7 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
         if #[cfg(target_feature = "sse2")] {
             u8x16(unpack_high_i8_m128i(self.0, other.0))
@@ -1726,15 +1726,14 @@ impl u8x16 {
     ///
     /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
     ///
-    /// This function has been deprecated and renamed to [`unpack_lo`] in order to
-    /// be consistent with other types.
+    /// This function has been deprecated and renamed to [`interleave_low`].
     ///
-    /// [`unpack_lo`]: Self::unpack_lo
+    /// [`interleave_low`]: Self::interleave_low
     #[inline]
     #[must_use]
-    #[deprecated(since = "1.8.0", note = "renamed to `unpack_lo`")]
+    #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
     pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
-        lhs.unpack_lo(rhs)
+        lhs.interleave_low(rhs)
     }
 
     /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
@@ -1743,15 +1742,14 @@ impl u8x16 {
     /// Equivalent to
     /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
     ///
-    /// This function has been deprecated and renamed to [`unpack_hi`] in order to
-    /// be consistent with other types.
+    /// This function has been deprecated and renamed to [`interleave_high`].
     ///
-    /// [`unpack_hi`]: Self::unpack_hi
+    /// [`interleave_high`]: Self::interleave_high
     #[inline]
     #[must_use]
-    #[deprecated(since = "1.8.0", note = "renamed to `unpack_hi`")]
+    #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
     pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
-        lhs.unpack_hi(rhs)
+        lhs.interleave_high(rhs)
     }
 
     /// Returns a new vector where each element is based on the index values in

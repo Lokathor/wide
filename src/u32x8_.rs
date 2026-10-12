@@ -358,31 +358,31 @@ define_simd_unsigned! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
+  pub fn interleave_low(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // `unpack_low_i32_m256i` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [aa, _]: [u32x4; 2] = cast(self);
         let [ba, _]: [u32x4; 2] = cast(other);
-        cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
+        cast([aa.interleave_low(ba), aa.interleave_high(ba)])
       } else {
-        Self(Inner { lo: self.0.lo.unpack_lo(other.0.lo), hi: self.0.lo.unpack_hi(other.0.lo) })
+        Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
       }
     }
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
+  pub fn interleave_high(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // `unpack_high_i32_m256i` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [_, ab]: [u32x4; 2] = cast(self);
         let [_, bb]: [u32x4; 2] = cast(other);
-        cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
+        cast([ab.interleave_low(bb), ab.interleave_high(bb)])
       } else {
-        Self(Inner { lo: self.0.hi.unpack_lo(other.0.hi), hi: self.0.hi.unpack_hi(other.0.hi) })
+        Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
       }
     }
   }

@@ -366,13 +366,13 @@ define_simd_float! {
   }
 
   #[inline]
-  pub fn unpack_lo(self, other: Self) -> Self {
-    Self::from_bits(self.to_bits().unpack_lo(other.to_bits()))
+  pub fn interleave_low(self, other: Self) -> Self {
+    Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
   }
 
   #[inline]
-  pub fn unpack_hi(self, other: Self) -> Self {
-    Self::from_bits(self.to_bits().unpack_hi(other.to_bits()))
+  pub fn interleave_high(self, other: Self) -> Self {
+    Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
   }
 
   ///

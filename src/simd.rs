@@ -375,8 +375,8 @@ macro_rules! define_simd {
     $fn_to_bitmask:item
     $fn_any:item
     $fn_all:item
-    $fn_unpack_lo:item
-    $fn_unpack_hi:item
+    $fn_interleave_low:item
+    $fn_interleave_high:item
     $fn_shuffle:item
     $fn_shuffle_zeroing:item
     $fn_shuffle_wrapping:item
@@ -1013,7 +1013,7 @@ macro_rules! define_simd {
       ///
       /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
       #[must_use]
-      $fn_unpack_lo
+      $fn_interleave_low
 
       /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
       /// halfs.
@@ -1021,7 +1021,7 @@ macro_rules! define_simd {
       /// Equivalent to
       /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
       #[must_use]
-      $fn_unpack_hi
+      $fn_interleave_high
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.
@@ -1097,6 +1097,37 @@ macro_rules! define_simd {
       #[must_use]
       pub fn blend(self, if_true: Self, if_false: Self) -> Self {
         self.select(if_true, if_false)
+      }
+
+      /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+      /// halfs.
+      ///
+      /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+      ///
+      /// This function has been deprecated and renamed to [`interleave_low`].
+      ///
+      /// [`interleave_low`]: Self::interleave_low
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
+      pub fn unpack_lo(self, other: Self) -> Self {
+        self.interleave_low(other)
+      }
+
+      /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+      /// halfs.
+      ///
+      /// Equivalent to
+      /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+      ///
+      /// This function has been deprecated and renamed to [`interleave_high`].
+      ///
+      /// [`interleave_high`]: Self::interleave_high
+      #[inline]
+      #[must_use]
+      #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
+      pub fn unpack_hi(self, other: Self) -> Self {
+        self.interleave_high(other)
       }
     }
 

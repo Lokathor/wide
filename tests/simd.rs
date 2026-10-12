@@ -2764,12 +2764,12 @@ fn test_transpose() {
 }
 
 #[test]
-fn test_unpack_lo() {
+fn test_interleave_low() {
     for_simd_types!(|T, N| {
         let a = std::array::from_fn(|i| (i + 1) as T);
         let b = std::array::from_fn(|i| (i + 100) as T);
 
-        let actual = Simd::new(a).unpack_lo(Simd::new(b));
+        let actual = Simd::new(a).interleave_low(Simd::new(b));
         let expected = Simd::new(std::array::from_fn(|i| {
             a.into_iter()
                 .zip(b)
@@ -2783,12 +2783,12 @@ fn test_unpack_lo() {
 }
 
 #[test]
-fn test_unpack_hi() {
+fn test_interleave_high() {
     for_simd_types!(|T, N| {
         let a = std::array::from_fn(|i| (i + 1) as T);
         let b = std::array::from_fn(|i| (i + 100) as T);
 
-        let actual = Simd::new(a).unpack_hi(Simd::new(b));
+        let actual = Simd::new(a).interleave_high(Simd::new(b));
         let expected = Simd::new(std::array::from_fn(|i| {
             a.into_iter()
                 .zip(b)
