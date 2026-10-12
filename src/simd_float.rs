@@ -1437,7 +1437,9 @@ macro_rules! define_simd_float {
       /// one rounding error. If not, this falls back to separate multiply and
       /// add operations, resulting in two rounding errors.
       ///
-      /// This function has been deprecated and renamed to [`fast_mul_add`].
+      /// This function has been deprecated and renamed to [`fast_mul_add`]. The
+      /// name `mul_add` was problematic because the `std` function `mul_add`
+      /// has different behavior than this function.
       ///
       /// [`fast_mul_add`]: Self::fast_mul_add
       #[inline]
@@ -1453,7 +1455,9 @@ macro_rules! define_simd_float {
       /// one rounding error. If not, this falls back to separate multiply and
       /// add operations, resulting in two rounding errors.
       ///
-      /// This function has been deprecated and renamed to [`fast_mul_sub`].
+      /// This function has been deprecated and renamed to [`fast_mul_sub`]. The
+      /// name `mul_sub` was problematic because the `std` function `mul_add`
+      /// has different behavior than this library's `mul_add` function.
       ///
       /// [`fast_mul_sub`]: Self::fast_mul_sub
       #[inline]
@@ -1470,6 +1474,9 @@ macro_rules! define_simd_float {
       /// add operations, resulting in two rounding errors.
       ///
       /// This function has been deprecated and renamed to [`fast_mul_neg_add`].
+      /// The name `mul_neg_add` was problematic because the `std` function
+      /// `mul_add` has different behavior than this library's `mul_add`
+      /// function.
       ///
       /// [`fast_mul_neg_add`]: Self::fast_mul_neg_add
       #[inline]
@@ -1486,6 +1493,9 @@ macro_rules! define_simd_float {
       /// add operations, resulting in two rounding errors.
       ///
       /// This function has been deprecated and renamed to [`fast_mul_neg_sub`].
+      /// The name `mul_neg_sub` was problematic because the `std` function
+      /// `mul_add` has different behavior than this library's `mul_add`
+      /// function.
       ///
       /// [`fast_mul_neg_sub`]: Self::fast_mul_neg_sub
       #[inline]
