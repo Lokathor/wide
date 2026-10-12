@@ -364,7 +364,7 @@ define_simd_float! {
         let [ba, _]: [f64x2; 2] = cast(other);
         cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
       } else {
-        Self(Inner { a: self.0.lo.unpack_lo(other.0.lo), b: self.0.lo.unpack_hi(other.0.lo) })
+        Self(Inner { lo: self.0.lo.unpack_lo(other.0.lo), hi: self.0.lo.unpack_hi(other.0.lo) })
       }
     }
   }
@@ -379,7 +379,7 @@ define_simd_float! {
         let [_, bb]: [f64x2; 2] = cast(other);
         cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
       } else {
-        Self(Inner { a: self.0.hi.unpack_lo(other.0.hi), b: self.0.hi.unpack_hi(other.0.hi) })
+        Self(Inner { lo: self.0.hi.unpack_lo(other.0.hi), hi: self.0.hi.unpack_hi(other.0.hi) })
       }
     }
   }

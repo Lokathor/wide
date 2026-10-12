@@ -342,7 +342,7 @@ define_simd_signed! {
             }
         } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
           unsafe {
-            i64x4 { a: i64x2(vmull_s32(vget_low_s32(self.0), vget_low_s32(rhs.0))),
+            i64x4 { lo: i64x2(vmull_s32(vget_low_s32(self.0), vget_low_s32(rhs.0))),
                     hi: i64x2(vmull_s32(vget_high_s32(self.0), vget_high_s32(rhs.0))) }
           }
         } else {

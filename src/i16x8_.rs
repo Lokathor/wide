@@ -434,7 +434,7 @@ define_simd_signed! {
           let low = unsafe { vmull_s16(lhs_low, rhs_low) };
           let high = unsafe { vmull_s16(lhs_high, rhs_high) };
 
-          i32x8 { a: i32x4(low), b: i32x4(high) }
+          i32x8 { lo: i32x4(low), b: i32x4(high) }
         } else {
           let a = self.as_array();
           let b = rhs.as_array();

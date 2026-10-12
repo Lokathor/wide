@@ -84,7 +84,7 @@ define_simd_unsigned! {
           arr1[3].wrapping_mul(arr2[3]),
         ])
       } else {
-        Self(Inner { a: self.0.lo.mul(rhs.0.lo), b: self.0.hi.mul(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.mul(rhs.0.lo), hi: self.0.hi.mul(rhs.0.hi) })
       }
     }
   }
@@ -398,7 +398,7 @@ define_simd_unsigned! {
         let [ba, _]: [u64x2; 2] = cast(other);
         cast([aa.unpack_lo(ba), aa.unpack_hi(ba)])
       } else {
-        Self(Inner { a: self.0.lo.unpack_lo(other.0.lo), b: self.0.lo.unpack_hi(other.0.lo) })
+        Self(Inner { lo: self.0.lo.unpack_lo(other.0.lo), hi: self.0.lo.unpack_hi(other.0.lo) })
       }
     }
   }
@@ -413,7 +413,7 @@ define_simd_unsigned! {
         let [_, bb]: [u64x2; 2] = cast(other);
         cast([ab.unpack_lo(bb), ab.unpack_hi(bb)])
       } else {
-        Self(Inner { a: self.0.hi.unpack_lo(other.0.hi), b: self.0.hi.unpack_hi(other.0.hi) })
+        Self(Inner { lo: self.0.hi.unpack_lo(other.0.hi), hi: self.0.hi.unpack_hi(other.0.hi) })
       }
     }
   }

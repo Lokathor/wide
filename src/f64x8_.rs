@@ -98,7 +98,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         Self(mul_m512d(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.mul(rhs.0.lo), b: self.0.hi.mul(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.mul(rhs.0.lo), hi: self.0.hi.mul(rhs.0.hi) })
       }
     }
   }
@@ -109,7 +109,7 @@ define_simd_float! {
       if #[cfg(target_feature="avx512f")] {
         Self(div_m512d(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.div(rhs.0.lo), b: self.0.hi.div(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.div(rhs.0.lo), hi: self.0.hi.div(rhs.0.hi) })
       }
     }
   }

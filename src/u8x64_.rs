@@ -163,7 +163,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u8_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.simd_lt(rhs.0.lo), b: self.0.hi.simd_lt(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_lt(rhs.0.lo), hi: self.0.hi.simd_lt(rhs.0.hi) })
       }
     }
   }
@@ -174,7 +174,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u8_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.simd_gt(rhs.0.lo), b: self.0.hi.simd_gt(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_gt(rhs.0.lo), hi: self.0.hi.simd_gt(rhs.0.hi) })
       }
     }
   }
@@ -185,7 +185,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u8_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.simd_le(rhs.0.lo), b: self.0.hi.simd_le(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_le(rhs.0.lo), hi: self.0.hi.simd_le(rhs.0.hi) })
       }
     }
   }
@@ -196,7 +196,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u8_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.simd_ge(rhs.0.lo), b: self.0.hi.simd_ge(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_ge(rhs.0.lo), hi: self.0.hi.simd_ge(rhs.0.hi) })
       }
     }
   }

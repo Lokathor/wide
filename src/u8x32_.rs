@@ -164,7 +164,7 @@ define_simd_unsigned! {
         let rhs_i8 = rhs.bitxor(offset).0;
         Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8))
       } else {
-        Self(Inner { a: self.0.lo.simd_lt(rhs.0.lo), b: self.0.hi.simd_lt(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_lt(rhs.0.lo), hi: self.0.hi.simd_lt(rhs.0.hi) })
       }
     }
   }
@@ -179,7 +179,7 @@ define_simd_unsigned! {
         let rhs_i8 = rhs.bitxor(offset).0;
         Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8))
       } else {
-        Self(Inner { a: self.0.lo.simd_gt(rhs.0.lo), b: self.0.hi.simd_gt(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_gt(rhs.0.lo), hi: self.0.hi.simd_gt(rhs.0.hi) })
       }
     }
   }
@@ -195,7 +195,7 @@ define_simd_unsigned! {
         let gt_mask = Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8));
         Self(gt_mask.bitxor(Self::splat(0xFF)).0)
       } else {
-        Self(Inner { a: self.0.lo.simd_le(rhs.0.lo), b: self.0.hi.simd_le(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_le(rhs.0.lo), hi: self.0.hi.simd_le(rhs.0.hi) })
       }
     }
   }
@@ -211,7 +211,7 @@ define_simd_unsigned! {
         let lt_mask = Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8));
         Self(lt_mask.bitxor(Self::splat(0xFF)).0)
       } else {
-        Self(Inner { a: self.0.lo.simd_ge(rhs.0.lo), b: self.0.hi.simd_ge(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.simd_ge(rhs.0.lo), hi: self.0.hi.simd_ge(rhs.0.hi) })
       }
     }
   }

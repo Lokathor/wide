@@ -80,7 +80,7 @@ define_simd_unsigned! {
       if #[cfg(target_feature="avx512bw")] {
         Self(mul_i16_keep_low_m512i(self.0, rhs.0))
       } else {
-        Self(Inner { a: self.0.lo.mul(rhs.0.lo), b: self.0.hi.mul(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo.mul(rhs.0.lo), hi: self.0.hi.mul(rhs.0.hi) })
       }
     }
   }
