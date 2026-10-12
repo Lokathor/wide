@@ -357,7 +357,7 @@ impl i16x16 {
             })
           } else {
 
-            i16x16::new([
+            i16x16::from_array([
               v.as_array()[0] as i16,
               v.as_array()[1] as i16,
               v.as_array()[2] as i16,

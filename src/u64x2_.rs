@@ -46,7 +46,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vaddq_u64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_add(rhs.0.arr[0]),
           self.0.arr[1].wrapping_add(rhs.0.arr[1]),
         ])
@@ -64,7 +64,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vsubq_u64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
           self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
         ])
@@ -99,7 +99,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vandq_u64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitand(rhs.0.arr[0]),
           self.0.arr[1].bitand(rhs.0.arr[1]),
         ])
@@ -117,7 +117,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vorrq_u64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitor(rhs.0.arr[0]),
           self.0.arr[1].bitor(rhs.0.arr[1]),
         ])
@@ -135,7 +135,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(veorq_u64(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitxor(rhs.0.arr[0]),
           self.0.arr[1].bitxor(rhs.0.arr[1]),
         ])
@@ -455,7 +455,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         Self(unsafe { vzip1q_u64(self.0, other.0) })
       } else {
-        Self::new([self.as_array()[0], other.as_array()[0]])
+        Self::from_array([self.as_array()[0], other.as_array()[0]])
       }
     }
   }
@@ -470,7 +470,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         Self(unsafe { vzip2q_u64(self.0, other.0) })
       } else {
-        Self::new([self.as_array()[1], other.as_array()[1]])
+        Self::from_array([self.as_array()[1], other.as_array()[1]])
       }
     }
   }
@@ -657,7 +657,7 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(rhs as i64 & 63)))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_shl(rhs),
           self.0.arr[1].wrapping_shl(rhs),
         ])
@@ -705,7 +705,7 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(-(rhs as i64 & 63))))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_shr(rhs),
           self.0.arr[1].wrapping_shr(rhs),
         ])
@@ -780,7 +780,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vshlq_u64(self.0, vmovq_n_s64(rhs.min(64) as i64))) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].unbounded_shl(rhs),
           self.0.arr[1].unbounded_shl(rhs),
         ])
@@ -821,7 +821,7 @@ define_simd_unsigned! {
           Self(vshlq_u64(self.0, vmovq_n_s64(-rhs.min(64).cast_signed() as i64)))
         }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].unbounded_shr(rhs),
             self.0.arr[1].unbounded_shr(rhs),
         ])
@@ -840,7 +840,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqaddq_u64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].saturating_add(rhs.0.arr[0]),
             self.0.arr[1].saturating_add(rhs.0.arr[1]),
         ])
@@ -859,7 +859,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_u64(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].saturating_sub(rhs.0.arr[0]),
             self.0.arr[1].saturating_sub(rhs.0.arr[1]),
         ])
@@ -881,8 +881,8 @@ define_simd_unsigned! {
       self_array[1].overflowing_mul(rhs_array[1]),
     ];
     (
-      Self::new([result[0].0, result[1].0]),
-      Self::new([-(result[0].1 as i64) as u64, -(result[1].1 as i64) as u64]),
+      Self::from_array([result[0].0, result[1].0]),
+      Self::from_array([-(result[0].1 as i64) as u64, -(result[1].1 as i64) as u64]),
     )
   }
 
@@ -904,11 +904,11 @@ define_simd_unsigned! {
     ];
 
     (
-      Self::new([
+      Self::from_array([
         widening_mul[0] as u64,
         widening_mul[1] as u64,
       ]),
-      Self::new([
+      Self::from_array([
         (widening_mul[0] >> 64) as u64,
         (widening_mul[1] >> 64) as u64,
       ]),
@@ -979,7 +979,7 @@ impl u64x2 {
             let mask = add_mul_operand_mask_u64::<W>();
             let a = a.to_array();
             let b = b.to_array();
-            Self::new(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
+            Self::from_array(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
           }
         }
     }
@@ -1008,7 +1008,7 @@ impl u64x2 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -1036,7 +1036,7 @@ impl u64x2 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }

@@ -49,14 +49,14 @@
 //! ```
 //! # use wide::f32x4;
 //! #
-//! let x = f32x4::new([1.0, -1.0, -1.0, 1.0]);
+//! let x = f32x4::from_array([1.0, -1.0, -1.0, 1.0]);
 //!
 //! let result = x.is_sign_positive().select(
 //!     f32x4::splat(5.0),
 //!     f32x4::splat(3.0),
 //! );
 //!
-//! assert_eq!(result, f32x4::new([5.0, 3.0, 3.0, 5.0]));
+//! assert_eq!(result, f32x4::from_array([5.0, 3.0, 3.0, 5.0]));
 //! ```
 //!
 //! To select from two values of a downstream type, implement the [`Select`]
@@ -79,17 +79,17 @@
 //! ```
 //! use wide::{f32x4, ShuffleExt, u32x4};
 //!
-//! let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
-//! let simd_b = f32x4::new([100.0, 101.0, 102.0, 103.0]);
+//! let simd_a = f32x4::from_array([0.0, 1.0, 2.0, 3.0]);
+//! let simd_b = f32x4::from_array([100.0, 101.0, 102.0, 103.0]);
 //!
-//! let reverse = simd_a.shuffle(u32x4::new([3, 2, 1, 0]));
+//! let reverse = simd_a.shuffle(u32x4::from_array([3, 2, 1, 0]));
 //!
-//! assert_eq!(reverse, f32x4::new([3.0, 2.0, 1.0, 0.0]));
+//! assert_eq!(reverse, f32x4::from_array([3.0, 2.0, 1.0, 0.0]));
 //!
 //! // Here, indices `0..4` map to `simd_a`, and indices `4..8` map to `simd_b`
-//! let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::new([2, 3, 4, 5]));
+//! let from_two_vectors = [simd_a, simd_b].shuffle(u32x4::from_array([2, 3, 4, 5]));
 //!
-//! assert_eq!(from_two_vectors, f32x4::new([2.0, 3.0, 100.0, 101.0]));
+//! assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 100.0, 101.0]));
 //! ```
 //!
 //! Constant-index based shuffling:
@@ -97,11 +97,11 @@
 //! ```
 //! use wide::f32x4;
 //!
-//! let simd_a = f32x4::new([0.0, 1.0, 2.0, 3.0]);
+//! let simd_a = f32x4::from_array([0.0, 1.0, 2.0, 3.0]);
 //!
 //! let reverse = simd_a.shuffle_consts::<3, 2, 1, 0>();
 //!
-//! assert_eq!(reverse, f32x4::new([3.0, 2.0, 1.0, 0.0]));
+//! assert_eq!(reverse, f32x4::from_array([3.0, 2.0, 1.0, 0.0]));
 //! ```
 //!
 //! # NaN bit patterns

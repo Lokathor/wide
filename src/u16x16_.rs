@@ -428,7 +428,7 @@ define_simd_unsigned! {
           }
         }
 
-        Self::new(result)
+        Self::from_array(result)
       }
     }
   }
@@ -551,7 +551,7 @@ define_simd_unsigned! {
 
     #[inline(always)]
     fn transpose_column(data: &[u16x16; 16], index: usize) -> u16x16 {
-      u16x16::new([
+      u16x16::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
@@ -890,7 +890,7 @@ impl From<u8x16> for u16x16 {
             })
           } else {
 
-            u16x16::new([
+            u16x16::from_array([
               v.as_array()[0] as u16,
               v.as_array()[1] as u16,
               v.as_array()[2] as u16,

@@ -16,7 +16,7 @@ pick! {
 macro_rules! const_f32_as_f32x16 {
     ($i:ident, $f:expr) => {
         #[allow(non_upper_case_globals)]
-        pub const $i: f32x16 = f32x16::new([$f; 16]);
+        pub const $i: f32x16 = f32x16::from_array([$f; 16]);
     };
 }
 
@@ -115,7 +115,7 @@ define_simd_float! {
 
   #[inline]
   fn rem(self, rhs: Self) -> Self::Output {
-    Self::new([
+    Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
       self.to_array()[2] % rhs.to_array()[2],
@@ -373,7 +373,7 @@ define_simd_float! {
 
     #[inline(always)]
     fn transpose_column(data: &[f32x16; 16], index: usize) -> f32x16 {
-      f32x16::new([
+      f32x16::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],

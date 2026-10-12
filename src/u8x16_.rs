@@ -46,7 +46,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vaddq_u8(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_add(rhs.0.arr[0]),
           self.0.arr[1].wrapping_add(rhs.0.arr[1]),
           self.0.arr[2].wrapping_add(rhs.0.arr[2]),
@@ -78,7 +78,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vsubq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
           self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
           self.0.arr[2].wrapping_sub(rhs.0.arr[2]),
@@ -112,7 +112,7 @@ define_simd_unsigned! {
         let self_array: [u8; 16] = cast(self);
         let rhs_array: [u8; 16] = cast(rhs);
 
-        Self::new([
+        Self::from_array([
           self_array[0].wrapping_mul(rhs_array[0]),
           self_array[1].wrapping_mul(rhs_array[1]),
           self_array[2].wrapping_mul(rhs_array[2]),
@@ -144,7 +144,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vandq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitand(rhs.0.arr[0]),
           self.0.arr[1].bitand(rhs.0.arr[1]),
           self.0.arr[2].bitand(rhs.0.arr[2]),
@@ -176,7 +176,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vorrq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitor(rhs.0.arr[0]),
           self.0.arr[1].bitor(rhs.0.arr[1]),
           self.0.arr[2].bitor(rhs.0.arr[2]),
@@ -208,7 +208,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(veorq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitxor(rhs.0.arr[0]),
           self.0.arr[1].bitxor(rhs.0.arr[1]),
           self.0.arr[2].bitxor(rhs.0.arr[2]),
@@ -240,7 +240,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vceqq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] == rhs.0.arr[0] { u8::MAX } else { 0 },
           if self.0.arr[1] == rhs.0.arr[1] { u8::MAX } else { 0 },
           if self.0.arr[2] == rhs.0.arr[2] { u8::MAX } else { 0 },
@@ -272,7 +272,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_eq(rhs)
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] != rhs.0.arr[0] { u8::MAX } else { 0 },
           if self.0.arr[1] != rhs.0.arr[1] { u8::MAX } else { 0 },
           if self.0.arr[2] != rhs.0.arr[2] { u8::MAX } else { 0 },
@@ -308,7 +308,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vcltq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { u8::MAX } else { 0 },
           if self.0.arr[1] < rhs.0.arr[1] { u8::MAX } else { 0 },
           if self.0.arr[2] < rhs.0.arr[2] { u8::MAX } else { 0 },
@@ -344,7 +344,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vcgtq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] > rhs.0.arr[0] { u8::MAX } else { 0 },
           if self.0.arr[1] > rhs.0.arr[1] { u8::MAX } else { 0 },
           if self.0.arr[2] > rhs.0.arr[2] { u8::MAX } else { 0 },
@@ -382,7 +382,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vcleq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] <= rhs.0.arr[0] { u8::MAX } else { 0 },
           if self.0.arr[1] <= rhs.0.arr[1] { u8::MAX } else { 0 },
           if self.0.arr[2] <= rhs.0.arr[2] { u8::MAX } else { 0 },
@@ -420,7 +420,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vcgeq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] >= rhs.0.arr[0] { u8::MAX } else { 0 },
           if self.0.arr[1] >= rhs.0.arr[1] { u8::MAX } else { 0 },
           if self.0.arr[2] >= rhs.0.arr[2] { u8::MAX } else { 0 },
@@ -776,7 +776,7 @@ define_simd_unsigned! {
             let zipped = unsafe { vzip_u8(lhs, rhs) };
             u8x16(unsafe { vcombine_u8(zipped.0, zipped.1) })
         } else {
-            u8x16::new([
+            u8x16::from_array([
                 self.as_array()[0], other.as_array()[0],
                 self.as_array()[1], other.as_array()[1],
                 self.as_array()[2], other.as_array()[2],
@@ -804,7 +804,7 @@ define_simd_unsigned! {
             let zipped = unsafe { vzip_u8(lhs, rhs) };
             u8x16(unsafe { vcombine_u8(zipped.0, zipped.1) })
         } else {
-            u8x16::new([
+            u8x16::from_array([
                 self.as_array()[8], other.as_array()[8],
                 self.as_array()[9], other.as_array()[9],
                 self.as_array()[10], other.as_array()[10],
@@ -841,7 +841,7 @@ define_simd_unsigned! {
           }
         }
 
-        Self::new(result)
+        Self::from_array(result)
       }
     }
   }
@@ -976,7 +976,7 @@ define_simd_unsigned! {
 
     #[inline(always)]
     fn transpose_column(data: &[u8x16; 16], index: usize) -> u8x16 {
-      u8x16::new([
+      u8x16::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
@@ -1032,7 +1032,7 @@ define_simd_unsigned! {
         let self_array: [u8; 16] = cast(self);
         let rhs_array: [u8; 16] = cast(rhs);
 
-        Self::new([
+        Self::from_array([
           self_array[0].wrapping_shl(rhs_array[0] as u32),
           self_array[1].wrapping_shl(rhs_array[1] as u32),
           self_array[2].wrapping_shl(rhs_array[2] as u32),
@@ -1093,7 +1093,7 @@ define_simd_unsigned! {
         let self_array: [u8; 16] = cast(self);
         let rhs_array: [u8; 16] = cast(rhs);
 
-        Self::new([
+        Self::from_array([
           self_array[0].wrapping_shr(rhs_array[0] as u32),
           self_array[1].wrapping_shr(rhs_array[1] as u32),
           self_array[2].wrapping_shr(rhs_array[2] as u32),
@@ -1148,7 +1148,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vmaxq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].max(rhs.0.arr[0]),
           self.0.arr[1].max(rhs.0.arr[1]),
           self.0.arr[2].max(rhs.0.arr[2]),
@@ -1180,7 +1180,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vminq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].min(rhs.0.arr[0]),
           self.0.arr[1].min(rhs.0.arr[1]),
           self.0.arr[2].min(rhs.0.arr[2]),
@@ -1330,7 +1330,7 @@ define_simd_unsigned! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        Self::new([
+        Self::from_array([
           self_array[0].unbounded_shl(rhs_array[0] as u32),
           self_array[1].unbounded_shl(rhs_array[1] as u32),
           self_array[2].unbounded_shl(rhs_array[2] as u32),
@@ -1389,7 +1389,7 @@ define_simd_unsigned! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        Self::new([
+        Self::from_array([
           self_array[0].unbounded_shr(rhs_array[0] as u32),
           self_array[1].unbounded_shr(rhs_array[1] as u32),
           self_array[2].unbounded_shr(rhs_array[2] as u32),
@@ -1444,7 +1444,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vqaddq_u8(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].saturating_add(rhs.0.arr[0]),
           self.0.arr[1].saturating_add(rhs.0.arr[1]),
           self.0.arr[2].saturating_add(rhs.0.arr[2]),
@@ -1476,7 +1476,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_u8(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].saturating_sub(rhs.0.arr[0]),
           self.0.arr[1].saturating_sub(rhs.0.arr[1]),
           self.0.arr[2].saturating_sub(rhs.0.arr[2]),
@@ -1523,7 +1523,7 @@ define_simd_unsigned! {
           let self_array = self.to_array();
           let rhs_array = rhs.to_array();
 
-          u16x16::new([
+          u16x16::from_array([
             (self_array[0] as u16).wrapping_mul(rhs_array[0] as u16),
             (self_array[1] as u16).wrapping_mul(rhs_array[1] as u16),
             (self_array[2] as u16).wrapping_mul(rhs_array[2] as u16),
@@ -1590,7 +1590,7 @@ define_simd_unsigned! {
         ];
 
         (
-          Self::new([
+          Self::from_array([
             widening_mul[0] as u8,
             widening_mul[1] as u8,
             widening_mul[2] as u8,
@@ -1608,7 +1608,7 @@ define_simd_unsigned! {
             widening_mul[14] as u8,
             widening_mul[15] as u8,
           ]),
-          Self::new([
+          Self::from_array([
             (widening_mul[0] >> 8) as u8,
             (widening_mul[1] >> 8) as u8,
             (widening_mul[2] >> 8) as u8,
@@ -1648,7 +1648,7 @@ define_simd_unsigned! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        Self::new([
+        Self::from_array([
           ((self_array[0] as u16).wrapping_mul(rhs_array[0] as u16) >> 8) as u8,
           ((self_array[1] as u16).wrapping_mul(rhs_array[1] as u16) >> 8) as u8,
           ((self_array[2] as u16).wrapping_mul(rhs_array[2] as u16) >> 8) as u8,
@@ -1699,7 +1699,7 @@ impl u8x16 {
                       }
                 }
 
-                Self::new([
+                Self::from_array([
                     clamp(lhs.as_array()[0]),
                     clamp(lhs.as_array()[1]),
                     clamp(lhs.as_array()[2]),

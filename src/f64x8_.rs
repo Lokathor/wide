@@ -16,7 +16,7 @@ pick! {
 macro_rules! const_f64_as_f64x8 {
     ($i:ident, $f:expr) => {
         #[allow(non_upper_case_globals)]
-        pub const $i: f64x8 = f64x8::new([$f; 8]);
+        pub const $i: f64x8 = f64x8::from_array([$f; 8]);
     };
 }
 
@@ -115,7 +115,7 @@ define_simd_float! {
 
   #[inline]
   fn rem(self, rhs: Self) -> Self::Output {
-    Self::new([
+    Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
       self.to_array()[2] % rhs.to_array()[2],
@@ -374,7 +374,7 @@ define_simd_float! {
 
     #[inline(always)]
     fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
-      f64x8::new([
+      f64x8::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
@@ -1921,7 +1921,7 @@ impl f64x8 {
           if #[cfg(target_feature="avx512f")] {
             Self(convert_to_m512d_from_i32_m256i(v.0))
           } else {
-            Self::new([
+            Self::from_array([
               v.as_array()[0] as f64,
               v.as_array()[1] as f64,
               v.as_array()[2] as f64,

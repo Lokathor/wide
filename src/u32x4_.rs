@@ -46,7 +46,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vaddq_u32(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_add(rhs.0.arr[0]),
           self.0.arr[1].wrapping_add(rhs.0.arr[1]),
           self.0.arr[2].wrapping_add(rhs.0.arr[2]),
@@ -66,7 +66,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vsubq_u32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
           self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
           self.0.arr[2].wrapping_sub(rhs.0.arr[2]),
@@ -108,7 +108,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vandq_u32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitand(rhs.0.arr[0]),
           self.0.arr[1].bitand(rhs.0.arr[1]),
           self.0.arr[2].bitand(rhs.0.arr[2]),
@@ -128,7 +128,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vorrq_u32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitor(rhs.0.arr[0]),
           self.0.arr[1].bitor(rhs.0.arr[1]),
           self.0.arr[2].bitor(rhs.0.arr[2]),
@@ -148,7 +148,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(veorq_u32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].bitxor(rhs.0.arr[0]),
           self.0.arr[1].bitxor(rhs.0.arr[1]),
           self.0.arr[2].bitxor(rhs.0.arr[2]),
@@ -168,7 +168,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vceqq_u32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] == rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] == rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] == rhs.0.arr[2] { u32::MAX } else { 0 },
@@ -188,7 +188,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_eq(rhs)
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] != rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] != rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] != rhs.0.arr[2] { u32::MAX } else { 0 },
@@ -216,7 +216,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
         unsafe {Self(vcgtq_u32(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] > rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] > rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] > rhs.0.arr[2] { u32::MAX } else { 0 },
@@ -236,7 +236,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] <= rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] <= rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] <= rhs.0.arr[2] { u32::MAX } else { 0 },
@@ -256,7 +256,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] >= rhs.0.arr[0] { u32::MAX } else { 0 },
           if self.0.arr[1] >= rhs.0.arr[1] { u32::MAX } else { 0 },
           if self.0.arr[2] >= rhs.0.arr[2] { u32::MAX } else { 0 },
@@ -519,7 +519,7 @@ define_simd_unsigned! {
       } else {
         let s = self.as_array();
         let b = other.as_array();
-        Self::new([s[0], b[0], s[1], b[1]])
+        Self::from_array([s[0], b[0], s[1], b[1]])
       }
     }
   }
@@ -536,7 +536,7 @@ define_simd_unsigned! {
       } else {
         let s = self.as_array();
         let b = other.as_array();
-        Self::new([s[2], b[2], s[3], b[3]])
+        Self::from_array([s[2], b[2], s[3], b[3]])
       }
     }
   }
@@ -567,7 +567,7 @@ define_simd_unsigned! {
           }
         }
 
-        Self::new(result)
+        Self::from_array(result)
       }
     }
   }
@@ -691,7 +691,7 @@ define_simd_unsigned! {
       } else {
         #[inline(always)]
         fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
-          u32x4::new([
+          u32x4::from_array([
             data[0].as_array()[index],
             data[1].as_array()[index],
             data[2].as_array()[index],
@@ -750,7 +750,7 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_u32(self.0, vmovq_n_s32(rhs as i32 & 31)))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_shl(rhs),
           self.0.arr[1].wrapping_shl(rhs),
           self.0.arr[2].wrapping_shl(rhs),
@@ -802,7 +802,7 @@ define_simd_unsigned! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_u32(self.0, vmovq_n_s32( -(rhs as i32 & 31))))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_shr(rhs),
           self.0.arr[1].wrapping_shr(rhs),
           self.0.arr[2].wrapping_shr(rhs),
@@ -906,7 +906,7 @@ define_simd_unsigned! {
         // The intrinsic has different semantics so we need to saturate `rhs`.
         unsafe { Self(vshlq_u32(self.0, vmovq_n_s32(rhs.min(32) as i32))) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].unbounded_shl(rhs),
           self.0.arr[1].unbounded_shl(rhs),
           self.0.arr[2].unbounded_shl(rhs),
@@ -931,7 +931,7 @@ define_simd_unsigned! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        Self::new([
+        Self::from_array([
           self_array[0].unbounded_shr(rhs_array[0]),
           self_array[1].unbounded_shr(rhs_array[1]),
           self_array[2].unbounded_shr(rhs_array[2]),
@@ -955,7 +955,7 @@ define_simd_unsigned! {
           Self(vshlq_u32(self.0, vmovq_n_s32(-rhs.min(32).cast_signed())))
         }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].unbounded_shr(rhs),
             self.0.arr[1].unbounded_shr(rhs),
             self.0.arr[2].unbounded_shr(rhs),
@@ -976,7 +976,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqaddq_u32(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].saturating_add(rhs.0.arr[0]),
             self.0.arr[1].saturating_add(rhs.0.arr[1]),
             self.0.arr[2].saturating_add(rhs.0.arr[2]),
@@ -997,7 +997,7 @@ define_simd_unsigned! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_u32(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].saturating_sub(rhs.0.arr[0]),
             self.0.arr[1].saturating_sub(rhs.0.arr[1]),
             self.0.arr[2].saturating_sub(rhs.0.arr[2]),
@@ -1112,13 +1112,13 @@ define_simd_unsigned! {
         ];
 
         (
-          Self::new([
+          Self::from_array([
             widening_mul[0] as u32,
             widening_mul[1] as u32,
             widening_mul[2] as u32,
             widening_mul[3] as u32,
           ]),
-          Self::new([
+          Self::from_array([
             (widening_mul[0] >> 32) as u32,
             (widening_mul[1] >> 32) as u32,
             (widening_mul[2] >> 32) as u32,
@@ -1321,7 +1321,7 @@ impl u32x4 {
                 Self(u32x4_shuffle::<I0, I1, I2, I3>(self.0, self.0))
               } else {
                 let self_array = self.to_array();
-                Self::new([
+                Self::from_array([
                   self_array[I0],
                   self_array[I1],
                   self_array[I2],
@@ -1364,7 +1364,7 @@ impl u32x4 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -1384,7 +1384,7 @@ impl u32x4 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }

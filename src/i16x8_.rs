@@ -42,7 +42,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_s16_u16(vcltq_s16(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] < rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] < rhs.0.arr[2] { -1 } else { 0 },
@@ -66,7 +66,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vreinterpretq_s16_u16(vcgtq_s16(self.0, rhs.0)))}
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] > rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] > rhs.0.arr[2] { -1 } else { 0 },
@@ -90,7 +90,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_gt(rhs)
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] <= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] <= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] <= rhs.0.arr[2] { -1 } else { 0 },
@@ -114,7 +114,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         !self.simd_lt(rhs)
       } else {
-        Self::new([
+        Self::from_array([
           if self.0.arr[0] >= rhs.0.arr[0] { -1 } else { 0 },
           if self.0.arr[1] >= rhs.0.arr[1] { -1 } else { 0 },
           if self.0.arr[2] >= rhs.0.arr[2] { -1 } else { 0 },
@@ -152,7 +152,7 @@ define_simd_signed! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        Self::new([
+        Self::from_array([
           self_array[0].wrapping_shr(rhs_array[0] as u32),
           self_array[1].wrapping_shr(rhs_array[1] as u32),
           self_array[2].wrapping_shr(rhs_array[2] as u32),
@@ -181,7 +181,7 @@ define_simd_signed! {
         #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_s16(self.0, vmovq_n_s16( -(rhs as i16 & 15))))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].wrapping_shr(rhs),
           self.0.arr[1].wrapping_shr(rhs),
           self.0.arr[2].wrapping_shr(rhs),
@@ -304,7 +304,7 @@ define_simd_signed! {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
-        Self::new([
+        Self::from_array([
           self_array[0].unbounded_shr(rhs_array[0] as u32),
           self_array[1].unbounded_shr(rhs_array[1] as u32),
           self_array[2].unbounded_shr(rhs_array[2] as u32),
@@ -332,7 +332,7 @@ define_simd_signed! {
           Self(vshlq_s16(self.0, vmovq_n_s16(-rhs.min(16).cast_signed() as i16)))
         }
       } else {
-        Self::new([
+        Self::from_array([
             self.0.arr[0].unbounded_shr(rhs),
             self.0.arr[1].unbounded_shr(rhs),
             self.0.arr[2].unbounded_shr(rhs),
@@ -356,7 +356,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe {Self(vqaddq_s16(self.0, rhs.0))}
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].saturating_add(rhs.0.arr[0]),
           self.0.arr[1].saturating_add(rhs.0.arr[1]),
           self.0.arr[2].saturating_add(rhs.0.arr[2]),
@@ -380,7 +380,7 @@ define_simd_signed! {
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         unsafe { Self(vqsubq_s16(self.0, rhs.0)) }
       } else {
-        Self::new([
+        Self::from_array([
           self.0.arr[0].saturating_sub(rhs.0.arr[0]),
           self.0.arr[1].saturating_sub(rhs.0.arr[1]),
           self.0.arr[2].saturating_sub(rhs.0.arr[2]),
@@ -433,7 +433,7 @@ define_simd_signed! {
           let a = self.as_array();
           let b = rhs.as_array();
 
-          i32x8::new([
+          i32x8::from_array([
             i32::from(a[0]) * i32::from(b[0]),
             i32::from(a[1]) * i32::from(b[1]),
             i32::from(a[2]) * i32::from(b[2]),
@@ -491,7 +491,7 @@ define_simd_signed! {
         ];
 
         (
-          u16x8::new([
+          u16x8::from_array([
             widening_mul[0] as u16,
             widening_mul[1] as u16,
             widening_mul[2] as u16,
@@ -501,7 +501,7 @@ define_simd_signed! {
             widening_mul[6] as u16,
             widening_mul[7] as u16,
           ]),
-          i16x8::new([
+          i16x8::from_array([
             (widening_mul[0] >> 16) as i16,
             (widening_mul[1] >> 16) as i16,
             (widening_mul[2] >> 16) as i16,
@@ -543,7 +543,7 @@ define_simd_signed! {
 
         Self(i16x8_shuffle::<1, 3, 5, 7, 9, 11, 13, 15>(low, high))
       } else {
-        i16x8::new([
+        i16x8::from_array([
           ((i32::from(rhs.as_array()[0]) * i32::from(self.as_array()[0])) >> 16) as i16,
           ((i32::from(rhs.as_array()[1]) * i32::from(self.as_array()[1])) >> 16) as i16,
           ((i32::from(rhs.as_array()[2]) * i32::from(self.as_array()[2])) >> 16) as i16,
@@ -690,7 +690,7 @@ impl i16x8 {
                 }
             }
 
-            i16x8::new([
+            i16x8::from_array([
               clamp(v.as_array()[0]),
               clamp(v.as_array()[1]),
               clamp(v.as_array()[2]),
@@ -721,7 +721,7 @@ impl i16x8 {
 
             i16x8(pack_i32_to_i16_m128i( a, b))
           } else {
-          i16x8::new([
+          i16x8::from_array([
             v.as_array()[0] as i16,
             v.as_array()[1] as i16,
             v.as_array()[2] as i16,
@@ -754,7 +754,7 @@ impl i16x8 {
             unsafe { Self(vld1q_s16( input.as_ptr() as *const i16 )) }
           } else {
             // 2018 edition doesn't have try_into
-            unsafe { Self::new( *(input.as_ptr() as * const [i16;8]) ) }
+            unsafe { Self::from_array( *(input.as_ptr() as * const [i16;8]) ) }
           }
         }
     }
@@ -779,7 +779,7 @@ impl i16x8 {
               i32x4(vpaddq_s32(pl, ph))
             }
           } else {
-            i32x4::new([
+            i32x4::from_array([
               (i32::from(self.0.arr[0]) * i32::from(rhs.0.arr[0])) + (i32::from(self.0.arr[1]) * i32::from(rhs.0.arr[1])),
               (i32::from(self.0.arr[2]) * i32::from(rhs.0.arr[2])) + (i32::from(self.0.arr[3]) * i32::from(rhs.0.arr[3])),
               (i32::from(self.0.arr[4]) * i32::from(rhs.0.arr[4])) + (i32::from(self.0.arr[5]) * i32::from(rhs.0.arr[5])),
@@ -819,7 +819,7 @@ impl i16x8 {
             unsafe { Self(vqrdmulhq_s16(self.0, rhs.0)) }
           } else {
             // compiler does a surprisingly good job of vectorizing this
-            Self::new([
+            Self::from_array([
               ((i32::from(self.0.arr[0]) * i32::from(rhs.0.arr[0]) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[1]) * i32::from(rhs.0.arr[1]) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[2]) * i32::from(rhs.0.arr[2]) + 0x4000) >> 15) as i16,
@@ -864,7 +864,7 @@ impl i16x8 {
             unsafe { Self(vqrdmulhq_n_s16(self.0, rhs)) }
           } else {
             // compiler does a surprisingly good job of vectorizing this
-            Self::new([
+            Self::from_array([
               ((i32::from(self.0.arr[0]) * i32::from(rhs) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[1]) * i32::from(rhs) + 0x4000) >> 15) as i16,
               ((i32::from(self.0.arr[2]) * i32::from(rhs) + 0x4000) >> 15) as i16,

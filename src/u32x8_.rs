@@ -420,7 +420,7 @@ define_simd_unsigned! {
           }
         }
 
-        Self::new(result)
+        Self::from_array(result)
       }
     }
   }
@@ -576,7 +576,7 @@ define_simd_unsigned! {
 
         #[inline(always)]
         fn transpose_column(data: &[u32x8; 8], index: usize) -> u32x8 {
-          u32x8::new([
+          u32x8::from_array([
             data[0].as_array()[index],
             data[1].as_array()[index],
             data[2].as_array()[index],
@@ -810,7 +810,7 @@ define_simd_unsigned! {
     pub fn widening_mul(self, rhs: Self) -> u64x8 {
       pick! {
         if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
-          const SHUFFLE_INDICES: m512i = i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).0;
+          const SHUFFLE_INDICES: m512i = i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0;
 
           let even_wide_mul = mul_u64_low_bits_m256i(self.0, rhs.0);
           let odd_wide_mul = mul_u64_low_bits_m256i(
@@ -921,7 +921,7 @@ impl From<u16x8> for u32x8 {
               hi: u32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
             })
           } else {
-            u32x8::new([
+            u32x8::from_array([
               u32::from(v.as_array()[0]),
               u32::from(v.as_array()[1]),
               u32::from(v.as_array()[2]),
@@ -956,7 +956,7 @@ impl u32x8 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -976,7 +976,7 @@ impl u32x8 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }

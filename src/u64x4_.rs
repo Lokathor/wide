@@ -448,7 +448,7 @@ define_simd_unsigned! {
           }
         }
 
-        Self::new(result)
+        Self::from_array(result)
       }
     }
   }
@@ -577,7 +577,7 @@ define_simd_unsigned! {
       } else {
         #[inline(always)]
         fn transpose_column(data: &[u64x4; 4], index: usize) -> u64x4 {
-          u64x4::new([
+          u64x4::from_array([
             data[0].as_array()[index],
             data[1].as_array()[index],
             data[2].as_array()[index],
@@ -789,8 +789,8 @@ define_simd_unsigned! {
       self_array[3].overflowing_mul(rhs_array[3]),
     ];
     (
-      Self::new([result[0].0, result[1].0, result[2].0, result[3].0]),
-      Self::new([
+      Self::from_array([result[0].0, result[1].0, result[2].0, result[3].0]),
+      Self::from_array([
         -(result[0].1 as i64) as u64,
         -(result[1].1 as i64) as u64,
         -(result[2].1 as i64) as u64,
@@ -819,13 +819,13 @@ define_simd_unsigned! {
     ];
 
     (
-      Self::new([
+      Self::from_array([
         widening_mul[0] as u64,
         widening_mul[1] as u64,
         widening_mul[2] as u64,
         widening_mul[3] as u64,
       ]),
-      Self::new([
+      Self::from_array([
         (widening_mul[0] >> 64) as u64,
         (widening_mul[1] >> 64) as u64,
         (widening_mul[2] >> 64) as u64,
@@ -909,7 +909,7 @@ impl u64x4 {
             let mask = add_mul_operand_mask_u64::<W>();
             let a = a.to_array();
             let b = b.to_array();
-            Self::new(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
+            Self::from_array(core::array::from_fn(|i| (a[i] & mask) * (b[i] & mask)))
           }
         }
     }
@@ -938,7 +938,7 @@ impl u64x4 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -966,7 +966,7 @@ impl u64x4 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }

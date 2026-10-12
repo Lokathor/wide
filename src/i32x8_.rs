@@ -238,7 +238,7 @@ define_simd_signed! {
     pub fn widening_mul(self, rhs: Self) -> i64x8 {
       pick! {
         if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
-          let shuffle_indices = const { i64x8::new([0, 4, 1, 5, 2, 6, 3, 7]).0 };
+          let shuffle_indices = const { i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0 };
 
           let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
           let odd_wide_mul = mul_i64_low_bits_m256i(
@@ -390,7 +390,7 @@ impl i32x8 {
               hi: i32x4(shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
             })
           } else {
-            i32x8::new([
+            i32x8::from_array([
               i32::from(v.as_array()[0]),
               i32::from(v.as_array()[1]),
               i32::from(v.as_array()[2]),
@@ -417,7 +417,7 @@ impl i32x8 {
               hi: i32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
             })
           } else {
-            i32x8::new([
+            i32x8::from_array([
               i32::from(v.as_array()[0]),
               i32::from(v.as_array()[1]),
               i32::from(v.as_array()[2]),

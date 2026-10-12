@@ -28,11 +28,11 @@ fn test_unbounded_shl() {
         .chain(random_iter())
         .map(|[left, right]| (left, right.map(T::cast_unsigned)))
         {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
                 left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
             }));
-            let actual = Simd::new(left).unbounded_shl(SimdUnsigned::new(right));
+            let actual = Simd::from_array(left).unbounded_shl(SimdUnsigned::from_array(right));
 
             assert!(
                 actual == expected,
@@ -61,11 +61,11 @@ fn test_unbounded_shl() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
                 left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
             }));
-            let actual = Simd::new(left).unbounded_shl(Simd::new(right));
+            let actual = Simd::from_array(left).unbounded_shl(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -96,8 +96,8 @@ fn test_unbounded_shl_scalar() {
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].unbounded_shl(right)));
-            let actual = Simd::new(left).unbounded_shl_scalar(right);
+            let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shl(right)));
+            let actual = Simd::from_array(left).unbounded_shl_scalar(right);
 
             assert!(
                 actual == expected,
@@ -124,8 +124,8 @@ fn test_unbounded_shl_scalar() {
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].unbounded_shl(right)));
-            let actual = Simd::new(left).unbounded_shl_scalar(right);
+            let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shl(right)));
+            let actual = Simd::from_array(left).unbounded_shl_scalar(right);
 
             assert!(
                 actual == expected,
@@ -159,11 +159,11 @@ fn test_unbounded_shr() {
         .chain(random_iter())
         .map(|[left, right]| (left, right.map(T::cast_unsigned)))
         {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
                 left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
             }));
-            let actual = Simd::new(left).unbounded_shr(SimdUnsigned::new(right));
+            let actual = Simd::from_array(left).unbounded_shr(SimdUnsigned::from_array(right));
 
             assert!(
                 actual == expected,
@@ -192,11 +192,11 @@ fn test_unbounded_shr() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
                 left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
             }));
-            let actual = Simd::new(left).unbounded_shr(Simd::new(right));
+            let actual = Simd::from_array(left).unbounded_shr(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -227,8 +227,8 @@ fn test_unbounded_shr_scalar() {
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].unbounded_shr(right)));
-            let actual = Simd::new(left).unbounded_shr_scalar(right);
+            let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shr(right)));
+            let actual = Simd::from_array(left).unbounded_shr_scalar(right);
 
             assert!(
                 actual == expected,
@@ -255,8 +255,8 @@ fn test_unbounded_shr_scalar() {
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].unbounded_shr(right)));
-            let actual = Simd::new(left).unbounded_shr_scalar(right);
+            let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shr(right)));
+            let actual = Simd::from_array(left).unbounded_shr_scalar(right);
 
             assert!(
                 actual == expected,
@@ -285,8 +285,9 @@ fn test_saturating_add() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_add(right[i])));
-            let actual = Simd::new(left).saturating_add(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_add(right[i])));
+            let actual = Simd::from_array(left).saturating_add(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -298,8 +299,9 @@ fn test_saturating_add() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_add(right[i])));
-            let actual = Simd::new(left).saturating_add(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_add(right[i])));
+            let actual = Simd::from_array(left).saturating_add(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -325,8 +327,9 @@ fn test_saturating_sub() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
-            let actual = Simd::new(left).saturating_sub(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
+            let actual = Simd::from_array(left).saturating_sub(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -338,8 +341,9 @@ fn test_saturating_sub() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
-            let actual = Simd::new(left).saturating_sub(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
+            let actual = Simd::from_array(left).saturating_sub(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -369,8 +373,9 @@ fn test_saturating_mul() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
-            let actual = Simd::new(left).saturating_mul(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
+            let actual = Simd::from_array(left).saturating_mul(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -421,8 +426,9 @@ fn test_saturating_mul() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
-            let actual = Simd::new(left).saturating_mul(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
+            let actual = Simd::from_array(left).saturating_mul(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -447,8 +453,9 @@ fn test_saturating_div() {
                 }
             }
 
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_div(right[i])));
-            let actual = Simd::new(left).saturating_div(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_div(right[i])));
+            let actual = Simd::from_array(left).saturating_div(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -469,8 +476,9 @@ fn test_saturating_div() {
                 }
             }
 
-            let expected = Simd::new(std::array::from_fn(|i| left[i].saturating_div(right[i])));
-            let actual = Simd::new(left).saturating_div(Simd::new(right));
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| left[i].saturating_div(right[i])));
+            let actual = Simd::from_array(left).saturating_div(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -500,8 +508,8 @@ fn test_overflowing_add() {
         .chain(random_iter())
         {
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_add(right[i]).1 {
                         !0
                     } else {
@@ -509,7 +517,7 @@ fn test_overflowing_add() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_add(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_add(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -522,8 +530,8 @@ fn test_overflowing_add() {
         .chain(random_iter())
         {
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_add(right[i]).1 {
                         !0
                     } else {
@@ -531,7 +539,7 @@ fn test_overflowing_add() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_add(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_add(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -558,8 +566,8 @@ fn test_overflowing_sub() {
         .chain(random_iter())
         {
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_sub(right[i]).1 {
                         !0
                     } else {
@@ -567,7 +575,7 @@ fn test_overflowing_sub() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_sub(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_sub(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -580,8 +588,8 @@ fn test_overflowing_sub() {
         .chain(random_iter())
         {
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_sub(right[i]).1 {
                         !0
                     } else {
@@ -589,7 +597,7 @@ fn test_overflowing_sub() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_sub(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_sub(Simd::from_array(right));
 
             assert_eq!(expected, actual);
         }
@@ -620,8 +628,8 @@ fn test_overflowing_mul() {
         .chain(random_iter())
         {
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_mul(right[i]).1 {
                         !0
                     } else {
@@ -629,7 +637,7 @@ fn test_overflowing_mul() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_mul(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_mul(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -681,8 +689,8 @@ fn test_overflowing_mul() {
         .chain(random_iter())
         {
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_mul(right[i]).1 {
                         !0
                     } else {
@@ -690,7 +698,7 @@ fn test_overflowing_mul() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_mul(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_mul(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -716,8 +724,8 @@ fn test_overflowing_div() {
             }
 
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_div(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_div(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_div(right[i]).1 {
                         !0
                     } else {
@@ -725,7 +733,7 @@ fn test_overflowing_div() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_div(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_div(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -747,8 +755,8 @@ fn test_overflowing_div() {
             }
 
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_div(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_div(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_div(right[i]).1 {
                         !0
                     } else {
@@ -756,7 +764,7 @@ fn test_overflowing_div() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_div(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_div(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -782,8 +790,8 @@ fn test_overflowing_rem() {
             }
 
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_rem(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_rem(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_rem(right[i]).1 {
                         !0
                     } else {
@@ -791,7 +799,7 @@ fn test_overflowing_rem() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_rem(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_rem(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -813,8 +821,8 @@ fn test_overflowing_rem() {
             }
 
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].overflowing_rem(right[i]).0)),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_rem(right[i]).0)),
+                Simd::from_array(std::array::from_fn(|i| {
                     if left[i].overflowing_rem(right[i]).1 {
                         !0
                     } else {
@@ -822,7 +830,7 @@ fn test_overflowing_rem() {
                     }
                 })),
             );
-            let actual = Simd::new(left).overflowing_rem(Simd::new(right));
+            let actual = Simd::from_array(left).overflowing_rem(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -855,10 +863,10 @@ fn test_widening_mul() {
         )
         .chain(random_iter())
         {
-            let expected = DoubleSizedSimd::new(std::array::from_fn(|i| {
+            let expected = DoubleSizedSimd::from_array(std::array::from_fn(|i| {
                 (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
             }));
-            let actual = Simd::new(left).widening_mul(Simd::new(right));
+            let actual = Simd::from_array(left).widening_mul(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -909,10 +917,10 @@ fn test_widening_mul() {
         )
         .chain(random_iter())
         {
-            let expected = DoubleSizedSimd::new(std::array::from_fn(|i| {
+            let expected = DoubleSizedSimd::from_array(std::array::from_fn(|i| {
                 (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
             }));
-            let actual = Simd::new(left).widening_mul(Simd::new(right));
+            let actual = Simd::from_array(left).widening_mul(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -946,15 +954,15 @@ fn test_mul_keep_low_high() {
         .chain(random_iter())
         {
             let expected = (
-                SimdUnsigned::new(std::array::from_fn(|i| {
+                SimdUnsigned::from_array(std::array::from_fn(|i| {
                     left[i].wrapping_mul(right[i]).cast_unsigned()
                 })),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| {
                     ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS)
                         as T
                 })),
             );
-            let actual = Simd::new(left).mul_keep_low_high(Simd::new(right));
+            let actual = Simd::from_array(left).mul_keep_low_high(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -1006,13 +1014,13 @@ fn test_mul_keep_low_high() {
         .chain(random_iter())
         {
             let expected = (
-                Simd::new(std::array::from_fn(|i| left[i].wrapping_mul(right[i]))),
-                Simd::new(std::array::from_fn(|i| {
+                Simd::from_array(std::array::from_fn(|i| left[i].wrapping_mul(right[i]))),
+                Simd::from_array(std::array::from_fn(|i| {
                     ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS)
                         as T
                 })),
             );
-            let actual = Simd::new(left).mul_keep_low_high(Simd::new(right));
+            let actual = Simd::from_array(left).mul_keep_low_high(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -1045,10 +1053,10 @@ fn test_mul_keep_high() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS) as T
             }));
-            let actual = Simd::new(left).mul_keep_high(Simd::new(right));
+            let actual = Simd::from_array(left).mul_keep_high(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -1099,10 +1107,10 @@ fn test_mul_keep_high() {
         )
         .chain(random_iter())
         {
-            let expected = Simd::new(std::array::from_fn(|i| {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
                 ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS) as T
             }));
-            let actual = Simd::new(left).mul_keep_high(Simd::new(right));
+            let actual = Simd::from_array(left).mul_keep_high(Simd::from_array(right));
 
             assert!(
                 actual == expected,
@@ -1116,17 +1124,17 @@ fn test_mul_keep_high() {
 fn test_from_big_truncate() {
     // `from_{big}_truncate` is inconsistently missing from types.
 
-    let value = i16x16::new([
+    let value = i16x16::from_array([
         10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127, 255,
     ]);
-    let expected = i8x16::new([
+    let expected = i8x16::from_array([
         16, -23, 2, 3, 4, 5, 6, -1, 16, -23, 2, -128, 127, -128, 127, -1,
     ]);
     let actual = i8x16::from_i16x16_truncate(value);
     assert_eq!(actual, expected);
 
-    let value = i32x8::new([10000, 1001, 2, 3, 4, 5, -65536, 65536]);
-    let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, 0, 0]);
+    let value = i32x8::from_array([10000, 1001, 2, 3, 4, 5, -65536, 65536]);
+    let expected = i16x8::from_array([10000, 1001, 2, 3, 4, 5, 0, 0]);
     let actual = i16x8::from_i32x8_truncate(value);
     assert_eq!(actual, expected);
 }
@@ -1135,17 +1143,17 @@ fn test_from_big_truncate() {
 fn test_from_big_saturate() {
     // `from_{big}_saturate` is inconsistently missing from types.
 
-    let value = i16x16::new([
+    let value = i16x16::from_array([
         10000, 1001, 2, 3, 4, 5, 6, 32767, 10000, 1001, 2, 128, -129, -128, 127, 255,
     ]);
-    let expected = i8x16::new([
+    let expected = i8x16::from_array([
         127, 127, 2, 3, 4, 5, 6, 127, 127, 127, 2, 127, -128, -128, 127, 127,
     ]);
     let actual = i8x16::from_i16x16_saturate(value);
     assert_eq!(actual, expected);
 
-    let value = i32x8::new([10000, 1001, 2, 3, 4, 5, -65535, 65536]);
-    let expected = i16x8::new([10000, 1001, 2, 3, 4, 5, -32768, 32767]);
+    let value = i32x8::from_array([10000, 1001, 2, 3, 4, 5, -65535, 65536]);
+    let expected = i16x8::from_array([10000, 1001, 2, 3, 4, 5, -32768, 32767]);
     let actual = i16x8::from_i32x8_saturate(value);
     assert_eq!(actual, expected);
 }
@@ -1154,20 +1162,20 @@ fn test_from_big_saturate() {
 fn test_round_float() {
     // `round_float` only exists for select types.
 
-    let value = i32x4::new([-1, 30, i32::MIN, i32::MAX]);
-    let expected = f32x4::new([-1.0, 30.0, i32::MIN as f32, i32::MAX as f32]);
+    let value = i32x4::from_array([-1, 30, i32::MIN, i32::MAX]);
+    let expected = f32x4::from_array([-1.0, 30.0, i32::MIN as f32, i32::MAX as f32]);
     let actual = value.round_float();
     assert_eq!(actual, expected);
 
-    let value = i32x16::new([0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1]);
-    let expected = f32x16::new([
+    let value = i32x16::from_array([0, 1, 2, 3, 4, 5, 6, 7, -8, -7, -6, -5, -4, -3, -2, -1]);
+    let expected = f32x16::from_array([
         0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0,
     ]);
     let actual = value.round_float();
     assert_eq!(actual, expected);
 
-    let value = i32x8::new([-1, 30, i32::MIN, i32::MAX, 29, 35, -8, 0]);
-    let expected = f32x8::new([
+    let value = i32x8::from_array([-1, 30, i32::MIN, i32::MAX, 29, 35, -8, 0]);
+    let expected = f32x8::from_array([
         -1.0,
         30.0,
         i32::MIN as f32,
@@ -1185,15 +1193,15 @@ fn test_round_float() {
 fn test_swizzle_half() {
     // `swizzle_half` is inconsistently missing from types.
 
-    let value = i8x32::new([
+    let value = i8x32::from_array([
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
         26, 27, 28, 29, 30, 31, 32,
     ]);
-    let indices = i8x32::new([
+    let indices = i8x32::from_array([
         15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6,
         5, 4, 3, 2, 1, 0,
     ]);
-    let expected = i8x32::new([
+    let expected = i8x32::from_array([
         16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 32, 31, 30, 29, 28, 27, 26, 25, 24,
         23, 22, 21, 20, 19, 18, 17,
     ]);
@@ -1207,15 +1215,15 @@ fn test_swizzle_half_out_of_range_zeroes() {
     // that output lane. This previously failed on the AVX2 path, which used a
     // signed `saturating_add(0x60)` that cannot set the high bit that makes
     // `pshufb` zero, so out-of-range indices leaked `self[..][0]`.
-    let value = i8x32::new([
+    let value = i8x32::from_array([
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
         26, 27, 28, 29, 30, 31, 32,
     ]);
     for &bad in &[16i8, 17, 31, 100, -1, -128] {
-        let indices = i8x32::new([bad; 32]);
+        let indices = i8x32::from_array([bad; 32]);
         assert_eq!(
             value.swizzle_half(indices),
-            i8x32::new([0i8; 32]),
+            i8x32::from_array([0i8; 32]),
             "index {bad} is out of range and must zero every lane",
         );
     }
@@ -1225,8 +1233,8 @@ fn test_swizzle_half_out_of_range_zeroes() {
 fn test_from_u8x16_low() {
     // This function only exists for select types.
 
-    let value = u8x16::new([1, 2, 3, 4, 5, 6, 7, u8::MAX, 9, 10, 11, 12, 13, 14, 15, 16]);
-    let expected = i16x8::new([1, 2, 3, 4, 5, 6, 7, u8::MAX as i16]);
+    let value = u8x16::from_array([1, 2, 3, 4, 5, 6, 7, u8::MAX, 9, 10, 11, 12, 13, 14, 15, 16]);
+    let expected = i16x8::from_array([1, 2, 3, 4, 5, 6, 7, u8::MAX as i16]);
     let actual = i16x8::from_u8x16_low(value);
     assert_eq!(actual, expected);
 
@@ -1240,8 +1248,8 @@ fn test_from_u8x16_low() {
 fn test_from_u8x16_high() {
     // This function only exists for select types.
 
-    let value = u8x16::new([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
-    let expected = i16x8::new([9, 10, 11, 12, 13, 14, 255, 128]);
+    let value = u8x16::from_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 255, 128]);
+    let expected = i16x8::from_array([9, 10, 11, 12, 13, 14, 255, 128]);
     let actual = i16x8::from_u8x16_high(value);
     assert_eq!(actual, expected);
 
@@ -1255,9 +1263,9 @@ fn test_from_u8x16_high() {
 fn test_narrow_i16x8() {
     // This function only exists for select types.
 
-    let a = i16x8::new([-1, 2, -3, 4, -5, 6, -7, 8]);
-    let b = i16x8::new([9, 10, 11, 12, 13, -14, 15, -16]);
-    let expected = u8x16::new([0, 2, 0, 4, 0, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 0]);
+    let a = i16x8::from_array([-1, 2, -3, 4, -5, 6, -7, 8]);
+    let b = i16x8::from_array([9, 10, 11, 12, 13, -14, 15, -16]);
+    let expected = u8x16::from_array([0, 2, 0, 4, 0, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 0]);
     let actual = u8x16::narrow_i16x8(a, b);
     assert_eq!(actual, expected);
 }

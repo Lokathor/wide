@@ -549,7 +549,7 @@ define_simd_unsigned! {
 
     #[inline(always)]
     fn transpose_column(data: &[u32x16; 16], index: usize) -> u32x16 {
-      u32x16::new([
+      u32x16::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
@@ -893,7 +893,7 @@ impl From<u16x16> for u32x16 {
           } else {
             // Portable fallback
             let arr = v.as_array();
-            Self::new([
+            Self::from_array([
               arr[0] as u32,  arr[1] as u32,  arr[2] as u32,  arr[3] as u32,
               arr[4] as u32,  arr[5] as u32,  arr[6] as u32,  arr[7] as u32,
               arr[8] as u32,  arr[9] as u32,  arr[10] as u32, arr[11] as u32,
@@ -924,7 +924,7 @@ impl u32x16 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_lo_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }
@@ -944,7 +944,7 @@ impl u32x16 {
         let acc = self.to_array();
         let a = a.to_array();
         let b = b.to_array();
-        Self::new(core::array::from_fn(|i| {
+        Self::from_array(core::array::from_fn(|i| {
             add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }

@@ -567,7 +567,7 @@ define_simd_unsigned! {
 
     #[inline(always)]
     fn transpose_column(data: &[u8x32; 32], index: usize) -> u8x32 {
-      u8x32::new([
+      u8x32::from_array([
         data[0].as_array()[index],
         data[1].as_array()[index],
         data[2].as_array()[index],
