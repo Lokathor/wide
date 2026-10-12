@@ -136,19 +136,22 @@ macro_rules! define_simd_float {
       }
 
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic precision
       ///
-      /// The order of addition is non-deterministic. This means it varies by
-      /// platform, version, and can even differ within the same execution from
-      /// one invocation to the next.
+      /// If this performs multiple additions, their order is non-deterministic.
+      /// This could also perform one sum operation with higher precision than
+      /// expected. This varies by platform, version, and can even differ within
+      /// the same execution from one invocation to the next.
       $fn_reduce_add
 
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic precision
       ///
-      /// The order of multiplication is non-deterministic. This means it varies
-      /// by platform, version, and can even differ within the same execution
-      /// from one invocation to the next.
+      /// If this performs multiple multiplications, their order is
+      /// non-deterministic. This could also perform one product operation with
+      /// higher precision than expected. This varies by platform, version, and
+      /// can even differ within the same execution from one invocation to the
+      /// next.
       $fn_reduce_mul
 
       $fn_bitselect
