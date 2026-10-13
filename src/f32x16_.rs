@@ -364,8 +364,6 @@ define_simd_float! {
     Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
   }
 
-  ///
-  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [f32x16; 16]) -> [f32x16; 16] {
     // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,
@@ -786,14 +784,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfmadd` (single
-  ///   rounding, best accuracy)
-  /// - On `x86`/`x86_64` with AVX-512F only: Uses `(self * m) + a` (two
-  ///   roundings)
-  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   #[inline]
   pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -811,14 +801,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfmsub` (single
-  ///   rounding, best accuracy)
-  /// - On `x86`/`x86_64` with AVX-512F only: Uses `(self * m) - s` (two
-  ///   roundings)
-  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   #[inline]
   pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -836,14 +818,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmadd` (single
-  ///   rounding, best accuracy)
-  /// - On `x86`/`x86_64` with AVX-512F only: Uses `a - (self * m)` (two
-  ///   roundings)
-  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   #[inline]
   pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -861,14 +835,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX-512F+FMA: Uses 512-bit `vfnmsub` (single
-  ///   rounding, best accuracy)
-  /// - On `x86`/`x86_64` with AVX-512F only: Uses `-(self * m) - s` (two
-  ///   roundings)
-  /// - Other platforms: Delegates to [`f32x8`] (inherits its FMA behavior)
   #[inline]
   pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -1007,7 +973,6 @@ define_simd_float! {
     }
   }
 
-  /// Calculate the exponent of a packed `f32x16`
   #[inline]
   pub fn exp(self) -> Self {
     const_f32_as_f32x16!(P0, 1.0 / 2.0);

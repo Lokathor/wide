@@ -595,8 +595,6 @@ define_simd_unsigned! {
     self.shuffle(indices & 7)
   }
 
-  ///
-  /// This function is accelerated on multiple target architectures.
   #[inline]
   pub fn transpose(data: [Self; 2]) -> [Self; 2] {
     pick! {

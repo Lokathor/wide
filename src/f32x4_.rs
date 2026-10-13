@@ -467,8 +467,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// Currently this function is only accelerated on `sse`.
   #[inline]
   pub fn transpose(data: [f32x4; 4]) -> [f32x4; 4] {
     pick! {
@@ -1178,13 +1176,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with FMA: Uses `vfmadd` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `vfmaq_f32` (single rounding, best accuracy)
-  /// - Without FMA support: Uses `(self * m) + a` (two roundings)
   #[inline]
   pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -1198,14 +1189,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with FMA: Uses `vfmsub` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `vfmaq_f32(-s, self, m)` (single rounding, best
-  ///   accuracy)
-  /// - Without FMA support: Uses `(self * m) - s` (two roundings)
   #[inline]
   pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -1219,13 +1202,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with FMA: Uses `vfnmadd` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `vfmsq_f32` (single rounding, best accuracy)
-  /// - Without FMA support: Uses `a - (self * m)` (two roundings)
   #[inline]
   pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -1239,14 +1215,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with FMA: Uses `vfnmsub` (single rounding, best
-  ///   accuracy)
-  /// - On ARM64 with NEON: Uses `-(vfmaq_f32(s, self, m))` (single rounding,
-  ///   best accuracy)
-  /// - Without FMA support: Uses `-(self * m) - s` (two roundings)
   #[inline]
   pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -1399,7 +1367,6 @@ define_simd_float! {
     }
   }
 
-  /// Calculate the exponent of a packed `f32x4`
   #[inline]
   pub fn exp(self) -> Self {
     const_f32_as_f32x4!(P0, 1.0 / 2.0);

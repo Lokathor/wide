@@ -37,6 +37,9 @@
   `reduce_mul` to the separate `impl` blocks of floats and integers, and improve
   documentation of operators
 
+* [#343](https://github.com/Lokathor/wide/pull/343): Remove type-specific
+  documentation extensions from functions available for categories of SIMD types
+
 ## 1.7.1
 
 * [#327](https://github.com/Lokathor/wide/pull/327): Fixed `i/u32x4::to_bitmask`
