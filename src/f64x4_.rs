@@ -383,8 +383,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// Currently this function is only accelerated on `avx`.
   #[inline]
   pub fn transpose(data: [f64x4; 4]) -> [f64x4; 4] {
     pick! {
@@ -787,13 +785,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfmadd` (single rounding,
-  ///   best accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) + a` (two roundings)
-  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -811,13 +802,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfmsub` (single rounding,
-  ///   best accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) - s` (two roundings)
-  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -835,13 +819,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfnmadd` (single rounding,
-  ///   best accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `a - (self * m)` (two roundings)
-  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -859,13 +836,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses 256-bit `vfnmsub` (single rounding,
-  ///   best accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `-(self * m) - s` (two roundings)
-  /// - Other platforms: Delegates to [`f64x2`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -1016,7 +986,6 @@ define_simd_float! {
     }
   }
 
-  /// Calculate the exponent of a packed `f64x4`
   #[inline]
   pub fn exp(self) -> Self {
     const_f64_as_f64x4!(P2, 1.0 / 2.0);

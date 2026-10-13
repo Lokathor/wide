@@ -375,8 +375,6 @@ define_simd_float! {
     Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
   }
 
-  ///
-  /// Currently this function is only accelerated on `avx`.
   #[inline]
   pub fn transpose(data: [f32x8; 8]) -> [f32x8; 8] {
     pick! {
@@ -812,13 +810,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses `vfmadd` (single rounding, best
-  ///   accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) + a` (two roundings)
-  /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -836,13 +827,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses `vfmsub` (single rounding, best
-  ///   accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `(self * m) - s` (two roundings)
-  /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -860,13 +844,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses `vfnmadd` (single rounding, best
-  ///   accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `a - (self * m)` (two roundings)
-  /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
@@ -884,13 +861,6 @@ define_simd_float! {
     }
   }
 
-  ///
-  /// # Platform-specific behavior (may change in the future)
-  ///
-  /// - On `x86`/`x86_64` with AVX+FMA: Uses `vfnmsub` (single rounding, best
-  ///   accuracy)
-  /// - On `x86`/`x86_64` with AVX only: Uses `-(self * m) - s` (two roundings)
-  /// - Other platforms: Delegates to [`f32x4`] (may use NEON FMA or fallback)
   #[inline]
   pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
@@ -1029,7 +999,6 @@ define_simd_float! {
     }
   }
 
-  /// Calculate the exponent of a packed `f32x8`
   #[inline]
   pub fn exp(self) -> Self {
     const_f32_as_f32x8!(P0, 1.0 / 2.0);
