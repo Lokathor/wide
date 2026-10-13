@@ -23,7 +23,7 @@ macro_rules! const_f32_as_f32x4 {
     };
 }
 
-define_simd_float! {
+impl f32x4 {
   unsafe {
     T = f32,
     N = 4,

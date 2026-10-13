@@ -13,7 +13,7 @@ pick! {
   }
 }
 
-define_simd_unsigned! {
+impl u8x32 {
   unsafe {
     T = u8,
     N = 32,

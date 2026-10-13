@@ -13,7 +13,7 @@ pick! {
   }
 }
 
-define_simd_signed! {
+impl i32x16 {
   unsafe {
     T = i32,
     N = 16,
