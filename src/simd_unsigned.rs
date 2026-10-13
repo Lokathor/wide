@@ -250,6 +250,16 @@ macro_rules! define_simd_unsigned {
       $fn_mul_keep_high
     );
 
+    impl_unary_operator!(
+      $Simd,
+      Neg,
+      neg,
+      #[inline]
+      fn neg(self) -> Self::Output {
+        Self::default() - self
+      }
+    );
+
     /// The following functionality exists for all SIMD vectors of unsigned
     /// integers.
     impl $Simd {

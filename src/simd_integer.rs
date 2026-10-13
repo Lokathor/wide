@@ -49,15 +49,6 @@ macro_rules! impl_simd_integer {
     ) => {
         impl Eq for $Simd {}
 
-        impl_unary_operator!(
-            $Simd,
-            Neg,
-            neg,
-            #[inline]
-            fn neg(self) -> Self::Output {
-                Self::default() - self
-            }
-        );
         impl_unary_operator!($Simd, Not, not, $fn_not);
 
         impl_binary_operator!($T, $Simd, Add, add, AddAssign, add_assign, $fn_add);

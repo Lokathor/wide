@@ -358,6 +358,16 @@ macro_rules! define_simd_signed {
       $fn_mul_keep_high
     );
 
+    impl_unary_operator!(
+      $Simd,
+      Neg,
+      neg,
+      #[inline]
+      fn neg(self) -> Self::Output {
+        Self::default() - self
+      }
+    );
+
     impl Select<$Simd> for $UnsignedSimd {
       #[inline]
       fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
