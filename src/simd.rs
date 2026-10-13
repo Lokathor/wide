@@ -1,4 +1,8 @@
-use bytemuck::{Pod, pod_align_to, pod_align_to_mut};
+//! Defines the library's types and APIs applicable to arbitrary SIMD vectors.
+
+use bytemuck::{Pod, Zeroable, cast, pod_align_to, pod_align_to_mut};
+#[cfg(feature = "serde")]
+use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
 /// A trait for lanewise SIMD selection.
 ///
@@ -331,63 +335,19 @@ where
 
 trait Sealed {}
 
-/// Defines a SIMD type and functionality shared by all SIMD types.
-///
-/// Modules invoking this macro must define an `Inner` type alias, which is used
-/// as the internal representation of the SIMD type. `Inner` must have a size
-/// and alignment of `size_of::<T>() * N` bytes.
-///
-/// Functions that need a separate implementation for each type (for
-/// performance) use `$fn_{name}:item` syntax, and functions that have one
-/// shared implementation are written out normally inside this macro.
-///
-/// `impl_simd` is not invoked directly from each SIMD type module.
-/// Instead, type modules invoke the `simd_float`, `simd_signed` and
-/// `simd_unsigned` macros, which invoke this macro. This allows avoiding
-/// boilerplate for functions that have one shared implementation for one
-/// numerical category (float, signed-integer, unsigned-integer), but not one
-/// implementation for *all* SIMD types.
 macro_rules! define_simd {
   (
-    unsafe {
       T = $T:ident,
       N = $N:literal,
       N_STR = $N_STR:literal,
       Simd = $Simd:ident,
+      backend_mod = $backend_mod:ident,
+      auto_impl = $auto_impl:ident,
       UnsignedSimd = $UnsignedSimd:ident,
+      Bitmask = $Bitmask:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
-    }
-
-    $fn_simd_eq:item
-    $fn_simd_ne:item
-    $fn_simd_lt:item
-    $fn_simd_gt:item
-    $fn_simd_le:item
-    $fn_simd_ge:item
-    $fn_replace_const:item
-    $fn_extract_const:item
-    $fn_bitselect:item
-    $fn_select:item
-    $fn_to_bitmask:item
-    $fn_any:item
-    $fn_all:item
-    $fn_interleave_low:item
-    $fn_interleave_high:item
-    $fn_shuffle:item
-    $fn_shuffle_zeroing:item
-    $fn_shuffle_wrapping:item
-    $fn_shuffle_2:item
-    $fn_shuffle_zeroing_2:item
-    $fn_shuffle_wrapping_2:item
-    $fn_shuffle_3:item
-    $fn_shuffle_zeroing_3:item
-    $fn_shuffle_wrapping_3:item
-    $fn_shuffle_4:item
-    $fn_shuffle_zeroing_4:item
-    $fn_shuffle_wrapping_4:item
-    $fn_transpose:item
   ) => {
     #[doc = concat!("A SIMD vector with ", $N_STR, " elements of type [`", stringify!($T), "`].")]
     ///
@@ -397,7 +357,22 @@ macro_rules! define_simd {
     /// [crate level documentation]: crate
     #[repr(transparent)]
     #[derive(Clone, Copy)]
-    pub struct $Simd(pub(crate) Inner);
+    pub struct $Simd(pub(crate) crate::$backend_mod::Inner);
+
+    // Invoke a macro that automatically implements some of this API's backend
+    // functions. This macro is `float_auto_impl` for floats, `signed_auto_impl`
+    // for signed integers and `unsigned_auto_impl` for unsigned integers.
+    //
+    // This is used for functions that do not have the same implementation for
+    // all SIMD types, but do have the same implementation for all SIMD float
+    // types, or for all SIMD signed-integer types, etc.
+    $auto_impl!(
+      T = $T,
+      N = $N,
+      Simd = $Simd,
+      UnsignedSimd = $UnsignedSimd,
+      Bitmask = $Bitmask,
+    );
 
     impl PartialEq for $Simd {
       #[inline]
@@ -592,47 +567,80 @@ macro_rules! define_simd {
     impl_formatting_trait!(core::fmt::UpperExp);
 
     impl Select<$Simd> for $Simd {
-      $fn_select
+      #[inline]
+      fn select(self, if_true: Self, if_false: Self) -> Self {
+        self.select_backend(if_true, if_false)
+      }
     }
 
     impl ShuffleExt for [$Simd; 2] {
       type Indices = $UnsignedSimd;
       type Output = $Simd;
 
-      $fn_shuffle_2
+      #[inline]
+      fn shuffle(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_2_backend(self, indices)
+      }
 
-      $fn_shuffle_zeroing_2
+      #[inline]
+      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_zeroing_2_backend(self, indices)
+      }
 
-      $fn_shuffle_wrapping_2
+      #[inline]
+      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_wrapping_2_backend(self, indices)
+      }
     }
 
     impl ShuffleExt for [$Simd; 3] {
       type Indices = $UnsignedSimd;
       type Output = $Simd;
 
-      $fn_shuffle_3
+      #[inline]
+      fn shuffle(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_3_backend(self, indices)
+      }
 
-      $fn_shuffle_zeroing_3
+      #[inline]
+      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_zeroing_3_backend(self, indices)
+      }
 
-      $fn_shuffle_wrapping_3
+      #[inline]
+      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_wrapping_3_backend(self, indices)
+      }
     }
 
     impl ShuffleExt for [$Simd; 4] {
       type Indices = $UnsignedSimd;
       type Output = $Simd;
 
-      $fn_shuffle_4
+      #[inline]
+      fn shuffle(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_4_backend(self, indices)
+      }
 
-      $fn_shuffle_zeroing_4
+      #[inline]
+      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_zeroing_4_backend(self, indices)
+      }
 
-      $fn_shuffle_wrapping_4
+      #[inline]
+      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+        $Simd::shuffle_wrapping_4_backend(self, indices)
+      }
     }
 
     #[expect(deprecated)]
     impl CmpEq for $Simd {
       type Output = Self;
 
-      $fn_simd_eq
+      #[inline]
+      fn simd_eq(self, rhs: Self) -> Self {
+        self.simd_eq_backend(rhs)
+      }
     }
 
     #[expect(deprecated)]
@@ -649,7 +657,10 @@ macro_rules! define_simd {
     impl CmpNe for $Simd {
       type Output = Self;
 
-      $fn_simd_ne
+      #[inline]
+      fn simd_ne(self, rhs: Self) -> Self {
+        self.simd_ne_backend(rhs)
+      }
     }
 
     #[expect(deprecated)]
@@ -666,7 +677,10 @@ macro_rules! define_simd {
     impl CmpLt for $Simd {
       type Output = Self;
 
-      $fn_simd_lt
+      #[inline]
+      fn simd_lt(self, rhs: Self) -> Self {
+        self.simd_lt_backend(rhs)
+      }
     }
 
     #[expect(deprecated)]
@@ -683,7 +697,10 @@ macro_rules! define_simd {
     impl CmpGt for $Simd {
       type Output = Self;
 
-      $fn_simd_gt
+      #[inline]
+      fn simd_gt(self, rhs: Self) -> Self {
+        self.simd_gt_backend(rhs)
+      }
     }
 
     #[expect(deprecated)]
@@ -700,7 +717,10 @@ macro_rules! define_simd {
     impl CmpLe for $Simd {
       type Output = Self;
 
-      $fn_simd_le
+      #[inline]
+      fn simd_le(self, rhs: Self) -> Self {
+        self.simd_le_backend(rhs)
+      }
     }
 
     #[expect(deprecated)]
@@ -717,7 +737,10 @@ macro_rules! define_simd {
     impl CmpGe for $Simd {
       type Output = Self;
 
-      $fn_simd_ge
+      #[inline]
+      fn simd_ge(self, rhs: Self) -> Self {
+        self.simd_ge_backend(rhs)
+      }
     }
 
     #[expect(deprecated)]
@@ -893,15 +916,29 @@ macro_rules! define_simd {
       ///
       /// If `INDEX` is out of bounds, compilation fails.
       #[doc(alias = "set", alias = "with")]
+      #[inline]
       #[must_use]
-      $fn_replace_const
+      pub fn replace_const<const INDEX: usize>(self, value: $T) -> Self {
+        const {
+          assert!(INDEX < $N, "attempt to call `Simd::replace_const` with an out of bounds index");
+        }
+
+        self.replace_const_backend::<INDEX>(value)
+      }
 
       /// Returns the element of `self` at position `INDEX`.
       ///
       /// If `INDEX` is out of bounds, compilation fails.
       #[doc(alias = "get")]
+      #[inline]
       #[must_use]
-      $fn_extract_const
+      pub fn extract_const<const INDEX: usize>(self) -> $T {
+        const {
+          assert!(INDEX < $N, "attempt to call `Simd::extract_const` with an out of bounds index");
+        }
+
+        self.extract_const_backend::<INDEX>()
+      }
 
       /// Bitwise selection.
       ///
@@ -915,8 +952,11 @@ macro_rules! define_simd {
       ///
       /// [mask]: crate#masks
       /// [`select`]: Self::select
+      #[inline]
       #[must_use]
-      $fn_bitselect
+      pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+        self.bitselect_backend(if_one, if_zero)
+      }
 
       /// Lanewise SIMD selection.
       ///
@@ -957,9 +997,12 @@ macro_rules! define_simd {
       /// is unspecified.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
       #[doc(alias("movemask", "move_mask"))]
-      $fn_to_bitmask
+      pub fn to_bitmask(self) -> $Bitmask {
+        self.to_bitmask_backend()
+      }
 
       /// Returns `true` if any element of `self` is true.
       ///
@@ -968,8 +1011,11 @@ macro_rules! define_simd {
       /// is unspecified.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_any
+      pub fn any(self) -> bool {
+        self.any_backend()
+      }
 
       /// Returns `true` if all elements of `self` are true.
       ///
@@ -978,8 +1024,11 @@ macro_rules! define_simd {
       /// is unspecified.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_all
+      pub fn all(self) -> bool {
+        self.all_backend()
+      }
 
       /// Returns `true` if none of the elements of `self` are true.
       ///
@@ -998,16 +1047,22 @@ macro_rules! define_simd {
       /// halfs.
       ///
       /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+      #[inline]
       #[must_use]
-      $fn_interleave_low
+      pub fn interleave_low(self, other: Self) -> Self {
+        self.interleave_low_backend(other)
+      }
 
       /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
       /// halfs.
       ///
       /// Equivalent to
       /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+      #[inline]
       #[must_use]
-      $fn_interleave_high
+      pub fn interleave_high(self, other: Self) -> Self {
+        self.interleave_high_backend(other)
+      }
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.
@@ -1029,8 +1084,11 @@ macro_rules! define_simd {
       /// indices, either zero is returned or the index wraps around,
       /// non-deterministically (unlike other types, which can return arbitrary
       /// values).
+      #[inline]
       #[must_use]
-      $fn_shuffle
+      pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
+        self.shuffle_backend(indices)
+      }
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.
@@ -1041,8 +1099,11 @@ macro_rules! define_simd {
       /// Equivalent to
       /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
       /// with a zero fallback.
+      #[inline]
       #[must_use]
-      $fn_shuffle_zeroing
+      pub fn shuffle_zeroing(self, indices: $UnsignedSimd) -> Self {
+        self.shuffle_zeroing_backend(indices)
+      }
 
       /// Returns a SIMD vector whose elements are selected from `self` using
       /// the corresponding runtime `indices`.
@@ -1051,12 +1112,18 @@ macro_rules! define_simd {
       ///
       /// Equivalent to
       /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
+      #[inline]
       #[must_use]
-      $fn_shuffle_wrapping
+      pub fn shuffle_wrapping(self, indices: $UnsignedSimd) -> Self {
+        self.shuffle_wrapping_backend(indices)
+      }
 
       /// Transposes an array of SIMD vectors interpreted as a square matrix.
+      #[inline]
       #[must_use]
-      $fn_transpose
+      pub fn transpose(data: [Self; $N]) -> [Self; $N] {
+        Self::transpose_backend(data)
+      }
 
       /// Converts an array to a SIMD vector.
       ///
@@ -1129,55 +1196,289 @@ macro_rules! define_simd {
       }
     }
 
-    mod bytemuck {
-      use bytemuck::{Pod, Zeroable};
+    // SAFETY: All SIMD types in this library contain fully initialized memory
+    // and accept all bits patterns.
+    unsafe impl Zeroable for $Simd {}
 
-      use crate::$Simd;
+    // SAFETY: All SIMD types in this library contain fully initialized memory
+    // and accept all bits patterns.
+    unsafe impl Pod for $Simd {}
 
-      // SAFETY: All SIMD types in this library contain fully initialized memory
-      // and accept all bits patterns.
-      unsafe impl Zeroable for $Simd {}
-
-      // SAFETY: All SIMD types in this library contain fully initialized memory
-      // and accept all bits patterns.
-      unsafe impl Pod for $Simd {}
+    #[cfg(feature = "serde")]
+    impl Serialize for $Simd {
+      #[inline]
+      fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+      where
+        S: serde_core::Serializer,
+      {
+        let array = self.as_array();
+        let mut seq = serializer.serialize_tuple($N)?;
+        for e in array {
+          seq.serialize_element(e)?;
+        }
+        seq.end()
+      }
     }
 
     #[cfg(feature = "serde")]
-    mod serde {
-      use serde_core::{
-        Deserialize, Serialize,
-        ser::SerializeTuple,
-      };
-
-      use crate::$Simd;
-
-      impl Serialize for $Simd {
-        #[inline]
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-          S: serde_core::Serializer,
-        {
-          let array = self.as_array();
-          let mut seq = serializer.serialize_tuple($N)?;
-          for e in array {
-            seq.serialize_element(e)?;
-          }
-          seq.end()
-        }
-      }
-
-      impl<'de> Deserialize<'de> for $Simd {
-        #[inline]
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-          D: serde_core::Deserializer<'de>,
-        {
-          crate::simd::deserialize_impl(deserializer)
-        }
+    impl<'de> Deserialize<'de> for $Simd {
+      #[inline]
+      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+      where
+        D: serde_core::Deserializer<'de>,
+      {
+        crate::simd::deserialize_impl(deserializer)
       }
     }
   };
+}
+
+/// Automatically implements backend functions that have the same implementation
+/// for all SIMD float types.
+macro_rules! float_auto_impl {
+    (
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+        Bitmask = $Bitmask:ident,
+    ) => {
+        impl $Simd {
+            #[inline]
+            fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
+                Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
+            }
+
+            #[inline]
+            fn extract_const_backend<const INDEX: usize>(self) -> $T {
+                $T::from_bits(self.to_bits().extract_const::<INDEX>())
+            }
+
+            #[inline]
+            fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+                Self::from_bits(self.to_bits().shuffle(indices))
+            }
+
+            #[inline]
+            fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+                Self::from_bits(self.to_bits().shuffle_zeroing(indices))
+            }
+
+            #[inline]
+            fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+                Self::from_bits(self.to_bits().shuffle_wrapping(indices))
+            }
+
+            #[inline]
+            fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+            }
+
+            #[inline]
+            fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+            }
+
+            #[inline]
+            fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+            }
+
+            #[inline]
+            fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+            }
+
+            #[inline]
+            fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+            }
+
+            #[inline]
+            fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+            }
+
+            #[inline]
+            fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+            }
+
+            #[inline]
+            fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+            }
+
+            #[inline]
+            fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+            }
+        }
+    };
+}
+
+/// Automatically implements backend functions that have the same implementation
+/// for all SIMD signed-integer types.
+macro_rules! signed_auto_impl {
+    (
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+        Bitmask = $Bitmask:ident,
+    ) => {
+        impl $Simd {
+            #[inline]
+            fn simd_eq_backend(self, other: Self) -> Self {
+                self.cast_unsigned()
+                    .simd_eq(other.cast_unsigned())
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn simd_ne_backend(self, other: Self) -> Self {
+                self.cast_unsigned()
+                    .simd_ne(other.cast_unsigned())
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
+                self.cast_unsigned()
+                    .replace_const::<INDEX>(value.cast_unsigned())
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn extract_const_backend<const INDEX: usize>(self) -> $T {
+                self.cast_unsigned().extract_const::<INDEX>().cast_signed()
+            }
+
+            #[inline]
+            fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+                self.cast_unsigned()
+                    .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+                self.cast_unsigned()
+                    .select(if_true.cast_unsigned(), if_false.cast_unsigned())
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn to_bitmask_backend(self) -> $Bitmask {
+                self.cast_unsigned().to_bitmask()
+            }
+
+            #[inline]
+            fn any_backend(self) -> bool {
+                self.cast_unsigned().any()
+            }
+
+            #[inline]
+            fn all_backend(self) -> bool {
+                self.cast_unsigned().all()
+            }
+
+            #[inline]
+            fn interleave_low_backend(self, other: Self) -> Self {
+                self.cast_unsigned()
+                    .interleave_low(other.cast_unsigned())
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn interleave_high_backend(self, other: Self) -> Self {
+                self.cast_unsigned()
+                    .interleave_high(other.cast_unsigned())
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+                self.cast_unsigned().shuffle(indices).cast_signed()
+            }
+
+            #[inline]
+            fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+                self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
+            }
+
+            #[inline]
+            fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+                self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
+            }
+
+            #[inline]
+            fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+            }
+
+            #[inline]
+            fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+            }
+
+            #[inline]
+            fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+            }
+
+            #[inline]
+            fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+            }
+
+            #[inline]
+            fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+            }
+
+            #[inline]
+            fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+            }
+
+            #[inline]
+            fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+            }
+
+            #[inline]
+            fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+            }
+
+            #[inline]
+            fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+            }
+
+            #[inline]
+            fn transpose_backend(data: [Self; $N]) -> [Self; $N] {
+                cast($UnsignedSimd::transpose(cast::<[$Simd; $N], [$UnsignedSimd; $N]>(
+                    data,
+                )))
+            }
+        }
+    };
+}
+
+/// Automatically implements backend functions that have the same implementation
+/// for all SIMD unsigned-integer types.
+macro_rules! unsigned_auto_impl {
+    (
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+        Bitmask = $Bitmask:ident,
+    ) => {
+        // There are currently no such functions.
+    };
 }
 
 impl<Simd, const N: usize> Sealed for [Simd; N] {}
@@ -1227,3 +1528,394 @@ where
         .deserialize_tuple(N, ArrayVisitor::<T, N>(core::marker::PhantomData))?
         .into())
 }
+
+define_simd!(
+    T = f32,
+    N = 4,
+    N_STR = "four",
+    Simd = f32x4,
+    backend_mod = f32x4_,
+    auto_impl = float_auto_impl,
+    UnsignedSimd = u32x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128 },
+    optional_type_arm_inner { ArmInner = float32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = f32,
+    N = 8,
+    N_STR = "eight",
+    Simd = f32x8,
+    backend_mod = f32x8_,
+    auto_impl = float_auto_impl,
+    UnsignedSimd = u32x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256 },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = f32,
+    N = 16,
+    N_STR = "16",
+    Simd = f32x16,
+    backend_mod = f32x16_,
+    auto_impl = float_auto_impl,
+    UnsignedSimd = u32x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512 },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = f64,
+    N = 2,
+    N_STR = "two",
+    Simd = f64x2,
+    backend_mod = f64x2_,
+    auto_impl = float_auto_impl,
+    UnsignedSimd = u64x2,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128d },
+    optional_type_arm_inner { ArmInner = float64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = f64,
+    N = 4,
+    N_STR = "four",
+    Simd = f64x4,
+    backend_mod = f64x4_,
+    auto_impl = float_auto_impl,
+    UnsignedSimd = u64x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = f64,
+    N = 8,
+    N_STR = "eight",
+    Simd = f64x8,
+    backend_mod = f64x8_,
+    auto_impl = float_auto_impl,
+    UnsignedSimd = u64x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i8,
+    N = 16,
+    N_STR = "16",
+    Simd = i8x16,
+    backend_mod = i8x16_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u8x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int8x16_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i8,
+    N = 32,
+    N_STR = "32",
+    Simd = i8x32,
+    backend_mod = i8x32_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u8x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i8,
+    N = 64,
+    N_STR = "64",
+    Simd = i8x64,
+    backend_mod = i8x64_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u8x64,
+    Bitmask = u64,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i16,
+    N = 8,
+    N_STR = "eight",
+    Simd = i16x8,
+    backend_mod = i16x8_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u16x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int16x8_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i16,
+    N = 16,
+    N_STR = "16",
+    Simd = i16x16,
+    backend_mod = i16x16_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u16x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i16,
+    N = 32,
+    N_STR = "32",
+    Simd = i16x32,
+    backend_mod = i16x32_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u16x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i32,
+    N = 4,
+    N_STR = "four",
+    Simd = i32x4,
+    backend_mod = i32x4_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u32x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i32,
+    N = 8,
+    N_STR = "eight",
+    Simd = i32x8,
+    backend_mod = i32x8_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u32x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i32,
+    N = 16,
+    N_STR = "16",
+    Simd = i32x16,
+    backend_mod = i32x16_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u32x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i64,
+    N = 2,
+    N_STR = "two",
+    Simd = i64x2,
+    backend_mod = i64x2_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u64x2,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i64,
+    N = 4,
+    N_STR = "four",
+    Simd = i64x4,
+    backend_mod = i64x4_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u64x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i64,
+    N = 8,
+    N_STR = "eight",
+    Simd = i64x8,
+    backend_mod = i64x8_,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u64x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u8,
+    N = 16,
+    N_STR = "16",
+    Simd = u8x16,
+    backend_mod = u8x16_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u8x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint8x16_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u8,
+    N = 32,
+    N_STR = "32",
+    Simd = u8x32,
+    backend_mod = u8x32_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u8x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u8,
+    N = 64,
+    N_STR = "64",
+    Simd = u8x64,
+    backend_mod = u8x64_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u8x64,
+    Bitmask = u64,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u16,
+    N = 8,
+    N_STR = "eight",
+    Simd = u16x8,
+    backend_mod = u16x8_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u16x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint16x8_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u16,
+    N = 16,
+    N_STR = "16",
+    Simd = u16x16,
+    backend_mod = u16x16_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u16x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u16,
+    N = 32,
+    N_STR = "32",
+    Simd = u16x32,
+    backend_mod = u16x32_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u16x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u32,
+    N = 4,
+    N_STR = "four",
+    Simd = u32x4,
+    backend_mod = u32x4_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u32x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u32,
+    N = 8,
+    N_STR = "eight",
+    Simd = u32x8,
+    backend_mod = u32x8_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u32x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u32,
+    N = 16,
+    N_STR = "16",
+    Simd = u32x16,
+    backend_mod = u32x16_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u32x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u64,
+    N = 2,
+    N_STR = "two",
+    Simd = u64x2,
+    backend_mod = u64x2_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u64x2,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u64,
+    N = 4,
+    N_STR = "four",
+    Simd = u64x4,
+    backend_mod = u64x4_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u64x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u64,
+    N = 8,
+    N_STR = "eight",
+    Simd = u64x8,
+    backend_mod = u64x8_,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u64x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
