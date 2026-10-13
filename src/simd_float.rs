@@ -694,7 +694,7 @@ macro_rules! define_simd_float {
       #[must_use]
       $fn_is_sign_negative
 
-      /// Returns the reciprocal (inverse) of a number, `1/x`.
+      /// Approximates the reciprocal (inverse) of a number, `1/x`.
       ///
       /// # Unspecified precision
       ///
@@ -710,7 +710,7 @@ macro_rules! define_simd_float {
       #[must_use]
       $fn_recip
 
-      /// Returns the square root of the reciprocal (inverse) of a number,
+      /// Approximates the square root of the reciprocal (inverse) of a number,
       /// `sqrt(1/x)`.
       ///
       /// # Unspecified precision
