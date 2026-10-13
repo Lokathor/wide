@@ -2,11 +2,11 @@ use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
-    type Inner = m128d;
+    pub(crate) type Inner = m128d;
   } else if #[cfg(target_feature="simd128")] {
-    type Inner = v128;
+    pub(crate) type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-    type Inner = float64x2_t;
+    pub(crate) type Inner = float64x2_t;
   } else {
     #[repr(C, align(16))]
     #[derive(Clone, Copy)]
