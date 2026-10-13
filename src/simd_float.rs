@@ -136,7 +136,7 @@ macro_rules! define_simd_float {
       }
 
       ///
-      /// # Non-deterministic precision
+      /// # Non-deterministic
       ///
       /// If this performs multiple additions, their order is non-deterministic.
       /// This could also perform one sum operation with higher precision than
@@ -145,7 +145,7 @@ macro_rules! define_simd_float {
       $fn_reduce_add
 
       ///
-      /// # Non-deterministic precision
+      /// # Non-deterministic
       ///
       /// If this performs multiple multiplications, their order is
       /// non-deterministic. This could also perform one product operation with
