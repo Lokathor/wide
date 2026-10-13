@@ -22,7 +22,7 @@ macro_rules! const_f32_as_f32x16 {
 
 impl f32x16 {
   #[inline]
-  fn neg(self) -> Self::Output {
+  pub(crate) fn neg(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512(self.0, Self::splat(-0.0).0))
@@ -36,7 +36,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn not(self) -> Self::Output {
+  pub(crate) fn not(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512(self.0, set_splat_m512(f32::from_bits(u32::MAX))))
@@ -50,7 +50,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(add_m512(self.0, rhs.0))
@@ -64,7 +64,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(sub_m512(self.0, rhs.0))
@@ -78,7 +78,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(mul_m512(self.0, rhs.0))
@@ -89,7 +89,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn div(self, rhs: Self) -> Self::Output {
+  pub(crate) fn div(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(div_m512(self.0, rhs.0))
@@ -100,7 +100,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn rem(self, rhs: Self) -> Self::Output {
+  pub(crate) fn rem(self, rhs: Self) -> Self::Output {
     Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
@@ -122,7 +122,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitand_m512(self.0, rhs.0))
@@ -136,7 +136,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
     if #[cfg(target_feature="avx512f")] {
         Self(bitor_m512(self.0, rhs.0))
@@ -150,7 +150,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512(self.0, rhs.0))
@@ -164,7 +164,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
@@ -178,7 +178,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
@@ -192,7 +192,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
@@ -206,7 +206,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
@@ -220,7 +220,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
@@ -234,7 +234,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
@@ -248,7 +248,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn reduce_add(self) -> f32 {
+  pub(crate) fn reduce_add(self) -> f32 {
     pick! {
       if #[cfg(target_feature="avx512f")]{
         reduce_add_m512(self.0)
@@ -259,7 +259,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn reduce_mul(self) -> f32 {
+  pub(crate) fn reduce_mul(self) -> f32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
@@ -277,7 +277,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+  pub(crate) fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitor_m512(
@@ -294,7 +294,7 @@ impl f32x16 {
   }
 
   #[inline]
-  fn select(self, if_true: Self, if_false: Self) -> Self {
+  pub(crate) fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(blend_varying_m512(if_false.0, if_true.0, movepi32_mask_m512(self.0)))
@@ -308,7 +308,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn to_bitmask(self) -> u32 {
+  pub(crate) fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         movepi32_mask_m512(self.0) as u32
@@ -319,7 +319,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn any(self) -> bool {
+  pub(crate) fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         movepi32_mask_m512(self.0) != 0
@@ -330,7 +330,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn all(self) -> bool {
+  pub(crate) fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         movepi32_mask_m512(self.0) == !0_u16
@@ -341,17 +341,17 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn interleave_low(self, other: Self) -> Self {
+  pub(crate) fn interleave_low(self, other: Self) -> Self {
     Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
   }
 
   #[inline]
-  pub fn interleave_high(self, other: Self) -> Self {
+  pub(crate) fn interleave_high(self, other: Self) -> Self {
     Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
   }
 
   #[inline]
-  pub fn transpose(data: [f32x16; 16]) -> [f32x16; 16] {
+  pub(crate) fn transpose(data: [f32x16; 16]) -> [f32x16; 16] {
     // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,
     // then try adding an optimized `avx512f` implementation.
 
@@ -398,7 +398,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn is_nan(self) -> Self {
+  pub(crate) fn is_nan(self) -> Self {
     pick! {
       if #[cfg(target_feature = "avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(Unordered)}>(self.0, self.0))
@@ -412,7 +412,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn is_infinite(self) -> Self {
+  pub(crate) fn is_infinite(self) -> Self {
     let shifted_inf = u32x16::from(0xFF000000);
     let u: u32x16 = cast(self);
     let shift_u = u << 1_u64;
@@ -421,7 +421,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn is_finite(self) -> Self {
+  pub(crate) fn is_finite(self) -> Self {
     let shifted_exp_mask = u32x16::splat(0xFF000000);
     let u: u32x16 = cast(self);
     let shift_u = u << 1_u32;
@@ -430,7 +430,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn is_sign_positive(self) -> Self {
+  pub(crate) fn is_sign_positive(self) -> Self {
     const SIGN_MASK: u32x16 = u32x16::splat((-0.0_f32).to_bits());
 
     let bits = cast::<f32x16, u32x16>(self);
@@ -440,7 +440,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn is_sign_negative(self) -> Self {
+  pub(crate) fn is_sign_negative(self) -> Self {
     const SIGN_MASK: u32x16 = u32x16::splat((-0.0_f32).to_bits());
 
     let bits = cast::<f32x16, u32x16>(self);
@@ -450,7 +450,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn recip(self) -> Self {
+  pub(crate) fn recip(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO: Add `_mm512_rcp14_ps` to `safe_arch`, looks like it is missing,
@@ -467,7 +467,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn recip_sqrt(self) -> Self {
+  pub(crate) fn recip_sqrt(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO: Add `_mm512_rsqrt14_ps` to `safe_arch`, looks like it is
@@ -484,7 +484,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // max_m512 seems to do rhs < self ? self : rhs. So if there's any NaN
@@ -501,7 +501,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_max(self, rhs: Self) -> Self {
+  pub(crate) fn fast_max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(max_m512(self.0, rhs.0))
@@ -515,7 +515,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // min_m512 seems to do rhs > self ? self : rhs. So if there's any NaN
@@ -532,7 +532,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_min(self, rhs: Self) -> Self {
+  pub(crate) fn fast_min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(min_m512(self.0, rhs.0))
@@ -546,7 +546,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn clamp(self, min: Self, max: Self) -> Self {
+  pub(crate) fn clamp(self, min: Self, max: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // This works since all bits set is NaN.
@@ -562,7 +562,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_clamp(self, min: Self, max: Self) -> Self {
+  pub(crate) fn fast_clamp(self, min: Self, max: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // For both `min_m512` and `max_m512` if any input is NaN, `rhs` gets
@@ -578,31 +578,31 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn reduce_max(self) -> f32 {
+  pub(crate) fn reduce_max(self) -> f32 {
     let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
     self_a.max(self_b).reduce_max()
   }
 
   #[inline]
-  pub fn fast_reduce_max(self) -> f32 {
+  pub(crate) fn fast_reduce_max(self) -> f32 {
     let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
     self_a.fast_max(self_b).fast_reduce_max()
   }
 
   #[inline]
-  pub fn reduce_min(self) -> f32 {
+  pub(crate) fn reduce_min(self) -> f32 {
     let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
     self_a.min(self_b).reduce_min()
   }
 
   #[inline]
-  pub fn fast_reduce_min(self) -> f32 {
+  pub(crate) fn fast_reduce_min(self) -> f32 {
     let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
     self_a.fast_min(self_b).fast_reduce_min()
   }
 
   #[inline]
-  pub fn abs(self) -> Self {
+  pub(crate) fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let non_sign_bits = f32x16::from(f32::from_bits(i32::MAX as u32));
@@ -617,7 +617,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn floor(self) -> Self {
+  pub(crate) fn floor(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512::<{round_op!(NegInf)}>(self.0))
@@ -631,7 +631,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn ceil(self) -> Self {
+  pub(crate) fn ceil(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512::<{round_op!(PosInf)}>(self.0))
@@ -645,7 +645,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn round(self) -> Self {
+  pub(crate) fn round(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         const_f32_as_f32x16!(HALF_NEXT_DOWN, 0.5_f32.next_down());
@@ -677,7 +677,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn round_int(self) -> i32x16 {
+  pub(crate) fn round_int(self) -> i32x16 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
@@ -696,7 +696,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_round_int(self) -> i32x16 {
+  pub(crate) fn fast_round_int(self) -> i32x16 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         cast(convert_to_i32_m512i_from_m512(self.0))
@@ -710,7 +710,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn round_ties_even(self) -> Self {
+  pub(crate) fn round_ties_even(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512::<{round_op!(Nearest)}>(self.0))
@@ -724,7 +724,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn trunc(self) -> Self {
+  pub(crate) fn trunc(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512::<{round_op!(Zero)}>(self.0))
@@ -738,7 +738,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn trunc_int(self) -> i32x16 {
+  pub(crate) fn trunc_int(self) -> i32x16 {
     pick! {
         if #[cfg(target_feature="avx512f")] {
         // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
@@ -757,7 +757,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_trunc_int(self) -> i32x16 {
+  pub(crate) fn fast_trunc_int(self) -> i32x16 {
     pick! {
       if #[cfg(all(target_feature="avx512f"))] {
         cast(convert_truncate_m512_i32_m512i(self.0))
@@ -771,7 +771,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
         Self(fused_mul_add_m512(self.0, a.0, b.0))
@@ -788,7 +788,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
         Self(fused_mul_sub_m512(self.0, a.0, b.0))
@@ -805,7 +805,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
         Self(fused_mul_neg_add_m512(self.0, a.0, b.0))
@@ -822,7 +822,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
         Self(fused_mul_neg_sub_m512(self.0, a.0, b.0))
@@ -839,7 +839,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn powf_simd(self, n: Self) -> Self {
+  pub(crate) fn powf_simd(self, n: Self) -> Self {
     const_f32_as_f32x16!(ln2f_hi, 0.693359375);
     const_f32_as_f32x16!(ln2f_lo, -2.12194440e-4);
     const_f32_as_f32x16!(P0logf, 3.3333331174E-1);
@@ -946,7 +946,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn sqrt(self) -> Self {
+  pub(crate) fn sqrt(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(sqrt_m512(self.0))
@@ -960,7 +960,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn exp(self) -> Self {
+  pub(crate) fn exp(self) -> Self {
     const_f32_as_f32x16!(P0, 1.0 / 2.0);
     const_f32_as_f32x16!(P1, 1.0 / 6.0);
     const_f32_as_f32x16!(P2, 1.0 / 24.0);
@@ -1012,7 +1012,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn exp2(self) -> Self {
+  pub(crate) fn exp2(self) -> Self {
     const_f32_as_f32x16!(P2, 1.0 / 2.0);
     const_f32_as_f32x16!(P3, 1.0 / 6.0);
     const_f32_as_f32x16!(P4, 1.0 / 24.0);
@@ -1059,7 +1059,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn ln(self) -> Self {
+  pub(crate) fn ln(self) -> Self {
     const_f32_as_f32x16!(HALF, 0.5);
     const_f32_as_f32x16!(P0, 3.3333331174E-1);
     const_f32_as_f32x16!(P1, -2.4999993993E-1);
@@ -1109,7 +1109,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn cbrt(self) -> Self {
+  pub(crate) fn cbrt(self) -> Self {
     let a = self.abs();
     let zero = a.simd_eq(Self::ZERO);
     if zero.all() {
@@ -1169,7 +1169,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn asin(self) -> Self {
+  pub(crate) fn asin(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f32_as_f32x16!(P4asinf, 4.2163199048E-2);
@@ -1203,7 +1203,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn acos(self) -> Self {
+  pub(crate) fn acos(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f32_as_f32x16!(P4asinf, 4.2163199048E-2);
@@ -1237,7 +1237,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn atan(self) -> Self {
+  pub(crate) fn atan(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f32_as_f32x16!(P3atanf, 8.05374449538E-2);
@@ -1275,7 +1275,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn atan2(self, x: Self) -> Self {
+  pub(crate) fn atan2(self, x: Self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f32_as_f32x16!(P3atanf, 8.05374449538E-2);
@@ -1331,7 +1331,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn sin_cos(self) -> (Self, Self) {
+  pub(crate) fn sin_cos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
 
@@ -1389,7 +1389,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn asin_acos(self) -> (Self, Self) {
+  pub(crate) fn asin_acos(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f32_as_f32x16!(P4asinf, 4.2163199048E-2);
@@ -1428,7 +1428,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn exp_m1(self) -> Self {
+  pub(crate) fn exp_m1(self) -> Self {
     // x < -17.329: e^x < 2⁻²⁵, exp_m1(x) = -1.0 exactly (mantissa exhaustion)
     // IEEE simd_lt returns false for NaN, so NaN lanes can't reach here.
     // -inf is < -17.329, and exp_m1(-inf) = -1.0, also correct.
@@ -1486,7 +1486,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn ln_1p(self) -> Self {
+  pub(crate) fn ln_1p(self) -> Self {
     // Based on the identity ln(1+x) = x·ln(1+x)/((1+x)-1), i.e. x·ln(u)/(u-1)
     // where u = 1+x. From MUSL libc (Rich Felker et al., https://musl.libc.org) src/math/log1pf.c
     // and fdlibm (Sun Microsystems, https://www.netlib.org/fdlibm/) s_log1p.c.
@@ -1504,7 +1504,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn sinh(self) -> Self {
+  pub(crate) fn sinh(self) -> Self {
     const_f32_as_f32x16!(P0, 1.0);
     const_f32_as_f32x16!(P1, 1.0 / 6.0);
     const_f32_as_f32x16!(P2, 1.0 / 120.0);
@@ -1523,7 +1523,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn cosh(self) -> Self {
+  pub(crate) fn cosh(self) -> Self {
     const_f32_as_f32x16!(P0, 1.0);
     const_f32_as_f32x16!(P1, 1.0 / 2.0);
     const_f32_as_f32x16!(P2, 1.0 / 24.0);
@@ -1541,7 +1541,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub fn tanh(self) -> Self {
+  pub(crate) fn tanh(self) -> Self {
     // |x| < 2e-4: tanh(x) ≈ x, error x³/3 < 16·ULP(x)
     // bound: x² < 48·2⁻²³ → x < 2.39e-3; 2e-4 has 10× margin
     // |x| > 9.011: tanh(x) = ±1 to f32 precision (e⁻²ˣ < 2⁻²⁴)

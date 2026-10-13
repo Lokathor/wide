@@ -15,7 +15,7 @@ pick! {
 
 impl i64x8 {
   #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
@@ -29,7 +29,7 @@ impl i64x8 {
   }
 
   #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl i64x8 {
   }
 
   #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
@@ -57,7 +57,7 @@ impl i64x8 {
   }
 
   #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
@@ -71,7 +71,7 @@ impl i64x8 {
   }
 
   #[inline]
-  fn shr(self, rhs: u64x8) -> Self::Output {
+  pub(crate) fn shr(self, rhs: u64x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
@@ -100,7 +100,7 @@ impl i64x8 {
   }
 
   #[inline]
-  fn shr(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
@@ -117,7 +117,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(max_i64_m512i(self.0, rhs.0))
@@ -131,7 +131,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(min_i64_m512i(self.0, rhs.0))
@@ -145,19 +145,19 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn reduce_max(self) -> i64 {
+  pub(crate) fn reduce_max(self) -> i64 {
     let array: [i64x4; 2] = cast(self);
     array[0].max(array[1]).reduce_max()
   }
 
   #[inline]
-  pub fn reduce_min(self) -> i64 {
+  pub(crate) fn reduce_min(self) -> i64 {
     let array: [i64x4; 2] = cast(self);
     array[0].min(array[1]).reduce_min()
   }
 
   #[inline]
-  pub fn unbounded_shr(self, rhs: u64x8) -> Self {
+  pub(crate) fn unbounded_shr(self, rhs: u64x8) -> Self {
     // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
     // Self(shr_each_i64_m512i(self.0, rhs.0) }
     // Fallback for now:
@@ -169,7 +169,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(shr_all_i64_m512i(self.0, rhs as u64))
@@ -183,7 +183,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn saturating_add(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let result = self + rhs;
@@ -202,7 +202,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let result = self - rhs;
@@ -221,7 +221,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one? This intentionally avoids `mul_keep_low_high` because getting the
     // high bits of 64-bit multiplication could be slow.
@@ -268,7 +268,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn mul_keep_low_high(self, rhs: Self) -> (u64x8, i64x8) {
+  pub(crate) fn mul_keep_low_high(self, rhs: Self) -> (u64x8, i64x8) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one?
 
@@ -311,7 +311,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
+  pub(crate) fn mul_keep_high(self, rhs: Self) -> Self {
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
 
@@ -328,7 +328,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn abs(self) -> Self {
+  pub(crate) fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // AVX512 might have this, unsure for now
@@ -354,7 +354,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn is_positive(self) -> Self {
+  pub(crate) fn is_positive(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
@@ -369,7 +369,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub fn is_negative(self) -> Self {
+  pub(crate) fn is_negative(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.

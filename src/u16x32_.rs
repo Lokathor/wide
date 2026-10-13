@@ -15,7 +15,7 @@ pick! {
 
 impl u16x32 {
   #[inline]
-  fn not(self) -> Self::Output {
+  pub(crate) fn not(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(bitxor_m512i(self.0, set_splat_i16_m512i(-1)))
@@ -29,7 +29,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(add_i16_m512i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(sub_i16_m512i(self.0, rhs.0))
@@ -57,7 +57,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(mul_i16_keep_low_m512i(self.0, rhs.0))
@@ -68,7 +68,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(bitand_m512i(self.0, rhs.0))
@@ -82,7 +82,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor(self, rhs: Self) -> Self::Output {
     pick! {
     if #[cfg(target_feature="avx512bw")] {
         Self(bitor_m512i(self.0, rhs.0))
@@ -96,7 +96,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(bitxor_m512i(self.0, rhs.0))
@@ -110,7 +110,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Eq)}>(self.0, rhs.0))
@@ -124,7 +124,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Ne)}>(self.0, rhs.0))
@@ -138,7 +138,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
@@ -152,7 +152,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
@@ -166,7 +166,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
@@ -180,7 +180,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
@@ -194,7 +194,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn replace_const<const INDEX: usize>(self, value: u16) -> Self {
+  pub(crate) fn replace_const<const INDEX: usize>(self, value: u16) -> Self {
     const {
       assert!(INDEX < 32, "attempt to call `Simd::replace_const` with an out of bounds index");
     }
@@ -255,7 +255,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn extract_const<const INDEX: usize>(self) -> u16 {
+  pub(crate) fn extract_const<const INDEX: usize>(self) -> u16 {
     const {
       assert!(INDEX < 32, "attempt to call `Simd::extract_const` with an out of bounds index");
     }
@@ -316,19 +316,19 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn reduce_add(self) -> u16 {
+  pub(crate) fn reduce_add(self) -> u16 {
     let array: [u16x16; 2] = cast(self);
     (array[0] + array[1]).reduce_add()
   }
 
   #[inline]
-  pub fn reduce_mul(self) -> u16 {
+  pub(crate) fn reduce_mul(self) -> u16 {
     let array: [u16x16; 2] = cast(self);
     (array[0] * array[1]).reduce_mul()
   }
 
   #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+  pub(crate) fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(bitor_m512i(
@@ -345,7 +345,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn select(self, if_true: Self, if_false: Self) -> Self {
+  pub(crate) fn select(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(blend_varying_i8_m512i(if_false.0,if_true.0,movepi8_mask_m512i(self.0)))
@@ -359,7 +359,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn to_bitmask(self) -> u32 {
+  pub(crate) fn to_bitmask(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // use f16 move_mask since it is the same size as i16
@@ -371,7 +371,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn any(self) -> bool {
+  pub(crate) fn any(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         movepi16_mask_m512i(self.0) != 0
@@ -382,7 +382,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn all(self) -> bool {
+  pub(crate) fn all(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         movepi16_mask_m512i(self.0) == 0xFFFFFFFF
@@ -393,7 +393,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn interleave_low(self, other: Self) -> Self {
+  pub(crate) fn interleave_low(self, other: Self) -> Self {
     // `_mm512_unpacklo_epi16` cannot be used because it acts within each
     // 128-bit lane, which is a different operation.
     let [self_a, _] = cast::<u16x32, [u16x16; 2]>(self);
@@ -402,7 +402,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn interleave_high(self, other: Self) -> Self {
+  pub(crate) fn interleave_high(self, other: Self) -> Self {
     // `_mm512_unpackhi_epi16` cannot be used because it acts within each
     // 128-bit lane, which is a different operation.
     let [_, self_b] = cast::<u16x32, [u16x16; 2]>(self);
@@ -411,7 +411,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn shuffle(self, indices: u16x32) -> Self {
+  pub(crate) fn shuffle(self, indices: u16x32) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512bw"))] {
         #[cfg(target_arch = "x86")]
@@ -430,7 +430,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn shuffle_zeroing(self, indices: u16x32) -> Self {
+  pub(crate) fn shuffle_zeroing(self, indices: u16x32) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512bw"))] {
         self.shuffle(indices) & indices.simd_lt(32)
@@ -444,7 +444,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn shuffle_wrapping(self, indices: u16x32) -> Self {
+  pub(crate) fn shuffle_wrapping(self, indices: u16x32) -> Self {
     pick! {
       if #[cfg(all(target_feature = "avx512bw"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -459,7 +459,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shuffle(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle(self: [u16x32; 2], indices: u16x32) -> u16x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw"))] {
         #[cfg(target_arch = "x86")]
@@ -477,7 +477,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shuffle_zeroing(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_zeroing(self: [u16x32; 2], indices: u16x32) -> u16x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
         self.shuffle(indices) & indices.simd_lt(64)
@@ -488,7 +488,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shuffle_wrapping(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_wrapping(self: [u16x32; 2], indices: u16x32) -> u16x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -500,37 +500,37 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shuffle(self: [u16x32; 3], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle(self: [u16x32; 3], indices: u16x32) -> u16x32 {
     [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  fn shuffle_zeroing(self: [u16x32; 3], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_zeroing(self: [u16x32; 3], indices: u16x32) -> u16x32 {
     self.shuffle(indices)
   }
 
   #[inline]
-  fn shuffle_wrapping(self: [u16x32; 3], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_wrapping(self: [u16x32; 3], indices: u16x32) -> u16x32 {
     self.shuffle(indices % 96)
   }
 
   #[inline]
-  fn shuffle(self: [u16x32; 4], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle(self: [u16x32; 4], indices: u16x32) -> u16x32 {
     [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  fn shuffle_zeroing(self: [u16x32; 4], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_zeroing(self: [u16x32; 4], indices: u16x32) -> u16x32 {
     self.shuffle(indices)
   }
 
   #[inline]
-  fn shuffle_wrapping(self: [u16x32; 4], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_wrapping(self: [u16x32; 4], indices: u16x32) -> u16x32 {
     self.shuffle(indices & 127)
   }
 
   #[inline]
-  pub fn transpose(data: [Self; 32]) -> [Self; 32] {
+  pub(crate) fn transpose(data: [Self; 32]) -> [Self; 32] {
     // Can this be optimized?
 
     #[inline(always)]
@@ -608,7 +608,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
+  pub(crate) fn shl(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Mask `rhs` to 15 to match `wrapping_shl`.
@@ -624,7 +624,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shl(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
@@ -641,7 +641,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
+  pub(crate) fn shr(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Mask `rhs` to 15 to match `wrapping_shr`.
@@ -657,7 +657,7 @@ impl u16x32 {
   }
 
   #[inline]
-  fn shr(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
@@ -674,7 +674,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(max_u16_m512i(self.0, rhs.0))
@@ -688,7 +688,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(min_u16_m512i(self.0, rhs.0))
@@ -702,19 +702,19 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn reduce_max(self) -> u16 {
+  pub(crate) fn reduce_max(self) -> u16 {
     let array: [u16x16; 2] = cast(self);
     array[0].max(array[1]).reduce_max()
   }
 
   #[inline]
-  pub fn reduce_min(self) -> u16 {
+  pub(crate) fn reduce_min(self) -> u16 {
     let array: [u16x16; 2] = cast(self);
     array[0].min(array[1]).reduce_min()
   }
 
   #[inline]
-  pub fn unbounded_shl(self, rhs: Self) -> Self {
+  pub(crate) fn unbounded_shl(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(shl_each_u16_m512i(self.0, rhs.0))
@@ -728,7 +728,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shl_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // `u32 as u16` truncates the higher half so we need to manually
@@ -744,7 +744,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn unbounded_shr(self, rhs: Self) -> Self {
+  pub(crate) fn unbounded_shr(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(shr_each_u16_m512i(self.0, rhs.0))
@@ -758,7 +758,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // `u32 as u16` truncates the higher half so we need to manually
@@ -774,7 +774,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn saturating_add(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(add_saturating_u16_m512i(self.0, rhs.0))
@@ -788,7 +788,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(sub_saturating_u16_m512i(self.0, rhs.0))
@@ -802,7 +802,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     let (low, high) = self.mul_keep_low_high(rhs);
     let overflow = high.simd_ne(Self::ZERO);
     (low, overflow)
@@ -813,7 +813,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
     // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
     // optimization.
 
@@ -826,7 +826,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
+  pub(crate) fn mul_keep_high(self, rhs: Self) -> Self {
     // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
     // optimization.
 

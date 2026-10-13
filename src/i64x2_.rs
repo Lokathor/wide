@@ -18,7 +18,7 @@ pick! {
 
 impl i64x2 {
   #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         // only has gt, so flip arguments around to get lt
@@ -39,7 +39,7 @@ impl i64x2 {
   }
 
   #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         Self(cmp_gt_mask_i64_m128i(self.0, rhs.0))
@@ -59,7 +59,7 @@ impl i64x2 {
   }
 
   #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_gt(rhs)
@@ -79,7 +79,7 @@ impl i64x2 {
   }
 
   #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_lt(rhs)
@@ -99,7 +99,7 @@ impl i64x2 {
   }
 
   #[inline]
-  fn shr(self, rhs: u64x2) -> Self::Output {
+  pub(crate) fn shr(self, rhs: u64x2) -> Self::Output {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
@@ -120,7 +120,7 @@ impl i64x2 {
   }
 
   #[inline]
-  fn shr(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="simd128")] {
         Self(i64x2_shr(self.0, rhs))
@@ -135,17 +135,17 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max(self, rhs: Self) -> Self {
     self.simd_gt(rhs).select(self, rhs)
   }
 
   #[inline]
-  pub fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min(self, rhs: Self) -> Self {
     self.simd_lt(rhs).select(self, rhs)
   }
 
   #[inline]
-  pub fn reduce_max(self) -> i64 {
+  pub(crate) fn reduce_max(self) -> i64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let array: [i64; 2] = cast(self);
@@ -159,7 +159,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn reduce_min(self) -> i64 {
+  pub(crate) fn reduce_min(self) -> i64 {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let array: [i64; 2] = cast(self);
@@ -173,7 +173,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn unbounded_shr(self, rhs: u64x2) -> Self {
+  pub(crate) fn unbounded_shr(self, rhs: u64x2) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
@@ -193,7 +193,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="simd128")] {
         if rhs < 64 { Self(i64x2_shr(self.0, rhs)) } else { self.is_negative() }
@@ -209,7 +209,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn saturating_add(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self + rhs;
@@ -230,7 +230,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self - rhs;
@@ -251,7 +251,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one? This intentionally avoids `mul_keep_low_high` because getting the
     // high bits of 64-bit multiplication could be slow.
@@ -274,7 +274,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn mul_keep_low_high(self, rhs: Self) -> (u64x2, i64x2) {
+  pub(crate) fn mul_keep_low_high(self, rhs: Self) -> (u64x2, i64x2) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one?
 
@@ -299,7 +299,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
+  pub(crate) fn mul_keep_high(self, rhs: Self) -> Self {
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
 
@@ -310,7 +310,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn abs(self) -> Self {
+  pub(crate) fn abs(self) -> Self {
     pick! {
       // x86 doesn't have this builtin
       if #[cfg(target_feature="simd128")] {
@@ -329,7 +329,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn is_positive(self) -> Self {
+  pub(crate) fn is_positive(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         Self(unsafe { vreinterpretq_s64_u64(vcgtzq_s64(self.0)) })
@@ -340,7 +340,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub fn is_negative(self) -> Self {
+  pub(crate) fn is_negative(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         Self(unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.0)) })

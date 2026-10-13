@@ -15,7 +15,7 @@ pick! {
 
 impl i32x8 {
   #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i32_m256i(rhs.0, self.0))
@@ -29,7 +29,7 @@ impl i32x8 {
   }
 
   #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i32_m256i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl i32x8 {
   }
 
   #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_gt(rhs)
@@ -57,7 +57,7 @@ impl i32x8 {
   }
 
   #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_lt(rhs)
@@ -71,7 +71,7 @@ impl i32x8 {
   }
 
   #[inline]
-  fn shr(self, rhs: u32x8) -> Self::Output {
+  pub(crate) fn shr(self, rhs: u32x8) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar
@@ -87,7 +87,7 @@ impl i32x8 {
   }
 
   #[inline]
-  fn shr(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
@@ -104,7 +104,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(max_i32_m256i(self.0, rhs.0))
@@ -118,7 +118,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(min_i32_m256i(self.0, rhs.0))
@@ -132,19 +132,19 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn reduce_max(self) -> i32 {
+  pub(crate) fn reduce_max(self) -> i32 {
     let arr: [i32x4; 2] = cast(self);
     arr[0].max(arr[1]).reduce_max()
   }
 
   #[inline]
-  pub fn reduce_min(self) -> i32 {
+  pub(crate) fn reduce_min(self) -> i32 {
     let arr: [i32x4; 2] = cast(self);
     arr[0].min(arr[1]).reduce_min()
   }
 
   #[inline]
-  pub fn unbounded_shr(self, rhs: u32x8) -> Self {
+  pub(crate) fn unbounded_shr(self, rhs: u32x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(shr_each_i32_m256i(self.0, rhs.0))
@@ -158,7 +158,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shr_scalar(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(shr_all_i32_m256i(self.0, cast([rhs as u64, 0])))
@@ -172,7 +172,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn saturating_add(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_add(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self + rhs;
@@ -191,7 +191,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_sub(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self - rhs;
@@ -210,7 +210,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
     let (low, high) = self.mul_keep_low_high(rhs);
     let low = cast::<u32x8, i32x8>(low);
 
@@ -220,7 +220,7 @@ impl i32x8 {
 
   optional_fn_widening_mul {
     #[inline]
-    pub fn widening_mul(self, rhs: Self) -> i64x8 {
+    pub(crate) fn widening_mul(self, rhs: Self) -> i64x8 {
       pick! {
         if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
           let shuffle_indices = const { i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0 };
@@ -256,7 +256,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn mul_keep_low_high(self, rhs: Self) -> (u32x8, i32x8) {
+  pub(crate) fn mul_keep_low_high(self, rhs: Self) -> (u32x8, i32x8) {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
@@ -286,7 +286,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
+  pub(crate) fn mul_keep_high(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
@@ -308,7 +308,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn abs(self) -> Self {
+  pub(crate) fn abs(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(abs_i32_m256i(self.0))
@@ -322,7 +322,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn is_positive(self) -> Self {
+  pub(crate) fn is_positive(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
@@ -337,7 +337,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub fn is_negative(self) -> Self {
+  pub(crate) fn is_negative(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.
