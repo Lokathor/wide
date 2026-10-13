@@ -543,8 +543,6 @@ define_simd_unsigned! {
     self.shuffle(indices & 63)
   }
 
-  ///
-  /// Currently this function is never accelerated.
   #[inline]
   pub fn transpose(data: [Self; 16]) -> [Self; 16] {
     // Can this be optimized?

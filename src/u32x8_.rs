@@ -528,8 +528,6 @@ define_simd_unsigned! {
     self.shuffle(indices & 31)
   }
 
-  ///
-  /// Currently this function is only accelerated on `avx2`.
   #[inline]
   pub fn transpose(data: [Self; 8]) -> [Self; 8] {
     pick! {
