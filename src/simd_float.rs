@@ -868,10 +868,15 @@ macro_rules! define_simd_float {
       /// This returns NaN when *either* argument is NaN or if a combination of
       /// +inf and -inf is provided as arguments.
       ///
-      /// This function is guaranteed to be deterministic between platforms.
       /// This currently returns a less precise result than
       #[doc = concat!("[`", stringify!($T), "::midpoint`]")]
       /// in order to gain performance, but this may change in a future version.
+      ///
+      /// # Non-deterministic
+      ///
+      /// The exact result of this function is non-deterministic. This means it
+      /// varies by platform, version, and can even differ within the same
+      /// execution from one invocation to the next.
       #[inline]
       #[must_use]
       pub fn midpoint(self, other: Self) -> Self {
