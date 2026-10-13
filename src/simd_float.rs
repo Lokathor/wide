@@ -1152,10 +1152,7 @@ macro_rules! define_simd_float {
       /// This function cannot be named simply `powf`, because a now deprecated
       /// function already uses that name.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1173,10 +1170,7 @@ macro_rules! define_simd_float {
 
       /// Returns `e^(self)`, (the exponential function) for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1186,10 +1180,7 @@ macro_rules! define_simd_float {
 
       /// Returns `2^(self)` for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1199,10 +1190,7 @@ macro_rules! define_simd_float {
 
       /// Returns the natural logarithm of a number for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1212,10 +1200,7 @@ macro_rules! define_simd_float {
 
       /// Returns the base 2 logarithm of a number for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1228,10 +1213,7 @@ macro_rules! define_simd_float {
 
       /// Returns the base 10 logarithm of a number for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1244,10 +1226,7 @@ macro_rules! define_simd_float {
 
       /// Returns the cube root of a number for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1257,10 +1236,7 @@ macro_rules! define_simd_float {
 
       /// Computes the sine of a number (in radians) for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1274,10 +1250,7 @@ macro_rules! define_simd_float {
 
       /// Computes the cosine of a number (in radians) for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1291,10 +1264,7 @@ macro_rules! define_simd_float {
 
       /// Computes the tangent of a number (in radians) for each input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1310,10 +1280,7 @@ macro_rules! define_simd_float {
       /// is in radians in the range [-pi/2, pi/2] or NaN if the number is
       /// outside the range [-1, 1].
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1325,10 +1292,7 @@ macro_rules! define_simd_float {
       /// value is in radians in the range [0, pi] or NaN if the number is
       /// outside the range [-1, 1].
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1339,10 +1303,7 @@ macro_rules! define_simd_float {
       /// Computes the arctangent of a number for each input element. Return
       /// value is in radians in the range [-pi/2, pi/2].
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1360,10 +1321,7 @@ macro_rules! define_simd_float {
       /// | `<= -0` | `>= +0` | `arctan(y/x) + pi`   | `[+pi/2, +pi]`|
       /// | `<= -0` | `<= -0` | `arctan(y/x) - pi`   | `[-pi, -pi/2]`|
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1374,10 +1332,7 @@ macro_rules! define_simd_float {
       /// Simultaneously computes the sine and cosine of a number `x` for each
       /// input element. Returns `(sin(x), cos(x))`.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1388,10 +1343,7 @@ macro_rules! define_simd_float {
       /// Simultaneously computes the arcsine and arccosine of a number `x` for
       /// each input element. Returns `(asin(x), acos(x))`.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1402,10 +1354,7 @@ macro_rules! define_simd_float {
       /// Returns `e^(self) - 1` for each input element in a way that is
       /// accurate even if a number is close to zero.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1416,10 +1365,7 @@ macro_rules! define_simd_float {
       /// Returns `ln(1+n)` (natural logarithm) for each input element more
       /// accurately than if the operations were performed separately.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1430,10 +1376,7 @@ macro_rules! define_simd_float {
       /// Returns the hyperbolic sine (`(e^self - e^(-self))/2`) for each input
       /// element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1444,10 +1387,7 @@ macro_rules! define_simd_float {
       /// Returns the hyperbolic cosine (`(e^self + e^(-self))/2`) for each
       /// input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1458,10 +1398,7 @@ macro_rules! define_simd_float {
       /// Returns the hyperbolic tangent (`sinh(self)/cosh(self)`) for each
       /// input element.
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1579,10 +1516,7 @@ macro_rules! define_simd_float {
       ///
       /// This function has been renamed to [`powf_simd`].
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
@@ -1603,10 +1537,7 @@ macro_rules! define_simd_float {
       /// `x` to the same power, even though that brings no performance benefit.
       #[doc = concat!("Use `x.powf_simd(", stringify!($Simd), "::splat(n))` instead.")]
       ///
-      /// # Low precision
-      ///
-      /// Currently, this function returns a considerably less precise result
-      /// than the `std` float function. This may change in a future version.
+      /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
       /// varies by platform, version, and can even differ within the same
