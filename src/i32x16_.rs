@@ -15,7 +15,7 @@ pick! {
 
 impl i32x16 {
   #[inline]
-  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
@@ -29,7 +29,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
@@ -57,7 +57,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
@@ -71,7 +71,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn shr(self, rhs: u32x16) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32x16) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         #[cfg(target_arch = "x86")]
@@ -93,7 +93,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn shr(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
@@ -110,7 +110,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(max_i32_m512i(self.0, rhs.0))
@@ -124,7 +124,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(min_i32_m512i(self.0, rhs.0))
@@ -138,19 +138,19 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn reduce_max(self) -> i32 {
+  pub(crate) fn reduce_max_backend(self) -> i32 {
     let arr: [i32x8; 2] = cast(self);
     arr[0].max(arr[1]).reduce_max()
   }
 
   #[inline]
-  pub(crate) fn reduce_min(self) -> i32 {
+  pub(crate) fn reduce_min_backend(self) -> i32 {
     let arr: [i32x8; 2] = cast(self);
     arr[0].min(arr[1]).reduce_min()
   }
 
   #[inline]
-  pub(crate) fn unbounded_shr(self, rhs: u32x16) -> Self {
+  pub(crate) fn unbounded_shr_backend(self, rhs: u32x16) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         #[cfg(target_arch = "x86")]
@@ -170,7 +170,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(shr_all_i32_m512i(self.0, rhs))
@@ -184,7 +184,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn saturating_add(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let result = self + rhs;
@@ -203,7 +203,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn saturating_sub(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let result = self - rhs;
@@ -222,7 +222,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
     let (low, high) = self.mul_keep_low_high(rhs);
     let low = cast::<u32x16, i32x16>(low);
 
@@ -235,7 +235,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn mul_keep_low_high(self, rhs: Self) -> (u32x16, i32x16) {
+  pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u32x16, i32x16) {
     pick! {
       if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
         #[cfg(target_arch = "x86")]
@@ -270,7 +270,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn mul_keep_high(self, rhs: Self) -> Self {
+  pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
         #[cfg(target_arch = "x86")]
@@ -297,7 +297,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn abs(self) -> Self {
+  pub(crate) fn abs_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(abs_i32_m512i(self.0))
@@ -311,7 +311,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn is_positive(self) -> Self {
+  pub(crate) fn is_positive_backend(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
@@ -326,7 +326,7 @@ impl i32x16 {
   }
 
   #[inline]
-  pub(crate) fn is_negative(self) -> Self {
+  pub(crate) fn is_negative_backend(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.

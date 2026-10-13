@@ -15,7 +15,7 @@ pick! {
 
 impl i64x4 {
   #[inline]
-  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(!(cmp_gt_mask_i64_m256i(self.0, rhs.0) ^ cmp_eq_mask_i64_m256i(self.0, rhs.0)))
@@ -29,7 +29,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i64_m256i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_gt(rhs)
@@ -57,7 +57,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_lt(rhs)
@@ -71,7 +71,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn shr(self, rhs: u64x4) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u64x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let arr: [i64; 4] = cast(self);
@@ -92,36 +92,36 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn shr(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
     // there is no signed right shift in AVX2
     let [a,b] : [i64x2; 2] = cast(self);
     cast([a.shr(rhs), b.shr(rhs)])
   }
 
   #[inline]
-  pub(crate) fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max_backend(self, rhs: Self) -> Self {
     self.simd_gt(rhs).select(self, rhs)
   }
 
   #[inline]
-  pub(crate) fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min_backend(self, rhs: Self) -> Self {
     self.simd_lt(rhs).select(self, rhs)
   }
 
   #[inline]
-  pub(crate) fn reduce_max(self) -> i64 {
+  pub(crate) fn reduce_max_backend(self) -> i64 {
     let array: [i64; 4] = cast(self);
     array[0].max(array[1]).max(array[2]).max(array[3])
   }
 
   #[inline]
-  pub(crate) fn reduce_min(self) -> i64 {
+  pub(crate) fn reduce_min_backend(self) -> i64 {
     let array: [i64; 4] = cast(self);
     array[0].min(array[1]).min(array[2]).min(array[3])
   }
 
   #[inline]
-  pub(crate) fn unbounded_shr(self, rhs: u64x4) -> Self {
+  pub(crate) fn unbounded_shr_backend(self, rhs: u64x4) -> Self {
     let [self_a, self_b] = cast::<i64x4, [i64x2; 2]>(self);
     let [rhs_a, rhs_b] = cast::<u64x4, [u64x2; 2]>(rhs);
 
@@ -129,14 +129,14 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
     // there is no signed right shift in AVX2
     let [self_a, self_b] = cast::<i64x4, [i64x2; 2]>(self);
     cast([self_a.unbounded_shr_scalar(rhs), self_b.unbounded_shr_scalar(rhs)])
   }
 
   #[inline]
-  pub(crate) fn saturating_add(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self + rhs;
@@ -155,7 +155,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn saturating_sub(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let result = self - rhs;
@@ -174,7 +174,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one? This intentionally avoids `mul_keep_low_high` because getting the
     // high bits of 64-bit multiplication could be slow.
@@ -204,7 +204,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn mul_keep_low_high(self, rhs: Self) -> (u64x4, i64x4) {
+  pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u64x4, i64x4) {
     // TODO(perf): This implementation looks quite bad. Is there a better
     // one?
 
@@ -235,7 +235,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn mul_keep_high(self, rhs: Self) -> Self {
+  pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
     let self_array = self.to_array();
     let rhs_array = rhs.to_array();
 
@@ -248,7 +248,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn abs(self) -> Self {
+  pub(crate) fn abs_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // avx x86 doesn't have this builtin
@@ -270,7 +270,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn is_positive(self) -> Self {
+  pub(crate) fn is_positive_backend(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated greater-than-zero intrinsics.
@@ -285,7 +285,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn is_negative(self) -> Self {
+  pub(crate) fn is_negative_backend(self) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         // `neon` has dedicated less-than-zero intrinsics.

@@ -18,12 +18,12 @@ pick! {
 
 impl u32x4 {
   #[inline]
-  pub(crate) fn not(self) -> Self::Output {
+  pub(crate) fn not_backend(self) -> Self::Output {
     self ^ cast::<u128, u32x4>(u128::MAX)
   }
 
   #[inline]
-  pub(crate) fn add(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(add_i32_m128i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn sub(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(sub_i32_m128i(self.0, rhs.0))
@@ -63,7 +63,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn mul(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self(mul_32_m128i(self.0, rhs.0))
@@ -85,7 +85,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn bitand(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitand_m128i(self.0, rhs.0))
@@ -105,7 +105,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn bitor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitor_m128i(self.0, rhs.0))
@@ -125,7 +125,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn bitxor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitxor_m128i(self.0, rhs.0))
@@ -145,7 +145,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_eq_mask_i32_m128i(self.0, rhs.0))
@@ -165,7 +165,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_eq(rhs)
@@ -185,13 +185,13 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
     // lt is just gt the other way around
     rhs.simd_gt(self)
   }
 
   #[inline]
-  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // no unsigned less than so inverting the high bit will get the correct result
@@ -213,7 +213,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_gt(rhs)
@@ -233,7 +233,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_lt(rhs)
@@ -253,7 +253,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn replace_const<const INDEX: usize>(self, value: u32) -> Self {
+  pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u32) -> Self {
     const {
       assert!(INDEX < 4, "attempt to call `Simd::replace_const` with an out of bounds index");
     }
@@ -307,7 +307,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn extract_const<const INDEX: usize>(self) -> u32 {
+  pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u32 {
     const {
       assert!(INDEX < 4, "attempt to call `Simd::extract_const` with an out of bounds index");
     }
@@ -347,7 +347,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn reduce_add(self) -> u32 {
+  pub(crate) fn reduce_add_backend(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         let hi64  = unpack_high_i64_m128i(self.0, self.0);
@@ -364,7 +364,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn reduce_mul(self) -> u32 {
+  pub(crate) fn reduce_mul_backend(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         let high_64  = unpack_high_i64_m128i(self.0, self.0);
@@ -394,7 +394,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+  pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
@@ -409,7 +409,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn select(self, if_true: Self, if_false: Self) -> Self {
+  pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self(blend_varying_i8_m128i(if_false.0, if_true.0, self.0))
@@ -424,7 +424,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn to_bitmask(self) -> u32 {
+  pub(crate) fn to_bitmask_backend(self) -> u32 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
@@ -454,7 +454,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn any(self) -> bool {
+  pub(crate) fn any_backend(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
@@ -474,7 +474,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn all(self) -> bool {
+  pub(crate) fn all_backend(self) -> bool {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // use f32 move_mask since it is the same size as i32
@@ -494,7 +494,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn interleave_low(self, other: Self) -> Self {
+  pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_low_i32_m128i(self.0, other.0))
@@ -511,7 +511,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn interleave_high(self, other: Self) -> Self {
+  pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(unpack_high_i32_m128i(self.0, other.0))
@@ -528,7 +528,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shuffle(self, indices: u32x4) -> Self {
+  pub(crate) fn shuffle_backend(self, indices: u32x4) -> Self {
     pick! {
       if #[cfg(target_feature = "avx")] {
         cast(shuffle_av_f32_all_m128(cast(self), indices.0))
@@ -559,7 +559,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing(self, indices: u32x4) -> Self {
+  pub(crate) fn shuffle_zeroing_backend(self, indices: u32x4) -> Self {
     pick! {
       if #[cfg(any(
         target_feature = "avx",
@@ -578,12 +578,12 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping(self, indices: u32x4) -> Self {
+  pub(crate) fn shuffle_wrapping_backend(self, indices: u32x4) -> Self {
     self.shuffle(indices & 3)
   }
 
   #[inline]
-  pub(crate) fn shuffle(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_backend(self: [u32x4; 2], indices: u32x4) -> u32x4 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         u32x4(shuffle_abv_i32_all_m128i(self[0].0, indices.0, self[1].0))
@@ -597,14 +597,14 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_zeroing_backend(self: [u32x4; 2], indices: u32x4) -> u32x4 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(8)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping(self: [u32x4; 2], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_wrapping_backend(self: [u32x4; 2], indices: u32x4) -> u32x4 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
@@ -616,7 +616,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shuffle(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_backend(self: [u32x4; 3], indices: u32x4) -> u32x4 {
     let self_bytes = cast::<[u32x4; 3], [u8x16; 3]>(self);
     let byte_indices = indices.to_byte_indices();
 
@@ -624,19 +624,19 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_zeroing_backend(self: [u32x4; 3], indices: u32x4) -> u32x4 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(12)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping(self: [u32x4; 3], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_wrapping_backend(self: [u32x4; 3], indices: u32x4) -> u32x4 {
     self.shuffle(indices % 12)
   }
 
   #[inline]
-  pub(crate) fn shuffle(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_backend(self: [u32x4; 4], indices: u32x4) -> u32x4 {
     let self_bytes = cast::<[u32x4; 4], [u8x16; 4]>(self);
     let byte_indices = indices.to_byte_indices();
 
@@ -644,19 +644,19 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_zeroing_backend(self: [u32x4; 4], indices: u32x4) -> u32x4 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
     self.shuffle(indices) & indices.simd_lt(16)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping(self: [u32x4; 4], indices: u32x4) -> u32x4 {
+  pub(crate) fn shuffle_wrapping_backend(self: [u32x4; 4], indices: u32x4) -> u32x4 {
     self.shuffle(indices & 15)
   }
 
   #[inline]
-  pub(crate) fn transpose(data: [Self; 4]) -> [Self; 4] {
+  pub(crate) fn transpose_backend(data: [Self; 4]) -> [Self; 4] {
     pick! {
       if #[cfg(target_feature="sse")] {
         let mut e0 = data[0];
@@ -694,7 +694,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shl(self, rhs: u32x4) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: u32x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 31 to have same behavior on all platforms
@@ -720,7 +720,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shl(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
@@ -745,7 +745,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shr(self, rhs: u32x4) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32x4) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 31 to have same behavior on all platforms
@@ -772,7 +772,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn shr(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
@@ -797,7 +797,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self(max_u32_m128i(self.0, rhs.0))
@@ -821,7 +821,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         Self(min_u32_m128i(self.0, rhs.0))
@@ -843,19 +843,19 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn reduce_max(self) -> u32 {
+  pub(crate) fn reduce_max_backend(self) -> u32 {
     let arr: [u32; 4] = cast(self);
     arr[0].max(arr[1]).max(arr[2].max(arr[3]))
   }
 
   #[inline]
-  pub(crate) fn reduce_min(self) -> u32 {
+  pub(crate) fn reduce_min_backend(self) -> u32 {
     let arr: [u32; 4] = cast(self);
     arr[0].min(arr[1]).min(arr[2].min(arr[3]))
   }
 
   #[inline]
-  pub(crate) fn unbounded_shl(self, rhs: Self) -> Self {
+  pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(shl_each_u32_m128i(self.0, rhs.0))
@@ -879,7 +879,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(shl_all_u32_m128i(self.0, cast([rhs as u64, 0])))
@@ -901,7 +901,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn unbounded_shr(self, rhs: Self) -> Self {
+  pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(shr_each_u32_m128i(self.0, rhs.0))
@@ -926,7 +926,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+  pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(shr_all_u32_m128i(self.0, cast([rhs as u64, 0])))
@@ -950,7 +950,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn saturating_add(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self + rhs;
@@ -971,7 +971,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn saturating_sub(self, rhs: Self) -> Self {
+  pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
         let result = self - rhs;
@@ -992,7 +992,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
     let (low, high) = self.mul_keep_low_high(rhs);
     let overflow = high.simd_ne(Self::ZERO);
     (low, overflow)
@@ -1000,7 +1000,7 @@ impl u32x4 {
 
   optional_fn_widening_mul {
     #[inline]
-    pub(crate) fn widening_mul(self, rhs: Self) -> u64x4 {
+    pub(crate) fn widening_mul_backend(self, rhs: Self) -> u64x4 {
       pick! {
         if #[cfg(target_feature="avx2")] {
           // ok to sign extend since we are throwing away the high half of the result anyway
@@ -1045,7 +1045,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
+  pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         let even_wide_mul = mul_widen_u32_odd_m128i(self.0, rhs.0);
@@ -1114,7 +1114,7 @@ impl u32x4 {
   }
 
   #[inline]
-  pub(crate) fn mul_keep_high(self, rhs: Self) -> Self {
+  pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let a = convert_to_i64_m256i_from_u32_m128i(self.0);

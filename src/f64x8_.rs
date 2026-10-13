@@ -22,7 +22,7 @@ macro_rules! const_f64_as_f64x8 {
 
 impl f64x8 {
   #[inline]
-  pub(crate) fn neg(self) -> Self::Output {
+  pub(crate) fn neg_backend(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512d(self.0, Self::splat(-0.0).0))
@@ -36,7 +36,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn not(self) -> Self::Output {
+  pub(crate) fn not_backend(self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512d(self.0, set_splat_m512d(f64::from_bits(u64::MAX))))
@@ -50,7 +50,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn add(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(add_m512d(self.0, rhs.0))
@@ -64,7 +64,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn sub(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(sub_m512d(self.0, rhs.0))
@@ -78,7 +78,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn mul(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(mul_m512d(self.0, rhs.0))
@@ -89,7 +89,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn div(self, rhs: Self) -> Self::Output {
+  pub(crate) fn div_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(div_m512d(self.0, rhs.0))
@@ -100,7 +100,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn rem(self, rhs: Self) -> Self::Output {
+  pub(crate) fn rem_backend(self, rhs: Self) -> Self::Output {
     Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
@@ -114,7 +114,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn bitand(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitand_m512d(self.0, rhs.0))
@@ -128,7 +128,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn bitor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
     pick! {
     if #[cfg(target_feature="avx512f")] {
         Self(bitor_m512d(self.0, rhs.0))
@@ -142,7 +142,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn bitxor(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512d(self.0, rhs.0))
@@ -156,7 +156,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
@@ -170,7 +170,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
@@ -184,7 +184,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
@@ -198,7 +198,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
@@ -212,7 +212,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_le(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
@@ -226,7 +226,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
@@ -240,7 +240,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn reduce_add(self) -> f64 {
+  pub(crate) fn reduce_add_backend(self) -> f64 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
@@ -259,7 +259,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn reduce_mul(self) -> f64 {
+  pub(crate) fn reduce_mul_backend(self) -> f64 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
@@ -279,7 +279,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+  pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitor_m512d(
@@ -296,7 +296,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn select(self, if_true: Self, if_false: Self) -> Self {
+  pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(blend_varying_m512d(if_false.0, if_true.0, movepi64_mask_m512d(self.0)))
@@ -310,7 +310,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn to_bitmask(self) -> u32 {
+  pub(crate) fn to_bitmask_backend(self) -> u32 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(self.0) as u32
@@ -321,7 +321,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn any(self) -> bool {
+  pub(crate) fn any_backend(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(self.0) != 0
@@ -332,7 +332,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn all(self) -> bool {
+  pub(crate) fn all_backend(self) -> bool {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         movepi64_mask_m512d(self.0) == 0b11111111
@@ -343,17 +343,17 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn interleave_low(self, other: Self) -> Self {
+  pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
     Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
   }
 
   #[inline]
-  pub(crate) fn interleave_high(self, other: Self) -> Self {
+  pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
     Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
   }
 
   #[inline]
-  pub(crate) fn transpose(data: [f64x8; 8]) -> [f64x8; 8] {
+  pub(crate) fn transpose_backend(data: [f64x8; 8]) -> [f64x8; 8] {
     // Can this be optimized?
 
     #[inline(always)]
@@ -383,7 +383,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn is_nan(self) -> Self {
+  pub(crate) fn is_nan_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512d::<{cmp_op!(Unordered)}>(self.0, self.0))
@@ -397,7 +397,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn is_infinite(self) -> Self {
+  pub(crate) fn is_infinite_backend(self) -> Self {
     let shifted_inf = u64x8::from(0xFFE0000000000000);
     let u: u64x8 = cast(self);
     let shift_u = u << 1_u64;
@@ -406,7 +406,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn is_finite(self) -> Self {
+  pub(crate) fn is_finite_backend(self) -> Self {
     let shifted_exp_mask = u64x8::splat(0xFFE0000000000000);
     let u: u64x8 = cast(self);
     let shift_u = u << 1_u64;
@@ -415,7 +415,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn is_sign_positive(self) -> Self {
+  pub(crate) fn is_sign_positive_backend(self) -> Self {
     const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
 
     let bits = cast::<f64x8, u64x8>(self);
@@ -425,7 +425,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn is_sign_negative(self) -> Self {
+  pub(crate) fn is_sign_negative_backend(self) -> Self {
     const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
 
     let bits = cast::<f64x8, u64x8>(self);
@@ -435,21 +435,21 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn recip(self) -> Self {
+  pub(crate) fn recip_backend(self) -> Self {
     // There does not seem to be a `recip` intrinsic for any architecture. The
     // closest is `_mm512_rcp14_pd` which has relative error.
     Self::ONE / self
   }
 
   #[inline]
-  pub(crate) fn recip_sqrt(self) -> Self {
+  pub(crate) fn recip_sqrt_backend(self) -> Self {
     // There does not seem to be a `recip_sqrt` intrinsic for any architecture.
     // The closest is `_mm512_rsqrt14_pd` which has relative error.
     Self::ONE / self.sqrt()
   }
 
   #[inline]
-  pub(crate) fn max(self, rhs: Self) -> Self {
+  pub(crate) fn max_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         rhs.is_nan().select(self, Self(max_m512d(self.0, rhs.0)))
@@ -463,7 +463,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_max(self, rhs: Self) -> Self {
+  pub(crate) fn fast_max_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(max_m512d(self.0, rhs.0))
@@ -477,7 +477,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn min(self, rhs: Self) -> Self {
+  pub(crate) fn min_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         rhs.is_nan().select(self, Self(min_m512d(self.0, rhs.0)))
@@ -491,7 +491,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_min(self, rhs: Self) -> Self {
+  pub(crate) fn fast_min_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(min_m512d(self.0, rhs.0))
@@ -505,7 +505,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn clamp(self, min: Self, max: Self) -> Self {
+  pub(crate) fn clamp_backend(self, min: Self, max: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // This works since all bits set is NaN.
@@ -521,7 +521,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_clamp(self, min: Self, max: Self) -> Self {
+  pub(crate) fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // For both `min_m512d` and `max_m512d` if any input is NaN, `rhs` gets
@@ -537,31 +537,31 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn reduce_max(self) -> f64 {
+  pub(crate) fn reduce_max_backend(self) -> f64 {
     let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
     self_a.max(self_b).reduce_max()
   }
 
   #[inline]
-  pub(crate) fn fast_reduce_max(self) -> f64 {
+  pub(crate) fn fast_reduce_max_backend(self) -> f64 {
     let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
     self_a.fast_max(self_b).fast_reduce_max()
   }
 
   #[inline]
-  pub(crate) fn reduce_min(self) -> f64 {
+  pub(crate) fn reduce_min_backend(self) -> f64 {
     let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
     self_a.min(self_b).reduce_min()
   }
 
   #[inline]
-  pub(crate) fn fast_reduce_min(self) -> f64 {
+  pub(crate) fn fast_reduce_min_backend(self) -> f64 {
     let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
     self_a.fast_min(self_b).fast_reduce_min()
   }
 
   #[inline]
-  pub(crate) fn abs(self) -> Self {
+  pub(crate) fn abs_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         let non_sign_bits = f64x8::from(f64::from_bits(i64::MAX as u64));
@@ -576,7 +576,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn floor(self) -> Self {
+  pub(crate) fn floor_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512d::<{round_op!(NegInf)}>(self.0))
@@ -590,7 +590,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn ceil(self) -> Self {
+  pub(crate) fn ceil_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512d::<{round_op!(PosInf)}>(self.0))
@@ -604,7 +604,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn round(self) -> Self {
+  pub(crate) fn round_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         const_f64_as_f64x8!(HALF_NEXT_DOWN, 0.5_f64.next_down());
@@ -636,7 +636,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn round_int(self) -> i64x8 {
+  pub(crate) fn round_int_backend(self) -> i64x8 {
     pick! {
       if #[cfg(target_feature="avx512dq")] {
         #[cfg(target_arch = "x86")]
@@ -663,7 +663,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_round_int(self) -> i64x8 {
+  pub(crate) fn fast_round_int_backend(self) -> i64x8 {
     pick! {
       if #[cfg(target_feature="avx512dq")] {
         #[cfg(target_arch = "x86")]
@@ -685,7 +685,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn round_ties_even(self) -> Self {
+  pub(crate) fn round_ties_even_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512d::<{round_op!(Nearest)}>(self.0))
@@ -699,7 +699,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn trunc(self) -> Self {
+  pub(crate) fn trunc_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(round_m512d::<{round_op!(Zero)}>(self.0))
@@ -713,7 +713,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn trunc_int(self) -> i64x8 {
+  pub(crate) fn trunc_int_backend(self) -> i64x8 {
     pick! {
       if #[cfg(target_feature="avx512dq")] {
         #[cfg(target_arch = "x86")]
@@ -740,7 +740,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_trunc_int(self) -> i64x8 {
+  pub(crate) fn fast_trunc_int_backend(self) -> i64x8 {
     pick! {
       if #[cfg(target_feature="avx512dq")] {
         #[cfg(target_arch = "x86")]
@@ -761,7 +761,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_mul_add(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
         Self(fused_mul_add_m512d(self.0, a.0, b.0))
@@ -778,7 +778,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_mul_sub(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
         Self(fused_mul_sub_m512d(self.0, a.0, b.0))
@@ -795,7 +795,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
     pick! {
       if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
         Self(fused_mul_neg_add_m512d(self.0, a.0, b.0))
@@ -812,7 +812,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
+  pub(crate) fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
     pick! {
        if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
          Self(fused_mul_neg_sub_m512d(self.0, a.0, b.0))
@@ -829,7 +829,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn powf_simd(self, n: Self) -> Self {
+  pub(crate) fn powf_simd_backend(self, n: Self) -> Self {
     const_f64_as_f64x8!(ln2d_hi, 0.693145751953125);
     const_f64_as_f64x8!(ln2d_lo, 1.42860682030941723212E-6);
     const_f64_as_f64x8!(P0log, 2.0039553499201281259648E1);
@@ -948,7 +948,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn sqrt(self) -> Self {
+  pub(crate) fn sqrt_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(sqrt_m512d(self.0))
@@ -962,7 +962,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn exp(self) -> Self {
+  pub(crate) fn exp_backend(self) -> Self {
     const_f64_as_f64x8!(P2, 1.0 / 2.0);
     const_f64_as_f64x8!(P3, 1.0 / 6.0);
     const_f64_as_f64x8!(P4, 1.0 / 24.0);
@@ -1014,7 +1014,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn exp2(self) -> Self {
+  pub(crate) fn exp2_backend(self) -> Self {
     const_f64_as_f64x8!(P2, 1.0 / 2.0);
     const_f64_as_f64x8!(P3, 1.0 / 6.0);
     const_f64_as_f64x8!(P4, 1.0 / 24.0);
@@ -1065,7 +1065,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn ln(self) -> Self {
+  pub(crate) fn ln_backend(self) -> Self {
     const_f64_as_f64x8!(HALF, 0.5);
     const_f64_as_f64x8!(P0, 7.70838733755885391666E0);
     const_f64_as_f64x8!(P1, 1.79368678507819816313E1);
@@ -1126,7 +1126,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn cbrt(self) -> Self {
+  pub(crate) fn cbrt_backend(self) -> Self {
     let a = self.abs();
     let zero = a.simd_eq(Self::ZERO);
     if zero.all() {
@@ -1188,7 +1188,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn asin(self) -> Self {
+  pub(crate) fn asin_backend(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
@@ -1274,7 +1274,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn acos(self) -> Self {
+  pub(crate) fn acos_backend(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
@@ -1360,7 +1360,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn atan(self) -> Self {
+  pub(crate) fn atan_backend(self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
@@ -1416,7 +1416,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn atan2(self, x: Self) -> Self {
+  pub(crate) fn atan2_backend(self, x: Self) -> Self {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
@@ -1496,7 +1496,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn sin_cos(self) -> (Self, Self) {
+  pub(crate) fn sin_cos_backend(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
 
@@ -1561,7 +1561,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn asin_acos(self) -> (Self, Self) {
+  pub(crate) fn asin_acos_backend(self) -> (Self, Self) {
     // Based on the Agner Fog "vector class library":
     // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
     const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
@@ -1653,7 +1653,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn exp_m1(self) -> Self {
+  pub(crate) fn exp_m1_backend(self) -> Self {
     const_f64_as_f64x8!(P2, 1.0 / 2.0);
     const_f64_as_f64x8!(P3, 1.0 / 6.0);
     const_f64_as_f64x8!(P4, 1.0 / 24.0);
@@ -1716,7 +1716,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn ln_1p(self) -> Self {
+  pub(crate) fn ln_1p_backend(self) -> Self {
     // Based on the identity ln(1+x) = x·ln(1+x)/((1+x)-1), i.e. x·ln(u)/(u-1)
     // where u = 1+x. From MUSL libc (Rich Felker et al., https://musl.libc.org) src/math/log1p.c
     // and fdlibm (Sun Microsystems, https://www.netlib.org/fdlibm/) s_log1p.c.
@@ -1734,7 +1734,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn sinh(self) -> Self {
+  pub(crate) fn sinh_backend(self) -> Self {
     const_f64_as_f64x8!(P0, 1.0);
     const_f64_as_f64x8!(P1, 1.0 / 6.0);
     const_f64_as_f64x8!(P2, 1.0 / 120.0);
@@ -1756,7 +1756,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn cosh(self) -> Self {
+  pub(crate) fn cosh_backend(self) -> Self {
     const_f64_as_f64x8!(P0, 1.0);
     const_f64_as_f64x8!(P1, 1.0 / 2.0);
     const_f64_as_f64x8!(P2, 1.0 / 24.0);
@@ -1778,7 +1778,7 @@ impl f64x8 {
   }
 
   #[inline]
-  pub(crate) fn tanh(self) -> Self {
+  pub(crate) fn tanh_backend(self) -> Self {
     // |x| < 5e-8: tanh(x) ≈ x, error x³/3 < 16·ULP(x)
     // bound: x² < 48·2⁻⁵² → x < 1.03e-7; 5e-8 has 2× margin
     // |x| > 19.062: tanh(x) = ±1 to f64 precision (e⁻²ˣ < 2⁻⁵⁴)
