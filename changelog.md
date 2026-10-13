@@ -25,6 +25,10 @@
   between unsigned and signed integers into their own `impl` block in
   documentation
 
+* [#341](https://github.com/Lokathor/wide/pull/341): Move `reduce_add` and
+  `reduce_mul` to the separate `impl` blocks of floats and integers, and improve
+  documentation of operators
+
 ## 1.7.1
 
 * [#327](https://github.com/Lokathor/wide/pull/327): Fixed `i/u32x4::to_bitmask`

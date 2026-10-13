@@ -135,25 +135,6 @@ macro_rules! define_simd_float {
         $T::from_bits(self.to_bits().extract_const::<INDEX>())
       }
 
-      ///
-      /// # Non-deterministic
-      ///
-      /// If this performs multiple additions, their order is non-deterministic.
-      /// This could also perform one sum operation with higher precision than
-      /// expected. This can vary by platform, version, and could even differ
-      /// within the same execution from one invocation to the next.
-      $fn_reduce_add
-
-      ///
-      /// # Non-deterministic
-      ///
-      /// If this performs multiple multiplications, their order is
-      /// non-deterministic. This could also perform one product operation with
-      /// higher precision than expected. This can vary by platform, version,
-      /// and could even differ within the same execution from one invocation to
-      /// the next.
-      $fn_reduce_mul
-
       $fn_bitselect
 
       $fn_select
@@ -236,7 +217,7 @@ macro_rules! define_simd_float {
       Neg,
       neg,
       $fn_neg,
-      /// Returns the negative of each element of `self`.
+      /// Computes negation for each element of `self`.
       ///
       /// This always returns the precise result, simply flipping the sign-bit.
     );
@@ -247,8 +228,8 @@ macro_rules! define_simd_float {
       $fn_not,
       /// Computes bitwise NOT for each element of `self`.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise NOT, even though the `!` operator is not
+      /// implemented for Rust's primitive floats.
     );
 
     impl_binary_operator!(
@@ -264,13 +245,12 @@ macro_rules! define_simd_float {
       ///
       /// This always returns the precise result.
       ,
-      /// Computes addition for each element of `self` and the uniform scalar
-      /// `rhs`.
+      /// Computes addition for each element of `self` and the scalar `rhs`.
       ///
       /// This always returns the precise result.
       ,
-      /// Computes addition for the uniform scalar `self` and each element of
-      /// `rhs`, returning a SIMD vector.
+      /// Computes addition for the scalar `self` and each element of `rhs`,
+      /// returning a SIMD vector.
       ///
       /// This always returns the precise result.
     );
@@ -287,13 +267,12 @@ macro_rules! define_simd_float {
       ///
       /// This always returns the precise result.
       ,
-      /// Computes subtraction for each element of `self` and the uniform scalar
-      /// `rhs`.
+      /// Computes subtraction for each element of `self` and the scalar `rhs`.
       ///
       /// This always returns the precise result.
       ,
-      /// Computes subtraction for the uniform scalar `self` and each element of
-      /// `rhs`, returning a SIMD vector.
+      /// Computes subtraction for the scalar `self` and each element of `rhs`,
+      /// returning a SIMD vector.
       ///
       /// This always returns the precise result.
     );
@@ -310,13 +289,13 @@ macro_rules! define_simd_float {
       ///
       /// This always returns the precise result.
       ,
-      /// Computes multiplication for each element of `self` and the uniform
-      /// scalar `rhs`.
+      /// Computes multiplication for each element of `self` and the scalar
+      /// `rhs`.
       ///
       /// This always returns the precise result.
       ,
-      /// Computes multiplication for the uniform scalar `self` and each element
-      /// of `rhs`, returning a SIMD vector.
+      /// Computes multiplication for the scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
       ///
       /// This always returns the precise result.
     );
@@ -333,12 +312,11 @@ macro_rules! define_simd_float {
       ///
       /// This always returns the precise result.
       ,
-      /// Computes division for each element of `self` and the uniform scalar
-      /// `rhs`.
+      /// Computes division for each element of `self` and the scalar `rhs`.
       ///
       /// This always returns the precise result.
       ,
-      /// Computes division for the uniform scalar `self` and each element of
+      /// Computes division for the scalar `self` and each element of
       /// `rhs`, returning a SIMD vector.
       ///
       /// This always returns the precise result.
@@ -356,13 +334,13 @@ macro_rules! define_simd_float {
       ///
       /// This always returns the precise result.
       ,
-      /// Computes the remainder for each element of `self` and the uniform
-      /// scalar `rhs`.
+      /// Computes the remainder for each element of `self` and the scalar
+      /// `rhs`.
       ///
       /// This always returns the precise result.
       ,
-      /// Computes the remainder for the uniform scalar `self` and each element
-      /// of `rhs`, returning a SIMD vector.
+      /// Computes the remainder for the scalar `self` and each element of
+      /// `rhs`, returning a SIMD vector.
       ///
       /// This always returns the precise result.
     );
@@ -377,20 +355,19 @@ macro_rules! define_simd_float {
       /// Computes bitwise AND for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise AND, even though the `&` operator is not
+      /// implemented for Rust's primitive floats.
       ,
-      /// Computes bitwise AND for each element of `self` and the uniform scalar
-      /// `rhs`.
+      /// Computes bitwise AND for each element of `self` and the scalar `rhs`.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise AND, even though the `&` operator is not
+      /// implemented for Rust's primitive floats.
       ,
-      /// Computes bitwise AND for the uniform scalar `self` and each element of
-      /// `rhs`, returning a SIMD vector.
+      /// Computes bitwise AND for the scalar `self` and each element of `rhs`,
+      /// returning a SIMD vector.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise AND, even though the `&` operator is not
+      /// implemented for Rust's primitive floats.
     );
     impl_binary_operator!(
       $T,
@@ -403,20 +380,19 @@ macro_rules! define_simd_float {
       /// Computes bitwise OR for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise OR, even though the `|` operator is not
+      /// implemented for Rust's primitive floats.
       ,
-      /// Computes bitwise OR for each element of `self` and the uniform scalar
-      /// `rhs`.
+      /// Computes bitwise OR for each element of `self` and the scalar `rhs`.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise OR, even though the `|` operator is not
+      /// implemented for Rust's primitive floats.
       ,
-      /// Computes bitwise OR for the uniform scalar `self` and each element of
-      /// `rhs`, returning a SIMD vector.
+      /// Computes bitwise OR for the scalar `self` and each element of `rhs`,
+      /// returning a SIMD vector.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise OR, even though the `|` operator is not
+      /// implemented for Rust's primitive floats.
     );
     impl_binary_operator!(
       $T,
@@ -429,20 +405,19 @@ macro_rules! define_simd_float {
       /// Computes bitwise XOR for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise XOR, even though the `^` operator is not
+      /// implemented for Rust's primitive floats.
       ,
-      /// Computes bitwise XOR for each element of `self` and the uniform scalar
-      /// `rhs`.
+      /// Computes bitwise XOR for each element of `self` and the scalar `rhs`.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise XOR, even though the `^` operator is not
+      /// implemented for Rust's primitive floats.
       ,
-      /// Computes bitwise XOR for the uniform scalar `self` and each element of
-      /// `rhs`, returning a SIMD vector.
+      /// Computes bitwise XOR for the scalar `self` and each element of `rhs`,
+      /// returning a SIMD vector.
       ///
-      /// This operator is not implemented for primitive scalar floats, but its
-      /// behavior here is the same as for integers.
+      /// This computes bitwise XOR, even though the `^` operator is not
+      /// implemented for Rust's primitive floats.
     );
 
     impl<Rhs> core::iter::Sum<Rhs> for $Simd
@@ -812,6 +787,32 @@ macro_rules! define_simd_float {
       /// [`min`]: Self::min
       #[must_use]
       $fn_fast_min
+
+      /// Reducing addition. Returns the sum of the vector's elements.
+      ///
+      /// Equivalent to `self[0] + self[1] + ...`.
+      ///
+      /// # Non-deterministic
+      ///
+      /// If this performs multiple additions, their order is non-deterministic.
+      /// This could also perform one sum operation with higher precision than
+      /// expected. This can vary by platform, version, and could even differ
+      /// within the same execution from one invocation to the next.
+      $fn_reduce_add
+
+      /// Reducing multiplication. Returns the product of the vector's
+      /// elements.
+      ///
+      /// Equivalent to `self[0] * self[1] * ...`.
+      ///
+      /// # Non-deterministic
+      ///
+      /// If this performs multiple multiplications, their order is
+      /// non-deterministic. This could also perform one product operation with
+      /// higher precision than expected. This can vary by platform, version,
+      /// and could even differ within the same execution from one invocation to
+      /// the next.
+      $fn_reduce_mul
 
       /// Returns the maximum between all elements of `self`.
       ///

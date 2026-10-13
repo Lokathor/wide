@@ -110,10 +110,6 @@ macro_rules! define_simd_unsigned {
 
       $fn_extract_const
 
-      $fn_reduce_add
-
-      $fn_reduce_mul
-
       $fn_bitselect
 
       $fn_select
@@ -193,6 +189,10 @@ macro_rules! define_simd_unsigned {
 
       $fn_min
 
+      $fn_reduce_add
+
+      $fn_reduce_mul
+
       $fn_reduce_max
 
       $fn_reduce_min
@@ -248,6 +248,20 @@ macro_rules! define_simd_unsigned {
       $fn_mul_keep_low_high
 
       $fn_mul_keep_high
+    );
+
+    impl_unary_operator!(
+      $Simd,
+      Neg,
+      neg,
+      #[inline]
+      fn neg(self) -> Self::Output {
+        Self::default() - self
+      },
+      /// Computes wrapping negation for each element of `self`.
+      ///
+      /// This computes wrapping `0 - self`, even though the `-` operator is not
+      /// implemented for Rust's primitive unsigned integers.
     );
 
     /// The following functionality exists for all SIMD vectors of unsigned
