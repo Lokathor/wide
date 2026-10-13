@@ -1669,14 +1669,9 @@ define_simd_unsigned! {
   }
 }
 
-/// The following functionality exists only for [`u8x16`], or only for
-/// particular types inconsistently.
 impl u8x16 {
-    /// Treats two [`i16x8`] values as a single [`i16x16`] value, then converts
-    /// each element from [`i16`] to [`u8`], saturating out of range values.
     #[inline]
-    #[must_use]
-    pub fn narrow_i16x8(lhs: i16x8, rhs: i16x8) -> Self {
+    pub(crate) fn narrow_i16x8_backend(lhs: i16x8, rhs: i16x8) -> Self {
         pick! {
             if #[cfg(target_feature = "sse2")] {
                 u8x16(pack_i16_to_u8_m128i(lhs.0, rhs.0))
@@ -1717,70 +1712,5 @@ impl u8x16 {
                 ])
             }
         }
-    }
-
-    /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
-    /// halfs.
-    ///
-    /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
-    ///
-    /// This function has been deprecated and renamed to [`interleave_low`].
-    ///
-    /// [`interleave_low`]: Self::interleave_low
-    #[inline]
-    #[must_use]
-    #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
-    pub fn unpack_low(lhs: u8x16, rhs: u8x16) -> u8x16 {
-        lhs.interleave_low(rhs)
-    }
-
-    /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
-    /// halfs.
-    ///
-    /// Equivalent to
-    /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
-    ///
-    /// This function has been deprecated and renamed to [`interleave_high`].
-    ///
-    /// [`interleave_high`]: Self::interleave_high
-    #[inline]
-    #[must_use]
-    #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
-    pub fn unpack_high(lhs: u8x16, rhs: u8x16) -> u8x16 {
-        lhs.interleave_high(rhs)
-    }
-
-    /// Returns a new vector where each element is based on the index values in
-    /// `rhs`.
-    ///
-    /// * Index values in the range `[0, 15]` select the i-th element of `self`.
-    /// * Index values that are out of range will cause that output lane to be
-    ///   `0`.
-    ///
-    /// This function has been deprecated and replaced with [`shuffle_zeroing`].
-    ///
-    /// [`shuffle_zeroing`]: Self::shuffle_zeroing
-    #[inline]
-    #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
-    pub fn swizzle(self, rhs: i8x16) -> i8x16 {
-        self.shuffle_zeroing(rhs.cast_unsigned()).cast_signed()
-    }
-
-    /// Works like [`swizzle`](Self::swizzle) with the following additional
-    /// details
-    ///
-    /// * Indices in the range `[0, 15]` will select the i-th element of `self`.
-    /// * If the high bit of any index is set (meaning that the index is
-    ///   negative), then the corresponding output lane is guaranteed to be zero.
-    /// * Otherwise the output lane is either `0` or `self[rhs[i] % 16]`,
-    ///   depending on the implementation.
-    ///
-    /// This function has been deprecated and replaced with [`shuffle`].
-    ///
-    /// [`shuffle`]: Self::shuffle
-    #[inline]
-    #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
-    pub fn swizzle_relaxed(self, rhs: u8x16) -> u8x16 {
-        self.shuffle(rhs)
     }
 }

@@ -1175,27 +1175,16 @@ define_simd_unsigned! {
   }
 }
 
-/// The following functionality exists only for [`u32x4`], or only for
-/// particular types inconsistently.
 impl u32x4 {
-    /// Returns a SIMD vector whose elements are selected from `self` using
-    /// constant indices.
-    ///
-    /// If an index is out of bounds, compilation fails.
-    ///
-    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
     #[inline]
-    #[must_use]
-    pub fn shuffle_consts<const I0: usize, const I1: usize, const I2: usize, const I3: usize>(
+    pub(crate) fn shuffle_consts_backend<
+        const I0: usize,
+        const I1: usize,
+        const I2: usize,
+        const I3: usize,
+    >(
         self,
     ) -> Self {
-        const {
-            assert!(I0 < 4);
-            assert!(I1 < 4);
-            assert!(I2 < 4);
-            assert!(I3 < 4);
-        }
-
         if const { I0 == 0 && I1 == 1 && I2 == 2 && I3 == 3 } {
             self
         } else {
@@ -1330,30 +1319,8 @@ impl u32x4 {
         }
     }
 
-    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-    /// vector of larger integers.
-    ///
-    /// The returned value is always exact and can never overflow.
-    ///
-    /// This function has been renamed to [`widening_mul`].
-    ///
-    /// [`widening_mul`]: Self::widening_mul
     #[inline]
-    #[must_use]
-    #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
-    pub fn mul_widen(self, rhs: Self) -> u64x4 {
-        self.widening_mul(rhs)
-    }
-
-    /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
-    /// `a` and `b`. `W` must be in `1..=32`.
-    ///
-    /// There is no IFMA equivalent at this width, and below 17 bits no widening
-    /// multiply is needed either: the whole product fits a lane, so the ordinary
-    /// lane multiply already yields both halves.
-    #[inline]
-    #[must_use]
-    pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_lo_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         if W <= 16 {
             let mask = Self::splat(add_mul_operand_mask_u32::<W>());
             return self + (((a & mask) * (b & mask)) & mask);
@@ -1367,11 +1334,8 @@ impl u32x4 {
         }))
     }
 
-    /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
-    /// and `b`. `W` must be in `1..=32`.
     #[inline]
-    #[must_use]
-    pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_hi_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         // See `add_mul_lo`: the whole product is in the lane, so the high half is a
         // shift.
         if W <= 16 {

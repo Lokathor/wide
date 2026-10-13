@@ -1472,14 +1472,9 @@ define_simd_unsigned! {
   }
 }
 
-/// The following functionality exists only for [`u16x8`], or only for
-/// particular types inconsistently.
 impl u16x8 {
-    /// Converts the lower eight elements of `u` from [`u8`] to [`u16`], dropping
-    /// the higher eight elements.
     #[inline]
-    #[must_use]
-    pub fn from_u8x16_low(u: u8x16) -> Self {
+    pub(crate) fn from_u8x16_low_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
             Self(unpack_low_i8_m128i(u.0, m128i::zeroed()))
@@ -1499,11 +1494,8 @@ impl u16x8 {
         }
     }
 
-    /// Converts the higher eight elements of `u` from [`u8`] to [`u16`], dropping
-    /// the lower eight elements.
     #[inline]
-    #[must_use]
-    pub fn from_u8x16_high(u: u8x16) -> Self {
+    pub(crate) fn from_u8x16_high_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
             Self(unpack_high_i8_m128i(u.0, m128i::zeroed()))
@@ -1521,21 +1513,6 @@ impl u16x8 {
             ])
           }
         }
-    }
-
-    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-    /// vector of larger integers.
-    ///
-    /// The returned value is always exact and can never overflow.
-    ///
-    /// This function has been renamed to [`widening_mul`].
-    ///
-    /// [`widening_mul`]: Self::widening_mul
-    #[inline]
-    #[must_use]
-    #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
-    pub fn mul_widen(self, rhs: Self) -> u32x8 {
-        self.widening_mul(rhs)
     }
 
     /// A helper for shuffle functions that turns indices of 16-bit lanes into

@@ -399,13 +399,9 @@ define_simd_signed! {
   }
 }
 
-/// The following functionality exists only for [`i64x8`], or only for
-/// particular types inconsistently.
 impl i64x8 {
-    /// Converts each element from [`i64`] to [`f64`].
     #[inline]
-    #[must_use]
-    pub fn round_float(self) -> f64x8 {
+    pub(crate) fn round_float_backend(self) -> f64x8 {
         let arr: [i64; 8] = cast(self);
         cast([
             arr[0] as f64,

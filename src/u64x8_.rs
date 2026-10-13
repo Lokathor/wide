@@ -885,8 +885,6 @@ define_simd_unsigned! {
   }
 }
 
-/// The following functionality exists only for [`u64x8`], or only for
-/// particular types inconsistently.
 impl u64x8 {
     /// The exact per-lane product of `a` and `b` masked to `W` bits.
     ///
@@ -894,7 +892,6 @@ impl u64x8 {
     /// callers guard on that. It is instantiated for wider `W` too, since the
     /// guard is a runtime `if` on a const, so it cannot assert the bound itself.
     #[inline]
-    #[must_use]
     fn mul_masked<const W: u32>(a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
@@ -918,11 +915,8 @@ impl u64x8 {
         }
     }
 
-    /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
-    /// `a` and `b`. `W` must be in `1..=64`.
     #[inline]
-    #[must_use]
-    pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_lo_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512ifma")] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.
@@ -947,11 +941,8 @@ impl u64x8 {
         }))
     }
 
-    /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
-    /// and `b`. `W` must be in `1..=64`.
     #[inline]
-    #[must_use]
-    pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_hi_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512ifma")] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.

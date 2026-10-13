@@ -878,8 +878,6 @@ define_simd_unsigned! {
   }
 }
 
-/// The following functionality exists only for [`u32x8`], or only for
-/// particular types inconsistently.
 impl u32x8 {
     /// A helper for shuffle functions that turns indices of 32-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
@@ -904,12 +902,9 @@ impl u32x8 {
 
         cast::<u32x8, u8x32>(base | WITHIN_LANE)
     }
-}
 
-impl From<u16x8> for u32x8 {
-    /// widens and zero extends to u32x8
     #[inline]
-    fn from(v: u16x8) -> Self {
+    pub(crate) fn from_u16x8_backend(v: u16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(convert_to_i32_m256i_from_u16_m128i(v.0))
@@ -932,20 +927,9 @@ impl From<u16x8> for u32x8 {
           }
         }
     }
-}
 
-/// The following functionality exists only for [`u32x8`], or only for
-/// particular types inconsistently.
-impl u32x8 {
-    /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
-    /// `a` and `b`. `W` must be in `1..=32`.
-    ///
-    /// There is no IFMA equivalent at this width, and below 17 bits no widening
-    /// multiply is needed either: the whole product fits a lane, so the ordinary
-    /// lane multiply already yields both halves.
     #[inline]
-    #[must_use]
-    pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_lo_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         if W <= 16 {
             let mask = Self::splat(add_mul_operand_mask_u32::<W>());
             return self + (((a & mask) * (b & mask)) & mask);
@@ -959,11 +943,8 @@ impl u32x8 {
         }))
     }
 
-    /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
-    /// and `b`. `W` must be in `1..=32`.
     #[inline]
-    #[must_use]
-    pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_hi_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         // See `add_mul_lo`: the whole product is in the lane, so the high half is a
         // shift.
         if W <= 16 {

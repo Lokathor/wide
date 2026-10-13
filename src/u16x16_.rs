@@ -848,8 +848,6 @@ define_simd_unsigned! {
   }
 }
 
-/// The following functionality exists only for [`u16x16`], or only for
-/// particular types inconsistently.
 impl u16x16 {
     /// A helper for shuffle functions that turns indices of 16-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
@@ -872,12 +870,9 @@ impl u16x16 {
 
         cast::<u16x16, u8x32>(base | WITHIN_LANE)
     }
-}
 
-impl From<u8x16> for u16x16 {
-    /// widens and sign extends to u16x16
     #[inline]
-    fn from(v: u8x16) -> Self {
+    pub(crate) fn from_u8x16_backend(v: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             u16x16(convert_to_i16_m256i_from_u8_m128i(v.0))
