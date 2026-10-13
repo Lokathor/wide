@@ -136,19 +136,22 @@ macro_rules! define_simd_float {
       }
 
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The order of addition is non-deterministic. This means it varies by
-      /// platform, version, and can even differ within the same execution from
-      /// one invocation to the next.
+      /// If this performs multiple additions, their order is non-deterministic.
+      /// This could also perform one sum operation with higher precision than
+      /// expected. This can vary by platform, version, and could even differ
+      /// within the same execution from one invocation to the next.
       $fn_reduce_add
 
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The order of multiplication is non-deterministic. This means it varies
-      /// by platform, version, and can even differ within the same execution
-      /// from one invocation to the next.
+      /// If this performs multiple multiplications, their order is
+      /// non-deterministic. This could also perform one product operation with
+      /// higher precision than expected. This can vary by platform, version,
+      /// and could even differ within the same execution from one invocation to
+      /// the next.
       $fn_reduce_mul
 
       $fn_bitselect
@@ -691,12 +694,12 @@ macro_rules! define_simd_float {
       #[must_use]
       $fn_is_sign_negative
 
-      /// Returns the reciprocal (inverse) of a number, `1/x`.
+      /// Approximates the reciprocal (inverse) of a number, `1/x`.
       ///
       /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       ///
       #[doc = concat!(
@@ -707,13 +710,13 @@ macro_rules! define_simd_float {
       #[must_use]
       $fn_recip
 
-      /// Returns the square root of the reciprocal (inverse) of a number,
+      /// Approximates the square root of the reciprocal (inverse) of a number,
       /// `sqrt(1/x)`.
       ///
       /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_recip_sqrt
@@ -722,8 +725,12 @@ macro_rules! define_simd_float {
       ///
       /// # Unspecified precision
       ///
+      /// This currently performs a deterministic multiplication by a constant.
+      /// However, this is not made as a guarantee, because the equivalent `std`
+      /// float function has unspecified precision.
+      ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -736,8 +743,12 @@ macro_rules! define_simd_float {
       ///
       /// # Unspecified precision
       ///
+      /// This currently performs a deterministic multiplication by a constant.
+      /// However, this is not made as a guarantee, because the equivalent `std`
+      /// float function has unspecified precision.
+      ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -857,14 +868,14 @@ macro_rules! define_simd_float {
       /// This returns NaN when *either* argument is NaN or if a combination of
       /// +inf and -inf is provided as arguments.
       ///
-      /// This function currently returns a less precise result than
+      /// This currently returns a less precise result than
       #[doc = concat!("[`", stringify!($T), "::midpoint`]")]
-      /// in order to gain performance, but this may change in the future.
+      /// in order to gain performance, but this may change in a future version.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1146,10 +1157,10 @@ macro_rules! define_simd_float {
       /// This function cannot be named simply `powf`, because a now deprecated
       /// function already uses that name.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_powf_simd
@@ -1164,40 +1175,40 @@ macro_rules! define_simd_float {
 
       /// Returns `e^(self)`, (the exponential function) for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_exp
 
       /// Returns `2^(self)` for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_exp2
 
       /// Returns the natural logarithm of a number for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_ln
 
       /// Returns the base 2 logarithm of a number for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1207,10 +1218,10 @@ macro_rules! define_simd_float {
 
       /// Returns the base 10 logarithm of a number for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1220,20 +1231,20 @@ macro_rules! define_simd_float {
 
       /// Returns the cube root of a number for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_cbrt
 
       /// Computes the sine of a number (in radians) for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1244,10 +1255,10 @@ macro_rules! define_simd_float {
 
       /// Computes the cosine of a number (in radians) for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1258,10 +1269,10 @@ macro_rules! define_simd_float {
 
       /// Computes the tangent of a number (in radians) for each input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1274,10 +1285,10 @@ macro_rules! define_simd_float {
       /// is in radians in the range [-pi/2, pi/2] or NaN if the number is
       /// outside the range [-1, 1].
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_asin
@@ -1286,10 +1297,10 @@ macro_rules! define_simd_float {
       /// value is in radians in the range [0, pi] or NaN if the number is
       /// outside the range [-1, 1].
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_acos
@@ -1297,10 +1308,10 @@ macro_rules! define_simd_float {
       /// Computes the arctangent of a number for each input element. Return
       /// value is in radians in the range [-pi/2, pi/2].
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_atan
@@ -1315,10 +1326,10 @@ macro_rules! define_simd_float {
       /// | `<= -0` | `>= +0` | `arctan(y/x) + pi`   | `[+pi/2, +pi]`|
       /// | `<= -0` | `<= -0` | `arctan(y/x) - pi`   | `[-pi, -pi/2]`|
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_atan2
@@ -1326,10 +1337,10 @@ macro_rules! define_simd_float {
       /// Simultaneously computes the sine and cosine of a number `x` for each
       /// input element. Returns `(sin(x), cos(x))`.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_sin_cos
@@ -1337,10 +1348,10 @@ macro_rules! define_simd_float {
       /// Simultaneously computes the arcsine and arccosine of a number `x` for
       /// each input element. Returns `(asin(x), acos(x))`.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_asin_acos
@@ -1348,10 +1359,10 @@ macro_rules! define_simd_float {
       /// Returns `e^(self) - 1` for each input element in a way that is
       /// accurate even if a number is close to zero.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_exp_m1
@@ -1359,10 +1370,10 @@ macro_rules! define_simd_float {
       /// Returns `ln(1+n)` (natural logarithm) for each input element more
       /// accurately than if the operations were performed separately.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_ln_1p
@@ -1370,10 +1381,10 @@ macro_rules! define_simd_float {
       /// Returns the hyperbolic sine (`(e^self - e^(-self))/2`) for each input
       /// element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_sinh
@@ -1381,10 +1392,10 @@ macro_rules! define_simd_float {
       /// Returns the hyperbolic cosine (`(e^self + e^(-self))/2`) for each
       /// input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_cosh
@@ -1392,10 +1403,10 @@ macro_rules! define_simd_float {
       /// Returns the hyperbolic tangent (`sinh(self)/cosh(self)`) for each
       /// input element.
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_tanh
@@ -1510,10 +1521,10 @@ macro_rules! define_simd_float {
       ///
       /// This function has been renamed to [`powf_simd`].
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       ///
       /// [`powf_simd`]: Self::powf_simd
@@ -1531,10 +1542,10 @@ macro_rules! define_simd_float {
       /// `x` to the same power, even though that brings no performance benefit.
       #[doc = concat!("Use `x.powf_simd(", stringify!($Simd), "::splat(n))` instead.")]
       ///
-      /// # Unspecified precision
+      /// # Non-deterministic
       ///
-      /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[deprecated(since = "1.6.0", note = "use `x.powf_simd(splat(n))` instead")]
       #[inline]
