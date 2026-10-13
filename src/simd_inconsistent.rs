@@ -224,6 +224,37 @@ impl i8x32 {
     pub fn swizzle_half_relaxed(self, rhs: i8x32) -> i8x32 {
         self.swizzle_half_relaxed_backend(rhs)
     }
+
+    /// Full 32-entry byte table lookup.
+    ///
+    /// * An index (interpreted as unsigned) in `[0, 31]` selects `self[index]`.
+    /// * Any index `>= 32` (including negative `i8` values) yields `0`.
+    ///
+    /// Unlike [`swizzle_half`](Self::swizzle_half), indices address the entire
+    /// 32-byte vector, not just their own 16-byte half.
+    ///
+    /// This function has been deprecated and replaced with [`shuffle_zeroing`].
+    ///
+    /// [`shuffle_zeroing`]: Self::shuffle_zeroing
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
+    pub fn swizzle(self, rhs: i8x32) -> i8x32 {
+        self.shuffle_zeroing(rhs.cast_unsigned())
+    }
+
+    /// Like [`swizzle`](Self::swizzle), but out-of-range indices (unsigned
+    /// `>= 32`) yield an implementation-defined result (`0` or `self[index %
+    /// 32]`). Prefer this when you know all indices are in range; it can be
+    /// cheaper.
+    ///
+    /// This function has been deprecated and replaced with [`shuffle`].
+    ///
+    /// [`shuffle`]: Self::shuffle
+    #[inline]
+    #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
+    pub fn swizzle_relaxed(self, rhs: i8x32) -> i8x32 {
+        self.shuffle(rhs.cast_unsigned())
+    }
 }
 
 /// The following functionality exists only for [`i16x8`], or only for
