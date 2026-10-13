@@ -140,8 +140,8 @@ macro_rules! define_simd_float {
       ///
       /// If this performs multiple additions, their order is non-deterministic.
       /// This could also perform one sum operation with higher precision than
-      /// expected. This varies by platform, version, and can even differ within
-      /// the same execution from one invocation to the next.
+      /// expected. This can vary by platform, version, and could even differ
+      /// within the same execution from one invocation to the next.
       $fn_reduce_add
 
       ///
@@ -149,9 +149,9 @@ macro_rules! define_simd_float {
       ///
       /// If this performs multiple multiplications, their order is
       /// non-deterministic. This could also perform one product operation with
-      /// higher precision than expected. This varies by platform, version, and
-      /// can even differ within the same execution from one invocation to the
-      /// next.
+      /// higher precision than expected. This can vary by platform, version,
+      /// and could even differ within the same execution from one invocation to
+      /// the next.
       $fn_reduce_mul
 
       $fn_bitselect
@@ -699,7 +699,7 @@ macro_rules! define_simd_float {
       /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       ///
       #[doc = concat!(
@@ -716,7 +716,7 @@ macro_rules! define_simd_float {
       /// # Unspecified precision
       ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_recip_sqrt
@@ -730,7 +730,7 @@ macro_rules! define_simd_float {
       /// float function has unspecified precision.
       ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -748,7 +748,7 @@ macro_rules! define_simd_float {
       /// float function has unspecified precision.
       ///
       /// The precision of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -875,7 +875,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1160,7 +1160,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_powf_simd
@@ -1178,7 +1178,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_exp
@@ -1188,7 +1188,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_exp2
@@ -1198,7 +1198,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_ln
@@ -1208,7 +1208,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1221,7 +1221,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1234,7 +1234,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_cbrt
@@ -1244,7 +1244,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1258,7 +1258,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1272,7 +1272,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[inline]
       #[must_use]
@@ -1288,7 +1288,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_asin
@@ -1300,7 +1300,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_acos
@@ -1311,7 +1311,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_atan
@@ -1329,7 +1329,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_atan2
@@ -1340,7 +1340,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_sin_cos
@@ -1351,7 +1351,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_asin_acos
@@ -1362,7 +1362,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_exp_m1
@@ -1373,7 +1373,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_ln_1p
@@ -1384,7 +1384,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_sinh
@@ -1395,7 +1395,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_cosh
@@ -1406,7 +1406,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[must_use]
       $fn_tanh
@@ -1524,7 +1524,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       ///
       /// [`powf_simd`]: Self::powf_simd
@@ -1545,7 +1545,7 @@ macro_rules! define_simd_float {
       /// # Non-deterministic
       ///
       /// The exact result of this function is non-deterministic. This means it
-      /// varies by platform, version, and can even differ within the same
+      /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       #[deprecated(since = "1.6.0", note = "use `x.powf_simd(splat(n))` instead")]
       #[inline]
