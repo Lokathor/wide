@@ -24,20 +24,6 @@ macro_rules! const_f64_as_f64x2 {
 }
 
 impl f64x2 {
-  unsafe {
-    T = f64,
-    N = 2,
-    N_STR = "two",
-    Simd = f64x2,
-    SignedSimd = i64x2,
-    UnsignedT = u64,
-    UnsignedSimd = u64x2,
-    optional_type_x86_inner { X86Inner = __m128d },
-    optional_type_arm_inner { ArmInner = float64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-  }
-  old_powf_simd_fn_name = pow_f64x2,
-
   #[inline]
   fn neg(self) -> Self::Output {
     pick! {

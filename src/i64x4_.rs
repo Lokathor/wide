@@ -14,21 +14,6 @@ pick! {
 }
 
 impl i64x4 {
-  unsafe {
-    T = i64,
-    N = 4,
-    N_STR = "four",
-    Simd = i64x4,
-    UnsignedSimd = u64x4,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    BitmaskType = u32,
-    [0, 1, 2, 3],
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {

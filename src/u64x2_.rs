@@ -17,20 +17,6 @@ pick! {
 }
 
 impl u64x2 {
-  unsafe {
-    T = u64,
-    N = 2,
-    N_STR = "two",
-    Simd = u64x2,
-    SignedSimd = i64x2,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1],
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-  }
-
   #[inline]
   fn not(self) -> Self::Output {
     self ^ cast::<u128, u64x2>(u128::MAX)

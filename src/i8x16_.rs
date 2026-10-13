@@ -17,21 +17,6 @@ pick! {
 }
 
 impl i8x16 {
-  unsafe {
-    T = i8,
-    N = 16,
-    N_STR = "16",
-    Simd = i8x16,
-    UnsignedSimd = u8x16,
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    BitmaskType = u32,
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int8x16_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-  }
-
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {

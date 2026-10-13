@@ -21,20 +21,6 @@ macro_rules! const_f64_as_f64x4 {
 }
 
 impl f64x4 {
-  unsafe {
-    T = f64,
-    N = 4,
-    N_STR = "four",
-    Simd = f64x4,
-    SignedSimd = i64x4,
-    UnsignedT = u64,
-    UnsignedSimd = u64x4,
-    optional_type_x86_inner { X86Inner = __m256d },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-  old_powf_simd_fn_name = pow_f64x4,
-
   #[inline]
   fn neg(self) -> Self::Output {
     pick! {

@@ -21,20 +21,6 @@ macro_rules! const_f32_as_f32x8 {
 }
 
 impl f32x8 {
-  unsafe {
-    T = f32,
-    N = 8,
-    N_STR = "eight",
-    Simd = f32x8,
-    SignedSimd = i32x8,
-    UnsignedT = u32,
-    UnsignedSimd = u32x8,
-    optional_type_x86_inner { X86Inner = __m256 },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-  old_powf_simd_fn_name = pow_f32x8,
-
   #[inline]
   fn neg(self) -> Self::Output {
     pick! {

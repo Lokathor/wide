@@ -17,21 +17,6 @@ pick! {
 }
 
 impl i64x2 {
-  unsafe {
-    T = i64,
-    N = 2,
-    N_STR = "two",
-    Simd = i64x2,
-    UnsignedSimd = u64x2,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    BitmaskType = u32,
-    [0, 1],
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-  }
-
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {

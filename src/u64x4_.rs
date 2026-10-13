@@ -14,20 +14,6 @@ pick! {
 }
 
 impl u64x4 {
-  unsafe {
-    T = u64,
-    N = 4,
-    N_STR = "four",
-    Simd = u64x4,
-    SignedSimd = i64x4,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1, 2, 3],
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-
   #[inline]
   fn not(self) -> Self {
     pick! {

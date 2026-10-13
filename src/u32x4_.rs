@@ -17,20 +17,6 @@ pick! {
 }
 
 impl u32x4 {
-  unsafe {
-    T = u32,
-    N = 4,
-    N_STR = "four",
-    Simd = u32x4,
-    SignedSimd = i32x4,
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    [0, 1, 2, 3],
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint32x4_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-  }
-
   #[inline]
   fn not(self) -> Self::Output {
     self ^ cast::<u128, u32x4>(u128::MAX)

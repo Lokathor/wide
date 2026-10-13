@@ -21,20 +21,6 @@ macro_rules! const_f32_as_f32x16 {
 }
 
 impl f32x16 {
-  unsafe {
-    T = f32,
-    N = 16,
-    N_STR = "16",
-    Simd = f32x16,
-    SignedSimd = i32x16,
-    UnsignedT = u32,
-    UnsignedSimd = u32x16,
-    optional_type_x86_inner { X86Inner = __m512 },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-  old_powf_simd_fn_name = pow_f32x16,
-
   #[inline]
   fn neg(self) -> Self::Output {
     pick! {

@@ -14,26 +14,6 @@ pick! {
 }
 
 impl i8x64 {
-  unsafe {
-    T = i8,
-    N = 64,
-    N_STR = "64",
-    Simd = i8x64,
-    UnsignedSimd = u8x64,
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    BitmaskType = u64,
-    [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-        16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
-    ],
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-  }
-
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
     rhs.simd_gt(self)

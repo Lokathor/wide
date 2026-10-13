@@ -17,20 +17,6 @@ pick! {
 }
 
 impl u8x16 {
-  unsafe {
-    T = u8,
-    N = 16,
-    N_STR = "16",
-    Simd = u8x16,
-    SignedSimd = i8x16,
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint8x16_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-  }
-
   #[inline]
   fn not(self) -> Self::Output {
     self ^ cast::<u128, u8x16>(u128::MAX)
