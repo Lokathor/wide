@@ -39,18 +39,18 @@ macro_rules! pick {
 }
 
 macro_rules! impl_unary_operator {
-  ($Simd:ident, $Op:ident, $op:ident, $impl:item $(, $(#[$doc:meta])*)?) => {
+  ($Simd:ident, $Op:ident, $op:ident, $impl:item, $(#[$doc:meta])*) => {
     impl $Op for $Simd {
       type Output = Self;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       $impl
     }
 
     impl $Op for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self) -> Self::Output {
         (*self).$op()
@@ -67,24 +67,22 @@ macro_rules! impl_binary_operator {
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $impl:item
-    $(,
-      $(#[$doc:meta])*,
-      $(#[$doc_scalar:meta])*,
-      $(#[$scalar_doc:meta])*
-    )?
+    $impl:item,
+    $(#[$doc:meta])*,
+    $(#[$doc_scalar:meta])*,
+    $(#[$scalar_doc:meta])*
   ) => {
     impl $Op for $Simd {
       type Output = Self;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       $impl
     }
 
     impl $Op<$T> for $Simd {
       type Output = Self;
 
-      $($(#[$doc_scalar])*)?
+      $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: $T) -> Self::Output {
         self.$op(Self::splat(rhs))
@@ -94,7 +92,7 @@ macro_rules! impl_binary_operator {
     impl $Op<$Simd> for $T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $Simd) -> Self::Output {
         $Simd::splat(self).$op(rhs)
@@ -102,7 +100,7 @@ macro_rules! impl_binary_operator {
     }
 
     impl $OpAssign for $Simd {
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: Self) {
         *self = (*self).$op(rhs);
@@ -110,7 +108,7 @@ macro_rules! impl_binary_operator {
     }
 
     impl $OpAssign<$T> for $Simd {
-      $($(#[$doc_scalar])*)?
+      $(#[$doc_scalar])*
       #[inline]
       fn $op_assign(&mut self, rhs: $T) {
         *self = (*self).$op(Self::splat(rhs));
@@ -120,7 +118,7 @@ macro_rules! impl_binary_operator {
     impl $Op<&Self> for $Simd {
       type Output = Self;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &Self) -> Self::Output {
         self.$op(*rhs)
@@ -130,7 +128,7 @@ macro_rules! impl_binary_operator {
     impl $Op<&$T> for $Simd {
       type Output = Self;
 
-      $($(#[$doc_scalar])*)?
+      $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: &$T) -> Self::Output {
         self.$op(Self::splat(*rhs))
@@ -140,7 +138,7 @@ macro_rules! impl_binary_operator {
     impl $Op<&$Simd> for $T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$Simd) -> Self::Output {
         $Simd::splat(self).$op(*rhs)
@@ -148,7 +146,7 @@ macro_rules! impl_binary_operator {
     }
 
     impl $OpAssign<&Self> for $Simd {
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &Self) {
         *self = (*self).$op(*rhs);
@@ -156,7 +154,7 @@ macro_rules! impl_binary_operator {
     }
 
     impl $OpAssign<&$T> for $Simd {
-      $($(#[$doc_scalar])*)?
+      $(#[$doc_scalar])*
       #[inline]
       fn $op_assign(&mut self, rhs: &$T) {
         *self = (*self).$op(Self::splat(*rhs));
@@ -166,7 +164,7 @@ macro_rules! impl_binary_operator {
     impl $Op<$Simd> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $Simd) -> Self::Output {
         (*self).$op(rhs)
@@ -176,7 +174,7 @@ macro_rules! impl_binary_operator {
     impl $Op<$T> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc_scalar])*)?
+      $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: $T) -> Self::Output {
         (*self).$op($Simd::splat(rhs))
@@ -186,7 +184,7 @@ macro_rules! impl_binary_operator {
     impl $Op<$Simd> for &$T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $Simd) -> Self::Output {
         $Simd::splat(*self).$op(rhs)
@@ -196,7 +194,7 @@ macro_rules! impl_binary_operator {
     impl $Op<&$Simd> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$Simd) -> Self::Output {
         (*self).$op(*rhs)
@@ -206,7 +204,7 @@ macro_rules! impl_binary_operator {
     impl $Op<&$T> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc_scalar])*)?
+      $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: &$T) -> Self::Output {
         (*self).$op($Simd::splat(*rhs))
@@ -216,7 +214,7 @@ macro_rules! impl_binary_operator {
     impl $Op<&$Simd> for &$T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$Simd) -> Self::Output {
         $Simd::splat(*self).$op(*rhs)
@@ -236,24 +234,22 @@ macro_rules! impl_shift_operator {
     $OpAssign:ident,
     $op_assign:ident,
     $impl_unsigned_simd:item,
-    $impl_u32:item
-    $(,
-      $(#[$doc:meta])*,
-      $(#[$doc_scalar:meta])*,
-      $(#[$scalar_doc:meta])*
-    )?
+    $impl_u32:item,
+    $(#[$doc:meta])*,
+    $(#[$doc_scalar:meta])*,
+    $(#[$scalar_doc:meta])*
   ) => {
     impl $Op<$UnsignedSimd> for $Simd {
       type Output = Self;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       $impl_unsigned_simd
     }
 
     impl $Op<$SignedSimd> for $Simd {
       type Output = Self;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
         self.$op(cast::<$SignedSimd, $UnsignedSimd>(rhs))
@@ -263,7 +259,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$UnsignedSimd> for $T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
         $Simd::splat(self).$op(rhs)
@@ -273,7 +269,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$SignedSimd> for $T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
         $Simd::splat(self).$op(rhs)
@@ -281,7 +277,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<$UnsignedSimd> for $Simd {
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: $UnsignedSimd) {
         *self = (*self).$op(rhs);
@@ -289,7 +285,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<$SignedSimd> for $Simd {
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: $SignedSimd) {
         *self = (*self).$op(rhs);
@@ -299,7 +295,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$UnsignedSimd> for $Simd {
       type Output = Self;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
         self.$op(*rhs)
@@ -309,7 +305,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$SignedSimd> for $Simd {
       type Output = Self;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
         self.$op(*rhs)
@@ -319,7 +315,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$UnsignedSimd> for $T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
         $Simd::splat(self).$op(*rhs)
@@ -329,7 +325,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$SignedSimd> for $T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
         $Simd::splat(self).$op(*rhs)
@@ -337,7 +333,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<&$UnsignedSimd> for $Simd {
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &$UnsignedSimd) {
         *self = (*self).$op(*rhs);
@@ -345,7 +341,7 @@ macro_rules! impl_shift_operator {
     }
 
     impl $OpAssign<&$SignedSimd> for $Simd {
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &$SignedSimd) {
         *self = (*self).$op(*rhs);
@@ -355,7 +351,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$UnsignedSimd> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
         (*self).$op(rhs)
@@ -365,7 +361,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$SignedSimd> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
         (*self).$op(rhs)
@@ -375,7 +371,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$UnsignedSimd> for &$T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
         $Simd::splat(*self).$op(rhs)
@@ -385,7 +381,7 @@ macro_rules! impl_shift_operator {
     impl $Op<$SignedSimd> for &$T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
         $Simd::splat(*self).$op(rhs)
@@ -395,7 +391,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$UnsignedSimd> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
         (*self).$op(*rhs)
@@ -405,7 +401,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$SignedSimd> for &$Simd {
       type Output = $Simd;
 
-      $($(#[$doc])*)?
+      $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
         (*self).$op(*rhs)
@@ -415,7 +411,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$UnsignedSimd> for &$T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
         $Simd::splat(*self).$op(*rhs)
@@ -425,7 +421,7 @@ macro_rules! impl_shift_operator {
     impl $Op<&$SignedSimd> for &$T {
       type Output = $Simd;
 
-      $($(#[$scalar_doc])*)?
+      $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
         $Simd::splat(*self).$op(*rhs)
@@ -437,12 +433,12 @@ macro_rules! impl_shift_operator {
         impl $Op<$T2> for $Simd {
           type Output = Self;
 
-          $($(#[$doc_scalar])*)?
+          $(#[$doc_scalar])*
           $impl
         }
 
         impl $OpAssign<$T2> for $Simd {
-          $($(#[$doc_scalar])*)?
+          $(#[$doc_scalar])*
           #[inline]
           fn $op_assign(&mut self, rhs: $T2) {
             *self = (*self).$op(rhs);
@@ -452,7 +448,7 @@ macro_rules! impl_shift_operator {
         impl $Op<&$T2> for $Simd {
           type Output = Self;
 
-          $($(#[$doc_scalar])*)?
+          $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: &$T2) -> Self::Output {
             self.$op(*rhs)
@@ -460,7 +456,7 @@ macro_rules! impl_shift_operator {
         }
 
         impl $OpAssign<&$T2> for $Simd {
-          $($(#[$doc_scalar])*)?
+          $(#[$doc_scalar])*
           #[inline]
           fn $op_assign(&mut self, rhs: &$T2) {
             *self = (*self).$op(*rhs);
@@ -470,7 +466,7 @@ macro_rules! impl_shift_operator {
         impl $Op<$T2> for &$Simd {
           type Output = $Simd;
 
-          $($(#[$doc_scalar])*)?
+          $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: $T2) -> Self::Output {
             (*self).$op(rhs)
@@ -480,7 +476,7 @@ macro_rules! impl_shift_operator {
         impl $Op<&$T2> for &$Simd {
           type Output = $Simd;
 
-          $($(#[$doc_scalar])*)?
+          $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: &$T2) -> Self::Output {
             (*self).$op(*rhs)

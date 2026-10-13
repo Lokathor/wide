@@ -257,7 +257,11 @@ macro_rules! define_simd_unsigned {
       #[inline]
       fn neg(self) -> Self::Output {
         Self::default() - self
-      }
+      },
+      /// Computes wrapping negation for each element of `self`.
+      ///
+      /// This computes wrapping `0 - self`, even though the `-` operator is not
+      /// implemented for Rust's primitive unsigned integers.
     );
 
     /// The following functionality exists for all SIMD vectors of unsigned

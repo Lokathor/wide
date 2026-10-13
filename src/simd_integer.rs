@@ -49,11 +49,65 @@ macro_rules! impl_simd_integer {
     ) => {
         impl Eq for $Simd {}
 
-        impl_unary_operator!($Simd, Not, not, $fn_not);
+        impl_unary_operator!(
+            $Simd,
+            Not,
+            not,
+            $fn_not,
+            /// Computes bitwise NOT for each element of `self`.
+        );
 
-        impl_binary_operator!($T, $Simd, Add, add, AddAssign, add_assign, $fn_add);
-        impl_binary_operator!($T, $Simd, Sub, sub, SubAssign, sub_assign, $fn_sub);
-        impl_binary_operator!($T, $Simd, Mul, mul, MulAssign, mul_assign, $fn_mul);
+        impl_binary_operator!(
+            $T,
+            $Simd,
+            Add,
+            add,
+            AddAssign,
+            add_assign,
+            $fn_add,
+            /// Computes wrapping addition for each element of `self` and the
+            /// corresponding element of `rhs`.
+            ,
+            /// Computes wrapping addition for each element of `self` and the
+            /// scalar `rhs`.
+            ,
+            /// Computes wrapping addition for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
+        );
+        impl_binary_operator!(
+            $T,
+            $Simd,
+            Sub,
+            sub,
+            SubAssign,
+            sub_assign,
+            $fn_sub,
+            /// Computes wrapping subtraction for each element of `self` and the
+            /// corresponding element of `rhs`.
+            ,
+            /// Computes wrapping subtraction for each element of `self` and the
+            /// scalar `rhs`.
+            ,
+            /// Computes wrapping subtraction for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
+        );
+        impl_binary_operator!(
+            $T,
+            $Simd,
+            Mul,
+            mul,
+            MulAssign,
+            mul_assign,
+            $fn_mul,
+            /// Computes wrapping multiplication for each element of `self` and
+            /// the corresponding element of `rhs`.
+            ,
+            /// Computes wrapping multiplication for each element of `self` and
+            /// the scalar `rhs`.
+            ,
+            /// Computes wrapping multiplication for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
+        );
         impl_binary_operator!(
             $T,
             $Simd,
@@ -68,32 +122,35 @@ macro_rules! impl_simd_integer {
 
                 Self::from_array([$(self_array[$index].wrapping_div(rhs_array[$index])),*])
             },
-            /// Divides each element of `left` by the corresponding element `right`.
+            /// Computes wrapping division for each element of `self` and the
+            /// corresponding element of `rhs`.
             ///
             /// Note that because division has no hardware support, this operation
             /// is very slow and should be avoided if possible.
             ///
             /// # Panics
             ///
-            /// Panics if any element of `right` is zero.
+            /// Panics if any element of `rhs` is zero.
             ,
-            /// Divides each element of `left` by the scalar `right`.
+            /// Computes wrapping division for each element of `self` and the
+            /// scalar `rhs`.
             ///
             /// Note that because division has no hardware support, this operation
             /// is very slow and should be avoided if possible.
             ///
             /// # Panics
             ///
-            /// Panics if `right` is zero.
+            /// Panics if `rhs` is zero.
             ,
-            /// Divides the scalar `left` by each element of `right`.
+            /// Computes wrapping division for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
             ///
             /// Note that because division has no hardware support, this operation
             /// is very slow and should be avoided if possible.
             ///
             /// # Panics
             ///
-            /// Panics if any element of `right` is zero.
+            /// Panics if any element of `rhs` is zero.
         );
         impl_binary_operator!(
             $T,
@@ -109,35 +166,35 @@ macro_rules! impl_simd_integer {
 
                 Self::from_array([$(self_array[$index].wrapping_rem(rhs_array[$index])),*])
             },
-            /// Returns the remainder of each element of `left` divided by the
-            /// corresponding element `right`.
+            /// Computes the wrapping remainder of each element of `self`
+            /// divided by the corresponding element of `rhs`.
             ///
             /// Note that because division has no hardware support, this operation
             /// is very slow and should be avoided if possible.
             ///
             /// # Panics
             ///
-            /// Panics if any element of `right` is zero.
+            /// Panics if any element of `rhs` is zero.
             ,
-            /// Returns the remainder of each element of `left` divided by the
-            /// scalar `right`.
+            /// Computes the wrapping remainder of each element of `self`
+            /// divided by the scalar `rhs`.
             ///
             /// Note that because division has no hardware support, this operation
             /// is very slow and should be avoided if possible.
             ///
             /// # Panics
             ///
-            /// Panics if `right` is zero.
+            /// Panics if `rhs` is zero.
             ,
-            /// Returns the remainder of the scalar `left` divided by each element
-            /// of `right`.
+            /// Computes the wrapping remainder of the scalar `self` divided by
+            /// each element of `rhs`, returning a SIMD vector.
             ///
             /// Note that because division has no hardware support, this operation
             /// is very slow and should be avoided if possible.
             ///
             /// # Panics
             ///
-            /// Panics if any element of `right` is zero.
+            /// Panics if any element of `rhs` is zero.
         );
         impl_shift_operator!(
             $T,
@@ -150,32 +207,34 @@ macro_rules! impl_simd_integer {
             shl_assign,
             $fn_shl_unsigned_simd,
             $fn_shl_u32,
-            /// Shifts left each element of `self` by the corresponding element of
-            /// `rhs`.
+            /// Shifts left each element of `self` by the corresponding element
+            /// of `rhs`.
             ///
             /// This operator behaves like [`wrapping_shl`].
             ///
-            /// Note that for most targets, this operator is slower than
+            /// Note that on most targets, this operator is slower than
             /// [`unbounded_shl`], so consider using that instead.
             ///
             #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
             #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
             ,
-            /// Shifts left each element of `self` by the uniform scalar `rhs`.
+            /// Shifts left each element of `self` by the scalar `rhs`.
             ///
             /// This operator behaves like [`wrapping_shl`].
             ///
-            /// Note that for most targets, this operator is slower than
+            /// On most targets, shifting by a scalar is faster than shifting by
+            /// SIMD vector. Note that on most targets, this operator is slower than
             /// [`unbounded_shl_scalar`], so consider using that instead.
             ///
             #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
             #[doc = concat!("[`unbounded_shl_scalar`]: ", stringify!($Simd), "::unbounded_shl_scalar")]
             ,
-            /// Shifts left the scalar `self` by each element of `rhs`.
+            /// Shifts left the scalar `self` by each element of `rhs`,
+            /// returning a SIMD vector.
             ///
             /// This operator behaves like [`wrapping_shl`].
             ///
-            /// Note that for most targets, this operator is slower than
+            /// Note that on most targets, this operator is slower than
             /// [`unbounded_shl`], so consider using that instead.
             ///
             #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
@@ -197,27 +256,28 @@ macro_rules! impl_simd_integer {
             ///
             /// This operator behaves like [`wrapping_shr`].
             ///
-            /// Note that for most targets, this operator is slower than
+            /// Note that on most targets, this operator is slower than
             /// [`unbounded_shr`], so consider using that instead.
             ///
             #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
             #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
             ,
-            /// Shifts right each element of `self` by the uniform scalar `rhs`.
+            /// Shifts right each element of `self` by the scalar `rhs`.
             ///
             /// This operator behaves like [`wrapping_shr`].
             ///
-            /// Note that for most targets, this operator is slower than
-            /// [`unbounded_shr_scalar`], so consider using that instead.
+            /// On most targets, shifting by a scalar is faster than shifting by
+            /// a SIMD vector. Note that on most targets, this operator is
+            /// slower than [`unbounded_shr`], so consider using that instead.
             ///
             #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[doc = concat!("[`unbounded_shr_scalar`]: ", stringify!($Simd), "::unbounded_shr_scalar")]
-            ,
-            /// Shifts right the scalar `self` by each element of `rhs`.
+            #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")],
+            /// Shifts right the scalar `self` by each element of `rhs`,
+            /// returning a SIMD vector.
             ///
             /// This operator behaves like [`wrapping_shr`].
             ///
-            /// Note that for most targets, this operator is slower than
+            /// Note that on most targets, this operator is slower than
             /// [`unbounded_shr`], so consider using that instead.
             ///
             #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
@@ -230,7 +290,15 @@ macro_rules! impl_simd_integer {
             bitand,
             BitAndAssign,
             bitand_assign,
-            $fn_bitand
+            $fn_bitand,
+            /// Computes bitwise AND for each element of `self` and the
+            /// corresponding element of `rhs`.
+            ,
+            /// Computes bitwise AND for each element of `self` and the
+            /// scalar `rhs`.
+            ,
+            /// Computes bitwise AND for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
         );
         impl_binary_operator!(
             $T,
@@ -239,7 +307,15 @@ macro_rules! impl_simd_integer {
             bitor,
             BitOrAssign,
             bitor_assign,
-            $fn_bitor
+            $fn_bitor,
+            /// Computes bitwise OR for each element of `self` and the
+            /// corresponding element of `rhs`.
+            ,
+            /// Computes bitwise OR for each element of `self` and the
+            /// scalar `rhs`.
+            ,
+            /// Computes bitwise OR for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
         );
         impl_binary_operator!(
             $T,
@@ -248,7 +324,15 @@ macro_rules! impl_simd_integer {
             bitxor,
             BitXorAssign,
             bitxor_assign,
-            $fn_bitxor
+            $fn_bitxor,
+            /// Computes bitwise XOR for each element of `self` and the
+            /// corresponding element of `rhs`.
+            ,
+            /// Computes bitwise XOR for each element of `self` and the
+            /// scalar `rhs`.
+            ,
+            /// Computes bitwise XOR for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
         );
 
         impl<Rhs> core::iter::Sum<Rhs> for $Simd

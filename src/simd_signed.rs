@@ -365,7 +365,8 @@ macro_rules! define_simd_signed {
       #[inline]
       fn neg(self) -> Self::Output {
         Self::default() - self
-      }
+      },
+      /// Computes wrapping negation for each element of `self`.
     );
 
     impl Select<$Simd> for $UnsignedSimd {
