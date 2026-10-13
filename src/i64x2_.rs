@@ -18,7 +18,7 @@ pick! {
 
 impl i64x2 {
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         // only has gt, so flip arguments around to get lt
@@ -39,7 +39,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.2")] {
         Self(cmp_gt_mask_i64_m128i(self.0, rhs.0))
@@ -59,7 +59,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_gt(rhs)
@@ -79,7 +79,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse4.1")] {
         !self.simd_lt(rhs)
@@ -99,7 +99,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u64x2) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u64x2) -> Self {
     pick! {
       if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
         unsafe {
@@ -120,7 +120,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="simd128")] {
         Self(i64x2_shr(self.0, rhs))

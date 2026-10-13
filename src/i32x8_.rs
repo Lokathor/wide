@@ -15,7 +15,7 @@ pick! {
 
 impl i32x8 {
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i32_m256i(rhs.0, self.0))
@@ -29,7 +29,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i32_m256i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_gt(rhs)
@@ -57,7 +57,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_lt(rhs)
@@ -71,7 +71,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32x8) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar
@@ -87,7 +87,7 @@ impl i32x8 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.

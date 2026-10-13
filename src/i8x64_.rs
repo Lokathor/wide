@@ -15,12 +15,12 @@ pick! {
 
 impl i8x64 {
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     rhs.simd_gt(self)
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
@@ -34,7 +34,7 @@ impl i8x64 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
@@ -48,7 +48,7 @@ impl i8x64 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
@@ -62,7 +62,7 @@ impl i8x64 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u8x64) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u8x64) -> Self {
     // There's no dedicated `i8` shift instruction, so we split into halves
     // and let `i8x32` handle it.
     let [self_a, self_b]: [i8x32; 2] = cast(self);
@@ -71,7 +71,7 @@ impl i8x64 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     let [self_a, self_b]: [i8x32; 2] = cast(self);
     cast([self_a >> rhs, self_b >> rhs])
   }

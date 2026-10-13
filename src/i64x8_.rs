@@ -15,7 +15,7 @@ pick! {
 
 impl i64x8 {
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
@@ -29,7 +29,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
@@ -57,7 +57,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_i64_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
@@ -71,7 +71,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u64x8) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u64x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
@@ -100,7 +100,7 @@ impl i64x8 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.

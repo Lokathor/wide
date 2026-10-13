@@ -22,7 +22,7 @@ macro_rules! const_f32_as_f32x16 {
 
 impl f32x16 {
   #[inline]
-  pub(crate) fn neg_backend(self) -> Self::Output {
+  pub(crate) fn neg_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512(self.0, Self::splat(-0.0).0))
@@ -36,7 +36,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn not_backend(self) -> Self::Output {
+  pub(crate) fn not_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512(self.0, set_splat_m512(f32::from_bits(u32::MAX))))
@@ -50,7 +50,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(add_m512(self.0, rhs.0))
@@ -64,7 +64,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(sub_m512(self.0, rhs.0))
@@ -78,7 +78,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(mul_m512(self.0, rhs.0))
@@ -89,7 +89,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn div_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn div_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(div_m512(self.0, rhs.0))
@@ -100,7 +100,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn rem_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn rem_backend(self, rhs: Self) -> Self {
     Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
@@ -122,7 +122,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitand_m512(self.0, rhs.0))
@@ -136,7 +136,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
     pick! {
     if #[cfg(target_feature="avx512f")] {
         Self(bitor_m512(self.0, rhs.0))
@@ -150,7 +150,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(bitxor_m512(self.0, rhs.0))
@@ -164,7 +164,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
@@ -178,7 +178,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
@@ -192,7 +192,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
@@ -206,7 +206,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
@@ -220,7 +220,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
@@ -234,7 +234,7 @@ impl f32x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         Self(cmp_op_mask_m512::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))

@@ -18,7 +18,7 @@ pick! {
 
 impl i32x4 {
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_lt_mask_i32_m128i(self.0, rhs.0))
@@ -38,7 +38,7 @@ impl i32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_gt_mask_i32_m128i(self.0, rhs.0))
@@ -58,7 +58,7 @@ impl i32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_gt(rhs)
@@ -78,7 +78,7 @@ impl i32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_lt(rhs)
@@ -98,7 +98,7 @@ impl i32x4 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32x4) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32x4) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // mask the shift count to 31 to have same behavior on all platforms
@@ -125,7 +125,7 @@ impl i32x4 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.

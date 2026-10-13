@@ -15,7 +15,7 @@ pick! {
 
 impl u16x32 {
   #[inline]
-  pub(crate) fn not_backend(self) -> Self::Output {
+  pub(crate) fn not_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(bitxor_m512i(self.0, set_splat_i16_m512i(-1)))
@@ -29,7 +29,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(add_i16_m512i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(sub_i16_m512i(self.0, rhs.0))
@@ -57,7 +57,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(mul_i16_keep_low_m512i(self.0, rhs.0))
@@ -68,7 +68,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(bitand_m512i(self.0, rhs.0))
@@ -82,7 +82,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
     pick! {
     if #[cfg(target_feature="avx512bw")] {
         Self(bitor_m512i(self.0, rhs.0))
@@ -96,7 +96,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(bitxor_m512i(self.0, rhs.0))
@@ -110,7 +110,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Eq)}>(self.0, rhs.0))
@@ -124,7 +124,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Ne)}>(self.0, rhs.0))
@@ -138,7 +138,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
@@ -152,7 +152,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
@@ -166,7 +166,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
@@ -180,7 +180,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         Self(cmp_op_mask_u16_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
@@ -608,7 +608,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn shl_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Mask `rhs` to 15 to match `wrapping_shl`.
@@ -624,7 +624,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn shl_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
@@ -641,7 +641,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Mask `rhs` to 15 to match `wrapping_shr`.
@@ -657,7 +657,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.

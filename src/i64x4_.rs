@@ -15,7 +15,7 @@ pick! {
 
 impl i64x4 {
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(!(cmp_gt_mask_i64_m256i(self.0, rhs.0) ^ cmp_eq_mask_i64_m256i(self.0, rhs.0)))
@@ -29,7 +29,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_gt_mask_i64_m256i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_gt(rhs)
@@ -57,7 +57,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_lt(rhs)
@@ -71,7 +71,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u64x4) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u64x4) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         let arr: [i64; 4] = cast(self);
@@ -92,7 +92,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     // there is no signed right shift in AVX2
     let [a,b] : [i64x2; 2] = cast(self);
     cast([a.shr(rhs), b.shr(rhs)])

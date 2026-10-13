@@ -25,7 +25,7 @@ macro_rules! const_f32_as_f32x4 {
 
 impl f32x4 {
   #[inline]
-  pub(crate) fn neg_backend(self) -> Self::Output {
+  pub(crate) fn neg_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(bitxor_m128(self.0, Self::splat(-0.0).0))
@@ -45,12 +45,12 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn not_backend(self) -> Self::Output {
+  pub(crate) fn not_backend(self) -> Self {
     self ^ cast::<u128, f32x4>(u128::MAX)
   }
 
   #[inline]
-  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(add_m128(self.0, rhs.0))
@@ -70,7 +70,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(sub_m128(self.0, rhs.0))
@@ -90,7 +90,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(mul_m128(self.0, rhs.0))
@@ -110,7 +110,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn div_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn div_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(div_m128(self.0, rhs.0))
@@ -130,7 +130,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn rem_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn rem_backend(self, rhs: Self) -> Self {
     Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
@@ -140,7 +140,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(bitand_m128(self.0, rhs.0))
@@ -160,7 +160,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(bitor_m128(self.0, rhs.0))
@@ -180,7 +180,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(bitxor_m128(self.0, rhs.0))
@@ -200,7 +200,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(cmp_eq_mask_m128(self.0, rhs.0))
@@ -220,7 +220,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(cmp_neq_mask_m128(self.0, rhs.0))
@@ -240,7 +240,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(cmp_lt_mask_m128(self.0, rhs.0))
@@ -260,7 +260,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(cmp_gt_mask_m128(self.0, rhs.0))
@@ -280,7 +280,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(cmp_le_mask_m128(self.0, rhs.0))
@@ -300,7 +300,7 @@ impl f32x4 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(cmp_ge_mask_m128(self.0, rhs.0))

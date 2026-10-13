@@ -29,7 +29,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(add_i32_m256i(self.0, rhs.0))
@@ -43,7 +43,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(sub_i32_m256i(self.0, rhs.0))
@@ -57,7 +57,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(mul_i32_keep_low_m256i(self.0, rhs.0))
@@ -71,7 +71,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(bitand_m256i(self.0, rhs.0))
@@ -85,7 +85,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(bitor_m256i(self.0, rhs.0))
@@ -99,7 +99,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(bitxor_m256i(self.0, rhs.0))
@@ -113,7 +113,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         Self(cmp_eq_mask_i32_m256i(self.0, rhs.0 ))
@@ -127,7 +127,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         !self.simd_eq(rhs)
@@ -141,13 +141,13 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     // lt is just gt the other way around
     rhs.simd_gt(self)
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // no unsigned gt than so inverting the high bit will get the correct result
@@ -163,12 +163,12 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     self.simd_eq(rhs) | self.simd_lt(rhs)
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     self.simd_eq(rhs) | self.simd_gt(rhs)
   }
 
@@ -587,7 +587,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn shl_backend(self, rhs: u32x8) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: u32x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar wrapping_shl
@@ -603,7 +603,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn shl_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
@@ -620,7 +620,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32x8) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32x8) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // ensure same behavior as scalar wrapping_shr
@@ -636,7 +636,7 @@ impl u32x8 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.

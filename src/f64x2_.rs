@@ -25,7 +25,7 @@ macro_rules! const_f64_as_f64x2 {
 
 impl f64x2 {
   #[inline]
-  pub(crate) fn neg_backend(self) -> Self::Output {
+  pub(crate) fn neg_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse")] {
         Self(bitxor_m128d(self.0, Self::splat(-0.0).0))
@@ -61,7 +61,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(add_m128d(self.0, rhs.0))
@@ -79,7 +79,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(sub_m128d(self.0, rhs.0))
@@ -97,7 +97,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(mul_m128d(self.0, rhs.0))
@@ -115,7 +115,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn div_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn div_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(div_m128d(self.0, rhs.0))
@@ -133,7 +133,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn rem_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn rem_backend(self, rhs: Self) -> Self {
     Self::from_array([
       self.to_array()[0] % rhs.to_array()[0],
       self.to_array()[1] % rhs.to_array()[1],
@@ -141,7 +141,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitand_m128d(self.0, rhs.0))
@@ -159,7 +159,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitor_m128d(self.0, rhs.0))
@@ -177,7 +177,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitxor_m128d(self.0, rhs.0))
@@ -195,7 +195,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_eq_mask_m128d(self.0, rhs.0))
@@ -213,7 +213,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_neq_mask_m128d(self.0, rhs.0))
@@ -231,7 +231,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_lt_mask_m128d(self.0, rhs.0))
@@ -249,7 +249,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
         Self(cmp_op_mask_m128d::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
@@ -269,7 +269,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_le_mask_m128d(self.0, rhs.0))
@@ -287,7 +287,7 @@ impl f64x2 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_ge_mask_m128d(self.0, rhs.0))

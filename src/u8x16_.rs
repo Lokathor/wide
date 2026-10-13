@@ -18,12 +18,12 @@ pick! {
 
 impl u8x16 {
   #[inline]
-  pub(crate) fn not_backend(self) -> Self::Output {
+  pub(crate) fn not_backend(self) -> Self {
     self ^ cast::<u128, u8x16>(u128::MAX)
   }
 
   #[inline]
-  pub(crate) fn add_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn add_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(add_i8_m128i(self.0, rhs.0))
@@ -55,7 +55,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn sub_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn sub_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(sub_i8_m128i(self.0, rhs.0))
@@ -87,7 +87,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn mul_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn mul_backend(self, rhs: Self) -> Self {
     // For x86 and wasm, this technically can be done explicitly by converting
     // to `i16` then converting back after multiplication, but that may not
     // actually be faster than auto-vectorization.
@@ -121,7 +121,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn bitand_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitand_m128i(self.0, rhs.0))
@@ -153,7 +153,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn bitor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitor_m128i(self.0, rhs.0))
@@ -185,7 +185,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(bitxor_m128i(self.0, rhs.0))
@@ -217,7 +217,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         Self(cmp_eq_mask_i8_m128i(self.0, rhs.0))
@@ -249,7 +249,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         !self.simd_eq(rhs)
@@ -281,7 +281,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -317,7 +317,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -353,7 +353,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -391,7 +391,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
@@ -1001,7 +1001,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn shl_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: Self) -> Self {
     // For x86, this technically can be done explicitly by converting
     // to `u16` or `u32` then converting back after multiplication, but that may
     // not actually be faster than auto-vectorization.
@@ -1039,7 +1039,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn shl_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shl_backend(self, rhs: u32) -> Self {
     // For x86, this technically can be done explicitly by converting
     // to `u16` or `u32` then converting back after multiplication, but that
     // may not actually be faster than auto-vectorization.
@@ -1061,7 +1061,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: Self) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: Self) -> Self {
     // For x86, this technically can be done explicitly by converting
     // to `u16` or `u32` then converting back after multiplication, but that may
     // not actually be faster than auto-vectorization.
@@ -1100,7 +1100,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self::Output {
+  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
     // For x86, this technically can be done explicitly by converting
     // to `u16` or `u32` then converting back after multiplication, but that
     // may not actually be faster than auto-vectorization.
