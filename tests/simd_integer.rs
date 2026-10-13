@@ -267,6 +267,89 @@ fn test_unbounded_shr_scalar() {
 }
 
 #[test]
+fn test_reduce_add() {
+    for_simd_types!(|T: Signed, N| {
+        for value in simd_chunks!([1, 2, 3, -4, 5, -6, 7, -9, -10, 20, -30, T::MAX]) {
+            let expected = value.into_iter().fold(0, T::wrapping_add);
+            let actual = Simd::from_array(value).reduce_add();
+
+            assert_eq!(actual, expected);
+        }
+    });
+    for_simd_types!(|T: Integer, N| {
+        for value in simd_chunks!([1, 2, 3, 4, 5, 6, 7, 9, 10, 20, 30, 40, T::MAX]) {
+            let expected = value.into_iter().fold(0, T::wrapping_add);
+            let actual = Simd::from_array(value).reduce_add();
+
+            assert_eq!(actual, expected);
+        }
+    });
+}
+
+#[test]
+fn test_reduce_mul() {
+    for_simd_types!(|T: Signed, N| {
+        // Have many `1` values so that not all cases overflow.
+        for value in simd_chunks!([
+            1,
+            2,
+            3,
+            1,
+            -1,
+            -4,
+            5,
+            -1,
+            1,
+            -6,
+            7,
+            -9,
+            -10,
+            20,
+            -30,
+            T::MAX
+        ]) {
+            let expected = value.into_iter().fold(1, T::wrapping_mul);
+            let actual = Simd::from_array(value).reduce_mul();
+
+            assert_eq!(actual, expected);
+        }
+    });
+    for_simd_types!(|T: Integer, N| {
+        // Have many `1` values so that not all cases overflow.
+        for value in simd_chunks!([
+            1,
+            2,
+            1,
+            3,
+            1,
+            1,
+            4,
+            1,
+            5,
+            1,
+            6,
+            1,
+            1,
+            7,
+            9,
+            1,
+            10,
+            20,
+            30,
+            40,
+            T::MAX
+        ])
+        .chain(random_iter())
+        {
+            let expected = value.into_iter().fold(1, T::wrapping_mul);
+            let actual = Simd::from_array(value).reduce_mul();
+
+            assert_eq!(actual, expected);
+        }
+    });
+}
+
+#[test]
 fn test_saturating_add() {
     for_simd_types!(|T: Integer, N| {
         for [left, right] in simd_chunks!(

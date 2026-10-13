@@ -110,10 +110,6 @@ macro_rules! define_simd_unsigned {
 
       $fn_extract_const
 
-      $fn_reduce_add
-
-      $fn_reduce_mul
-
       $fn_bitselect
 
       $fn_select
@@ -192,6 +188,10 @@ macro_rules! define_simd_unsigned {
       $fn_max
 
       $fn_min
+
+      $fn_reduce_add
+
+      $fn_reduce_mul
 
       $fn_reduce_max
 

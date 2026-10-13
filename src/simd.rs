@@ -368,8 +368,6 @@ macro_rules! define_simd {
     $fn_simd_ge:item
     $fn_replace_const:item
     $fn_extract_const:item
-    $fn_reduce_add:item
-    $fn_reduce_mul:item
     $fn_bitselect:item
     $fn_select:item
     $fn_to_bitmask:item
@@ -904,18 +902,6 @@ macro_rules! define_simd {
       #[doc(alias = "get")]
       #[must_use]
       $fn_extract_const
-
-      /// Reducing addition. Returns the sum of the vector's elements.
-      ///
-      /// Equivalent to `self[0] + self[1] + ...`.
-      #[must_use]
-      $fn_reduce_add
-
-      /// Reducing multiplication. Returns the product of the vector's elements.
-      ///
-      /// Equivalent to `self[0] * self[1] * ...`.
-      #[must_use]
-      $fn_reduce_mul
 
       /// Bitwise selection.
       ///

@@ -92,18 +92,6 @@ macro_rules! define_simd_signed {
       }
 
       #[inline]
-      pub fn reduce_add(self) -> $T {
-        // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
-      }
-
-      #[inline]
-      pub fn reduce_mul(self) -> $T {
-        // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
-      }
-
-      #[inline]
       pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
         self.cast_unsigned()
           .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
@@ -287,6 +275,18 @@ macro_rules! define_simd_signed {
       $fn_max
 
       $fn_min
+
+      #[inline]
+      pub fn reduce_add(self) -> $T {
+        // Wrapping addition is the same for signed and unsigned integers.
+        cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
+      }
+
+      #[inline]
+      pub fn reduce_mul(self) -> $T {
+        // Wrapping multiplication is the same for signed and unsigned integers.
+        cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
+      }
 
       $fn_reduce_max
 

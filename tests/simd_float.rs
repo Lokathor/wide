@@ -3,6 +3,40 @@ use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
 
 #[test]
+fn test_reduce_add() {
+    for_simd_types!(|T: Float, N| {
+        for value in simd_chunks!([
+            0.2, 0.3, 0.5, 0.7, 1.1, 1.3, 1.7, 1.9, 2.3, 2.9, 3.1, 3.7, 4.1, 4.3, 4.7, 5.3,
+        ]) {
+            let expected = value.into_iter().sum::<T>();
+            let actual = Simd::from_array(value).reduce_add();
+
+            assert!(
+                (actual - expected).abs() <= expected.abs() * 1e-5,
+                "expected: {expected:?}\n  actual: {actual:?}",
+            );
+        }
+    });
+}
+
+#[test]
+fn test_reduce_mul() {
+    for_simd_types!(|T: Float, N| {
+        for value in simd_chunks!([
+            0.2, 0.3, 0.5, 0.7, 1.1, 1.3, 1.7, 1.9, 2.3, 2.9, 3.1, 3.7, 4.1, 4.3, 4.7, 5.3,
+        ]) {
+            let expected = value.into_iter().product::<T>();
+            let actual = Simd::from_array(value).reduce_mul();
+
+            assert!(
+                (actual - expected).abs() <= expected.abs() * 1e-5,
+                "expected: {expected:?}\n  actual: {actual:?}",
+            );
+        }
+    });
+}
+
+#[test]
 fn test_abs() {
     for_simd_types!(|T: Float, N| {
         for value in simd_chunks!([

@@ -27,6 +27,8 @@ macro_rules! impl_simd_integer {
         $fn_shr_u32:item
         $fn_max:item
         $fn_min:item
+        $fn_reduce_add:item
+        $fn_reduce_mul:item
         $fn_reduce_max:item
         $fn_reduce_min:item
         $fn_unbounded_shl:item
@@ -348,6 +350,19 @@ macro_rules! impl_simd_integer {
             pub fn clamp(self, min: Self, max: Self) -> Self {
                 self.max(min).min(max)
             }
+
+            /// Reducing addition. Returns the sum of the vector's elements.
+            ///
+            /// Equivalent to `self[0] + self[1] + ...`.
+            #[must_use]
+            $fn_reduce_add
+
+            /// Reducing multiplication. Returns the product of the vector's
+            /// elements.
+            ///
+            /// Equivalent to `self[0] * self[1] * ...`.
+            #[must_use]
+            $fn_reduce_mul
 
             /// Reducing maximum. Returns the maximum of the vector's elements.
             ///

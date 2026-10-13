@@ -135,25 +135,6 @@ macro_rules! define_simd_float {
         $T::from_bits(self.to_bits().extract_const::<INDEX>())
       }
 
-      ///
-      /// # Non-deterministic
-      ///
-      /// If this performs multiple additions, their order is non-deterministic.
-      /// This could also perform one sum operation with higher precision than
-      /// expected. This can vary by platform, version, and could even differ
-      /// within the same execution from one invocation to the next.
-      $fn_reduce_add
-
-      ///
-      /// # Non-deterministic
-      ///
-      /// If this performs multiple multiplications, their order is
-      /// non-deterministic. This could also perform one product operation with
-      /// higher precision than expected. This can vary by platform, version,
-      /// and could even differ within the same execution from one invocation to
-      /// the next.
-      $fn_reduce_mul
-
       $fn_bitselect
 
       $fn_select
@@ -812,6 +793,32 @@ macro_rules! define_simd_float {
       /// [`min`]: Self::min
       #[must_use]
       $fn_fast_min
+
+      /// Reducing addition. Returns the sum of the vector's elements.
+      ///
+      /// Equivalent to `self[0] + self[1] + ...`.
+      ///
+      /// # Non-deterministic
+      ///
+      /// If this performs multiple additions, their order is non-deterministic.
+      /// This could also perform one sum operation with higher precision than
+      /// expected. This can vary by platform, version, and could even differ
+      /// within the same execution from one invocation to the next.
+      $fn_reduce_add
+
+      /// Reducing multiplication. Returns the product of the vector's
+      /// elements.
+      ///
+      /// Equivalent to `self[0] * self[1] * ...`.
+      ///
+      /// # Non-deterministic
+      ///
+      /// If this performs multiple multiplications, their order is
+      /// non-deterministic. This could also perform one product operation with
+      /// higher precision than expected. This can vary by platform, version,
+      /// and could even differ within the same execution from one invocation to
+      /// the next.
+      $fn_reduce_mul
 
       /// Returns the maximum between all elements of `self`.
       ///
