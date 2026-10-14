@@ -302,31 +302,9 @@ impl i16x16 {
           }
         }
     }
-}
 
-impl From<i8x16> for i16x16 {
-    /// widen with sign extend from i8 to i16
     #[inline]
-    fn from(i: i8x16) -> Self {
-        i16x16::from_i8x16(i)
-    }
-}
-
-impl From<u8x16> for i16x16 {
-    /// widen with zero extend from u8 to i16
-    #[inline]
-    fn from(i: u8x16) -> Self {
-        cast(u16x16::from(i))
-    }
-}
-
-/// The following functionality exists only for [`i16x16`], or only for
-/// particular types inconsistently.
-impl i16x16 {
-    /// Converts each element from [`i8`] to [`i16`].
-    #[inline]
-    #[must_use]
-    pub fn from_i8x16(v: i8x16) -> Self {
+    pub(crate) fn from_i8x16_backend(v: i8x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             i16x16(convert_to_i16_m256i_from_i8_m128i(v.0))
@@ -364,14 +342,8 @@ impl i16x16 {
         }
     }
 
-    /// Partially computes the dot product.
-    ///
-    /// First this multiplies the input 16-bit integers, producing intermediate
-    /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
-    /// eight 32-bit integers.
     #[inline]
-    #[must_use]
-    pub fn dot(self, rhs: Self) -> i32x8 {
+    pub(crate) fn dot_backend(self, rhs: Self) -> i32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             i32x8( mul_i16_horizontal_add_m256i(self.0, rhs.0))
@@ -384,16 +356,8 @@ impl i16x16 {
         }
     }
 
-    /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
-    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-    /// and `1`. This corresponds to the following instructions:
-    /// - `vqrdmulhq_n_s16` instruction on neon
-    /// - `i16x8_q15mulr_sat` on simd128
-    /// - `_mm256_mulhrs_epi16` on avx2
-    /// - emulated via `mul_i16_*` on sse2
     #[inline]
-    #[must_use]
-    pub fn mul_scale_round(self, rhs: Self) -> Self {
+    pub(crate) fn mul_scale_round_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(mul_i16_scale_round_m256i(self.0, rhs.0))
@@ -406,16 +370,8 @@ impl i16x16 {
         }
     }
 
-    /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
-    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-    /// and `1`. This corresponds to the following instructions:
-    /// - `vqrdmulhq_n_s16` instruction on neon
-    /// - `i16x8_q15mulr_sat` on simd128
-    /// - `_mm256_mulhrs_epi16` on avx2
-    /// - emulated via `mul_i16_*` on sse2
     #[inline]
-    #[must_use]
-    pub fn mul_scale_round_n(self, rhs: i16) -> Self {
+    pub(crate) fn mul_scale_round_n_backend(self, rhs: i16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(mul_i16_scale_round_m256i(self.0, set_splat_i16_m256i(rhs)))

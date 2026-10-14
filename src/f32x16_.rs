@@ -1560,11 +1560,7 @@ impl f32x16 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
-}
 
-/// The following functionality exists only for [`f32x16`], or only for
-/// particular types inconsistently.
-impl f32x16 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f32_as_f32x16!(pow2_23, 8388608.0);
@@ -1631,9 +1627,8 @@ impl f32x16 {
         cast::<_, f32x16>(i32x16::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
     }
 
-    /// Converts each element from [`i32`] to [`f32`].
     #[inline]
-    pub fn from_i32x16(v: i32x16) -> Self {
+    pub(crate) fn from_i32x16_backend(v: i32x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
             Self(convert_to_m512_from_i32_m512i(v.0))
@@ -1644,21 +1639,5 @@ impl f32x16 {
             })
           }
         }
-    }
-
-    /// Returns a [mask] that checks if each element has a negative sign,
-    /// including `-0.0`, NaNs with negative sign bit and negative infinity.
-    ///
-    /// Note that this function has a misleading name. If the sign bit is set, the
-    /// result has all bits set, not just the sign bit. This function has been
-    /// renamed to [`is_sign_negative`].
-    ///
-    /// [mask]: crate#masks
-    /// [`is_sign_negative`]: Self::is_sign_negative
-    #[inline]
-    #[must_use]
-    #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
-    pub fn sign_bit(self) -> Self {
-        self.is_sign_negative()
     }
 }

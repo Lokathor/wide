@@ -834,12 +834,9 @@ impl u32x16 {
           }
         }
     }
-}
 
-impl From<u16x16> for u32x16 {
-    /// Widens and zero-extends each u16 lane to u32
     #[inline]
-    fn from(v: u16x16) -> Self {
+    pub(crate) fn from_u16x16_backend(v: u16x16) -> Self {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
             Self(convert_to_u32_m512i_from_u16_m256i(v.0))
@@ -873,20 +870,9 @@ impl From<u16x16> for u32x16 {
           }
         }
     }
-}
 
-/// The following functionality exists only for [`u32x16`], or only for
-/// particular types inconsistently.
-impl u32x16 {
-    /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
-    /// `a` and `b`. `W` must be in `1..=32`.
-    ///
-    /// There is no IFMA equivalent at this width, and below 17 bits no widening
-    /// multiply is needed either: the whole product fits a lane, so the ordinary
-    /// lane multiply already yields both halves.
     #[inline]
-    #[must_use]
-    pub fn add_mul_lo<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_lo_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         if W <= 16 {
             let mask = Self::splat(add_mul_operand_mask_u32::<W>());
             return self + (((a & mask) * (b & mask)) & mask);
@@ -900,11 +886,8 @@ impl u32x16 {
         }))
     }
 
-    /// `self + ((a * b) >> W)`, reading only the low `W` bits of each lane of `a`
-    /// and `b`. `W` must be in `1..=32`.
     #[inline]
-    #[must_use]
-    pub fn add_mul_hi<const W: u32>(self, a: Self, b: Self) -> Self {
+    pub(crate) fn add_mul_hi_backend<const W: u32>(self, a: Self, b: Self) -> Self {
         // See `add_mul_lo`: the whole product is in the lane, so the high half is a
         // shift.
         if W <= 16 {

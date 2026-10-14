@@ -347,22 +347,9 @@ impl i32x8 {
           }
         }
     }
-}
 
-impl From<i16x8> for i32x8 {
     #[inline]
-    fn from(value: i16x8) -> Self {
-        i32x8::from_i16x8(value)
-    }
-}
-
-/// The following functionality exists only for [`i32x8`], or only for
-/// particular types inconsistently.
-impl i32x8 {
-    /// Converts each element from [`i16`] to [`i32`].
-    #[inline]
-    #[must_use]
-    pub fn from_i16x8(v: i16x8) -> Self {
+    pub(crate) fn from_i16x8_backend(v: i16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             i32x8(convert_to_i32_m256i_from_i16_m128i(v.0))
@@ -386,10 +373,8 @@ impl i32x8 {
         }
     }
 
-    /// Converts each element from [`u16`] to [`i32`].
     #[inline]
-    #[must_use]
-    pub fn from_u16x8(v: u16x8) -> Self {
+    pub(crate) fn from_u16x8_backend(v: u16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             i32x8(convert_to_i32_m256i_from_u16_m128i(v.0))
@@ -413,10 +398,8 @@ impl i32x8 {
         }
     }
 
-    /// Converts each element from [`i32`] to [`f32`].
     #[inline]
-    #[must_use]
-    pub fn round_float(self) -> f32x8 {
+    pub(crate) fn round_float_backend(self) -> f32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             cast(convert_to_m256_from_i32_m256i(self.0))

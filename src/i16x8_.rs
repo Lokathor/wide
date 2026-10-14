@@ -588,16 +588,9 @@ impl i16x8 {
           }
         }
     }
-}
 
-/// The following functionality exists only for [`i16x8`], or only for
-/// particular types inconsistently.
-impl i16x8 {
-    /// Converts the lower eight elements of `u` from [`u8`] to [`i16`], dropping
-    /// the higher eight elements.
     #[inline]
-    #[must_use]
-    pub fn from_u8x16_low(u: u8x16) -> Self {
+    pub(crate) fn from_u8x16_low_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
             Self(unpack_low_i8_m128i(u.0, m128i::zeroed()))
@@ -617,11 +610,8 @@ impl i16x8 {
         }
     }
 
-    /// Converts the higher eight elements of `u` from [`u8`] to [`i16`], dropping
-    /// the lower eight elements.
     #[inline]
-    #[must_use]
-    pub fn from_u8x16_high(u: u8x16) -> Self {
+    pub(crate) fn from_u8x16_high_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
             Self(unpack_high_i8_m128i(u.0, m128i::zeroed()))
@@ -641,11 +631,8 @@ impl i16x8 {
         }
     }
 
-    /// Converts each element from [`i32`] to [`i16`], saturating out of range
-    /// values.
     #[inline]
-    #[must_use]
-    pub fn from_i32x8_saturate(v: i32x8) -> Self {
+    pub(crate) fn from_i32x8_saturate_backend(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             i16x8(pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(v.0), extract_m128i_from_m256i::<1>(v.0)))
@@ -685,13 +672,8 @@ impl i16x8 {
         }
     }
 
-    /// Converts each element from [`i32`] to [`i16`], truncating out of range
-    /// values (behaves like [`as`] casting).
-    ///
-    /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
     #[inline]
-    #[must_use]
-    pub fn from_i32x8_truncate(v: i32x8) -> Self {
+    pub(crate) fn from_i32x8_truncate_backend(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             let a = v.0 & set_splat_i32_m256i(0xffff);
@@ -716,14 +698,8 @@ impl i16x8 {
         }
     }
 
-    /// Converts a slice to a SIMD vector, ignoring elements beyond the first 8.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `input` has less than 8 elements.
     #[inline]
-    #[must_use]
-    pub fn from_slice_unaligned(input: &[i16]) -> Self {
+    pub(crate) fn from_slice_unaligned_backend(input: &[i16]) -> Self {
         assert!(input.len() >= 8);
 
         pick! {
@@ -740,14 +716,8 @@ impl i16x8 {
         }
     }
 
-    /// Partially computes the dot product.
-    ///
-    /// First this multiplies the input 16-bit integers, producing intermediate
-    /// 32-bit integers. Then this horizontally adds adjacent pairs, resulting in
-    /// four 32-bit integers.
     #[inline]
-    #[must_use]
-    pub fn dot(self, rhs: Self) -> i32x4 {
+    pub(crate) fn dot_backend(self, rhs: Self) -> i32x4 {
         pick! {
           if #[cfg(target_feature="sse2")] {
             i32x4(mul_i16_horizontal_add_m128i(self.0, rhs.0))
@@ -770,16 +740,8 @@ impl i16x8 {
         }
     }
 
-    /// Multiply and scale equivalent to `((self * rhs) + 0x4000) >> 15` on each
-    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-    /// and `1`. This corresponds to the following instructions:
-    /// - `vqrdmulhq_s16` instruction on neon
-    /// - `i16x8_q15mulr_sat` on simd128
-    /// - `_mm_mulhrs_epi16` on ssse3
-    /// - emulated via `mul_i16_*` on sse2
     #[inline]
-    #[must_use]
-    pub fn mul_scale_round(self, rhs: Self) -> Self {
+    pub(crate) fn mul_scale_round_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="ssse3")] {
             Self(mul_i16_scale_round_m128i(self.0, rhs.0))
@@ -815,15 +777,7 @@ impl i16x8 {
     }
 
     #[inline]
-    #[must_use]
-    /// Multiply and scale, equivalent to `((self * rhs) + 0x4000) >> 15` on each
-    /// lane, effectively multiplying by a 16 bit fixed point number between `-1`
-    /// and `1`. This corresponds to the following instructions:
-    /// - `vqrdmulhq_n_s16` instruction on neon
-    /// - `i16x8_q15mulr_sat` on simd128
-    /// - `_mm_mulhrs_epi16` on ssse3
-    /// - emulated via `mul_i16_*` on sse2
-    pub fn mul_scale_round_n(self, rhs: i16) -> Self {
+    pub(crate) fn mul_scale_round_n_backend(self, rhs: i16) -> Self {
         pick! {
           if #[cfg(target_feature="ssse3")] {
             Self( mul_i16_scale_round_m128i(self.0, set_splat_i16_m128i(rhs)))
@@ -857,20 +811,5 @@ impl i16x8 {
             ])
           }
         }
-    }
-
-    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-    /// vector of larger integers.
-    ///
-    /// The returned value is always exact and can never overflow.
-    ///
-    /// This function has been renamed to [`widening_mul`].
-    ///
-    /// [`widening_mul`]: Self::widening_mul
-    #[inline]
-    #[must_use]
-    #[deprecated(since = "1.6.0", note = "renamed to `widening_mul`")]
-    pub fn mul_widen(self, rhs: Self) -> i32x8 {
-        self.widening_mul(rhs)
     }
 }

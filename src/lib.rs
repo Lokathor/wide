@@ -194,6 +194,8 @@ mod simd_signed;
 
 mod simd_unsigned;
 
+mod simd_inconsistent;
+
 mod f32x16_;
 mod f32x4_;
 mod f32x8_;

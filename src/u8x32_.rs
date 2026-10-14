@@ -845,60 +845,15 @@ impl u8x32 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
-}
 
-/// The following functionality exists only for [`u8x32`], or only for
-/// particular types inconsistently.
-impl u8x32 {
-    /// Returns a new vector with lanes selected from the lanes of the first input
-    /// vector a specified in the second input vector `rhs`.
-    /// The indices i in range `[0, 15]` select the i-th element of `self`. For
-    /// indices outside of the range the resulting lane is `0`.
-    ///
-    /// This note that is the equivalent of two parallel swizzle operations on the
-    /// two halves of the vector, and the indexes each refer to the
-    /// corresponding half.
     #[inline]
-    pub fn swizzle_half(self, rhs: i8x32) -> i8x32 {
+    pub(crate) fn swizzle_half_backend(self, rhs: i8x32) -> i8x32 {
         cast(i8x32::swizzle_half(cast(self), cast(rhs)))
     }
 
-    /// Indices in the range `[0, 15]` will select the i-th element of `self`. If
-    /// the high bit of any element of `rhs` is set (negative) then the
-    /// corresponding output lane is guaranteed to be zero. Otherwise if the
-    /// element of `rhs` is within the range `[32, 127]` then the output lane is
-    /// either `0` or `self[rhs[i] % 16]` depending on the implementation.
-    ///
-    /// This is the equivalent to two parallel swizzle operations on the two
-    /// halves of the vector, and the indexes each refer to their corresponding
-    /// half.
     #[inline]
-    pub fn swizzle_half_relaxed(self, rhs: u8x32) -> u8x32 {
+    pub(crate) fn swizzle_half_relaxed_backend(self, rhs: u8x32) -> u8x32 {
         cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
-    }
-
-    /// Full 32-entry byte table lookup. An index in `[0, 31]` selects
-    /// `self[index]`; any index `>= 32` yields `0`.
-    ///
-    /// This function has been deprecated and replaced with [`shuffle_zeroing`].
-    ///
-    /// [`shuffle_zeroing`]: Self::shuffle_zeroing
-    #[inline]
-    #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
-    pub fn swizzle(self, rhs: u8x32) -> u8x32 {
-        self.shuffle_zeroing(rhs)
-    }
-
-    /// Like [`swizzle`](Self::swizzle), but out-of-range indices yield an
-    /// implementation-defined result (`0` or `self[index % 32]`).
-    ///
-    /// This function has been deprecated and replaced with [`shuffle`].
-    ///
-    /// [`shuffle`]: Self::shuffle
-    #[inline]
-    #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
-    pub fn swizzle_relaxed(self, rhs: u8x32) -> u8x32 {
-        self.shuffle(rhs)
     }
 }
 

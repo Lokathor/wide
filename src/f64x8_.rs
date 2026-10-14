@@ -1791,11 +1791,7 @@ impl f64x8 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
-}
 
-/// The following functionality exists only for [`f64x8`], or only for
-/// particular types inconsistently.
-impl f64x8 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f64_as_f64x8!(pow2_52, 4503599627370496.0);
@@ -1860,9 +1856,8 @@ impl f64x8 {
         cast::<_, f64x8>(i64x8::splat(0x7FF8000000000000 | 0x101 << 29))
     }
 
-    /// Converts each element from [`i32`] to [`f64`].
     #[inline]
-    pub fn from_i32x8(v: i32x8) -> Self {
+    pub(crate) fn from_i32x8_backend(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
             Self(convert_to_m512d_from_i32_m256i(v.0))
@@ -1879,12 +1874,5 @@ impl f64x8 {
             ])
           }
         }
-    }
-}
-
-impl From<i32x8> for f64x8 {
-    #[inline]
-    fn from(v: i32x8) -> Self {
-        Self::from_i32x8(v)
     }
 }

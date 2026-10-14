@@ -1954,24 +1954,6 @@ impl f32x4 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
-}
-
-/// The following functionality exists only for [`f32x4`], or only for
-/// particular types inconsistently.
-impl f32x4 {
-    /// Returns a SIMD vector whose elements are selected from `self` using
-    /// constant indices.
-    ///
-    /// If an index is out of bounds, compilation fails.
-    ///
-    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
-    #[inline]
-    #[must_use]
-    pub fn shuffle_consts<const I0: usize, const I1: usize, const I2: usize, const I3: usize>(
-        self,
-    ) -> Self {
-        Self::from_bits(self.to_bits().shuffle_consts::<I0, I1, I2, I3>())
-    }
 
     #[inline]
     fn vm_pow2n(self) -> Self {
@@ -2035,9 +2017,8 @@ impl f32x4 {
         cast::<_, f32x4>(i32x4::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
     }
 
-    /// Converts each element from [`i32`] to [`f32`].
     #[inline]
-    pub fn from_i32x4(v: i32x4) -> Self {
+    pub(crate) fn from_i32x4_backend(v: i32x4) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
             Self(convert_to_m128_from_i32_m128i(v.0))
@@ -2054,21 +2035,5 @@ impl f32x4 {
             ])
           }
         }
-    }
-
-    /// Returns a [mask] that checks if each element has a negative sign,
-    /// including `-0.0`, NaNs with negative sign bit and negative infinity.
-    ///
-    /// Note that this function has a misleading name. If the sign bit is set, the
-    /// result has all bits set, not just the sign bit. This function has been
-    /// renamed to [`is_sign_negative`].
-    ///
-    /// [mask]: crate#masks
-    /// [`is_sign_negative`]: Self::is_sign_negative
-    #[inline]
-    #[must_use]
-    #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
-    pub fn sign_bit(self) -> Self {
-        self.is_sign_negative()
     }
 }

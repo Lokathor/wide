@@ -728,16 +728,9 @@ impl i8x16 {
           }
         }
     }
-}
 
-/// The following functionality exists only for [`i8x16`], or only for
-/// particular types inconsistently.
-impl i8x16 {
-    /// Converts each element from [`i16`] to [`i8`], saturating out of range
-    /// values.
     #[inline]
-    #[must_use]
-    pub fn from_i16x16_saturate(v: i16x16) -> i8x16 {
+    pub(crate) fn from_i16x16_saturate_backend(v: i16x16) -> i8x16 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             i8x16(pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(v.0), extract_m128i_from_m256i::<1>(v.0)))
@@ -785,13 +778,8 @@ impl i8x16 {
         }
     }
 
-    /// Converts each element from [`i16`] to [`i8`], truncating out of range
-    /// values (behaves like [`as`] casting).
-    ///
-    /// [`as`]: https://doc.rust-lang.org/stable/reference/expressions/operator-expr.html#r-expr.as.numeric
     #[inline]
-    #[must_use]
-    pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
+    pub(crate) fn from_i16x16_truncate_backend(v: i16x16) -> i8x16 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             let a = v.0 & set_splat_i16_m256i(0xff);
@@ -823,14 +811,8 @@ impl i8x16 {
         }
     }
 
-    /// Converts a slice to a SIMD vector, ignoring elements beyond the first 16.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `input` has less than 16 elements.
     #[inline]
-    #[must_use]
-    pub fn from_slice_unaligned(input: &[i8]) -> Self {
+    pub(crate) fn from_slice_unaligned_backend(input: &[i8]) -> Self {
         assert!(input.len() >= 16);
 
         pick! {
@@ -845,39 +827,5 @@ impl i8x16 {
             unsafe { Self::from_array( *(input.as_ptr() as * const [i8;16]) ) }
           }
         }
-    }
-
-    /// Returns a new vector where each element is based on the index values in
-    /// `rhs`.
-    ///
-    /// * Index values in the range `[0, 15]` select the i-th element of `self`.
-    /// * Index values that are out of range will cause that output lane to be
-    ///   `0`.
-    ///
-    /// This function has been deprecated and replaced with [`shuffle_zeroing`].
-    ///
-    /// [`shuffle_zeroing`]: Self::shuffle_zeroing
-    #[inline]
-    #[deprecated(since = "1.7.0", note = "replaced with `shuffle_zeroing`")]
-    pub fn swizzle(self, rhs: i8x16) -> i8x16 {
-        self.shuffle_zeroing(rhs.cast_unsigned())
-    }
-
-    /// Works like [`swizzle`](Self::swizzle) with the following additional
-    /// details
-    ///
-    /// * Indices in the range `[0, 15]` will select the i-th element of `self`.
-    /// * If the high bit of any index is set (meaning that the index is
-    ///   negative), then the corresponding output lane is guaranteed to be zero.
-    /// * Otherwise the output lane is either `0` or `self[rhs[i] % 16]`,
-    ///   depending on the implementation.
-    ///
-    /// This function has been deprecated and replaced with [`shuffle`].
-    ///
-    /// [`shuffle`]: Self::shuffle
-    #[inline]
-    #[deprecated(since = "1.7.0", note = "replaced with `shuffle`")]
-    pub fn swizzle_relaxed(self, rhs: i8x16) -> i8x16 {
-        self.shuffle(rhs.cast_unsigned())
     }
 }
