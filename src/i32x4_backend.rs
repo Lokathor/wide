@@ -307,18 +307,18 @@ impl i32x4 {
                 shr_imm_u64_m128i::<32>(self.0),
                 shr_imm_u64_m128i::<32>(rhs.0));
 
-              i64x4(crate::i64x4_::Inner {
+              i64x4(crate::i64x4_backend::Inner {
                 lo: i64x2(unpack_low_i64_m128i(evenp, oddp)),
                 hi: i64x2(unpack_high_i64_m128i(evenp, oddp))
               })
           } else if #[cfg(target_feature="simd128")] {
-              i64x4(crate::i64x4_::Inner {
+              i64x4(crate::i64x4_backend::Inner {
                 lo: i64x2(i64x2_extmul_low_i32x4(self.0, rhs.0)),
                 hi: i64x2(i64x2_extmul_high_i32x4(self.0, rhs.0)),
               })
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             unsafe {
-              i64x4(crate::i64x4_::Inner {
+              i64x4(crate::i64x4_backend::Inner {
                 lo: i64x2(vmull_s32(vget_low_s32(self.0), vget_low_s32(rhs.0))),
                 hi: i64x2(vmull_s32(vget_high_s32(self.0), vget_high_s32(rhs.0))),
               })
