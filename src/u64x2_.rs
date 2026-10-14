@@ -623,14 +623,12 @@ impl u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 63, 0]);
         Self(shl_all_u64_m128i(self.0, shift))
       } else if #[cfg(target_feature="simd128")] {
         Self(u64x2_shl(self.0, rhs))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(rhs as i64 & 63)))}
       } else {
         Self::from_array([
@@ -671,14 +669,12 @@ impl u64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 63, 0]);
         Self(shr_all_u64_m128i(self.0, shift))
       } else if #[cfg(target_feature="simd128")] {
         Self(u64x2_shr(self.0, rhs))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(-(rhs as i64 & 63))))}
       } else {
         Self::from_array([

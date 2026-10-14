@@ -104,7 +104,6 @@ impl i64x8 {
     pick! {
       if #[cfg(target_feature="avx512f")] {
         // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs as u64 & 63;
         Self(shr_all_i64_m512i(self.0, shift))
       } else {

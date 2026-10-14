@@ -156,14 +156,12 @@ impl i16x8 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 15, 0]);
         Self(shr_all_i16_m128i(self.0, shift))
       } else if #[cfg(target_feature="simd128")] {
         Self(i16x8_shr(self.0, rhs))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_s16(self.0, vmovq_n_s16( -(rhs as i16 & 15))))}
       } else {
         Self::from_array([

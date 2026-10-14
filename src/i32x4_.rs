@@ -129,14 +129,12 @@ impl i32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = cast([rhs as u64 & 31, 0]);
         Self(shr_all_i32_m128i(self.0, shift))
       } else if #[cfg(target_feature="simd128")] {
         Self(i32x4_shr(self.0, rhs))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         unsafe {Self(vshlq_s32(self.0, vmovq_n_s32( -(rhs as i32 & 31))))}
       } else {
         Self::from_array([

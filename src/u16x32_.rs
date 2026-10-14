@@ -620,7 +620,6 @@ impl u16x32 {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs as u16 & 15;
         Self(shl_all_u16_m512i(self.0, shift))
       } else {
@@ -653,7 +652,6 @@ impl u16x32 {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
         let shift = rhs as u16 & 15;
         Self(shr_all_u16_m512i(self.0, shift))
       } else {
