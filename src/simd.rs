@@ -1459,9 +1459,10 @@ macro_rules! signed_auto_impl {
 
             #[inline]
             fn transpose_backend(data: [Self; $N]) -> [Self; $N] {
-                cast($UnsignedSimd::transpose(cast::<[$Simd; $N], [$UnsignedSimd; $N]>(
-                    data,
-                )))
+                cast($UnsignedSimd::transpose(cast::<
+                    [$Simd; $N],
+                    [$UnsignedSimd; $N],
+                >(data)))
             }
         }
     };

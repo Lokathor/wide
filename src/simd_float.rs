@@ -1,17 +1,15 @@
 //! Defines APIs applicable to SIMD vectors of floats.
 
 use core::ops::{
-  Neg, Not, Add, Sub, Mul, Div, Rem, BitAnd, BitOr, BitXor,
-  AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, BitAndAssign,
-  BitOrAssign, BitXorAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
+    Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
 };
 
 use bytemuck::Zeroable;
 
 use crate::{
-  Select, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, u32x4, u32x8,
-  u32x16, u64x2, u64x4, u64x8, i32x8, i32x4, i32x16, i64x2, i64x4,
-  i64x8,
+    Select, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
+    u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
 macro_rules! impl_simd_float {
