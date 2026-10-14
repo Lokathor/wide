@@ -624,7 +624,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn shl_backend(self, rhs: u32) -> Self {
+  pub(crate) fn shl_scalar_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
@@ -657,7 +657,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
+  pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="avx512bw")] {
         // Use `rhs % 16` to perform wrapping shift and not unbounded shift.

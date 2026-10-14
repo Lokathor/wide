@@ -125,7 +125,7 @@ impl i32x4 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
+  pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
         // Use `rhs % 32` to perform wrapping shift and not unbounded shift.

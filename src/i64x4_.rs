@@ -92,7 +92,7 @@ impl i64x4 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
+  pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
     // there is no signed right shift in AVX2
     let [a,b] : [i64x2; 2] = cast(self);
     cast([a.shr(rhs), b.shr(rhs)])

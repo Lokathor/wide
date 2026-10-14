@@ -71,7 +71,7 @@ impl i8x64 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
+  pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
     let [self_a, self_b]: [i8x32; 2] = cast(self);
     cast([self_a >> rhs, self_b >> rhs])
   }

@@ -120,7 +120,7 @@ impl i64x2 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
+  pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
     pick! {
       if #[cfg(target_feature="simd128")] {
         Self(i64x2_shr(self.0, rhs))

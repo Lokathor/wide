@@ -185,7 +185,7 @@ impl i8x16 {
   }
 
   #[inline]
-  pub(crate) fn shr_backend(self, rhs: u32) -> Self {
+  pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
     // For x86, this technically can be done explicitly by converting
     // to `i16` or `i32` then converting back after multiplication, but that
     // may not actually be faster than auto-vectorization.
