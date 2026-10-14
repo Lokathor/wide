@@ -198,10 +198,6 @@ impl u32x16 {
 
   #[inline]
   pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u32) -> Self {
-    const {
-      assert!(INDEX < 16, "attempt to call `Simd::replace_const` with an out of bounds index");
-    }
-
     /// Because of limitations in const generics, this must have separate
     /// branches per index. This macro is used to avoid duplication.
     macro_rules! use_indices {
@@ -256,10 +252,6 @@ impl u32x16 {
 
   #[inline]
   pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u32 {
-    const {
-      assert!(INDEX < 16, "attempt to call `Simd::extract_const` with an out of bounds index");
-    }
-
     /// Because of limitations in const generics, this must have separate
     /// branches per index. This macro is used to avoid duplication.
     macro_rules! use_indices {
