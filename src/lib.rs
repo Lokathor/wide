@@ -228,12 +228,6 @@ mod u8x64_;
 mod imports {
     //! Exports items that should be imported by all SIMD-type modules.
 
-    pub use core::ops::{
-        Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div,
-        DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub,
-        SubAssign,
-    };
-
     #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
     pub use core::arch::aarch64::*;
     #[cfg(target_feature = "simd128")]

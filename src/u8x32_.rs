@@ -18,11 +18,11 @@ impl u8x32 {
   pub(crate) fn not_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self(self.0.not())
+        Self(!self.0)
       } else {
         Self(Inner {
-          lo: self.0.lo.not(),
-          hi: self.0.hi.not(),
+          lo: !self.0.lo,
+          hi: !self.0.hi,
         })
       }
     }
@@ -35,8 +35,8 @@ impl u8x32 {
         Self(add_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.add(rhs.0.lo),
-          hi: self.0.hi.add(rhs.0.hi),
+          lo: self.0.lo + rhs.0.lo,
+          hi: self.0.hi + rhs.0.hi,
         })
       }
     }
@@ -49,8 +49,8 @@ impl u8x32 {
         Self(sub_i8_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.sub(rhs.0.lo),
-          hi: self.0.hi.sub(rhs.0.hi),
+          lo: self.0.lo - rhs.0.lo,
+          hi: self.0.hi - rhs.0.hi,
         })
       }
     }
@@ -73,8 +73,8 @@ impl u8x32 {
           Self(bitand_m256i(self.0,rhs.0))
       } else {
           Self(Inner {
-            lo: self.0.lo.bitand(rhs.0.lo),
-            hi: self.0.hi.bitand(rhs.0.hi),
+            lo: self.0.lo & rhs.0.lo,
+            hi: self.0.hi & rhs.0.hi,
           })
       }
     }
@@ -87,8 +87,8 @@ impl u8x32 {
         Self(bitor_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitor(rhs.0.lo),
-          hi: self.0.hi.bitor(rhs.0.hi),
+          lo: self.0.lo | rhs.0.lo,
+          hi: self.0.hi | rhs.0.hi,
         })
       }
     }
@@ -101,8 +101,8 @@ impl u8x32 {
         Self(bitxor_m256i(self.0,rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitxor(rhs.0.lo),
-          hi: self.0.hi.bitxor(rhs.0.hi),
+          lo: self.0.lo ^ rhs.0.lo,
+          hi: self.0.hi ^ rhs.0.hi,
         })
       }
     }
@@ -142,8 +142,8 @@ impl u8x32 {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8))
       } else {
         Self(Inner { lo: self.0.lo.simd_lt(rhs.0.lo), hi: self.0.hi.simd_lt(rhs.0.hi) })
@@ -157,8 +157,8 @@ impl u8x32 {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8))
       } else {
         Self(Inner { lo: self.0.lo.simd_gt(rhs.0.lo), hi: self.0.hi.simd_gt(rhs.0.hi) })
@@ -172,10 +172,10 @@ impl u8x32 {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         let gt_mask = Self(cmp_gt_mask_i8_m256i(self_i8,rhs_i8));
-        Self(gt_mask.bitxor(Self::splat(0xFF)).0)
+        gt_mask ^ Self::splat(0xFF)
       } else {
         Self(Inner { lo: self.0.lo.simd_le(rhs.0.lo), hi: self.0.hi.simd_le(rhs.0.hi) })
       }
@@ -188,10 +188,10 @@ impl u8x32 {
       if #[cfg(target_feature="avx2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         let lt_mask = Self(cmp_gt_mask_i8_m256i(rhs_i8, self_i8));
-        Self(lt_mask.bitxor(Self::splat(0xFF)).0)
+        lt_mask ^ Self::splat(0xFF)
       } else {
         Self(Inner { lo: self.0.lo.simd_ge(rhs.0.lo), hi: self.0.hi.simd_ge(rhs.0.hi) })
       }

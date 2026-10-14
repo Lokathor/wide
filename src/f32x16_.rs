@@ -28,8 +28,8 @@ impl f32x16 {
         Self(bitxor_m512(self.0, Self::splat(-0.0).0))
       } else {
         Self(Inner {
-          lo: self.0.lo.neg(),
-          hi: self.0.hi.neg(),
+          lo: -self.0.lo,
+          hi: -self.0.hi,
         })
       }
     }
@@ -42,8 +42,8 @@ impl f32x16 {
         Self(bitxor_m512(self.0, set_splat_m512(f32::from_bits(u32::MAX))))
       } else {
         Self(Inner {
-          lo: self.0.lo.not(),
-          hi: self.0.hi.not(),
+          lo: !self.0.lo,
+          hi: !self.0.hi,
         })
       }
     }
@@ -56,8 +56,8 @@ impl f32x16 {
         Self(add_m512(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.add(rhs.0.lo),
-          hi: self.0.hi.add(rhs.0.hi),
+          lo: self.0.lo + rhs.0.lo,
+          hi: self.0.hi + rhs.0.hi,
         })
       }
     }
@@ -70,8 +70,8 @@ impl f32x16 {
         Self(sub_m512(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.sub(rhs.0.lo),
-          hi: self.0.hi.sub(rhs.0.hi),
+          lo: self.0.lo - rhs.0.lo,
+          hi: self.0.hi - rhs.0.hi,
         })
       }
     }
@@ -83,7 +83,7 @@ impl f32x16 {
       if #[cfg(target_feature="avx512f")] {
         Self(mul_m512(self.0, rhs.0))
       } else {
-        Self(Inner { lo: self.0.lo.mul(rhs.0.lo), hi: self.0.hi.mul(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo * rhs.0.lo, hi: self.0.hi * rhs.0.hi })
       }
     }
   }
@@ -94,7 +94,7 @@ impl f32x16 {
       if #[cfg(target_feature="avx512f")] {
         Self(div_m512(self.0, rhs.0))
       } else {
-        Self(Inner { lo: self.0.lo.div(rhs.0.lo), hi: self.0.hi.div(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo / rhs.0.lo, hi: self.0.hi / rhs.0.hi })
       }
     }
   }
@@ -128,8 +128,8 @@ impl f32x16 {
         Self(bitand_m512(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitand(rhs.0.lo),
-          hi: self.0.hi.bitand(rhs.0.hi),
+          lo: self.0.lo & rhs.0.lo,
+          hi: self.0.hi & rhs.0.hi,
         })
       }
     }
@@ -142,8 +142,8 @@ impl f32x16 {
         Self(bitor_m512(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitor(rhs.0.lo),
-          hi: self.0.hi.bitor(rhs.0.hi),
+          lo: self.0.lo | rhs.0.lo,
+          hi: self.0.hi | rhs.0.hi,
         })
       }
     }
@@ -156,8 +156,8 @@ impl f32x16 {
         Self(bitxor_m512(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitxor(rhs.0.lo),
-          hi: self.0.hi.bitxor(rhs.0.hi),
+          lo: self.0.lo ^ rhs.0.lo,
+          hi: self.0.hi ^ rhs.0.hi,
         })
       }
     }

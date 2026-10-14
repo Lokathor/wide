@@ -92,8 +92,8 @@ impl i64x8 {
       } else {
         // widen via two halves
         Self(Inner {
-          lo: self.0.lo.shr(rhs.0.lo),
-          hi: self.0.hi.shr(rhs.0.hi),
+          lo: self.0.lo >> rhs.0.lo,
+          hi: self.0.hi >> rhs.0.hi,
         })
       }
     }
@@ -108,8 +108,8 @@ impl i64x8 {
         Self(shr_all_i64_m512i(self.0, shift))
       } else {
         Self(Inner {
-          lo: self.0.lo.shr(rhs),
-          hi: self.0.hi.shr(rhs),
+          lo: self.0.lo >> rhs,
+          hi: self.0.hi >> rhs,
         })
       }
     }

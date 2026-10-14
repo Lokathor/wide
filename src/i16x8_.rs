@@ -694,7 +694,7 @@ impl i16x8 {
     pub fn from_i32x8_truncate(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let a = v.0.bitand(set_splat_i32_m256i(0xffff));
+            let a = v.0 & set_splat_i32_m256i(0xffff);
             i16x8(pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ))
           } else if #[cfg(target_feature="sse2")] {
             let a = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.0.lo.0));

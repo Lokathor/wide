@@ -131,22 +131,22 @@ impl u8x16 {
         unsafe {Self(vandq_u8(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitand(rhs.0.arr[0]),
-          self.0.arr[1].bitand(rhs.0.arr[1]),
-          self.0.arr[2].bitand(rhs.0.arr[2]),
-          self.0.arr[3].bitand(rhs.0.arr[3]),
-          self.0.arr[4].bitand(rhs.0.arr[4]),
-          self.0.arr[5].bitand(rhs.0.arr[5]),
-          self.0.arr[6].bitand(rhs.0.arr[6]),
-          self.0.arr[7].bitand(rhs.0.arr[7]),
-          self.0.arr[8].bitand(rhs.0.arr[8]),
-          self.0.arr[9].bitand(rhs.0.arr[9]),
-          self.0.arr[10].bitand(rhs.0.arr[10]),
-          self.0.arr[11].bitand(rhs.0.arr[11]),
-          self.0.arr[12].bitand(rhs.0.arr[12]),
-          self.0.arr[13].bitand(rhs.0.arr[13]),
-          self.0.arr[14].bitand(rhs.0.arr[14]),
-          self.0.arr[15].bitand(rhs.0.arr[15]),
+          self.0.arr[0] & rhs.0.arr[0],
+          self.0.arr[1] & rhs.0.arr[1],
+          self.0.arr[2] & rhs.0.arr[2],
+          self.0.arr[3] & rhs.0.arr[3],
+          self.0.arr[4] & rhs.0.arr[4],
+          self.0.arr[5] & rhs.0.arr[5],
+          self.0.arr[6] & rhs.0.arr[6],
+          self.0.arr[7] & rhs.0.arr[7],
+          self.0.arr[8] & rhs.0.arr[8],
+          self.0.arr[9] & rhs.0.arr[9],
+          self.0.arr[10] & rhs.0.arr[10],
+          self.0.arr[11] & rhs.0.arr[11],
+          self.0.arr[12] & rhs.0.arr[12],
+          self.0.arr[13] & rhs.0.arr[13],
+          self.0.arr[14] & rhs.0.arr[14],
+          self.0.arr[15] & rhs.0.arr[15],
         ])
       }
     }
@@ -163,22 +163,22 @@ impl u8x16 {
         unsafe {Self(vorrq_u8(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitor(rhs.0.arr[0]),
-          self.0.arr[1].bitor(rhs.0.arr[1]),
-          self.0.arr[2].bitor(rhs.0.arr[2]),
-          self.0.arr[3].bitor(rhs.0.arr[3]),
-          self.0.arr[4].bitor(rhs.0.arr[4]),
-          self.0.arr[5].bitor(rhs.0.arr[5]),
-          self.0.arr[6].bitor(rhs.0.arr[6]),
-          self.0.arr[7].bitor(rhs.0.arr[7]),
-          self.0.arr[8].bitor(rhs.0.arr[8]),
-          self.0.arr[9].bitor(rhs.0.arr[9]),
-          self.0.arr[10].bitor(rhs.0.arr[10]),
-          self.0.arr[11].bitor(rhs.0.arr[11]),
-          self.0.arr[12].bitor(rhs.0.arr[12]),
-          self.0.arr[13].bitor(rhs.0.arr[13]),
-          self.0.arr[14].bitor(rhs.0.arr[14]),
-          self.0.arr[15].bitor(rhs.0.arr[15]),
+          self.0.arr[0] | rhs.0.arr[0],
+          self.0.arr[1] | rhs.0.arr[1],
+          self.0.arr[2] | rhs.0.arr[2],
+          self.0.arr[3] | rhs.0.arr[3],
+          self.0.arr[4] | rhs.0.arr[4],
+          self.0.arr[5] | rhs.0.arr[5],
+          self.0.arr[6] | rhs.0.arr[6],
+          self.0.arr[7] | rhs.0.arr[7],
+          self.0.arr[8] | rhs.0.arr[8],
+          self.0.arr[9] | rhs.0.arr[9],
+          self.0.arr[10] | rhs.0.arr[10],
+          self.0.arr[11] | rhs.0.arr[11],
+          self.0.arr[12] | rhs.0.arr[12],
+          self.0.arr[13] | rhs.0.arr[13],
+          self.0.arr[14] | rhs.0.arr[14],
+          self.0.arr[15] | rhs.0.arr[15],
         ])
       }
     }
@@ -195,22 +195,22 @@ impl u8x16 {
         unsafe {Self(veorq_u8(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitxor(rhs.0.arr[0]),
-          self.0.arr[1].bitxor(rhs.0.arr[1]),
-          self.0.arr[2].bitxor(rhs.0.arr[2]),
-          self.0.arr[3].bitxor(rhs.0.arr[3]),
-          self.0.arr[4].bitxor(rhs.0.arr[4]),
-          self.0.arr[5].bitxor(rhs.0.arr[5]),
-          self.0.arr[6].bitxor(rhs.0.arr[6]),
-          self.0.arr[7].bitxor(rhs.0.arr[7]),
-          self.0.arr[8].bitxor(rhs.0.arr[8]),
-          self.0.arr[9].bitxor(rhs.0.arr[9]),
-          self.0.arr[10].bitxor(rhs.0.arr[10]),
-          self.0.arr[11].bitxor(rhs.0.arr[11]),
-          self.0.arr[12].bitxor(rhs.0.arr[12]),
-          self.0.arr[13].bitxor(rhs.0.arr[13]),
-          self.0.arr[14].bitxor(rhs.0.arr[14]),
-          self.0.arr[15].bitxor(rhs.0.arr[15]),
+          self.0.arr[0] ^ rhs.0.arr[0],
+          self.0.arr[1] ^ rhs.0.arr[1],
+          self.0.arr[2] ^ rhs.0.arr[2],
+          self.0.arr[3] ^ rhs.0.arr[3],
+          self.0.arr[4] ^ rhs.0.arr[4],
+          self.0.arr[5] ^ rhs.0.arr[5],
+          self.0.arr[6] ^ rhs.0.arr[6],
+          self.0.arr[7] ^ rhs.0.arr[7],
+          self.0.arr[8] ^ rhs.0.arr[8],
+          self.0.arr[9] ^ rhs.0.arr[9],
+          self.0.arr[10] ^ rhs.0.arr[10],
+          self.0.arr[11] ^ rhs.0.arr[11],
+          self.0.arr[12] ^ rhs.0.arr[12],
+          self.0.arr[13] ^ rhs.0.arr[13],
+          self.0.arr[14] ^ rhs.0.arr[14],
+          self.0.arr[15] ^ rhs.0.arr[15],
         ])
       }
     }
@@ -286,8 +286,8 @@ impl u8x16 {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         Self(cmp_lt_mask_i8_m128i(self_i8, rhs_i8))
       } else if #[cfg(target_feature="simd128")] {
         Self(u8x16_lt(self.0, rhs.0))
@@ -322,8 +322,8 @@ impl u8x16 {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         Self(cmp_gt_mask_i8_m128i(self_i8, rhs_i8))
       } else if #[cfg(target_feature="simd128")] {
         Self(u8x16_gt(self.0, rhs.0))
@@ -358,11 +358,11 @@ impl u8x16 {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         // a <= b  is equivalent to  !(b < a)  or  !(a > b)
         let gt_mask = u8x16(cmp_gt_mask_i8_m128i(self_i8, rhs_i8));
-        Self(gt_mask.bitxor(u8x16::splat(0xFF)).0)
+        gt_mask ^ u8x16::splat(0xFF)
       } else if #[cfg(target_feature="simd128")] {
         Self(u8x16_le(self.0, rhs.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -396,11 +396,11 @@ impl u8x16 {
       if #[cfg(target_feature="sse2")] {
         // Convert from u8 to i8.
         let offset = Self::splat(0x80);
-        let self_i8 = self.bitxor(offset).0;
-        let rhs_i8 = rhs.bitxor(offset).0;
+        let self_i8 = (self ^ offset).0;
+        let rhs_i8 = (rhs ^ offset).0;
         // a >= b  is equivalent to  !(b > a)  or  !(a < b)
         let lt_mask = u8x16(cmp_lt_mask_i8_m128i(self_i8, rhs_i8));
-        Self(lt_mask.bitxor(u8x16::splat(0xFF)).0)
+        lt_mask ^ u8x16::splat(0xFF)
       } else if #[cfg(target_feature="simd128")] {
         Self(u8x16_ge(self.0, rhs.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{

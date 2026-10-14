@@ -84,8 +84,8 @@ impl i64x4 {
         ])
       } else {
         Self(Inner {
-          lo: self.0.lo.shr(rhs.0.lo),
-          hi: self.0.hi.shr(rhs.0.hi),
+          lo: self.0.lo >> rhs.0.lo,
+          hi: self.0.hi >> rhs.0.hi,
         })
       }
     }
@@ -95,7 +95,7 @@ impl i64x4 {
   pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
     // there is no signed right shift in AVX2
     let [a,b] : [i64x2; 2] = cast(self);
-    cast([a.shr(rhs), b.shr(rhs)])
+    cast([a >> rhs, b >> rhs])
   }
 
   #[inline]

@@ -28,8 +28,8 @@ impl f64x4 {
         Self(bitxor_m256d(self.0, Self::splat(-0.0).0))
       } else {
         Self(Inner {
-          lo: self.0.lo.neg(),
-          hi: self.0.hi.neg(),
+          lo: -self.0.lo,
+          hi: -self.0.hi,
         })
       }
     }
@@ -39,11 +39,11 @@ impl f64x4 {
   pub(crate) fn not_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx")] {
-        Self(self.0.not())
+        Self(!self.0)
       } else {
         Self(Inner {
-          lo: self.0.lo.not(),
-          hi: self.0.hi.not(),
+          lo: !self.0.lo,
+          hi: !self.0.hi,
         })
       }
     }
@@ -56,8 +56,8 @@ impl f64x4 {
         Self(add_m256d(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.add(rhs.0.lo),
-          hi: self.0.hi.add(rhs.0.hi),
+          lo: self.0.lo + rhs.0.lo,
+          hi: self.0.hi + rhs.0.hi,
         })
       }
     }
@@ -70,8 +70,8 @@ impl f64x4 {
         Self(sub_m256d(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.sub(rhs.0.lo),
-          hi: self.0.hi.sub(rhs.0.hi),
+          lo: self.0.lo - rhs.0.lo,
+          hi: self.0.hi - rhs.0.hi,
         })
       }
     }
@@ -84,8 +84,8 @@ impl f64x4 {
         Self(mul_m256d(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.mul(rhs.0.lo),
-          hi: self.0.hi.mul(rhs.0.hi),
+          lo: self.0.lo * rhs.0.lo,
+          hi: self.0.hi * rhs.0.hi,
         })
       }
     }
@@ -98,8 +98,8 @@ impl f64x4 {
         Self(div_m256d(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.div(rhs.0.lo),
-          hi: self.0.hi.div(rhs.0.hi),
+          lo: self.0.lo / rhs.0.lo,
+          hi: self.0.hi / rhs.0.hi,
         })
       }
     }
@@ -122,8 +122,8 @@ impl f64x4 {
         Self(bitand_m256d(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitand(rhs.0.lo),
-          hi: self.0.hi.bitand(rhs.0.hi),
+          lo: self.0.lo & rhs.0.lo,
+          hi: self.0.hi & rhs.0.hi,
         })
       }
     }
@@ -136,8 +136,8 @@ impl f64x4 {
         Self(bitor_m256d(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitor(rhs.0.lo),
-          hi: self.0.hi.bitor(rhs.0.hi),
+          lo: self.0.lo | rhs.0.lo,
+          hi: self.0.hi | rhs.0.hi,
         })
       }
     }
@@ -150,8 +150,8 @@ impl f64x4 {
         Self(bitxor_m256d(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitxor(rhs.0.lo),
-          hi: self.0.hi.bitxor(rhs.0.hi),
+          lo: self.0.lo ^ rhs.0.lo,
+          hi: self.0.hi ^ rhs.0.hi,
         })
       }
     }

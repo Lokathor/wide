@@ -46,7 +46,7 @@ impl f64x2 {
   pub(crate) fn not_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="sse2")] {
-        Self(self.0.not())
+        Self(!self.0)
       } else if #[cfg(target_feature="simd128")] {
         Self(v128_not(self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -220,7 +220,7 @@ impl f64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self(f64x2_ne(self.0, rhs.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0))).not() }
+        unsafe {!Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0))) }
       } else {
         Self::from_array([
           if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -455,7 +455,7 @@ impl f64x2 {
       } else if #[cfg(target_feature="simd128")] {
         Self(f64x2_ne(self.0, self.0))
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, self.0))).not() }
+        unsafe {!Self(vreinterpretq_f64_u64(vceqq_f64(self.0, self.0))) }
       } else {
         Self::from_array([
           if self.0.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },

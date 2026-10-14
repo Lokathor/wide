@@ -86,8 +86,8 @@ impl u64x2 {
         unsafe {Self(vandq_u64(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitand(rhs.0.arr[0]),
-          self.0.arr[1].bitand(rhs.0.arr[1]),
+          self.0.arr[0] & rhs.0.arr[0],
+          self.0.arr[1] & rhs.0.arr[1],
         ])
       }
     }
@@ -104,8 +104,8 @@ impl u64x2 {
         unsafe {Self(vorrq_u64(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitor(rhs.0.arr[0]),
-          self.0.arr[1].bitor(rhs.0.arr[1]),
+          self.0.arr[0] | rhs.0.arr[0],
+          self.0.arr[1] | rhs.0.arr[1],
         ])
       }
     }
@@ -122,8 +122,8 @@ impl u64x2 {
         unsafe {Self(veorq_u64(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitxor(rhs.0.arr[0]),
-          self.0.arr[1].bitxor(rhs.0.arr[1]),
+          self.0.arr[0] ^ rhs.0.arr[0],
+          self.0.arr[1] ^ rhs.0.arr[1],
         ])
       }
     }

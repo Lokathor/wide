@@ -21,8 +21,8 @@ impl u16x32 {
         Self(bitxor_m512i(self.0, set_splat_i16_m512i(-1)))
       } else {
         Self(Inner {
-          lo: self.0.lo.not(),
-          hi: self.0.hi.not(),
+          lo: !self.0.lo,
+          hi: !self.0.hi,
         })
       }
     }
@@ -35,8 +35,8 @@ impl u16x32 {
         Self(add_i16_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.add(rhs.0.lo),
-          hi: self.0.hi.add(rhs.0.hi),
+          lo: self.0.lo + rhs.0.lo,
+          hi: self.0.hi + rhs.0.hi,
         })
       }
     }
@@ -49,8 +49,8 @@ impl u16x32 {
         Self(sub_i16_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.sub(rhs.0.lo),
-          hi: self.0.hi.sub(rhs.0.hi),
+          lo: self.0.lo - rhs.0.lo,
+          hi: self.0.hi - rhs.0.hi,
         })
       }
     }
@@ -62,7 +62,7 @@ impl u16x32 {
       if #[cfg(target_feature="avx512bw")] {
         Self(mul_i16_keep_low_m512i(self.0, rhs.0))
       } else {
-        Self(Inner { lo: self.0.lo.mul(rhs.0.lo), hi: self.0.hi.mul(rhs.0.hi) })
+        Self(Inner { lo: self.0.lo * rhs.0.lo, hi: self.0.hi * rhs.0.hi })
       }
     }
   }
@@ -74,8 +74,8 @@ impl u16x32 {
         Self(bitand_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitand(rhs.0.lo),
-          hi: self.0.hi.bitand(rhs.0.hi),
+          lo: self.0.lo & rhs.0.lo,
+          hi: self.0.hi & rhs.0.hi,
         })
       }
     }
@@ -88,8 +88,8 @@ impl u16x32 {
         Self(bitor_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitor(rhs.0.lo),
-          hi: self.0.hi.bitor(rhs.0.hi),
+          lo: self.0.lo | rhs.0.lo,
+          hi: self.0.hi | rhs.0.hi,
         })
       }
     }
@@ -102,8 +102,8 @@ impl u16x32 {
         Self(bitxor_m512i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitxor(rhs.0.lo),
-          hi: self.0.hi.bitxor(rhs.0.hi),
+          lo: self.0.lo ^ rhs.0.lo,
+          hi: self.0.hi ^ rhs.0.hi,
         })
       }
     }
@@ -624,8 +624,8 @@ impl u16x32 {
         Self(shl_all_u16_m512i(self.0, shift))
       } else {
         Self(Inner {
-          lo: self.0.lo.shl(rhs),
-          hi: self.0.hi.shl(rhs),
+          lo: self.0.lo << rhs,
+          hi: self.0.hi << rhs,
         })
       }
     }
@@ -656,8 +656,8 @@ impl u16x32 {
         Self(shr_all_u16_m512i(self.0, shift))
       } else {
         Self(Inner {
-          lo: self.0.lo.shr(rhs),
-          hi: self.0.hi.shr(rhs),
+          lo: self.0.lo >> rhs,
+          hi: self.0.hi >> rhs,
         })
       }
     }

@@ -105,14 +105,14 @@ impl u16x8 {
         unsafe {Self(vandq_u16(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitand(rhs.0.arr[0]),
-          self.0.arr[1].bitand(rhs.0.arr[1]),
-          self.0.arr[2].bitand(rhs.0.arr[2]),
-          self.0.arr[3].bitand(rhs.0.arr[3]),
-          self.0.arr[4].bitand(rhs.0.arr[4]),
-          self.0.arr[5].bitand(rhs.0.arr[5]),
-          self.0.arr[6].bitand(rhs.0.arr[6]),
-          self.0.arr[7].bitand(rhs.0.arr[7]),
+          self.0.arr[0] & rhs.0.arr[0],
+          self.0.arr[1] & rhs.0.arr[1],
+          self.0.arr[2] & rhs.0.arr[2],
+          self.0.arr[3] & rhs.0.arr[3],
+          self.0.arr[4] & rhs.0.arr[4],
+          self.0.arr[5] & rhs.0.arr[5],
+          self.0.arr[6] & rhs.0.arr[6],
+          self.0.arr[7] & rhs.0.arr[7],
         ])
       }
     }
@@ -129,14 +129,14 @@ impl u16x8 {
         unsafe {Self(vorrq_u16(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitor(rhs.0.arr[0]),
-          self.0.arr[1].bitor(rhs.0.arr[1]),
-          self.0.arr[2].bitor(rhs.0.arr[2]),
-          self.0.arr[3].bitor(rhs.0.arr[3]),
-          self.0.arr[4].bitor(rhs.0.arr[4]),
-          self.0.arr[5].bitor(rhs.0.arr[5]),
-          self.0.arr[6].bitor(rhs.0.arr[6]),
-          self.0.arr[7].bitor(rhs.0.arr[7]),
+          self.0.arr[0] | rhs.0.arr[0],
+          self.0.arr[1] | rhs.0.arr[1],
+          self.0.arr[2] | rhs.0.arr[2],
+          self.0.arr[3] | rhs.0.arr[3],
+          self.0.arr[4] | rhs.0.arr[4],
+          self.0.arr[5] | rhs.0.arr[5],
+          self.0.arr[6] | rhs.0.arr[6],
+          self.0.arr[7] | rhs.0.arr[7],
         ])
       }
     }
@@ -153,14 +153,14 @@ impl u16x8 {
         unsafe {Self(veorq_u16(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitxor(rhs.0.arr[0]),
-          self.0.arr[1].bitxor(rhs.0.arr[1]),
-          self.0.arr[2].bitxor(rhs.0.arr[2]),
-          self.0.arr[3].bitxor(rhs.0.arr[3]),
-          self.0.arr[4].bitxor(rhs.0.arr[4]),
-          self.0.arr[5].bitxor(rhs.0.arr[5]),
-          self.0.arr[6].bitxor(rhs.0.arr[6]),
-          self.0.arr[7].bitxor(rhs.0.arr[7]),
+          self.0.arr[0] ^ rhs.0.arr[0],
+          self.0.arr[1] ^ rhs.0.arr[1],
+          self.0.arr[2] ^ rhs.0.arr[2],
+          self.0.arr[3] ^ rhs.0.arr[3],
+          self.0.arr[4] ^ rhs.0.arr[4],
+          self.0.arr[5] ^ rhs.0.arr[5],
+          self.0.arr[6] ^ rhs.0.arr[6],
+          self.0.arr[7] ^ rhs.0.arr[7],
         ])
       }
     }

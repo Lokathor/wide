@@ -95,10 +95,10 @@ impl u32x4 {
         unsafe {Self(vandq_u32(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitand(rhs.0.arr[0]),
-          self.0.arr[1].bitand(rhs.0.arr[1]),
-          self.0.arr[2].bitand(rhs.0.arr[2]),
-          self.0.arr[3].bitand(rhs.0.arr[3]),
+          self.0.arr[0] & rhs.0.arr[0],
+          self.0.arr[1] & rhs.0.arr[1],
+          self.0.arr[2] & rhs.0.arr[2],
+          self.0.arr[3] & rhs.0.arr[3],
         ])
       }
     }
@@ -115,10 +115,10 @@ impl u32x4 {
         unsafe {Self(vorrq_u32(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitor(rhs.0.arr[0]),
-          self.0.arr[1].bitor(rhs.0.arr[1]),
-          self.0.arr[2].bitor(rhs.0.arr[2]),
-          self.0.arr[3].bitor(rhs.0.arr[3]),
+          self.0.arr[0] | rhs.0.arr[0],
+          self.0.arr[1] | rhs.0.arr[1],
+          self.0.arr[2] | rhs.0.arr[2],
+          self.0.arr[3] | rhs.0.arr[3],
         ])
       }
     }
@@ -135,10 +135,10 @@ impl u32x4 {
         unsafe {Self(veorq_u32(self.0, rhs.0))}
       } else {
         Self::from_array([
-          self.0.arr[0].bitxor(rhs.0.arr[0]),
-          self.0.arr[1].bitxor(rhs.0.arr[1]),
-          self.0.arr[2].bitxor(rhs.0.arr[2]),
-          self.0.arr[3].bitxor(rhs.0.arr[3]),
+          self.0.arr[0] ^ rhs.0.arr[0],
+          self.0.arr[1] ^ rhs.0.arr[1],
+          self.0.arr[2] ^ rhs.0.arr[2],
+          self.0.arr[3] ^ rhs.0.arr[3],
         ])
       }
     }

@@ -802,11 +802,11 @@ impl i8x16 {
     pub fn from_i16x16_truncate(v: i16x16) -> i8x16 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let a = v.0.bitand(set_splat_i16_m256i(0xff));
+            let a = v.0 & set_splat_i16_m256i(0xff);
             i8x16(pack_i16_to_u8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a)))
           } else if #[cfg(target_feature="sse2")] {
             let mask = set_splat_i16_m128i(0xff);
-            i8x16(pack_i16_to_u8_m128i( v.0.lo.0.bitand(mask), v.0.hi.0.bitand(mask) ))
+            i8x16(pack_i16_to_u8_m128i( v.0.lo.0 & mask, v.0.hi.0 & mask ))
           } else {
             // no super good intrinsics on other platforms... plain old codegen does a reasonable job
             i8x16::from_array([

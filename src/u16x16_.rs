@@ -18,11 +18,11 @@ impl u16x16 {
   pub(crate) fn not_backend(self) -> Self {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self(self.0.not())
+        Self(!self.0)
       } else {
         Self(Inner {
-          lo: self.0.lo.not(),
-          hi: self.0.hi.not(),
+          lo: !self.0.lo,
+          hi: !self.0.hi,
         })
       }
     }
@@ -35,8 +35,8 @@ impl u16x16 {
         Self(add_i16_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.add(rhs.0.lo),
-          hi: self.0.hi.add(rhs.0.hi),
+          lo: self.0.lo + rhs.0.lo,
+          hi: self.0.hi + rhs.0.hi,
         })
       }
     }
@@ -49,8 +49,8 @@ impl u16x16 {
         Self(sub_i16_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.sub(rhs.0.lo),
-          hi: self.0.hi.sub(rhs.0.hi),
+          lo: self.0.lo - rhs.0.lo,
+          hi: self.0.hi - rhs.0.hi,
         })
       }
     }
@@ -64,8 +64,8 @@ impl u16x16 {
         Self(mul_i16_keep_low_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.mul(rhs.0.lo),
-          hi: self.0.hi.mul(rhs.0.hi),
+          lo: self.0.lo * rhs.0.lo,
+          hi: self.0.hi * rhs.0.hi,
         })
       }
     }
@@ -78,8 +78,8 @@ impl u16x16 {
         Self(bitand_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitand(rhs.0.lo),
-          hi: self.0.hi.bitand(rhs.0.hi),
+          lo: self.0.lo & rhs.0.lo,
+          hi: self.0.hi & rhs.0.hi,
         })
       }
     }
@@ -92,8 +92,8 @@ impl u16x16 {
         Self(bitor_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitor(rhs.0.lo),
-          hi: self.0.hi.bitor(rhs.0.hi),
+          lo: self.0.lo | rhs.0.lo,
+          hi: self.0.hi | rhs.0.hi,
         })
       }
     }
@@ -106,8 +106,8 @@ impl u16x16 {
         Self(bitxor_m256i(self.0, rhs.0))
       } else {
         Self(Inner {
-          lo: self.0.lo.bitxor(rhs.0.lo),
-          hi: self.0.hi.bitxor(rhs.0.hi),
+          lo: self.0.lo ^ rhs.0.lo,
+          hi: self.0.hi ^ rhs.0.hi,
         })
       }
     }
@@ -598,8 +598,8 @@ impl u16x16 {
         Self(shl_all_u16_m256i(self.0, shift))
       } else {
         Self(Inner {
-          lo: self.0.lo.shl(rhs),
-          hi: self.0.hi.shl(rhs),
+          lo: self.0.lo << rhs,
+          hi: self.0.hi << rhs,
         })
       }
     }
@@ -636,8 +636,8 @@ impl u16x16 {
         Self(shr_all_u16_m256i(self.0, shift))
       } else {
         Self(Inner {
-          lo: self.0.lo.shr(rhs),
-          hi: self.0.hi.shr(rhs),
+          lo: self.0.lo >> rhs,
+          hi: self.0.hi >> rhs,
         })
       }
     }

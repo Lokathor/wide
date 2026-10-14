@@ -101,8 +101,8 @@ impl i32x16 {
         Self(shr_all_i32_m512i(self.0, shift))
       } else {
         Self(Inner {
-          lo: self.0.lo.shr(rhs),
-          hi: self.0.hi.shr(rhs),
+          lo: self.0.lo >> rhs,
+          hi: self.0.hi >> rhs,
         })
       }
     }
