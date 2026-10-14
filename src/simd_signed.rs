@@ -1,371 +1,26 @@
-/// Emits functionality shared by all SIMD signed-integer types.
-///
-/// To understand how to invoke this macro correctly, also see [`impl_simd!`]
-/// which is automatically invoked by this macro.
-///
-/// Functions that need a separate implementation for each type (for
-/// performance) use `$fn_{name}:item` syntax, and functions that have one
-/// shared implementation for all ints are written out normally inside this
-/// macro.
-macro_rules! define_simd_signed {
+//! Defines APIs applicable to SIMD vectors of signed integers.
+
+use core::ops::Neg;
+
+use bytemuck::cast;
+
+use crate::{
+    Select, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
+    u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+};
+
+macro_rules! impl_simd_signed {
   (
-    unsafe {
-      T = $T:ident,
-      N = $N:literal,
-      N_STR = $N_STR:literal,
-      Simd = $Simd:ident,
-      UnsignedSimd = $UnsignedSimd:ident,
-      T_BITS = $T_BITS:literal,
-      T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
-      BitmaskType = $BitmaskType:ty,
-      [$($index:literal),* $(,)?],
-      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
-      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
-      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
-    }
-
-    // General SIMD functions
-    $fn_simd_lt:item
-    $fn_simd_gt:item
-    $fn_simd_le:item
-    $fn_simd_ge:item
-
-    // Integer functions
-    $fn_shr_unsigned_simd:item
-    $fn_shr_u32:item
-    $fn_max:item
-    $fn_min:item
-    $fn_reduce_max:item
-    $fn_reduce_min:item
-    $fn_unbounded_shr:item
-    $fn_unbounded_shr_scalar:item
-    $fn_saturating_add:item
-    $fn_saturating_sub:item
-    $fn_overflowing_mul:item
-    optional_fn_widening_mul { $($fn_widening_mul:item)? }
-    $fn_mul_keep_low_high:item
-    $fn_mul_keep_high:item
-
-    // Signed-integer functions
-    $fn_abs:item
-    $fn_is_positive:item
-    $fn_is_negative:item
+    T = $T:ident,
+    N = $N:literal,
+    Simd = $Simd:ident,
+    UnsignedSimd = $UnsignedSimd:ident,
   ) => {
-    define_simd!(
-      unsafe {
-        T = $T,
-        N = $N,
-        N_STR = $N_STR,
-        Simd = $Simd,
-        UnsignedSimd = $UnsignedSimd,
-        optional_type_x86_inner { $(X86Inner = $X86Inner)? },
-        optional_type_arm_inner { $(ArmInner = $ArmInner)? },
-        optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
-      }
-
-      #[inline]
-      fn simd_eq(self, other: Self) -> Self {
-        self.cast_unsigned().simd_eq(other.cast_unsigned()).cast_signed()
-      }
-
-      #[inline]
-      fn simd_ne(self, other: Self) -> Self {
-        self.cast_unsigned().simd_ne(other.cast_unsigned()).cast_signed()
-      }
-
-      $fn_simd_lt
-
-      $fn_simd_gt
-
-      $fn_simd_le
-
-      $fn_simd_ge
-
-      #[inline]
-      pub fn replace_const<const INDEX: usize>(self, value: $T) -> Self {
-        self.cast_unsigned().replace_const::<INDEX>(value.cast_unsigned()).cast_signed()
-      }
-
-      #[inline]
-      pub fn extract_const<const INDEX: usize>(self) -> $T {
-        self.cast_unsigned().extract_const::<INDEX>().cast_signed()
-      }
-
-      #[inline]
-      pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-        self.cast_unsigned()
-          .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
-          .cast_signed()
-      }
-
-      #[inline]
-      fn select(self, if_true: Self, if_false: Self) -> Self {
-        self.cast_unsigned()
-          .select(if_true.cast_unsigned(), if_false.cast_unsigned())
-          .cast_signed()
-      }
-
-      #[inline]
-      pub fn to_bitmask(self) -> $BitmaskType {
-        self.cast_unsigned().to_bitmask()
-      }
-
-      #[inline]
-      pub fn any(self) -> bool {
-        self.cast_unsigned().any()
-      }
-
-      #[inline]
-      pub fn all(self) -> bool {
-        self.cast_unsigned().all()
-      }
-
-      #[inline]
-      pub fn interleave_low(self, other: Self) -> Self {
-        self.cast_unsigned().interleave_low(other.cast_unsigned()).cast_signed()
-      }
-
-      #[inline]
-      pub fn interleave_high(self, other: Self) -> Self {
-        self.cast_unsigned().interleave_high(other.cast_unsigned()).cast_signed()
-      }
-
-      #[inline]
-      pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
-        self.cast_unsigned().shuffle(indices).cast_signed()
-      }
-
-      #[inline]
-      pub fn shuffle_zeroing(self, indices: $UnsignedSimd) -> Self {
-        self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
-      }
-
-      #[inline]
-      pub fn shuffle_wrapping(self, indices: $UnsignedSimd) -> Self {
-        self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
-      }
-
-      #[inline]
-      fn shuffle(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle(indices))
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_zeroing(indices))
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_wrapping(indices))
-      }
-
-      #[inline]
-      fn shuffle(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle(indices))
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_zeroing(indices))
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_wrapping(indices))
-      }
-
-      #[inline]
-      fn shuffle(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle(indices))
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_zeroing(indices))
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_wrapping(indices))
-      }
-
-      #[inline]
-      pub fn transpose(data: [Self; $N]) -> [Self; $N] {
-        cast($UnsignedSimd::transpose(cast::<[$Simd; $N], [$UnsignedSimd; $N]>(data)))
-      }
-    );
-
-    impl_simd_integer!(
-      unsafe {
-        T = $T,
-        N = $N,
-        Simd = $Simd,
-        UnsignedSimd = $UnsignedSimd,
-        SignedSimd = $Simd,
-        T_BITS = $T_BITS,
-        T_BITS_MUL_2 = $T_BITS_MUL_2,
-        [$($index),*],
-      }
-
-      #[inline]
-      fn not(self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
-      }
-
-      #[inline]
-      fn add(self, rhs: Self) -> Self::Output {
-        // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
-        )
-      }
-
-      #[inline]
-      fn sub(self, rhs: Self) -> Self::Output {
-        // Wrapping subtraction is the same for signed and unsigned integers.
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
-        )
-      }
-
-      #[inline]
-      fn mul(self, rhs: Self) -> Self::Output {
-        // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
-        )
-      }
-
-      #[inline]
-      fn bitand(self, rhs: Self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
-        )
-      }
-
-      #[inline]
-      fn bitor(self, rhs: Self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
-        )
-      }
-
-      #[inline]
-      fn bitxor(self, rhs: Self) -> Self::Output {
-        cast::<$UnsignedSimd, $Simd>(
-          cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
-        )
-      }
-
-      #[inline]
-      fn shl(self, rhs: $UnsignedSimd) -> Self {
-        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
-      }
-
-      #[inline]
-      fn shl(self, rhs: u32) -> Self {
-        cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
-      }
-
-      $fn_shr_unsigned_simd
-
-      $fn_shr_u32
-
-      $fn_max
-
-      $fn_min
-
-      #[inline]
-      pub fn reduce_add(self) -> $T {
-        // Wrapping addition is the same for signed and unsigned integers.
-        cast::<$Simd, $UnsignedSimd>(self).reduce_add().cast_signed()
-      }
-
-      #[inline]
-      pub fn reduce_mul(self) -> $T {
-        // Wrapping multiplication is the same for signed and unsigned integers.
-        cast::<$Simd, $UnsignedSimd>(self).reduce_mul().cast_signed()
-      }
-
-      $fn_reduce_max
-
-      $fn_reduce_min
-
-      #[inline]
-      pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
-        // Shift left is the same for unsigned and signed integers.
-        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
-      }
-
-      #[inline]
-      pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
-        // Shift left is the same for unsigned and signed integers.
-        cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
-      }
-
-      $fn_unbounded_shr
-
-      $fn_unbounded_shr_scalar
-
-      $fn_saturating_add
-
-      $fn_saturating_sub
-
-      #[inline]
-      pub fn saturating_mul(self, rhs: Self) -> Self {
-        let (result, overflow) = self.overflowing_mul(rhs);
-        let limit = Self::MAX ^ (self ^ rhs).is_negative();
-        overflow.select(limit, result)
-      }
-
-      #[inline]
-      pub fn overflowing_add(self, rhs: Self) -> (Self, Self) {
-        let result = self + rhs;
-        let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
-
-        (result, overflow)
-      }
-
-      #[inline]
-      pub fn overflowing_sub(self, rhs: Self) -> (Self, Self) {
-        let result = self - rhs;
-        let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
-
-        (result, overflow)
-      }
-
-      $fn_overflowing_mul
-
-      #[inline]
-      pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
-        // The second field is equivalent to
-        // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
-        (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
-      }
-
-      #[inline]
-      pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
-        // The second field is equivalent to
-        // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
-        (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
-      }
-
-      optional_fn_widening_mul { $($fn_widening_mul)? }
-
-      $fn_mul_keep_low_high
-
-      $fn_mul_keep_high
-    );
-
     impl_unary_operator!(
       $Simd,
       Neg,
       neg,
-      #[inline]
-      fn neg(self) -> Self::Output {
-        Self::default() - self
-      },
+      neg_backend,
       /// Computes wrapping negation for each element of `self`.
     );
 
@@ -405,8 +60,11 @@ macro_rules! define_simd_signed {
       }
 
       /// Returns the absolute value of each input element.
+      #[inline]
       #[must_use]
-      $fn_abs
+      pub fn abs(self) -> Self {
+        self.abs_backend()
+      }
 
       /// Returns numbers representing the sign of each element.
       ///
@@ -425,15 +83,38 @@ macro_rules! define_simd_signed {
       /// it is zero or negative.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_is_positive
+      pub fn is_positive(self) -> Self {
+        self.is_positive_backend()
+      }
 
       /// Returns a [mask] that is true for each negative element, and false if
       /// it is zero or positive.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_is_negative
+      pub fn is_negative(self) -> Self {
+        self.is_negative_backend()
+      }
+
+      #[inline]
+      fn neg_backend(self) -> Self {
+        Self::default() - self
+      }
     }
   };
 }
+impl_simd_signed!(T = i8, N = 16, Simd = i8x16, UnsignedSimd = u8x16,);
+impl_simd_signed!(T = i8, N = 32, Simd = i8x32, UnsignedSimd = u8x32,);
+impl_simd_signed!(T = i8, N = 64, Simd = i8x64, UnsignedSimd = u8x64,);
+impl_simd_signed!(T = i16, N = 8, Simd = i16x8, UnsignedSimd = u16x8,);
+impl_simd_signed!(T = i16, N = 16, Simd = i16x16, UnsignedSimd = u16x16,);
+impl_simd_signed!(T = i16, N = 32, Simd = i16x32, UnsignedSimd = u16x32,);
+impl_simd_signed!(T = i32, N = 4, Simd = i32x4, UnsignedSimd = u32x4,);
+impl_simd_signed!(T = i32, N = 8, Simd = i32x8, UnsignedSimd = u32x8,);
+impl_simd_signed!(T = i32, N = 16, Simd = i32x16, UnsignedSimd = u32x16,);
+impl_simd_signed!(T = i64, N = 2, Simd = i64x2, UnsignedSimd = u64x2,);
+impl_simd_signed!(T = i64, N = 4, Simd = i64x4, UnsignedSimd = u64x4,);
+impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);

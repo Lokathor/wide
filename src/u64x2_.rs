@@ -2,11 +2,11 @@ use crate::imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
-    type Inner = m128i;
+    pub(crate) type Inner = m128i;
   } else if #[cfg(target_feature="simd128")] {
-    type Inner = v128;
+    pub(crate) type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-    type Inner = uint64x2_t;
+    pub(crate) type Inner = uint64x2_t;
   } else {
     #[repr(C, align(16))]
     #[derive(Clone, Copy)]
@@ -16,245 +16,227 @@ pick! {
   }
 }
 
-define_simd_unsigned! {
-  unsafe {
-    T = u64,
-    N = 2,
-    N_STR = "two",
-    Simd = u64x2,
-    SignedSimd = i64x2,
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    [0, 1],
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-  }
-
-  #[inline]
-  fn not(self) -> Self::Output {
-    self ^ cast::<u128, u64x2>(u128::MAX)
-  }
-
-  #[inline]
-  fn add(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(add_i64_m128i(self.0, rhs.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(u64x2_add(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self(vaddq_u64(self.0, rhs.0)) }
-      } else {
-        Self::from_array([
-          self.0.arr[0].wrapping_add(rhs.0.arr[0]),
-          self.0.arr[1].wrapping_add(rhs.0.arr[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn sub(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(sub_i64_m128i(self.0, rhs.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(u64x2_sub(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self(vsubq_u64(self.0, rhs.0)) }
-      } else {
-        Self::from_array([
-          self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
-          self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn mul(self, rhs: Self) -> Self::Output {
-    //we should try to implement this on sse2
-    pick! {
-      if #[cfg(target_feature="simd128")] {
-        Self(u64x2_mul(self.0, rhs.0))
-      } else {
-        let arr1: [u64; 2] = cast(self);
-        let arr2: [u64; 2] = cast(rhs);
-        cast([
-          arr1[0].wrapping_mul(arr2[0]),
-          arr1[1].wrapping_mul(arr2[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn bitand(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(bitand_m128i(self.0, rhs.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(v128_and(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vandq_u64(self.0, rhs.0))}
-      } else {
-        Self::from_array([
-          self.0.arr[0].bitand(rhs.0.arr[0]),
-          self.0.arr[1].bitand(rhs.0.arr[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn bitor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(bitor_m128i(self.0, rhs.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(v128_or(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vorrq_u64(self.0, rhs.0))}
-      } else {
-        Self::from_array([
-          self.0.arr[0].bitor(rhs.0.arr[0]),
-          self.0.arr[1].bitor(rhs.0.arr[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn bitxor(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(bitxor_m128i(self.0, rhs.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(v128_xor(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(veorq_u64(self.0, rhs.0))}
-      } else {
-        Self::from_array([
-          self.0.arr[0].bitxor(rhs.0.arr[0]),
-          self.0.arr[1].bitxor(rhs.0.arr[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_eq(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self(cmp_eq_mask_i64_m128i(self.0, rhs.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(u64x2_eq(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vceqq_u64(self.0, rhs.0)) }
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] == r[0] { -1_i64 } else { 0 },
-          if s[1] == r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ne(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_eq(rhs)
-      } else if #[cfg(target_feature="simd128")] {
-        Self(u64x2_ne(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_eq(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] != r[0] { -1_i64 } else { 0 },
-          if s[1] != r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_lt(self, rhs: Self) -> Self::Output {
-    // lt is just gt the other way around
-    rhs.simd_gt(self)
-  }
-
-  #[inline]
-  fn simd_gt(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.2")] {
-        // no unsigned gt so inverting the high bit will get the correct result
-        let highbit = u64x2::splat(1 << 63);
-        Self(cmp_gt_mask_i64_m128i((self ^ highbit).0, (rhs ^ highbit).0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vcgtq_u64(self.0, rhs.0))}
-      } else {
-        // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] > r[0] { u64::MAX } else { 0 },
-          if s[1] > r[1] { u64::MAX } else { 0 },
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_le(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_gt(rhs)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_gt(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] <= r[0] { -1_i64 } else { 0 },
-          if s[1] <= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn simd_ge(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        !self.simd_lt(rhs)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        !self.simd_lt(rhs)
-      } else {
-        let s: [u64;2] = cast(self);
-        let r: [u64;2] = cast(rhs);
-        cast([
-          if s[0] >= r[0] { -1_i64 } else { 0 },
-          if s[1] >= r[1] { -1_i64 } else { 0 },
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn replace_const<const INDEX: usize>(self, value: u64) -> Self {
-    const {
-      assert!(INDEX < 2, "attempt to call `Simd::replace_const` with an out of bounds index");
+impl u64x2 {
+    #[inline]
+    pub(crate) fn not_backend(self) -> Self {
+        self ^ cast::<u128, u64x2>(u128::MAX)
     }
 
-    /// Because of limitations in const generics, this must have separate
-    /// branches per index. This macro is used to avoid duplication.
-    macro_rules! use_indices {
+    #[inline]
+    pub(crate) fn add_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(add_i64_m128i(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_add(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self(vaddq_u64(self.0, rhs.0)) }
+          } else {
+            Self::from_array([
+              self.0.arr[0].wrapping_add(rhs.0.arr[0]),
+              self.0.arr[1].wrapping_add(rhs.0.arr[1]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn sub_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(sub_i64_m128i(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_sub(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self(vsubq_u64(self.0, rhs.0)) }
+          } else {
+            Self::from_array([
+              self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
+              self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn mul_backend(self, rhs: Self) -> Self {
+        //we should try to implement this on sse2
+        pick! {
+          if #[cfg(target_feature="simd128")] {
+            Self(u64x2_mul(self.0, rhs.0))
+          } else {
+            let arr1: [u64; 2] = cast(self);
+            let arr2: [u64; 2] = cast(rhs);
+            cast([
+              arr1[0].wrapping_mul(arr2[0]),
+              arr1[1].wrapping_mul(arr2[1]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(bitand_m128i(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_and(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {Self(vandq_u64(self.0, rhs.0))}
+          } else {
+            Self::from_array([
+              self.0.arr[0] & rhs.0.arr[0],
+              self.0.arr[1] & rhs.0.arr[1],
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(bitor_m128i(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_or(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {Self(vorrq_u64(self.0, rhs.0))}
+          } else {
+            Self::from_array([
+              self.0.arr[0] | rhs.0.arr[0],
+              self.0.arr[1] | rhs.0.arr[1],
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(bitxor_m128i(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_xor(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {Self(veorq_u64(self.0, rhs.0))}
+          } else {
+            Self::from_array([
+              self.0.arr[0] ^ rhs.0.arr[0],
+              self.0.arr[1] ^ rhs.0.arr[1],
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            Self(cmp_eq_mask_i64_m128i(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_eq(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {Self(vceqq_u64(self.0, rhs.0)) }
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] == r[0] { -1_i64 } else { 0 },
+              if s[1] == r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            !self.simd_eq(rhs)
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_ne(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_eq(rhs)
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] != r[0] { -1_i64 } else { 0 },
+              if s[1] != r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        // lt is just gt the other way around
+        rhs.simd_gt(self)
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.2")] {
+            // no unsigned gt so inverting the high bit will get the correct result
+            let highbit = u64x2::splat(1 << 63);
+            Self(cmp_gt_mask_i64_m128i((self ^ highbit).0, (rhs ^ highbit).0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {Self(vcgtq_u64(self.0, rhs.0))}
+          } else {
+            // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] > r[0] { u64::MAX } else { 0 },
+              if s[1] > r[1] { u64::MAX } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            !self.simd_gt(rhs)
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_gt(rhs)
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] <= r[0] { -1_i64 } else { 0 },
+              if s[1] <= r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            !self.simd_lt(rhs)
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_lt(rhs)
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] >= r[0] { -1_i64 } else { 0 },
+              if s[1] >= r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u64) -> Self {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
       (0..2 = [$($INDEX:literal),*]) => {
         pick! {
           if #[cfg(all(target_arch = "x86_64", target_feature = "sse4.1"))] {
@@ -294,18 +276,14 @@ define_simd_unsigned! {
         }
       };
     }
-    use_indices! { 0..2 = [0, 1] }
-  }
-
-  #[inline]
-  pub fn extract_const<const INDEX: usize>(self) -> u64 {
-    const {
-      assert!(INDEX < 2, "attempt to call `Simd::extract_const` with an out of bounds index");
+        use_indices! { 0..2 = [0, 1] }
     }
 
-    /// Because of limitations in const generics, this must have separate
-    /// branches per index. This macro is used to avoid duplication.
-    macro_rules! use_indices {
+    #[inline]
+    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u64 {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
       (0..2 = [$($INDEX:literal),*]) => {
         pick! {
           if #[cfg(all(target_arch = "x86_64", target_feature = "sse4.1"))] {
@@ -338,590 +316,579 @@ define_simd_unsigned! {
         }
       };
     }
-    use_indices! { 0..2 = [0, 1] }
-  }
-
-  #[inline]
-  pub fn reduce_add(self) -> u64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [u64; 2] = cast(self);
-        array[0].wrapping_add(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_u64(self.0, 0).wrapping_add(vgetq_lane_u64(self.0, 1)) }
-      } else {
-        self.0.arr[0].wrapping_add(self.0.arr[1])
-      }
+        use_indices! { 0..2 = [0, 1] }
     }
-  }
 
-  #[inline]
-  pub fn reduce_mul(self) -> u64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [u64; 2] = cast(self);
-        array[0].wrapping_mul(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_u64(self.0, 0).wrapping_mul(vgetq_lane_u64(self.0, 1)) }
-      } else {
-        self.0.arr[0].wrapping_mul(self.0.arr[1])
-      }
+    #[inline]
+    pub(crate) fn reduce_add_backend(self) -> u64 {
+        pick! {
+          if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+            let array: [u64; 2] = cast(self);
+            array[0].wrapping_add(array[1])
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { vgetq_lane_u64(self.0, 0).wrapping_add(vgetq_lane_u64(self.0, 1)) }
+          } else {
+            self.0.arr[0].wrapping_add(self.0.arr[1])
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(v128_bitselect(if_one.0, if_zero.0, self.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vbslq_u64(self.0, if_one.0, if_zero.0))}
-      } else {
-        generic_bit_blend(self, if_one, if_zero)
-      }
+    #[inline]
+    pub(crate) fn reduce_mul_backend(self) -> u64 {
+        pick! {
+          if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+            let array: [u64; 2] = cast(self);
+            array[0].wrapping_mul(array[1])
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { vgetq_lane_u64(self.0, 0).wrapping_mul(vgetq_lane_u64(self.0, 1)) }
+          } else {
+            self.0.arr[0].wrapping_mul(self.0.arr[1])
+          }
+        }
     }
-  }
 
-  #[inline]
-  fn select(self, if_true: Self, if_false: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse4.1")] {
-        Self(blend_varying_i8_m128i(if_false.0, if_true.0, self.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(v128_bitselect(if_true.0, if_false.0, self.0))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {Self(vbslq_u64(self.0, if_true.0, if_false.0))}
-      } else {
-        generic_bit_blend(self, if_true, if_false)
-      }
+    #[inline]
+    pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_bitselect(if_one.0, if_zero.0, self.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {Self(vbslq_u64(self.0, if_one.0, if_zero.0))}
+          } else {
+            generic_bit_blend(self, if_one, if_zero)
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn to_bitmask(self) -> u32 {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m128d(cast(self.0)) as u32
-      } else if #[cfg(target_feature="simd128")] {
-        i64x2_bitmask(self.0) as u32
-      } else {
-        // nothing amazingly efficient for neon
-        let arr: [u64; 2] = cast(self);
-        (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as u32
-      }
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            Self(blend_varying_i8_m128i(if_false.0, if_true.0, self.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_bitselect(if_true.0, if_false.0, self.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {Self(vbslq_u64(self.0, if_true.0, if_false.0))}
+          } else {
+            generic_bit_blend(self, if_true, if_false)
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn any(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="sse")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m128d(cast(self.0)) != 0
-      } else if #[cfg(target_feature="simd128")] {
-        i64x2_bitmask(self.0) != 0
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] | v[1]) & 0x8000000000000000) != 0
-      }
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="sse")] {
+            // use f64 move_mask since it is the same size as i64
+            move_mask_m128d(cast(self.0)) as u32
+          } else if #[cfg(target_feature="simd128")] {
+            i64x2_bitmask(self.0) as u32
+          } else {
+            // nothing amazingly efficient for neon
+            let arr: [u64; 2] = cast(self);
+            (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as u32
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn all(self) -> bool {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // use f64 move_mask since it is the same size as i64
-        move_mask_m128d(cast(self.0)) == 0b11
-      }  else if #[cfg(target_feature="simd128")] {
-        i64x2_bitmask(self.0) == 0b11
-      } else {
-        let v : [u64;2] = cast(self);
-        ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
-      }
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="sse")] {
+            // use f64 move_mask since it is the same size as i64
+            move_mask_m128d(cast(self.0)) != 0
+          } else if #[cfg(target_feature="simd128")] {
+            i64x2_bitmask(self.0) != 0
+          } else {
+            let v : [u64;2] = cast(self);
+            ((v[0] | v[1]) & 0x8000000000000000) != 0
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn interleave_low(self, other: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(unpack_low_i64_m128i(self.0, other.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(i64x2_shuffle::<0, 2>(self.0, other.0))
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self(unsafe { vzip1q_u64(self.0, other.0) })
-      } else {
-        Self::from_array([self.as_array()[0], other.as_array()[0]])
-      }
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // use f64 move_mask since it is the same size as i64
+            move_mask_m128d(cast(self.0)) == 0b11
+          }  else if #[cfg(target_feature="simd128")] {
+            i64x2_bitmask(self.0) == 0b11
+          } else {
+            let v : [u64;2] = cast(self);
+            ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn interleave_high(self, other: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(unpack_high_i64_m128i(self.0, other.0))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(i64x2_shuffle::<1, 3>(self.0, other.0))
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        Self(unsafe { vzip2q_u64(self.0, other.0) })
-      } else {
-        Self::from_array([self.as_array()[1], other.as_array()[1]])
-      }
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(unpack_low_i64_m128i(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(i64x2_shuffle::<0, 2>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            Self(unsafe { vzip1q_u64(self.0, other.0) })
+          } else {
+            Self::from_array([self.as_array()[0], other.as_array()[0]])
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn shuffle(self, indices: u64x2) -> Self {
-    pick! {
-      if #[cfg(target_feature = "sse2")] {
-        let e0 = Self(shuffle_ai_f32_all_m128i::<0b01_00_01_00>(self.0));
-        let e1 = Self(shuffle_ai_f32_all_m128i::<0b11_10_11_10>(self.0));
-
-        // We can assume that each index is either `0` or `1`, and negating that
-        // always gives us either all bits zero or all bits one.
-        (-indices).select(e1, e0)
-      } else if #[cfg(target_feature = "simd128")] {
-        let e0 = Self(u64x2_shuffle::<0, 0>(self.0, self.0));
-        let e1 = Self(u64x2_shuffle::<1, 1>(self.0, self.0));
-
-        // We can assume that each index is either `0` or `1`, and negating that
-        // always gives us either all bits zero or all bits one.
-        (-indices).select(e1, e0)
-      } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]{
-        let e0 = unsafe { Self(vdupq_n_u64(vget_lane_u64::<0>(vget_low_u64(self.0)))) };
-        let e1 = unsafe { Self(vdupq_n_u64(vget_lane_u64::<0>(vget_high_u64(self.0)))) };
-
-        // We can assume that each index is either `0` or `1`, and negating that
-        // always gives us either all bits zero or all bits one.
-        (-indices).select(e1, e0)
-      } else {
-        let e0 = Self::splat(self.as_array()[0]);
-        let e1 = Self::splat(self.as_array()[1]);
-
-        // We can assume that each index is either `0` or `1`, and negating that
-        // always gives us either all bits zero or all bits one.
-        (-indices).select(e1, e0)
-      }
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(unpack_high_i64_m128i(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(i64x2_shuffle::<1, 3>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            Self(unsafe { vzip2q_u64(self.0, other.0) })
+          } else {
+            Self::from_array([self.as_array()[1], other.as_array()[1]])
+          }
+        }
     }
-  }
 
-  #[inline]
-  pub fn shuffle_zeroing(self, indices: u64x2) -> Self {
-    // Since all implementations use the `select` trick, we always need to mask
-    self.shuffle(indices) & indices.simd_lt(2)
-  }
+    #[inline]
+    pub(crate) fn shuffle_backend(self, indices: u64x2) -> Self {
+        pick! {
+          if #[cfg(target_feature = "sse2")] {
+            let e0 = Self(shuffle_ai_f32_all_m128i::<0b01_00_01_00>(self.0));
+            let e1 = Self(shuffle_ai_f32_all_m128i::<0b11_10_11_10>(self.0));
 
-  #[inline]
-  pub fn shuffle_wrapping(self, indices: u64x2) -> Self {
-    // Since all implementations use the `select` trick, we always need to mask
-    self.shuffle(indices & 1)
-  }
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          } else if #[cfg(target_feature = "simd128")] {
+            let e0 = Self(u64x2_shuffle::<0, 0>(self.0, self.0));
+            let e1 = Self(u64x2_shuffle::<1, 1>(self.0, self.0));
 
-  #[inline]
-  fn shuffle(self: [u64x2; 2], indices: u64x2) -> u64x2 {
-    pick! {
-      if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-        u64x2(shuffle_abv_i64_all_m128i(self[0].0, indices.0, self[1].0))
-      } else {
-        let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(self);
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]{
+            let e0 = unsafe { Self(vdupq_n_u64(vget_lane_u64::<0>(vget_low_u64(self.0)))) };
+            let e1 = unsafe { Self(vdupq_n_u64(vget_lane_u64::<0>(vget_high_u64(self.0)))) };
+
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          } else {
+            let e0 = Self::splat(self.as_array()[0]);
+            let e1 = Self::splat(self.as_array()[1]);
+
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_backend(self, indices: u64x2) -> Self {
+        // Since all implementations use the `select` trick, we always need to mask
+        self.shuffle(indices) & indices.simd_lt(2)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_backend(self, indices: u64x2) -> Self {
+        // Since all implementations use the `select` trick, we always need to mask
+        self.shuffle(indices & 1)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            u64x2(shuffle_abv_i64_all_m128i(inputs[0].0, indices.0, inputs[1].0))
+          } else {
+            let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(inputs);
+            let byte_indices = indices.to_byte_indices();
+
+            cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(4)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            // `avx512` shuffle intrinsics are wrapping
+            inputs.shuffle(indices)
+          } else {
+            inputs.shuffle(indices & 3)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+        let self_bytes = cast::<[u64x2; 3], [u8x16; 3]>(inputs);
         let byte_indices = indices.to_byte_indices();
 
         cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
-      }
     }
-  }
 
-  #[inline]
-  fn shuffle_zeroing(self: [u64x2; 2], indices: u64x2) -> u64x2 {
-    // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
-    // 8-bit can trigger an overflow causing incorrect behavior
-    self.shuffle(indices) & indices.simd_lt(4)
-  }
-
-  #[inline]
-  fn shuffle_wrapping(self: [u64x2; 2], indices: u64x2) -> u64x2 {
-    pick! {
-      if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-        // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
-      } else {
-        self.shuffle(indices & 3)
-      }
+    #[inline]
+    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(6)
     }
-  }
 
-  #[inline]
-  fn shuffle(self: [u64x2; 3], indices: u64x2) -> u64x2 {
-    let self_bytes = cast::<[u64x2; 3], [u8x16; 3]>(self);
-    let byte_indices = indices.to_byte_indices();
-
-    cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
-  }
-
-  #[inline]
-  fn shuffle_zeroing(self: [u64x2; 3], indices: u64x2) -> u64x2 {
-    // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
-    // 8-bit can trigger an overflow causing incorrect behavior
-    self.shuffle(indices) & indices.simd_lt(6)
-  }
-
-  #[inline]
-  fn shuffle_wrapping(self: [u64x2; 3], indices: u64x2) -> u64x2 {
-    self.shuffle(indices % 6)
-  }
-
-  #[inline]
-  fn shuffle(self: [u64x2; 4], indices: u64x2) -> u64x2 {
-    let self_bytes = cast::<[u64x2; 4], [u8x16; 4]>(self);
-    let byte_indices = indices.to_byte_indices();
-
-    cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
-  }
-
-  #[inline]
-  fn shuffle_zeroing(self: [u64x2; 4], indices: u64x2) -> u64x2 {
-    // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
-    // 8-bit can trigger an overflow causing incorrect behavior
-    self.shuffle(indices) & indices.simd_lt(8)
-  }
-
-  #[inline]
-  fn shuffle_wrapping(self: [u64x2; 4], indices: u64x2) -> u64x2 {
-    self.shuffle(indices & 7)
-  }
-
-  #[inline]
-  pub fn transpose(data: [Self; 2]) -> [Self; 2] {
-    pick! {
-      if #[cfg(any(
-        target_feature="sse2",
-        all(target_feature="neon",target_arch="aarch64"),
-        target_feature="simd128",
-      ))] {
-        // TODO: Remove the casts once unpack functions exist for `Self`.
-        // [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
-        [
-          data[0].cast_signed().interleave_low(data[1].cast_signed()).cast_unsigned(),
-          data[0].cast_signed().interleave_high(data[1].cast_signed()).cast_unsigned(),
-        ]
-      } else {
-        let [x, y, z, w]: [u64; 4] = cast(data);
-        cast([x, z, y, w])
-      }
+    #[inline]
+    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+        inputs.shuffle(indices % 6)
     }
-  }
 
-  #[inline]
-  fn shl(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & Self::splat(63);
-        Self(shl_each_u64_m128i(self.0, shift_by.0))
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          // mask the shift count to 63 to have same behavior on all platforms
-          let shift_by = vreinterpretq_s64_u64(vandq_u64(rhs.0, vmovq_n_u64(63)));
-          Self(vshlq_u64(self.0, shift_by))
+    #[inline]
+    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+        let self_bytes = cast::<[u64x2; 4], [u8x16; 4]>(inputs);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(8)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+        inputs.shuffle(indices & 7)
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [Self; 2]) -> [Self; 2] {
+        pick! {
+          if #[cfg(any(
+            target_feature="sse2",
+            all(target_feature="neon",target_arch="aarch64"),
+            target_feature="simd128",
+          ))] {
+            // TODO: Remove the casts once unpack functions exist for `Self`.
+            // [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
+            [
+              data[0].cast_signed().interleave_low(data[1].cast_signed()).cast_unsigned(),
+              data[0].cast_signed().interleave_high(data[1].cast_signed()).cast_unsigned(),
+            ]
+          } else {
+            let [x, y, z, w]: [u64; 4] = cast(data);
+            cast([x, z, y, w])
+          }
         }
-      } else {
-        let arr: [u64; 2] = cast(self);
-        let rhs: [u64; 2] = cast(rhs);
+    }
+
+    #[inline]
+    pub(crate) fn shl_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // mask the shift count to 63 to have same behavior on all platforms
+            let shift_by = rhs & Self::splat(63);
+            Self(shl_each_u64_m128i(self.0, shift_by.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            unsafe {
+              // mask the shift count to 63 to have same behavior on all platforms
+              let shift_by = vreinterpretq_s64_u64(vandq_u64(rhs.0, vmovq_n_u64(63)));
+              Self(vshlq_u64(self.0, shift_by))
+            }
+          } else {
+            let arr: [u64; 2] = cast(self);
+            let rhs: [u64; 2] = cast(rhs);
+            cast([
+              arr[0].wrapping_shl(rhs[0] as u32),
+              arr[1].wrapping_shl(rhs[1] as u32),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shl_scalar_backend(self, rhs: u32) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            let shift = cast([rhs as u64 & 63, 0]);
+            Self(shl_all_u64_m128i(self.0, shift))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_shl(self.0, rhs))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(rhs as i64 & 63)))}
+          } else {
+            Self::from_array([
+              self.0.arr[0].wrapping_shl(rhs),
+              self.0.arr[1].wrapping_shl(rhs),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shr_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // mask the shift count to 63 to have same behavior on all platforms
+            let shift_by = rhs & Self::splat(63);
+            Self(shr_each_u64_m128i(self.0, shift_by.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            unsafe {
+              // mask the shift count to 63 to have same behavior on all platforms
+              // no right shift, have to pass negative value to left shift on neon
+              let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.0, vmovq_n_u64(63))));
+              Self(vshlq_u64(self.0, shift_by))
+            }
+          } else {
+            let arr: [u64; 2] = cast(self);
+            let rhs: [u64; 2] = cast(rhs);
+            cast([
+              arr[0].wrapping_shr(rhs[0] as u32),
+              arr[1].wrapping_shr(rhs[1] as u32),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            let shift = cast([rhs as u64 & 63, 0]);
+            Self(shr_all_u64_m128i(self.0, shift))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_shr(self.0, rhs))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
+            unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(-(rhs as i64 & 63))))}
+          } else {
+            Self::from_array([
+              self.0.arr[0].wrapping_shr(rhs),
+              self.0.arr[1].wrapping_shr(rhs),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn max_backend(self, rhs: Self) -> Self {
+        self.simd_gt(rhs).select(self, rhs)
+    }
+
+    #[inline]
+    pub(crate) fn min_backend(self, rhs: Self) -> Self {
+        self.simd_lt(rhs).select(self, rhs)
+    }
+
+    #[inline]
+    pub(crate) fn reduce_max_backend(self) -> u64 {
+        pick! {
+          if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+            let array: [u64; 2] = cast(self);
+            array[0].max(array[1])
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { vgetq_lane_u64(self.0, 0).max(vgetq_lane_u64(self.0, 1)) }
+          } else {
+            self.0.arr[0].max(self.0.arr[1])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn reduce_min_backend(self) -> u64 {
+        pick! {
+          if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+            let array: [u64; 2] = cast(self);
+            array[0].min(array[1])
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { vgetq_lane_u64(self.0, 0).min(vgetq_lane_u64(self.0, 1)) }
+          } else {
+            self.0.arr[0].min(self.0.arr[1])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self(shl_each_u64_m128i(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            unsafe {
+              // The intrinsic has different semantics so we need to mask ourselves.
+              Self(vshlq_u64(self.0, vreinterpretq_s64_u64(rhs.0))) & rhs.simd_lt(64)
+            }
+          } else {
+            // Cannot use scalar `unbounded_shl` because it takes `u32`, which is
+            // smaller than `u64`.
+            (self << rhs) & rhs.simd_lt(64)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(shl_all_u64_m128i(self.0, cast([rhs as u64, 0])))
+          } else if #[cfg(target_feature="simd128")] {
+            // The intrinsic performs wrapping shift so we need to mask the result.
+            Self(u64x2_shl(self.0, rhs)) & Self::splat(rhs as u64).simd_lt(64)
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self(vshlq_u64(self.0, vmovq_n_s64(rhs.min(64) as i64))) }
+          } else {
+            Self::from_array([
+              self.0.arr[0].unbounded_shl(rhs),
+              self.0.arr[1].unbounded_shl(rhs),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self(shr_each_u64_m128i(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            unsafe {
+              // Negate `rhs` because there is no direct shift-right intrinsic, and
+              // mask to hide `rhs` overflow.
+              Self(vshlq_u64(self.0, vnegq_s64(vreinterpretq_s64_u64(rhs.0)))) & rhs.simd_lt(64)
+            }
+          } else {
+            // Cannot use scalar `unbounded_shr` because it takes `u32`, which is
+            // smaller than `u64`.
+            (self >> rhs) & rhs.simd_lt(64)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(shr_all_u64_m128i(self.0, cast([rhs as u64, 0])))
+          } else if #[cfg(target_feature="simd128")] {
+            if rhs < 64 { Self(u64x2_shr(self.0, rhs)) } else { Self::ZERO }
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe {
+              // Negate `rhs` because there is no direct shift-right intrinsic, and
+              // restrict it to prevent overflow.
+              Self(vshlq_u64(self.0, vmovq_n_s64(-rhs.min(64).cast_signed() as i64)))
+            }
+          } else {
+            Self::from_array([
+                self.0.arr[0].unbounded_shr(rhs),
+                self.0.arr[1].unbounded_shr(rhs),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+            let result = self + rhs;
+            let overflow = result.simd_lt(self);
+            // Return `MAX` (all bits set) if overflow occurs.
+            result | overflow
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self(vqaddq_u64(self.0, rhs.0)) }
+          } else {
+            Self::from_array([
+                self.0.arr[0].saturating_add(rhs.0.arr[0]),
+                self.0.arr[1].saturating_add(rhs.0.arr[1]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
+            let result = self - rhs;
+            let no_overflow = result.simd_le(self);
+            // Return `0` (no bits set) if overflow occurs.
+            result & no_overflow
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            unsafe { Self(vqsubq_u64(self.0, rhs.0)) }
+          } else {
+            Self::from_array([
+                self.0.arr[0].saturating_sub(rhs.0.arr[0]),
+                self.0.arr[1].saturating_sub(rhs.0.arr[1]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
+        // TODO(perf): This implementation looks quite bad. Is there a better
+        // one? This intentionally avoids `mul_keep_low_high` because getting the
+        // high bits of 64-bit multiplication could be slow.
+
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        let result = [
+            self_array[0].overflowing_mul(rhs_array[0]),
+            self_array[1].overflowing_mul(rhs_array[1]),
+        ];
+        (
+            Self::from_array([result[0].0, result[1].0]),
+            Self::from_array([-(result[0].1 as i64) as u64, -(result[1].1 as i64) as u64]),
+        )
+    }
+
+    #[inline]
+    pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
+        // TODO(perf): This implementation looks quite bad. Is there a better
+        // one?
+
+        let self_array = self.to_array();
+        let rhs_array = rhs.to_array();
+
+        let widening_mul = [
+            (self_array[0] as u128).wrapping_mul(rhs_array[0] as u128),
+            (self_array[1] as u128).wrapping_mul(rhs_array[1] as u128),
+        ];
+
+        (
+            Self::from_array([widening_mul[0] as u64, widening_mul[1] as u64]),
+            Self::from_array([
+                (widening_mul[0] >> 64) as u64,
+                (widening_mul[1] >> 64) as u64,
+            ]),
+        )
+    }
+
+    #[inline]
+    pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
+        let arr1: [u64; 2] = cast(self);
+        let arr2: [u64; 2] = cast(rhs);
         cast([
-          arr[0].wrapping_shl(rhs[0] as u32),
-          arr[1].wrapping_shl(rhs[1] as u32),
+            ((arr1[0] as u128 * arr2[0] as u128) >> 64) as u64,
+            ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
         ])
-      }
     }
-  }
-
-  #[inline]
-  fn shl(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 63, 0]);
-        Self(shl_all_u64_m128i(self.0, shift))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(u64x2_shl(self.0, rhs))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(rhs as i64 & 63)))}
-      } else {
-        Self::from_array([
-          self.0.arr[0].wrapping_shl(rhs),
-          self.0.arr[1].wrapping_shl(rhs),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shr(self, rhs: Self) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        // mask the shift count to 63 to have same behavior on all platforms
-        let shift_by = rhs & Self::splat(63);
-        Self(shr_each_u64_m128i(self.0, shift_by.0))
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          // mask the shift count to 63 to have same behavior on all platforms
-          // no right shift, have to pass negative value to left shift on neon
-          let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.0, vmovq_n_u64(63))));
-          Self(vshlq_u64(self.0, shift_by))
-        }
-      } else {
-        let arr: [u64; 2] = cast(self);
-        let rhs: [u64; 2] = cast(rhs);
-        cast([
-          arr[0].wrapping_shr(rhs[0] as u32),
-          arr[1].wrapping_shr(rhs[1] as u32),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  fn shr(self, rhs: u32) -> Self::Output {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        let shift = cast([rhs as u64 & 63, 0]);
-        Self(shr_all_u64_m128i(self.0, shift))
-      } else if #[cfg(target_feature="simd128")] {
-        Self(u64x2_shr(self.0, rhs))
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
-        #[expect(clippy::suspicious_arithmetic_impl)]
-        unsafe {Self(vshlq_u64(self.0, vmovq_n_s64(-(rhs as i64 & 63))))}
-      } else {
-        Self::from_array([
-          self.0.arr[0].wrapping_shr(rhs),
-          self.0.arr[1].wrapping_shr(rhs),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn max(self, rhs: Self) -> Self {
-    self.simd_gt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  pub fn min(self, rhs: Self) -> Self {
-    self.simd_lt(rhs).select(self, rhs)
-  }
-
-  #[inline]
-  pub fn reduce_max(self) -> u64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [u64; 2] = cast(self);
-        array[0].max(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_u64(self.0, 0).max(vgetq_lane_u64(self.0, 1)) }
-      } else {
-        self.0.arr[0].max(self.0.arr[1])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn reduce_min(self) -> u64 {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let array: [u64; 2] = cast(self);
-        array[0].min(array[1])
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { vgetq_lane_u64(self.0, 0).min(vgetq_lane_u64(self.0, 1)) }
-      } else {
-        self.0.arr[0].min(self.0.arr[1])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn unbounded_shl(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self(shl_each_u64_m128i(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          // The intrinsic has different semantics so we need to mask ourselves.
-          Self(vshlq_u64(self.0, vreinterpretq_s64_u64(rhs.0))) & rhs.simd_lt(64)
-        }
-      } else {
-        // Cannot use scalar `unbounded_shl` because it takes `u32`, which is
-        // smaller than `u64`.
-        (self << rhs) & rhs.simd_lt(64)
-      }
-    }
-  }
-
-  #[inline]
-  pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(shl_all_u64_m128i(self.0, cast([rhs as u64, 0])))
-      } else if #[cfg(target_feature="simd128")] {
-        // The intrinsic performs wrapping shift so we need to mask the result.
-        Self(u64x2_shl(self.0, rhs)) & Self::splat(rhs as u64).simd_lt(64)
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self(vshlq_u64(self.0, vmovq_n_s64(rhs.min(64) as i64))) }
-      } else {
-        Self::from_array([
-          self.0.arr[0].unbounded_shl(rhs),
-          self.0.arr[1].unbounded_shl(rhs),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn unbounded_shr(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(target_feature="avx2")] {
-        Self(shr_each_u64_m128i(self.0, rhs.0))
-      } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-        unsafe {
-          // Negate `rhs` because there is no direct shift-right intrinsic, and
-          // mask to hide `rhs` overflow.
-          Self(vshlq_u64(self.0, vnegq_s64(vreinterpretq_s64_u64(rhs.0)))) & rhs.simd_lt(64)
-        }
-      } else {
-        // Cannot use scalar `unbounded_shr` because it takes `u32`, which is
-        // smaller than `u64`.
-        (self >> rhs) & rhs.simd_lt(64)
-      }
-    }
-  }
-
-  #[inline]
-  pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
-    pick! {
-      if #[cfg(target_feature="sse2")] {
-        Self(shr_all_u64_m128i(self.0, cast([rhs as u64, 0])))
-      } else if #[cfg(target_feature="simd128")] {
-        if rhs < 64 { Self(u64x2_shr(self.0, rhs)) } else { Self::ZERO }
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe {
-          // Negate `rhs` because there is no direct shift-right intrinsic, and
-          // restrict it to prevent overflow.
-          Self(vshlq_u64(self.0, vmovq_n_s64(-rhs.min(64).cast_signed() as i64)))
-        }
-      } else {
-        Self::from_array([
-            self.0.arr[0].unbounded_shr(rhs),
-            self.0.arr[1].unbounded_shr(rhs),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn saturating_add(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let result = self + rhs;
-        let overflow = result.simd_lt(self);
-        // Return `MAX` (all bits set) if overflow occurs.
-        result | overflow
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self(vqaddq_u64(self.0, rhs.0)) }
-      } else {
-        Self::from_array([
-            self.0.arr[0].saturating_add(rhs.0.arr[0]),
-            self.0.arr[1].saturating_add(rhs.0.arr[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn saturating_sub(self, rhs: Self) -> Self {
-    pick! {
-      if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
-        let result = self - rhs;
-        let no_overflow = result.simd_le(self);
-        // Return `0` (no bits set) if overflow occurs.
-        result & no_overflow
-      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-        unsafe { Self(vqsubq_u64(self.0, rhs.0)) }
-      } else {
-        Self::from_array([
-            self.0.arr[0].saturating_sub(rhs.0.arr[0]),
-            self.0.arr[1].saturating_sub(rhs.0.arr[1]),
-        ])
-      }
-    }
-  }
-
-  #[inline]
-  pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
-    // TODO(perf): This implementation looks quite bad. Is there a better
-    // one? This intentionally avoids `mul_keep_low_high` because getting the
-    // high bits of 64-bit multiplication could be slow.
-
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    let result = [
-      self_array[0].overflowing_mul(rhs_array[0]),
-      self_array[1].overflowing_mul(rhs_array[1]),
-    ];
-    (
-      Self::from_array([result[0].0, result[1].0]),
-      Self::from_array([-(result[0].1 as i64) as u64, -(result[1].1 as i64) as u64]),
-    )
-  }
-
-  optional_fn_widening_mul {
-    // Cannot have `widening_mul` because there is no `u128x2` type.
-  }
-
-  #[inline]
-  pub fn mul_keep_low_high(self, rhs: Self) -> (Self, Self) {
-    // TODO(perf): This implementation looks quite bad. Is there a better
-    // one?
-
-    let self_array = self.to_array();
-    let rhs_array = rhs.to_array();
-
-    let widening_mul = [
-      (self_array[0] as u128).wrapping_mul(rhs_array[0] as u128),
-      (self_array[1] as u128).wrapping_mul(rhs_array[1] as u128),
-    ];
-
-    (
-      Self::from_array([
-        widening_mul[0] as u64,
-        widening_mul[1] as u64,
-      ]),
-      Self::from_array([
-        (widening_mul[0] >> 64) as u64,
-        (widening_mul[1] >> 64) as u64,
-      ]),
-    )
-  }
-
-  #[inline]
-  pub fn mul_keep_high(self, rhs: Self) -> Self {
-    let arr1: [u64; 2] = cast(self);
-    let arr2: [u64; 2] = cast(rhs);
-    cast([
-      ((arr1[0] as u128 * arr2[0] as u128) >> 64) as u64,
-      ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
-    ])
-  }
 }
 
 /// The following functionality exists only for [`u64x2`], or only for
