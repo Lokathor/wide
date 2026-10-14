@@ -678,7 +678,7 @@ impl u16x8 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+  pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x8) -> u16x8 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -686,9 +686,9 @@ impl u16x8 {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::_mm_permutex2var_epi16;
         // TODO(safe_arch): add `_mm_permutex2var_epi16`.
-        u16x8(unsafe { m128i(_mm_permutex2var_epi16(self[0].0.0, indices.0.0, self[1].0.0)) })
+        u16x8(unsafe { m128i(_mm_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)) })
       } else {
-        let self_bytes = cast::<[u16x8; 2], [u8x16; 2]>(self);
+        let self_bytes = cast::<[u16x8; 2], [u8x16; 2]>(inputs);
         let byte_indices = indices.to_byte_indices();
 
         cast::<u8x16, u16x8>(self_bytes.shuffle(byte_indices))
@@ -697,62 +697,62 @@ impl u16x8 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+  pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
-    self.shuffle(indices) & indices.simd_lt(16)
+    inputs.shuffle(indices) & indices.simd_lt(16)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u16x8; 2], indices: u16x8) -> u16x8 {
+  pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u16x8) -> u16x8 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
-        self.shuffle(indices & 15)
+        inputs.shuffle(indices & 15)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u16x8; 3], indices: u16x8) -> u16x8 {
-    let self_bytes = cast::<[u16x8; 3], [u8x16; 3]>(self);
+  pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u16x8) -> u16x8 {
+    let self_bytes = cast::<[u16x8; 3], [u8x16; 3]>(inputs);
     let byte_indices = indices.to_byte_indices();
 
     cast::<u8x16, u16x8>(self_bytes.shuffle(byte_indices))
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u16x8; 3], indices: u16x8) -> u16x8 {
+  pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
-    self.shuffle(indices) & indices.simd_lt(24)
+    inputs.shuffle(indices) & indices.simd_lt(24)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u16x8; 3], indices: u16x8) -> u16x8 {
-    self.shuffle(indices % 24)
+  pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u16x8) -> u16x8 {
+    inputs.shuffle(indices % 24)
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u16x8; 4], indices: u16x8) -> u16x8 {
-    let self_bytes = cast::<[u16x8; 4], [u8x16; 4]>(self);
+  pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u16x8) -> u16x8 {
+    let self_bytes = cast::<[u16x8; 4], [u8x16; 4]>(inputs);
     let byte_indices = indices.to_byte_indices();
 
     cast::<u8x16, u16x8>(self_bytes.shuffle(byte_indices))
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u16x8; 4], indices: u16x8) -> u16x8 {
+  pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u16x8) -> u16x8 {
     // Even if the `u8x16` shuffle is zeroing, our 16-bit to 8-bit index
     // conversion breaks for out of bounds indices.
-    self.shuffle(indices) & indices.simd_lt(32)
+    inputs.shuffle(indices) & indices.simd_lt(32)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u16x8; 4], indices: u16x8) -> u16x8 {
-    self.shuffle(indices & 31)
+  pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u16x8) -> u16x8 {
+    inputs.shuffle(indices & 31)
   }
 
   #[inline]

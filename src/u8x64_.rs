@@ -463,7 +463,7 @@ impl u8x64 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x64; 2], indices: u8x64) -> u8x64 {
+  pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x64) -> u8x64 {
     pick! {
       if #[cfg(target_feature = "avx512vbmi")] {
         #[cfg(target_arch = "x86")]
@@ -472,67 +472,67 @@ impl u8x64 {
         use core::arch::x86_64::_mm512_permutex2var_epi8;
         // TODO(safe_arch): add `_mm512_permutex2var_epi8`.
         u8x64(unsafe {
-            m512i(_mm512_permutex2var_epi8(self[0].0.0, indices.0.0, self[1].0.0))
+            m512i(_mm512_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
         })
       } else {
-        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 64)
+        inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 64)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x64; 2], indices: u8x64) -> u8x64 {
+  pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u8x64) -> u8x64 {
     pick! {
       if #[cfg(target_feature = "avx512vbmi")] {
-        self.shuffle(indices) & indices.simd_lt(128)
+        inputs.shuffle(indices) & indices.simd_lt(128)
       } else {
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x64; 2], indices: u8x64) -> u8x64 {
+  pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u8x64) -> u8x64 {
     pick! {
       if #[cfg(target_feature = "avx512vbmi")] {
         // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
-        self.shuffle(indices & 127)
+        inputs.shuffle(indices & 127)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x64; 3], indices: u8x64) -> u8x64 {
-    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 128)
+  pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u8x64) -> u8x64 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 128)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x64; 3], indices: u8x64) -> u8x64 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u8x64) -> u8x64 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x64; 3], indices: u8x64) -> u8x64 {
-    self.shuffle(indices % 192)
+  pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u8x64) -> u8x64 {
+    inputs.shuffle(indices % 192)
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x64; 4], indices: u8x64) -> u8x64 {
-    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 128)
+  pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u8x64) -> u8x64 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | [inputs[2], inputs[3]].shuffle_zeroing(indices - 128)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x64; 4], indices: u8x64) -> u8x64 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u8x64) -> u8x64 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x64; 4], indices: u8x64) -> u8x64 {
+  pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u8x64) -> u8x64 {
     // There are 64*4=256 lanes to pick from, and that is exactly how many
     // indices `u8` can represent, so out of bounds indices are impossible.
-    self.shuffle(indices)
+    inputs.shuffle(indices)
   }
 
   #[inline]

@@ -464,67 +464,67 @@ impl u32x16 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u32x16; 2], indices: u32x16) -> u32x16 {
+  pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u32x16) -> u32x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
-        u32x16(shuffle_abv_i32_all_m512i(self[0].0, indices.0, self[1].0))
+        u32x16(shuffle_abv_i32_all_m512i(inputs[0].0, indices.0, inputs[1].0))
       } else {
-        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 16)
+        inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 16)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u32x16; 2], indices: u32x16) -> u32x16 {
+  pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u32x16) -> u32x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512f"))] {
-        self.shuffle(indices) & indices.simd_lt(32)
+        inputs.shuffle(indices) & indices.simd_lt(32)
       } else {
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u32x16; 2], indices: u32x16) -> u32x16 {
+  pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u32x16) -> u32x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
-        self.shuffle(indices & 31)
+        inputs.shuffle(indices & 31)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u32x16; 3], indices: u32x16) -> u32x16 {
-    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 32)
+  pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u32x16) -> u32x16 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 32)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u32x16; 3], indices: u32x16) -> u32x16 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u32x16) -> u32x16 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u32x16; 3], indices: u32x16) -> u32x16 {
-    self.shuffle(indices % 48)
+  pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u32x16) -> u32x16 {
+    inputs.shuffle(indices % 48)
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u32x16; 4], indices: u32x16) -> u32x16 {
-    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 32)
+  pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u32x16) -> u32x16 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | [inputs[2], inputs[3]].shuffle_zeroing(indices - 32)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u32x16; 4], indices: u32x16) -> u32x16 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u32x16) -> u32x16 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u32x16; 4], indices: u32x16) -> u32x16 {
-    self.shuffle(indices & 63)
+  pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u32x16) -> u32x16 {
+    inputs.shuffle(indices & 63)
   }
 
   #[inline]

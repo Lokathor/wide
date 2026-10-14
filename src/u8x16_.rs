@@ -867,7 +867,7 @@ impl u8x16 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+  pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x16) -> u8x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -876,82 +876,82 @@ impl u8x16 {
         use core::arch::x86_64::_mm_permutex2var_epi8;
 
         // TODO(safe_arch): add `_mm_permutex2var_epi8`.
-        u8x16(unsafe { m128i(_mm_permutex2var_epi8(self[0].0.0, indices.0.0, self[1].0.0)) })
+        u8x16(unsafe { m128i(_mm_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)) })
       } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        let table = uint8x16x2_t(self[0].0, self[1].0);
+        let table = uint8x16x2_t(inputs[0].0, inputs[1].0);
         unsafe { u8x16(vqtbl2q_u8(table, indices.0)) }
       } else {
-        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 16)
+        inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 16)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+  pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u8x16) -> u8x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-        self.shuffle(indices) & indices.simd_lt(32)
+        inputs.shuffle(indices) & indices.simd_lt(32)
       } else {
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x16; 2], indices: u8x16) -> u8x16 {
+  pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u8x16) -> u8x16 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
-        self.shuffle(indices & 31)
+        inputs.shuffle(indices & 31)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x16; 3], indices: u8x16) -> u8x16 {
+  pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u8x16) -> u8x16 {
     pick! {
       if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        let table = uint8x16x3_t(self[0].0, self[1].0, self[2].0);
+        let table = uint8x16x3_t(inputs[0].0, inputs[1].0, inputs[2].0);
         unsafe { u8x16(vqtbl3q_u8(table, indices.0)) }
       } else {
-        [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 32)
+        [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 32)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x16; 3], indices: u8x16) -> u8x16 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u8x16) -> u8x16 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x16; 3], indices: u8x16) -> u8x16 {
-    self.shuffle(indices % 48)
+  pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u8x16) -> u8x16 {
+    inputs.shuffle(indices % 48)
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x16; 4], indices: u8x16) -> u8x16 {
+  pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u8x16) -> u8x16 {
     pick! {
       if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-        let table = uint8x16x4_t(self[0].0, self[1].0, self[2].0, self[3].0);
+        let table = uint8x16x4_t(inputs[0].0, inputs[1].0, inputs[2].0, inputs[3].0);
         unsafe { u8x16(vqtbl4q_u8(table, indices.0)) }
       } else {
-        [self[0], self[1]].shuffle_zeroing(indices)
-          | [self[2], self[3]].shuffle_zeroing(indices - 32)
+        [inputs[0], inputs[1]].shuffle_zeroing(indices)
+          | [inputs[2], inputs[3]].shuffle_zeroing(indices - 32)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x16; 4], indices: u8x16) -> u8x16 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u8x16) -> u8x16 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x16; 4], indices: u8x16) -> u8x16 {
-    self.shuffle(indices & 63)
+  pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u8x16) -> u8x16 {
+    inputs.shuffle(indices & 63)
   }
 
   #[inline]

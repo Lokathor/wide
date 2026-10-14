@@ -509,12 +509,12 @@ impl u64x2 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+  pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-        u64x2(shuffle_abv_i64_all_m128i(self[0].0, indices.0, self[1].0))
+        u64x2(shuffle_abv_i64_all_m128i(inputs[0].0, indices.0, inputs[1].0))
       } else {
-        let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(self);
+        let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(inputs);
         let byte_indices = indices.to_byte_indices();
 
         cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
@@ -523,62 +523,62 @@ impl u64x2 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+  pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
-    self.shuffle(indices) & indices.simd_lt(4)
+    inputs.shuffle(indices) & indices.simd_lt(4)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u64x2; 2], indices: u64x2) -> u64x2 {
+  pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
     pick! {
       if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
-        self.shuffle(indices & 3)
+        inputs.shuffle(indices & 3)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u64x2; 3], indices: u64x2) -> u64x2 {
-    let self_bytes = cast::<[u64x2; 3], [u8x16; 3]>(self);
+  pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+    let self_bytes = cast::<[u64x2; 3], [u8x16; 3]>(inputs);
     let byte_indices = indices.to_byte_indices();
 
     cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u64x2; 3], indices: u64x2) -> u64x2 {
+  pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
-    self.shuffle(indices) & indices.simd_lt(6)
+    inputs.shuffle(indices) & indices.simd_lt(6)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u64x2; 3], indices: u64x2) -> u64x2 {
-    self.shuffle(indices % 6)
+  pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+    inputs.shuffle(indices % 6)
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u64x2; 4], indices: u64x2) -> u64x2 {
-    let self_bytes = cast::<[u64x2; 4], [u8x16; 4]>(self);
+  pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+    let self_bytes = cast::<[u64x2; 4], [u8x16; 4]>(inputs);
     let byte_indices = indices.to_byte_indices();
 
     cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u64x2; 4], indices: u64x2) -> u64x2 {
+  pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
     // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
     // 8-bit can trigger an overflow causing incorrect behavior
-    self.shuffle(indices) & indices.simd_lt(8)
+    inputs.shuffle(indices) & indices.simd_lt(8)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u64x2; 4], indices: u64x2) -> u64x2 {
-    self.shuffle(indices & 7)
+  pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+    inputs.shuffle(indices & 7)
   }
 
   #[inline]

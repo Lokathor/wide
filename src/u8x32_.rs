@@ -462,7 +462,7 @@ impl u8x32 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x32; 2], indices: u8x32) -> u8x32 {
+  pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x32) -> u8x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         #[cfg(target_arch = "x86")]
@@ -471,75 +471,75 @@ impl u8x32 {
         use core::arch::x86_64::_mm256_permutex2var_epi8;
         // TODO(safe_arch): add `_mm256_permutex2var_epi8`.
         u8x32(unsafe {
-            m256i(_mm256_permutex2var_epi8(self[0].0.0, indices.0.0, self[1].0.0))
+            m256i(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
         })
       } else if #[cfg(target_feature="avx2")] {
-        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
+        inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
       } else {
         u8x32(Inner {
-          lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.lo),
-          hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle(indices.0.hi),
+          lo: [inputs[0].0.lo, inputs[0].0.hi, inputs[1].0.lo, inputs[1].0.hi].shuffle(indices.0.lo),
+          hi: [inputs[0].0.lo, inputs[0].0.hi, inputs[1].0.lo, inputs[1].0.hi].shuffle(indices.0.hi),
         })
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x32; 2], indices: u8x32) -> u8x32 {
+  pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u8x32) -> u8x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-        self.shuffle(indices) & indices.simd_lt(64)
+        inputs.shuffle(indices) & indices.simd_lt(64)
       } else if #[cfg(target_feature="avx2")] {
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
         u8x32(Inner {
-          lo: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.lo),
-          hi: [self[0].0.lo, self[0].0.hi, self[1].0.lo, self[1].0.hi].shuffle_zeroing(indices.0.hi),
+          lo: [inputs[0].0.lo, inputs[0].0.hi, inputs[1].0.lo, inputs[1].0.hi].shuffle_zeroing(indices.0.lo),
+          hi: [inputs[0].0.lo, inputs[0].0.hi, inputs[1].0.lo, inputs[1].0.hi].shuffle_zeroing(indices.0.hi),
         })
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x32; 2], indices: u8x32) -> u8x32 {
+  pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u8x32) -> u8x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
         // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
-        self.shuffle(indices & 63)
+        inputs.shuffle(indices & 63)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x32; 3], indices: u8x32) -> u8x32 {
-    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 64)
+  pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u8x32) -> u8x32 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x32; 3], indices: u8x32) -> u8x32 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u8x32) -> u8x32 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x32; 3], indices: u8x32) -> u8x32 {
-    self.shuffle(indices % 96)
+  pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u8x32) -> u8x32 {
+    inputs.shuffle(indices % 96)
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u8x32; 4], indices: u8x32) -> u8x32 {
-    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 64)
+  pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u8x32) -> u8x32 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | [inputs[2], inputs[3]].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u8x32; 4], indices: u8x32) -> u8x32 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u8x32) -> u8x32 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u8x32; 4], indices: u8x32) -> u8x32 {
-    self.shuffle(indices & 127)
+  pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u8x32) -> u8x32 {
+    inputs.shuffle(indices & 127)
   }
 
   #[inline]

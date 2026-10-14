@@ -459,7 +459,7 @@ impl u16x32 {
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x32) -> u16x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw"))] {
         #[cfg(target_arch = "x86")]
@@ -468,65 +468,65 @@ impl u16x32 {
         use core::arch::x86_64::_mm512_permutex2var_epi16;
         // TODO(safe_arch): add `_mm512_permutex2var_epi16`.
         u16x32(unsafe {
-            m512i(_mm512_permutex2var_epi16(self[0].0.0, indices.0.0, self[1].0.0))
+            m512i(_mm512_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0))
         })
       } else {
-        self[0].shuffle_zeroing(indices) | self[1].shuffle_zeroing(indices - 32)
+        inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u16x32) -> u16x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-        self.shuffle(indices) & indices.simd_lt(64)
+        inputs.shuffle(indices) & indices.simd_lt(64)
       } else {
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u16x32; 2], indices: u16x32) -> u16x32 {
+  pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u16x32) -> u16x32 {
     pick! {
       if #[cfg(all(target_feature = "avx512bw"))] {
         // `avx512` shuffle intrinsics are wrapping
-        self.shuffle(indices)
+        inputs.shuffle(indices)
       } else {
-        self.shuffle(indices & 63)
+        inputs.shuffle(indices & 63)
       }
     }
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u16x32; 3], indices: u16x32) -> u16x32 {
-    [self[0], self[1]].shuffle_zeroing(indices) | self[2].shuffle_zeroing(indices - 64)
+  pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u16x32) -> u16x32 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u16x32; 3], indices: u16x32) -> u16x32 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u16x32) -> u16x32 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u16x32; 3], indices: u16x32) -> u16x32 {
-    self.shuffle(indices % 96)
+  pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u16x32) -> u16x32 {
+    inputs.shuffle(indices % 96)
   }
 
   #[inline]
-  pub(crate) fn shuffle_backend(self: [u16x32; 4], indices: u16x32) -> u16x32 {
-    [self[0], self[1]].shuffle_zeroing(indices) | [self[2], self[3]].shuffle_zeroing(indices - 64)
+  pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u16x32) -> u16x32 {
+    [inputs[0], inputs[1]].shuffle_zeroing(indices) | [inputs[2], inputs[3]].shuffle_zeroing(indices - 64)
   }
 
   #[inline]
-  pub(crate) fn shuffle_zeroing_backend(self: [u16x32; 4], indices: u16x32) -> u16x32 {
-    self.shuffle(indices)
+  pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u16x32) -> u16x32 {
+    inputs.shuffle(indices)
   }
 
   #[inline]
-  pub(crate) fn shuffle_wrapping_backend(self: [u16x32; 4], indices: u16x32) -> u16x32 {
-    self.shuffle(indices & 127)
+  pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u16x32) -> u16x32 {
+    inputs.shuffle(indices & 127)
   }
 
   #[inline]
@@ -807,7 +807,7 @@ impl u16x32 {
     let overflow = high.simd_ne(Self::ZERO);
     (low, overflow)
   }
-  
+
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
     // x86 has no `_mm512_mul_epu16` intrinsic so there is no `avx512`
