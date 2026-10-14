@@ -1,31 +1,31 @@
-use crate::imports::*;
+use crate::backend_imports::*;
 
 pick! {
-  if #[cfg(target_feature="avx")] {
-    pub(crate) type Inner = m256d;
+  if #[cfg(target_feature="avx512f")] {
+    pub(crate) type Inner = m512d;
   } else {
-    #[repr(C, align(32))]
+    #[repr(C, align(64))]
     #[derive(Clone, Copy)]
     pub(crate) struct Inner {
-      pub lo: f64x2,
-      pub hi: f64x2,
+      pub lo: f64x4,
+      pub hi: f64x4,
     }
   }
 }
 
-macro_rules! const_f64_as_f64x4 {
+macro_rules! const_f64_as_f64x8 {
     ($i:ident, $f:expr) => {
         #[allow(non_upper_case_globals)]
-        pub const $i: f64x4 = f64x4::from_array([$f; 4]);
+        pub const $i: f64x8 = f64x8::from_array([$f; 8]);
     };
 }
 
-impl f64x4 {
+impl f64x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(bitxor_m256d(self.0, Self::splat(-0.0).0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(bitxor_m512d(self.0, Self::splat(-0.0).0))
           } else {
             Self(Inner {
               lo: -self.0.lo,
@@ -38,8 +38,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(!self.0)
+          if #[cfg(target_feature="avx512f")] {
+            Self(bitxor_m512d(self.0, set_splat_m512d(f64::from_bits(u64::MAX))))
           } else {
             Self(Inner {
               lo: !self.0.lo,
@@ -52,8 +52,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(add_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(add_m512d(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -66,8 +66,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(sub_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(sub_m512d(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -80,13 +80,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn mul_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(mul_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(mul_m512d(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo * rhs.0.lo,
-              hi: self.0.hi * rhs.0.hi,
-            })
+            Self(Inner { lo: self.0.lo * rhs.0.lo, hi: self.0.hi * rhs.0.hi })
           }
         }
     }
@@ -94,13 +91,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn div_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(div_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(div_m512d(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo / rhs.0.lo,
-              hi: self.0.hi / rhs.0.hi,
-            })
+            Self(Inner { lo: self.0.lo / rhs.0.lo, hi: self.0.hi / rhs.0.hi })
           }
         }
     }
@@ -112,14 +106,18 @@ impl f64x4 {
             self.to_array()[1] % rhs.to_array()[1],
             self.to_array()[2] % rhs.to_array()[2],
             self.to_array()[3] % rhs.to_array()[3],
+            self.to_array()[4] % rhs.to_array()[4],
+            self.to_array()[5] % rhs.to_array()[5],
+            self.to_array()[6] % rhs.to_array()[6],
+            self.to_array()[7] % rhs.to_array()[7],
         ])
     }
 
     #[inline]
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(bitand_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(bitand_m512d(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo & rhs.0.lo,
@@ -132,8 +130,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(bitor_m256d(self.0, rhs.0))
+        if #[cfg(target_feature="avx512f")] {
+            Self(bitor_m512d(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo | rhs.0.lo,
@@ -146,8 +144,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(bitxor_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(bitxor_m512d(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
@@ -160,8 +158,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")]{
-            Self(cmp_op_mask_m256d::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -174,8 +172,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")]{
-            Self(cmp_op_mask_m256d::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ne(rhs.0.lo),
@@ -188,8 +186,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")]{
-            Self(cmp_op_mask_m256d::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_lt(rhs.0.lo),
@@ -202,8 +200,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")]{
-            Self(cmp_op_mask_m256d::<{cmp_op!( GreaterThanOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -216,8 +214,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")]{
-            Self(cmp_op_mask_m256d::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_le(rhs.0.lo),
@@ -230,8 +228,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")]{
-            Self(cmp_op_mask_m256d::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ge(rhs.0.lo),
@@ -244,14 +242,16 @@ impl f64x4 {
     #[inline]
     pub(crate) fn reduce_add_backend(self) -> f64 {
         pick! {
-          if #[cfg(target_feature="avx")] {
+          if #[cfg(target_feature="avx512f")] {
             // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-            let lo = cast_to_m128d_from_m256d(self.0);
-            let hi = extract_m128d_from_m256d::<1>(self.0);
-            let lo = add_m128d(lo,hi);
-            let hi64 = unpack_high_m128d(lo,lo);
-            let sum = add_m128d_s(lo,hi64);
-            get_f64_from_m128d_s(sum)
+            let lo = cast_to_m256d_from_m512d(self.0);
+            let hi = extract_m256d_from_m512d::<1>(self.0);
+            let v  = add_m256d(lo, hi);                // [a0+a4, a1+a5, a2+a6, a3+a7]
+            let t  = add_horizontal_m256d(v, v);       // [s01, s23, s01, s23]
+            let lo = cast_to_m128d_from_m256d(t);      // s01
+            let hi = extract_m128d_from_m256d::<1>(t); // s23
+            let s  = add_m128d(lo, hi);                // [sum, ...]
+            get_f64_from_m128d_s(s)
           } else {
             self.0.lo.reduce_add() + self.0.hi.reduce_add()
           }
@@ -261,10 +261,13 @@ impl f64x4 {
     #[inline]
     pub(crate) fn reduce_mul_backend(self) -> f64 {
         pick! {
-          if #[cfg(target_feature="avx")] {
+          if #[cfg(target_feature="avx512f")] {
             // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-            let lo = cast_to_m128d_from_m256d(self.0);
-            let hi = extract_m128d_from_m256d::<1>(self.0);
+            let lo = cast_to_m256d_from_m512d(self.0);
+            let hi = extract_m256d_from_m512d::<1>(self.0);
+            let v  = mul_m256d(lo, hi);
+            let lo = cast_to_m128d_from_m256d(v);
+            let hi = extract_m128d_from_m256d::<1>(v);
             let lo = mul_m128d(lo,hi);
             let hi64 = unpack_high_m128d(lo,lo);
             let product = mul_m128d_s(lo,hi64);
@@ -278,10 +281,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(bitor_m256d(
-                bitand_m256d(if_one.0, self.0),
-                bitandnot_m256d(self.0, if_zero.0),
+          if #[cfg(target_feature="avx512f")] {
+            Self(bitor_m512d(
+                bitand_m512d(if_one.0, self.0),
+                bitandnot_m512d(self.0, if_zero.0),
             ))
           } else {
             Self(Inner {
@@ -295,8 +298,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(blend_varying_m256d(if_false.0, if_true.0, self.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(blend_varying_m512d(if_false.0, if_true.0, movepi64_mask_m512d(self.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -309,10 +312,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            move_mask_m256d(self.0) as u32
+          if #[cfg(target_feature="avx512f")] {
+            movepi64_mask_m512d(self.0) as u32
           } else {
-            (self.0.hi.to_bitmask() << 2) | self.0.lo.to_bitmask()
+            (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
           }
         }
     }
@@ -320,8 +323,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn any_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            move_mask_m256d(self.0) != 0
+          if #[cfg(target_feature="avx512f")] {
+            movepi64_mask_m512d(self.0) != 0
           } else {
             self.0.lo.any() || self.0.hi.any()
           }
@@ -331,8 +334,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn all_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            move_mask_m256d(self.0) == 0b1111
+          if #[cfg(target_feature="avx512f")] {
+            movepi64_mask_m512d(self.0) == 0b11111111
           } else {
             self.0.lo.all() && self.0.hi.all()
           }
@@ -341,75 +344,49 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            // `unpack_lo_m256d` cannot be used because it actually performs a
-            // different operation.
-            let [aa, _]: [f64x2; 2] = cast(self);
-            let [ba, _]: [f64x2; 2] = cast(other);
-            cast([aa.interleave_low(ba), aa.interleave_high(ba)])
-          } else {
-            Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
-          }
-        }
+        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
     }
 
     #[inline]
     pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            // `unpack_hi_m256d` cannot be used because it actually performs a
-            // different operation.
-            let [_, ab]: [f64x2; 2] = cast(self);
-            let [_, bb]: [f64x2; 2] = cast(other);
-            cast([ab.interleave_low(bb), ab.interleave_high(bb)])
-          } else {
-            Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
-          }
-        }
+        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
     }
 
     #[inline]
-    pub(crate) fn transpose_backend(data: [f64x4; 4]) -> [f64x4; 4] {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            // Can this be optimized?
-            let a = data[0].interleave_low(data[2]);
-            let b = data[1].interleave_low(data[3]);
-            let c = data[0].interleave_high(data[2]);
-            let d = data[1].interleave_high(data[3]);
-            [
-              a.interleave_low(b),
-              a.interleave_high(b),
-              c.interleave_low(d),
-              c.interleave_high(d),
-            ]
-          } else {
-            #[inline(always)]
-            fn transpose_column(data: &[f64x4; 4], index: usize) -> f64x4 {
-              f64x4::from_array([
+    pub(crate) fn transpose_backend(data: [f64x8; 8]) -> [f64x8; 8] {
+        // Can this be optimized?
+
+        #[inline(always)]
+        fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
+            f64x8::from_array([
                 data[0].as_array()[index],
                 data[1].as_array()[index],
                 data[2].as_array()[index],
                 data[3].as_array()[index],
-              ])
-            }
-
-            [
-              transpose_column(&data, 0),
-              transpose_column(&data, 1),
-              transpose_column(&data, 2),
-              transpose_column(&data, 3),
-            ]
-          }
+                data[4].as_array()[index],
+                data[5].as_array()[index],
+                data[6].as_array()[index],
+                data[7].as_array()[index],
+            ])
         }
+
+        [
+            transpose_column(&data, 0),
+            transpose_column(&data, 1),
+            transpose_column(&data, 2),
+            transpose_column(&data, 3),
+            transpose_column(&data, 4),
+            transpose_column(&data, 5),
+            transpose_column(&data, 6),
+            transpose_column(&data, 7),
+        ]
     }
 
     #[inline]
     pub(crate) fn is_nan_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256d::<{cmp_op!(Unordered)}>(self.0, self.0 ))
+          if #[cfg(target_feature="avx512f")] {
+            Self(cmp_op_mask_m512d::<{cmp_op!(Unordered)}>(self.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.is_nan(),
@@ -421,8 +398,8 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn is_infinite_backend(self) -> Self {
-        let shifted_inf = u64x4::from(0xFFE0000000000000);
-        let u: u64x4 = cast(self);
+        let shifted_inf = u64x8::from(0xFFE0000000000000);
+        let u: u64x8 = cast(self);
         let shift_u = u << 1_u64;
         let out = (shift_u).simd_eq(shifted_inf);
         cast(out)
@@ -430,8 +407,8 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn is_finite_backend(self) -> Self {
-        let shifted_exp_mask = u64x4::from(0xFFE0000000000000);
-        let u: u64x4 = cast(self);
+        let shifted_exp_mask = u64x8::splat(0xFFE0000000000000);
+        let u: u64x8 = cast(self);
         let shift_u = u << 1_u64;
         let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
         cast(out)
@@ -439,46 +416,43 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn is_sign_positive_backend(self) -> Self {
-        const SIGN_MASK: u64x4 = u64x4::splat((-0.0_f64).to_bits());
+        const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
 
-        let bits = cast::<f64x4, u64x4>(self);
+        let bits = cast::<f64x8, u64x8>(self);
         let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(u64x4::ZERO);
-        cast::<u64x4, f64x4>(result)
+        let result = sign.simd_eq(u64x8::ZERO);
+        cast::<u64x8, f64x8>(result)
     }
 
     #[inline]
     pub(crate) fn is_sign_negative_backend(self) -> Self {
-        const SIGN_MASK: u64x4 = u64x4::splat((-0.0_f64).to_bits());
+        const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
 
-        let bits = cast::<f64x4, u64x4>(self);
+        let bits = cast::<f64x8, u64x8>(self);
         let sign = bits & SIGN_MASK;
         let result = sign.simd_eq(SIGN_MASK);
-        cast::<u64x4, f64x4>(result)
+        cast::<u64x8, f64x8>(result)
     }
 
     #[inline]
     pub(crate) fn recip_backend(self) -> Self {
         // There does not seem to be a `recip` intrinsic for any architecture. The
-        // closest is `_mm256_rcp14_pd` which has relative error.
+        // closest is `_mm512_rcp14_pd` which has relative error.
         Self::ONE / self
     }
 
     #[inline]
     pub(crate) fn recip_sqrt_backend(self) -> Self {
         // There does not seem to be a `recip_sqrt` intrinsic for any architecture.
-        // The closest is `_mm256_rsqrt14_pd` which has relative error.
+        // The closest is `_mm512_rsqrt14_pd` which has relative error.
         Self::ONE / self.sqrt()
     }
 
     #[inline]
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            // max_m256d seems to do rhs < self ? self : rhs. So if there's any NaN
-            // involved, it chooses rhs, so we need to specifically check rhs for
-            // NaN.
-            rhs.is_nan().select(self, Self(max_m256d(self.0, rhs.0)))
+          if #[cfg(target_feature="avx512f")] {
+            rhs.is_nan().select(self, Self(max_m512d(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -491,8 +465,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn fast_max_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(max_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(max_m512d(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_max(rhs.0.lo),
@@ -505,11 +479,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            // min_m256d seems to do rhs < self ? self : rhs. So if there's any NaN
-            // involved, it chooses rhs, so we need to specifically check rhs for
-            // NaN.
-            rhs.is_nan().select(self, Self(min_m256d(self.0, rhs.0)))
+          if #[cfg(target_feature="avx512f")] {
+            rhs.is_nan().select(self, Self(min_m512d(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -522,8 +493,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn fast_min_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(min_m256d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(min_m512d(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_min(rhs.0.lo),
@@ -536,7 +507,7 @@ impl f64x4 {
     #[inline]
     pub(crate) fn clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
+          if #[cfg(target_feature="avx512f")] {
             // This works since all bits set is NaN.
             self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
           } else {
@@ -552,10 +523,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            // For both `min_m256d` and `max_m256d` if any input is NaN, `rhs` gets
+          if #[cfg(target_feature="avx512f")] {
+            // For both `min_m512d` and `max_m512d` if any input is NaN, `rhs` gets
             // chosen. For `self` to be chosen, `self` must be the second argument.
-            Self(max_m256d(min.0, min_m256d(max.0, self.0)))
+            Self(max_m512d(min.0, min_m512d(max.0, self.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
@@ -567,33 +538,33 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn reduce_max_backend(self) -> f64 {
-        let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
+        let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
         self_a.max(self_b).reduce_max()
     }
 
     #[inline]
     pub(crate) fn fast_reduce_max_backend(self) -> f64 {
-        let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
+        let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
         self_a.fast_max(self_b).fast_reduce_max()
     }
 
     #[inline]
     pub(crate) fn reduce_min_backend(self) -> f64 {
-        let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
+        let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
         self_a.min(self_b).reduce_min()
     }
 
     #[inline]
     pub(crate) fn fast_reduce_min_backend(self) -> f64 {
-        let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
+        let [self_a, self_b] = cast::<f64x8, [f64x4; 2]>(self);
         self_a.fast_min(self_b).fast_reduce_min()
     }
 
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            let non_sign_bits = f64x4::from(f64::from_bits(i64::MAX as u64));
+          if #[cfg(target_feature="avx512f")] {
+            let non_sign_bits = f64x8::from(f64::from_bits(i64::MAX as u64));
             self & non_sign_bits
           } else {
             Self(Inner {
@@ -607,8 +578,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn floor_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(floor_m256d(self.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(round_m512d::<{round_op!(NegInf)}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.floor(),
@@ -621,8 +592,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn ceil_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(ceil_m256d(self.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(round_m512d::<{round_op!(PosInf)}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.ceil(),
@@ -635,68 +606,80 @@ impl f64x4 {
     #[inline]
     pub(crate) fn round_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx2")] {
-            const_f64_as_f64x4!(HALF_NEXT_DOWN, 0.5_f64.next_down());
-            const_f64_as_f64x4!(BOUNDS_LIMIT, 4503599627370496.0);
+          if #[cfg(target_feature="avx512f")] {
+            const_f64_as_f64x8!(HALF_NEXT_DOWN, 0.5_f64.next_down());
+            const_f64_as_f64x8!(BOUNDS_LIMIT, 4503599627370496.0);
 
             let self_abs = self.abs();
 
             let adjusted_self = self_abs + Self::HALF;
-            let result_abs = Self(round_m256d::<{round_op!(Zero)}>(adjusted_self.0));
+            let result_abs = Self(round_m512d::<{round_op!(Zero)}>(adjusted_self.0));
             // The addition breaks for `0.5.next_down()` which incorrectly rounds to
             // `1.0`. This resets the result back to `0.0`.
             let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
             // Large value, infinity and NaN need special handling.
-            let bounds_mask: Self = cast(cmp_gt_mask_i64_m256i(cast(BOUNDS_LIMIT), cast(self_abs)));
+            let bounds_mask: Self = cast(cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(
+              cast(self_abs),
+              cast(BOUNDS_LIMIT),
+            ));
 
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
           } else {
-            let [a, b] = cast::<f64x4, [f64x2; 2]>(self);
-            cast([a.round(), b.round()])
+            Self(Inner {
+              lo: self.0.lo.round(),
+              hi: self.0.hi.round(),
+            })
           }
         }
     }
 
     #[inline]
-    pub(crate) fn round_int_backend(self) -> i64x4 {
+    pub(crate) fn round_int_backend(self) -> i64x8 {
         pick! {
-          if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+          if #[cfg(target_feature="avx512dq")] {
             #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm256_cvtpd_epi64;
+            use core::arch::x86::_mm512_cvtpd_epi64;
             #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm256_cvtpd_epi64;
+            use core::arch::x86_64::_mm512_cvtpd_epi64;
 
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
-            let flip_to_max: i64x4 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+            let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            // TODO(safe_arch): Add `_mm256_cvtpd_epi64`.
-            let cast: i64x4 = cast(m256i(unsafe { _mm256_cvtpd_epi64(non_nan.0.0) }));
+            // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
+            let cast: i64x8 = cast(m512i(unsafe { _mm512_cvtpd_epi64(non_nan.0.0) }));
             flip_to_max ^ cast
           } else {
-            let [a, b]: [f64x2; 2] = cast(self);
-            cast([a.round_int(), b.round_int()])
+            let [a,b]: [f64x4;2] = cast(self);
+            cast([
+              a.round_int(),
+              b.round_int(),
+            ])
           }
         }
     }
 
     #[inline]
-    pub(crate) fn fast_round_int_backend(self) -> i64x4 {
+    pub(crate) fn fast_round_int_backend(self) -> i64x8 {
         pick! {
-          if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+          if #[cfg(target_feature="avx512dq")] {
             #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm256_cvtpd_epi64;
+            use core::arch::x86::_mm512_cvtpd_epi64;
             #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm256_cvtpd_epi64;
+            use core::arch::x86_64::_mm512_cvtpd_epi64;
 
-            // TODO(safe_arch): Add `_mm256_cvtpd_epi64`.
-            cast(m256i(unsafe { _mm256_cvtpd_epi64(self.0.0) }))
+            // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
+            cast(m512i(unsafe { _mm512_cvtpd_epi64(self.0.0) }))
           } else {
-            let [a, b]: [f64x2; 2] = cast(self);
-            cast([a.fast_round_int(), b.fast_round_int()])
+
+            let [a,b]: [f64x4;2] = cast(self);
+            cast([
+              a.fast_round_int(),
+              b.fast_round_int(),
+            ])
           }
         }
     }
@@ -704,8 +687,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn round_ties_even_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(round_m256d::<{round_op!(Nearest)}>(self.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(round_m512d::<{round_op!(Nearest)}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.round_ties_even(),
@@ -718,8 +701,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn trunc_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(round_m256d::<{round_op!(Zero)}>(self.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(round_m512d::<{round_op!(Zero)}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.trunc(),
@@ -730,43 +713,49 @@ impl f64x4 {
     }
 
     #[inline]
-    pub(crate) fn trunc_int_backend(self) -> i64x4 {
+    pub(crate) fn trunc_int_backend(self) -> i64x8 {
         pick! {
-          if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+          if #[cfg(target_feature="avx512dq")] {
             #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm256_cvttpd_epi64;
+            use core::arch::x86::_mm512_cvttpd_epi64;
             #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm256_cvttpd_epi64;
+            use core::arch::x86_64::_mm512_cvttpd_epi64;
 
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
-            let flip_to_max: i64x4 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
+            let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            // TODO(safe_arch): Add `_mm256_cvttpd_epi64`.
-            let cast: i64x4 = cast(m256i(unsafe { _mm256_cvttpd_epi64(non_nan.0.0) }));
+            // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
+            let cast: i64x8 = cast(m512i(unsafe { _mm512_cvttpd_epi64(non_nan.0.0) }));
             flip_to_max ^ cast
           } else {
-            let [a, b]: [f64x2; 2] = cast(self);
-            cast([a.trunc_int(), b.trunc_int()])
+            let [a,b]: [f64x4;2] = cast(self);
+            cast([
+              a.trunc_int(),
+              b.trunc_int(),
+            ])
           }
         }
     }
 
     #[inline]
-    pub(crate) fn fast_trunc_int_backend(self) -> i64x4 {
+    pub(crate) fn fast_trunc_int_backend(self) -> i64x8 {
         pick! {
-          if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
+          if #[cfg(target_feature="avx512dq")] {
             #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm256_cvttpd_epi64;
+            use core::arch::x86::_mm512_cvttpd_epi64;
             #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm256_cvttpd_epi64;
+            use core::arch::x86_64::_mm512_cvttpd_epi64;
 
-            // TODO(safe_arch): Add `_mm256_cvttpd_epi64`.
-            cast(m256i(unsafe { _mm256_cvttpd_epi64(self.0.0) }))
+            // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
+            cast(m512i(unsafe { _mm512_cvttpd_epi64(self.0.0) }))
           } else {
-            let [a, b]: [f64x2; 2] = cast(self);
-            cast([a.fast_trunc_int(), b.fast_trunc_int()])
+            let [a,b]: [f64x4;2] = cast(self);
+            cast([
+              a.fast_trunc_int(),
+              b.fast_trunc_int(),
+            ])
           }
         }
     }
@@ -774,10 +763,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-            Self(fused_mul_add_m256d(self.0, a.0, b.0))
-          } else if #[cfg(target_feature="avx")] {
-            // still want to use 256 bit ops
+          if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+            Self(fused_mul_add_m512d(self.0, a.0, b.0))
+          } else if #[cfg(target_feature="avx512f")] {
+            // still want to use 512 bit ops
             (self * a) + b
           } else {
             Self(Inner {
@@ -791,10 +780,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-            Self(fused_mul_sub_m256d(self.0, a.0, b.0))
-          } else if #[cfg(target_feature="avx")] {
-            // still want to use 256 bit ops
+          if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+            Self(fused_mul_sub_m512d(self.0, a.0, b.0))
+          } else if #[cfg(target_feature="avx512f")] {
+            // still want to use 512 bit ops
             (self * a) - b
           } else {
             Self(Inner {
@@ -808,10 +797,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-            Self(fused_mul_neg_add_m256d(self.0, a.0, b.0))
-          } else if #[cfg(target_feature="avx")] {
-            // still want to use 256 bit ops
+          if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+            Self(fused_mul_neg_add_m512d(self.0, a.0, b.0))
+          } else if #[cfg(target_feature="avx512f")] {
+            // still want to use 512 bit ops
             b - (self * a)
           } else {
             Self(Inner {
@@ -825,10 +814,10 @@ impl f64x4 {
     #[inline]
     pub(crate) fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
-           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-             Self(fused_mul_neg_sub_m256d(self.0, a.0, b.0))
-            } else if #[cfg(target_feature="avx")] {
-              // still want to use 256 bit ops
+           if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
+             Self(fused_mul_neg_sub_m512d(self.0, a.0, b.0))
+            } else if #[cfg(target_feature="avx512f")] {
+              // still want to use 512 bit ops
               -(self * a) - b
             } else {
              Self(Inner {
@@ -841,41 +830,41 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn powf_simd_backend(self, n: Self) -> Self {
-        const_f64_as_f64x4!(ln2d_hi, 0.693145751953125);
-        const_f64_as_f64x4!(ln2d_lo, 1.42860682030941723212E-6);
-        const_f64_as_f64x4!(P0log, 2.0039553499201281259648E1);
-        const_f64_as_f64x4!(P1log, 5.7112963590585538103336E1);
-        const_f64_as_f64x4!(P2log, 6.0949667980987787057556E1);
-        const_f64_as_f64x4!(P3log, 2.9911919328553073277375E1);
-        const_f64_as_f64x4!(P4log, 6.5787325942061044846969E0);
-        const_f64_as_f64x4!(P5log, 4.9854102823193375972212E-1);
-        const_f64_as_f64x4!(P6log, 4.5270000862445199635215E-5);
-        const_f64_as_f64x4!(Q0log, 6.0118660497603843919306E1);
-        const_f64_as_f64x4!(Q1log, 2.1642788614495947685003E2);
-        const_f64_as_f64x4!(Q2log, 3.0909872225312059774938E2);
-        const_f64_as_f64x4!(Q3log, 2.2176239823732856465394E2);
-        const_f64_as_f64x4!(Q4log, 8.3047565967967209469434E1);
-        const_f64_as_f64x4!(Q5log, 1.5062909083469192043167E1);
+        const_f64_as_f64x8!(ln2d_hi, 0.693145751953125);
+        const_f64_as_f64x8!(ln2d_lo, 1.42860682030941723212E-6);
+        const_f64_as_f64x8!(P0log, 2.0039553499201281259648E1);
+        const_f64_as_f64x8!(P1log, 5.7112963590585538103336E1);
+        const_f64_as_f64x8!(P2log, 6.0949667980987787057556E1);
+        const_f64_as_f64x8!(P3log, 2.9911919328553073277375E1);
+        const_f64_as_f64x8!(P4log, 6.5787325942061044846969E0);
+        const_f64_as_f64x8!(P5log, 4.9854102823193375972212E-1);
+        const_f64_as_f64x8!(P6log, 4.5270000862445199635215E-5);
+        const_f64_as_f64x8!(Q0log, 6.0118660497603843919306E1);
+        const_f64_as_f64x8!(Q1log, 2.1642788614495947685003E2);
+        const_f64_as_f64x8!(Q2log, 3.0909872225312059774938E2);
+        const_f64_as_f64x8!(Q3log, 2.2176239823732856465394E2);
+        const_f64_as_f64x8!(Q4log, 8.3047565967967209469434E1);
+        const_f64_as_f64x8!(Q5log, 1.5062909083469192043167E1);
 
         // Taylor expansion constants
-        const_f64_as_f64x4!(p2, 1.0 / 2.0); // coefficients for Taylor expansion of exp
-        const_f64_as_f64x4!(p3, 1.0 / 6.0);
-        const_f64_as_f64x4!(p4, 1.0 / 24.0);
-        const_f64_as_f64x4!(p5, 1.0 / 120.0);
-        const_f64_as_f64x4!(p6, 1.0 / 720.0);
-        const_f64_as_f64x4!(p7, 1.0 / 5040.0);
-        const_f64_as_f64x4!(p8, 1.0 / 40320.0);
-        const_f64_as_f64x4!(p9, 1.0 / 362880.0);
-        const_f64_as_f64x4!(p10, 1.0 / 3628800.0);
-        const_f64_as_f64x4!(p11, 1.0 / 39916800.0);
-        const_f64_as_f64x4!(p12, 1.0 / 479001600.0);
-        const_f64_as_f64x4!(p13, 1.0 / 6227020800.0);
+        const_f64_as_f64x8!(p2, 1.0 / 2.0); // coefficients for Taylor expansion of exp
+        const_f64_as_f64x8!(p3, 1.0 / 6.0);
+        const_f64_as_f64x8!(p4, 1.0 / 24.0);
+        const_f64_as_f64x8!(p5, 1.0 / 120.0);
+        const_f64_as_f64x8!(p6, 1.0 / 720.0);
+        const_f64_as_f64x8!(p7, 1.0 / 5040.0);
+        const_f64_as_f64x8!(p8, 1.0 / 40320.0);
+        const_f64_as_f64x8!(p9, 1.0 / 362880.0);
+        const_f64_as_f64x8!(p10, 1.0 / 3628800.0);
+        const_f64_as_f64x8!(p11, 1.0 / 39916800.0);
+        const_f64_as_f64x8!(p12, 1.0 / 479001600.0);
+        const_f64_as_f64x8!(p13, 1.0 / 6227020800.0);
 
         let x1 = self.abs();
         let x = x1.fraction_2();
-        let mask = x.simd_gt(f64x4::SQRT_2 * f64x4::HALF);
+        let mask = x.simd_gt(f64x8::SQRT_2 * f64x8::HALF);
         let x = (!mask).select(x + x, x);
-        let x = x - f64x4::ONE;
+        let x = x - f64x8::ONE;
         let x2 = x * x;
         let px = polynomial_6!(x, P0log, P1log, P2log, P3log, P4log, P5log, P6log);
         let px = px * x * x2;
@@ -883,38 +872,38 @@ impl f64x4 {
         let lg1 = px / qx;
 
         let ef = x1.exponent();
-        let ef = mask.select(ef + f64x4::ONE, ef);
+        let ef = mask.select(ef + f64x8::ONE, ef);
         let e1 = (ef * n).round_ties_even();
         let yr = ef.fast_mul_sub(n, e1);
 
-        let lg = f64x4::HALF.fast_mul_neg_add(x2, x) + lg1;
-        let x2err = (f64x4::HALF * x).fast_mul_sub(x, f64x4::HALF * x2);
-        let lg_err = f64x4::HALF.fast_mul_add(x2, lg - x) - lg1;
+        let lg = f64x8::HALF.fast_mul_neg_add(x2, x) + lg1;
+        let x2err = (f64x8::HALF * x).fast_mul_sub(x, f64x8::HALF * x2);
+        let lg_err = f64x8::HALF.fast_mul_add(x2, lg - x) - lg1;
 
-        let e2 = (lg * n * f64x4::LOG2_E).round_ties_even();
+        let e2 = (lg * n * f64x8::LOG2_E).round_ties_even();
         let v = lg.fast_mul_sub(n, e2 * ln2d_hi);
         let v = e2.fast_mul_neg_add(ln2d_lo, v);
-        let v = v - (lg_err + x2err).fast_mul_sub(n, yr * f64x4::LN_2);
+        let v = v - (lg_err + x2err).fast_mul_sub(n, yr * f64x8::LN_2);
 
         let x = v;
-        let e3 = (x * f64x4::LOG2_E).round_ties_even();
-        let x = e3.fast_mul_neg_add(f64x4::LN_2, x);
-        let z = polynomial_13!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) + f64x4::ONE;
+        let e3 = (x * f64x8::LOG2_E).round_ties_even();
+        let x = e3.fast_mul_neg_add(f64x8::LN_2, x);
+        let z = polynomial_13!(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) + f64x8::ONE;
         let ee = e1 + e2 + e3;
-        let ei = cast::<_, i64x4>(ee.round_int());
-        let ej = cast::<_, i64x4>(ei + (cast::<_, i64x4>(z) >> 52));
+        let ei = cast::<_, i64x8>(ee.round_int());
+        let ej = cast::<_, i64x8>(ei + (cast::<_, i64x8>(z) >> 52));
 
         let overflow =
-            cast::<_, f64x4>(!ej.simd_lt(i64x4::splat(0x07FF))) | ee.simd_gt(f64x4::splat(3000.0));
+            cast::<_, f64x8>(!ej.simd_lt(i64x8::splat(0x07FF))) | ee.simd_gt(f64x8::splat(3000.0));
         let underflow =
-            cast::<_, f64x4>(!ej.simd_gt(i64x4::splat(0x000))) | ee.simd_lt(f64x4::splat(-3000.0));
+            cast::<_, f64x8>(!ej.simd_gt(i64x8::splat(0x000))) | ee.simd_lt(f64x8::splat(-3000.0));
 
         // Add exponent by integer addition
-        let z = cast::<_, f64x4>(cast::<_, i64x4>(z) + (ei << 52));
+        let z = cast::<_, f64x8>(cast::<_, i64x8>(z) + (ei << 52));
 
         // Check for overflow/underflow
         let z = if (overflow | underflow).any() {
-            let z = underflow.select(f64x4::ZERO, z);
+            let z = underflow.select(f64x8::ZERO, z);
             overflow.select(Self::infinity(), z)
         } else {
             z
@@ -923,9 +912,9 @@ impl f64x4 {
         // Check for self == 0
         let x_zero = self.is_zero_or_subnormal();
         let z = x_zero.select(
-            n.simd_lt(f64x4::ZERO).select(
+            n.simd_lt(f64x8::ZERO).select(
                 Self::infinity(),
-                n.simd_eq(f64x4::ZERO).select(f64x4::ONE, f64x4::ZERO),
+                n.simd_eq(f64x8::ZERO).select(f64x8::ONE, f64x8::ZERO),
             ),
             z,
         );
@@ -936,7 +925,7 @@ impl f64x4 {
             // Y into an integer
             let yi = n.simd_eq(n.round_ties_even());
             // Is y odd? If yes flip the sign of the result.
-            let y_odd = cast::<i64x4, f64x4>(n.round_int() << 63);
+            let y_odd = cast::<i64x8, f64x8>(n.round_int() << 63);
 
             let z1 = yi.select(
                 z | y_odd,
@@ -961,8 +950,8 @@ impl f64x4 {
     #[inline]
     pub(crate) fn sqrt_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(sqrt_m256d(self.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(sqrt_m512d(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.sqrt(),
@@ -974,32 +963,32 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn exp_backend(self) -> Self {
-        const_f64_as_f64x4!(P2, 1.0 / 2.0);
-        const_f64_as_f64x4!(P3, 1.0 / 6.0);
-        const_f64_as_f64x4!(P4, 1.0 / 24.0);
-        const_f64_as_f64x4!(P5, 1.0 / 120.0);
-        const_f64_as_f64x4!(P6, 1.0 / 720.0);
-        const_f64_as_f64x4!(P7, 1.0 / 5040.0);
-        const_f64_as_f64x4!(P8, 1.0 / 40320.0);
-        const_f64_as_f64x4!(P9, 1.0 / 362880.0);
-        const_f64_as_f64x4!(P10, 1.0 / 3628800.0);
-        const_f64_as_f64x4!(P11, 1.0 / 39916800.0);
-        const_f64_as_f64x4!(P12, 1.0 / 479001600.0);
-        const_f64_as_f64x4!(P13, 1.0 / 6227020800.0);
+        const_f64_as_f64x8!(P2, 1.0 / 2.0);
+        const_f64_as_f64x8!(P3, 1.0 / 6.0);
+        const_f64_as_f64x8!(P4, 1.0 / 24.0);
+        const_f64_as_f64x8!(P5, 1.0 / 120.0);
+        const_f64_as_f64x8!(P6, 1.0 / 720.0);
+        const_f64_as_f64x8!(P7, 1.0 / 5040.0);
+        const_f64_as_f64x8!(P8, 1.0 / 40320.0);
+        const_f64_as_f64x8!(P9, 1.0 / 362880.0);
+        const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
+        const_f64_as_f64x8!(P11, 1.0 / 39916800.0);
+        const_f64_as_f64x8!(P12, 1.0 / 479001600.0);
+        const_f64_as_f64x8!(P13, 1.0 / 6227020800.0);
         // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
         // following fdlibm's approach (Sun Microsystems, https://www.netlib.org/fdlibm/ e_exp.c).
         // Values chosen so LN2D_HI + LN2D_LO = ln(2) to full f64 precision.
-        const_f64_as_f64x4!(LN2D_HI, 0.693145751953125);
-        const_f64_as_f64x4!(LN2D_LO, 1.42860682030941723212E-6);
-        let max_x = f64x4::from(709.783);
-        let min_x = f64x4::from(-744.79);
+        const_f64_as_f64x8!(LN2D_HI, 0.693145751953125);
+        const_f64_as_f64x8!(LN2D_LO, 1.42860682030941723212E-6);
+        let max_x = f64x8::from(709.783);
+        let min_x = f64x8::from(-744.79);
         let finite = self.is_finite();
         // x < min_x: e^x underflows to 0 -- skip the entire pipeline
         let neg_underflow = self.simd_lt(min_x) & finite;
         if neg_underflow.all() {
             return Self::ZERO;
         }
-        let max_r = f64x4::from(1023.0);
+        let max_r = f64x8::from(1023.0);
         let r = (self * Self::LOG2_E).round_ties_even();
         let big = r.simd_gt(max_r);
         let r_safe = big.select(max_r, r);
@@ -1025,20 +1014,20 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn exp2_backend(self) -> Self {
-        const_f64_as_f64x4!(P2, 1.0 / 2.0);
-        const_f64_as_f64x4!(P3, 1.0 / 6.0);
-        const_f64_as_f64x4!(P4, 1.0 / 24.0);
-        const_f64_as_f64x4!(P5, 1.0 / 120.0);
-        const_f64_as_f64x4!(P6, 1.0 / 720.0);
-        const_f64_as_f64x4!(P7, 1.0 / 5040.0);
-        const_f64_as_f64x4!(P8, 1.0 / 40320.0);
-        const_f64_as_f64x4!(P9, 1.0 / 362880.0);
-        const_f64_as_f64x4!(P10, 1.0 / 3628800.0);
+        const_f64_as_f64x8!(P2, 1.0 / 2.0);
+        const_f64_as_f64x8!(P3, 1.0 / 6.0);
+        const_f64_as_f64x8!(P4, 1.0 / 24.0);
+        const_f64_as_f64x8!(P5, 1.0 / 120.0);
+        const_f64_as_f64x8!(P6, 1.0 / 720.0);
+        const_f64_as_f64x8!(P7, 1.0 / 5040.0);
+        const_f64_as_f64x8!(P8, 1.0 / 40320.0);
+        const_f64_as_f64x8!(P9, 1.0 / 362880.0);
+        const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
 
         // max_x = log2(f64::MAX) ≈ 1023.9999999999999
         // min_x = log2(f64::MIN_POSITIVE) - 52 ≈ -1022 - 52 = -1074
-        let max_x = f64x4::from(1023.9999999999999);
-        let min_x = f64x4::from(-1074.5);
+        let max_x = f64x8::from(1023.9999999999999);
+        let min_x = f64x8::from(-1074.5);
         let finite = self.is_finite();
         let neg_underflow = self.simd_lt(min_x) & finite;
         if neg_underflow.all() {
@@ -1046,7 +1035,7 @@ impl f64x4 {
         }
 
         let round = self.round_ties_even();
-        let max_r = f64x4::from(1023.0);
+        let max_r = f64x8::from(1023.0);
         let big = round.simd_gt(max_r);
         let r_safe = big.select(max_r, round);
         let excess = round - max_r;
@@ -1075,28 +1064,28 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn ln_backend(self) -> Self {
-        const_f64_as_f64x4!(HALF, 0.5);
-        const_f64_as_f64x4!(P0, 7.70838733755885391666E0);
-        const_f64_as_f64x4!(P1, 1.79368678507819816313E1);
-        const_f64_as_f64x4!(P2, 1.44989225341610930846E1);
-        const_f64_as_f64x4!(P3, 4.70579119878881725854E0);
-        const_f64_as_f64x4!(P4, 4.97494994976747001425E-1);
-        const_f64_as_f64x4!(P5, 1.01875663804580931796E-4);
+        const_f64_as_f64x8!(HALF, 0.5);
+        const_f64_as_f64x8!(P0, 7.70838733755885391666E0);
+        const_f64_as_f64x8!(P1, 1.79368678507819816313E1);
+        const_f64_as_f64x8!(P2, 1.44989225341610930846E1);
+        const_f64_as_f64x8!(P3, 4.70579119878881725854E0);
+        const_f64_as_f64x8!(P4, 4.97494994976747001425E-1);
+        const_f64_as_f64x8!(P5, 1.01875663804580931796E-4);
 
-        const_f64_as_f64x4!(Q0, 2.31251620126765340583E1);
-        const_f64_as_f64x4!(Q1, 7.11544750618563894466E1);
-        const_f64_as_f64x4!(Q2, 8.29875266912776603211E1);
-        const_f64_as_f64x4!(Q3, 4.52279145837532221105E1);
-        const_f64_as_f64x4!(Q4, 1.12873587189167450590E1);
+        const_f64_as_f64x8!(Q0, 2.31251620126765340583E1);
+        const_f64_as_f64x8!(Q1, 7.11544750618563894466E1);
+        const_f64_as_f64x8!(Q2, 8.29875266912776603211E1);
+        const_f64_as_f64x8!(Q3, 4.52279145837532221105E1);
+        const_f64_as_f64x8!(Q4, 1.12873587189167450590E1);
         // LN2F_HI/LO from fdlibm (Freely Distributable LIBM)
         // Sun Microsystems, Inc. https://www.netlib.org/fdlibm/
         // e_log.c: bit-exact double-double decomposition of ln(2) for f64.
         // Replaced the original f32-literals (0.693359375, -2.12194440e-4)
         // which had ~10 significant digits, causing ~630 ULP error in f64 ln.
-        const_f64_as_f64x4!(LN2F_HI, f64::from_bits(0x3FE62E42FEE00000));
-        const_f64_as_f64x4!(LN2F_LO, f64::from_bits(0x3DEA39EF35793C76));
-        const_f64_as_f64x4!(VM_SQRT2, 1.414213562373095048801);
-        const_f64_as_f64x4!(VM_SMALLEST_NORMAL, 2.2250738585072014E-308);
+        const_f64_as_f64x8!(LN2F_HI, f64::from_bits(0x3FE62E42FEE00000));
+        const_f64_as_f64x8!(LN2F_LO, f64::from_bits(0x3DEA39EF35793C76));
+        const_f64_as_f64x8!(VM_SQRT2, 1.414213562373095048801);
+        const_f64_as_f64x8!(VM_SMALLEST_NORMAL, 2.2250738585072014E-308);
 
         let x1 = self;
         let x = Self::fraction_2(x1);
@@ -1155,12 +1144,12 @@ impl f64x4 {
         // Naoki Shibata et al., "SLEEF: A Portable Vectorized Library of C99
         // Mathematical Functions", https://sleef.org / https://github.com/shibatch/sleef
         // Licensed under the Boost Software License 1.0.
-        const_f64_as_f64x4!(C0, 2.2307275302496609725722);
-        const_f64_as_f64x4!(C1, -3.85841935510444988821632);
-        const_f64_as_f64x4!(C2, 6.03990368989458747961407);
-        const_f64_as_f64x4!(C3, -5.73353060922947843636166);
-        const_f64_as_f64x4!(C4, 2.96155103020039511818595);
-        const_f64_as_f64x4!(C5, -0.640245898480692909870982);
+        const_f64_as_f64x8!(C0, 2.2307275302496609725722);
+        const_f64_as_f64x8!(C1, -3.85841935510444988821632);
+        const_f64_as_f64x8!(C2, 6.03990368989458747961407);
+        const_f64_as_f64x8!(C3, -5.73353060922947843636166);
+        const_f64_as_f64x8!(C4, 2.96155103020039511818595);
+        const_f64_as_f64x8!(C5, -0.640245898480692909870982);
         let mut x = polynomial_5!(d, C0, C1, C2, C3, C4, C5);
 
         // Newton for 1/cbrt: x = x - (d * x^4 - x) / 3.
@@ -1181,8 +1170,8 @@ impl f64x4 {
         let e_adj = neg.select(e - two, e);
         let k = (e_adj / three).trunc();
         let r = e - three * k;
-        const_f64_as_f64x4!(CBRT2, 1.2599210498948732);
-        const_f64_as_f64x4!(CBRT4, 1.5874010519681994);
+        const_f64_as_f64x8!(CBRT2, 1.2599210498948732);
+        const_f64_as_f64x8!(CBRT4, 1.5874010519681994);
         y = r.simd_eq(Self::ONE).select(y * CBRT2, y);
         y = r.simd_eq(two).select(y * CBRT4, y);
         y *= Self::vm_pow2n(k);
@@ -1199,35 +1188,35 @@ impl f64x4 {
     pub(crate) fn asin_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
-        const_f64_as_f64x4!(R3asin, -5.634242780008963776856E-1);
-        const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
-        const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
-        const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
+        const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
+        const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
+        const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
+        const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
+        const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
 
-        const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
-        const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
-        const_f64_as_f64x4!(S1asin, -3.838770957603691357202E2);
-        const_f64_as_f64x4!(S0asin, 3.424398657913078477438E2);
+        const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
+        const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
+        const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
+        const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
 
-        const_f64_as_f64x4!(P5asin, 4.253011369004428248960E-3);
-        const_f64_as_f64x4!(P4asin, -6.019598008014123785661E-1);
-        const_f64_as_f64x4!(P3asin, 5.444622390564711410273E0);
-        const_f64_as_f64x4!(P2asin, -1.626247967210700244449E1);
-        const_f64_as_f64x4!(P1asin, 1.956261983317594739197E1);
-        const_f64_as_f64x4!(P0asin, -8.198089802484824371615E0);
+        const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
+        const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
+        const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
+        const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
+        const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
+        const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
 
-        const_f64_as_f64x4!(Q4asin, -1.474091372988853791896E1);
-        const_f64_as_f64x4!(Q3asin, 7.049610280856842141659E1);
-        const_f64_as_f64x4!(Q2asin, -1.471791292232726029859E2);
-        const_f64_as_f64x4!(Q1asin, 1.395105614657485689735E2);
-        const_f64_as_f64x4!(Q0asin, -4.918853881490881290097E1);
+        const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
+        const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
+        const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
+        const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
+        const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
 
         let xa = self.abs();
 
-        let big = xa.simd_ge(f64x4::splat(0.625));
+        let big = xa.simd_ge(f64x8::splat(0.625));
 
-        let x1 = big.select(f64x4::splat(1.0) - xa, xa * xa);
+        let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
 
         let x2 = x1 * x1;
         let x3 = x2 * x1;
@@ -1237,10 +1226,10 @@ impl f64x4 {
         let do_big = big.any();
         let do_small = !big.all();
 
-        let mut rx = f64x4::default();
-        let mut sx = f64x4::default();
-        let mut px = f64x4::default();
-        let mut qx = f64x4::default();
+        let mut rx = f64x8::default();
+        let mut sx = f64x8::default();
+        let mut px = f64x8::default();
+        let mut qx = f64x8::default();
 
         if do_big {
             rx = x3.fast_mul_add(R3asin, x2 * R2asin)
@@ -1262,8 +1251,8 @@ impl f64x4 {
 
         let y1 = vx / wx * x1;
 
-        let mut z1 = f64x4::default();
-        let mut z2 = f64x4::default();
+        let mut z1 = f64x8::default();
+        let mut z2 = f64x8::default();
         if do_big {
             let xb = (x1 + x1).sqrt();
             z1 = xb.fast_mul_add(y1, xb);
@@ -1274,7 +1263,7 @@ impl f64x4 {
         }
 
         // asin
-        let z3 = f64x4::FRAC_PI_2 - z1;
+        let z3 = f64x8::FRAC_PI_2 - z1;
         let asin = big.select(z3, z2);
         let asin = asin.flipsign(self);
 
@@ -1285,35 +1274,35 @@ impl f64x4 {
     pub(crate) fn acos_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
-        const_f64_as_f64x4!(R3asin, -5.634242780008963776856E-1);
-        const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
-        const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
-        const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
+        const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
+        const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
+        const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
+        const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
+        const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
 
-        const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
-        const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
-        const_f64_as_f64x4!(S1asin, -3.838770957603691357202E2);
-        const_f64_as_f64x4!(S0asin, 3.424398657913078477438E2);
+        const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
+        const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
+        const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
+        const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
 
-        const_f64_as_f64x4!(P5asin, 4.253011369004428248960E-3);
-        const_f64_as_f64x4!(P4asin, -6.019598008014123785661E-1);
-        const_f64_as_f64x4!(P3asin, 5.444622390564711410273E0);
-        const_f64_as_f64x4!(P2asin, -1.626247967210700244449E1);
-        const_f64_as_f64x4!(P1asin, 1.956261983317594739197E1);
-        const_f64_as_f64x4!(P0asin, -8.198089802484824371615E0);
+        const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
+        const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
+        const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
+        const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
+        const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
+        const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
 
-        const_f64_as_f64x4!(Q4asin, -1.474091372988853791896E1);
-        const_f64_as_f64x4!(Q3asin, 7.049610280856842141659E1);
-        const_f64_as_f64x4!(Q2asin, -1.471791292232726029859E2);
-        const_f64_as_f64x4!(Q1asin, 1.395105614657485689735E2);
-        const_f64_as_f64x4!(Q0asin, -4.918853881490881290097E1);
+        const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
+        const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
+        const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
+        const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
+        const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
 
         let xa = self.abs();
 
-        let big = xa.simd_ge(f64x4::splat(0.625));
+        let big = xa.simd_ge(f64x8::splat(0.625));
 
-        let x1 = big.select(f64x4::splat(1.0) - xa, xa * xa);
+        let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
 
         let x2 = x1 * x1;
         let x3 = x2 * x1;
@@ -1323,10 +1312,10 @@ impl f64x4 {
         let do_big = big.any();
         let do_small = !big.all();
 
-        let mut rx = f64x4::default();
-        let mut sx = f64x4::default();
-        let mut px = f64x4::default();
-        let mut qx = f64x4::default();
+        let mut rx = f64x8::default();
+        let mut sx = f64x8::default();
+        let mut px = f64x8::default();
+        let mut qx = f64x8::default();
 
         if do_big {
             rx = x3.fast_mul_add(R3asin, x2 * R2asin)
@@ -1348,8 +1337,8 @@ impl f64x4 {
 
         let y1 = vx / wx * x1;
 
-        let mut z1 = f64x4::default();
-        let mut z2 = f64x4::default();
+        let mut z1 = f64x8::default();
+        let mut z2 = f64x8::default();
         if do_big {
             let xb = (x1 + x1).sqrt();
             z1 = xb.fast_mul_add(y1, xb);
@@ -1360,8 +1349,8 @@ impl f64x4 {
         }
 
         // acos
-        let z3 = self.simd_lt(f64x4::ZERO).select(f64x4::PI - z1, z1);
-        let z4 = f64x4::FRAC_PI_2 - z2.flipsign(self);
+        let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
+        let z4 = f64x8::FRAC_PI_2 - z2.flipsign(self);
         let acos = big.select(z3, z4);
 
         acos
@@ -1371,21 +1360,21 @@ impl f64x4 {
     pub(crate) fn atan_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f64_as_f64x4!(MORE_BITS, 6.123233995736765886130E-17);
-        const_f64_as_f64x4!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
-        const_f64_as_f64x4!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
+        const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
+        const_f64_as_f64x8!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
+        const_f64_as_f64x8!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
 
-        const_f64_as_f64x4!(P4atan, -8.750608600031904122785E-1);
-        const_f64_as_f64x4!(P3atan, -1.615753718733365076637E1);
-        const_f64_as_f64x4!(P2atan, -7.500855792314704667340E1);
-        const_f64_as_f64x4!(P1atan, -1.228866684490136173410E2);
-        const_f64_as_f64x4!(P0atan, -6.485021904942025371773E1);
+        const_f64_as_f64x8!(P4atan, -8.750608600031904122785E-1);
+        const_f64_as_f64x8!(P3atan, -1.615753718733365076637E1);
+        const_f64_as_f64x8!(P2atan, -7.500855792314704667340E1);
+        const_f64_as_f64x8!(P1atan, -1.228866684490136173410E2);
+        const_f64_as_f64x8!(P0atan, -6.485021904942025371773E1);
 
-        const_f64_as_f64x4!(Q4atan, 2.485846490142306297962E1);
-        const_f64_as_f64x4!(Q3atan, 1.650270098316988542046E2);
-        const_f64_as_f64x4!(Q2atan, 4.328810604912902668951E2);
-        const_f64_as_f64x4!(Q1atan, 4.853903996359136964868E2);
-        const_f64_as_f64x4!(Q0atan, 1.945506571482613964425E2);
+        const_f64_as_f64x8!(Q4atan, 2.485846490142306297962E1);
+        const_f64_as_f64x8!(Q3atan, 1.650270098316988542046E2);
+        const_f64_as_f64x8!(Q2atan, 4.328810604912902668951E2);
+        const_f64_as_f64x8!(Q1atan, 4.853903996359136964868E2);
+        const_f64_as_f64x8!(Q0atan, 1.945506571482613964425E2);
 
         let t = self.abs();
 
@@ -1427,21 +1416,21 @@ impl f64x4 {
     pub(crate) fn atan2_backend(self, x: Self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f64_as_f64x4!(MORE_BITS, 6.123233995736765886130E-17);
-        const_f64_as_f64x4!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
-        const_f64_as_f64x4!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
+        const_f64_as_f64x8!(MORE_BITS, 6.123233995736765886130E-17);
+        const_f64_as_f64x8!(MORE_BITS_O2, 6.123233995736765886130E-17 * 0.5);
+        const_f64_as_f64x8!(T3PO8, core::f64::consts::SQRT_2 + 1.0);
 
-        const_f64_as_f64x4!(P4atan, -8.750608600031904122785E-1);
-        const_f64_as_f64x4!(P3atan, -1.615753718733365076637E1);
-        const_f64_as_f64x4!(P2atan, -7.500855792314704667340E1);
-        const_f64_as_f64x4!(P1atan, -1.228866684490136173410E2);
-        const_f64_as_f64x4!(P0atan, -6.485021904942025371773E1);
+        const_f64_as_f64x8!(P4atan, -8.750608600031904122785E-1);
+        const_f64_as_f64x8!(P3atan, -1.615753718733365076637E1);
+        const_f64_as_f64x8!(P2atan, -7.500855792314704667340E1);
+        const_f64_as_f64x8!(P1atan, -1.228866684490136173410E2);
+        const_f64_as_f64x8!(P0atan, -6.485021904942025371773E1);
 
-        const_f64_as_f64x4!(Q4atan, 2.485846490142306297962E1);
-        const_f64_as_f64x4!(Q3atan, 1.650270098316988542046E2);
-        const_f64_as_f64x4!(Q2atan, 4.328810604912902668951E2);
-        const_f64_as_f64x4!(Q1atan, 4.853903996359136964868E2);
-        const_f64_as_f64x4!(Q0atan, 1.945506571482613964425E2);
+        const_f64_as_f64x8!(Q4atan, 2.485846490142306297962E1);
+        const_f64_as_f64x8!(Q3atan, 1.650270098316988542046E2);
+        const_f64_as_f64x8!(Q2atan, 4.328810604912902668951E2);
+        const_f64_as_f64x8!(Q1atan, 4.853903996359136964868E2);
+        const_f64_as_f64x8!(Q0atan, 1.945506571482613964425E2);
 
         let y = self;
 
@@ -1508,25 +1497,25 @@ impl f64x4 {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
 
-        const_f64_as_f64x4!(P0sin, -1.66666666666666307295E-1);
-        const_f64_as_f64x4!(P1sin, 8.33333333332211858878E-3);
-        const_f64_as_f64x4!(P2sin, -1.98412698295895385996E-4);
-        const_f64_as_f64x4!(P3sin, 2.75573136213857245213E-6);
-        const_f64_as_f64x4!(P4sin, -2.50507477628578072866E-8);
-        const_f64_as_f64x4!(P5sin, 1.58962301576546568060E-10);
+        const_f64_as_f64x8!(P0sin, -1.66666666666666307295E-1);
+        const_f64_as_f64x8!(P1sin, 8.33333333332211858878E-3);
+        const_f64_as_f64x8!(P2sin, -1.98412698295895385996E-4);
+        const_f64_as_f64x8!(P3sin, 2.75573136213857245213E-6);
+        const_f64_as_f64x8!(P4sin, -2.50507477628578072866E-8);
+        const_f64_as_f64x8!(P5sin, 1.58962301576546568060E-10);
 
-        const_f64_as_f64x4!(P0cos, 4.16666666666665929218E-2);
-        const_f64_as_f64x4!(P1cos, -1.38888888888730564116E-3);
-        const_f64_as_f64x4!(P2cos, 2.48015872888517045348E-5);
-        const_f64_as_f64x4!(P3cos, -2.75573141792967388112E-7);
-        const_f64_as_f64x4!(P4cos, 2.08757008419747316778E-9);
-        const_f64_as_f64x4!(P5cos, -1.13585365213876817300E-11);
+        const_f64_as_f64x8!(P0cos, 4.16666666666665929218E-2);
+        const_f64_as_f64x8!(P1cos, -1.38888888888730564116E-3);
+        const_f64_as_f64x8!(P2cos, 2.48015872888517045348E-5);
+        const_f64_as_f64x8!(P3cos, -2.75573141792967388112E-7);
+        const_f64_as_f64x8!(P4cos, 2.08757008419747316778E-9);
+        const_f64_as_f64x8!(P5cos, -1.13585365213876817300E-11);
 
-        const_f64_as_f64x4!(DP1, 7.853981554508209228515625E-1 * 2.);
-        const_f64_as_f64x4!(DP2, 7.94662735614792836714E-9 * 2.);
-        const_f64_as_f64x4!(DP3, 3.06161699786838294307E-17 * 2.);
+        const_f64_as_f64x8!(DP1, 7.853981554508209228515625E-1 * 2.);
+        const_f64_as_f64x8!(DP2, 7.94662735614792836714E-9 * 2.);
+        const_f64_as_f64x8!(DP3, 3.06161699786838294307E-17 * 2.);
 
-        const_f64_as_f64x4!(TWO_OVER_PI, 2.0 / core::f64::consts::PI);
+        const_f64_as_f64x8!(TWO_OVER_PI, 2.0 / core::f64::consts::PI);
 
         let xa = self.abs();
 
@@ -1539,24 +1528,24 @@ impl f64x4 {
         let mut s = polynomial_5!(x2, P0sin, P1sin, P2sin, P3sin, P4sin, P5sin);
         let mut c = polynomial_5!(x2, P0cos, P1cos, P2cos, P3cos, P4cos, P5cos);
         s = (x * x2).fast_mul_add(s, x);
-        c = (x2 * x2).fast_mul_add(c, x2.fast_mul_neg_add(f64x4::from(0.5), f64x4::from(1.0)));
+        c = (x2 * x2).fast_mul_add(c, x2.fast_mul_neg_add(f64x8::from(0.5), f64x8::from(1.0)));
 
-        let swap = !((q & i64x4::from(1)).simd_eq(i64x4::from(0)));
+        let swap = !((q & i64x8::from(1)).simd_eq(i64x8::from(0)));
 
-        let mut overflow: f64x4 = cast(q.simd_gt(i64x4::from(0x80000000000000)));
+        let mut overflow: f64x8 = cast(q.simd_gt(i64x8::from(0x80000000000000)));
         overflow &= xa.is_finite();
-        s = overflow.select(f64x4::from(0.0), s);
-        c = overflow.select(f64x4::from(1.0), c);
+        s = overflow.select(f64x8::from(0.0), s);
+        c = overflow.select(f64x8::from(1.0), c);
 
         // calc sin
-        let mut sin1 = cast::<_, f64x4>(swap).select(c, s);
-        let sign_sin: i64x4 = (q << 62) ^ cast::<_, i64x4>(self);
+        let mut sin1 = cast::<_, f64x8>(swap).select(c, s);
+        let sign_sin: i64x8 = (q << 62) ^ cast::<_, i64x8>(self);
         sin1 = sin1.flipsign(cast(sign_sin));
 
         // calc cos
-        let mut cos1 = cast::<_, f64x4>(swap).select(s, c);
-        let sign_cos: i64x4 = ((q + i64x4::from(1)) & i64x4::from(2)) << 62;
-        cos1 ^= cast::<_, f64x4>(sign_cos);
+        let mut cos1 = cast::<_, f64x8>(swap).select(s, c);
+        let sign_cos: i64x8 = ((q + i64x8::from(1)) & i64x8::from(2)) << 62;
+        cos1 ^= cast::<_, f64x8>(sign_cos);
 
         // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
         let finite = self.is_finite();
@@ -1571,35 +1560,35 @@ impl f64x4 {
     pub(crate) fn asin_acos_backend(self) -> (Self, Self) {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
-        const_f64_as_f64x4!(R3asin, -5.634242780008963776856E-1);
-        const_f64_as_f64x4!(R2asin, 6.968710824104713396794E0);
-        const_f64_as_f64x4!(R1asin, -2.556901049652824852289E1);
-        const_f64_as_f64x4!(R0asin, 2.853665548261061424989E1);
+        const_f64_as_f64x8!(R4asin, 2.967721961301243206100E-3);
+        const_f64_as_f64x8!(R3asin, -5.634242780008963776856E-1);
+        const_f64_as_f64x8!(R2asin, 6.968710824104713396794E0);
+        const_f64_as_f64x8!(R1asin, -2.556901049652824852289E1);
+        const_f64_as_f64x8!(R0asin, 2.853665548261061424989E1);
 
-        const_f64_as_f64x4!(S3asin, -2.194779531642920639778E1);
-        const_f64_as_f64x4!(S2asin, 1.470656354026814941758E2);
-        const_f64_as_f64x4!(S1asin, -3.838770957603691357202E2);
-        const_f64_as_f64x4!(S0asin, 3.424398657913078477438E2);
+        const_f64_as_f64x8!(S3asin, -2.194779531642920639778E1);
+        const_f64_as_f64x8!(S2asin, 1.470656354026814941758E2);
+        const_f64_as_f64x8!(S1asin, -3.838770957603691357202E2);
+        const_f64_as_f64x8!(S0asin, 3.424398657913078477438E2);
 
-        const_f64_as_f64x4!(P5asin, 4.253011369004428248960E-3);
-        const_f64_as_f64x4!(P4asin, -6.019598008014123785661E-1);
-        const_f64_as_f64x4!(P3asin, 5.444622390564711410273E0);
-        const_f64_as_f64x4!(P2asin, -1.626247967210700244449E1);
-        const_f64_as_f64x4!(P1asin, 1.956261983317594739197E1);
-        const_f64_as_f64x4!(P0asin, -8.198089802484824371615E0);
+        const_f64_as_f64x8!(P5asin, 4.253011369004428248960E-3);
+        const_f64_as_f64x8!(P4asin, -6.019598008014123785661E-1);
+        const_f64_as_f64x8!(P3asin, 5.444622390564711410273E0);
+        const_f64_as_f64x8!(P2asin, -1.626247967210700244449E1);
+        const_f64_as_f64x8!(P1asin, 1.956261983317594739197E1);
+        const_f64_as_f64x8!(P0asin, -8.198089802484824371615E0);
 
-        const_f64_as_f64x4!(Q4asin, -1.474091372988853791896E1);
-        const_f64_as_f64x4!(Q3asin, 7.049610280856842141659E1);
-        const_f64_as_f64x4!(Q2asin, -1.471791292232726029859E2);
-        const_f64_as_f64x4!(Q1asin, 1.395105614657485689735E2);
-        const_f64_as_f64x4!(Q0asin, -4.918853881490881290097E1);
+        const_f64_as_f64x8!(Q4asin, -1.474091372988853791896E1);
+        const_f64_as_f64x8!(Q3asin, 7.049610280856842141659E1);
+        const_f64_as_f64x8!(Q2asin, -1.471791292232726029859E2);
+        const_f64_as_f64x8!(Q1asin, 1.395105614657485689735E2);
+        const_f64_as_f64x8!(Q0asin, -4.918853881490881290097E1);
 
         let xa = self.abs();
 
-        let big = xa.simd_ge(f64x4::splat(0.625));
+        let big = xa.simd_ge(f64x8::splat(0.625));
 
-        let x1 = big.select(f64x4::splat(1.0) - xa, xa * xa);
+        let x1 = big.select(f64x8::splat(1.0) - xa, xa * xa);
 
         let x2 = x1 * x1;
         let x3 = x2 * x1;
@@ -1609,10 +1598,10 @@ impl f64x4 {
         let do_big = big.any();
         let do_small = !big.all();
 
-        let mut rx = f64x4::default();
-        let mut sx = f64x4::default();
-        let mut px = f64x4::default();
-        let mut qx = f64x4::default();
+        let mut rx = f64x8::default();
+        let mut sx = f64x8::default();
+        let mut px = f64x8::default();
+        let mut qx = f64x8::default();
 
         if do_big {
             rx = x3.fast_mul_add(R3asin, x2 * R2asin)
@@ -1635,8 +1624,8 @@ impl f64x4 {
 
         let y1 = vx / wx * x1;
 
-        let mut z1 = f64x4::default();
-        let mut z2 = f64x4::default();
+        let mut z1 = f64x8::default();
+        let mut z2 = f64x8::default();
         if do_big {
             let xb = (x1 + x1).sqrt();
             z1 = xb.fast_mul_add(y1, xb);
@@ -1647,13 +1636,13 @@ impl f64x4 {
         }
 
         // asin
-        let z3 = f64x4::FRAC_PI_2 - z1;
+        let z3 = f64x8::FRAC_PI_2 - z1;
         let asin = big.select(z3, z2);
         let asin = asin.flipsign(self);
 
         // acos
-        let z3 = self.simd_lt(f64x4::ZERO).select(f64x4::PI - z1, z1);
-        let z4 = f64x4::FRAC_PI_2 - z2.flipsign(self);
+        let z3 = self.simd_lt(f64x8::ZERO).select(f64x8::PI - z1, z1);
+        let z4 = f64x8::FRAC_PI_2 - z2.flipsign(self);
         let acos = big.select(z3, z4);
 
         (asin, acos)
@@ -1661,34 +1650,34 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn exp_m1_backend(self) -> Self {
-        const_f64_as_f64x4!(P2, 1.0 / 2.0);
-        const_f64_as_f64x4!(P3, 1.0 / 6.0);
-        const_f64_as_f64x4!(P4, 1.0 / 24.0);
-        const_f64_as_f64x4!(P5, 1.0 / 120.0);
-        const_f64_as_f64x4!(P6, 1.0 / 720.0);
-        const_f64_as_f64x4!(P7, 1.0 / 5040.0);
-        const_f64_as_f64x4!(P8, 1.0 / 40320.0);
-        const_f64_as_f64x4!(P9, 1.0 / 362880.0);
-        const_f64_as_f64x4!(P10, 1.0 / 3628800.0);
-        const_f64_as_f64x4!(P11, 1.0 / 39916800.0);
-        const_f64_as_f64x4!(P12, 1.0 / 479001600.0);
-        const_f64_as_f64x4!(P13, 1.0 / 6227020800.0);
+        const_f64_as_f64x8!(P2, 1.0 / 2.0);
+        const_f64_as_f64x8!(P3, 1.0 / 6.0);
+        const_f64_as_f64x8!(P4, 1.0 / 24.0);
+        const_f64_as_f64x8!(P5, 1.0 / 120.0);
+        const_f64_as_f64x8!(P6, 1.0 / 720.0);
+        const_f64_as_f64x8!(P7, 1.0 / 5040.0);
+        const_f64_as_f64x8!(P8, 1.0 / 40320.0);
+        const_f64_as_f64x8!(P9, 1.0 / 362880.0);
+        const_f64_as_f64x8!(P10, 1.0 / 3628800.0);
+        const_f64_as_f64x8!(P11, 1.0 / 39916800.0);
+        const_f64_as_f64x8!(P12, 1.0 / 479001600.0);
+        const_f64_as_f64x8!(P13, 1.0 / 6227020800.0);
         // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
         // following fdlibm's approach (Sun Microsystems, https://www.netlib.org/fdlibm/ e_exp.c).
-        const_f64_as_f64x4!(LN2D_HI, 0.693145751953125);
-        const_f64_as_f64x4!(LN2D_LO, 1.42860682030941723212E-6);
+        const_f64_as_f64x8!(LN2D_HI, 0.693145751953125);
+        const_f64_as_f64x8!(LN2D_LO, 1.42860682030941723212E-6);
         // x < -37.429: e^x < 2⁻⁵⁴, exp_m1(x) = -1.0 exactly (mantissa exhaustion)
         // IEEE simd_lt returns false for NaN, so NaN lanes can't reach here.
         // -inf is < -37.429, and exp_m1(-inf) = -1.0, also correct.
-        if self.simd_lt(f64x4::from(-37.429)).all() {
-            return f64x4::from(-1.0);
+        if self.simd_lt(f64x8::from(-37.429)).all() {
+            return f64x8::from(-1.0);
         }
         // max_x = ln(f64::MAX) ≈ 709.7827129, max_r = 1023 (IEEE max normal
         // exponent) min_x = -1074.5 ln(2) ≈ -744.79: min r for vm_pow2n to
         // construct subnormal
-        let max_x = f64x4::from(709.783);
-        let min_x = f64x4::from(-744.79);
-        let max_r = f64x4::from(1023.0);
+        let max_x = f64x8::from(709.783);
+        let min_x = f64x8::from(-744.79);
+        let max_r = f64x8::from(1023.0);
         let r = (self * Self::LOG2_E).round_ties_even();
         let big = r.simd_gt(max_r);
         let r_safe = big.select(max_r, r);
@@ -1741,16 +1730,16 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn sinh_backend(self) -> Self {
-        const_f64_as_f64x4!(P0, 1.0);
-        const_f64_as_f64x4!(P1, 1.0 / 6.0);
-        const_f64_as_f64x4!(P2, 1.0 / 120.0);
-        const_f64_as_f64x4!(P3, 1.0 / 5040.0);
-        const_f64_as_f64x4!(P4, 1.0 / 362880.0);
-        const_f64_as_f64x4!(P5, 1.0 / 39916800.0);
-        const_f64_as_f64x4!(P6, 1.0 / 6227020800.0);
+        const_f64_as_f64x8!(P0, 1.0);
+        const_f64_as_f64x8!(P1, 1.0 / 6.0);
+        const_f64_as_f64x8!(P2, 1.0 / 120.0);
+        const_f64_as_f64x8!(P3, 1.0 / 5040.0);
+        const_f64_as_f64x8!(P4, 1.0 / 362880.0);
+        const_f64_as_f64x8!(P5, 1.0 / 39916800.0);
+        const_f64_as_f64x8!(P6, 1.0 / 6227020800.0);
         let a = self.abs();
         // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
-        let small = a.simd_lt(f64x4::from(0.5));
+        let small = a.simd_lt(f64x8::from(0.5));
         let t = a * a;
         let poly = a * polynomial_6!(t, P0, P1, P2, P3, P4, P5, P6);
         let exp_based = {
@@ -1763,17 +1752,17 @@ impl f64x4 {
 
     #[inline]
     pub(crate) fn cosh_backend(self) -> Self {
-        const_f64_as_f64x4!(P0, 1.0);
-        const_f64_as_f64x4!(P1, 1.0 / 2.0);
-        const_f64_as_f64x4!(P2, 1.0 / 24.0);
-        const_f64_as_f64x4!(P3, 1.0 / 720.0);
-        const_f64_as_f64x4!(P4, 1.0 / 40320.0);
-        const_f64_as_f64x4!(P5, 1.0 / 3628800.0);
-        const_f64_as_f64x4!(P6, 1.0 / 479001600.0);
-        const_f64_as_f64x4!(P7, 1.0 / 87178291200.0);
+        const_f64_as_f64x8!(P0, 1.0);
+        const_f64_as_f64x8!(P1, 1.0 / 2.0);
+        const_f64_as_f64x8!(P2, 1.0 / 24.0);
+        const_f64_as_f64x8!(P3, 1.0 / 720.0);
+        const_f64_as_f64x8!(P4, 1.0 / 40320.0);
+        const_f64_as_f64x8!(P5, 1.0 / 3628800.0);
+        const_f64_as_f64x8!(P6, 1.0 / 479001600.0);
+        const_f64_as_f64x8!(P7, 1.0 / 87178291200.0);
         let a = self.abs();
         // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
-        let small = a.simd_lt(f64x4::from(0.5));
+        let small = a.simd_lt(f64x8::from(0.5));
         let t = a * a;
         let poly = polynomial_7!(t, P0, P1, P2, P3, P4, P5, P6, P7);
         let exp_based = {
@@ -1789,11 +1778,11 @@ impl f64x4 {
         // bound: x² < 48·2⁻⁵² → x < 1.03e-7; 5e-8 has 2× margin
         // |x| > 19.062: tanh(x) = ±1 to f64 precision (e⁻²ˣ < 2⁻⁵⁴)
         let a = self.abs();
-        let large = a.simd_gt(f64x4::from(19.062));
+        let large = a.simd_gt(f64x8::from(19.062));
         if large.all() {
             return Self::ONE.flipsign(self);
         }
-        let small = a.simd_lt(f64x4::from(5e-8));
+        let small = a.simd_lt(f64x8::from(5e-8));
         let exp_based = {
             let t = (Self::from(-2.0) * a).exp_m1();
             let pos = -t / (t + Self::from(2.0));
@@ -1805,22 +1794,22 @@ impl f64x4 {
 
     #[inline]
     fn vm_pow2n(self) -> Self {
-        const_f64_as_f64x4!(pow2_52, 4503599627370496.0);
-        const_f64_as_f64x4!(bias, 1023.0);
+        const_f64_as_f64x8!(pow2_52, 4503599627370496.0);
+        const_f64_as_f64x8!(bias, 1023.0);
         let a = self + (bias + pow2_52);
-        let c = cast::<_, i64x4>(a) << 52;
-        let std_result = cast::<_, f64x4>(c);
+        let c = cast::<_, i64x8>(a) << 52;
+        let std_result = cast::<_, f64x8>(c);
 
-        let min_exp = f64x4::from(-1022.0);
+        let min_exp = f64x8::from(-1022.0);
         let is_sub = self.simd_lt(min_exp);
         if is_sub.any() {
-            let valid = self.simd_ge(f64x4::from(-1074.0));
-            let shift_f = self + f64x4::from(1074.0);
+            let valid = self.simd_ge(f64x8::from(-1074.0));
+            let shift_f = self + f64x8::from(1074.0);
             let mut shift_i = shift_f.trunc_int();
-            shift_i = cast::<_, i64x4>(valid).select(shift_i, i64x4::ZERO);
-            let mantissa = i64x4::ONE << shift_i;
-            let sub_result = cast::<_, f64x4>(mantissa);
-            let sub_result = valid.select(sub_result, f64x4::ZERO);
+            shift_i = cast::<_, i64x8>(valid).select(shift_i, i64x8::ZERO);
+            let mantissa = i64x8::ONE << shift_i;
+            let sub_result = cast::<_, f64x8>(mantissa);
+            let sub_result = valid.select(sub_result, f64x8::ZERO);
             is_sub.select(sub_result, std_result)
         } else {
             std_result
@@ -1828,56 +1817,60 @@ impl f64x4 {
     }
 
     #[inline]
-    fn exponent(self) -> f64x4 {
-        const_f64_as_f64x4!(pow2_52, 4503599627370496.0);
-        const_f64_as_f64x4!(bias, 1023.0);
-        let a = cast::<_, u64x4>(self);
+    fn exponent(self) -> f64x8 {
+        const_f64_as_f64x8!(pow2_52, 4503599627370496.0);
+        const_f64_as_f64x8!(bias, 1023.0);
+        let a = cast::<_, u64x8>(self);
         let b = a >> 52;
-        let c = b | cast::<_, u64x4>(pow2_52);
-        let d = cast::<_, f64x4>(c);
+        let c = b | cast::<_, u64x8>(pow2_52);
+        let d = cast::<_, f64x8>(c);
         let e = d - (pow2_52 + bias);
         e
     }
 
     #[inline]
     fn fraction_2(self) -> Self {
-        let t1 = cast::<_, u64x4>(self);
-        let t2 = cast::<_, u64x4>(
-            (t1 & u64x4::from(0x000FFFFFFFFFFFFF)) | u64x4::from(0x3FE0000000000000),
+        let t1 = cast::<_, u64x8>(self);
+        let t2 = cast::<_, u64x8>(
+            (t1 & u64x8::from(0x000FFFFFFFFFFFFF)) | u64x8::from(0x3FE0000000000000),
         );
-        cast::<_, f64x4>(t2)
+        cast::<_, f64x8>(t2)
     }
     #[inline]
     fn is_zero_or_subnormal(self) -> Self {
-        let t = cast::<_, i64x4>(self);
-        let t = t & i64x4::splat(0x7FF0000000000000);
-        let mask = t.simd_eq(i64x4::splat(0));
-        cast::<_, f64x4>(mask)
+        let t = cast::<_, i64x8>(self);
+        let t = t & i64x8::splat(0x7FF0000000000000);
+        let mask = t.simd_eq(i64x8::splat(0));
+        cast::<_, f64x8>(mask)
     }
     #[inline]
     fn infinity() -> Self {
-        cast::<_, f64x4>(i64x4::splat(0x7FF0000000000000))
+        cast::<_, f64x8>(i64x8::splat(0x7FF0000000000000))
     }
     #[inline]
     fn nan_log() -> Self {
-        cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
+        cast::<_, f64x8>(i64x8::splat(0x7FF8000000000000 | 0x101 << 29))
     }
     #[inline]
     fn nan_pow() -> Self {
-        cast::<_, f64x4>(i64x4::splat(0x7FF8000000000000 | 0x101 << 29))
+        cast::<_, f64x8>(i64x8::splat(0x7FF8000000000000 | 0x101 << 29))
     }
 
     #[inline]
-    pub(crate) fn from_i32x4_backend(v: i32x4) -> Self {
+    pub(crate) fn from_i32x8_backend(v: i32x8) -> Self {
         pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(convert_to_m256d_from_i32_m128i(v.0))
+          if #[cfg(target_feature="avx512f")] {
+            Self(convert_to_m512d_from_i32_m256i(v.0))
           } else {
             Self::from_array([
               v.as_array()[0] as f64,
               v.as_array()[1] as f64,
               v.as_array()[2] as f64,
               v.as_array()[3] as f64,
+              v.as_array()[4] as f64,
+              v.as_array()[5] as f64,
+              v.as_array()[6] as f64,
+              v.as_array()[7] as f64,
             ])
           }
         }

@@ -196,39 +196,45 @@ mod simd_unsigned;
 
 mod simd_inconsistent;
 
-mod f32x16_;
-mod f32x4_;
-mod f32x8_;
-mod f64x2_;
-mod f64x4_;
-mod f64x8_;
-mod i16x16_;
-mod i16x32_;
-mod i16x8_;
-mod i32x16_;
-mod i32x4_;
-mod i32x8_;
-mod i64x2_;
-mod i64x4_;
-mod i64x8_;
-mod i8x16_;
-mod i8x32_;
-mod i8x64_;
-mod u16x16_;
-mod u16x32_;
-mod u16x8_;
-mod u32x16_;
-mod u32x4_;
-mod u32x8_;
-mod u64x2_;
-mod u64x4_;
-mod u64x8_;
-mod u8x16_;
-mod u8x32_;
-mod u8x64_;
+// The following modules define each SIMD type's internal representation and
+// function implementations. They do not contribute to the public API. For
+// functions supported by only some SIMD types, declare the public functions in
+// `simd_inconsistent.rs` and have them call internal backend functions defined
+// in these modules.
 
-mod imports {
-    //! Exports items that should be imported by all SIMD-type modules.
+mod f32x16_backend;
+mod f32x4_backend;
+mod f32x8_backend;
+mod f64x2_backend;
+mod f64x4_backend;
+mod f64x8_backend;
+mod i16x16_backend;
+mod i16x32_backend;
+mod i16x8_backend;
+mod i32x16_backend;
+mod i32x4_backend;
+mod i32x8_backend;
+mod i64x2_backend;
+mod i64x4_backend;
+mod i64x8_backend;
+mod i8x16_backend;
+mod i8x32_backend;
+mod i8x64_backend;
+mod u16x16_backend;
+mod u16x32_backend;
+mod u16x8_backend;
+mod u32x16_backend;
+mod u32x4_backend;
+mod u32x8_backend;
+mod u64x2_backend;
+mod u64x4_backend;
+mod u64x8_backend;
+mod u8x16_backend;
+mod u8x32_backend;
+mod u8x64_backend;
+
+mod backend_imports {
+    //! Exports items that should be imported by all SIMD-type backend modules.
 
     #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
     pub use core::arch::aarch64::*;

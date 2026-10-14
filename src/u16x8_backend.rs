@@ -1,4 +1,4 @@
-use crate::imports::*;
+use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
@@ -1307,7 +1307,7 @@ impl u16x8 {
           } else if #[cfg(target_feature="sse2")] {
             let low = mul_i16_keep_low_m128i(self.0, rhs.0);
             let high = mul_u16_keep_high_m128i(self.0, rhs.0);
-            u32x8(crate::u32x8_::Inner {
+            u32x8(crate::u32x8_backend::Inner {
               lo: u32x4(unpack_low_i16_m128i(low, high)),
               hi: u32x4(unpack_high_i16_m128i(low, high))
             })
@@ -1321,7 +1321,7 @@ impl u16x8 {
             let low = unsafe { vmull_u16(lhs_low, rhs_low) };
             let high = unsafe { vmull_u16(lhs_high, rhs_high) };
 
-            u32x8(crate::u32x8_::Inner { lo: u32x4(low), hi: u32x4(high) })
+            u32x8(crate::u32x8_backend::Inner { lo: u32x4(low), hi: u32x4(high) })
           } else {
             let a = self.as_array();
             let b = rhs.as_array();

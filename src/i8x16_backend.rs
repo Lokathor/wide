@@ -1,4 +1,4 @@
-use crate::imports::*;
+use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
@@ -517,7 +517,7 @@ impl i8x16 {
               let low_wide_mul = vmull_s8(vget_low_s8(self.0), vget_low_s8(rhs.0));
               let high_wide_mul = vmull_s8(vget_high_s8(self.0), vget_high_s8(rhs.0));
 
-              i16x16(crate::i16x16_::Inner {
+              i16x16(crate::i16x16_backend::Inner {
                 lo: i16x8(low_wide_mul),
                 hi: i16x8(high_wide_mul),
               })

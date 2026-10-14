@@ -1,4 +1,4 @@
-use crate::imports::*;
+use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
@@ -348,7 +348,7 @@ impl i16x16 {
           if #[cfg(target_feature="avx2")] {
             i32x8( mul_i16_horizontal_add_m256i(self.0, rhs.0))
           } else {
-            i32x8(crate::i32x8_::Inner {
+            i32x8(crate::i32x8_backend::Inner {
               lo: self.0.lo.dot(rhs.0.lo),
               hi: self.0.hi.dot(rhs.0.hi),
             })

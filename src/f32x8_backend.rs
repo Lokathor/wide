@@ -1,31 +1,31 @@
-use crate::imports::*;
+use crate::backend_imports::*;
 
 pick! {
-  if #[cfg(target_feature="avx512f")] {
-    pub(crate) type Inner = m512;
+  if #[cfg(target_feature="avx")] {
+    pub(crate) type Inner = m256;
   } else {
-    #[repr(C, align(64))]
+    #[repr(C, align(32))]
     #[derive(Clone, Copy)]
     pub(crate) struct Inner {
-      pub lo: f32x8,
-      pub hi: f32x8,
+      pub lo: f32x4,
+      pub hi: f32x4,
     }
   }
 }
 
-macro_rules! const_f32_as_f32x16 {
+macro_rules! const_f32_as_f32x8 {
     ($i:ident, $f:expr) => {
         #[allow(non_upper_case_globals)]
-        pub const $i: f32x16 = f32x16::from_array([$f; 16]);
+        pub const $i: f32x8 = f32x8::from_array([$f; 8]);
     };
 }
 
-impl f32x16 {
+impl f32x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512(self.0, Self::splat(-0.0).0))
+          if #[cfg(target_feature="avx")] {
+            Self(bitxor_m256(self.0, Self::splat(-0.0).0))
           } else {
             Self(Inner {
               lo: -self.0.lo,
@@ -38,8 +38,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512(self.0, set_splat_m512(f32::from_bits(u32::MAX))))
+          if #[cfg(target_feature="avx")] {
+            Self(!self.0)
           } else {
             Self(Inner {
               lo: !self.0.lo,
@@ -52,8 +52,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(add_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(add_m256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -66,8 +66,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(sub_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(sub_m256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -80,10 +80,13 @@ impl f32x16 {
     #[inline]
     pub(crate) fn mul_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(mul_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(mul_m256(self.0, rhs.0))
           } else {
-            Self(Inner { lo: self.0.lo * rhs.0.lo, hi: self.0.hi * rhs.0.hi })
+            Self(Inner {
+              lo: self.0.lo * rhs.0.lo,
+              hi: self.0.hi * rhs.0.hi,
+            })
           }
         }
     }
@@ -91,10 +94,13 @@ impl f32x16 {
     #[inline]
     pub(crate) fn div_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(div_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(div_m256(self.0, rhs.0))
           } else {
-            Self(Inner { lo: self.0.lo / rhs.0.lo, hi: self.0.hi / rhs.0.hi })
+            Self(Inner {
+              lo: self.0.lo / rhs.0.lo,
+              hi: self.0.hi / rhs.0.hi,
+            })
           }
         }
     }
@@ -110,22 +116,14 @@ impl f32x16 {
             self.to_array()[5] % rhs.to_array()[5],
             self.to_array()[6] % rhs.to_array()[6],
             self.to_array()[7] % rhs.to_array()[7],
-            self.to_array()[8] % rhs.to_array()[8],
-            self.to_array()[9] % rhs.to_array()[9],
-            self.to_array()[10] % rhs.to_array()[10],
-            self.to_array()[11] % rhs.to_array()[11],
-            self.to_array()[12] % rhs.to_array()[12],
-            self.to_array()[13] % rhs.to_array()[13],
-            self.to_array()[14] % rhs.to_array()[14],
-            self.to_array()[15] % rhs.to_array()[15],
         ])
     }
 
     #[inline]
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitand_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(bitand_m256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo & rhs.0.lo,
@@ -138,8 +136,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
-        if #[cfg(target_feature="avx512f")] {
-            Self(bitor_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(bitor_m256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo | rhs.0.lo,
@@ -152,8 +150,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(bitxor_m256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
@@ -166,8 +164,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -180,8 +178,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ne(rhs.0.lo),
@@ -194,8 +192,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_lt(rhs.0.lo),
@@ -208,8 +206,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -222,8 +220,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_le(rhs.0.lo),
@@ -236,8 +234,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ge(rhs.0.lo),
@@ -250,8 +248,18 @@ impl f32x16 {
     #[inline]
     pub(crate) fn reduce_add_backend(self) -> f32 {
         pick! {
-          if #[cfg(target_feature="avx512f")]{
-            reduce_add_m512(self.0)
+          // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
+          if #[cfg(target_feature="avx")]{
+            let hi_quad = extract_m128_from_m256::<1>(self.0);
+            let lo_quad = cast_to_m128_from_m256(self.0);
+            let sum_quad = add_m128(lo_quad,hi_quad);
+            let lo_dual = sum_quad;
+            let hi_dual = move_high_low_m128(sum_quad,sum_quad);
+            let sum_dual = add_m128(lo_dual,hi_dual);
+            let lo = sum_dual;
+            let hi = shuffle_abi_f32_all_m128::<0b_01>(sum_dual, sum_dual);
+            let sum = add_m128_s(lo, hi);
+            get_f32_from_m128_s(sum)
           } else {
             self.0.lo.reduce_add() + self.0.hi.reduce_add()
           }
@@ -261,15 +269,18 @@ impl f32x16 {
     #[inline]
     pub(crate) fn reduce_mul_backend(self) -> f32 {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
-            // safe.
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_reduce_mul_ps;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_reduce_mul_ps;
-
-            unsafe { _mm512_reduce_mul_ps(self.0.0) }
+          // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
+          if #[cfg(target_feature="avx")] {
+            let hi_quad = extract_m128_from_m256::<1>(self.0);
+            let lo_quad = cast_to_m128_from_m256(self.0);
+            let product_quad = mul_m128(lo_quad,hi_quad);
+            let lo_dual = product_quad;
+            let hi_dual = move_high_low_m128(product_quad, product_quad);
+            let product_dual = mul_m128(lo_dual,hi_dual);
+            let lo = product_dual;
+            let hi = shuffle_abi_f32_all_m128::<0b_01>(product_dual, product_dual);
+            let product = mul_m128_s(lo, hi);
+            get_f32_from_m128_s(product)
           } else {
             self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
           }
@@ -279,10 +290,10 @@ impl f32x16 {
     #[inline]
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitor_m512(
-                bitand_m512(if_one.0, self.0),
-                bitandnot_m512(self.0, if_zero.0),
+          if #[cfg(target_feature="avx")] {
+            Self(bitor_m256(
+                bitand_m256(if_one.0, self.0),
+                bitandnot_m256(self.0, if_zero.0),
             ))
           } else {
             Self(Inner {
@@ -296,8 +307,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(blend_varying_m512(if_false.0, if_true.0, movepi32_mask_m512(self.0)))
+          if #[cfg(target_feature="avx")] {
+            Self(blend_varying_m256(if_false.0, if_true.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -310,10 +321,10 @@ impl f32x16 {
     #[inline]
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            movepi32_mask_m512(self.0) as u32
+          if #[cfg(target_feature="avx")] {
+            move_mask_m256(self.0) as u32
           } else {
-            (self.0.hi.to_bitmask() << 8) | self.0.lo.to_bitmask()
+            (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
           }
         }
     }
@@ -321,8 +332,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn any_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            movepi32_mask_m512(self.0) != 0
+          if #[cfg(target_feature="avx")] {
+            move_mask_m256(self.0) != 0
           } else {
             self.0.lo.any() || self.0.hi.any()
           }
@@ -332,8 +343,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn all_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            movepi32_mask_m512(self.0) == !0_u16
+          if #[cfg(target_feature="avx")] {
+            move_mask_m256(self.0) == 0b11111111
           } else {
             self.0.lo.all() && self.0.hi.all()
           }
@@ -351,13 +362,52 @@ impl f32x16 {
     }
 
     #[inline]
-    pub(crate) fn transpose_backend(data: [f32x16; 16]) -> [f32x16; 16] {
-        // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,
-        // then try adding an optimized `avx512f` implementation.
+    pub(crate) fn transpose_backend(data: [f32x8; 8]) -> [f32x8; 8] {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            let a0 = unpack_lo_m256(data[0].0, data[1].0);
+            let a1 = unpack_hi_m256(data[0].0, data[1].0);
+            let a2 = unpack_lo_m256(data[2].0, data[3].0);
+            let a3 = unpack_hi_m256(data[2].0, data[3].0);
+            let a4 = unpack_lo_m256(data[4].0, data[5].0);
+            let a5 = unpack_hi_m256(data[4].0, data[5].0);
+            let a6 = unpack_lo_m256(data[6].0, data[7].0);
+            let a7 = unpack_hi_m256(data[6].0, data[7].0);
 
-        #[inline(always)]
-        fn transpose_column(data: &[f32x16; 16], index: usize) -> f32x16 {
-            f32x16::from_array([
+            pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
+              (z << 6) | (y << 4) | (x << 2) | w
+            }
+
+            const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
+            const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
+
+            // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
+            // (since blend runs on a different port than shuffle)
+            let b0 = shuffle_m256::<SHUFF_LO>(a0,a2);
+            let b1 = shuffle_m256::<SHUFF_HI>(a0,a2);
+            let b2 = shuffle_m256::<SHUFF_LO>(a1,a3);
+            let b3 = shuffle_m256::<SHUFF_HI>(a1,a3);
+            let b4 = shuffle_m256::<SHUFF_LO>(a4,a6);
+            let b5 = shuffle_m256::<SHUFF_HI>(a4,a6);
+            let b6 = shuffle_m256::<SHUFF_LO>(a5,a7);
+            let b7 = shuffle_m256::<SHUFF_HI>(a5,a7);
+
+            [
+              f32x8(permute2z_m256::<0x20>(b0, b4)),
+              f32x8(permute2z_m256::<0x20>(b1, b5)),
+              f32x8(permute2z_m256::<0x20>(b2, b6)),
+              f32x8(permute2z_m256::<0x20>(b3, b7)),
+              f32x8(permute2z_m256::<0x31>(b0, b4)),
+              f32x8(permute2z_m256::<0x31>(b1, b5)),
+              f32x8(permute2z_m256::<0x31>(b2, b6)),
+              f32x8(permute2z_m256::<0x31>(b3, b7))
+            ]
+          } else {
+            // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
+
+            #[inline(always)]
+            fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
+              f32x8::from_array([
                 data[0].as_array()[index],
                 data[1].as_array()[index],
                 data[2].as_array()[index],
@@ -366,42 +416,28 @@ impl f32x16 {
                 data[5].as_array()[index],
                 data[6].as_array()[index],
                 data[7].as_array()[index],
-                data[8].as_array()[index],
-                data[9].as_array()[index],
-                data[10].as_array()[index],
-                data[11].as_array()[index],
-                data[12].as_array()[index],
-                data[13].as_array()[index],
-                data[14].as_array()[index],
-                data[15].as_array()[index],
-            ])
-        }
+              ])
+            }
 
-        [
-            transpose_column(&data, 0),
-            transpose_column(&data, 1),
-            transpose_column(&data, 2),
-            transpose_column(&data, 3),
-            transpose_column(&data, 4),
-            transpose_column(&data, 5),
-            transpose_column(&data, 6),
-            transpose_column(&data, 7),
-            transpose_column(&data, 8),
-            transpose_column(&data, 9),
-            transpose_column(&data, 10),
-            transpose_column(&data, 11),
-            transpose_column(&data, 12),
-            transpose_column(&data, 13),
-            transpose_column(&data, 14),
-            transpose_column(&data, 15),
-        ]
+            [
+              transpose_column(&data, 0),
+              transpose_column(&data, 1),
+              transpose_column(&data, 2),
+              transpose_column(&data, 3),
+              transpose_column(&data, 4),
+              transpose_column(&data, 5),
+              transpose_column(&data, 6),
+              transpose_column(&data, 7),
+            ]
+          }
+        }
     }
 
     #[inline]
     pub(crate) fn is_nan_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature = "avx512f")] {
-            Self(cmp_op_mask_m512::<{cmp_op!(Unordered)}>(self.0, self.0))
+          if #[cfg(target_feature="avx")] {
+            Self(cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.is_nan(),
@@ -413,8 +449,8 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn is_infinite_backend(self) -> Self {
-        let shifted_inf = u32x16::from(0xFF000000);
-        let u: u32x16 = cast(self);
+        let shifted_inf = u32x8::from(0xFF000000);
+        let u: u32x8 = cast(self);
         let shift_u = u << 1_u64;
         let out = (shift_u).simd_eq(shifted_inf);
         cast(out)
@@ -422,41 +458,38 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn is_finite_backend(self) -> Self {
-        let shifted_exp_mask = u32x16::splat(0xFF000000);
-        let u: u32x16 = cast(self);
-        let shift_u = u << 1_u32;
+        let shifted_exp_mask = u32x8::from(0xFF000000);
+        let u: u32x8 = cast(self);
+        let shift_u = u << 1_u64;
         let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
         cast(out)
     }
 
     #[inline]
     pub(crate) fn is_sign_positive_backend(self) -> Self {
-        const SIGN_MASK: u32x16 = u32x16::splat((-0.0_f32).to_bits());
+        const SIGN_MASK: u32x8 = u32x8::splat((-0.0_f32).to_bits());
 
-        let bits = cast::<f32x16, u32x16>(self);
+        let bits = cast::<f32x8, u32x8>(self);
         let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(u32x16::ZERO);
-        cast::<u32x16, f32x16>(result)
+        let result = sign.simd_eq(u32x8::ZERO);
+        cast::<u32x8, f32x8>(result)
     }
 
     #[inline]
     pub(crate) fn is_sign_negative_backend(self) -> Self {
-        const SIGN_MASK: u32x16 = u32x16::splat((-0.0_f32).to_bits());
+        const SIGN_MASK: u32x8 = u32x8::splat((-0.0_f32).to_bits());
 
-        let bits = cast::<f32x16, u32x16>(self);
+        let bits = cast::<f32x8, u32x8>(self);
         let sign = bits & SIGN_MASK;
         let result = sign.simd_eq(SIGN_MASK);
-        cast::<u32x16, f32x16>(result)
+        cast::<u32x8, f32x8>(result)
     }
 
     #[inline]
     pub(crate) fn recip_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // TODO: Add `_mm512_rcp14_ps` to `safe_arch`, looks like it is missing,
-            // then consider updating this implementation if the relative error is
-            // acceptable.
-            1.0 / self
+          if #[cfg(target_feature="avx")] {
+            Self(reciprocal_m256(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.recip(),
@@ -469,11 +502,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn recip_sqrt_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // TODO: Add `_mm512_rsqrt14_ps` to `safe_arch`, looks like it is
-            // missing, then consider updating this implementation if the relative
-            // error is acceptable.
-            self.sqrt().recip()
+          if #[cfg(target_feature="avx")] {
+            Self(reciprocal_sqrt_m256(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.recip_sqrt(),
@@ -486,25 +516,26 @@ impl f32x16 {
     #[inline]
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // max_m512 seems to do rhs < self ? self : rhs. So if there's any NaN
+          if #[cfg(target_feature="avx")] {
+            // max_m256 seems to do rhs < self ? self : rhs. So if there's any NaN
             // involved, it chooses rhs, so we need to specifically check rhs for
             // NaN.
-            rhs.is_nan().select(self, Self(max_m512(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(max_m256(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
               hi: self.0.hi.max(rhs.0.hi),
             })
           }
+
         }
     }
 
     #[inline]
     pub(crate) fn fast_max_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(max_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(max_m256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_max(rhs.0.lo),
@@ -517,11 +548,11 @@ impl f32x16 {
     #[inline]
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // min_m512 seems to do rhs > self ? self : rhs. So if there's any NaN
+          if #[cfg(target_feature="avx")] {
+            // min_m256 seems to do rhs > self ? self : rhs. So if there's any NaN
             // involved, it chooses rhs, so we need to specifically check rhs for
             // NaN.
-            rhs.is_nan().select(self, Self(min_m512(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(min_m256(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -534,8 +565,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn fast_min_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(min_m512(self.0, rhs.0))
+          if #[cfg(target_feature="avx")] {
+            Self(min_m256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_min(rhs.0.lo),
@@ -548,7 +579,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx")] {
             // This works since all bits set is NaN.
             self.fast_clamp(min, max) | min.is_nan() | max.is_nan()
           } else {
@@ -564,10 +595,10 @@ impl f32x16 {
     #[inline]
     pub(crate) fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // For both `min_m512` and `max_m512` if any input is NaN, `rhs` gets
+          if #[cfg(target_feature="avx")] {
+            // For both `min_m256` and `max_m256` if any input is NaN, `rhs` gets
             // chosen. For `self` to be chosen, `self` must be the second argument.
-            Self(max_m512(min.0, min_m512(max.0, self.0)))
+            Self(max_m256(min.0, min_m256(max.0, self.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
@@ -579,33 +610,33 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn reduce_max_backend(self) -> f32 {
-        let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
+        let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
         self_a.max(self_b).reduce_max()
     }
 
     #[inline]
     pub(crate) fn fast_reduce_max_backend(self) -> f32 {
-        let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
+        let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
         self_a.fast_max(self_b).fast_reduce_max()
     }
 
     #[inline]
     pub(crate) fn reduce_min_backend(self) -> f32 {
-        let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
+        let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
         self_a.min(self_b).reduce_min()
     }
 
     #[inline]
     pub(crate) fn fast_reduce_min_backend(self) -> f32 {
-        let [self_a, self_b] = cast::<f32x16, [f32x8; 2]>(self);
+        let [self_a, self_b] = cast::<f32x8, [f32x4; 2]>(self);
         self_a.fast_min(self_b).fast_reduce_min()
     }
 
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            let non_sign_bits = f32x16::from(f32::from_bits(i32::MAX as u32));
+          if #[cfg(target_feature="avx")] {
+            let non_sign_bits = f32x8::from(f32::from_bits(i32::MAX as u32));
             self & non_sign_bits
           } else {
             Self(Inner {
@@ -619,8 +650,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn floor_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(round_m512::<{round_op!(NegInf)}>(self.0))
+          if #[cfg(target_feature="avx")] {
+            Self(floor_m256(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.floor(),
@@ -633,8 +664,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn ceil_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(round_m512::<{round_op!(PosInf)}>(self.0))
+          if #[cfg(target_feature="avx")] {
+            Self(ceil_m256(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.ceil(),
@@ -647,64 +678,58 @@ impl f32x16 {
     #[inline]
     pub(crate) fn round_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            const_f32_as_f32x16!(HALF_NEXT_DOWN, 0.5_f32.next_down());
-            const_f32_as_f32x16!(BOUNDS_LIMIT, 8388608.0);
+          if #[cfg(target_feature="avx2")] {
+            const_f32_as_f32x8!(HALF_NEXT_DOWN, 0.5_f32.next_down());
+            const_f32_as_f32x8!(BOUNDS_LIMIT, 8388608.0);
 
             let self_abs = self.abs();
 
             let adjusted_self = self_abs + Self::HALF;
-            let result_abs = Self(round_m512::<{round_op!(Zero)}>(adjusted_self.0));
+            let result_abs = Self(round_m256::<{round_op!(Zero)}>(adjusted_self.0));
             // The addition breaks for `0.5.next_down()` which incorrectly rounds to
             // `1.0`. This resets the result back to `0.0`.
             let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
             // Large value, infinity and NaN need special handling.
-            let bounds_mask: Self = cast(cmp_op_mask_i32_m512i::<{cmp_int_op!(Lt)}>(
-              cast(self_abs),
-              cast(BOUNDS_LIMIT),
-            ));
+            let bounds_mask: Self = cast(cmp_gt_mask_i32_m256i(cast(BOUNDS_LIMIT), cast(self_abs)));
 
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
           } else {
-            Self(Inner {
-              lo: self.0.lo.round(),
-              hi: self.0.hi.round(),
-            })
+            let [a, b] = cast::<f32x8, [f32x4; 2]>(self);
+            cast([a.round(), b.round()])
           }
         }
     }
 
     #[inline]
-    pub(crate) fn round_int_backend(self) -> i32x16 {
+    pub(crate) fn round_int_backend(self) -> i32x8 {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx")] {
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
-            let flip_to_max: i32x16 = cast(self.simd_ge(Self::splat(2147483648.0)));
-            let cast: i32x16 = cast(convert_to_i32_m512i_from_m512(non_nan.0));
+            let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
+            let cast: i32x8 = cast(convert_to_i32_m256i_from_m256(non_nan.0));
             flip_to_max ^ cast
           } else {
-            i32x16(crate::i32x16_::Inner {
-              lo: self.0.lo.round_int(),
-              hi: self.0.hi.round_int(),
-            })
+            cast([
+              self.0.lo.round_int(),
+              self.0.hi.round_int(),
+            ])
           }
         }
     }
 
     #[inline]
-    pub(crate) fn fast_round_int_backend(self) -> i32x16 {
+    pub(crate) fn fast_round_int_backend(self) -> i32x8 {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            cast(convert_to_i32_m512i_from_m512(self.0))
+          if #[cfg(target_feature="avx")] {
+            cast(convert_to_i32_m256i_from_m256(self.0))
           } else {
-            i32x16(crate::i32x16_::Inner {
-              lo: self.0.lo.fast_round_int(),
-              hi: self.0.hi.fast_round_int(),
-            })
+            cast([
+              self.0.lo.fast_round_int(),
+              self.0.hi.fast_round_int()])
           }
         }
     }
@@ -712,8 +737,9 @@ impl f32x16 {
     #[inline]
     pub(crate) fn round_ties_even_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(round_m512::<{round_op!(Nearest)}>(self.0))
+          // NOTE: Is there an SSE2 version of this? f32x4 version probably translates but I've not had time to figure it out
+          if #[cfg(target_feature="avx")] {
+            Self(round_m256::<{round_op!(Nearest)}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.round_ties_even(),
@@ -726,8 +752,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn trunc_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(round_m512::<{round_op!(Zero)}>(self.0))
+          if #[cfg(target_feature="avx")] {
+            Self(round_m256::<{round_op!(Zero)}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.trunc(),
@@ -738,14 +764,14 @@ impl f32x16 {
     }
 
     #[inline]
-    pub(crate) fn trunc_int_backend(self) -> i32x16 {
+    pub(crate) fn trunc_int_backend(self) -> i32x8 {
         pick! {
-            if #[cfg(target_feature="avx512f")] {
+            if #[cfg(target_feature="avx")] {
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
-            let flip_to_max: i32x16 = cast(self.simd_ge(Self::splat(2147483648.0)));
-            let cast: i32x16 = cast(convert_truncate_m512_i32_m512i(non_nan.0));
+            let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
+            let cast: i32x8 = cast(convert_truncate_to_i32_m256i_from_m256(non_nan.0));
             flip_to_max ^ cast
           } else {
             cast([
@@ -757,10 +783,10 @@ impl f32x16 {
     }
 
     #[inline]
-    pub(crate) fn fast_trunc_int_backend(self) -> i32x16 {
+    pub(crate) fn fast_trunc_int_backend(self) -> i32x8 {
         pick! {
-          if #[cfg(all(target_feature="avx512f"))] {
-            cast(convert_truncate_m512_i32_m512i(self.0))
+          if #[cfg(all(target_feature="avx"))] {
+            cast(convert_truncate_to_i32_m256i_from_m256(self.0))
           } else {
             cast([
               self.0.lo.fast_trunc_int(),
@@ -773,10 +799,10 @@ impl f32x16 {
     #[inline]
     pub(crate) fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-            Self(fused_mul_add_m512(self.0, a.0, b.0))
-          } else if #[cfg(target_feature="avx512f")] {
-            // still want to use 512 bit ops
+          if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+            Self(fused_mul_add_m256(self.0, a.0, b.0))
+          } else if #[cfg(target_feature="avx")] {
+            // still want to use 256 bit ops
             (self * a) + b
           } else {
             Self(Inner {
@@ -790,10 +816,10 @@ impl f32x16 {
     #[inline]
     pub(crate) fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-            Self(fused_mul_sub_m512(self.0, a.0, b.0))
-          } else if #[cfg(target_feature="avx512f")] {
-            // still want to use 512 bit ops
+          if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+            Self(fused_mul_sub_m256(self.0, a.0, b.0))
+          } else if #[cfg(target_feature="avx")] {
+            // still want to use 256 bit ops
             (self * a) - b
           } else {
             Self(Inner {
@@ -807,10 +833,10 @@ impl f32x16 {
     #[inline]
     pub(crate) fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-            Self(fused_mul_neg_add_m512(self.0, a.0, b.0))
-          } else if #[cfg(target_feature="avx512f")] {
-            // still want to use 512 bit ops
+          if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+            Self(fused_mul_neg_add_m256(self.0, a.0, b.0))
+          } else if #[cfg(target_feature="avx")] {
+            // still want to use 256 bit ops
             b - (self * a)
           } else {
             Self(Inner {
@@ -824,10 +850,10 @@ impl f32x16 {
     #[inline]
     pub(crate) fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-            Self(fused_mul_neg_sub_m512(self.0, a.0, b.0))
-          } else if #[cfg(target_feature="avx512f")] {
-            // still want to use 512 bit ops
+          if #[cfg(all(target_feature="avx",target_feature="fma"))] {
+            Self(fused_mul_neg_sub_m256(self.0, a.0, b.0))
+          } else if #[cfg(target_feature="avx")] {
+            // still want to use 256 bit ops
             -(self * a) - b
           } else {
             Self(Inner {
@@ -840,31 +866,31 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn powf_simd_backend(self, n: Self) -> Self {
-        const_f32_as_f32x16!(ln2f_hi, 0.693359375);
-        const_f32_as_f32x16!(ln2f_lo, -2.12194440e-4);
-        const_f32_as_f32x16!(P0logf, 3.3333331174E-1);
-        const_f32_as_f32x16!(P1logf, -2.4999993993E-1);
-        const_f32_as_f32x16!(P2logf, 2.0000714765E-1);
-        const_f32_as_f32x16!(P3logf, -1.6668057665E-1);
-        const_f32_as_f32x16!(P4logf, 1.4249322787E-1);
-        const_f32_as_f32x16!(P5logf, -1.2420140846E-1);
-        const_f32_as_f32x16!(P6logf, 1.1676998740E-1);
-        const_f32_as_f32x16!(P7logf, -1.1514610310E-1);
-        const_f32_as_f32x16!(P8logf, 7.0376836292E-2);
+        const_f32_as_f32x8!(ln2f_hi, 0.693359375);
+        const_f32_as_f32x8!(ln2f_lo, -2.12194440e-4);
+        const_f32_as_f32x8!(P0logf, 3.3333331174E-1);
+        const_f32_as_f32x8!(P1logf, -2.4999993993E-1);
+        const_f32_as_f32x8!(P2logf, 2.0000714765E-1);
+        const_f32_as_f32x8!(P3logf, -1.6668057665E-1);
+        const_f32_as_f32x8!(P4logf, 1.4249322787E-1);
+        const_f32_as_f32x8!(P5logf, -1.2420140846E-1);
+        const_f32_as_f32x8!(P6logf, 1.1676998740E-1);
+        const_f32_as_f32x8!(P7logf, -1.1514610310E-1);
+        const_f32_as_f32x8!(P8logf, 7.0376836292E-2);
 
-        const_f32_as_f32x16!(p2expf, 1.0 / 2.0); // coefficients for Taylor expansion of exp
-        const_f32_as_f32x16!(p3expf, 1.0 / 6.0);
-        const_f32_as_f32x16!(p4expf, 1.0 / 24.0);
-        const_f32_as_f32x16!(p5expf, 1.0 / 120.0);
-        const_f32_as_f32x16!(p6expf, 1.0 / 720.0);
-        const_f32_as_f32x16!(p7expf, 1.0 / 5040.0);
+        const_f32_as_f32x8!(p2expf, 1.0 / 2.0); // coefficients for Taylor expansion of exp
+        const_f32_as_f32x8!(p3expf, 1.0 / 6.0);
+        const_f32_as_f32x8!(p4expf, 1.0 / 24.0);
+        const_f32_as_f32x8!(p5expf, 1.0 / 120.0);
+        const_f32_as_f32x8!(p6expf, 1.0 / 720.0);
+        const_f32_as_f32x8!(p7expf, 1.0 / 5040.0);
 
         let x1 = self.abs();
         let x = x1.fraction_2();
-        let mask = x.simd_gt(f32x16::SQRT_2 * f32x16::HALF);
+        let mask = x.simd_gt(f32x8::SQRT_2 * f32x8::HALF);
         let x = (!mask).select(x + x, x);
 
-        let x = x - f32x16::ONE;
+        let x = x - f32x8::ONE;
         let x2 = x * x;
         let lg1 = polynomial_8!(
             x, P0logf, P1logf, P2logf, P3logf, P4logf, P5logf, P6logf, P7logf, P8logf
@@ -872,49 +898,49 @@ impl f32x16 {
         let lg1 = lg1 * x2 * x;
 
         let ef = x1.exponent();
-        let ef = mask.select(ef + f32x16::ONE, ef);
+        let ef = mask.select(ef + f32x8::ONE, ef);
         let e1 = (ef * n).round_ties_even();
         let yr = ef.fast_mul_sub(n, e1);
 
-        let lg = f32x16::HALF.fast_mul_neg_add(x2, x) + lg1;
-        let x2_err = (f32x16::HALF * x).fast_mul_sub(x, f32x16::HALF * x2);
-        let lg_err = f32x16::HALF.fast_mul_add(x2, lg - x) - lg1;
+        let lg = f32x8::HALF.fast_mul_neg_add(x2, x) + lg1;
+        let x2_err = (f32x8::HALF * x).fast_mul_sub(x, f32x8::HALF * x2);
+        let lg_err = f32x8::HALF.fast_mul_add(x2, lg - x) - lg1;
 
-        let e2 = (lg * n * f32x16::LOG2_E).round_ties_even();
+        let e2 = (lg * n * f32x8::LOG2_E).round_ties_even();
         let v = lg.fast_mul_sub(n, e2 * ln2f_hi);
         let v = e2.fast_mul_neg_add(ln2f_lo, v);
-        let v = v - (lg_err + x2_err).fast_mul_sub(n, yr * f32x16::LN_2);
+        let v = v - (lg_err + x2_err).fast_mul_sub(n, yr * f32x8::LN_2);
 
         let x = v;
-        let e3 = (x * f32x16::LOG2_E).round_ties_even();
-        let x = e3.fast_mul_neg_add(f32x16::LN_2, x);
+        let e3 = (x * f32x8::LOG2_E).round_ties_even();
+        let x = e3.fast_mul_neg_add(f32x8::LN_2, x);
         let x2 = x * x;
         let z = x2.fast_mul_add(
             polynomial_5!(x, p2expf, p3expf, p4expf, p5expf, p6expf, p7expf),
-            x + f32x16::ONE,
+            x + f32x8::ONE,
         );
 
         let ee = e1 + e2 + e3;
-        let ei = cast::<_, i32x16>(ee.round_int());
-        let ej = cast::<_, i32x16>(ei + (cast::<_, i32x16>(z) >> 23));
+        let ei = cast::<_, i32x8>(ee.round_int());
+        let ej = cast::<_, i32x8>(ei + (cast::<_, i32x8>(z) >> 23));
 
-        let overflow = cast::<_, f32x16>(ej.simd_gt(i32x16::splat(0x0FF)))
-            | (ee.simd_gt(f32x16::splat(300.0)));
-        let underflow = cast::<_, f32x16>(ej.simd_lt(i32x16::splat(0x000)))
-            | (ee.simd_lt(f32x16::splat(-300.0)));
+        let overflow =
+            cast::<_, f32x8>(ej.simd_gt(i32x8::splat(0x0FF))) | (ee.simd_gt(f32x8::splat(300.0)));
+        let underflow =
+            cast::<_, f32x8>(ej.simd_lt(i32x8::splat(0x000))) | (ee.simd_lt(f32x8::splat(-300.0)));
 
         // Add exponent by integer addition
-        let z = cast::<_, f32x16>(cast::<_, i32x16>(z) + (ei << 23));
+        let z = cast::<_, f32x8>(cast::<_, i32x8>(z) + (ei << 23));
         // Check for overflow/underflow
-        let z = underflow.select(f32x16::ZERO, z);
+        let z = underflow.select(f32x8::ZERO, z);
         let z = overflow.select(Self::infinity(), z);
 
         // Check for self == 0
         let x_zero = self.is_zero_or_subnormal();
         let z = x_zero.select(
-            n.simd_lt(f32x16::ZERO).select(
+            n.simd_lt(f32x8::ZERO).select(
                 Self::infinity(),
-                n.simd_eq(f32x16::ZERO).select(f32x16::ONE, f32x16::ZERO),
+                n.simd_eq(f32x8::ZERO).select(f32x8::ONE, f32x8::ZERO),
             ),
             z,
         );
@@ -925,7 +951,7 @@ impl f32x16 {
             let yi = n.simd_eq(n.round_ties_even());
 
             // Is y odd? If yes flip the sign of the result.
-            let y_odd = cast::<i32x16, f32x16>(n.round_int() << 31);
+            let y_odd = cast::<i32x8, f32x8>(n.round_int() << 31);
 
             let z1 = yi.select(
                 z | y_odd,
@@ -950,8 +976,8 @@ impl f32x16 {
     #[inline]
     pub(crate) fn sqrt_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(sqrt_m512(self.0))
+          if #[cfg(target_feature="avx")] {
+            Self(sqrt_m256(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.sqrt(),
@@ -963,31 +989,31 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn exp_backend(self) -> Self {
-        const_f32_as_f32x16!(P0, 1.0 / 2.0);
-        const_f32_as_f32x16!(P1, 1.0 / 6.0);
-        const_f32_as_f32x16!(P2, 1.0 / 24.0);
-        const_f32_as_f32x16!(P3, 1.0 / 120.0);
-        const_f32_as_f32x16!(P4, 1.0 / 720.0);
-        const_f32_as_f32x16!(P5, 1.0 / 5040.0);
+        const_f32_as_f32x8!(P0, 1.0 / 2.0);
+        const_f32_as_f32x8!(P1, 1.0 / 6.0);
+        const_f32_as_f32x8!(P2, 1.0 / 24.0);
+        const_f32_as_f32x8!(P3, 1.0 / 120.0);
+        const_f32_as_f32x8!(P4, 1.0 / 720.0);
+        const_f32_as_f32x8!(P5, 1.0 / 5040.0);
         // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
         // following the approach from fdlibm's e_exp.c (Sun Microsystems,
         // https://www.netlib.org/fdlibm/). The f32 split uses f32-precision constants
         // (0.693359375, -2.12194440e-4) summing to ln(2) with single-precision
         // accuracy; the f64 variants use a full f64 double-double
         // decomposition.
-        const_f32_as_f32x16!(LN2D_HI, 0.693359375);
-        const_f32_as_f32x16!(LN2D_LO, -2.12194440e-4);
+        const_f32_as_f32x8!(LN2D_HI, 0.693359375);
+        const_f32_as_f32x8!(LN2D_LO, -2.12194440e-4);
         // max_x = ln(f32::MAX) ≈ 88.7229, max_r = 127 (IEEE max normal exponent)
         // min_x = -149.5 ln(2) ≈ -103.63: min r for vm_pow2n subnormal
-        let max_x = f32x16::from(88.723);
-        let min_x = f32x16::from(-103.63);
+        let max_x = f32x8::from(88.723);
+        let min_x = f32x8::from(-103.63);
         // x < min_x: e^x underflows to 0 -- skip the entire pipeline
         let finite = self.is_finite();
         let neg_underflow = self.simd_lt(min_x) & finite;
         if neg_underflow.all() {
             return Self::ZERO;
         }
-        let max_r = f32x16::from(127.0);
+        let max_r = f32x8::from(127.0);
         let r = (self * Self::LOG2_E).round_ties_even();
         let big = r.simd_gt(max_r);
         let r_safe = big.select(max_r, r);
@@ -1015,17 +1041,17 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn exp2_backend(self) -> Self {
-        const_f32_as_f32x16!(P2, 1.0 / 2.0);
-        const_f32_as_f32x16!(P3, 1.0 / 6.0);
-        const_f32_as_f32x16!(P4, 1.0 / 24.0);
-        const_f32_as_f32x16!(P5, 1.0 / 120.0);
-        const_f32_as_f32x16!(P6, 1.0 / 720.0);
-        const_f32_as_f32x16!(P7, 1.0 / 5040.0);
+        const_f32_as_f32x8!(P2, 1.0 / 2.0);
+        const_f32_as_f32x8!(P3, 1.0 / 6.0);
+        const_f32_as_f32x8!(P4, 1.0 / 24.0);
+        const_f32_as_f32x8!(P5, 1.0 / 120.0);
+        const_f32_as_f32x8!(P6, 1.0 / 720.0);
+        const_f32_as_f32x8!(P7, 1.0 / 5040.0);
 
         // max_x = log2(f32::MAX) ≈ 127.99999
         // min_x = log2(f32::MIN_POSITIVE) - 23 ≈ -126 - 23 = -149
-        let max_x = f32x16::from(127.99999);
-        let min_x = f32x16::from(-149.5);
+        let max_x = f32x8::from(127.99999);
+        let min_x = f32x8::from(-149.5);
         let finite = self.is_finite();
         let neg_underflow = self.simd_lt(min_x) & finite;
         if neg_underflow.all() {
@@ -1033,7 +1059,7 @@ impl f32x16 {
         }
 
         let round = self.round_ties_even();
-        let max_r = f32x16::from(127.0);
+        let max_r = f32x8::from(127.0);
         let big = round.simd_gt(max_r);
         let r_safe = big.select(max_r, round);
         let excess = round - max_r;
@@ -1062,19 +1088,19 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn ln_backend(self) -> Self {
-        const_f32_as_f32x16!(HALF, 0.5);
-        const_f32_as_f32x16!(P0, 3.3333331174E-1);
-        const_f32_as_f32x16!(P1, -2.4999993993E-1);
-        const_f32_as_f32x16!(P2, 2.0000714765E-1);
-        const_f32_as_f32x16!(P3, -1.6668057665E-1);
-        const_f32_as_f32x16!(P4, 1.4249322787E-1);
-        const_f32_as_f32x16!(P5, -1.2420140846E-1);
-        const_f32_as_f32x16!(P6, 1.1676998740E-1);
-        const_f32_as_f32x16!(P7, -1.1514610310E-1);
-        const_f32_as_f32x16!(P8, 7.0376836292E-2);
-        const_f32_as_f32x16!(LN2F_HI, 0.693359375);
-        const_f32_as_f32x16!(LN2F_LO, -2.12194440e-4);
-        const_f32_as_f32x16!(VM_SMALLEST_NORMAL, 1.17549435E-38);
+        const_f32_as_f32x8!(HALF, 0.5);
+        const_f32_as_f32x8!(P0, 3.3333331174E-1);
+        const_f32_as_f32x8!(P1, -2.4999993993E-1);
+        const_f32_as_f32x8!(P2, 2.0000714765E-1);
+        const_f32_as_f32x8!(P3, -1.6668057665E-1);
+        const_f32_as_f32x8!(P4, 1.4249322787E-1);
+        const_f32_as_f32x8!(P5, -1.2420140846E-1);
+        const_f32_as_f32x8!(P6, 1.1676998740E-1);
+        const_f32_as_f32x8!(P7, -1.1514610310E-1);
+        const_f32_as_f32x8!(P8, 7.0376836292E-2);
+        const_f32_as_f32x8!(LN2F_HI, 0.693359375);
+        const_f32_as_f32x8!(LN2F_LO, -2.12194440e-4);
+        const_f32_as_f32x8!(VM_SMALLEST_NORMAL, 1.17549435E-38);
 
         let x1 = self;
         let x = Self::fraction_2(x1);
@@ -1131,12 +1157,12 @@ impl f32x16 {
         // Licensed under the Boost Software License 1.0.
         // These are the f32-precision coefficients; our f64 variants use the f64
         // set.
-        const_f32_as_f32x16!(C0, 2.2241257);
-        const_f32_as_f32x16!(C1, -3.8095417);
-        const_f32_as_f32x16!(C2, 5.8982625);
-        const_f32_as_f32x16!(C3, -5.532182);
-        const_f32_as_f32x16!(C4, 2.8208892);
-        const_f32_as_f32x16!(C5, -0.60156447);
+        const_f32_as_f32x8!(C0, 2.2241257);
+        const_f32_as_f32x8!(C1, -3.8095417);
+        const_f32_as_f32x8!(C2, 5.8982625);
+        const_f32_as_f32x8!(C3, -5.532182);
+        const_f32_as_f32x8!(C4, 2.8208892);
+        const_f32_as_f32x8!(C5, -0.60156447);
         let mut x = polynomial_5!(d, C0, C1, C2, C3, C4, C5);
 
         let x2 = x * x;
@@ -1155,8 +1181,8 @@ impl f32x16 {
         let e_adj = neg.select(e - two, e);
         let k = (e_adj / three).trunc();
         let r = e - three * k;
-        const_f32_as_f32x16!(CBRT2, 1.259921);
-        const_f32_as_f32x16!(CBRT4, 1.587401);
+        const_f32_as_f32x8!(CBRT2, 1.259921);
+        const_f32_as_f32x8!(CBRT4, 1.587401);
         y = r.simd_eq(Self::ONE).select(y * CBRT2, y);
         y = r.simd_eq(two).select(y * CBRT4, y);
         y *= Self::vm_pow2n(k);
@@ -1173,16 +1199,16 @@ impl f32x16 {
     pub(crate) fn asin_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f32_as_f32x16!(P4asinf, 4.2163199048E-2);
-        const_f32_as_f32x16!(P3asinf, 2.4181311049E-2);
-        const_f32_as_f32x16!(P2asinf, 4.5470025998E-2);
-        const_f32_as_f32x16!(P1asinf, 7.4953002686E-2);
-        const_f32_as_f32x16!(P0asinf, 1.6666752422E-1);
+        const_f32_as_f32x8!(P4asinf, 4.2163199048E-2);
+        const_f32_as_f32x8!(P3asinf, 2.4181311049E-2);
+        const_f32_as_f32x8!(P2asinf, 4.5470025998E-2);
+        const_f32_as_f32x8!(P1asinf, 7.4953002686E-2);
+        const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
         let xa = self.abs();
-        let big = xa.simd_ge(f32x16::splat(0.5));
+        let big = xa.simd_ge(f32x8::splat(0.5));
 
-        let x1 = f32x16::splat(0.5) * (f32x16::ONE - xa);
+        let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
         let x2 = xa * xa;
         let x3 = big.select(x1, x2);
 
@@ -1196,7 +1222,7 @@ impl f32x16 {
         let z1 = z + z;
 
         // asin
-        let z3 = f32x16::FRAC_PI_2 - z1;
+        let z3 = f32x8::FRAC_PI_2 - z1;
         let asin = big.select(z3, z);
         let asin = asin.flipsign(self);
 
@@ -1207,16 +1233,16 @@ impl f32x16 {
     pub(crate) fn acos_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f32_as_f32x16!(P4asinf, 4.2163199048E-2);
-        const_f32_as_f32x16!(P3asinf, 2.4181311049E-2);
-        const_f32_as_f32x16!(P2asinf, 4.5470025998E-2);
-        const_f32_as_f32x16!(P1asinf, 7.4953002686E-2);
-        const_f32_as_f32x16!(P0asinf, 1.6666752422E-1);
+        const_f32_as_f32x8!(P4asinf, 4.2163199048E-2);
+        const_f32_as_f32x8!(P3asinf, 2.4181311049E-2);
+        const_f32_as_f32x8!(P2asinf, 4.5470025998E-2);
+        const_f32_as_f32x8!(P1asinf, 7.4953002686E-2);
+        const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
         let xa = self.abs();
-        let big = xa.simd_ge(f32x16::splat(0.5));
+        let big = xa.simd_ge(f32x8::splat(0.5));
 
-        let x1 = f32x16::splat(0.5) * (f32x16::ONE - xa);
+        let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
         let x2 = xa * xa;
         let x3 = big.select(x1, x2);
 
@@ -1230,8 +1256,8 @@ impl f32x16 {
         let z1 = z + z;
 
         // acos
-        let z3 = self.simd_lt(f32x16::ZERO).select(f32x16::PI - z1, z1);
-        let z4 = f32x16::FRAC_PI_2 - z.flipsign(self);
+        let z3 = self.simd_lt(f32x8::ZERO).select(f32x8::PI - z1, z1);
+        let z4 = f32x8::FRAC_PI_2 - z.flipsign(self);
         let acos = big.select(z3, z4);
 
         acos
@@ -1241,10 +1267,10 @@ impl f32x16 {
     pub(crate) fn atan_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f32_as_f32x16!(P3atanf, 8.05374449538E-2);
-        const_f32_as_f32x16!(P2atanf, -1.38776856032E-1);
-        const_f32_as_f32x16!(P1atanf, 1.99777106478E-1);
-        const_f32_as_f32x16!(P0atanf, -3.33329491539E-1);
+        const_f32_as_f32x8!(P3atanf, 8.05374449538E-2);
+        const_f32_as_f32x8!(P2atanf, -1.38776856032E-1);
+        const_f32_as_f32x8!(P1atanf, 1.99777106478E-1);
+        const_f32_as_f32x8!(P0atanf, -3.33329491539E-1);
 
         let t = self.abs();
 
@@ -1279,10 +1305,10 @@ impl f32x16 {
     pub(crate) fn atan2_backend(self, x: Self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f32_as_f32x16!(P3atanf, 8.05374449538E-2);
-        const_f32_as_f32x16!(P2atanf, -1.38776856032E-1);
-        const_f32_as_f32x16!(P1atanf, 1.99777106478E-1);
-        const_f32_as_f32x16!(P0atanf, -3.33329491539E-1);
+        const_f32_as_f32x8!(P3atanf, 8.05374449538E-2);
+        const_f32_as_f32x8!(P2atanf, -1.38776856032E-1);
+        const_f32_as_f32x8!(P1atanf, 1.99777106478E-1);
+        const_f32_as_f32x8!(P0atanf, -3.33329491539E-1);
 
         let y = self;
 
@@ -1336,49 +1362,49 @@ impl f32x16 {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
 
-        const_f32_as_f32x16!(DP1F, 0.78515625_f32 * 2.0);
-        const_f32_as_f32x16!(DP2F, 2.4187564849853515625E-4_f32 * 2.0);
-        const_f32_as_f32x16!(DP3F, 3.77489497744594108E-8_f32 * 2.0);
+        const_f32_as_f32x8!(DP1F, 0.78515625_f32 * 2.0);
+        const_f32_as_f32x8!(DP2F, 2.4187564849853515625E-4_f32 * 2.0);
+        const_f32_as_f32x8!(DP3F, 3.77489497744594108E-8_f32 * 2.0);
 
-        const_f32_as_f32x16!(P0sinf, -1.6666654611E-1);
-        const_f32_as_f32x16!(P1sinf, 8.3321608736E-3);
-        const_f32_as_f32x16!(P2sinf, -1.9515295891E-4);
+        const_f32_as_f32x8!(P0sinf, -1.6666654611E-1);
+        const_f32_as_f32x8!(P1sinf, 8.3321608736E-3);
+        const_f32_as_f32x8!(P2sinf, -1.9515295891E-4);
 
-        const_f32_as_f32x16!(P0cosf, 4.166664568298827E-2);
-        const_f32_as_f32x16!(P1cosf, -1.388731625493765E-3);
-        const_f32_as_f32x16!(P2cosf, 2.443315711809948E-5);
+        const_f32_as_f32x8!(P0cosf, 4.166664568298827E-2);
+        const_f32_as_f32x8!(P1cosf, -1.388731625493765E-3);
+        const_f32_as_f32x8!(P2cosf, 2.443315711809948E-5);
 
-        const_f32_as_f32x16!(TWO_OVER_PI, 2.0 / core::f32::consts::PI);
+        const_f32_as_f32x8!(TWO_OVER_PI, 2.0 / core::f32::consts::PI);
 
         let xa = self.abs();
 
         // Find quadrant
         let y = (xa * TWO_OVER_PI).round_ties_even();
-        let q: i32x16 = y.round_int();
+        let q: i32x8 = y.round_int();
 
         let x = y.fast_mul_neg_add(DP3F, y.fast_mul_neg_add(DP2F, y.fast_mul_neg_add(DP1F, xa)));
 
         let x2 = x * x;
         let mut s = polynomial_2!(x2, P0sinf, P1sinf, P2sinf) * (x * x2) + x;
         let mut c = polynomial_2!(x2, P0cosf, P1cosf, P2cosf) * (x2 * x2)
-            + f32x16::from(0.5).fast_mul_neg_add(x2, f32x16::from(1.0));
+            + f32x8::from(0.5).fast_mul_neg_add(x2, f32x8::from(1.0));
 
-        let swap = !(q & i32x16::from(1)).simd_eq(i32x16::from(0));
+        let swap = !(q & i32x8::from(1)).simd_eq(i32x8::from(0));
 
-        let mut overflow: f32x16 = cast(q.simd_gt(i32x16::from(0x2000000)));
+        let mut overflow: f32x8 = cast(q.simd_gt(i32x8::from(0x2000000)));
         overflow &= xa.is_finite();
-        s = overflow.select(f32x16::from(0.0), s);
-        c = overflow.select(f32x16::from(1.0), c);
+        s = overflow.select(f32x8::from(0.0), s);
+        c = overflow.select(f32x8::from(1.0), c);
 
         // calc sin
-        let mut sin1 = cast::<_, f32x16>(swap).select(c, s);
-        let sign_sin: i32x16 = (q << 30) ^ cast::<_, i32x16>(self);
+        let mut sin1 = cast::<_, f32x8>(swap).select(c, s);
+        let sign_sin: i32x8 = (q << 30) ^ cast::<_, i32x8>(self);
         sin1 = sin1.flipsign(cast(sign_sin));
 
         // calc cos
-        let mut cos1 = cast::<_, f32x16>(swap).select(s, c);
-        let sign_cos: i32x16 = ((q + i32x16::from(1)) & i32x16::from(2)) << 30;
-        cos1 ^= cast::<_, f32x16>(sign_cos);
+        let mut cos1 = cast::<_, f32x8>(swap).select(s, c);
+        let sign_cos: i32x8 = ((q + i32x8::from(1)) & i32x8::from(2)) << 30;
+        cos1 ^= cast::<_, f32x8>(sign_cos);
 
         // IEEE 754: sin/cos(±∞) = NaN, sin/cos(NaN) = NaN
         let finite = self.is_finite();
@@ -1393,16 +1419,16 @@ impl f32x16 {
     pub(crate) fn asin_acos_backend(self) -> (Self, Self) {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
-        const_f32_as_f32x16!(P4asinf, 4.2163199048E-2);
-        const_f32_as_f32x16!(P3asinf, 2.4181311049E-2);
-        const_f32_as_f32x16!(P2asinf, 4.5470025998E-2);
-        const_f32_as_f32x16!(P1asinf, 7.4953002686E-2);
-        const_f32_as_f32x16!(P0asinf, 1.6666752422E-1);
+        const_f32_as_f32x8!(P4asinf, 4.2163199048E-2);
+        const_f32_as_f32x8!(P3asinf, 2.4181311049E-2);
+        const_f32_as_f32x8!(P2asinf, 4.5470025998E-2);
+        const_f32_as_f32x8!(P1asinf, 7.4953002686E-2);
+        const_f32_as_f32x8!(P0asinf, 1.6666752422E-1);
 
         let xa = self.abs();
-        let big = xa.simd_ge(f32x16::splat(0.5));
+        let big = xa.simd_ge(f32x8::splat(0.5));
 
-        let x1 = f32x16::splat(0.5) * (f32x16::ONE - xa);
+        let x1 = f32x8::splat(0.5) * (f32x8::ONE - xa);
         let x2 = xa * xa;
         let x3 = big.select(x1, x2);
 
@@ -1416,12 +1442,12 @@ impl f32x16 {
         let z1 = z + z;
 
         // acos
-        let z3 = self.simd_lt(f32x16::ZERO).select(f32x16::PI - z1, z1);
-        let z4 = f32x16::FRAC_PI_2 - z.flipsign(self);
+        let z3 = self.simd_lt(f32x8::ZERO).select(f32x8::PI - z1, z1);
+        let z4 = f32x8::FRAC_PI_2 - z.flipsign(self);
         let acos = big.select(z3, z4);
 
         // asin
-        let z3 = f32x16::FRAC_PI_2 - z1;
+        let z3 = f32x8::FRAC_PI_2 - z1;
         let asin = big.select(z3, z);
         let asin = asin.flipsign(self);
 
@@ -1433,28 +1459,28 @@ impl f32x16 {
         // x < -17.329: e^x < 2⁻²⁵, exp_m1(x) = -1.0 exactly (mantissa exhaustion)
         // IEEE simd_lt returns false for NaN, so NaN lanes can't reach here.
         // -inf is < -17.329, and exp_m1(-inf) = -1.0, also correct.
-        if self.simd_lt(f32x16::from(-17.329)).all() {
-            return f32x16::from(-1.0);
+        if self.simd_lt(f32x8::from(-17.329)).all() {
+            return f32x8::from(-1.0);
         }
-        const_f32_as_f32x16!(P0, 1.0 / 2.0);
-        const_f32_as_f32x16!(P1, 1.0 / 6.0);
-        const_f32_as_f32x16!(P2, 1.0 / 24.0);
-        const_f32_as_f32x16!(P3, 1.0 / 120.0);
-        const_f32_as_f32x16!(P4, 1.0 / 720.0);
-        const_f32_as_f32x16!(P5, 1.0 / 5040.0);
+        const_f32_as_f32x8!(P0, 1.0 / 2.0);
+        const_f32_as_f32x8!(P1, 1.0 / 6.0);
+        const_f32_as_f32x8!(P2, 1.0 / 24.0);
+        const_f32_as_f32x8!(P3, 1.0 / 120.0);
+        const_f32_as_f32x8!(P4, 1.0 / 720.0);
+        const_f32_as_f32x8!(P5, 1.0 / 5040.0);
         // LN2D_HI/LO: double-double decomposition of ln(2) for exp range reduction,
         // following the approach from fdlibm's e_exp.c (Sun Microsystems,
         // https://www.netlib.org/fdlibm/). The f32 split uses f32-precision constants
         // (0.693359375, -2.12194440e-4) summing to ln(2) with single-precision
         // accuracy; the f64 variants use a full f64 double-double
         // decomposition.
-        const_f32_as_f32x16!(LN2D_HI, 0.693359375);
-        const_f32_as_f32x16!(LN2D_LO, -2.12194440e-4);
+        const_f32_as_f32x8!(LN2D_HI, 0.693359375);
+        const_f32_as_f32x8!(LN2D_LO, -2.12194440e-4);
         // max_x = ln(f32::MAX) ≈ 88.7229, max_r = 127 (IEEE max normal exponent)
         // min_x = -149.5 ln(2) ≈ -103.63: min r for vm_pow2n subnormal
-        let max_x = f32x16::from(88.723);
-        let min_x = f32x16::from(-103.63);
-        let max_r = f32x16::from(127.0);
+        let max_x = f32x8::from(88.723);
+        let min_x = f32x8::from(-103.63);
+        let max_r = f32x8::from(127.0);
         let r = (self * Self::LOG2_E).round_ties_even();
         let big = r.simd_gt(max_r);
         let r_safe = big.select(max_r, r);
@@ -1506,13 +1532,13 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn sinh_backend(self) -> Self {
-        const_f32_as_f32x16!(P0, 1.0);
-        const_f32_as_f32x16!(P1, 1.0 / 6.0);
-        const_f32_as_f32x16!(P2, 1.0 / 120.0);
-        const_f32_as_f32x16!(P3, 1.0 / 5040.0);
+        const_f32_as_f32x8!(P0, 1.0);
+        const_f32_as_f32x8!(P1, 1.0 / 6.0);
+        const_f32_as_f32x8!(P2, 1.0 / 120.0);
+        const_f32_as_f32x8!(P3, 1.0 / 5040.0);
         let a = self.abs();
         // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
-        let small = a.simd_lt(f32x16::from(0.5));
+        let small = a.simd_lt(f32x8::from(0.5));
         let t = a * a;
         let poly = a * polynomial_3!(t, P0, P1, P2, P3);
         let exp_based = {
@@ -1525,13 +1551,13 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn cosh_backend(self) -> Self {
-        const_f32_as_f32x16!(P0, 1.0);
-        const_f32_as_f32x16!(P1, 1.0 / 2.0);
-        const_f32_as_f32x16!(P2, 1.0 / 24.0);
-        const_f32_as_f32x16!(P3, 1.0 / 720.0);
+        const_f32_as_f32x8!(P0, 1.0);
+        const_f32_as_f32x8!(P1, 1.0 / 2.0);
+        const_f32_as_f32x8!(P2, 1.0 / 24.0);
+        const_f32_as_f32x8!(P3, 1.0 / 720.0);
         let a = self.abs();
         // |x| < 0.5: Taylor poly; last truncation term < 1 ULP at x=0.5 for both types
-        let small = a.simd_lt(f32x16::from(0.5));
+        let small = a.simd_lt(f32x8::from(0.5));
         let t = a * a;
         let poly = polynomial_3!(t, P0, P1, P2, P3);
         let exp_based = {
@@ -1547,11 +1573,11 @@ impl f32x16 {
         // bound: x² < 48·2⁻²³ → x < 2.39e-3; 2e-4 has 10× margin
         // |x| > 9.011: tanh(x) = ±1 to f32 precision (e⁻²ˣ < 2⁻²⁴)
         let a = self.abs();
-        let large = a.simd_gt(f32x16::from(9.011));
+        let large = a.simd_gt(f32x8::from(9.011));
         if large.all() {
             return Self::ONE.flipsign(self);
         }
-        let small = a.simd_lt(f32x16::from(2e-4));
+        let small = a.simd_lt(f32x8::from(2e-4));
         let exp_based = {
             let t = (Self::from(-2.0) * a).exp_m1();
             let pos = -t / (t + Self::from(2.0));
@@ -1563,22 +1589,22 @@ impl f32x16 {
 
     #[inline]
     fn vm_pow2n(self) -> Self {
-        const_f32_as_f32x16!(pow2_23, 8388608.0);
-        const_f32_as_f32x16!(bias, 127.0);
+        const_f32_as_f32x8!(pow2_23, 8388608.0);
+        const_f32_as_f32x8!(bias, 127.0);
         let a = self + (bias + pow2_23);
-        let c = cast::<_, i32x16>(a) << 23;
-        let std_result = cast::<_, f32x16>(c);
+        let c = cast::<_, i32x8>(a) << 23;
+        let std_result = cast::<_, f32x8>(c);
 
-        let min_exp = f32x16::from(-126.0);
+        let min_exp = f32x8::from(-126.0);
         let is_sub = self.simd_lt(min_exp);
         if is_sub.any() {
-            let valid = self.simd_ge(f32x16::from(-149.0));
-            let shift_f = self + f32x16::from(149.0);
+            let valid = self.simd_ge(f32x8::from(-149.0));
+            let shift_f = self + f32x8::from(149.0);
             let mut shift_i = shift_f.trunc_int();
-            shift_i = cast::<_, i32x16>(valid).select(shift_i, i32x16::ZERO);
-            let mantissa = i32x16::ONE << shift_i;
-            let sub_result = cast::<_, f32x16>(mantissa);
-            let sub_result = valid.select(sub_result, f32x16::ZERO);
+            shift_i = cast::<_, i32x8>(valid).select(shift_i, i32x8::ZERO);
+            let mantissa = i32x8::ONE << shift_i;
+            let sub_result = cast::<_, f32x8>(mantissa);
+            let sub_result = valid.select(sub_result, f32x8::ZERO);
             is_sub.select(sub_result, std_result)
         } else {
             std_result
@@ -1586,57 +1612,59 @@ impl f32x16 {
     }
 
     #[inline]
-    fn exponent(self) -> Self {
-        const_f32_as_f32x16!(pow2_23, 8388608.0);
-        const_f32_as_f32x16!(bias, 127.0);
-        let a = cast::<_, u32x16>(self);
+    fn exponent(self) -> f32x8 {
+        const_f32_as_f32x8!(pow2_23, 8388608.0);
+        const_f32_as_f32x8!(bias, 127.0);
+        let a = cast::<_, u32x8>(self);
         let b = a >> 23;
-        let c = b | cast::<_, u32x16>(pow2_23);
-        let d = cast::<_, f32x16>(c);
+        let c = b | cast::<_, u32x8>(pow2_23);
+        let d = cast::<_, f32x8>(c);
         let e = d - (pow2_23 + bias);
         e
     }
 
     #[inline]
     fn fraction_2(self) -> Self {
-        let t1 = cast::<_, u32x16>(self);
-        let t2 = cast::<_, u32x16>((t1 & u32x16::from(0x007FFFFF)) | u32x16::from(0x3F000000));
-        cast::<_, f32x16>(t2)
+        let t1 = cast::<_, u32x8>(self);
+        let t2 = cast::<_, u32x8>((t1 & u32x8::from(0x007FFFFF)) | u32x8::from(0x3F000000));
+        cast::<_, f32x8>(t2)
     }
-
     #[inline]
     fn is_zero_or_subnormal(self) -> Self {
-        let t = cast::<_, i32x16>(self);
-        let t = t & i32x16::splat(0x7F800000);
-        let mask = t.simd_eq(i32x16::splat(0));
-        cast::<_, f32x16>(mask)
+        let t = cast::<_, i32x8>(self);
+        let t = t & i32x8::splat(0x7F800000);
+        let mask = t.simd_eq(i32x8::splat(0));
+        cast::<_, f32x8>(mask)
     }
-
     #[inline]
     fn infinity() -> Self {
-        cast::<_, f32x16>(i32x16::splat(0x7F800000))
+        cast::<_, f32x8>(i32x8::splat(0x7F800000))
     }
-
     #[inline]
     fn nan_log() -> Self {
-        cast::<_, f32x16>(i32x16::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
+        cast::<_, f32x8>(i32x8::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
     }
-
     #[inline]
     fn nan_pow() -> Self {
-        cast::<_, f32x16>(i32x16::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
+        cast::<_, f32x8>(i32x8::splat(0x7FC00000 | 0x101 & 0x003FFFFF))
     }
 
     #[inline]
-    pub(crate) fn from_i32x16_backend(v: i32x16) -> Self {
+    pub(crate) fn from_i32x8_backend(v: i32x8) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(convert_to_m512_from_i32_m512i(v.0))
+          if #[cfg(target_feature="avx2")] {
+            Self(convert_to_m256_from_i32_m256i(v.0))
           } else {
-            Self(Inner {
-              lo: f32x8::from_i32x8(v.0.lo),
-              hi: f32x8::from_i32x8(v.0.hi),
-            })
+            Self::from_array([
+                v.as_array()[0] as f32,
+                v.as_array()[1] as f32,
+                v.as_array()[2] as f32,
+                v.as_array()[3] as f32,
+                v.as_array()[4] as f32,
+                v.as_array()[5] as f32,
+                v.as_array()[6] as f32,
+                v.as_array()[7] as f32,
+              ])
           }
         }
     }
