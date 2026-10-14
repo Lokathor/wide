@@ -233,8 +233,8 @@ mod u8x16_backend;
 mod u8x32_backend;
 mod u8x64_backend;
 
-mod imports {
-    //! Exports items that should be imported by all SIMD-type modules.
+mod backend_imports {
+    //! Exports items that should be imported by all SIMD-type backend modules.
 
     #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]
     pub use core::arch::aarch64::*;
