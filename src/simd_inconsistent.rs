@@ -1,3 +1,18 @@
+//! Defines APIs that only exists for some SIMD types inconsistently.
+//!
+//! Such APIS are usually either:
+//!
+//! - Deprecated and replaced by consistent APIs
+//!
+//! - Missing for certain types and could be moved from here (and renamed if
+//!   needed) once they are implemented for all applicable types
+//!
+//! - Cannot be made consistent yet due to language limitations
+//!
+//! This module does not implement any functionality. All functions here
+//! simply delegate to other functions, either backend functions or other public
+//! functions.
+
 use crate::{
     f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i16x8, i16x16, i16x32, i32x4, i32x8,
     i32x16, i64x2, i64x4, i64x8, u8x16, u8x32, u16x8, u16x16, u32x4, u32x8, u32x16, u64x2, u64x4,
