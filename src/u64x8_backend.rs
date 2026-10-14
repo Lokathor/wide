@@ -223,13 +223,11 @@ impl u64x8 {
             use core::arch::x86_64::_mm512_mask_set1_epi64;
 
             // TODO(safe_arch): Add `_mm512_mask_set1_epi64`
-            unsafe {
-              Self(m512i(_mm512_mask_set1_epi64(
-                  self.0.0,
-                  const { 1 << INDEX },
-                  value.cast_signed(),
-              )))
-            }
+            Self(m512i(_mm512_mask_set1_epi64(
+                self.0.0,
+                const { 1 << INDEX },
+                value.cast_signed(),
+            )))
           } else {
             let [self_a, self_b] = cast::<u64x8, [u64x4; 2]>(self);
 
@@ -273,16 +271,14 @@ impl u64x8 {
             use core::arch::x86_64::_mm512_extracti32x4_epi32;
 
             // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
-            unsafe {
-              match INDEX {
-                $($INDEX => {
-                  let quarter = cast::<m128i, u64x2>(m128i(
-                    _mm512_extracti32x4_epi32::<{ $INDEX / 2 }>(self.0.0),
-                  ));
-                  quarter.extract_const::<{ $INDEX % 2 }>()
-                })*
-                8.. => unreachable!()
-              }
+            match INDEX {
+              $($INDEX => {
+                let quarter = cast::<m128i, u64x2>(m128i(
+                  _mm512_extracti32x4_epi32::<{ $INDEX / 2 }>(self.0.0),
+                ));
+                quarter.extract_const::<{ $INDEX % 2 }>()
+              })*
+              8.. => unreachable!()
             }
           } else {
             let [self_a, self_b] = cast::<u64x8, [u64x4; 2]>(self);

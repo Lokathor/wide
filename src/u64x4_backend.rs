@@ -405,7 +405,7 @@ impl u64x4 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm256_permutexvar_epi64;
             // TODO(safe_arch): Add `_mm256_permutexvar_epi64`.
-            Self(m256i(unsafe { _mm256_permutexvar_epi64(indices.0.0, self.0.0) }))
+            Self(m256i(_mm256_permutexvar_epi64(indices.0.0, self.0.0)))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),

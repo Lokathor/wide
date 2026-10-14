@@ -31,7 +31,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_add(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vaddq_u8(self.0, rhs.0)) }
+            Self(vaddq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].wrapping_add(rhs.0.arr[0]),
@@ -63,7 +63,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_sub(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vsubq_u8(self.0, rhs.0))}
+            Self(vsubq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
@@ -94,7 +94,7 @@ impl u8x16 {
         // actually be faster than auto-vectorization.
         pick! {
           if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vmulq_u8(self.0, rhs.0)) }
+            Self(vmulq_u8(self.0, rhs.0))
           } else {
             let self_array: [u8; 16] = cast(self);
             let rhs_array: [u8; 16] = cast(rhs);
@@ -129,7 +129,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_and(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vandq_u8(self.0, rhs.0))}
+            Self(vandq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0] & rhs.0.arr[0],
@@ -161,7 +161,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_or(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vorrq_u8(self.0, rhs.0))}
+            Self(vorrq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0] | rhs.0.arr[0],
@@ -193,7 +193,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_xor(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(veorq_u8(self.0, rhs.0))}
+            Self(veorq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0] ^ rhs.0.arr[0],
@@ -225,7 +225,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_eq(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vceqq_u8(self.0, rhs.0))}
+            Self(vceqq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               if self.0.arr[0] == rhs.0.arr[0] { u8::MAX } else { 0 },
@@ -293,7 +293,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vcltq_u8(self.0, rhs.0))}
+            Self(vcltq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               if self.0.arr[0] < rhs.0.arr[0] { u8::MAX } else { 0 },
@@ -329,7 +329,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vcgtq_u8(self.0, rhs.0))}
+            Self(vcgtq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               if self.0.arr[0] > rhs.0.arr[0] { u8::MAX } else { 0 },
@@ -367,7 +367,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_le(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vcleq_u8(self.0, rhs.0))}
+            Self(vcleq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               if self.0.arr[0] <= rhs.0.arr[0] { u8::MAX } else { 0 },
@@ -405,7 +405,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_ge(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vcgeq_u8(self.0, rhs.0))}
+            Self(vcgeq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               if self.0.arr[0] >= rhs.0.arr[0] { u8::MAX } else { 0 },
@@ -459,7 +459,7 @@ impl u8x16 {
               $($INDEX => {
                 let value = set_i32_m128i_s(value as i32);
                 // TODO(safe_arch): Add `_mm_slli_si128`
-                let shifted_value = Self(m128i(unsafe { _mm_slli_si128::<$INDEX>(value.0) }));
+                let shifted_value = Self(m128i(_mm_slli_si128::<$INDEX>(value.0)));
 
                 replace_mask.select(shifted_value, self)
               })*
@@ -470,11 +470,9 @@ impl u8x16 {
             target_feature = "neon",
             target_endian = "little",
           ))] {
-            unsafe {
-              match INDEX {
-                $($INDEX => Self(vsetq_lane_u8::<$INDEX>(value, self.0)),)*
-                16.. => unreachable!(),
-              }
+            match INDEX {
+              $($INDEX => Self(vsetq_lane_u8::<$INDEX>(value, self.0)),)*
+              16.. => unreachable!(),
             }
           } else if #[cfg(target_feature = "simd128")] {
             Self(u8x16_replace_lane::<INDEX>(self.0, value))
@@ -515,7 +513,7 @@ impl u8x16 {
             let shifted_self = match INDEX {
               0 => self.0,
               // TODO(safe_arch): Add `_mm_srli_si128`
-              $($INDEX_FROM_1 => m128i(unsafe { _mm_srli_si128::<$INDEX_FROM_1>(self.0.0) }),)*
+              $($INDEX_FROM_1 => m128i(_mm_srli_si128::<$INDEX_FROM_1>(self.0.0)),)*
               16.. => unreachable!(),
             };
 
@@ -525,11 +523,9 @@ impl u8x16 {
             target_feature = "neon",
             target_endian = "little",
           ))] {
-            unsafe {
-              match INDEX {
-                $($INDEX => vgetq_lane_u8::<$INDEX>(self.0),)*
-                16.. => unreachable!(),
-              }
+            match INDEX {
+              $($INDEX => vgetq_lane_u8::<$INDEX>(self.0),)*
+              16.. => unreachable!(),
             }
           } else if #[cfg(target_feature = "simd128")] {
             u8x16_extract_lane::<INDEX>(self.0)
@@ -579,19 +575,17 @@ impl u8x16 {
             let sum = u8x16_add(sum, rhs);
             u8x16_extract_lane::<0>(sum)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // Use `transmute` instead of `cast` because `uint8x16_t` does not
-              // implement `bytemuck::Pod`.
-              let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
-              let sum = vaddq_u8(self.0, rhs);
-              let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_2));
-              let sum = vaddq_u8(sum, rhs);
-              let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_3));
-              let sum = vaddq_u8(sum, rhs);
-              let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_4));
-              let sum = vaddq_u8(sum, rhs);
-              vgetq_lane_u8(sum, 0)
-            }
+            // Use `transmute` instead of `cast` because `uint8x16_t` does not
+            // implement `bytemuck::Pod`.
+            let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
+            let sum = vaddq_u8(self.0, rhs);
+            let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_2));
+            let sum = vaddq_u8(sum, rhs);
+            let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_3));
+            let sum = vaddq_u8(sum, rhs);
+            let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_4));
+            let sum = vaddq_u8(sum, rhs);
+            vgetq_lane_u8(sum, 0)
           } else {
             let array: [u8; 16] = cast(self);
             array.into_iter().reduce(u8::wrapping_add).unwrap()
@@ -608,19 +602,17 @@ impl u8x16 {
             const HIGH_16: [u8; 16] = [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             const HIGH_8: [u8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-            unsafe {
-              // Use `transmute` instead of `cast` because `int8x16_t` does not
-              // implement `bytemuck::Pod`.
-              let high_64 = vqtbl1q_u8(self.0, core::mem::transmute(HIGH_64));
-              let reduce_64 = vmulq_u8(self.0, high_64);
-              let high_32 = vqtbl1q_u8(reduce_64, core::mem::transmute(HIGH_32));
-              let reduce_32 = vmulq_u8(reduce_64, high_32);
-              let high_16 = vqtbl1q_u8(reduce_32, core::mem::transmute(HIGH_16));
-              let reduce_16 = vmulq_u8(reduce_32, high_16);
-              let high_8 = vqtbl1q_u8(reduce_16, core::mem::transmute(HIGH_8));
-              let reduce_8 = vmulq_u8(reduce_16, high_8);
-              vgetq_lane_u8::<0>(reduce_8)
-            }
+            // Use `transmute` instead of `cast` because `int8x16_t` does not
+            // implement `bytemuck::Pod`.
+            let high_64 = vqtbl1q_u8(self.0, core::mem::transmute(HIGH_64));
+            let reduce_64 = vmulq_u8(self.0, high_64);
+            let high_32 = vqtbl1q_u8(reduce_64, core::mem::transmute(HIGH_32));
+            let reduce_32 = vmulq_u8(reduce_64, high_32);
+            let high_16 = vqtbl1q_u8(reduce_32, core::mem::transmute(HIGH_16));
+            let reduce_16 = vmulq_u8(reduce_32, high_16);
+            let high_8 = vqtbl1q_u8(reduce_16, core::mem::transmute(HIGH_8));
+            let reduce_8 = vmulq_u8(reduce_16, high_8);
+            vgetq_lane_u8::<0>(reduce_8)
           } else {
             self.to_array().into_iter().reduce(u8::wrapping_mul).unwrap()
           }
@@ -635,7 +627,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_one.0, if_zero.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vbslq_u8(self.0, if_one.0, if_zero.0))}
+            Self(vbslq_u8(self.0, if_one.0, if_zero.0))
           } else {
             generic_bit_blend(self, if_one, if_zero)
           }
@@ -650,7 +642,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_true.0, if_false.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vbslq_u8(self.0, if_true.0, if_false.0))}
+            Self(vbslq_u8(self.0, if_true.0, if_false.0))
           } else {
             generic_bit_blend(self, if_true, if_false)
           }
@@ -665,21 +657,19 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             u8x16_bitmask(self.0) as u32
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // set all to 1 if top bit is set, else 0
-              let masked = vcltzq_s8(self.cast_signed().0);
+            // set all to 1 if top bit is set, else 0
+            let masked = vcltzq_s8(self.cast_signed().0);
 
-              // select the right bit out of each lane
-              let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
-              let out = vandq_u8(masked, selectbit);
+            // select the right bit out of each lane
+            let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+            let out = vandq_u8(masked, selectbit);
 
-              // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
-              let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
-              let r = vqtbl1q_u8(out, table);
+            // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
+            let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+            let r = vqtbl1q_u8(out, table);
 
-              // horizontally add the 16-bit lanes
-              vaddvq_u16(vreinterpretq_u16_u8(r)) as u32
-            }
+            // horizontally add the 16-bit lanes
+            vaddvq_u16(vreinterpretq_u16_u8(r)) as u32
            } else {
             ((self.0.arr[0].cast_signed() < 0) as u32) |
             ((self.0.arr[1].cast_signed() < 0) as u32) << 1 |
@@ -709,9 +699,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             u8x16_bitmask(self.0) != 0
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            unsafe {
-              vminvq_s8(self.cast_signed().0) < 0
-            }
+            vminvq_s8(self.cast_signed().0) < 0
           } else {
             let v : [u64;2] = cast(self);
             ((v[0] | v[1]) & 0x8080808080808080) != 0
@@ -727,9 +715,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             u8x16_bitmask(self.0) == 0b1111_1111_1111_1111
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            unsafe {
-              vmaxvq_s8(self.cast_signed().0) < 0
-            }
+            vmaxvq_s8(self.cast_signed().0) < 0
           } else {
             let v : [u64;2] = cast(self);
             (v[0] & v[1] & 0x8080808080808080) == 0x8080808080808080
@@ -745,11 +731,11 @@ impl u8x16 {
             } else if #[cfg(target_feature = "simd128")] {
               u8x16(u8x16_shuffle::<0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23>(self.0, other.0))
             } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-                let lhs = unsafe { vget_low_u8(self.0) };
-                let rhs = unsafe { vget_low_u8(other.0) };
+                let lhs = vget_low_u8(self.0);
+                let rhs = vget_low_u8(other.0);
 
-                let zipped = unsafe { vzip_u8(lhs, rhs) };
-                u8x16(unsafe { vcombine_u8(zipped.0, zipped.1) })
+                let zipped = vzip_u8(lhs, rhs);
+                u8x16(vcombine_u8(zipped.0, zipped.1))
             } else {
                 u8x16::from_array([
                     self.as_array()[0], other.as_array()[0],
@@ -773,11 +759,11 @@ impl u8x16 {
             } else if #[cfg(target_feature = "simd128")] {
                 u8x16(u8x16_shuffle::<8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31>(self.0, other.0))
             } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-                let lhs = unsafe { vget_high_u8(self.0) };
-                let rhs = unsafe { vget_high_u8(other.0) };
+                let lhs = vget_high_u8(self.0);
+                let rhs = vget_high_u8(other.0);
 
-                let zipped = unsafe { vzip_u8(lhs, rhs) };
-                u8x16(unsafe { vcombine_u8(zipped.0, zipped.1) })
+                let zipped = vzip_u8(lhs, rhs);
+                u8x16(vcombine_u8(zipped.0, zipped.1))
             } else {
                 u8x16::from_array([
                     self.as_array()[8], other.as_array()[8],
@@ -803,7 +789,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_swizzle(self.0, indices.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            unsafe { Self(vqtbl1q_u8(self.0, indices.0)) }
+            Self(vqtbl1q_u8(self.0, indices.0))
           } else {
             let self_array = self.to_array();
             let indices_array = indices.to_array();
@@ -848,7 +834,7 @@ impl u8x16 {
             use core::arch::x86_64::_mm_permutexvar_epi8;
 
             // TODO(safe_arch): add `_mm_permutexvar_epi8`.
-            Self(unsafe { m128i(_mm_permutexvar_epi8(indices.0.0, self.0.0)) })
+            Self(m128i(_mm_permutexvar_epi8(indices.0.0, self.0.0)))
           } else {
             self.shuffle(indices & 15)
           }
@@ -865,10 +851,10 @@ impl u8x16 {
             use core::arch::x86_64::_mm_permutex2var_epi8;
 
             // TODO(safe_arch): add `_mm_permutex2var_epi8`.
-            u8x16(unsafe { m128i(_mm_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)) })
+            u8x16(m128i(_mm_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             let table = uint8x16x2_t(inputs[0].0, inputs[1].0);
-            unsafe { u8x16(vqtbl2q_u8(table, indices.0)) }
+            u8x16(vqtbl2q_u8(table, indices.0))
           } else {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 16)
           }
@@ -903,7 +889,7 @@ impl u8x16 {
         pick! {
           if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             let table = uint8x16x3_t(inputs[0].0, inputs[1].0, inputs[2].0);
-            unsafe { u8x16(vqtbl3q_u8(table, indices.0)) }
+            u8x16(vqtbl3q_u8(table, indices.0))
           } else {
             [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 32)
           }
@@ -925,7 +911,7 @@ impl u8x16 {
         pick! {
           if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             let table = uint8x16x4_t(inputs[0].0, inputs[1].0, inputs[2].0, inputs[3].0);
-            unsafe { u8x16(vqtbl4q_u8(table, indices.0)) }
+            u8x16(vqtbl4q_u8(table, indices.0))
           } else {
             [inputs[0], inputs[1]].shuffle_zeroing(indices)
               | [inputs[2], inputs[3]].shuffle_zeroing(indices - 32)
@@ -996,11 +982,9 @@ impl u8x16 {
         // not actually be faster than auto-vectorization.
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              // Mask `rhs` to 7 to match `wrapping_shl`.
-              let shift_by = vreinterpretq_s8_u8(vandq_u8(rhs.0, vmovq_n_u8(7)));
-              Self(vshlq_u8(self.0, shift_by))
-            }
+            // Mask `rhs` to 7 to match `wrapping_shl`.
+            let shift_by = vreinterpretq_s8_u8(vandq_u8(rhs.0, vmovq_n_u8(7)));
+            Self(vshlq_u8(self.0, shift_by))
           } else {
             let self_array: [u8; 16] = cast(self);
             let rhs_array: [u8; 16] = cast(rhs);
@@ -1038,7 +1022,7 @@ impl u8x16 {
             Self(u8x16_shl(self.0, rhs & 7))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             // Mask `rhs` to 7 to match `wrapping_shl`.
-            unsafe { Self(vshlq_u8(self.0, vmovq_n_s8(rhs as i8 & 7))) }
+            Self(vshlq_u8(self.0, vmovq_n_s8(rhs as i8 & 7)))
           } else {
             let values: u16x8 = cast(self);
             let shift = rhs & 7;
@@ -1056,12 +1040,10 @@ impl u8x16 {
         // not actually be faster than auto-vectorization.
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
-              // there is no shift-right intrinsic.
-              let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(vandq_u8(rhs.0, vmovq_n_u8(7))));
-              Self(vshlq_u8(self.0, neg_rhs))
-            }
+            // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
+            // there is no shift-right intrinsic.
+            let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(vandq_u8(rhs.0, vmovq_n_u8(7))));
+            Self(vshlq_u8(self.0, neg_rhs))
           } else {
             let self_array: [u8; 16] = cast(self);
             let rhs_array: [u8; 16] = cast(rhs);
@@ -1100,7 +1082,7 @@ impl u8x16 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
             // there is no shift-right intrinsic.
-            unsafe { Self(vshlq_u8(self.0, vmovq_n_s8(-(rhs as i8 & 7)))) }
+            Self(vshlq_u8(self.0, vmovq_n_s8(-(rhs as i8 & 7))))
           } else {
             let values: u16x8 = cast(self);
             let shift = rhs & 7;
@@ -1119,7 +1101,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_max(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vmaxq_u8(self.0, rhs.0))}
+            Self(vmaxq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].max(rhs.0.arr[0]),
@@ -1151,7 +1133,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_min(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vminq_u8(self.0, rhs.0))}
+            Self(vminq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].min(rhs.0.arr[0]),
@@ -1208,19 +1190,17 @@ impl u8x16 {
             let max = u8x16_max(max, rhs);
             u8x16_extract_lane::<0>(max)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // Use `transmute` instead of `cast` because `uint8x16_t` does not
-              // implement `bytemuck::Pod`.
-              let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
-              let max = vmaxq_u8(self.0, rhs);
-              let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_2));
-              let max = vmaxq_u8(max, rhs);
-              let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_3));
-              let max = vmaxq_u8(max, rhs);
-              let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_4));
-              let max = vmaxq_u8(max, rhs);
-              vgetq_lane_u8(max, 0)
-            }
+            // Use `transmute` instead of `cast` because `uint8x16_t` does not
+            // implement `bytemuck::Pod`.
+            let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
+            let max = vmaxq_u8(self.0, rhs);
+            let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_2));
+            let max = vmaxq_u8(max, rhs);
+            let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_3));
+            let max = vmaxq_u8(max, rhs);
+            let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_4));
+            let max = vmaxq_u8(max, rhs);
+            vgetq_lane_u8(max, 0)
           } else {
             let array: [u8; 16] = cast(self);
             array.into_iter().reduce(u8::max).unwrap()
@@ -1261,19 +1241,17 @@ impl u8x16 {
             let min = u8x16_min(min, rhs);
             u8x16_extract_lane::<0>(min)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // Use `transmute` instead of `cast` because `uint8x16_t` does not
-              // implement `bytemuck::Pod`.
-              let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
-              let min = vminq_u8(self.0, rhs);
-              let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_2));
-              let min = vminq_u8(min, rhs);
-              let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_3));
-              let min = vminq_u8(min, rhs);
-              let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_4));
-              let min = vminq_u8(min, rhs);
-              vgetq_lane_u8(min, 0)
-            }
+            // Use `transmute` instead of `cast` because `uint8x16_t` does not
+            // implement `bytemuck::Pod`.
+            let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
+            let min = vminq_u8(self.0, rhs);
+            let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_2));
+            let min = vminq_u8(min, rhs);
+            let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_3));
+            let min = vminq_u8(min, rhs);
+            let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_4));
+            let min = vminq_u8(min, rhs);
+            vgetq_lane_u8(min, 0)
           } else {
             let array: [u8; 16] = cast(self);
             array.into_iter().reduce(u8::min).unwrap()
@@ -1288,9 +1266,7 @@ impl u8x16 {
         // actually be faster than auto-vectorization.
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              Self(vshlq_u8(self.0, vreinterpretq_s8_u8(rhs.0))) & rhs.simd_lt(8)
-            }
+            Self(vshlq_u8(self.0, vreinterpretq_s8_u8(rhs.0))) & rhs.simd_lt(8)
           } else {
             let self_array = self.to_array();
             let rhs_array = rhs.to_array();
@@ -1328,7 +1304,7 @@ impl u8x16 {
             if rhs >= 8 { Self::ZERO } else { Self(u8x16_shl(self.0, rhs)) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             // The intrinsic has different semantics so we need to saturate `rhs`.
-            unsafe { Self(vshlq_u8(self.0, vmovq_n_s8(rhs.min(i8::MAX as u32) as i8))) }
+            Self(vshlq_u8(self.0, vmovq_n_s8(rhs.min(i8::MAX as u32) as i8)))
           } else {
             let values: u16x8 = cast(self);
             let shifted = values.unbounded_shl_scalar(rhs);
@@ -1345,11 +1321,9 @@ impl u8x16 {
         // not actually be faster than auto-vectorization.
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              // Negate `rhs` because there is no direct shift-right intrinsic, and
-              // mask to hide `rhs` overflow.
-              Self(vshlq_u8(self.0, vnegq_s8(vreinterpretq_s8_u8(rhs.0)))) & rhs.simd_lt(8)
-            }
+            // Negate `rhs` because there is no direct shift-right intrinsic, and
+            // mask to hide `rhs` overflow.
+            Self(vshlq_u8(self.0, vnegq_s8(vreinterpretq_s8_u8(rhs.0)))) & rhs.simd_lt(8)
           } else {
             let self_array = self.to_array();
             let rhs_array = rhs.to_array();
@@ -1385,11 +1359,9 @@ impl u8x16 {
           if #[cfg(target_feature="simd128")] {
             if rhs < 8 { Self(u8x16_shr(self.0, rhs)) } else { Self::ZERO }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // Negate `rhs` because there is no direct shift-right intrinsic, and
-              // restrict it to prevent overflow.
-              Self(vshlq_u8(self.0, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)))
-            }
+            // Negate `rhs` because there is no direct shift-right intrinsic, and
+            // restrict it to prevent overflow.
+            Self(vshlq_u8(self.0, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)))
           } else {
             let values: u16x8 = cast(self);
             let shifted = values.unbounded_shr_scalar(rhs);
@@ -1407,7 +1379,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_add_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vqaddq_u8(self.0, rhs.0))}
+            Self(vqaddq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].saturating_add(rhs.0.arr[0]),
@@ -1439,7 +1411,7 @@ impl u8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_sub_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vqsubq_u8(self.0, rhs.0)) }
+            Self(vqsubq_u8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].saturating_sub(rhs.0.arr[0]),
@@ -1474,15 +1446,13 @@ impl u8x16 {
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> u16x16 {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              let low_wide_mul = vmull_u8(vget_low_u8(self.0), vget_low_u8(rhs.0));
-              let high_wide_mul = vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0));
+            let low_wide_mul = vmull_u8(vget_low_u8(self.0), vget_low_u8(rhs.0));
+            let high_wide_mul = vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0));
 
-              u16x16(crate::u16x16_backend::Inner {
-                lo: u16x8(low_wide_mul),
-                hi: u16x8(high_wide_mul),
-              })
-            }
+            u16x16(crate::u16x16_backend::Inner {
+              lo: u16x8(low_wide_mul),
+              hi: u16x8(high_wide_mul),
+            })
           } else {
             let self_array = self.to_array();
             let rhs_array = rhs.to_array();
@@ -1513,19 +1483,17 @@ impl u8x16 {
     pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              let low_wide_mul = vreinterpretq_u8_u16(
-                vmull_u8(vget_low_u8(self.0), vget_low_u8(rhs.0)),
-              );
-              let high_wide_mul = vreinterpretq_u8_u16(
-                vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0)),
-              );
-              let low_high = vuzpq_u8(low_wide_mul, high_wide_mul);
-              (
-                Self(low_high.0),
-                Self(low_high.1),
-              )
-            }
+            let low_wide_mul = vreinterpretq_u8_u16(
+              vmull_u8(vget_low_u8(self.0), vget_low_u8(rhs.0)),
+            );
+            let high_wide_mul = vreinterpretq_u8_u16(
+              vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0)),
+            );
+            let low_high = vuzpq_u8(low_wide_mul, high_wide_mul);
+            (
+              Self(low_high.0),
+              Self(low_high.1),
+            )
           } else {
             // TODO(perf): This implementation looks quite bad. Is there a better
             // one?
@@ -1598,15 +1566,13 @@ impl u8x16 {
     pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              let low_wide_mul = vreinterpretq_u8_u16(
-                vmull_u8(vget_low_u8(self.0), vget_low_u8(rhs.0)),
-              );
-              let high_wide_mul = vreinterpretq_u8_u16(
-                vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0)),
-              );
-              Self(vuzpq_u8(low_wide_mul, high_wide_mul).1)
-            }
+            let low_wide_mul = vreinterpretq_u8_u16(
+              vmull_u8(vget_low_u8(self.0), vget_low_u8(rhs.0)),
+            );
+            let high_wide_mul = vreinterpretq_u8_u16(
+              vmull_u8(vget_high_u8(self.0), vget_high_u8(rhs.0)),
+            );
+            Self(vuzpq_u8(low_wide_mul, high_wide_mul).1)
           } else {
             let self_array = self.to_array();
             let rhs_array = rhs.to_array();
@@ -1641,9 +1607,9 @@ impl u8x16 {
             } else if #[cfg(target_feature = "simd128")] {
                 u8x16(u8x16_narrow_i16x8(lhs.0, rhs.0))
             } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-                let lhs = unsafe { vqmovun_s16(lhs.0) };
-                let rhs = unsafe { vqmovun_s16(rhs.0) };
-                u8x16(unsafe { vcombine_u8(lhs, rhs) })
+                let lhs = vqmovun_s16(lhs.0);
+                let rhs = vqmovun_s16(rhs.0);
+                u8x16(vcombine_u8(lhs, rhs))
             } else {
                 fn clamp(a: i16) -> u8 {
                       if a < u8::MIN as i16 {

@@ -26,7 +26,7 @@ impl i8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_s8_u8(vcltq_s8(self.0, rhs.0)))}
+            Self(vreinterpretq_s8_u8(vcltq_s8(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] < rhs.0.arr[0] { -1 } else { 0 },
@@ -58,7 +58,7 @@ impl i8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_s8_u8(vcgtq_s8(self.0, rhs.0)))}
+            Self(vreinterpretq_s8_u8(vcgtq_s8(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] > rhs.0.arr[0] { -1 } else { 0 },
@@ -153,12 +153,10 @@ impl i8x16 {
         // not actually be faster than auto-vectorization.
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
-              // there is no shift-right intrinsic.
-              let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(vandq_u8(rhs.0, vmovq_n_u8(7))));
-              Self(vshlq_s8(self.0, neg_rhs))
-            }
+            // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
+            // there is no shift-right intrinsic.
+            let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(vandq_u8(rhs.0, vmovq_n_u8(7))));
+            Self(vshlq_s8(self.0, neg_rhs))
           } else {
             let self_array: [i8; 16] = cast(self);
             let rhs_array: [u8; 16] = cast(rhs);
@@ -197,7 +195,7 @@ impl i8x16 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             // Mask `rhs` to 7 to match `wrapping_shr`, and negate it because
             // there is no shift-right intrinsic.
-            unsafe { Self(vshlq_s8(self.0, vmovq_n_s8(-(rhs as i8 & 7)))) }
+            Self(vshlq_s8(self.0, vmovq_n_s8(-(rhs as i8 & 7))))
           } else {
             let self_array = self.to_array();
 
@@ -231,7 +229,7 @@ impl i8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_max(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vmaxq_s8(self.0, rhs.0))}
+            Self(vmaxq_s8(self.0, rhs.0))
           } else {
             self.simd_lt(rhs).select(rhs, self)
           }
@@ -246,7 +244,7 @@ impl i8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_min(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vminq_s8(self.0, rhs.0))}
+            Self(vminq_s8(self.0, rhs.0))
           } else {
             self.simd_lt(rhs).select(self, rhs)
           }
@@ -286,19 +284,17 @@ impl i8x16 {
             let max = i8x16_max(max, rhs);
             i8x16_extract_lane::<0>(max)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // Use `transmute` instead of `cast` because `int8x16_t` does not
-              // implement `bytemuck::Pod`.
-              let rhs = vqtbl1q_s8(self.0, core::mem::transmute(SHUFFLE_1));
-              let max = vmaxq_s8(self.0, rhs);
-              let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_2));
-              let max = vmaxq_s8(max, rhs);
-              let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_3));
-              let max = vmaxq_s8(max, rhs);
-              let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_4));
-              let max = vmaxq_s8(max, rhs);
-              vgetq_lane_s8(max, 0)
-            }
+            // Use `transmute` instead of `cast` because `int8x16_t` does not
+            // implement `bytemuck::Pod`.
+            let rhs = vqtbl1q_s8(self.0, core::mem::transmute(SHUFFLE_1));
+            let max = vmaxq_s8(self.0, rhs);
+            let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_2));
+            let max = vmaxq_s8(max, rhs);
+            let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_3));
+            let max = vmaxq_s8(max, rhs);
+            let rhs = vqtbl1q_s8(max, core::mem::transmute(SHUFFLE_4));
+            let max = vmaxq_s8(max, rhs);
+            vgetq_lane_s8(max, 0)
           } else {
             let array: [i8; 16] = cast(self);
             array.into_iter().reduce(i8::max).unwrap()
@@ -339,19 +335,17 @@ impl i8x16 {
             let min = i8x16_min(min, rhs);
             i8x16_extract_lane::<0>(min)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // Use `transmute` instead of `cast` because `int8x16_t` does not
-              // implement `bytemuck::Pod`.
-              let rhs = vqtbl1q_s8(self.0, core::mem::transmute(SHUFFLE_1));
-              let min = vminq_s8(self.0, rhs);
-              let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_2));
-              let min = vminq_s8(min, rhs);
-              let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_3));
-              let min = vminq_s8(min, rhs);
-              let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_4));
-              let min = vminq_s8(min, rhs);
-              vgetq_lane_s8(min, 0)
-            }
+            // Use `transmute` instead of `cast` because `int8x16_t` does not
+            // implement `bytemuck::Pod`.
+            let rhs = vqtbl1q_s8(self.0, core::mem::transmute(SHUFFLE_1));
+            let min = vminq_s8(self.0, rhs);
+            let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_2));
+            let min = vminq_s8(min, rhs);
+            let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_3));
+            let min = vminq_s8(min, rhs);
+            let rhs = vqtbl1q_s8(min, core::mem::transmute(SHUFFLE_4));
+            let min = vminq_s8(min, rhs);
+            vgetq_lane_s8(min, 0)
           } else {
             let array: [i8; 16] = cast(self);
             array.into_iter().reduce(i8::min).unwrap()
@@ -366,12 +360,10 @@ impl i8x16 {
         // not actually be faster than auto-vectorization.
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              // Negate `rhs` because there is no direct shift-right intrinsic, and
-              // restrict it to prevent overflow.
-              let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(rhs.min(u8x16::splat(8)).0));
-              Self(vshlq_s8(self.0, neg_rhs))
-            }
+            // Negate `rhs` because there is no direct shift-right intrinsic, and
+            // restrict it to prevent overflow.
+            let neg_rhs = vnegq_s8(vreinterpretq_s8_u8(rhs.min(u8x16::splat(8)).0));
+            Self(vshlq_s8(self.0, neg_rhs))
           } else {
             let self_array = self.to_array();
             let rhs_array = rhs.to_array();
@@ -407,11 +399,9 @@ impl i8x16 {
           if #[cfg(target_feature="simd128")] {
             if rhs < 8 { Self(i8x16_shr(self.0, rhs)) } else { self.is_negative() }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {
-              // Negate `rhs` because there is no direct shift-right intrinsic, and
-              // restrict it to prevent overflow.
-              Self(vshlq_s8(self.0, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)))
-            }
+            // Negate `rhs` because there is no direct shift-right intrinsic, and
+            // restrict it to prevent overflow.
+            Self(vshlq_s8(self.0, vmovq_n_s8(-rhs.min(8).cast_signed() as i8)))
           } else {
             let self_array = self.to_array();
 
@@ -445,7 +435,7 @@ impl i8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_add_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vqaddq_s8(self.0, rhs.0))}
+            Self(vqaddq_s8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].saturating_add(rhs.0.arr[0]),
@@ -477,7 +467,7 @@ impl i8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_sub_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vqsubq_s8(self.0, rhs.0)) }
+            Self(vqsubq_s8(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].saturating_sub(rhs.0.arr[0]),
@@ -514,15 +504,13 @@ impl i8x16 {
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> i16x16 {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              let low_wide_mul = vmull_s8(vget_low_s8(self.0), vget_low_s8(rhs.0));
-              let high_wide_mul = vmull_s8(vget_high_s8(self.0), vget_high_s8(rhs.0));
+            let low_wide_mul = vmull_s8(vget_low_s8(self.0), vget_low_s8(rhs.0));
+            let high_wide_mul = vmull_s8(vget_high_s8(self.0), vget_high_s8(rhs.0));
 
-              i16x16(crate::i16x16_backend::Inner {
-                lo: i16x8(low_wide_mul),
-                hi: i16x8(high_wide_mul),
-              })
-            }
+            i16x16(crate::i16x16_backend::Inner {
+              lo: i16x8(low_wide_mul),
+              hi: i16x8(high_wide_mul),
+            })
           } else {
             let self_array = self.to_array();
             let rhs_array = rhs.to_array();
@@ -553,20 +541,18 @@ impl i8x16 {
     pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u8x16, i8x16) {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              let low_wide_mul = vreinterpretq_s8_s16(
-                vmull_s8(vget_low_s8(self.0), vget_low_s8(rhs.0)),
-              );
-              let high_wide_mul = vreinterpretq_s8_s16(
-                vmull_s8(vget_high_s8(self.0), vget_high_s8(rhs.0)),
-              );
-              let low_high = vuzpq_s8(low_wide_mul, high_wide_mul);
+            let low_wide_mul = vreinterpretq_s8_s16(
+              vmull_s8(vget_low_s8(self.0), vget_low_s8(rhs.0)),
+            );
+            let high_wide_mul = vreinterpretq_s8_s16(
+              vmull_s8(vget_high_s8(self.0), vget_high_s8(rhs.0)),
+            );
+            let low_high = vuzpq_s8(low_wide_mul, high_wide_mul);
 
-              (
-                u8x16(vreinterpretq_u8_s8(low_high.0)),
-                i8x16(low_high.1),
-              )
-            }
+            (
+              u8x16(vreinterpretq_u8_s8(low_high.0)),
+              i8x16(low_high.1),
+            )
           } else {
             // TODO(perf): This implementation looks quite bad. Is there a better
             // one?
@@ -639,16 +625,14 @@ impl i8x16 {
     pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              let low_wide_mul = vreinterpretq_s8_s16(
-                vmull_s8(vget_low_s8(self.0), vget_low_s8(rhs.0)),
-              );
-              let high_wide_mul = vreinterpretq_s8_s16(
-                vmull_s8(vget_high_s8(self.0), vget_high_s8(rhs.0)),
-              );
+            let low_wide_mul = vreinterpretq_s8_s16(
+              vmull_s8(vget_low_s8(self.0), vget_low_s8(rhs.0)),
+            );
+            let high_wide_mul = vreinterpretq_s8_s16(
+              vmull_s8(vget_high_s8(self.0), vget_high_s8(rhs.0)),
+            );
 
-              Self(vuzpq_s8(low_wide_mul, high_wide_mul).1)
-            }
+            Self(vuzpq_s8(low_wide_mul, high_wide_mul).1)
           } else {
             let self_array = self.to_array();
             let rhs_array = rhs.to_array();
@@ -683,7 +667,7 @@ impl i8x16 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vabsq_s8(self.0))}
+            Self(vabsq_s8(self.0))
           } else {
             let arr: [i8; 16] = cast(self);
             cast([
@@ -712,7 +696,7 @@ impl i8x16 {
     pub(crate) fn is_positive_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(unsafe { vreinterpretq_s8_u8(vcgtzq_s8(self.0)) })
+            Self(vreinterpretq_s8_u8(vcgtzq_s8(self.0)))
           } else {
             self.simd_gt(Self::ZERO)
           }
@@ -723,7 +707,7 @@ impl i8x16 {
     pub(crate) fn is_negative_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(unsafe { vreinterpretq_s8_u8(vcltzq_s8(self.0)) })
+            Self(vreinterpretq_s8_u8(vcltzq_s8(self.0)))
           } else {
             self.simd_lt(Self::ZERO)
           }
@@ -740,9 +724,7 @@ impl i8x16 {
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             use core::arch::aarch64::*;
 
-            unsafe {
-              i8x16(vcombine_s8(vqmovn_s16(v.0.lo.0), vqmovn_s16(v.0.hi.0)))
-            }
+            i8x16(vcombine_s8(vqmovn_s16(v.0.lo.0), vqmovn_s16(v.0.hi.0)))
           } else if #[cfg(target_feature="simd128")] {
             i8x16(i8x16_narrow_i16x8(v.0.lo.0, v.0.hi.0))
           } else {
@@ -818,14 +800,14 @@ impl i8x16 {
 
         pick! {
           if #[cfg(target_feature="sse2")] {
-            unsafe { Self(load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) )) }
+            Self(load_unaligned_m128i(unsafe { &*(input.as_ptr() as * const [u8;16]) }))
           } else if #[cfg(target_feature="simd128")] {
-            unsafe { Self(v128_load(input.as_ptr() as *const v128 )) }
+            Self(unsafe { v128_load(input.as_ptr() as *const v128) })
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vld1q_s8( input.as_ptr() as *const i8 )) }
+            Self(unsafe { vld1q_s8(input.as_ptr() as *const i8) })
           } else {
             // 2018 edition doesn't have try_into
-            unsafe { Self::from_array( *(input.as_ptr() as * const [i8;16]) ) }
+            Self::from_array(unsafe { *(input.as_ptr() as * const [i8;16]) })
           }
         }
     }

@@ -33,7 +33,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_neg(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vnegq_f64(self.0))}
+            Self(vnegq_f64(self.0))
           } else {
             Self::from_array([
               -self.0.arr[0],
@@ -51,7 +51,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_not(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_f64(self.0))))}
+            Self(vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_f64(self.0))))
           } else {
             Self::from_array([
               f64::from_bits(!self.0.arr[0].to_bits()),
@@ -69,7 +69,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_add(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vaddq_f64(self.0, rhs.0)) }
+            Self(vaddq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0] + rhs.0.arr[0],
@@ -87,7 +87,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_sub(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vsubq_f64(self.0, rhs.0)) }
+            Self(vsubq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0] - rhs.0.arr[0],
@@ -105,7 +105,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_mul(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vmulq_f64(self.0, rhs.0))}
+            Self(vmulq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0] * rhs.0.arr[0],
@@ -123,7 +123,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_div(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vdivq_f64(self.0, rhs.0))}
+            Self(vdivq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0] / rhs.0.arr[0],
@@ -149,7 +149,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_and(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))}
+            Self(vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))
           } else {
             Self::from_array([
               f64::from_bits(self.0.arr[0].to_bits() & rhs.0.arr[0].to_bits()),
@@ -167,7 +167,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_or(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(vorrq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))}
+            Self(vreinterpretq_f64_u64(vorrq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))
           } else {
             Self::from_array([
               f64::from_bits(self.0.arr[0].to_bits() | rhs.0.arr[0].to_bits()),
@@ -185,7 +185,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_xor(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))}
+            Self(vreinterpretq_f64_u64(veorq_u64(vreinterpretq_u64_f64(self.0), vreinterpretq_u64_f64(rhs.0))))
           } else {
             Self::from_array([
               f64::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
@@ -203,7 +203,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_eq(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))}
+            Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -221,7 +221,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_ne(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {!Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0))) }
+            !Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -239,7 +239,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)))}
+            Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -259,7 +259,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)))}
+            Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -277,7 +277,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_le(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)))}
+            Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -295,7 +295,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_ge(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)))}
+            Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)))
           } else {
             Self::from_array([
               if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -315,7 +315,7 @@ impl f64x2 {
             let a: [f64;2] = cast(self);
             a.iter().sum()
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { vgetq_lane_f64(self.0,0) + vgetq_lane_f64(self.0,1) }
+            vgetq_lane_f64(self.0,0) + vgetq_lane_f64(self.0,1)
           } else {
             self.0.arr.iter().sum()
           }
@@ -336,7 +336,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_one.0, if_zero.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_one.0, if_zero.0))}
+            Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_one.0, if_zero.0))
           } else {
             generic_bit_blend(self, if_one, if_zero)
           }
@@ -351,7 +351,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_true.0, if_false.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_true.0, if_false.0))}
+            Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_true.0, if_false.0))
           } else {
             generic_bit_blend(self, if_true, if_false)
           }
@@ -366,12 +366,9 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             u64x2_bitmask(self.0) as u32
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe
-            {
-              let e = vreinterpretq_u64_f64(self.0);
+            let e = vreinterpretq_u64_f64(self.0);
 
-              (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
-            }
+            (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
           } else {
             (((self.0.arr[0].to_bits() as i64) < 0) as u32) |
             (((self.0.arr[1].to_bits() as i64) < 0) as u32) << 1
@@ -410,7 +407,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i64x2_shuffle::<0, 2>(self.0, other.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            Self(unsafe { vzip1q_f64(self.0, other.0) })
+            Self(vzip1q_f64(self.0, other.0))
           } else {
             Self::from_array([self.as_array()[0], other.as_array()[0]])
           }
@@ -425,7 +422,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i64x2_shuffle::<1, 3>(self.0, other.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            Self(unsafe { vzip2q_f64(self.0, other.0) })
+            Self(vzip2q_f64(self.0, other.0))
           } else {
             Self::from_array([self.as_array()[1], other.as_array()[1]])
           }
@@ -456,7 +453,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_ne(self.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {!Self(vreinterpretq_f64_u64(vceqq_f64(self.0, self.0))) }
+            !Self(vreinterpretq_f64_u64(vceqq_f64(self.0, self.0)))
           } else {
             Self::from_array([
               if self.0.arr[0].is_nan() { f64::from_bits(u64::MAX) } else { 0.0 },
@@ -559,7 +556,7 @@ impl f64x2 {
               f64x2_ne(self.0, self.0), // NaN check
             ))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vmaxnmq_f64(self.0, rhs.0))}
+            Self(vmaxnmq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].max(rhs.0.arr[0]),
@@ -577,7 +574,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_pmax(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vmaxq_f64(self.0, rhs.0))}
+            Self(vmaxq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               if self.0.arr[0] < rhs.0.arr[0] { rhs.0.arr[0] } else { self.0.arr[0] },
@@ -608,7 +605,7 @@ impl f64x2 {
               f64x2_ne(self.0, self.0), // NaN check
             ))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vminnmq_f64(self.0, rhs.0))}
+            Self(vminnmq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               self.0.arr[0].min(rhs.0.arr[0]),
@@ -626,7 +623,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_pmin(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vminq_f64(self.0, rhs.0))}
+            Self(vminq_f64(self.0, rhs.0))
           } else {
             Self::from_array([
               if self.0.arr[0] < rhs.0.arr[0] { self.0.arr[0] } else { rhs.0.arr[0] },
@@ -662,7 +659,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_max(f64x2_min(self.0, max.0), min.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            unsafe { Self(vmaxq_f64(vminq_f64(self.0, max.0), min.0)) }
+            Self(vmaxq_f64(vminq_f64(self.0, max.0), min.0))
           } else {
             // The standard library does not have NaN propagating `min` and `max`
             // functions.
@@ -678,7 +675,7 @@ impl f64x2 {
     pub(crate) fn reduce_max_backend(self) -> f64 {
         pick! {
           if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-            unsafe { vmaxnmvq_f64(self.0) }
+            vmaxnmvq_f64(self.0)
           } else {
             let self_array = self.to_array();
             self_array[0].max(self_array[1])
@@ -690,7 +687,7 @@ impl f64x2 {
     pub(crate) fn fast_reduce_max_backend(self) -> f64 {
         pick! {
           if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-            unsafe { vmaxnmvq_f64(self.0) }
+            vmaxnmvq_f64(self.0)
           } else {
             let [e0, e1] = self.to_array();
             if e0 > e1 { e0 } else { e1 }
@@ -702,7 +699,7 @@ impl f64x2 {
     pub(crate) fn reduce_min_backend(self) -> f64 {
         pick! {
           if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-            unsafe { vminnmvq_f64(self.0) }
+            vminnmvq_f64(self.0)
           } else {
             let self_array = self.to_array();
             self_array[0].min(self_array[1])
@@ -714,7 +711,7 @@ impl f64x2 {
     pub(crate) fn fast_reduce_min_backend(self) -> f64 {
         pick! {
           if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-            unsafe { vminnmvq_f64(self.0) }
+            vminnmvq_f64(self.0)
           } else {
             let [e0, e1] = self.to_array();
             if e0 < e1 { e0 } else { e1 }
@@ -728,7 +725,7 @@ impl f64x2 {
           if #[cfg(target_feature="simd128")] {
             Self(f64x2_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vabsq_f64(self.0))}
+            Self(vabsq_f64(self.0))
           } else {
             let non_sign_bits = f64x2::from(f64::from_bits(i64::MAX as u64));
             self & non_sign_bits
@@ -744,7 +741,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="sse4.1")] {
             Self(floor_m128d(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vrndmq_f64(self.0))}
+            Self(vrndmq_f64(self.0))
           } else if #[cfg(feature="std")] {
             let base: [f64; 2] = cast(self);
             cast(base.map(|val| val.floor()))
@@ -767,7 +764,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="sse4.1")] {
             Self(ceil_m128d(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vrndpq_f64(self.0))}
+            Self(vrndpq_f64(self.0))
           } else if #[cfg(feature="std")] {
             let base: [f64; 2] = cast(self);
             cast(base.map(|val| val.ceil()))
@@ -820,7 +817,7 @@ impl f64x2 {
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
           } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-            unsafe { Self(vrndaq_f64(self.0)) }
+            Self(vrndaq_f64(self.0))
           } else {
             const_f64_as_f64x2!(HALF_NEXT_DOWN, 0.5_f64.next_down());
             const_f64_as_f64x2!(BOUNDS_LIMIT, 4503599627370496.0);
@@ -860,10 +857,10 @@ impl f64x2 {
             let flip_to_max: i64x2 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
             // TODO(safe_arch): Add `_mm_cvtpd_epi64`.
-            let cast: i64x2 = cast(m128i(unsafe { _mm_cvtpd_epi64(non_nan.0.0) }));
+            let cast: i64x2 = cast(m128i(_mm_cvtpd_epi64(non_nan.0.0)));
             flip_to_max ^ cast
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            cast(Self(unsafe { vreinterpretq_f64_s64(vcvtnq_s64_f64(self.0)) }))
+            cast(Self(vreinterpretq_f64_s64(vcvtnq_s64_f64(self.0))))
           } else {
             let rounded: [f64; 2] = cast(self.round_ties_even());
             cast([rounded[0] as i64, rounded[1] as i64])
@@ -881,7 +878,7 @@ impl f64x2 {
             use core::arch::x86_64::_mm_cvtpd_epi64;
 
             // TODO(safe_arch): Add `_mm_cvtpd_epi64`.
-            cast(m128i(unsafe { _mm_cvtpd_epi64(self.0.0) }))
+            cast(m128i(_mm_cvtpd_epi64(self.0.0)))
           } else {
             self.round_int()
           }
@@ -896,7 +893,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_nearest(self.0))
           } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-            unsafe { Self(vrndnq_f64(self.0)) }
+            Self(vrndnq_f64(self.0))
           } else {
             const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
             const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
@@ -919,7 +916,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_trunc(self.0))
           } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-            unsafe { Self(vrndq_f64(self.0)) }
+            Self(vrndq_f64(self.0))
           } else {
             // There does not seem to be an SSE2 intrinsic for this.
             // `truncate_m128d_to_m128i` truncates to `i32` values which cannot
@@ -957,10 +954,10 @@ impl f64x2 {
             let flip_to_max: i64x2 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
             // TODO(safe_arch): Add `_mm_cvttpd_epi64`.
-            let cast: i64x2 = cast(m128i(unsafe { _mm_cvttpd_epi64(non_nan.0.0) }));
+            let cast: i64x2 = cast(m128i(_mm_cvttpd_epi64(non_nan.0.0)));
             flip_to_max ^ cast
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            cast(Self(unsafe { vreinterpretq_f64_s64(vcvtq_s64_f64(self.0)) }))
+            cast(Self(vreinterpretq_f64_s64(vcvtq_s64_f64(self.0))))
           } else {
             // There does not seem to be an intrinsic for `wasm32`.
             let n: [f64;2] = cast(self);
@@ -979,7 +976,7 @@ impl f64x2 {
             use core::arch::x86_64::_mm_cvttpd_epi64;
 
             // TODO(safe_arch): Add `_mm_cvttpd_epi64`.
-            cast(m128i(unsafe { _mm_cvttpd_epi64(self.0.0) }))
+            cast(m128i(_mm_cvttpd_epi64(self.0.0)))
           } else {
             self.trunc_int()
           }
@@ -992,7 +989,7 @@ impl f64x2 {
           if #[cfg(all(target_feature="fma"))] {
             Self(fused_mul_add_m128d(self.0, a.0, b.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            unsafe { Self(vfmaq_f64(b.0, self.0, a.0)) }
+            Self(vfmaq_f64(b.0, self.0, a.0))
           } else {
             (self * a) + b
           }
@@ -1005,7 +1002,7 @@ impl f64x2 {
           if #[cfg(all(target_feature="fma"))] {
             Self(fused_mul_sub_m128d(self.0, a.0, b.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            unsafe { Self(vfmaq_f64(vnegq_f64(b.0), self.0, a.0)) }
+            Self(vfmaq_f64(vnegq_f64(b.0), self.0, a.0))
           } else {
             (self * a) - b
           }
@@ -1018,7 +1015,7 @@ impl f64x2 {
             if #[cfg(all(target_feature="fma"))] {
               Self(fused_mul_neg_add_m128d(self.0, a.0, b.0))
             } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-              unsafe { Self(vfmsq_f64(b.0, self.0, a.0)) }
+              Self(vfmsq_f64(b.0, self.0, a.0))
             } else {
               b - (self * a)
             }
@@ -1031,7 +1028,7 @@ impl f64x2 {
             if #[cfg(all(target_feature="fma"))] {
               Self(fused_mul_neg_sub_m128d(self.0, a.0, b.0))
             } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-              unsafe { Self(vnegq_f64(vfmaq_f64(b.0, self.0, a.0))) }
+              Self(vnegq_f64(vfmaq_f64(b.0, self.0, a.0)))
             } else {
               -(self * a) - b
             }
@@ -1164,7 +1161,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_sqrt(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vsqrtq_f64(self.0))}
+            Self(vsqrtq_f64(self.0))
           } else if #[cfg(feature="std")] {
             Self::from_array([
               self.0.arr[0].sqrt(),
@@ -2084,7 +2081,7 @@ impl f64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_convert_low_i32x4(v.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            Self(unsafe { vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.0))) })
+            Self(vcvtq_f64_s64(vmovl_s32(vget_low_s32(v.0))))
           } else {
             Self::from_array([
                 v.as_array()[0] as f64,

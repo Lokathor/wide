@@ -212,13 +212,11 @@ impl u16x32 {
             use core::arch::x86_64::_mm512_mask_set1_epi16;
 
             // TODO(safe_arch): Add `_mm512_mask_set1_epi16`
-            unsafe {
-              Self(m512i(_mm512_mask_set1_epi16(
-                  self.0.0,
-                  const { 1 << INDEX },
-                  value.cast_signed(),
-              )))
-            }
+            Self(m512i(_mm512_mask_set1_epi16(
+                self.0.0,
+                const { 1 << INDEX },
+                value.cast_signed(),
+            )))
           } else {
             let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
 
@@ -269,16 +267,14 @@ impl u16x32 {
             use core::arch::x86_64::_mm512_extracti32x4_epi32;
 
             // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
-            unsafe {
-              match INDEX {
-                $($INDEX => {
-                  let quarter = cast::<m128i, u16x8>(m128i(
-                    _mm512_extracti32x4_epi32::<{ $INDEX / 8 }>(self.0.0),
-                  ));
-                  quarter.extract_const::<{ $INDEX % 8 }>()
-                })*
-                32.. => unreachable!()
-              }
+            match INDEX {
+              $($INDEX => {
+                let quarter = cast::<m128i, u16x8>(m128i(
+                  _mm512_extracti32x4_epi32::<{ $INDEX / 8 }>(self.0.0),
+                ));
+                quarter.extract_const::<{ $INDEX % 8 }>()
+              })*
+              32.. => unreachable!()
             }
           } else {
             let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
@@ -418,7 +414,7 @@ impl u16x32 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm512_permutexvar_epi16;
             // TODO(safe_arch): Add `_mm512_permutexvar_epi16`
-            Self(unsafe { m512i(_mm512_permutexvar_epi16(indices.0.0, self.0.0)) })
+            Self(m512i(_mm512_permutexvar_epi16(indices.0.0, self.0.0)))
           } else {
             let self_halfs = cast::<u16x32, [u16x16; 2]>(self);
             let [indices_a, indices_b] = cast::<u16x32, [u16x16; 2]>(indices);
@@ -466,9 +462,7 @@ impl u16x32 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm512_permutex2var_epi16;
             // TODO(safe_arch): add `_mm512_permutex2var_epi16`.
-            u16x32(unsafe {
-                m512i(_mm512_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0))
-            })
+            u16x32(m512i(_mm512_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
           }

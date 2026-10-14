@@ -391,7 +391,7 @@ impl u16x16 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm256_permutexvar_epi16;
             // TODO(safe_arch): Add `_mm256_permutexvar_epi16`
-            Self(unsafe { m256i(_mm256_permutexvar_epi16(indices.0.0, self.0.0)) })
+            Self(m256i(_mm256_permutexvar_epi16(indices.0.0, self.0.0)))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),
@@ -457,9 +457,7 @@ impl u16x16 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm256_permutex2var_epi16;
             // TODO(safe_arch): add `_mm256_permutex2var_epi16`.
-            u16x16(unsafe {
-                m256i(_mm256_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0))
-            })
+            u16x16(m256i(_mm256_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else {
             let self_bytes = cast::<[u16x16; 2], [u8x32; 2]>(inputs);
             let byte_indices = indices.to_byte_indices();
@@ -586,7 +584,7 @@ impl u16x16 {
             // Mask `rhs` to 15 to match `wrapping_shl`.
             let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
             // TODO(safe_arch): Add `_mm256_sllv_epi16`.
-            cast(unsafe { _mm256_sllv_epi16(self.0.0, rhs.0) })
+            cast(_mm256_sllv_epi16(self.0.0, rhs.0))
           } else {
             let [self_a, self_b]: [u16x8; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -624,7 +622,7 @@ impl u16x16 {
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
             // TODO(safe_arch): Add `_mm256_srlv_epi16`.
-            cast(unsafe { _mm256_srlv_epi16(self.0.0, rhs.0) })
+            cast(_mm256_srlv_epi16(self.0.0, rhs.0))
           } else {
             let [self_a, self_b]: [u16x8; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -700,7 +698,7 @@ impl u16x16 {
             use core::arch::x86_64::_mm256_sllv_epi16;
 
             // TODO(safe_arch): Add `_mm256_sllv_epi16`.
-            cast(unsafe { _mm256_sllv_epi16(self.0.0, rhs.0.0) })
+            cast(_mm256_sllv_epi16(self.0.0, rhs.0.0))
           } else {
             let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
             let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);
@@ -734,7 +732,7 @@ impl u16x16 {
             use core::arch::x86_64::_mm256_srlv_epi16;
 
             // TODO(safe_arch): Add `_mm256_srlv_epi16`.
-            cast(unsafe { _mm256_srlv_epi16(self.0.0, rhs.0.0) })
+            cast(_mm256_srlv_epi16(self.0.0, rhs.0.0))
           } else {
             let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
             let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);

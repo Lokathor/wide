@@ -651,7 +651,7 @@ impl f64x8 {
             let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
             // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
-            let cast: i64x8 = cast(m512i(unsafe { _mm512_cvtpd_epi64(non_nan.0.0) }));
+            let cast: i64x8 = cast(m512i(_mm512_cvtpd_epi64(non_nan.0.0)));
             flip_to_max ^ cast
           } else {
             let [a,b]: [f64x4;2] = cast(self);
@@ -673,7 +673,7 @@ impl f64x8 {
             use core::arch::x86_64::_mm512_cvtpd_epi64;
 
             // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
-            cast(m512i(unsafe { _mm512_cvtpd_epi64(self.0.0) }))
+            cast(m512i(_mm512_cvtpd_epi64(self.0.0)))
           } else {
 
             let [a,b]: [f64x4;2] = cast(self);
@@ -728,7 +728,7 @@ impl f64x8 {
             let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
             // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
-            let cast: i64x8 = cast(m512i(unsafe { _mm512_cvttpd_epi64(non_nan.0.0) }));
+            let cast: i64x8 = cast(m512i(_mm512_cvttpd_epi64(non_nan.0.0)));
             flip_to_max ^ cast
           } else {
             let [a,b]: [f64x4;2] = cast(self);
@@ -750,7 +750,7 @@ impl f64x8 {
             use core::arch::x86_64::_mm512_cvttpd_epi64;
 
             // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
-            cast(m512i(unsafe { _mm512_cvttpd_epi64(self.0.0) }))
+            cast(m512i(_mm512_cvttpd_epi64(self.0.0)))
           } else {
             let [a,b]: [f64x4;2] = cast(self);
             cast([

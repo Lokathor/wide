@@ -469,9 +469,7 @@ impl u8x32 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm256_permutex2var_epi8;
             // TODO(safe_arch): add `_mm256_permutex2var_epi8`.
-            u8x32(unsafe {
-                m256i(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
-            })
+            u8x32(m256i(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else if #[cfg(target_feature="avx2")] {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
           } else {

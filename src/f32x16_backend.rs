@@ -270,7 +270,7 @@ impl f32x16 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm512_reduce_mul_ps;
 
-            unsafe { _mm512_reduce_mul_ps(self.0.0) }
+            _mm512_reduce_mul_ps(self.0.0)
           } else {
             self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
           }

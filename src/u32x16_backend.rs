@@ -215,13 +215,11 @@ impl u32x16 {
             use core::arch::x86_64::_mm512_mask_set1_epi32;
 
             // TODO(safe_arch): Add `_mm512_mask_set1_epi32`
-            unsafe {
-              Self(m512i(_mm512_mask_set1_epi32(
-                  self.0.0,
-                  const { 1 << INDEX },
-                  value.cast_signed(),
-              )))
-            }
+            Self(m512i(_mm512_mask_set1_epi32(
+                self.0.0,
+                const { 1 << INDEX },
+                value.cast_signed(),
+            )))
           } else {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
 
@@ -269,16 +267,14 @@ impl u32x16 {
             use core::arch::x86_64::_mm512_extracti32x4_epi32;
 
             // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
-            unsafe {
-              match INDEX {
-                $($INDEX => {
-                  let quarter = cast::<m128i, u32x4>(m128i(
-                    _mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.0.0),
-                  ));
-                  quarter.extract_const::<{ $INDEX % 4 }>()
-                })*
-                16.. => unreachable!()
-              }
+            match INDEX {
+              $($INDEX => {
+                let quarter = cast::<m128i, u32x4>(m128i(
+                  _mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.0.0),
+                ));
+                quarter.extract_const::<{ $INDEX % 4 }>()
+              })*
+              16.. => unreachable!()
             }
           } else {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
@@ -785,8 +781,8 @@ impl u32x16 {
             let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
             // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
             (
-              Self(m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) })),
-              Self(m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) })),
+              Self(m512i(_mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0))),
+              Self(m512i(_mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0))),
             )
           } else {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
