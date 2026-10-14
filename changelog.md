@@ -40,6 +40,10 @@
 * [#343](https://github.com/Lokathor/wide/pull/343): Remove type-specific
   documentation extensions from functions available for categories of SIMD types
 
+* [#345](https://github.com/Lokathor/wide/pull/345): Fix cases where for the
+  same function, different types had different parameter names (for example,
+  `other` vs `rhs` in `min,max` functions)
+
 ## 1.7.1
 
 * [#327](https://github.com/Lokathor/wide/pull/327): Fixed `i/u32x4::to_bitmask`

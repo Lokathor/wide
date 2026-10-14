@@ -1,59 +1,52 @@
+//! Defines APIs applicable to SIMD vectors of integers (both signed and
+//! unsigned).
+
+use core::ops::{
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
+    Mul, MulAssign, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+};
+
+use bytemuck::{Zeroable, cast};
+
+use crate::{
+    i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16,
+    u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+};
+
 macro_rules! impl_simd_integer {
     (
-        unsafe {
-            T = $T:ident,
-            N = $N:literal,
-            Simd = $Simd:ident,
-            UnsignedSimd = $UnsignedSimd:ident,
-            SignedSimd = $SignedSimd:ident,
-            T_BITS = $T_BITS:literal,
-            T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
-            [$($index:literal),* $(,)?],
-        }
-
-        // General SIMD functions
-        $fn_not:item
-        $fn_add:item
-        $fn_sub:item
-        $fn_mul:item
-        $fn_bitand:item
-        $fn_bitor:item
-        $fn_bitxor:item
-
-        // Integer-specific functions
-        $fn_shl_unsigned_simd:item
-        $fn_shl_u32:item
-        $fn_shr_unsigned_simd:item
-        $fn_shr_u32:item
-        $fn_max:item
-        $fn_min:item
-        $fn_reduce_add:item
-        $fn_reduce_mul:item
-        $fn_reduce_max:item
-        $fn_reduce_min:item
-        $fn_unbounded_shl:item
-        $fn_unbounded_shl_scalar:item
-        $fn_unbounded_shr:item
-        $fn_unbounded_shr_scalar:item
-        $fn_saturating_add:item
-        $fn_saturating_sub:item
-        $fn_saturating_mul:item
-        $fn_overflowing_add:item
-        $fn_overflowing_sub:item
-        $fn_overflowing_mul:item
-        $fn_overflowing_div:item
-        $fn_overflowing_rem:item
-        optional_fn_widening_mul { $($fn_widening_mul:item)? }
-        $fn_mul_keep_low_high:item
-        $fn_mul_keep_high:item
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        auto_impl = $auto_impl:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+        SignedSimd = $SignedSimd:ident,
+        WiderSimd = { $($WiderSimd:ident)? },
+        T_BITS = $T_BITS:literal,
+        T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
+        INDICES = [$($INDEX:literal),* $(,)?],
     ) => {
+        // Invoke a macro that automatically implements some of this
+        // API's backend functions. This macro is `signed_auto_impl` for signed
+        // integers and `unsigned_auto_impl` for unsigned integers.
+        //
+        // This is used for functions that do not have the same implementation
+        // for all SIMD integer types, but do have the same implementation for
+        // all SIMD signed-integer types, or for all SIMD unsigned-integer
+        // types.
+        $auto_impl!(
+            T = $T,
+            Simd = $Simd,
+            UnsignedSimd = $UnsignedSimd,
+        );
+
         impl Eq for $Simd {}
 
         impl_unary_operator!(
             $Simd,
             Not,
             not,
-            $fn_not,
+            not_backend,
             /// Computes bitwise NOT for each element of `self`.
         );
 
@@ -64,7 +57,7 @@ macro_rules! impl_simd_integer {
             add,
             AddAssign,
             add_assign,
-            $fn_add,
+            add_backend,
             /// Computes wrapping addition for each element of `self` and the
             /// corresponding element of `rhs`.
             ,
@@ -81,7 +74,7 @@ macro_rules! impl_simd_integer {
             sub,
             SubAssign,
             sub_assign,
-            $fn_sub,
+            sub_backend,
             /// Computes wrapping subtraction for each element of `self` and the
             /// corresponding element of `rhs`.
             ,
@@ -98,7 +91,7 @@ macro_rules! impl_simd_integer {
             mul,
             MulAssign,
             mul_assign,
-            $fn_mul,
+            mul_backend,
             /// Computes wrapping multiplication for each element of `self` and
             /// the corresponding element of `rhs`.
             ,
@@ -115,13 +108,7 @@ macro_rules! impl_simd_integer {
             div,
             DivAssign,
             div_assign,
-            #[inline]
-            fn div(self, rhs: Self) -> Self::Output {
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array([$(self_array[$index].wrapping_div(rhs_array[$index])),*])
-            },
+            div_backend,
             /// Computes wrapping division for each element of `self` and the
             /// corresponding element of `rhs`.
             ///
@@ -159,13 +146,7 @@ macro_rules! impl_simd_integer {
             rem,
             RemAssign,
             rem_assign,
-            #[inline]
-            fn rem(self, rhs: Self) -> Self::Output {
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array([$(self_array[$index].wrapping_rem(rhs_array[$index])),*])
-            },
+            rem_backend,
             /// Computes the wrapping remainder of each element of `self`
             /// divided by the corresponding element of `rhs`.
             ///
@@ -205,8 +186,8 @@ macro_rules! impl_simd_integer {
             shl,
             ShlAssign,
             shl_assign,
-            $fn_shl_unsigned_simd,
-            $fn_shl_u32,
+            shl_backend,
+            shl_scalar_backend,
             /// Shifts left each element of `self` by the corresponding element
             /// of `rhs`.
             ///
@@ -249,8 +230,8 @@ macro_rules! impl_simd_integer {
             shr,
             ShrAssign,
             shr_assign,
-            $fn_shr_unsigned_simd,
-            $fn_shr_u32,
+            shr_backend,
+            shr_scalar_backend,
             /// Shifts right each element of `self` by the corresponding element of
             /// `rhs`.
             ///
@@ -290,7 +271,7 @@ macro_rules! impl_simd_integer {
             bitand,
             BitAndAssign,
             bitand_assign,
-            $fn_bitand,
+            bitand_backend,
             /// Computes bitwise AND for each element of `self` and the
             /// corresponding element of `rhs`.
             ,
@@ -307,7 +288,7 @@ macro_rules! impl_simd_integer {
             bitor,
             BitOrAssign,
             bitor_assign,
-            $fn_bitor,
+            bitor_backend,
             /// Computes bitwise OR for each element of `self` and the
             /// corresponding element of `rhs`.
             ,
@@ -324,7 +305,7 @@ macro_rules! impl_simd_integer {
             bitxor,
             BitXorAssign,
             bitxor_assign,
-            $fn_bitxor,
+            bitxor_backend,
             /// Computes bitwise XOR for each element of `self` and the
             /// corresponding element of `rhs`.
             ,
@@ -407,13 +388,19 @@ macro_rules! impl_simd_integer {
 
             /// Returns the maximum between each element of `self` and the
             /// corresponding element of `other`.
+            #[inline]
             #[must_use]
-            $fn_max
+            pub fn max(self, other: Self) -> Self {
+                self.max_backend(other)
+            }
 
             /// Returns the minimum between each element of `self` and the
             /// corresponding element of `other`.
+            #[inline]
             #[must_use]
-            $fn_min
+            pub fn min(self, other: Self) -> Self {
+                self.min_backend(other)
+            }
 
             /// Clamps each element of `self` between the corresponding elements
             /// of `min` and `max`.
@@ -429,27 +416,39 @@ macro_rules! impl_simd_integer {
             /// Reducing addition. Returns the sum of the vector's elements.
             ///
             /// Equivalent to `self[0] + self[1] + ...`.
+            #[inline]
             #[must_use]
-            $fn_reduce_add
+            pub fn reduce_add(self) -> $T {
+                self.reduce_add_backend()
+            }
 
             /// Reducing multiplication. Returns the product of the vector's
             /// elements.
             ///
             /// Equivalent to `self[0] * self[1] * ...`.
+            #[inline]
             #[must_use]
-            $fn_reduce_mul
+            pub fn reduce_mul(self) -> $T {
+                self.reduce_mul_backend()
+            }
 
             /// Reducing maximum. Returns the maximum of the vector's elements.
             ///
             /// Equivalent to `self[0].max(self[1].max(...))`.
+            #[inline]
             #[must_use]
-            $fn_reduce_max
+            pub fn reduce_max(self) -> $T {
+                self.reduce_max_backend()
+            }
 
             /// Reducing minimum. Returns the minimum of the vector's elements.
             ///
             /// Equivalent to `self[0].min(self[1].min(...))`.
+            #[inline]
             #[must_use]
-            $fn_reduce_min
+            pub fn reduce_min(self) -> $T {
+                self.reduce_min_backend()
+            }
 
             /// Shifts left each element of `self` by the corresponding element
             /// of `rhs`, without bounding `rhs`.
@@ -466,8 +465,11 @@ macro_rules! impl_simd_integer {
             ///
             #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
             /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
+            #[inline]
             #[must_use]
-            $fn_unbounded_shl
+            pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
+                self.unbounded_shl_backend(rhs)
+            }
 
             /// Shifts left each element of `self` by the uniform scalar `rhs`,
             /// without bounding `rhs`.
@@ -483,8 +485,11 @@ macro_rules! impl_simd_integer {
             /// because it has special hardware support.
             ///
             #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+            #[inline]
             #[must_use]
-            $fn_unbounded_shl_scalar
+            pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+                self.unbounded_shl_scalar_backend(rhs)
+            }
 
             /// Shifts right each element of `self` by the corresponding element
             /// of `rhs`, without bounding `rhs`.
@@ -503,8 +508,11 @@ macro_rules! impl_simd_integer {
             ///
             #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
             /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
+            #[inline]
             #[must_use]
-            $fn_unbounded_shr
+            pub fn unbounded_shr(self, rhs: $UnsignedSimd) -> Self {
+                self.unbounded_shr_backend(rhs)
+            }
 
             /// Shifts right each element of `self` by the uniform scalar `rhs`,
             /// without bounding `rhs`.
@@ -522,23 +530,35 @@ macro_rules! impl_simd_integer {
             /// it has special hardware support.
             ///
             #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+            #[inline]
             #[must_use]
-            $fn_unbounded_shr_scalar
+            pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+                self.unbounded_shr_scalar_backend(rhs)
+            }
 
             /// Saturating integer addition. Computes `self + rhs`, saturating at the
             /// numeric bounds instead of overflowing.
+            #[inline]
             #[must_use]
-            $fn_saturating_add
+            pub fn saturating_add(self, rhs: Self) -> Self {
+                self.saturating_add_backend(rhs)
+            }
 
             /// Saturating integer subtraction. Computes `self - rhs`, saturating at
             /// the numeric bounds instead of overflowing.
+            #[inline]
             #[must_use]
-            $fn_saturating_sub
+            pub fn saturating_sub(self, rhs: Self) -> Self {
+                self.saturating_sub_backend(rhs)
+            }
 
             /// Saturating integer multiplication. Computes `self * rhs`, saturating
             /// at the numeric bounds instead of overflowing.
+            #[inline]
             #[must_use]
-            $fn_saturating_mul
+            pub fn saturating_mul(self, rhs: Self) -> Self {
+                self.saturating_mul_backend(rhs)
+            }
 
             /// Saturating integer division. Computes `self / rhs`, saturating at the
             /// numeric bounds instead of overflowing.
@@ -558,7 +578,7 @@ macro_rules! impl_simd_integer {
                 let self_array = self.to_array();
                 let rhs_array = rhs.to_array();
 
-                Self::from_array([$(self_array[$index].saturating_div(rhs_array[$index])),*])
+                Self::from_array([$(self_array[$INDEX].saturating_div(rhs_array[$INDEX])),*])
             }
 
             /// Returns `self + rhs` and whether an overflow occured.
@@ -567,8 +587,11 @@ macro_rules! impl_simd_integer {
             ///
             /// - The addition (returns the wrapped value if an overflow occured)
             /// - A mask indicating whether an overflow occured
+            #[inline]
             #[must_use]
-            $fn_overflowing_add
+            pub fn overflowing_add(self, rhs: Self) -> (Self, Self) {
+                self.overflowing_add_backend(rhs)
+            }
 
             /// Returns `self - rhs` and whether an overflow occured.
             ///
@@ -576,8 +599,11 @@ macro_rules! impl_simd_integer {
             ///
             /// - The subtraction (returns the wrapped value if an overflow occured)
             /// - A mask indicating whether an overflow occured
+            #[inline]
             #[must_use]
-            $fn_overflowing_sub
+            pub fn overflowing_sub(self, rhs: Self) -> (Self, Self) {
+                self.overflowing_sub_backend(rhs)
+            }
 
             /// Returns `self * rhs` and whether an overflow occured.
             ///
@@ -585,8 +611,11 @@ macro_rules! impl_simd_integer {
             ///
             /// - The multiplication (returns the wrapped value if an overflow occured)
             /// - A mask indicating whether an overflow occured
+            #[inline]
             #[must_use]
-            $fn_overflowing_mul
+            pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+                self.overflowing_mul_backend(rhs)
+            }
 
             /// Returns `self / rhs` and whether an overflow occured.
             ///
@@ -600,8 +629,11 @@ macro_rules! impl_simd_integer {
             ///
             /// Note that because division has no hardware support, this operation is
             /// very slow and should be avoided if possible.
+            #[inline]
             #[must_use]
-            $fn_overflowing_div
+            pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
+                self.overflowing_div_backend(rhs)
+            }
 
             /// Returns `self % rhs` and whether an overflow occured.
             ///
@@ -615,8 +647,11 @@ macro_rules! impl_simd_integer {
             ///
             /// Note that because division has no hardware support, this operation is
             /// very slow and should be avoided if possible.
+            #[inline]
             #[must_use]
-            $fn_overflowing_rem
+            pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
+                self.overflowing_rem_backend(rhs)
+            }
 
             $(
                 /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
@@ -632,8 +667,11 @@ macro_rules! impl_simd_integer {
                 /// there is no `i64x16`).
                 ///
                 /// [`mul_keep_low_high`]: Self::mul_keep_low_high
+                #[inline]
                 #[must_use]
-                $fn_widening_mul
+                pub fn widening_mul(self, rhs: Self) -> $WiderSimd {
+                    self.widening_mul_backend(rhs)
+                }
             )?
 
             #[doc = concat!(
@@ -652,8 +690,11 @@ macro_rules! impl_simd_integer {
             /// `mul_keep_low_high` exists for all types, `widening_mul` does not
             /// exist for types with no wider variant (e.g., for `i32x16` because
             /// there is no `i64x16`).
+            #[inline]
             #[must_use]
-            $fn_mul_keep_low_high
+            pub fn mul_keep_low_high(self, rhs: Self) -> ($UnsignedSimd, Self) {
+                self.mul_keep_low_high_backend(rhs)
+            }
 
             #[doc = concat!(
                 "Computes `self * rhs`, producing intermediate ",
@@ -662,8 +703,519 @@ macro_rules! impl_simd_integer {
                 $T_BITS,
                 "-bit parts."
             )]
+            #[inline]
             #[must_use]
-            $fn_mul_keep_high
+            pub fn mul_keep_high(self, rhs: Self) -> Self {
+                self.mul_keep_high_backend(rhs)
+            }
+
+            #[inline]
+            #[track_caller]
+            fn div_backend(self, rhs: Self) -> Self {
+                let self_array = self.to_array();
+                let rhs_array = rhs.to_array();
+
+                Self::from_array([$(self_array[$INDEX].wrapping_div(rhs_array[$INDEX])),*])
+            }
+
+            #[inline]
+            #[track_caller]
+            fn rem_backend(self, rhs: Self) -> Self {
+                let self_array = self.to_array();
+                let rhs_array = rhs.to_array();
+
+                Self::from_array([$(self_array[$INDEX].wrapping_rem(rhs_array[$INDEX])),*])
+            }
         }
     };
 }
+
+/// Automatically implements backend functions that have the same implementation
+/// for all SIMD signed-integer types.
+macro_rules! signed_auto_impl {
+    (
+        T = $T:ident,
+        Simd = $Simd:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+    ) => {
+        impl $Simd {
+            #[inline]
+            fn not_backend(self) -> Self {
+                cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
+            }
+
+            #[inline]
+            fn add_backend(self, rhs: Self) -> Self {
+                // Wrapping addition is the same for signed and unsigned integers.
+                cast::<$UnsignedSimd, $Simd>(
+                    cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
+                )
+            }
+
+            #[inline]
+            fn sub_backend(self, rhs: Self) -> Self {
+                // Wrapping subtraction is the same for signed and unsigned integers.
+                cast::<$UnsignedSimd, $Simd>(
+                    cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
+                )
+            }
+
+            #[inline]
+            fn mul_backend(self, rhs: Self) -> Self {
+                // Wrapping multiplication is the same for signed and unsigned integers.
+                cast::<$UnsignedSimd, $Simd>(
+                    cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
+                )
+            }
+
+            #[inline]
+            fn bitand_backend(self, rhs: Self) -> Self {
+                cast::<$UnsignedSimd, $Simd>(
+                    cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
+                )
+            }
+
+            #[inline]
+            fn bitor_backend(self, rhs: Self) -> Self {
+                cast::<$UnsignedSimd, $Simd>(
+                    cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
+                )
+            }
+
+            #[inline]
+            fn bitxor_backend(self, rhs: Self) -> Self {
+                cast::<$UnsignedSimd, $Simd>(
+                    cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
+                )
+            }
+
+            #[inline]
+            fn shl_backend(self, rhs: $UnsignedSimd) -> Self {
+                cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+            }
+
+            #[inline]
+            fn shl_scalar_backend(self, rhs: u32) -> Self {
+                cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+            }
+
+            #[inline]
+            fn reduce_add_backend(self) -> $T {
+                // Wrapping addition is the same for signed and unsigned integers.
+                cast::<$Simd, $UnsignedSimd>(self)
+                    .reduce_add()
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn reduce_mul_backend(self) -> $T {
+                // Wrapping multiplication is the same for signed and unsigned integers.
+                cast::<$Simd, $UnsignedSimd>(self)
+                    .reduce_mul()
+                    .cast_signed()
+            }
+
+            #[inline]
+            fn unbounded_shl_backend(self, rhs: $UnsignedSimd) -> Self {
+                // Shift left is the same for unsigned and signed integers.
+                cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
+            }
+
+            #[inline]
+            fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
+                // Shift left is the same for unsigned and signed integers.
+                cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
+            }
+
+            #[inline]
+            fn saturating_mul_backend(self, rhs: Self) -> Self {
+                let (result, overflow) = self.overflowing_mul(rhs);
+                let limit = Self::MAX ^ (self ^ rhs).is_negative();
+                overflow.select(limit, result)
+            }
+
+            #[inline]
+            fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
+                let result = self + rhs;
+                let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+
+                (result, overflow)
+            }
+
+            #[inline]
+            fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
+                let result = self - rhs;
+                let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+
+                (result, overflow)
+            }
+
+            #[inline]
+            fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
+                // The second field is equivalent to
+                // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+                (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+            }
+
+            #[inline]
+            fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
+                // The second field is equivalent to
+                // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+                (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+            }
+        }
+    };
+}
+
+/// Automatically implements backend functions that have the same implementation
+/// for all SIMD unsigned-integer types.
+macro_rules! unsigned_auto_impl {
+    (
+        T = $T:ident,
+        Simd = $Simd:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+    ) => {
+        impl $Simd {
+            #[inline]
+            fn saturating_mul_backend(self, rhs: Self) -> Self {
+                let (low, high) = self.mul_keep_low_high(rhs);
+                low | high.simd_ne(Self::ZERO)
+            }
+
+            #[inline]
+            fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
+                let result = self + rhs;
+                let overflow = result.simd_lt(self);
+
+                (result, overflow)
+            }
+
+            #[inline]
+            fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
+                let result = self - rhs;
+                let overflow = result.simd_gt(self);
+
+                (result, overflow)
+            }
+
+            #[inline]
+            fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
+                (self / rhs, Self::ZERO)
+            }
+
+            #[inline]
+            fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
+                (self % rhs, Self::ZERO)
+            }
+        }
+    };
+}
+
+impl_simd_integer!(
+    T = i8,
+    N = 16,
+    Simd = i8x16,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u8x16,
+    SignedSimd = i8x16,
+    WiderSimd = { i16x16 },
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+impl_simd_integer!(
+    T = i8,
+    N = 32,
+    Simd = i8x32,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u8x32,
+    SignedSimd = i8x32,
+    WiderSimd = { i16x32 },
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
+    INDICES = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31,
+    ],
+);
+impl_simd_integer!(
+    T = i8,
+    N = 64,
+    Simd = i8x64,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u8x64,
+    SignedSimd = i8x64,
+    WiderSimd = { /*i16x64*/ },
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
+    INDICES = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+    ],
+);
+impl_simd_integer!(
+    T = i16,
+    N = 8,
+    Simd = i16x8,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u16x8,
+    SignedSimd = i16x8,
+    WiderSimd = { i32x8 },
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
+);
+impl_simd_integer!(
+    T = i16,
+    N = 16,
+    Simd = i16x16,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u16x16,
+    SignedSimd = i16x16,
+    WiderSimd = { i32x16 },
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+impl_simd_integer!(
+    T = i16,
+    N = 32,
+    Simd = i16x32,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u16x32,
+    SignedSimd = i16x32,
+    WiderSimd = { /*i32x32*/ },
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    INDICES = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31,
+    ],
+);
+impl_simd_integer!(
+    T = i32,
+    N = 4,
+    Simd = i32x4,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u32x4,
+    SignedSimd = i32x4,
+    WiderSimd = { i64x4 },
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    INDICES = [0, 1, 2, 3],
+);
+impl_simd_integer!(
+    T = i32,
+    N = 8,
+    Simd = i32x8,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u32x8,
+    SignedSimd = i32x8,
+    WiderSimd = { i64x8 },
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
+);
+impl_simd_integer!(
+    T = i32,
+    N = 16,
+    Simd = i32x16,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u32x16,
+    SignedSimd = i32x16,
+    WiderSimd = { /*i64x16*/ },
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+impl_simd_integer!(
+    T = i64,
+    N = 2,
+    Simd = i64x2,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u64x2,
+    SignedSimd = i64x2,
+    WiderSimd = { /*i128x2*/ },
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    INDICES = [0, 1],
+);
+impl_simd_integer!(
+    T = i64,
+    N = 4,
+    Simd = i64x4,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u64x4,
+    SignedSimd = i64x4,
+    WiderSimd = { /*i128x4*/ },
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    INDICES = [0, 1, 2, 3],
+);
+impl_simd_integer!(
+    T = i64,
+    N = 8,
+    Simd = i64x8,
+    auto_impl = signed_auto_impl,
+    UnsignedSimd = u64x8,
+    SignedSimd = i64x8,
+    WiderSimd = { /*i128x8*/ },
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
+);
+impl_simd_integer!(
+    T = u8,
+    N = 16,
+    Simd = u8x16,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u8x16,
+    SignedSimd = i8x16,
+    WiderSimd = { u16x16 },
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+impl_simd_integer!(
+    T = u8,
+    N = 32,
+    Simd = u8x32,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u8x32,
+    SignedSimd = i8x32,
+    WiderSimd = { u16x32 },
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
+    INDICES = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31,
+    ],
+);
+impl_simd_integer!(
+    T = u8,
+    N = 64,
+    Simd = u8x64,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u8x64,
+    SignedSimd = i8x64,
+    WiderSimd = { /*u16x64*/ },
+    T_BITS = 8,
+    T_BITS_MUL_2 = 16,
+    INDICES = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+    ],
+);
+impl_simd_integer!(
+    T = u16,
+    N = 8,
+    Simd = u16x8,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u16x8,
+    SignedSimd = i16x8,
+    WiderSimd = { u32x8 },
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
+);
+impl_simd_integer!(
+    T = u16,
+    N = 16,
+    Simd = u16x16,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u16x16,
+    SignedSimd = i16x16,
+    WiderSimd = { u32x16 },
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+impl_simd_integer!(
+    T = u16,
+    N = 32,
+    Simd = u16x32,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u16x32,
+    SignedSimd = i16x32,
+    WiderSimd = { /*u32x32*/ },
+    T_BITS = 16,
+    T_BITS_MUL_2 = 32,
+    INDICES = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31,
+    ],
+);
+impl_simd_integer!(
+    T = u32,
+    N = 4,
+    Simd = u32x4,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u32x4,
+    SignedSimd = i32x4,
+    WiderSimd = { u64x4 },
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    INDICES = [0, 1, 2, 3],
+);
+impl_simd_integer!(
+    T = u32,
+    N = 8,
+    Simd = u32x8,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u32x8,
+    SignedSimd = i32x8,
+    WiderSimd = { u64x8 },
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
+);
+impl_simd_integer!(
+    T = u32,
+    N = 16,
+    Simd = u32x16,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u32x16,
+    SignedSimd = i32x16,
+    WiderSimd = { /*u64x16*/ },
+    T_BITS = 32,
+    T_BITS_MUL_2 = 64,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
+impl_simd_integer!(
+    T = u64,
+    N = 2,
+    Simd = u64x2,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u64x2,
+    SignedSimd = i64x2,
+    WiderSimd = { /*u128x2*/ },
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    INDICES = [0, 1],
+);
+impl_simd_integer!(
+    T = u64,
+    N = 4,
+    Simd = u64x4,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u64x4,
+    SignedSimd = i64x4,
+    WiderSimd = { /*u128x4*/ },
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    INDICES = [0, 1, 2, 3],
+);
+impl_simd_integer!(
+    T = u64,
+    N = 8,
+    Simd = u64x8,
+    auto_impl = unsigned_auto_impl,
+    UnsignedSimd = u64x8,
+    SignedSimd = i64x8,
+    WiderSimd = { /*u128x8*/ },
+    T_BITS = 64,
+    T_BITS_MUL_2 = 128,
+    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
+);

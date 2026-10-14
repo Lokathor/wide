@@ -1,222 +1,31 @@
-/// Emits functionality shared by all SIMD float types.
-///
-/// To understand how to invoke this macro correctly, also see [`impl_simd!`]
-/// which is automatically invoked by this macro.
-///
-/// Functions that need a separate implementation for each type (for
-/// performance) use `$fn_{name}:item` syntax, and functions that have one
-/// shared implementation for all floats are written out normally inside this
-/// macro.
-macro_rules! define_simd_float {
+//! Defines APIs applicable to SIMD vectors of floats.
+
+use core::ops::{
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
+    Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
+};
+
+use bytemuck::Zeroable;
+
+use crate::{
+    Select, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
+    u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+};
+
+macro_rules! impl_simd_float {
   (
-    unsafe {
       T = $T:ident,
-      N = $N:literal,
-      N_STR = $N_STR:literal,
       Simd = $Simd:ident,
       SignedSimd = $SignedSimd:ident,
       UnsignedT = $UnsignedT:ident,
       UnsignedSimd = $UnsignedSimd:ident,
-      optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
-      optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
-      optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
-    }
-    old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
-
-    // General SIMD functions
-    $fn_neg:item
-    $fn_not:item
-    $fn_add:item
-    $fn_sub:item
-    $fn_mul:item
-    $fn_div:item
-    $fn_rem:item
-    $fn_bitand:item
-    $fn_bitor:item
-    $fn_bitxor:item
-    $fn_simd_eq:item
-    $fn_simd_ne:item
-    $fn_simd_lt:item
-    $fn_simd_gt:item
-    $fn_simd_le:item
-    $fn_simd_ge:item
-    $fn_reduce_add:item
-    $fn_reduce_mul:item
-    $fn_bitselect:item
-    $fn_select:item
-    $fn_to_bitmask:item
-    $fn_any:item
-    $fn_all:item
-    $fn_interleave_low:item
-    $fn_interleave_high:item
-    $fn_transpose:item
-
-    // Float-specific functions
-    $fn_is_nan:item
-    $fn_is_infinite:item
-    $fn_is_finite:item
-    $fn_is_sign_positive:item
-    $fn_is_sign_negative:item
-    $fn_recip:item
-    $fn_recip_sqrt:item
-    $fn_max:item
-    $fn_fast_max:item
-    $fn_min:item
-    $fn_fast_min:item
-    $fn_clamp:item
-    $fn_fast_clamp:item
-    $fn_reduce_max:item
-    $fn_fast_reduce_max:item
-    $fn_reduce_min:item
-    $fn_fast_reduce_min:item
-    $fn_abs:item
-    $fn_floor:item
-    $fn_ceil:item
-    $fn_round:item
-    $fn_round_int:item
-    $fn_fast_round_int:item
-    $fn_round_ties_even:item
-    $fn_trunc:item
-    $fn_trunc_int:item
-    $fn_fast_trunc_int:item
-    $fn_fast_mul_add:item
-    $fn_fast_mul_sub:item
-    $fn_fast_mul_neg_add:item
-    $fn_fast_mul_neg_sub:item
-    $fn_powf_simd:item
-    $fn_sqrt:item
-    $fn_exp:item
-    $fn_exp2:item
-    $fn_ln:item
-    $fn_cbrt:item
-    $fn_asin:item
-    $fn_acos:item
-    $fn_atan:item
-    $fn_atan2:item
-    $fn_sin_cos:item
-    $fn_asin_acos:item
-    $fn_exp_m1:item
-    $fn_ln_1p:item
-    $fn_sinh:item
-    $fn_cosh:item
-    $fn_tanh:item
+      old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
   ) => {
-    define_simd!(
-      unsafe {
-        T = $T,
-        N = $N,
-        N_STR = $N_STR,
-        Simd = $Simd,
-        UnsignedSimd = $UnsignedSimd,
-        optional_type_x86_inner { $(X86Inner = $X86Inner)? },
-        optional_type_arm_inner { $(ArmInner = $ArmInner)? },
-        optional_type_wasm_inner { $(WasmInner = $WasmInner)? },
-      }
-
-      $fn_simd_eq
-
-      $fn_simd_ne
-
-      $fn_simd_lt
-
-      $fn_simd_gt
-
-      $fn_simd_le
-
-      $fn_simd_ge
-
-      #[inline]
-      pub fn replace_const<const INDEX: usize>(self, value: $T) -> Self {
-        Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
-      }
-
-      #[inline]
-      pub fn extract_const<const INDEX: usize>(self) -> $T {
-        $T::from_bits(self.to_bits().extract_const::<INDEX>())
-      }
-
-      $fn_bitselect
-
-      $fn_select
-
-      $fn_to_bitmask
-
-      $fn_any
-
-      $fn_all
-
-      $fn_interleave_low
-
-      $fn_interleave_high
-
-      #[inline]
-      pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
-        Self::from_bits(self.to_bits().shuffle(indices))
-      }
-
-      #[inline]
-      pub fn shuffle_zeroing(self, indices: $UnsignedSimd) -> Self {
-        Self::from_bits(self.to_bits().shuffle_zeroing(indices))
-      }
-
-      #[inline]
-      pub fn shuffle_wrapping(self, indices: $UnsignedSimd) -> Self {
-        Self::from_bits(self.to_bits().shuffle_wrapping(indices))
-      }
-
-      #[inline]
-      fn shuffle(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle(indices))
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_zeroing(indices))
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(self).shuffle_wrapping(indices))
-      }
-
-      #[inline]
-      fn shuffle(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle(indices))
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_zeroing(indices))
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(self).shuffle_wrapping(indices))
-      }
-
-      #[inline]
-      fn shuffle(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle(indices))
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_zeroing(indices))
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-        cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(self).shuffle_wrapping(indices))
-      }
-
-      $fn_transpose
-    );
-
     impl_unary_operator!(
       $Simd,
       Neg,
       neg,
-      $fn_neg,
+      neg_backend,
       /// Computes negation for each element of `self`.
       ///
       /// This always returns the precise result, simply flipping the sign-bit.
@@ -225,7 +34,7 @@ macro_rules! define_simd_float {
       $Simd,
       Not,
       not,
-      $fn_not,
+      not_backend,
       /// Computes bitwise NOT for each element of `self`.
       ///
       /// This computes bitwise NOT, even though the `!` operator is not
@@ -239,7 +48,7 @@ macro_rules! define_simd_float {
       add,
       AddAssign,
       add_assign,
-      $fn_add,
+      add_backend,
       /// Computes addition for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
@@ -261,7 +70,7 @@ macro_rules! define_simd_float {
       sub,
       SubAssign,
       sub_assign,
-      $fn_sub,
+      sub_backend,
       /// Computes subtraction for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
@@ -283,7 +92,7 @@ macro_rules! define_simd_float {
       mul,
       MulAssign,
       mul_assign,
-      $fn_mul,
+      mul_backend,
       /// Computes multiplication for each element of `self` and the
       /// corresponding element of `rhs`.
       ///
@@ -306,7 +115,7 @@ macro_rules! define_simd_float {
       div,
       DivAssign,
       div_assign,
-      $fn_div,
+      div_backend,
       /// Computes division for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
@@ -328,7 +137,7 @@ macro_rules! define_simd_float {
       rem,
       RemAssign,
       rem_assign,
-      $fn_rem,
+      rem_backend,
       /// Computes the remainder for each element of `self` and the
       /// corresponding element of `rhs`.
       ///
@@ -351,7 +160,7 @@ macro_rules! define_simd_float {
       bitand,
       BitAndAssign,
       bitand_assign,
-      $fn_bitand,
+      bitand_backend,
       /// Computes bitwise AND for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
@@ -376,7 +185,7 @@ macro_rules! define_simd_float {
       bitor,
       BitOrAssign,
       bitor_assign,
-      $fn_bitor,
+      bitor_backend,
       /// Computes bitwise OR for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
@@ -401,7 +210,7 @@ macro_rules! define_simd_float {
       bitxor,
       BitXorAssign,
       bitxor_assign,
-      $fn_bitxor,
+      bitxor_backend,
       /// Computes bitwise XOR for each element of `self` and the corresponding
       /// element of `rhs`.
       ///
@@ -638,36 +447,51 @@ macro_rules! define_simd_float {
       /// Returns a [mask] that checks if each element is NaN.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_is_nan
+      pub fn is_nan(self) -> Self {
+        self.is_nan_backend()
+      }
 
       /// Returns a [mask] that checks if each element is infinity (either
       /// positive or negative).
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_is_infinite
+      pub fn is_infinite(self) -> Self {
+        self.is_infinite_backend()
+      }
 
       /// Returns a [mask] that checks if each element is neither infinite nor
       /// NaN.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_is_finite
+      pub fn is_finite(self) -> Self {
+        self.is_finite_backend()
+      }
 
       /// Returns a [mask] that checks if each element has a positive sign,
       /// including `+0.0`, NaNs with positive sign bit and positive infinity.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_is_sign_positive
+      pub fn is_sign_positive(self) -> Self {
+        self.is_sign_positive_backend()
+      }
 
       /// Returns a [mask] that checks if each element has a negative sign,
       /// including `-0.0`, NaNs with negative sign bit and negative infinity.
       ///
       /// [mask]: crate#masks
+      #[inline]
       #[must_use]
-      $fn_is_sign_negative
+      pub fn is_sign_negative(self) -> Self {
+        self.is_sign_negative_backend()
+      }
 
       /// Approximates the reciprocal (inverse) of a number, `1/x`.
       ///
@@ -682,8 +506,11 @@ macro_rules! define_simd_float {
         stringify!($Simd),
         "::ONE / x`."
       )]
+      #[inline]
       #[must_use]
-      $fn_recip
+      pub fn recip(self) -> Self {
+        self.recip_backend()
+      }
 
       /// Approximates the square root of the reciprocal (inverse) of a number,
       /// `sqrt(1/x)`.
@@ -693,8 +520,11 @@ macro_rules! define_simd_float {
       /// The precision of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_recip_sqrt
+      pub fn recip_sqrt(self) -> Self {
+        self.recip_sqrt_backend()
+      }
 
       /// Converts radians to degrees.
       ///
@@ -743,8 +573,11 @@ macro_rules! define_simd_float {
       /// See [`fast_max`] for a faster variant that does not handle NaNs.
       ///
       /// [`fast_max`]: Self::fast_max
+      #[inline]
       #[must_use]
-      $fn_max
+      pub fn max(self, other: Self) -> Self {
+        self.max_backend(other)
+      }
 
       /// Returns the maximum between each element of `self` and the
       /// corresponding element of `other`, not specifying behavior for NaNs.
@@ -757,8 +590,11 @@ macro_rules! define_simd_float {
       /// See [`max`] for a slower variant that does handle NaNs.
       ///
       /// [`max`]: Self::max
+      #[inline]
       #[must_use]
-      $fn_fast_max
+      pub fn fast_max(self, other: Self) -> Self {
+        self.fast_max_backend(other)
+      }
 
       /// Returns the minimum between each element of `self` and the
       /// corresponding element of `other`, ignoring NaN.
@@ -771,8 +607,11 @@ macro_rules! define_simd_float {
       /// See [`fast_min`] for a faster variant that does not handle NaNs.
       ///
       /// [`fast_min`]: Self::fast_min
+      #[inline]
       #[must_use]
-      $fn_min
+      pub fn min(self, other: Self) -> Self {
+        self.min_backend(other)
+      }
 
       /// Returns the minimum between each element of `self` and the
       /// corresponding element of `other`, not specifying behavior for NaNs.
@@ -785,8 +624,11 @@ macro_rules! define_simd_float {
       /// See [`min`] for a slower variant that does handle NaNs.
       ///
       /// [`min`]: Self::min
+      #[inline]
       #[must_use]
-      $fn_fast_min
+      pub fn fast_min(self, other: Self) -> Self {
+        self.fast_min_backend(other)
+      }
 
       /// Reducing addition. Returns the sum of the vector's elements.
       ///
@@ -798,7 +640,11 @@ macro_rules! define_simd_float {
       /// This could also perform one sum operation with higher precision than
       /// expected. This can vary by platform, version, and could even differ
       /// within the same execution from one invocation to the next.
-      $fn_reduce_add
+      #[inline]
+      #[must_use]
+      pub fn reduce_add(self) -> $T {
+        self.reduce_add_backend()
+      }
 
       /// Reducing multiplication. Returns the product of the vector's
       /// elements.
@@ -812,7 +658,11 @@ macro_rules! define_simd_float {
       /// higher precision than expected. This can vary by platform, version,
       /// and could even differ within the same execution from one invocation to
       /// the next.
-      $fn_reduce_mul
+      #[inline]
+      #[must_use]
+      pub fn reduce_mul(self) -> $T {
+        self.reduce_mul_backend()
+      }
 
       /// Returns the maximum between all elements of `self`.
       ///
@@ -825,8 +675,11 @@ macro_rules! define_simd_float {
       /// NaNs.
       ///
       /// [`fast_reduce_max`]: Self::fast_reduce_max
+      #[inline]
       #[must_use]
-      $fn_reduce_max
+      pub fn reduce_max(self) -> $T {
+        self.reduce_max_backend()
+      }
 
       /// Returns the maximum between all elements of `self`.
       ///
@@ -836,8 +689,11 @@ macro_rules! define_simd_float {
       /// non-deterministically.
       ///
       /// [`reduce_max`]: Self::reduce_max
+      #[inline]
       #[must_use]
-      $fn_fast_reduce_max
+      pub fn fast_reduce_max(self) -> $T {
+        self.fast_reduce_max_backend()
+      }
 
       /// Returns the minimum between all elements of `self`.
       ///
@@ -850,8 +706,11 @@ macro_rules! define_simd_float {
       /// NaNs.
       ///
       /// [`fast_reduce_min`]: Self::fast_reduce_min
+      #[inline]
       #[must_use]
-      $fn_reduce_min
+      pub fn reduce_min(self) -> $T {
+        self.reduce_min_backend()
+      }
 
       /// Returns the minimum between all elements of `self`.
       ///
@@ -861,8 +720,11 @@ macro_rules! define_simd_float {
       /// non-deterministically.
       ///
       /// [`reduce_min`]: Self::reduce_min
+      #[inline]
       #[must_use]
-      $fn_fast_reduce_min
+      pub fn fast_reduce_min(self) -> $T {
+        self.fast_reduce_min_backend()
+      }
 
       /// Calculates the midpoint (average) between `self` and `other`.
       ///
@@ -919,8 +781,11 @@ macro_rules! define_simd_float {
       /// `max` being NaN.
       ///
       /// [`fast_clamp`]: Self::fast_clamp
+      #[inline]
       #[must_use]
-      $fn_clamp
+      pub fn clamp(self, min: Self, max: Self) -> Self {
+        self.clamp_backend(min, max)
+      }
 
       /// Restrict a value to a certain interval unless it is NaN.
       ///
@@ -933,14 +798,20 @@ macro_rules! define_simd_float {
       /// being NaN.
       ///
       /// [`clamp`]: Self::clamp
+      #[inline]
       #[must_use]
-      $fn_fast_clamp
+      pub fn fast_clamp(self, min: Self, max: Self) -> Self {
+        self.fast_clamp_backend(min, max)
+      }
 
       /// Computes the absolute value of `self`.
       ///
       /// This function always returns the precise result.
+      #[inline]
       #[must_use]
-      $fn_abs
+      pub fn abs(self) -> Self {
+        self.abs_backend()
+      }
 
       /// Returns numbers representing the sign of each element.
       ///
@@ -984,15 +855,21 @@ macro_rules! define_simd_float {
       /// Returns the largest integer less than or equal to each input element.
       ///
       /// This function always returns the precise result.
+      #[inline]
       #[must_use]
-      $fn_floor
+      pub fn floor(self) -> Self {
+        self.floor_backend()
+      }
 
       /// Returns the smallest integer greater than or equal to each input
       /// element.
       ///
       /// This function always returns the precise result.
+      #[inline]
       #[must_use]
-      $fn_ceil
+      pub fn ceil(self) -> Self {
+        self.ceil_backend()
+      }
 
       /// Returns the nearest integer to each input element. If a value is
       /// half-way between two integers, round away from `0.0`.
@@ -1005,8 +882,11 @@ macro_rules! define_simd_float {
       ///
       /// [`round`]: Self::round
       /// [`round_ties_even`]: Self::round_ties_even
+      #[inline]
       #[must_use]
-      $fn_round
+      pub fn round(self) -> Self {
+        self.round_backend()
+      }
 
       /// Returns the nearest integer to each input element.
       ///
@@ -1018,8 +898,11 @@ macro_rules! define_simd_float {
       /// range values or NaNs.
       ///
       /// [`fast_round_int`]: Self::fast_round_int
+      #[inline]
       #[must_use]
-      $fn_round_int
+      pub fn round_int(self) -> $SignedSimd {
+        self.round_int_backend()
+      }
 
       /// Returns the nearest integer to each input element.
       ///
@@ -1031,22 +914,31 @@ macro_rules! define_simd_float {
       /// values and NaNs.
       ///
       /// [`round_int`]: Self::round_int
+      #[inline]
       #[must_use]
-      $fn_fast_round_int
+      pub fn fast_round_int(self) -> $SignedSimd {
+        self.fast_round_int_backend()
+      }
 
       /// Returns the nearest integer to each input element. Rounds half-way
       /// cases to the number with an even least significant digit.
       ///
       /// This function always returns the precise result.
+      #[inline]
       #[must_use]
-      $fn_round_ties_even
+      pub fn round_ties_even(self) -> Self {
+        self.round_ties_even_backend()
+      }
 
       /// Returns the integer part of each input element. This means that
       /// non-integer numbers are always truncated towards zero.
       ///
       /// This function always returns the precise result.
+      #[inline]
       #[must_use]
-      $fn_trunc
+      pub fn trunc(self) -> Self {
+        self.trunc_backend()
+      }
 
       /// Returns the integer part of each input element. This means that
       /// non-integer numbers are always truncated towards zero.
@@ -1056,8 +948,11 @@ macro_rules! define_simd_float {
       /// range values or NaNs.
       ///
       /// [`fast_trunc_int`]: Self::fast_trunc_int
+      #[inline]
       #[must_use]
-      $fn_trunc_int
+      pub fn trunc_int(self) -> $SignedSimd {
+        self.trunc_int_backend()
+      }
 
       /// Returns the integer part of each input element. This means that
       /// non-integer numbers are always truncated towards zero.
@@ -1067,8 +962,11 @@ macro_rules! define_simd_float {
       /// values and NaNs.
       ///
       /// [`trunc_int`]: Self::trunc_int
+      #[inline]
       #[must_use]
-      $fn_fast_trunc_int
+      pub fn fast_trunc_int(self) -> $SignedSimd {
+        self.fast_trunc_int_backend()
+      }
 
       /// Returns the fractional part of each input element.
       ///
@@ -1084,32 +982,44 @@ macro_rules! define_simd_float {
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
       /// add operations, resulting in two rounding errors.
+      #[inline]
       #[must_use]
-      $fn_fast_mul_add
+      pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
+        self.fast_mul_add_backend(a, b)
+      }
 
       /// Fused multiply-sub. Computes `(self * a) - b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
       /// add operations, resulting in two rounding errors.
+      #[inline]
       #[must_use]
-      $fn_fast_mul_sub
+      pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
+        self.fast_mul_sub_backend(a, b)
+      }
 
       /// Fused multiply-negate-add. Computes `-(self * a) + b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
       /// add operations, resulting in two rounding errors.
+      #[inline]
       #[must_use]
-      $fn_fast_mul_neg_add
+      pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
+        self.fast_mul_neg_add_backend(a, b)
+      }
 
       /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
       ///
       /// If there is hardware FMA support, this computes the result with only
       /// one rounding error. If not, this falls back to separate multiply and
       /// add operations, resulting in two rounding errors.
+      #[inline]
       #[must_use]
-      $fn_fast_mul_neg_sub
+      pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
+        self.fast_mul_neg_sub_backend(a, b)
+      }
 
       /// Calculates Euclidean division, the matching function for
       /// [`rem_euclid`].
@@ -1163,16 +1073,22 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_powf_simd
+      pub fn powf_simd(self, n: Self) -> Self {
+        self.powf_simd_backend(n)
+      }
 
       /// Returns the square root of a number for each input element.
       ///
       /// Returns NaN if `self` is a negative number other than `-0.0`.
       ///
       /// This function always returns the precise result.
+      #[inline]
       #[must_use]
-      $fn_sqrt
+      pub fn sqrt(self) -> Self {
+        self.sqrt_backend()
+      }
 
       /// Returns `e^(self)`, (the exponential function) for each input element.
       ///
@@ -1181,8 +1097,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_exp
+      pub fn exp(self) -> Self {
+        self.exp_backend()
+      }
 
       /// Returns `2^(self)` for each input element.
       ///
@@ -1191,8 +1110,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_exp2
+      pub fn exp2(self) -> Self {
+        self.exp2_backend()
+      }
 
       /// Returns the natural logarithm of a number for each input element.
       ///
@@ -1201,8 +1123,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_ln
+      pub fn ln(self) -> Self {
+        self.ln_backend()
+      }
 
       /// Returns the base 2 logarithm of a number for each input element.
       ///
@@ -1237,8 +1162,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_cbrt
+      pub fn cbrt(self) -> Self {
+        self.cbrt_backend()
+      }
 
       /// Computes the sine of a number (in radians) for each input element.
       ///
@@ -1291,8 +1219,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_asin
+      pub fn asin(self) -> Self {
+        self.asin_backend()
+      }
 
       /// Computes the arccosine of a number for each input element. Return
       /// value is in radians in the range [0, pi] or NaN if the number is
@@ -1303,8 +1234,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_acos
+      pub fn acos(self) -> Self {
+        self.acos_backend()
+      }
 
       /// Computes the arctangent of a number for each input element. Return
       /// value is in radians in the range [-pi/2, pi/2].
@@ -1314,8 +1248,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_atan
+      pub fn atan(self) -> Self {
+        self.atan_backend()
+      }
 
       /// Computes the four quadrant arctangent of each element of `self` (`y`)
       /// and the corresponding element of `other` (`x`) in radians.
@@ -1332,8 +1269,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_atan2
+      pub fn atan2(self, other: Self) -> Self {
+        self.atan2_backend(other)
+      }
 
       /// Simultaneously computes the sine and cosine of a number `x` for each
       /// input element. Returns `(sin(x), cos(x))`.
@@ -1343,8 +1283,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_sin_cos
+      pub fn sin_cos(self) -> (Self, Self) {
+        self.sin_cos_backend()
+      }
 
       /// Simultaneously computes the arcsine and arccosine of a number `x` for
       /// each input element. Returns `(asin(x), acos(x))`.
@@ -1354,8 +1297,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_asin_acos
+      pub fn asin_acos(self) -> (Self, Self) {
+        self.asin_acos_backend()
+      }
 
       /// Returns `e^(self) - 1` for each input element in a way that is
       /// accurate even if a number is close to zero.
@@ -1365,8 +1311,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_exp_m1
+      pub fn exp_m1(self) -> Self {
+        self.exp_m1_backend()
+      }
 
       /// Returns `ln(1+n)` (natural logarithm) for each input element more
       /// accurately than if the operations were performed separately.
@@ -1376,8 +1325,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_ln_1p
+      pub fn ln_1p(self) -> Self {
+        self.ln_1p_backend()
+      }
 
       /// Returns the hyperbolic sine (`(e^self - e^(-self))/2`) for each input
       /// element.
@@ -1387,8 +1339,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_sinh
+      pub fn sinh(self) -> Self {
+        self.sinh_backend()
+      }
 
       /// Returns the hyperbolic cosine (`(e^self + e^(-self))/2`) for each
       /// input element.
@@ -1398,8 +1353,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_cosh
+      pub fn cosh(self) -> Self {
+        self.cosh_backend()
+      }
 
       /// Returns the hyperbolic tangent (`sinh(self)/cosh(self)`) for each
       /// input element.
@@ -1409,8 +1367,11 @@ macro_rules! define_simd_float {
       /// The exact result of this function is non-deterministic. This means it
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
+      #[inline]
       #[must_use]
-      $fn_tanh
+      pub fn tanh(self) -> Self {
+        self.tanh_backend()
+      }
 
       /// Returns a [mask] that checks if each element is infinity (either
       /// positive or negative).
@@ -1557,3 +1518,51 @@ macro_rules! define_simd_float {
     }
   };
 }
+impl_simd_float!(
+    T = f32,
+    Simd = f32x4,
+    SignedSimd = i32x4,
+    UnsignedT = u32,
+    UnsignedSimd = u32x4,
+    old_powf_simd_fn_name = pow_f32x4,
+);
+impl_simd_float!(
+    T = f32,
+    Simd = f32x8,
+    SignedSimd = i32x8,
+    UnsignedT = u32,
+    UnsignedSimd = u32x8,
+    old_powf_simd_fn_name = pow_f32x8,
+);
+impl_simd_float!(
+    T = f32,
+    Simd = f32x16,
+    SignedSimd = i32x16,
+    UnsignedT = u32,
+    UnsignedSimd = u32x16,
+    old_powf_simd_fn_name = pow_f32x16,
+);
+impl_simd_float!(
+    T = f64,
+    Simd = f64x2,
+    SignedSimd = i64x2,
+    UnsignedT = u64,
+    UnsignedSimd = u64x2,
+    old_powf_simd_fn_name = pow_f64x2,
+);
+impl_simd_float!(
+    T = f64,
+    Simd = f64x4,
+    SignedSimd = i64x4,
+    UnsignedT = u64,
+    UnsignedSimd = u64x4,
+    old_powf_simd_fn_name = pow_f64x4,
+);
+impl_simd_float!(
+    T = f64,
+    Simd = f64x8,
+    SignedSimd = i64x8,
+    UnsignedT = u64,
+    UnsignedSimd = u64x8,
+    old_powf_simd_fn_name = pow_f64x8,
+);

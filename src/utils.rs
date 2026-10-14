@@ -39,12 +39,15 @@ macro_rules! pick {
 }
 
 macro_rules! impl_unary_operator {
-  ($Simd:ident, $Op:ident, $op:ident, $impl:item, $(#[$doc:meta])*) => {
+  ($Simd:ident, $Op:ident, $op:ident, $op_backend:ident, $(#[$doc:meta])*) => {
     impl $Op for $Simd {
       type Output = Self;
 
       $(#[$doc])*
-      $impl
+      #[inline]
+      fn $op(self) -> Self::Output {
+        self.$op_backend()
+      }
     }
 
     impl $Op for &$Simd {
@@ -53,7 +56,7 @@ macro_rules! impl_unary_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self) -> Self::Output {
-        (*self).$op()
+        self.$op_backend()
       }
     }
   }
@@ -67,7 +70,7 @@ macro_rules! impl_binary_operator {
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $impl:item,
+    $op_backend:ident,
     $(#[$doc:meta])*,
     $(#[$doc_scalar:meta])*,
     $(#[$scalar_doc:meta])*
@@ -76,7 +79,10 @@ macro_rules! impl_binary_operator {
       type Output = Self;
 
       $(#[$doc])*
-      $impl
+      #[inline]
+      fn $op(self, rhs: Self) -> Self::Output {
+        self.$op_backend(rhs)
+      }
     }
 
     impl $Op<$T> for $Simd {
@@ -85,7 +91,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: $T) -> Self::Output {
-        self.$op(Self::splat(rhs))
+        self.$op_backend(Self::splat(rhs))
       }
     }
 
@@ -95,7 +101,7 @@ macro_rules! impl_binary_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $Simd) -> Self::Output {
-        $Simd::splat(self).$op(rhs)
+        $Simd::splat(self).$op_backend(rhs)
       }
     }
 
@@ -103,7 +109,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: Self) {
-        *self = (*self).$op(rhs);
+        *self = self.$op_backend(rhs);
       }
     }
 
@@ -111,7 +117,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc_scalar])*
       #[inline]
       fn $op_assign(&mut self, rhs: $T) {
-        *self = (*self).$op(Self::splat(rhs));
+        *self = self.$op_backend(Self::splat(rhs));
       }
     }
 
@@ -121,7 +127,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &Self) -> Self::Output {
-        self.$op(*rhs)
+        self.$op_backend(*rhs)
       }
     }
 
@@ -131,7 +137,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: &$T) -> Self::Output {
-        self.$op(Self::splat(*rhs))
+        self.$op_backend(Self::splat(*rhs))
       }
     }
 
@@ -141,7 +147,7 @@ macro_rules! impl_binary_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$Simd) -> Self::Output {
-        $Simd::splat(self).$op(*rhs)
+        $Simd::splat(self).$op_backend(*rhs)
       }
     }
 
@@ -149,7 +155,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &Self) {
-        *self = (*self).$op(*rhs);
+        *self = (*self).$op_backend(*rhs);
       }
     }
 
@@ -157,7 +163,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc_scalar])*
       #[inline]
       fn $op_assign(&mut self, rhs: &$T) {
-        *self = (*self).$op(Self::splat(*rhs));
+        *self = self.$op_backend(Self::splat(*rhs));
       }
     }
 
@@ -167,7 +173,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $Simd) -> Self::Output {
-        (*self).$op(rhs)
+        (*self).$op_backend(rhs)
       }
     }
 
@@ -177,7 +183,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: $T) -> Self::Output {
-        (*self).$op($Simd::splat(rhs))
+        self.$op_backend($Simd::splat(rhs))
       }
     }
 
@@ -187,7 +193,7 @@ macro_rules! impl_binary_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $Simd) -> Self::Output {
-        $Simd::splat(*self).$op(rhs)
+        $Simd::splat(*self).$op_backend(rhs)
       }
     }
 
@@ -197,7 +203,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$Simd) -> Self::Output {
-        (*self).$op(*rhs)
+        self.$op_backend(*rhs)
       }
     }
 
@@ -207,7 +213,7 @@ macro_rules! impl_binary_operator {
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: &$T) -> Self::Output {
-        (*self).$op($Simd::splat(*rhs))
+        self.$op_backend($Simd::splat(*rhs))
       }
     }
 
@@ -217,7 +223,7 @@ macro_rules! impl_binary_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$Simd) -> Self::Output {
-        $Simd::splat(*self).$op(*rhs)
+        $Simd::splat(*self).$op_backend(*rhs)
       }
     }
   }
@@ -233,8 +239,8 @@ macro_rules! impl_shift_operator {
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $impl_unsigned_simd:item,
-    $impl_u32:item,
+    $op_backend:ident,
+    $op_scalar_backend:ident,
     $(#[$doc:meta])*,
     $(#[$doc_scalar:meta])*,
     $(#[$scalar_doc:meta])*
@@ -243,7 +249,10 @@ macro_rules! impl_shift_operator {
       type Output = Self;
 
       $(#[$doc])*
-      $impl_unsigned_simd
+      #[inline]
+      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
+        self.$op_backend(rhs)
+      }
     }
 
     impl $Op<$SignedSimd> for $Simd {
@@ -252,7 +261,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        self.$op(cast::<$SignedSimd, $UnsignedSimd>(rhs))
+        self.$op_backend(cast::<$SignedSimd, $UnsignedSimd>(rhs))
       }
     }
 
@@ -262,7 +271,7 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        $Simd::splat(self).$op(rhs)
+        $Simd::splat(self).$op_backend(rhs)
       }
     }
 
@@ -272,7 +281,7 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        $Simd::splat(self).$op(rhs)
+        $Simd::splat(self).$op_backend(rhs.cast_unsigned())
       }
     }
 
@@ -280,7 +289,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: $UnsignedSimd) {
-        *self = (*self).$op(rhs);
+        *self = self.$op_backend(rhs);
       }
     }
 
@@ -288,7 +297,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: $SignedSimd) {
-        *self = (*self).$op(rhs);
+        *self = self.$op_backend(rhs.cast_unsigned());
       }
     }
 
@@ -298,7 +307,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        self.$op(*rhs)
+        self.$op_backend(*rhs)
       }
     }
 
@@ -308,7 +317,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        self.$op(*rhs)
+        self.$op_backend(rhs.cast_unsigned())
       }
     }
 
@@ -318,7 +327,7 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        $Simd::splat(self).$op(*rhs)
+        $Simd::splat(self).$op_backend(*rhs)
       }
     }
 
@@ -328,7 +337,7 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        $Simd::splat(self).$op(*rhs)
+        $Simd::splat(self).$op_backend(rhs.cast_unsigned())
       }
     }
 
@@ -336,7 +345,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &$UnsignedSimd) {
-        *self = (*self).$op(*rhs);
+        *self = self.$op_backend(*rhs);
       }
     }
 
@@ -344,7 +353,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &$SignedSimd) {
-        *self = (*self).$op(*rhs);
+        *self = self.$op_backend(rhs.cast_unsigned());
       }
     }
 
@@ -354,7 +363,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        (*self).$op(rhs)
+        self.$op_backend(rhs)
       }
     }
 
@@ -364,7 +373,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        (*self).$op(rhs)
+        self.$op_backend(rhs.cast_unsigned())
       }
     }
 
@@ -374,7 +383,7 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op(rhs)
+        $Simd::splat(*self).$op_backend(rhs)
       }
     }
 
@@ -384,7 +393,7 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op(rhs)
+        $Simd::splat(*self).$op_backend(rhs.cast_unsigned())
       }
     }
 
@@ -394,7 +403,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        (*self).$op(*rhs)
+        self.$op_backend(*rhs)
       }
     }
 
@@ -404,7 +413,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        (*self).$op(*rhs)
+        self.$op_backend(rhs.cast_unsigned())
       }
     }
 
@@ -414,7 +423,7 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op(*rhs)
+        $Simd::splat(*self).$op_backend(*rhs)
       }
     }
 
@@ -424,24 +433,27 @@ macro_rules! impl_shift_operator {
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op(*rhs)
+        $Simd::splat(*self).$op_backend(rhs.cast_unsigned())
       }
     }
 
     macro_rules! impl_scalar {
-      ($T2:ident, $impl:item) => {
+      ($T2:ident) => {
         impl $Op<$T2> for $Simd {
           type Output = Self;
 
           $(#[$doc_scalar])*
-          $impl
+          #[inline]
+          fn $op(self, rhs: $T2) -> Self::Output {
+            self.$op_scalar_backend(rhs as u32)
+          }
         }
 
         impl $OpAssign<$T2> for $Simd {
           $(#[$doc_scalar])*
           #[inline]
           fn $op_assign(&mut self, rhs: $T2) {
-            *self = (*self).$op(rhs);
+            *self = self.$op_scalar_backend(rhs as u32);
           }
         }
 
@@ -451,7 +463,7 @@ macro_rules! impl_shift_operator {
           $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: &$T2) -> Self::Output {
-            self.$op(*rhs)
+            self.$op_scalar_backend(*rhs as u32)
           }
         }
 
@@ -459,7 +471,7 @@ macro_rules! impl_shift_operator {
           $(#[$doc_scalar])*
           #[inline]
           fn $op_assign(&mut self, rhs: &$T2) {
-            *self = (*self).$op(*rhs);
+            *self = self.$op_scalar_backend(*rhs as u32);
           }
         }
 
@@ -469,7 +481,7 @@ macro_rules! impl_shift_operator {
           $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: $T2) -> Self::Output {
-            (*self).$op(rhs)
+            self.$op_scalar_backend(rhs as u32)
           }
         }
 
@@ -479,35 +491,23 @@ macro_rules! impl_shift_operator {
           $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: &$T2) -> Self::Output {
-            (*self).$op(*rhs)
+            self.$op_scalar_backend(*rhs as u32)
           }
         }
       }
     }
-    impl_scalar!(u32, $impl_u32);
-
-    macro_rules! impl_scalar_with_cast {
-      ($T2:ident) => {
-        impl_scalar!(
-          $T2,
-          #[inline]
-          fn $op(self, rhs: $T2) -> Self::Output {
-            self.$op(rhs as u32)
-          }
-        );
-      }
-    }
-    impl_scalar_with_cast!(i8);
-    impl_scalar_with_cast!(i16);
-    impl_scalar_with_cast!(i32);
-    impl_scalar_with_cast!(i64);
-    impl_scalar_with_cast!(i128);
-    impl_scalar_with_cast!(isize);
-    impl_scalar_with_cast!(u8);
-    impl_scalar_with_cast!(u16);
-    impl_scalar_with_cast!(u64);
-    impl_scalar_with_cast!(u128);
-    impl_scalar_with_cast!(usize);
+    impl_scalar!(u32);
+    impl_scalar!(i8);
+    impl_scalar!(i16);
+    impl_scalar!(i32);
+    impl_scalar!(i64);
+    impl_scalar!(i128);
+    impl_scalar!(isize);
+    impl_scalar!(u8);
+    impl_scalar!(u16);
+    impl_scalar!(u64);
+    impl_scalar!(u128);
+    impl_scalar!(usize);
   }
 }
 
