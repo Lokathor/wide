@@ -194,6 +194,8 @@ mod simd_signed;
 
 mod simd_unsigned;
 
+mod simd_inconsistent;
+
 mod f32x16_;
 mod f32x4_;
 mod f32x8_;
@@ -224,11 +226,6 @@ mod u64x8_;
 mod u8x16_;
 mod u8x32_;
 mod u8x64_;
-
-// This module is intentionally placed last. The order of module definitions
-// affects the order of `impl` blocks in documentation, and this module's `impl`
-// blocks should come last.
-mod simd_inconsistent;
 
 mod imports {
     //! Exports items that should be imported by all SIMD-type modules.
