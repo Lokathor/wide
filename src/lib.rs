@@ -196,6 +196,12 @@ mod simd_unsigned;
 
 mod simd_inconsistent;
 
+// The following modules define each SIMD type's internal representation and
+// function implementations. They do not contribute to the public API. For
+// functions supported by only some SIMD types, declare the public functions in
+// `simd_inconsistent.rs` and have them call internal backend functions defined
+// in these modules.
+
 mod f32x16_backend;
 mod f32x4_backend;
 mod f32x8_backend;
