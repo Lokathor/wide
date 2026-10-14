@@ -1954,9 +1954,7 @@ impl f32x4 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
-}
 
-impl f32x4 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f32_as_f32x4!(pow2_23, 8388608.0);

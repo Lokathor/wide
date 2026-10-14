@@ -377,9 +377,7 @@ impl i64x8 {
           }
         }
     }
-}
 
-impl i64x8 {
     #[inline]
     pub(crate) fn round_float_backend(self) -> f64x8 {
         let arr: [i64; 8] = cast(self);

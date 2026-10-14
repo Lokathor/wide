@@ -834,9 +834,7 @@ impl u32x16 {
           }
         }
     }
-}
 
-impl u32x16 {
     #[inline]
     pub(crate) fn from_u16x16_backend(v: u16x16) -> Self {
         pick! {

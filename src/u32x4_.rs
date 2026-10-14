@@ -1145,9 +1145,7 @@ impl u32x4 {
           }
         }
     }
-}
 
-impl u32x4 {
     #[inline]
     pub(crate) fn shuffle_consts_backend<
         const I0: usize,

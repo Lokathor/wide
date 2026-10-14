@@ -2000,9 +2000,7 @@ impl f64x2 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
-}
 
-impl f64x2 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f64_as_f64x2!(pow2_52, 4503599627370496.0);

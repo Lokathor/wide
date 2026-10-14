@@ -845,9 +845,7 @@ impl u8x32 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
-}
 
-impl u8x32 {
     #[inline]
     pub(crate) fn swizzle_half_backend(self, rhs: i8x32) -> i8x32 {
         cast(i8x32::swizzle_half(cast(self), cast(rhs)))

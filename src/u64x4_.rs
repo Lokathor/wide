@@ -824,9 +824,7 @@ impl u64x4 {
           }
         }
     }
-}
 
-impl u64x4 {
     /// A helper for shuffle functions that turns indices of 64-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
     ///

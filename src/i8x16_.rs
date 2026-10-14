@@ -728,9 +728,7 @@ impl i8x16 {
           }
         }
     }
-}
 
-impl i8x16 {
     #[inline]
     pub(crate) fn from_i16x16_saturate_backend(v: i16x16) -> i8x16 {
         pick! {

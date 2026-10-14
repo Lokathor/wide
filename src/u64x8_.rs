@@ -855,9 +855,7 @@ impl u64x8 {
           }
         }
     }
-}
 
-impl u64x8 {
     /// The exact per-lane product of `a` and `b` masked to `W` bits.
     ///
     /// Only exact for `W <= 32`, where the product still fits a lane, and

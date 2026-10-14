@@ -1631,9 +1631,7 @@ impl u8x16 {
           }
         }
     }
-}
 
-impl u8x16 {
     #[inline]
     pub(crate) fn narrow_i16x8_backend(lhs: i16x8, rhs: i16x8) -> Self {
         pick! {

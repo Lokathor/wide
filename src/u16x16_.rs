@@ -829,9 +829,7 @@ impl u16x16 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
-}
 
-impl u16x16 {
     /// A helper for shuffle functions that turns indices of 16-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
     ///

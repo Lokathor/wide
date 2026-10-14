@@ -850,9 +850,7 @@ impl u32x8 {
           }
         }
     }
-}
 
-impl u32x8 {
     /// A helper for shuffle functions that turns indices of 32-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
     ///

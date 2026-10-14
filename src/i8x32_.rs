@@ -260,9 +260,7 @@ impl i8x32 {
           }
         }
     }
-}
 
-impl i8x32 {
     #[inline]
     pub(crate) fn swizzle_half_backend(self, rhs: i8x32) -> i8x32 {
         pick! {

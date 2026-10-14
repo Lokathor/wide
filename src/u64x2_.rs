@@ -889,9 +889,7 @@ impl u64x2 {
             ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
         ])
     }
-}
 
-impl u64x2 {
     /// A helper for shuffle functions that turns indices of 64-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
     ///

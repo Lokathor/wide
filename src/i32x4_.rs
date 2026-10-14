@@ -493,9 +493,7 @@ impl i32x4 {
           }
         }
     }
-}
 
-impl i32x4 {
     #[inline]
     pub(crate) fn round_float_backend(self) -> f32x4 {
         pick! {
