@@ -199,10 +199,6 @@ impl i64x4 {
     )
   }
 
-  optional_fn_widening_mul {
-    // Cannot have `widening_mul` because there is no `i128x4` type.
-  }
-
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u64x4, i64x4) {
     // TODO(perf): This implementation looks quite bad. Is there a better

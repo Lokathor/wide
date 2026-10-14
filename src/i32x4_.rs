@@ -295,7 +295,6 @@ impl i32x4 {
     (low, overflow)
   }
 
-  optional_fn_widening_mul {
     #[inline]
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> i64x4 {
       pick! {
@@ -339,7 +338,6 @@ impl i32x4 {
         }
       }
     }
-  }
 
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u32x4, i32x4) {

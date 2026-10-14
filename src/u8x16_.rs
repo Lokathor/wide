@@ -1489,7 +1489,6 @@ impl u8x16 {
     (low, overflow)
   }
 
-  optional_fn_widening_mul {
     #[inline]
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> u16x16 {
       pick! {
@@ -1528,7 +1527,6 @@ impl u8x16 {
         }
       }
     }
-  }
 
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {

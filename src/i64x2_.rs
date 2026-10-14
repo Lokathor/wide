@@ -268,11 +268,7 @@ impl i64x2 {
       Self::from_array([-(result[0].1 as i64), -(result[1].1 as i64)]),
     )
   }
-
-  optional_fn_widening_mul {
-    // Cannot have `widening_mul` because there is no `i128x2` type.
-  }
-
+  
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u64x2, i64x2) {
     // TODO(perf): This implementation looks quite bad. Is there a better

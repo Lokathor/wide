@@ -222,10 +222,6 @@ impl i16x32 {
     (low, overflow)
   }
 
-  optional_fn_widening_mul {
-    // Cannot have `widening_mul` because there is no `i32x32` type.
-  }
-
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u16x32, i16x32) {
     // x86 has no `_mm512_mul_epi16` intrinsic so there is no `avx512`

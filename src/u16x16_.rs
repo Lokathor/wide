@@ -796,7 +796,6 @@ impl u16x16 {
     (low, overflow)
   }
 
-  optional_fn_widening_mul {
     #[inline]
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> u32x16 {
       // x86 has no `_mm256_mul_epu16` intrinsic so there is no `avx2`
@@ -807,7 +806,6 @@ impl u16x16 {
 
       cast([self_a.widening_mul(rhs_a), self_b.widening_mul(rhs_b)])
     }
-  }
 
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {

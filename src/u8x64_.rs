@@ -845,10 +845,6 @@ impl u8x64 {
     (low, overflow)
   }
 
-  optional_fn_widening_mul {
-    // Cannot have `widening_mul` because there is no `u16x64` type.
-  }
-
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
     // There is no `_mm512_mullo_epi8`/`_mm512_mulhi_epu8` intrinsic, so there

@@ -774,10 +774,6 @@ impl u32x16 {
     (low, overflow)
   }
 
-  optional_fn_widening_mul {
-    // Cannot have `widening_mul` because there is no `u64x16` type.
-  }
-
   #[inline]
   pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
     pick! {
