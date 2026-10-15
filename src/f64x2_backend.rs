@@ -894,6 +894,8 @@ impl f64x2 {
             Self(round_m128d::<{round_op!(Nearest)}>(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_nearest(self.0))
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            unsafe { Self(vrndnq_f64(self.0)) }
           } else {
             const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
             const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
