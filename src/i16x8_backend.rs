@@ -572,7 +572,7 @@ impl i16x8 {
     pub(crate) fn from_u8x16_low_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(unpack_low_i8_m128i(u.0, m128i::zeroed()))
+            Self(unpack_low_i8_m128i(u.0, __m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -593,7 +593,7 @@ impl i16x8 {
     pub(crate) fn from_u8x16_high_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(unpack_high_i8_m128i(u.0, m128i::zeroed()))
+            Self(unpack_high_i8_m128i(u.0, __m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([

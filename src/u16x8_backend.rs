@@ -225,7 +225,7 @@ impl u16x8 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature = "sse2")] {
-            let bias = m128i::from([0x8000u16; 8]);
+            let bias = Self::from_array([0x8000u16; 8]).0;
 
             let a_biased = sub_i16_m128i(self.0, bias);
             let b_biased = sub_i16_m128i(rhs.0, bias);
@@ -590,7 +590,7 @@ impl u16x8 {
     pub(crate) fn shuffle_backend(self, indices: u16x8) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            Self(m128i(_mm_permutexvar_epi16(indices.0.0, self.0.0)))
+            Self(_mm_permutexvar_epi16(indices.0.0, self.0.0))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),
@@ -651,7 +651,7 @@ impl u16x8 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x8) -> u16x8 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            u16x8(m128i(_mm_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
+            u16x8(_mm_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0))
           } else {
             let self_bytes = cast::<[u16x8; 2], [u8x16; 2]>(inputs);
             let byte_indices = indices.to_byte_indices();
@@ -1381,7 +1381,7 @@ impl u16x8 {
     pub(crate) fn from_u8x16_low_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(unpack_low_i8_m128i(u.0, m128i::zeroed()))
+            Self(unpack_low_i8_m128i(u.0, __m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -1402,7 +1402,7 @@ impl u16x8 {
     pub(crate) fn from_u8x16_high_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(unpack_high_i8_m128i(u.0, m128i::zeroed()))
+            Self(unpack_high_i8_m128i(u.0, __m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([

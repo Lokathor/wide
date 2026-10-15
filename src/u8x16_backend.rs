@@ -453,7 +453,7 @@ impl u8x16 {
             match INDEX {
               $($INDEX => {
                 let value = set_i32_m128i_s(value as i32);
-                let shifted_value = Self(m128i(_mm_slli_si128::<$INDEX>(value.0)));
+                let shifted_value = Self(_mm_slli_si128::<$INDEX>(value.0));
 
                 replace_mask.select(shifted_value, self)
               })*
@@ -501,7 +501,7 @@ impl u8x16 {
             // Shift bytes so that the element at `INDEX` becomes the lowest one
             let shifted_self = match INDEX {
               0 => self.0,
-              $($INDEX_FROM_1 => m128i(_mm_srli_si128::<$INDEX_FROM_1>(self.0.0)),)*
+              $($INDEX_FROM_1 => _mm_srli_si128::<$INDEX_FROM_1>(self.0.0),)*
               16.. => unreachable!(),
             };
 
@@ -824,7 +824,7 @@ impl u8x16 {
     pub(crate) fn shuffle_wrapping_backend(self, indices: u8x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            Self(m128i(_mm_permutexvar_epi8(indices.0.0, self.0.0)))
+            Self(_mm_permutexvar_epi8(indices.0.0, self.0.0))
           } else {
             self.shuffle(indices & 15)
           }
@@ -835,7 +835,7 @@ impl u8x16 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x16) -> u8x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            u8x16(m128i(_mm_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
+            u8x16(_mm_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             let table = uint8x16x2_t(inputs[0].0, inputs[1].0);
             u8x16(vqtbl2q_u8(table, indices.0))

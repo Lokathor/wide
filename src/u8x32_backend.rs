@@ -464,7 +464,7 @@ impl u8x32 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x32) -> u8x32 {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            u8x32(m256i(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
+            u8x32(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
           } else if #[cfg(target_feature="avx2")] {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
           } else {
@@ -863,7 +863,7 @@ impl u8x32 {
     // shifting a byte by 8 or more gets rid of everything anyway.
     #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
     #[inline]
-    fn shift_each_u16(self, rhs: m256i, right: bool, unbounded: bool) -> Self {
+    fn shift_each_u16(self, rhs: __m256i, right: bool, unbounded: bool) -> Self {
         let self16 = convert_to_i16_m512i_from_u8_m256i(self.0);
         let count16 = if unbounded {
             convert_to_u16_m512i_from_u8_m256i(min_u8_m256i(rhs, set_splat_i8_m256i(8)))
@@ -890,7 +890,7 @@ impl u8x32 {
     // the 64-bit chunks back together, and reassemble.
     #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))]
     #[inline]
-    fn pack_u16_halves(low: m256i, high: m256i) -> m256i {
+    fn pack_u16_halves(low: __m256i, high: __m256i) -> __m256i {
         let packed = pack_i16_to_u8_m256i(low, high);
         let packed_low = extract_m128i_m256i::<0>(packed);
         let packed_high = extract_m128i_m256i::<1>(packed);

@@ -209,11 +209,11 @@ impl u32x16 {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
-            Self(m512i(_mm512_mask_set1_epi32(
+            Self(_mm512_mask_set1_epi32(
                 self.0.0,
                 const { 1 << INDEX },
                 value.cast_signed(),
-            )))
+            ))
           } else {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
 
@@ -257,9 +257,7 @@ impl u32x16 {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
             match INDEX {
               $($INDEX => {
-                let quarter = cast::<m128i, u32x4>(m128i(
-                  _mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.0.0),
-                ));
+                let quarter = u32x4(_mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.0.0));
                 quarter.extract_const::<{ $INDEX % 4 }>()
               })*
               16.. => unreachable!()
@@ -763,8 +761,8 @@ impl u32x16 {
             let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
             let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
             (
-              Self(m512i(_mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0))),
-              Self(m512i(_mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0))),
+              Self(_mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0)),
+              Self(_mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0)),
             )
           } else {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
@@ -789,12 +787,12 @@ impl u32x16 {
             let blo = extract_m256i32_from_m512i::<0>(rhs.0);
             let bhi = extract_m256i32_from_m512i::<1>(rhs.0);
 
-            let lo_res: m256i = {
+            let lo_res: __m256i = {
               let a8 = u32x8(alo);
               let b8 = u32x8(blo);
               a8.mul_keep_high(b8).0
             };
-            let hi_res: m256i = {
+            let hi_res: __m256i = {
               let a8 = u32x8(ahi);
               let b8 = u32x8(bhi);
               a8.mul_keep_high(b8).0
@@ -820,8 +818,8 @@ impl u32x16 {
           if #[cfg(target_feature = "avx512f")] {
             Self(convert_to_u32_m512i_from_u16_m256i(v.0))
           } else if #[cfg(target_feature = "avx2")] {
-            let lo: m128i = extract_m128i_from_m256i::<0>(v.0);
-            let hi: m128i = extract_m128i_from_m256i::<1>(v.0);
+            let lo: __m128i = extract_m128i_from_m256i::<0>(v.0);
+            let hi: __m128i = extract_m128i_from_m256i::<1>(v.0);
             Self(Inner {
               lo: u32x8(convert_to_i32_m256i_from_u16_m128i(lo)),
               hi: u32x8(convert_to_i32_m256i_from_u16_m128i(hi)),

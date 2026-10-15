@@ -400,7 +400,7 @@ impl u64x4 {
     pub(crate) fn shuffle_backend(self, indices: u64x4) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx512vl"))] {
-            Self(m256i(_mm256_permutexvar_epi64(indices.0.0, self.0.0)))
+            Self(_mm256_permutexvar_epi64(indices.0.0, self.0.0))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),

@@ -370,7 +370,7 @@ impl u32x8 {
     pub(crate) fn shuffle_backend(self, indices: u32x8) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            Self(m256i(_mm256_permutexvar_epi32(indices.0.0, self.0.0)))
+            Self(_mm256_permutexvar_epi32(indices.0.0, self.0.0))
           } else if #[cfg(target_feature = "avx2")] {
             Self(shuffle_av_i32_all_m256i(self.0, indices.0))
           } else if #[cfg(any(
@@ -524,14 +524,14 @@ impl u32x8 {
 
             // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
             // (since blend runs on a different port than shuffle)
-            let b0 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a0),cast(a2)));
-            let b1 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a0),cast(a2)));
-            let b2 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a1),cast(a3)));
-            let b3 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a1),cast(a3)));
-            let b4 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a4),cast(a6)));
-            let b5 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a4),cast(a6)));
-            let b6 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a5),cast(a7)));
-            let b7 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a5),cast(a7)));
+            let b0 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_LO>(cast(a0),cast(a2)));
+            let b1 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_HI>(cast(a0),cast(a2)));
+            let b2 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_LO>(cast(a1),cast(a3)));
+            let b3 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_HI>(cast(a1),cast(a3)));
+            let b4 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_LO>(cast(a4),cast(a6)));
+            let b5 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_HI>(cast(a4),cast(a6)));
+            let b6 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_LO>(cast(a5),cast(a7)));
+            let b7 = cast::<__m256,__m256i>(shuffle_m256::<SHUFF_HI>(cast(a5),cast(a7)));
 
             [
               u32x8(permute2z_m256i::<0x20>(b0, b4)),
@@ -779,14 +779,14 @@ impl u32x8 {
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> u64x8 {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
-            const SHUFFLE_INDICES: m512i = i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0;
+            const SHUFFLE_INDICES: __m512i = i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0;
 
             let even_wide_mul = mul_u64_low_bits_m256i(self.0, rhs.0);
             let odd_wide_mul = mul_u64_low_bits_m256i(
               shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.0),
               shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
             );
-            let even_then_odd = cast::<[m256i; 2], m512i>([even_wide_mul, odd_wide_mul]);
+            let even_then_odd = cast::<[__m256i; 2], __m512i>([even_wide_mul, odd_wide_mul]);
             u64x8(permute_i64_m512i(SHUFFLE_INDICES, even_then_odd))
           } else {
             let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);

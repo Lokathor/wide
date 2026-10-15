@@ -669,7 +669,7 @@ impl f64x4 {
             let non_nan = self & non_nan_mask;
             let flip_to_max: i64x4 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            let cast: i64x4 = cast(m256i(_mm256_cvtpd_epi64(non_nan.0.0)));
+            let cast: i64x4 = cast(_mm256_cvtpd_epi64(non_nan.0.0));
             flip_to_max ^ cast
           } else {
             let [a, b]: [f64x2; 2] = cast(self);
@@ -682,7 +682,7 @@ impl f64x4 {
     pub(crate) fn fast_round_int_backend(self) -> i64x4 {
         pick! {
           if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
-            cast(m256i(_mm256_cvtpd_epi64(self.0.0)))
+            cast(_mm256_cvtpd_epi64(self.0.0))
           } else {
             let [a, b]: [f64x2; 2] = cast(self);
             cast([a.fast_round_int(), b.fast_round_int()])
@@ -727,7 +727,7 @@ impl f64x4 {
             let non_nan = self & non_nan_mask;
             let flip_to_max: i64x4 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            let cast: i64x4 = cast(m256i(_mm256_cvttpd_epi64(non_nan.0.0)));
+            let cast: i64x4 = cast(_mm256_cvttpd_epi64(non_nan.0.0));
             flip_to_max ^ cast
           } else {
             let [a, b]: [f64x2; 2] = cast(self);
@@ -740,7 +740,7 @@ impl f64x4 {
     pub(crate) fn fast_trunc_int_backend(self) -> i64x4 {
         pick! {
           if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
-            cast(m256i(_mm256_cvttpd_epi64(self.0.0)))
+            cast(_mm256_cvttpd_epi64(self.0.0))
           } else {
             let [a, b]: [f64x2; 2] = cast(self);
             cast([a.fast_trunc_int(), b.fast_trunc_int()])

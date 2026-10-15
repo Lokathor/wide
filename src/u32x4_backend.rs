@@ -1168,7 +1168,7 @@ impl u32x4 {
                   );
                 }
 
-                Self(m128i(result))
+                Self(result)
               } else if #[cfg(all(
                 target_feature = "neon",
                 target_arch = "aarch64",

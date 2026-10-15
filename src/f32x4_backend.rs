@@ -1042,7 +1042,7 @@ impl f32x4 {
           if #[cfg(target_feature="sse4.1")] {
             Self(round_m128::<{round_op!(Nearest)}>(self.0))
           } else if #[cfg(target_feature="sse2")] {
-            let mi: m128i = convert_to_i32_m128i_from_m128(self.0);
+            let mi: __m128i = convert_to_i32_m128i_from_m128(self.0);
             let f: f32x4 = f32x4(convert_to_m128_from_i32_m128i(mi));
             let i: i32x4 = cast(mi);
             let mask: f32x4 = cast(i.simd_eq(i32x4::from(0x80000000_u32 as i32)));

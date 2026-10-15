@@ -247,7 +247,7 @@ impl u64x2 {
             }
           } else if #[cfg(target_feature = "sse2")] {
             #[cfg(target_arch = "x86")]
-            let value = cast::<[u64; 2], m128i>([value, 0]);
+            let value = cast::<[u64; 2], __m128i>([value, 0]);
             #[cfg(target_arch = "x86_64")]
             let value = set_i64_m128i_s(value.cast_signed());
 

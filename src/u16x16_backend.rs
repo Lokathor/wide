@@ -152,7 +152,7 @@ impl u16x16 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature = "avx2")] {
-            let bias = m256i::from([0x8000u16; 16]);
+            let bias = Self::from_array([0x8000u16; 16]).0;
             let a_biased = sub_i16_m256i(self.0, bias);
             let b_biased = sub_i16_m256i(rhs.0, bias);
             let mask = cmp_gt_mask_i16_m256i(a_biased, b_biased);
@@ -328,7 +328,7 @@ impl u16x16 {
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
           if #[cfg(target_feature="sse2")] {
-              let [a,b] = cast::<_,[m128i;2]>(self);
+              let [a,b] = cast::<_,[__m128i;2]>(self);
               move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
             } else {
             self.0.lo.to_bitmask() | (self.0.hi.to_bitmask() << 8)
@@ -386,7 +386,7 @@ impl u16x16 {
     pub(crate) fn shuffle_backend(self, indices: u16x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            Self(m256i(_mm256_permutexvar_epi16(indices.0.0, self.0.0)))
+            Self(_mm256_permutexvar_epi16(indices.0.0, self.0.0))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),
@@ -447,7 +447,7 @@ impl u16x16 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            u16x16(m256i(_mm256_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
+            u16x16(_mm256_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0))
           } else {
             let self_bytes = cast::<[u16x16; 2], [u8x32; 2]>(inputs);
             let byte_indices = indices.to_byte_indices();
