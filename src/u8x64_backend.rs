@@ -195,7 +195,7 @@ impl u8x64 {
         pick! {
           if #[cfg(target_feature = "avx512bw")] {
             Self(_mm512_mask_set1_epi8(
-                self.0.0,
+                self.0,
                 const { 1 << INDEX },
                 value.cast_signed(),
             ))
@@ -252,7 +252,7 @@ impl u8x64 {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
             match INDEX {
               $($INDEX => {
-                let quarter = u8x16(_mm512_extracti32x4_epi32::<{ $INDEX / 16 }>(self.0.0));
+                let quarter = u8x16(_mm512_extracti32x4_epi32::<{ $INDEX / 16 }>(self.0));
                 quarter.extract_const::<{ $INDEX % 16 }>()
               })*
               64.. => unreachable!()
@@ -447,7 +447,7 @@ impl u8x64 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x64) -> u8x64 {
         pick! {
           if #[cfg(target_feature = "avx512vbmi")] {
-            u8x64(_mm512_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
+            u8x64(_mm512_permutex2var_epi8(inputs[0].0, indices.0, inputs[1].0))
           } else {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 64)
           }

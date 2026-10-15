@@ -464,7 +464,7 @@ impl u8x32 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x32) -> u8x32 {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            u8x32(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
+            u8x32(_mm256_permutex2var_epi8(inputs[0].0, indices.0, inputs[1].0))
           } else if #[cfg(target_feature="avx2")] {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
           } else {

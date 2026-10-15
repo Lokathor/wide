@@ -210,7 +210,7 @@ impl u32x16 {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
             Self(_mm512_mask_set1_epi32(
-                self.0.0,
+                self.0,
                 const { 1 << INDEX },
                 value.cast_signed(),
             ))
@@ -257,7 +257,7 @@ impl u32x16 {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
             match INDEX {
               $($INDEX => {
-                let quarter = u32x4(_mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.0.0));
+                let quarter = u32x4(_mm512_extracti32x4_epi32::<{ $INDEX / 4 }>(self.0));
                 quarter.extract_const::<{ $INDEX % 4 }>()
               })*
               16.. => unreachable!()

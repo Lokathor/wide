@@ -263,7 +263,7 @@ impl f32x16 {
     pub(crate) fn reduce_mul_backend(self) -> f32 {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            _mm512_reduce_mul_ps(self.0.0)
+            _mm512_reduce_mul_ps(self.0)
           } else {
             self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
           }

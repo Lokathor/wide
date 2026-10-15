@@ -370,7 +370,7 @@ impl u32x8 {
     pub(crate) fn shuffle_backend(self, indices: u32x8) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            Self(_mm256_permutexvar_epi32(indices.0.0, self.0.0))
+            Self(_mm256_permutexvar_epi32(indices.0, self.0))
           } else if #[cfg(target_feature = "avx2")] {
             Self(shuffle_av_i32_all_m256i(self.0, indices.0))
           } else if #[cfg(any(

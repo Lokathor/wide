@@ -207,7 +207,7 @@ impl u16x32 {
         pick! {
           if #[cfg(target_feature = "avx512bw")] {
             Self(_mm512_mask_set1_epi16(
-                self.0.0,
+                self.0,
                 const { 1 << INDEX },
                 value.cast_signed(),
             ))
@@ -257,7 +257,7 @@ impl u16x32 {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
             match INDEX {
               $($INDEX => {
-                let quarter = u16x8(_mm512_extracti32x4_epi32::<{ $INDEX / 8 }>(self.0.0));
+                let quarter = u16x8(_mm512_extracti32x4_epi32::<{ $INDEX / 8 }>(self.0));
                 quarter.extract_const::<{ $INDEX % 8 }>()
               })*
               32.. => unreachable!()
@@ -395,7 +395,7 @@ impl u16x32 {
     pub(crate) fn shuffle_backend(self, indices: u16x32) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw"))] {
-            Self(_mm512_permutexvar_epi16(indices.0.0, self.0.0))
+            Self(_mm512_permutexvar_epi16(indices.0, self.0))
           } else {
             let self_halfs = cast::<u16x32, [u16x16; 2]>(self);
             let [indices_a, indices_b] = cast::<u16x32, [u16x16; 2]>(indices);
@@ -438,7 +438,7 @@ impl u16x32 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x32) -> u16x32 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw"))] {
-            u16x32(_mm512_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0))
+            u16x32(_mm512_permutex2var_epi16(inputs[0].0, indices.0, inputs[1].0))
           } else {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
           }

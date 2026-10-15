@@ -1142,7 +1142,7 @@ impl u32x4 {
 
                 use core::arch::asm;
 
-                let value: __m128i = self.0.0;
+                let value: __m128i = self.0;
                 let result: __m128i;
 
                 // SAFETY:

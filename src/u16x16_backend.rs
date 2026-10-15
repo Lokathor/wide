@@ -386,7 +386,7 @@ impl u16x16 {
     pub(crate) fn shuffle_backend(self, indices: u16x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            Self(_mm256_permutexvar_epi16(indices.0.0, self.0.0))
+            Self(_mm256_permutexvar_epi16(indices.0, self.0))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),
@@ -447,7 +447,7 @@ impl u16x16 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            u16x16(_mm256_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0))
+            u16x16(_mm256_permutex2var_epi16(inputs[0].0, indices.0, inputs[1].0))
           } else {
             let self_bytes = cast::<[u16x16; 2], [u8x32; 2]>(inputs);
             let byte_indices = indices.to_byte_indices();
@@ -568,7 +568,7 @@ impl u16x16 {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shl`.
             let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
-            cast(_mm256_sllv_epi16(self.0.0, rhs.0))
+            cast(_mm256_sllv_epi16(self.0, rhs.0))
           } else {
             let [self_a, self_b]: [u16x8; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -600,7 +600,7 @@ impl u16x16 {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
-            cast(_mm256_srlv_epi16(self.0.0, rhs.0))
+            cast(_mm256_srlv_epi16(self.0, rhs.0))
           } else {
             let [self_a, self_b]: [u16x8; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -670,7 +670,7 @@ impl u16x16 {
     pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            cast(_mm256_sllv_epi16(self.0.0, rhs.0.0))
+            cast(_mm256_sllv_epi16(self.0, rhs.0))
           } else {
             let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
             let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);
@@ -698,7 +698,7 @@ impl u16x16 {
     pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            cast(_mm256_srlv_epi16(self.0.0, rhs.0.0))
+            cast(_mm256_srlv_epi16(self.0, rhs.0))
           } else {
             let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
             let [rhs_a, rhs_b] = cast::<u16x16, [u16x8; 2]>(rhs);
