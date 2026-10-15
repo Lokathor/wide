@@ -374,7 +374,7 @@ impl f32x4 {
             let masked = vcltq_s32( vreinterpretq_s32_f32(self.0), vdupq_n_s32(0));
 
             // select the right bit out of each lane
-            let selectbit : uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
+            let selectbit = u32x4::from_array([1, 2, 4, 8]).0;
             let r = vandq_u32(masked, selectbit);
 
             // horizontally add the 16-bit lanes

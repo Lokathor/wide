@@ -483,7 +483,7 @@ impl u16x8 {
             let masked = vcltzq_s16(self.cast_signed().0);
 
             // select the right bit out of each lane
-            let selectbit : uint16x8_t = core::mem::transmute([1u16, 2, 4, 8, 16, 32, 64, 128]);
+            let selectbit = Self::from_array([1, 2, 4, 8, 16, 32, 64, 128]).0;
             let r = vandq_u16(masked, selectbit);
 
             // horizontally add the 16-bit lanes

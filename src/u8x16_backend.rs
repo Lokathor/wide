@@ -545,23 +545,27 @@ impl u8x16 {
     #[inline]
     pub(crate) fn reduce_add_backend(self) -> u8 {
         #[allow(dead_code)]
-        const SHUFFLE_1: [u8; 16] = [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_1: u8x16
+          = u8x16::from_array([8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_2: [u8; 16] = [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_2: u8x16
+          = u8x16::from_array([4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_3: [u8; 16] = [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_3: u8x16
+          = u8x16::from_array([2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_4: [u8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_4: u8x16
+          = u8x16::from_array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, m128i::from(SHUFFLE_1));
+            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
             let sum = add_i8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_2));
+            let rhs = shuffle_av_i8z_all_m128i(sum, SHUFFLE_2.0);
             let sum = add_i8_m128i(sum, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_3));
+            let rhs = shuffle_av_i8z_all_m128i(sum, SHUFFLE_3.0);
             let sum = add_i8_m128i(sum, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(sum, m128i::from(SHUFFLE_4));
+            let rhs = shuffle_av_i8z_all_m128i(sum, SHUFFLE_4.0);
             let sum = add_i8_m128i(sum, rhs);
             get_i32_from_m128i_s(sum) as u8
           } else if #[cfg(target_feature="simd128")] {
@@ -575,15 +579,13 @@ impl u8x16 {
             let sum = u8x16_add(sum, rhs);
             u8x16_extract_lane::<0>(sum)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // Use `transmute` instead of `cast` because `uint8x16_t` does not
-            // implement `bytemuck::Pod`.
-            let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
+            let rhs = vqtbl1q_u8(self.0, SHUFFLE_1.0);
             let sum = vaddq_u8(self.0, rhs);
-            let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_2));
+            let rhs = vqtbl1q_u8(sum, SHUFFLE_2.0);
             let sum = vaddq_u8(sum, rhs);
-            let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_3));
+            let rhs = vqtbl1q_u8(sum, SHUFFLE_3.0);
             let sum = vaddq_u8(sum, rhs);
-            let rhs = vqtbl1q_u8(sum, core::mem::transmute(SHUFFLE_4));
+            let rhs = vqtbl1q_u8(sum, SHUFFLE_4.0);
             let sum = vaddq_u8(sum, rhs);
             vgetq_lane_u8(sum, 0)
           } else {
@@ -597,20 +599,22 @@ impl u8x16 {
     pub(crate) fn reduce_mul_backend(self) -> u8 {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            const HIGH_64: [u8; 16] = [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
-            const HIGH_32: [u8; 16] = [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
-            const HIGH_16: [u8; 16] = [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            const HIGH_8: [u8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            const HIGH_64: u8x16
+              = u8x16::from_array([8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0]);
+            const HIGH_32: u8x16
+              = u8x16::from_array([4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0]);
+            const HIGH_16: u8x16
+              = u8x16::from_array([2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            const HIGH_8: u8x16
+              = u8x16::from_array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
-            // Use `transmute` instead of `cast` because `int8x16_t` does not
-            // implement `bytemuck::Pod`.
-            let high_64 = vqtbl1q_u8(self.0, core::mem::transmute(HIGH_64));
+            let high_64 = vqtbl1q_u8(self.0, HIGH_64.0);
             let reduce_64 = vmulq_u8(self.0, high_64);
-            let high_32 = vqtbl1q_u8(reduce_64, core::mem::transmute(HIGH_32));
+            let high_32 = vqtbl1q_u8(reduce_64, HIGH_32.0);
             let reduce_32 = vmulq_u8(reduce_64, high_32);
-            let high_16 = vqtbl1q_u8(reduce_32, core::mem::transmute(HIGH_16));
+            let high_16 = vqtbl1q_u8(reduce_32, HIGH_16.0);
             let reduce_16 = vmulq_u8(reduce_32, high_16);
-            let high_8 = vqtbl1q_u8(reduce_16, core::mem::transmute(HIGH_8));
+            let high_8 = vqtbl1q_u8(reduce_16, HIGH_8.0);
             let reduce_8 = vmulq_u8(reduce_16, high_8);
             vgetq_lane_u8::<0>(reduce_8)
           } else {
@@ -661,11 +665,15 @@ impl u8x16 {
             let masked = vcltzq_s8(self.cast_signed().0);
 
             // select the right bit out of each lane
-            let selectbit : uint8x16_t = core::mem::transmute([1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+            let selectbit = Self::from_array([
+              1u8, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128,
+            ]).0;
             let out = vandq_u8(masked, selectbit);
 
             // interleave the lanes so that a 16-bit sum accumulates the bits in the right order
-            let table : uint8x16_t = core::mem::transmute([0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]);
+            let table = Self::from_array([
+              0u8, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15,
+            ]).0;
             let r = vqtbl1q_u8(out, table);
 
             // horizontally add the 16-bit lanes
@@ -1160,23 +1168,27 @@ impl u8x16 {
     #[inline]
     pub(crate) fn reduce_max_backend(self) -> u8 {
         #[allow(dead_code)]
-        const SHUFFLE_1: [i8; 16] = [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_1: u8x16
+          = u8x16::from_array([8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_2: [i8; 16] = [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_2: u8x16
+          = u8x16::from_array([4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_3: [i8; 16] = [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_3: u8x16
+          = u8x16::from_array([2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_4: [i8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_4: u8x16
+          = u8x16::from_array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, m128i::from(SHUFFLE_1));
+            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
             let max = max_u8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_2));
+            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_2.0);
             let max = max_u8_m128i(max, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_3));
+            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_3.0);
             let max = max_u8_m128i(max, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, m128i::from(SHUFFLE_4));
+            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_4.0);
             let max = max_u8_m128i(max, rhs);
             get_i32_from_m128i_s(max) as u8
           } else if #[cfg(target_feature="simd128")] {
@@ -1190,15 +1202,13 @@ impl u8x16 {
             let max = u8x16_max(max, rhs);
             u8x16_extract_lane::<0>(max)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // Use `transmute` instead of `cast` because `uint8x16_t` does not
-            // implement `bytemuck::Pod`.
-            let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
+            let rhs = vqtbl1q_u8(self.0, SHUFFLE_1.0);
             let max = vmaxq_u8(self.0, rhs);
-            let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_2));
+            let rhs = vqtbl1q_u8(max, SHUFFLE_2.0);
             let max = vmaxq_u8(max, rhs);
-            let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_3));
+            let rhs = vqtbl1q_u8(max, SHUFFLE_3.0);
             let max = vmaxq_u8(max, rhs);
-            let rhs = vqtbl1q_u8(max, core::mem::transmute(SHUFFLE_4));
+            let rhs = vqtbl1q_u8(max, SHUFFLE_4.0);
             let max = vmaxq_u8(max, rhs);
             vgetq_lane_u8(max, 0)
           } else {
@@ -1211,23 +1221,27 @@ impl u8x16 {
     #[inline]
     pub(crate) fn reduce_min_backend(self) -> u8 {
         #[allow(dead_code)]
-        const SHUFFLE_1: [i8; 16] = [8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_1: u8x16
+          = u8x16::from_array([8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_2: [i8; 16] = [4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_2: u8x16
+          = u8x16::from_array([4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_3: [i8; 16] = [2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_3: u8x16
+          = u8x16::from_array([2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         #[allow(dead_code)]
-        const SHUFFLE_4: [i8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const SHUFFLE_4: u8x16
+          = u8x16::from_array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, m128i::from(SHUFFLE_1));
+            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
             let min = min_u8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_2));
+            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_2.0);
             let min = min_u8_m128i(min, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_3));
+            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_3.0);
             let min = min_u8_m128i(min, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, m128i::from(SHUFFLE_4));
+            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_4.0);
             let min = min_u8_m128i(min, rhs);
             get_i32_from_m128i_s(min) as u8
           } else if #[cfg(target_feature="simd128")] {
@@ -1241,15 +1255,13 @@ impl u8x16 {
             let min = u8x16_min(min, rhs);
             u8x16_extract_lane::<0>(min)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // Use `transmute` instead of `cast` because `uint8x16_t` does not
-            // implement `bytemuck::Pod`.
-            let rhs = vqtbl1q_u8(self.0, core::mem::transmute(SHUFFLE_1));
+            let rhs = vqtbl1q_u8(self.0, SHUFFLE_1.0);
             let min = vminq_u8(self.0, rhs);
-            let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_2));
+            let rhs = vqtbl1q_u8(min, SHUFFLE_2.0);
             let min = vminq_u8(min, rhs);
-            let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_3));
+            let rhs = vqtbl1q_u8(min, SHUFFLE_3.0);
             let min = vminq_u8(min, rhs);
-            let rhs = vqtbl1q_u8(min, core::mem::transmute(SHUFFLE_4));
+            let rhs = vqtbl1q_u8(min, SHUFFLE_4.0);
             let min = vminq_u8(min, rhs);
             vgetq_lane_u8(min, 0)
           } else {

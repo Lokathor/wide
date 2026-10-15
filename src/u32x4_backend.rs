@@ -423,7 +423,7 @@ impl u32x4 {
             let masked = vcltq_s32(self.cast_signed().0, vdupq_n_s32(0));
 
             // select the right bit out of each lane
-            let selectbit : uint32x4_t = core::mem::transmute([1u32, 2, 4, 8]);
+            let selectbit = Self::from_array([1, 2, 4, 8]).0;
             let r = vandq_u32(masked, selectbit);
 
             // horizontally add the 32-bit lanes
@@ -1178,8 +1178,6 @@ impl u32x4 {
                 target_arch = "aarch64",
                 target_endian = "little",
               ))] {
-                use core::mem::transmute;
-
                 // Special case for duplicate
                 if const { I0 == 1 && I1 == 1 && I2 == 1 && I3 == 1 } {
                   Self(vdupq_laneq_u32::<1>(self.0))
@@ -1223,7 +1221,7 @@ impl u32x4 {
                   Self(vreinterpretq_u32_u8(vqtbl1q_u8(
                     vreinterpretq_u8_u32(self.0),
                     const {
-                      transmute::<[u8; 16], uint8x16_t>([
+                      u8x16::from_array([
                         I0 as u8 * 4,
                         I0 as u8 * 4 + 1,
                         I0 as u8 * 4 + 2,
@@ -1240,7 +1238,7 @@ impl u32x4 {
                         I3 as u8 * 4 + 1,
                         I3 as u8 * 4 + 2,
                         I3 as u8 * 4 + 3,
-                      ])
+                      ]).0
                     },
                   )))
                 }
