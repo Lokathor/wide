@@ -818,6 +818,8 @@ impl f64x2 {
 
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            unsafe { Self(vrndaq_f64(self.0)) }
           } else {
             const_f64_as_f64x2!(HALF_NEXT_DOWN, 0.5_f64.next_down());
             const_f64_as_f64x2!(BOUNDS_LIMIT, 4503599627370496.0);
@@ -892,6 +894,8 @@ impl f64x2 {
             Self(round_m128d::<{round_op!(Nearest)}>(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_nearest(self.0))
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            unsafe { Self(vrndnq_f64(self.0)) }
           } else {
             const SIGN_MASK: f64x2 = f64x2::splat(-0.0);
             const MAGIC_VALUE: f64x2 = f64x2::splat(f64::from_bits(0x43300000_00000000));
@@ -913,6 +917,8 @@ impl f64x2 {
             Self(round_m128d::<{round_op!(Zero)}>(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_trunc(self.0))
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            unsafe { Self(vrndq_f64(self.0)) }
           } else {
             // There does not seem to be an SSE2 intrinsic for this.
             // `truncate_m128d_to_m128i` truncates to `i32` values which cannot
