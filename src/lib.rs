@@ -9,6 +9,7 @@
 #![allow(clippy::misrefactored_assign_op)]
 #![allow(clippy::approx_constant)]
 #![forbid(missing_docs)]
+#![forbid(unsafe_op_in_unsafe_fn)]
 
 //! A crate to help you go wide.
 //!
