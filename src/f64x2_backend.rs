@@ -913,6 +913,8 @@ impl f64x2 {
             Self(round_m128d::<{round_op!(Zero)}>(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f64x2_trunc(self.0))
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            unsafe { Self(vrndq_f64(self.0)) }
           } else {
             // There does not seem to be an SSE2 intrinsic for this.
             // `truncate_m128d_to_m128i` truncates to `i32` values which cannot
