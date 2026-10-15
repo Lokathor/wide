@@ -2,6 +2,94 @@ use core::ops::{BitAnd, BitXor};
 
 use bytemuck::cast;
 
+/// Modifies an `impl` block such that calling functions with target features
+/// that are guaranteed at compile time does not require an `unsafe` block.
+///
+/// This macro is only needed due to a language limitation. If language support
+/// for this pattern gets stabilized, this macro can be removed.
+///
+/// This macro disables formatting, since rustfmt does not understand its
+/// syntax. If declarative attribute macros get stabilized, this macro can use
+/// attribute syntax which will reenable formatting.
+///
+/// Each target feature must be explicitly listed inside this macro's
+/// implementation in order to be supported. If a target feature does not work,
+/// it may be missing from this macro's list.
+macro_rules! safe_target_feature {
+    // In order to support both inherent and trait implementations this must use
+    // redirection
+    (impl $Self:ident $body:tt) => {
+        impl $Self {
+            safe_target_feature! { Self = $Self, $body }
+        }
+    };
+    (impl $Trait:ident for $Self:ident $body:tt) => {
+        impl $Trait for $Self {
+            safe_target_feature! { Self = $Self, $body }
+        }
+    };
+
+    (
+        Self = $Self:ty,
+        {$(
+            // Match a function item
+            $(#[$meta:meta])+
+            $vis:vis
+            $($keyword_or_name:ident)+ // This trick enables support for keywords before `fn`
+            $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),* $(,)?>)?
+            ($($param:ident $(: $ParamTy:ty)?),* $(,)?) // The type is optional so that `self` works
+            $(-> $OutputTy:ty)?
+            $body:block
+        )*}
+    ) => {$(
+        // Paste the original function signature
+        $(#[$meta])+
+        $vis $($keyword_or_name)+
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        ($($param $(: $ParamTy)?),*)
+        $(-> $OutputTy)?
+        // Paste a modified body
+        {
+            // Internally paste the original function. This trait is used so
+            // that the function is not exposed outside of this block.
+            trait OriginalFn: Sized {
+                #[track_caller]
+                unsafe fn original_fn
+                $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                ($($param $(: $ParamTy)?),*)
+                $(-> $OutputTy)?;
+            }
+
+            impl OriginalFn for $Self {
+                // Enable target features that are guaranteed at compile time
+                #[cfg_attr(target_feature = "avx", target_feature(enable = "avx"))]
+                #[cfg_attr(target_feature = "avx2", target_feature(enable = "avx2"))]
+                #[cfg_attr(target_feature = "avx512bw", target_feature(enable = "avx512bw"))]
+                #[cfg_attr(target_feature = "avx512dq", target_feature(enable = "avx512dq"))]
+                #[cfg_attr(target_feature = "avx512f", target_feature(enable = "avx512f"))]
+                #[cfg_attr(target_feature = "avx512vbmi", target_feature(enable = "avx512vbmi"))]
+                #[cfg_attr(target_feature = "avx512vl", target_feature(enable = "avx512vl"))]
+                #[cfg_attr(target_feature = "neon", target_feature(enable = "neon"))]
+                #[cfg_attr(target_feature = "sse", target_feature(enable = "sse"))]
+                #[cfg_attr(target_feature = "sse2", target_feature(enable = "sse2"))]
+                #[cfg_attr(target_feature = "sse4.1", target_feature(enable = "sse4.1"))]
+                #[cfg_attr(target_feature = "sse4.2", target_feature(enable = "sse4.2"))]
+                #[cfg_attr(target_feature = "ssse3", target_feature(enable = "ssse3"))]
+                #[inline]
+                unsafe fn original_fn
+                $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                ($($param $(: $ParamTy)?),*)
+                $(-> $OutputTy)?
+                $body
+            }
+
+            // SAFETY: `original_fn` only enables target features that are
+            // guaranteed at compile time via cfg.
+            unsafe { <Self as OriginalFn>::original_fn$(::<$($CONST_PARAM),*>)?($($param),*) }
+        }
+    )*};
+}
+
 macro_rules! pick {
   ($(if #[cfg($($test:meta),*)] {
       $($if_tokens:tt)*
