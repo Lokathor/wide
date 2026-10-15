@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl i8x64 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -237,4 +238,5 @@ impl i8x64 {
           }
         }
     }
+}
 }

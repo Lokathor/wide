@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u8x32 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -468,9 +469,7 @@ impl u8x32 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm256_permutex2var_epi8;
             // TODO(safe_arch): add `_mm256_permutex2var_epi8`.
-            u8x32(unsafe {
-                m256i(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
-            })
+            u8x32(m256i(_mm256_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else if #[cfg(target_feature="avx2")] {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)
           } else {
@@ -856,8 +855,10 @@ impl u8x32 {
         cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
     }
 }
+}
 
 #[cfg(target_feature = "avx2")]
+safe_target_feature! {
 impl u8x32 {
     // There's no `u8` shift instruction, so we cheat: widen every byte to a
     // `u16`, shift in the wider lane, then shrink back down to `u8`. Shifting
@@ -905,4 +906,5 @@ impl u8x32 {
             combined_high,
         )
     }
+}
 }

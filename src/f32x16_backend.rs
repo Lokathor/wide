@@ -20,6 +20,7 @@ macro_rules! const_f32_as_f32x16 {
     };
 }
 
+safe_target_feature! {
 impl f32x16 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
@@ -269,7 +270,7 @@ impl f32x16 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm512_reduce_mul_ps;
 
-            unsafe { _mm512_reduce_mul_ps(self.0.0) }
+            _mm512_reduce_mul_ps(self.0.0)
           } else {
             self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
           }
@@ -1640,4 +1641,5 @@ impl f32x16 {
           }
         }
     }
+}
 }

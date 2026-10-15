@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl i16x32 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -82,7 +83,7 @@ impl i16x32 {
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m512i(rhs.0, set_splat_i16_m512i(15));
             // TODO(safe_arch): Add `_mm512_srav_epi16`.
-            Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0) }))
+            Self(m512i(_mm512_srav_epi16(self.0.0, rhs.0)))
           } else {
             let [self_a, self_b]: [i16x16; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x16; 2] = cast(rhs);
@@ -158,7 +159,7 @@ impl i16x32 {
             use core::arch::x86_64::_mm512_srav_epi16;
 
             // TODO(safe_arch): Add `_mm512_srav_epi16`.
-            Self(m512i(unsafe { _mm512_srav_epi16(self.0.0, rhs.0.0) }))
+            Self(m512i(_mm512_srav_epi16(self.0.0, rhs.0.0)))
           } else {
             let [self_a, self_b] = cast::<i16x32, [i16x16; 2]>(self);
             let [rhs_a, rhs_b] = cast::<u16x32, [u16x16; 2]>(rhs);
@@ -320,4 +321,5 @@ impl i16x32 {
           }
         }
     }
+}
 }

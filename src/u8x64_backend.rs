@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u8x64 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -199,13 +200,11 @@ impl u8x64 {
             use core::arch::x86_64::_mm512_mask_set1_epi8;
 
             // TODO(safe_arch): Add `_mm512_mask_set1_epi8`
-            unsafe {
-              Self(m512i(_mm512_mask_set1_epi8(
-                  self.0.0,
-                  const { 1 << INDEX },
-                  value.cast_signed(),
-              )))
-            }
+            Self(m512i(_mm512_mask_set1_epi8(
+                self.0.0,
+                const { 1 << INDEX },
+                value.cast_signed(),
+            )))
           } else {
             let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
 
@@ -263,16 +262,14 @@ impl u8x64 {
             use core::arch::x86_64::_mm512_extracti32x4_epi32;
 
             // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
-            unsafe {
-              match INDEX {
-                $($INDEX => {
-                  let quarter = cast::<m128i, u8x16>(m128i(
-                    _mm512_extracti32x4_epi32::<{ $INDEX / 16 }>(self.0.0),
-                  ));
-                  quarter.extract_const::<{ $INDEX % 16 }>()
-                })*
-                64.. => unreachable!()
-              }
+            match INDEX {
+              $($INDEX => {
+                let quarter = cast::<m128i, u8x16>(m128i(
+                  _mm512_extracti32x4_epi32::<{ $INDEX / 16 }>(self.0.0),
+                ));
+                quarter.extract_const::<{ $INDEX % 16 }>()
+              })*
+              64.. => unreachable!()
             }
           } else {
             let [self_a, self_b] = cast::<u8x64, [u8x32; 2]>(self);
@@ -469,9 +466,7 @@ impl u8x64 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm512_permutex2var_epi8;
             // TODO(safe_arch): add `_mm512_permutex2var_epi8`.
-            u8x64(unsafe {
-                m512i(_mm512_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0))
-            })
+            u8x64(m512i(_mm512_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 64)
           }
@@ -870,4 +865,5 @@ impl u8x64 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
+}
 }

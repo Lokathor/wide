@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u32x8 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -374,7 +375,7 @@ impl u32x8 {
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::_mm256_permutexvar_epi32;
             // TODO(safe_arch): Add `_mm256_permutexvar_epi32`
-            Self(unsafe { m256i(_mm256_permutexvar_epi32(indices.0.0, self.0.0)) })
+            Self(m256i(_mm256_permutexvar_epi32(indices.0.0, self.0.0)))
           } else if #[cfg(target_feature = "avx2")] {
             Self(shuffle_av_i32_all_m256i(self.0, indices.0))
           } else if #[cfg(any(
@@ -931,4 +932,5 @@ impl u32x8 {
             add_mul_hi_lane_u32::<W>(acc[i], a[i], b[i])
         }))
     }
+}
 }

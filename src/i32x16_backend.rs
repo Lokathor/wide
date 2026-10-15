@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl i32x16 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -82,7 +83,7 @@ impl i32x16 {
             // Mask `rhs` to 31 to match `wrapping_shr`.
             let rhs = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
             // TODO(safe_arch): Add `_mm512_srav_epi32`.
-            Self(m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0) }))
+            Self(m512i(_mm512_srav_epi32(self.0.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs.0.lo,
@@ -158,7 +159,7 @@ impl i32x16 {
             use core::arch::x86_64::_mm512_srav_epi32;
 
             // TODO(safe_arch): Add `_mm512_srav_epi32`.
-            Self(m512i(unsafe { _mm512_srav_epi32(self.0.0, rhs.0.0) }))
+            Self(m512i(_mm512_srav_epi32(self.0.0, rhs.0.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -247,8 +248,8 @@ impl i32x16 {
             let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
             // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
             (
-              u32x16(m512i(unsafe { _mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0) })),
-              i32x16(m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) })),
+              u32x16(m512i(_mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0))),
+              i32x16(m512i(_mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0))),
             )
           } else {
             let [self_a, self_b] = cast::<i32x16, [i32x8; 2]>(self);
@@ -281,7 +282,7 @@ impl i32x16 {
             let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
             let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
             // TODO(safe_arch): Add `_mm512_unpackhi_epi64`.
-            Self(m512i(unsafe { _mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0) }))
+            Self(m512i(_mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0)))
           } else {
             let [self_a, self_b] = cast::<i32x16, [i32x8; 2]>(self);
             let [rhs_a, rhs_b] = cast::<i32x16, [i32x8; 2]>(rhs);
@@ -363,4 +364,5 @@ impl i32x16 {
           }
         }
     }
+}
 }

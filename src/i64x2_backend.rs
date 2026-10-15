@@ -16,6 +16,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl i64x2 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -26,7 +27,7 @@ impl i64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i64x2_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_s64_u64(vcltq_s64(self.0, rhs.0)))}
+            Self(vreinterpretq_s64_u64(vcltq_s64(self.0, rhs.0)))
           } else {
             let s: [i64;2] = cast(self);
             let r: [i64;2] = cast(rhs);
@@ -46,7 +47,7 @@ impl i64x2 {
           } else if #[cfg(target_feature="simd128")] {
             Self(i64x2_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vreinterpretq_s64_u64(vcgtq_s64(self.0, rhs.0)))}
+            Self(vreinterpretq_s64_u64(vcgtq_s64(self.0, rhs.0)))
           } else {
             let s: [i64;2] = cast(self);
             let r: [i64;2] = cast(rhs);
@@ -102,12 +103,10 @@ impl i64x2 {
     pub(crate) fn shr_backend(self, rhs: u64x2) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              // mask the shift count to 63 to have same behavior on all platforms
-              // no right shift, have to pass negative value to left shift on neon
-              let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.0, vmovq_n_u64(63))));
-              Self(vshlq_s64(self.0, shift_by))
-            }
+            // mask the shift count to 63 to have same behavior on all platforms
+            // no right shift, have to pass negative value to left shift on neon
+            let shift_by = vnegq_s64(vreinterpretq_s64_u64(vandq_u64(rhs.0, vmovq_n_u64(63))));
+            Self(vshlq_s64(self.0, shift_by))
           } else {
             let arr: [i64; 2] = cast(self);
             let rhs: [u64; 2] = cast(rhs);
@@ -151,7 +150,7 @@ impl i64x2 {
             let array: [i64; 2] = cast(self);
             array[0].max(array[1])
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { vgetq_lane_s64(self.0, 0).max(vgetq_lane_s64(self.0, 1)) }
+            vgetq_lane_s64(self.0, 0).max(vgetq_lane_s64(self.0, 1))
           } else {
             self.0.arr[0].max(self.0.arr[1])
           }
@@ -165,7 +164,7 @@ impl i64x2 {
             let array: [i64; 2] = cast(self);
             array[0].min(array[1])
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { vgetq_lane_s64(self.0, 0).min(vgetq_lane_s64(self.0, 1)) }
+            vgetq_lane_s64(self.0, 0).min(vgetq_lane_s64(self.0, 1))
           } else {
             self.0.arr[0].min(self.0.arr[1])
           }
@@ -176,11 +175,9 @@ impl i64x2 {
     pub(crate) fn unbounded_shr_backend(self, rhs: u64x2) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            unsafe {
-              // Negate `rhs` because there is no direct shift-right intrinsic, and
-              // restrict it to prevent overflow.
-              Self(vshlq_s64(self.0, vnegq_s64(vreinterpretq_s64_u64(rhs.min(u64x2::splat(64)).0))))
-            }
+            // Negate `rhs` because there is no direct shift-right intrinsic, and
+            // restrict it to prevent overflow.
+            Self(vshlq_s64(self.0, vnegq_s64(vreinterpretq_s64_u64(rhs.min(u64x2::splat(64)).0))))
           } else {
             // Cannot use scalar `unbounded_shl` because it takes `u32`, which is
             // smaller than `u64`.
@@ -219,7 +216,7 @@ impl i64x2 {
             // If overflow occurs return `MAX` if positive or `MIN` if negative.
             overflow.select(Self::MAX ^ negative, result)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vqaddq_s64(self.0, rhs.0)) }
+            Self(vqaddq_s64(self.0, rhs.0))
           } else {
             Self::from_array([
                 self.0.arr[0].saturating_add(rhs.0.arr[0]),
@@ -240,7 +237,7 @@ impl i64x2 {
             // If overflow occurs return `MAX` if positive or `MIN` if negative.
             overflow.select(Self::MAX ^ negative, result)
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe { Self(vqsubq_s64(self.0, rhs.0)) }
+            Self(vqsubq_s64(self.0, rhs.0))
           } else {
             Self::from_array([
                 self.0.arr[0].saturating_sub(rhs.0.arr[0]),
@@ -309,7 +306,7 @@ impl i64x2 {
           if #[cfg(target_feature="simd128")] {
             Self(i64x2_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            unsafe {Self(vabsq_s64(self.0))}
+            Self(vabsq_s64(self.0))
           } else {
             let arr: [i64; 2] = cast(self);
             cast(
@@ -325,7 +322,7 @@ impl i64x2 {
     pub(crate) fn is_positive_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(unsafe { vreinterpretq_s64_u64(vcgtzq_s64(self.0)) })
+            Self(vreinterpretq_s64_u64(vcgtzq_s64(self.0)))
           } else {
             self.simd_gt(Self::ZERO)
           }
@@ -336,7 +333,7 @@ impl i64x2 {
     pub(crate) fn is_negative_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(unsafe { vreinterpretq_s64_u64(vcltzq_s64(self.0)) })
+            Self(vreinterpretq_s64_u64(vcltzq_s64(self.0)))
           } else {
             self.simd_lt(Self::ZERO)
           }
@@ -348,4 +345,5 @@ impl i64x2 {
         let arr: [i64; 2] = cast(self);
         cast([arr[0] as f64, arr[1] as f64])
     }
+}
 }
