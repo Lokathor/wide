@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    pub(crate) type Inner = m256i;
+    pub(crate) type Inner = __m256i;
   } else {
     #[repr(C, align(32))]
     #[derive(Clone, Copy)]

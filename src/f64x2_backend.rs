@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
-    pub(crate) type Inner = m128d;
+    pub(crate) type Inner = __m128d;
   } else if #[cfg(target_feature="simd128")] {
     pub(crate) type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
