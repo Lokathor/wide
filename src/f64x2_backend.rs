@@ -818,6 +818,8 @@ impl f64x2 {
 
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            unsafe { Self(vrndaq_f64(self.0)) }
           } else {
             const_f64_as_f64x2!(HALF_NEXT_DOWN, 0.5_f64.next_down());
             const_f64_as_f64x2!(BOUNDS_LIMIT, 4503599627370496.0);
