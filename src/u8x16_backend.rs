@@ -16,6 +16,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u8x16 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -1675,4 +1676,5 @@ impl u8x16 {
             }
         }
     }
+}
 }

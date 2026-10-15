@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u8x32 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -856,8 +857,10 @@ impl u8x32 {
         cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
     }
 }
+}
 
 #[cfg(target_feature = "avx2")]
+safe_target_feature! {
 impl u8x32 {
     // There's no `u8` shift instruction, so we cheat: widen every byte to a
     // `u16`, shift in the wider lane, then shrink back down to `u8`. Shifting
@@ -905,4 +908,5 @@ impl u8x32 {
             combined_high,
         )
     }
+}
 }

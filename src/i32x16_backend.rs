@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl i32x16 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -363,4 +364,5 @@ impl i32x16 {
           }
         }
     }
+}
 }

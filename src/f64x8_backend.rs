@@ -20,6 +20,7 @@ macro_rules! const_f64_as_f64x8 {
     };
 }
 
+safe_target_feature! {
 impl f64x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
@@ -1875,4 +1876,5 @@ impl f64x8 {
           }
         }
     }
+}
 }

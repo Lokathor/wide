@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u64x8 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -935,4 +936,5 @@ impl u64x8 {
             add_mul_hi_lane_u64::<W>(acc[i], a[i], b[i])
         }))
     }
+}
 }

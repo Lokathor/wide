@@ -16,6 +16,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u32x4 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -1344,4 +1345,5 @@ impl u32x4 {
 
         cast::<u32x4, u8x16>(base | WITHIN_LANE)
     }
+}
 }

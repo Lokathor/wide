@@ -23,6 +23,7 @@ macro_rules! const_f32_as_f32x4 {
     };
 }
 
+safe_target_feature! {
 impl f32x4 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
@@ -2036,4 +2037,5 @@ impl f32x4 {
           }
         }
     }
+}
 }

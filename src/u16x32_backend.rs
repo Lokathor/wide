@@ -13,6 +13,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl u16x32 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
@@ -831,4 +832,5 @@ impl u16x32 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
+}
 }

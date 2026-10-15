@@ -16,6 +16,7 @@ pick! {
   }
 }
 
+safe_target_feature! {
 impl i64x2 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -348,4 +349,5 @@ impl i64x2 {
         let arr: [i64; 2] = cast(self);
         cast([arr[0] as f64, arr[1] as f64])
     }
+}
 }
