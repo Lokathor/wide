@@ -767,6 +767,7 @@ impl u16x8 {
             ]
          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
 
+              #[target_feature(enable = "neon")]
               #[inline] fn vtrq32(a : uint16x8_t, b : uint16x8_t) -> (uint16x8_t, uint16x8_t)
               {
                 let r = vtrnq_u32(vreinterpretq_u32_u16(a),vreinterpretq_u32_u16(b));
