@@ -25,7 +25,7 @@
   for `f32x4::floor` and `f32x4::ceil`
 
 * [#349](https://github.com/Lokathor/wide/pull/349): Add optimized `neon` path
-  for `f64x2::trunc`
+  for `f64x2::round`, `f64x2::round_ties_even` and `f64x2::trunc`
 
 ### Documentation
 
