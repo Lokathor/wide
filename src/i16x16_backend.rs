@@ -19,7 +19,7 @@ impl i16x16 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(!cmp_gt_mask_i16_m256i(self.0, rhs.0) ^ cmp_eq_mask_i16_m256i(self.0,rhs.0))
+            !Self(_mm256_xor_si256(_mm256_cmpgt_epi16(self.0, rhs.0), _mm256_cmpeq_epi16(self.0,rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_lt(rhs.0.lo),
@@ -33,7 +33,7 @@ impl i16x16 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_gt_mask_i16_m256i(self.0, rhs.0))
+            Self(_mm256_cmpgt_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -76,8 +76,8 @@ impl i16x16 {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
-            let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
-            cast(_mm256_srav_epi16(self.0, rhs.0))
+            let rhs = _mm256_and_si256(rhs.0, _mm256_set1_epi16(15));
+            cast(_mm256_srav_epi16(self.0, rhs))
           } else {
             let [self_a, self_b]: [i16x8; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -93,7 +93,7 @@ impl i16x16 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 15, 0]);
-            Self(shr_all_i16_m256i(self.0, shift))
+            Self(_mm256_sra_epi16(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs,
@@ -107,7 +107,7 @@ impl i16x16 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(max_i16_m256i(self.0, rhs.0))
+            Self(_mm256_max_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -121,7 +121,7 @@ impl i16x16 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(min_i16_m256i(self.0, rhs.0))
+            Self(_mm256_min_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -163,7 +163,7 @@ impl i16x16 {
     pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_all_i16_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_sra_epi16(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr_scalar(rhs),
@@ -177,7 +177,7 @@ impl i16x16 {
     pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(add_saturating_i16_m256i(self.0, rhs.0))
+            Self(_mm256_adds_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_add(rhs.0.lo),
@@ -191,7 +191,7 @@ impl i16x16 {
     pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(sub_saturating_i16_m256i(self.0, rhs.0))
+            Self(_mm256_subs_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_sub(rhs.0.lo),
@@ -252,7 +252,7 @@ impl i16x16 {
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(abs_i16_m256i(self.0))
+            Self(_mm256_abs_epi16(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.abs(),
@@ -296,16 +296,16 @@ impl i16x16 {
     pub(crate) fn from_i8x16_backend(v: i8x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i16x16(convert_to_i16_m256i_from_i8_m128i(v.0))
+            i16x16(_mm256_cvtepi8_epi16(v.0))
           } else if #[cfg(target_feature="sse4.1")] {
             Self(Inner {
-              lo: i16x8(convert_to_i16_m128i_from_lower8_i8_m128i(v.0)),
-              hi: i16x8(convert_to_i16_m128i_from_lower8_i8_m128i(unpack_high_i64_m128i(v.0, v.0)))
+              lo: i16x8(_mm_cvtepi8_epi16(v.0)),
+              hi: i16x8(_mm_cvtepi8_epi16(_mm_unpackhi_epi64(v.0, v.0)))
             })
           } else if #[cfg(target_feature="sse2")] {
             Self(Inner {
-              lo: i16x8(shr_imm_i16_m128i::<8>( unpack_low_i8_m128i(v.0, v.0))),
-              hi: i16x8(shr_imm_i16_m128i::<8>( unpack_high_i8_m128i(v.0, v.0))),
+              lo: i16x8(_mm_srai_epi16::<8>( _mm_unpacklo_epi8(v.0, v.0))),
+              hi: i16x8(_mm_srai_epi16::<8>( _mm_unpackhi_epi8(v.0, v.0))),
             })
           } else {
 
@@ -335,7 +335,7 @@ impl i16x16 {
     pub(crate) fn dot_backend(self, rhs: Self) -> i32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i32x8( mul_i16_horizontal_add_m256i(self.0, rhs.0))
+            i32x8( _mm256_madd_epi16(self.0, rhs.0))
           } else {
             i32x8(crate::i32x8_backend::Inner {
               lo: self.0.lo.dot(rhs.0.lo),
@@ -349,7 +349,7 @@ impl i16x16 {
     pub(crate) fn mul_scale_round_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(mul_i16_scale_round_m256i(self.0, rhs.0))
+            Self(_mm256_mulhrs_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.mul_scale_round(rhs.0.lo),
@@ -363,7 +363,7 @@ impl i16x16 {
     pub(crate) fn mul_scale_round_n_backend(self, rhs: i16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(mul_i16_scale_round_m256i(self.0, set_splat_i16_m256i(rhs)))
+            Self(_mm256_mulhrs_epi16(self.0, _mm256_set1_epi16(rhs)))
           } else {
             Self(Inner {
               lo: self.0.lo.mul_scale_round_n(rhs),

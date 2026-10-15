@@ -22,7 +22,7 @@ impl i8x16 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(cmp_lt_mask_i8_m128i(self.0, rhs.0))
+            Self(_mm_cmplt_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -54,7 +54,7 @@ impl i8x16 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(cmp_gt_mask_i8_m128i(self.0, rhs.0))
+            Self(_mm_cmpgt_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -225,7 +225,7 @@ impl i8x16 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
-            Self(max_i8_m128i(self.0, rhs.0))
+            Self(_mm_max_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_max(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -240,7 +240,7 @@ impl i8x16 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
-            Self(min_i8_m128i(self.0, rhs.0))
+            Self(_mm_min_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_min(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -268,15 +268,15 @@ impl i8x16 {
 
         pick! {
           if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
-            let max = max_i8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_2.0);
-            let max = max_i8_m128i(max, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_3.0);
-            let max = max_i8_m128i(max, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_4.0);
-            let max = max_i8_m128i(max, rhs);
-            get_i32_from_m128i_s(max) as i8
+            let rhs = _mm_shuffle_epi8(self.0, SHUFFLE_1.0);
+            let max = _mm_max_epi8(self.0, rhs);
+            let rhs = _mm_shuffle_epi8(max, SHUFFLE_2.0);
+            let max = _mm_max_epi8(max, rhs);
+            let rhs = _mm_shuffle_epi8(max, SHUFFLE_3.0);
+            let max = _mm_max_epi8(max, rhs);
+            let rhs = _mm_shuffle_epi8(max, SHUFFLE_4.0);
+            let max = _mm_max_epi8(max, rhs);
+            _mm_cvtsi128_si32(max) as i8
           } else if #[cfg(target_feature="simd128")] {
             let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.0, self.0);
             let max = i8x16_max(self.0, rhs);
@@ -321,15 +321,15 @@ impl i8x16 {
 
         pick! {
           if #[cfg(all(target_feature="ssse3", target_feature="sse4.1"))] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
-            let min = min_i8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_2.0);
-            let min = min_i8_m128i(min, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_3.0);
-            let min = min_i8_m128i(min, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_4.0);
-            let min = min_i8_m128i(min, rhs);
-            get_i32_from_m128i_s(min) as i8
+            let rhs = _mm_shuffle_epi8(self.0, SHUFFLE_1.0);
+            let min = _mm_min_epi8(self.0, rhs);
+            let rhs = _mm_shuffle_epi8(min, SHUFFLE_2.0);
+            let min = _mm_min_epi8(min, rhs);
+            let rhs = _mm_shuffle_epi8(min, SHUFFLE_3.0);
+            let min = _mm_min_epi8(min, rhs);
+            let rhs = _mm_shuffle_epi8(min, SHUFFLE_4.0);
+            let min = _mm_min_epi8(min, rhs);
+            _mm_cvtsi128_si32(min) as i8
           } else if #[cfg(target_feature="simd128")] {
             let rhs = i8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.0, self.0);
             let min = i8x16_min(self.0, rhs);
@@ -435,7 +435,7 @@ impl i8x16 {
     pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(add_saturating_i8_m128i(self.0, rhs.0) )
+            Self(_mm_adds_epi8(self.0, rhs.0) )
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_add_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -467,7 +467,7 @@ impl i8x16 {
     pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(sub_saturating_i8_m128i(self.0, rhs.0))
+            Self(_mm_subs_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_sub_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -667,7 +667,7 @@ impl i8x16 {
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            Self(abs_i8_m128i(self.0))
+            Self(_mm_abs_epi8(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -722,9 +722,9 @@ impl i8x16 {
     pub(crate) fn from_i16x16_saturate_backend(v: i16x16) -> i8x16 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i8x16(pack_i16_to_i8_m128i( extract_m128i_from_m256i::<0>(v.0), extract_m128i_from_m256i::<1>(v.0)))
+            i8x16(_mm_packs_epi16( _mm256_extractf128_si256::<0>(v.0), _mm256_extractf128_si256::<1>(v.0)))
           } else if #[cfg(target_feature="sse2")] {
-            i8x16(pack_i16_to_i8_m128i( v.0.lo.0, v.0.hi.0 ))
+            i8x16(_mm_packs_epi16( v.0.lo.0, v.0.hi.0 ))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             i8x16(vcombine_s8(vqmovn_s16(v.0.lo.0), vqmovn_s16(v.0.hi.0)))
           } else if #[cfg(target_feature="simd128")] {
@@ -767,11 +767,11 @@ impl i8x16 {
     pub(crate) fn from_i16x16_truncate_backend(v: i16x16) -> i8x16 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let a = v.0 & set_splat_i16_m256i(0xff);
-            i8x16(pack_i16_to_u8_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a)))
+            let a = _mm256_and_si256(v.0, _mm256_set1_epi16(0xff));
+            i8x16(_mm_packus_epi16( _mm256_extractf128_si256::<0>(a), _mm256_extractf128_si256::<1>(a)))
           } else if #[cfg(target_feature="sse2")] {
-            let mask = set_splat_i16_m128i(0xff);
-            i8x16(pack_i16_to_u8_m128i( v.0.lo.0 & mask, v.0.hi.0 & mask ))
+            let mask = _mm_set1_epi16(0xff);
+            i8x16(_mm_packus_epi16(_mm_and_si128(v.0.lo.0, mask), _mm_and_si128(v.0.hi.0, mask)))
           } else {
             // no super good intrinsics on other platforms... plain old codegen does a reasonable job
             i8x16::from_array([
@@ -802,7 +802,7 @@ impl i8x16 {
 
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(load_unaligned_m128i(unsafe { &*(input.as_ptr() as * const [u8;16]) }))
+            Self(unsafe { _mm_loadu_si128(input.as_ptr() as *const __m128i) })
           } else if #[cfg(target_feature="simd128")] {
             Self(unsafe { v128_load(input.as_ptr() as *const v128) })
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{

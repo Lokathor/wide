@@ -19,7 +19,7 @@ impl u16x16 {
     pub(crate) fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(!self.0)
+            self ^ Self::MAX
           } else {
             Self(Inner {
               lo: !self.0.lo,
@@ -33,7 +33,7 @@ impl u16x16 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(add_i16_m256i(self.0, rhs.0))
+            Self(_mm256_add_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -47,7 +47,7 @@ impl u16x16 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(sub_i16_m256i(self.0, rhs.0))
+            Self(_mm256_sub_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -62,7 +62,7 @@ impl u16x16 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // non-widening multiplication is the same for unsigned and signed
-            Self(mul_i16_keep_low_m256i(self.0, rhs.0))
+            Self(_mm256_mullo_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo * rhs.0.lo,
@@ -76,7 +76,7 @@ impl u16x16 {
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitand_m256i(self.0, rhs.0))
+            Self(_mm256_and_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo & rhs.0.lo,
@@ -90,7 +90,7 @@ impl u16x16 {
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitor_m256i(self.0, rhs.0))
+            Self(_mm256_or_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo | rhs.0.lo,
@@ -104,7 +104,7 @@ impl u16x16 {
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitxor_m256i(self.0, rhs.0))
+            Self(_mm256_xor_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
@@ -118,7 +118,7 @@ impl u16x16 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_eq_mask_i16_m256i(self.0, rhs.0))
+            Self(_mm256_cmpeq_epi16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -153,9 +153,9 @@ impl u16x16 {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             let bias = Self::from_array([0x8000u16; 16]).0;
-            let a_biased = sub_i16_m256i(self.0, bias);
-            let b_biased = sub_i16_m256i(rhs.0, bias);
-            let mask = cmp_gt_mask_i16_m256i(a_biased, b_biased);
+            let a_biased = _mm256_sub_epi16(self.0, bias);
+            let b_biased = _mm256_sub_epi16(rhs.0, bias);
+            let mask = _mm256_cmpgt_epi16(a_biased, b_biased);
 
             Self(mask)
           } else {
@@ -208,7 +208,7 @@ impl u16x16 {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             match INDEX {
-              $($INDEX => Self(insert_i16_to_m256i::<$INDEX>(self.0, value.cast_signed())),)*
+              $($INDEX => Self(_mm256_insert_epi16::<$INDEX>(self.0, value.cast_signed())),)*
               16.. => unreachable!(),
             }
           } else {
@@ -253,7 +253,7 @@ impl u16x16 {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             match INDEX {
-              $($INDEX => extract_i16_as_i32_m256i::<$INDEX>(self.0).cast_unsigned() as u16,)*
+              $($INDEX => _mm256_extract_epi16::<$INDEX>(self.0).cast_unsigned() as u16,)*
               16.. => unreachable!(),
             }
           } else {
@@ -297,9 +297,9 @@ impl u16x16 {
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitor_m256i(
-                bitand_m256i(if_one.0, self.0),
-                bitandnot_m256i(self.0, if_zero.0),
+            Self(_mm256_or_si256(
+                _mm256_and_si256(if_one.0, self.0),
+                _mm256_andnot_si256(self.0, if_zero.0),
             ))
           } else {
             Self(Inner {
@@ -314,7 +314,7 @@ impl u16x16 {
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(blend_varying_i8_m256i(if_false.0, if_true.0, self.0))
+            Self(_mm256_blendv_epi8(if_false.0, if_true.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -329,7 +329,7 @@ impl u16x16 {
         pick! {
           if #[cfg(target_feature="sse2")] {
               let [a,b] = cast::<_,[__m128i;2]>(self);
-              move_mask_i8_m128i( pack_i16_to_i8_m128i(a,b)) as u32
+              _mm_movemask_epi8( _mm_packs_epi16(a,b)) as u32
             } else {
             self.0.lo.to_bitmask() | (self.0.hi.to_bitmask() << 8)
           }
@@ -340,7 +340,7 @@ impl u16x16 {
     pub(crate) fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            ((move_mask_i8_m256i(self.0) as u32) & 0b10101010101010101010101010101010) != 0
+            ((_mm256_movemask_epi8(self.0) as u32) & 0b10101010101010101010101010101010) != 0
           } else {
             (self.0.lo | self.0.hi).any()
           }
@@ -351,7 +351,7 @@ impl u16x16 {
     pub(crate) fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            ((move_mask_i8_m256i(self.0) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
+            ((_mm256_movemask_epi8(self.0) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
           } else {
             (self.0.lo & self.0.hi).all()
           }
@@ -567,8 +567,8 @@ impl u16x16 {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shl`.
-            let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
-            cast(_mm256_sllv_epi16(self.0, rhs.0))
+            let rhs = _mm256_and_si256(rhs.0, _mm256_set1_epi16(15));
+            cast(_mm256_sllv_epi16(self.0, rhs))
           } else {
             let [self_a, self_b]: [u16x8; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -584,7 +584,7 @@ impl u16x16 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 15, 0]);
-            Self(shl_all_u16_m256i(self.0, shift))
+            Self(_mm256_sll_epi16(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo << rhs,
@@ -599,8 +599,8 @@ impl u16x16 {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
-            let rhs = bitand_m256i(rhs.0, set_splat_i16_m256i(15));
-            cast(_mm256_srlv_epi16(self.0, rhs.0))
+            let rhs = _mm256_and_si256(rhs.0, _mm256_set1_epi16(15));
+            cast(_mm256_srlv_epi16(self.0, rhs))
           } else {
             let [self_a, self_b]: [u16x8; 2] = cast(self);
             let [rhs_a, rhs_b]: [u16x8; 2] = cast(rhs);
@@ -616,7 +616,7 @@ impl u16x16 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 15, 0]);
-            Self(shr_all_u16_m256i(self.0, shift))
+            Self(_mm256_srl_epi16(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs,
@@ -630,7 +630,7 @@ impl u16x16 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(max_u16_m256i(self.0, rhs.0))
+            Self(_mm256_max_epu16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -644,7 +644,7 @@ impl u16x16 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(min_u16_m256i(self.0, rhs.0))
+            Self(_mm256_min_epu16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -684,7 +684,7 @@ impl u16x16 {
     pub(crate) fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shl_all_u16_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_sll_epi16(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shl_scalar(rhs),
@@ -712,7 +712,7 @@ impl u16x16 {
     pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_all_u16_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_srl_epi16(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr_scalar(rhs),
@@ -726,7 +726,7 @@ impl u16x16 {
     pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(add_saturating_u16_m256i(self.0, rhs.0))
+            Self(_mm256_adds_epu16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_add(rhs.0.lo),
@@ -740,7 +740,7 @@ impl u16x16 {
     pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(sub_saturating_u16_m256i(self.0, rhs.0))
+            Self(_mm256_subs_epu16(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_sub(rhs.0.lo),
@@ -821,11 +821,11 @@ impl u16x16 {
     pub(crate) fn from_u8x16_backend(v: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            u16x16(convert_to_i16_m256i_from_u8_m128i(v.0))
+            u16x16(_mm256_cvtepu8_epi16(v.0))
           } else if #[cfg(target_feature="sse2")] {
             Self(Inner {
-              lo: u16x8(shr_imm_u16_m128i::<8>(unpack_low_i8_m128i(v.0, v.0))),
-              hi: u16x8(shr_imm_u16_m128i::<8>(unpack_high_i8_m128i(v.0, v.0))),
+              lo: u16x8(_mm_srli_epi16::<8>(_mm_unpacklo_epi8(v.0, v.0))),
+              hi: u16x8(_mm_srli_epi16::<8>(_mm_unpackhi_epi8(v.0, v.0))),
             })
           } else {
 

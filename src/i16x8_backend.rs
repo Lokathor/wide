@@ -22,7 +22,7 @@ impl i16x8 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(cmp_lt_mask_i16_m128i(self.0, rhs.0))
+            Self(_mm_cmplt_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -46,7 +46,7 @@ impl i16x8 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(cmp_gt_mask_i16_m128i(self.0, rhs.0))
+            Self(_mm_cmpgt_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -119,8 +119,8 @@ impl i16x8 {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
-            let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
-            cast(_mm_srav_epi16(self.0, rhs.0))
+            let rhs = _mm_and_si128(rhs.0, _mm_set1_epi16(15));
+            cast(_mm_srav_epi16(self.0, rhs))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`, and negate it because
             // there is no shift-right intrinsic.
@@ -150,7 +150,7 @@ impl i16x8 {
           if #[cfg(target_feature="sse2")] {
             // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 15, 0]);
-            Self(shr_all_i16_m128i(self.0, shift))
+            Self(_mm_sra_epi16(self.0, shift))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_shr(self.0, rhs))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -175,7 +175,7 @@ impl i16x8 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(max_i16_m128i(self.0, rhs.0))
+            Self(_mm_max_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_max(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -190,7 +190,7 @@ impl i16x8 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(min_i16_m128i(self.0, rhs.0))
+            Self(_mm_min_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_min(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -205,13 +205,13 @@ impl i16x8 {
     pub(crate) fn reduce_max_backend(self) -> i16 {
         pick! {
             if #[cfg(target_feature="sse2")] {
-              let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.0);
-              let sum64 = max_i16_m128i(self.0, hi64);
-              let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
-              let sum32 = max_i16_m128i(sum64, hi32);
-              let lo16 = shr_imm_u32_m128i::<16>(sum32);
-              let sum16 = max_i16_m128i(sum32, lo16);
-              extract_i16_as_i32_m128i::<0>(sum16) as i16
+              let hi64 = _mm_shuffle_epi32::<0b01_00_11_10>(self.0);
+              let sum64 = _mm_max_epi16(self.0, hi64);
+              let hi32 = _mm_shuffle_epi32::<0b11_10_00_01>(sum64);
+              let sum32 = _mm_max_epi16(sum64, hi32);
+              let lo16 = _mm_srli_epi32::<16>(sum32);
+              let sum16 = _mm_max_epi16(sum32, lo16);
+              _mm_extract_epi16::<0>(sum16) as i16
             } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
               vmaxvq_s16(self.0)
             } else {
@@ -234,13 +234,13 @@ impl i16x8 {
     pub(crate) fn reduce_min_backend(self) -> i16 {
         pick! {
             if #[cfg(target_feature="sse2")] {
-              let hi64 = shuffle_ai_f32_all_m128i::<0b01_00_11_10>(self.0);
-              let sum64 = min_i16_m128i(self.0, hi64);
-              let hi32 = shuffle_ai_f32_all_m128i::<0b11_10_00_01>(sum64);
-              let sum32 = min_i16_m128i(sum64, hi32);
-              let lo16 = shr_imm_u32_m128i::<16>(sum32);
-              let sum16 = min_i16_m128i(sum32, lo16);
-              extract_i16_as_i32_m128i::<0>(sum16) as i16
+              let hi64 = _mm_shuffle_epi32::<0b01_00_11_10>(self.0);
+              let sum64 = _mm_min_epi16(self.0, hi64);
+              let hi32 = _mm_shuffle_epi32::<0b11_10_00_01>(sum64);
+              let sum32 = _mm_min_epi16(sum64, hi32);
+              let lo16 = _mm_srli_epi32::<16>(sum32);
+              let sum16 = _mm_min_epi16(sum32, lo16);
+              _mm_extract_epi16::<0>(sum16) as i16
             } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
               vminvq_s16(self.0)
             } else {
@@ -290,7 +290,7 @@ impl i16x8 {
     pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(shr_all_i16_m128i(self.0, cast([rhs as u64, 0])))
+            Self(_mm_sra_epi16(self.0, cast([rhs as u64, 0])))
           } else if #[cfg(target_feature="simd128")] {
             if rhs < 16 { Self(i16x8_shr(self.0, rhs)) } else { self.is_negative() }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -316,7 +316,7 @@ impl i16x8 {
     pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(add_saturating_i16_m128i(self.0, rhs.0))
+            Self(_mm_adds_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_add_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -340,7 +340,7 @@ impl i16x8 {
     pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(sub_saturating_i16_m128i(self.0, rhs.0))
+            Self(_mm_subs_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_sub_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -373,15 +373,15 @@ impl i16x8 {
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> i32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let a = convert_to_i32_m256i_from_i16_m128i(self.0);
-            let b = convert_to_i32_m256i_from_i16_m128i(rhs.0);
-            i32x8(mul_i32_keep_low_m256i(a,b))
+            let a = _mm256_cvtepi16_epi32(self.0);
+            let b = _mm256_cvtepi16_epi32(rhs.0);
+            i32x8(_mm256_mullo_epi32(a,b))
           } else if #[cfg(target_feature="sse2")] {
-            let low = mul_i16_keep_low_m128i(self.0, rhs.0);
-            let high = mul_i16_keep_high_m128i(self.0, rhs.0);
+            let low = _mm_mullo_epi16(self.0, rhs.0);
+            let high = _mm_mulhi_epi16(self.0, rhs.0);
             i32x8(crate::i32x8_backend::Inner {
-              lo: i32x4(unpack_low_i16_m128i(low, high)),
-              hi: i32x4(unpack_high_i16_m128i(low, high))
+              lo: i32x4(_mm_unpacklo_epi16(low, high)),
+              hi: i32x4(_mm_unpackhi_epi16(low, high))
             })
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             let lhs_low = vget_low_s16(self.0);
@@ -482,7 +482,7 @@ impl i16x8 {
     pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(mul_i16_keep_high_m128i(self.0, rhs.0))
+            Self(_mm_mulhi_epi16(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             let lhs_low = vget_low_s16(self.0);
             let rhs_low = vget_low_s16(rhs.0);
@@ -521,10 +521,10 @@ impl i16x8 {
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            let mask = shr_imm_i16_m128i::<15>(self.0);
-            Self(bitxor_m128i(add_i16_m128i(self.0, mask), mask))
+            let mask = _mm_srai_epi16::<15>(self.0);
+            Self(_mm_xor_si128(_mm_add_epi16(self.0, mask), mask))
           } else if #[cfg(target_feature="ssse3")] {
-            Self(abs_i16_m128i(self.0))
+            Self(_mm_abs_epi16(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -572,7 +572,7 @@ impl i16x8 {
     pub(crate) fn from_u8x16_low_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(unpack_low_i8_m128i(u.0, __m128i::zeroed()))
+            Self(_mm_unpacklo_epi8(u.0, __m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -593,7 +593,7 @@ impl i16x8 {
     pub(crate) fn from_u8x16_high_backend(u: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(unpack_high_i8_m128i(u.0, __m128i::zeroed()))
+            Self(_mm_unpackhi_epi8(u.0, __m128i::zeroed()))
           } else {
             let u_arr: [u8; 16] = cast(u);
             cast([
@@ -614,9 +614,9 @@ impl i16x8 {
     pub(crate) fn from_i32x8_saturate_backend(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i16x8(pack_i32_to_i16_m128i( extract_m128i_from_m256i::<0>(v.0), extract_m128i_from_m256i::<1>(v.0)))
+            i16x8(_mm_packs_epi32( _mm256_extractf128_si256::<0>(v.0), _mm256_extractf128_si256::<1>(v.0)))
           } else if #[cfg(target_feature="sse2")] {
-            i16x8(pack_i32_to_i16_m128i( v.0.lo.0, v.0.hi.0 ))
+            i16x8(_mm_packs_epi32( v.0.lo.0, v.0.hi.0 ))
           } else if #[cfg(target_feature="simd128")] {
             i16x8(i16x8_narrow_i32x4(v.0.lo.0, v.0.hi.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
@@ -651,13 +651,13 @@ impl i16x8 {
     pub(crate) fn from_i32x8_truncate_backend(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let a = v.0 & set_splat_i32_m256i(0xffff);
-            i16x8(pack_i32_to_u16_m128i( extract_m128i_from_m256i::<0>(a), extract_m128i_from_m256i::<1>(a) ))
+            let a = _mm256_and_si256(v.0, _mm256_set1_epi32(0xffff));
+            i16x8(_mm_packus_epi32( _mm256_extractf128_si256::<0>(a), _mm256_extractf128_si256::<1>(a) ))
           } else if #[cfg(target_feature="sse2")] {
-            let a = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.0.lo.0));
-            let b = shr_imm_i32_m128i::<16>(shl_imm_u32_m128i::<16>(v.0.hi.0));
+            let a = _mm_srai_epi32::<16>(_mm_slli_epi32::<16>(v.0.lo.0));
+            let b = _mm_srai_epi32::<16>(_mm_slli_epi32::<16>(v.0.hi.0));
 
-            i16x8(pack_i32_to_i16_m128i( a, b))
+            i16x8(_mm_packs_epi32( a, b))
           } else {
           i16x8::from_array([
             v.as_array()[0] as i16,
@@ -679,7 +679,7 @@ impl i16x8 {
 
         pick! {
           if #[cfg(target_feature="sse2")] {
-            unsafe { Self(load_unaligned_m128i( &*(input.as_ptr() as * const [u8;16]) )) }
+            unsafe { Self(_mm_loadu_si128(input.as_ptr() as *const __m128i)) }
           } else if #[cfg(target_feature="simd128")] {
             unsafe { Self(v128_load(input.as_ptr() as *const v128 )) }
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -695,7 +695,7 @@ impl i16x8 {
     pub(crate) fn dot_backend(self, rhs: Self) -> i32x4 {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            i32x4(mul_i16_horizontal_add_m128i(self.0, rhs.0))
+            i32x4(_mm_madd_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             i32x4(i32x4_dot_i16x8(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -717,17 +717,17 @@ impl i16x8 {
     pub(crate) fn mul_scale_round_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            Self(mul_i16_scale_round_m128i(self.0, rhs.0))
+            Self(_mm_mulhrs_epi16(self.0, rhs.0))
           } else if #[cfg(target_feature="sse2")] {
-            // unfortunately mul_i16_scale_round_m128i only got added in sse3
-            let hi = mul_i16_keep_high_m128i(self.0, rhs.0);
-            let lo = mul_i16_keep_low_m128i(self.0, rhs.0);
-            let mut v1 = unpack_low_i16_m128i(lo, hi);
-            let mut v2 = unpack_high_i16_m128i(lo, hi);
-            let a = set_splat_i32_m128i(0x4000);
-            v1 = shr_imm_i32_m128i::<15>(add_i32_m128i(v1, a));
-            v2 = shr_imm_i32_m128i::<15>(add_i32_m128i(v2, a));
-            let s = pack_i32_to_i16_m128i(v1, v2);
+            // unfortunately _mm_mulhrs_epi16 only got added in sse3
+            let hi = _mm_mulhi_epi16(self.0, rhs.0);
+            let lo = _mm_mullo_epi16(self.0, rhs.0);
+            let mut v1 = _mm_unpacklo_epi16(lo, hi);
+            let mut v2 = _mm_unpackhi_epi16(lo, hi);
+            let a = _mm_set1_epi32(0x4000);
+            v1 = _mm_srai_epi32::<15>(_mm_add_epi32(v1, a));
+            v2 = _mm_srai_epi32::<15>(_mm_add_epi32(v2, a));
+            let s = _mm_packs_epi32(v1, v2);
             Self(s)
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_q15mulr_sat(self.0, rhs.0))
@@ -753,18 +753,18 @@ impl i16x8 {
     pub(crate) fn mul_scale_round_n_backend(self, rhs: i16) -> Self {
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            Self( mul_i16_scale_round_m128i(self.0, set_splat_i16_m128i(rhs)))
+            Self( _mm_mulhrs_epi16(self.0, _mm_set1_epi16(rhs)))
           } else if #[cfg(target_feature="sse2")] {
-            // unfortunately mul_i16_scale_round_m128i only got added in sse3
-            let r = set_splat_i16_m128i(rhs);
-            let hi = mul_i16_keep_high_m128i(self.0, r);
-            let lo = mul_i16_keep_low_m128i(self.0, r);
-            let mut v1 = unpack_low_i16_m128i(lo, hi);
-            let mut v2 = unpack_high_i16_m128i(lo, hi);
-            let a = set_splat_i32_m128i(0x4000);
-            v1 = shr_imm_i32_m128i::<15>(add_i32_m128i(v1, a));
-            v2 = shr_imm_i32_m128i::<15>(add_i32_m128i(v2, a));
-            let s = pack_i32_to_i16_m128i(v1, v2);
+            // unfortunately _mm_mulhrs_epi16 only got added in sse3
+            let r = _mm_set1_epi16(rhs);
+            let hi = _mm_mulhi_epi16(self.0, r);
+            let lo = _mm_mullo_epi16(self.0, r);
+            let mut v1 = _mm_unpacklo_epi16(lo, hi);
+            let mut v2 = _mm_unpackhi_epi16(lo, hi);
+            let a = _mm_set1_epi32(0x4000);
+            v1 = _mm_srai_epi32::<15>(_mm_add_epi32(v1, a));
+            v2 = _mm_srai_epi32::<15>(_mm_add_epi32(v2, a));
+            let s = _mm_packs_epi32(v1, v2);
             Self(s)
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_q15mulr_sat(self.0, i16x8_splat(rhs)))

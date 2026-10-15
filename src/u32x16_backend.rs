@@ -19,7 +19,7 @@ impl u32x16 {
     pub(crate) fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512i(self.0, set_splat_i32_m512i(-1)))
+            Self(_mm512_xor_si512(self.0, _mm512_set1_epi32(-1)))
           } else {
             Self(Inner {
               lo: !self.0.lo,
@@ -33,7 +33,7 @@ impl u32x16 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(add_i32_m512i(self.0, rhs.0))
+            Self(_mm512_add_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -47,7 +47,7 @@ impl u32x16 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(sub_i32_m512i(self.0, rhs.0))
+            Self(_mm512_sub_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -61,7 +61,7 @@ impl u32x16 {
     pub(crate) fn mul_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(mul_i32_keep_low_m512i(self.0, rhs.0))
+            Self(_mm512_mullo_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo * rhs.0.lo,
@@ -75,7 +75,7 @@ impl u32x16 {
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(bitand_m512i(self.0, rhs.0))
+            Self(_mm512_and_si512(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo & rhs.0.lo,
@@ -89,7 +89,7 @@ impl u32x16 {
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
         if #[cfg(target_feature="avx512f")] {
-            Self(bitor_m512i(self.0, rhs.0))
+            Self(_mm512_or_si512(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo | rhs.0.lo,
@@ -103,7 +103,7 @@ impl u32x16 {
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512i(self.0, rhs.0))
+            Self(_mm512_xor_si512(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
@@ -117,7 +117,10 @@ impl u32x16 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Eq)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_EQ}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -131,7 +134,10 @@ impl u32x16 {
     pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Ne)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NE}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ne(rhs.0.lo),
@@ -145,7 +151,10 @@ impl u32x16 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Lt)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_LT}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
           } else {
             Self(Inner {
               lo: rhs.0.lo.simd_gt(self.0.lo),
@@ -159,7 +168,10 @@ impl u32x16 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NLE}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -173,7 +185,10 @@ impl u32x16 {
     pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_LE}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_le(rhs.0.lo),
@@ -187,7 +202,10 @@ impl u32x16 {
     pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_u32_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NLT}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ge(rhs.0.lo),
@@ -303,9 +321,9 @@ impl u32x16 {
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(bitor_m512i(
-                bitand_m512i(if_one.0, self.0),
-                bitandnot_m512i(self.0, if_zero.0),
+            Self(_mm512_or_si512(
+                _mm512_and_si512(if_one.0, self.0),
+                _mm512_andnot_si512(self.0, if_zero.0),
             ))
           } else {
             Self(Inner {
@@ -320,7 +338,7 @@ impl u32x16 {
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(blend_varying_i8_m512i(if_false.0,if_true.0,movepi8_mask_m512i(self.0)))
+            Self(_mm512_mask_blend_epi8(_mm512_movepi8_mask(self.0), if_false.0,if_true.0))
           } else {
             Self(Inner {
               lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -334,7 +352,7 @@ impl u32x16 {
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            movepi32_mask_m512i(self.0) as u32
+            _mm512_movepi32_mask(self.0) as u32
           } else {
             f32x16::to_bitmask(cast(self))
           }
@@ -345,7 +363,7 @@ impl u32x16 {
     pub(crate) fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            movepi32_mask_m512i(self.0) != 0
+            _mm512_movepi32_mask(self.0) != 0
           } else {
             let [a, b]: [u32x8; 2] = cast(self);
             (a | b).any()
@@ -357,7 +375,7 @@ impl u32x16 {
     pub(crate) fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            movepi32_mask_m512i(self.0) == 0xFFFF
+            _mm512_movepi32_mask(self.0) == 0xFFFF
           } else {
             let [a, b]: [u32x8; 2] = cast(self);
             (a & b).all()
@@ -399,7 +417,7 @@ impl u32x16 {
     pub(crate) fn shuffle_backend(self, indices: u32x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512f"))] {
-            Self(permute_i32_m512i(indices.0, self.0))
+            Self(_mm512_permutexvar_epi32(indices.0, self.0))
           } else {
             let self_halfs = cast::<u32x16, [u32x8; 2]>(self);
             let [indices_a, indices_b] = cast::<u32x16, [u32x8; 2]>(indices);
@@ -442,7 +460,7 @@ impl u32x16 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u32x16) -> u32x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512f"))] {
-            u32x16(shuffle_abv_i32_all_m512i(inputs[0].0, indices.0, inputs[1].0))
+            u32x16(_mm512_permutex2var_epi32(inputs[0].0, indices.0, inputs[1].0))
           } else {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 16)
           }
@@ -553,8 +571,8 @@ impl u32x16 {
     pub(crate) fn shl_backend(self, rhs: u32x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift_by = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
-            Self(shl_each_u32_m512i(self.0, shift_by))
+            let shift_by = _mm512_and_si512(rhs.0, _mm512_set1_epi32(31));
+            Self(_mm512_sllv_epi32(self.0, shift_by))
           } else {
             Self(Inner {
               lo: self.0.lo << rhs.0.lo,
@@ -570,7 +588,7 @@ impl u32x16 {
           if #[cfg(target_feature="avx512f")] {
             // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
             let shift = rhs & 31;
-            Self(shl_all_u32_m512i(self.0, shift))
+            Self(_mm512_sllv_epi32(self.0, _mm512_set1_epi32(shift as i32)))
           } else {
             Self(Inner {
               lo: self.0.lo << rhs,
@@ -584,8 +602,8 @@ impl u32x16 {
     pub(crate) fn shr_backend(self, rhs: u32x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let shift_by = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
-            Self(shr_each_u32_m512i(self.0, shift_by ))
+            let shift_by = _mm512_and_si512(rhs.0, _mm512_set1_epi32(31));
+            Self(_mm512_srlv_epi32(self.0, shift_by ))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs.0.lo,
@@ -601,7 +619,7 @@ impl u32x16 {
           if #[cfg(target_feature="avx512f")] {
             // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
             let shift = rhs & 31;
-            Self(shr_all_u32_m512i(self.0, shift))
+            Self(_mm512_srlv_epi32(self.0, _mm512_set1_epi32(shift as i32)))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs,
@@ -615,7 +633,7 @@ impl u32x16 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(max_u32_m512i(self.0, rhs.0))
+            Self(_mm512_max_epu32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -629,7 +647,7 @@ impl u32x16 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(min_u32_m512i(self.0, rhs.0))
+            Self(_mm512_min_epu32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -655,7 +673,7 @@ impl u32x16 {
     pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(shl_each_u32_m512i(self.0, rhs.0))
+            Self(_mm512_sllv_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shl(rhs.0.lo),
@@ -669,7 +687,7 @@ impl u32x16 {
     pub(crate) fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(shl_all_u32_m512i(self.0, rhs))
+            Self(_mm512_sllv_epi32(self.0, _mm512_set1_epi32(rhs as i32)))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shl_scalar(rhs),
@@ -683,7 +701,7 @@ impl u32x16 {
     pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(shr_each_u32_m512i(self.0, rhs.0))
+            Self(_mm512_srlv_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -697,7 +715,7 @@ impl u32x16 {
     pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(shr_all_u32_m512i(self.0, rhs))
+            Self(_mm512_srlv_epi32(self.0, _mm512_set1_epi32(rhs as i32)))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr_scalar(rhs),
@@ -752,17 +770,17 @@ impl u32x16 {
     pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
-            let even_wide_mul = mul_u32_wide_m512i(self.0, rhs.0);
-            let odd_wide_mul = mul_u32_wide_m512i(
-              shuffle_i32_m512i::<0b_00_11_00_01>(self.0),
-              shuffle_i32_m512i::<0b_00_11_00_01>(rhs.0),
+            let even_wide_mul = _mm512_mul_epu32(self.0, rhs.0);
+            let odd_wide_mul = _mm512_mul_epu32(
+              _mm512_shuffle_epi32::<0b_00_11_00_01>(self.0),
+              _mm512_shuffle_epi32::<0b_00_11_00_01>(rhs.0),
             );
 
-            let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
-            let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
+            let ll_hh_1 = _mm512_unpacklo_epi32(even_wide_mul, odd_wide_mul);
+            let ll_hh_2 = _mm512_unpackhi_epi32(even_wide_mul, odd_wide_mul);
             (
-              Self(_mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0)),
-              Self(_mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0)),
+              Self(_mm512_unpacklo_epi64(ll_hh_1, ll_hh_2)),
+              Self(_mm512_unpackhi_epi64(ll_hh_1, ll_hh_2)),
             )
           } else {
             let [self_a, self_b] = cast::<u32x16, [u32x8; 2]>(self);
@@ -782,10 +800,10 @@ impl u32x16 {
     pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            let alo = extract_m256i32_from_m512i::<0>(self.0);
-            let ahi = extract_m256i32_from_m512i::<1>(self.0);
-            let blo = extract_m256i32_from_m512i::<0>(rhs.0);
-            let bhi = extract_m256i32_from_m512i::<1>(rhs.0);
+            let alo = _mm512_extracti32x8_epi32::<0>(self.0);
+            let ahi = _mm512_extracti32x8_epi32::<1>(self.0);
+            let blo = _mm512_extracti32x8_epi32::<0>(rhs.0);
+            let bhi = _mm512_extracti32x8_epi32::<1>(rhs.0);
 
             let lo_res: __m256i = {
               let a8 = u32x8(alo);
@@ -798,9 +816,9 @@ impl u32x16 {
               a8.mul_keep_high(b8).0
             };
 
-            let zero = zeroed_m512i();
-            let with_lo = insert_m256i32_to_m512i::<0>(zero, lo_res);
-            let combined = insert_m256i32_to_m512i::<1>(with_lo, hi_res);
+            let zero = _mm512_setzero_si512();
+            let with_lo = _mm512_inserti32x8::<0>(zero, lo_res);
+            let combined = _mm512_inserti32x8::<1>(with_lo, hi_res);
 
             Self(combined)
           } else {
@@ -816,23 +834,23 @@ impl u32x16 {
     pub(crate) fn from_u16x16_backend(v: u16x16) -> Self {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
-            Self(convert_to_u32_m512i_from_u16_m256i(v.0))
+            Self(_mm512_cvtepu16_epi32(v.0))
           } else if #[cfg(target_feature = "avx2")] {
-            let lo: __m128i = extract_m128i_from_m256i::<0>(v.0);
-            let hi: __m128i = extract_m128i_from_m256i::<1>(v.0);
+            let lo: __m128i = _mm256_extractf128_si256::<0>(v.0);
+            let hi: __m128i = _mm256_extractf128_si256::<1>(v.0);
             Self(Inner {
-              lo: u32x8(convert_to_i32_m256i_from_u16_m128i(lo)),
-              hi: u32x8(convert_to_i32_m256i_from_u16_m128i(hi)),
+              lo: u32x8(_mm256_cvtepu16_epi32(lo)),
+              hi: u32x8(_mm256_cvtepu16_epi32(hi)),
             })
           } else if #[cfg(target_feature = "sse2")] {
             Self(Inner {
               lo: u32x8(crate::u32x8_backend::Inner {
-                lo: u32x4(shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.lo.0, v.0.lo.0))),
-                hi: u32x4(shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.lo.0, v.0.lo.0))),
+                lo: u32x4(_mm_srli_epi32::<16>(_mm_unpacklo_epi16(v.0.lo.0, v.0.lo.0))),
+                hi: u32x4(_mm_srli_epi32::<16>(_mm_unpackhi_epi16(v.0.lo.0, v.0.lo.0))),
               }),
               hi: u32x8(crate::u32x8_backend::Inner {
-                lo: u32x4(shr_imm_u32_m128i::<16>(unpack_low_i16_m128i(v.0.hi.0, v.0.hi.0))),
-                hi: u32x4(shr_imm_u32_m128i::<16>(unpack_high_i16_m128i(v.0.hi.0, v.0.hi.0))),
+                lo: u32x4(_mm_srli_epi32::<16>(_mm_unpacklo_epi16(v.0.hi.0, v.0.hi.0))),
+                hi: u32x4(_mm_srli_epi32::<16>(_mm_unpackhi_epi16(v.0.hi.0, v.0.hi.0))),
               }),
             })
           } else {

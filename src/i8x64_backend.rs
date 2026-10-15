@@ -24,7 +24,10 @@ impl i8x64 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Nle)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi8(
+              _mm512_cmp_epi8_mask::<{_MM_CMPINT_NLE}>(self.0, rhs.0),
+              _mm512_set1_epi8(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -38,7 +41,10 @@ impl i8x64 {
     pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Le)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi8(
+              _mm512_cmp_epi8_mask::<{_MM_CMPINT_LE}>(self.0, rhs.0),
+              _mm512_set1_epi8(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_le(rhs.0.lo),
@@ -52,7 +58,10 @@ impl i8x64 {
     pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(cmp_op_mask_i8_m512i::<{cmp_int_op!(Nlt)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_epi8(
+              _mm512_cmp_epi8_mask::<{_MM_CMPINT_NLT}>(self.0, rhs.0),
+              _mm512_set1_epi8(-1),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ge(rhs.0.lo),
@@ -81,7 +90,7 @@ impl i8x64 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(max_i8_m512i(self.0, rhs.0))
+            Self(_mm512_max_epi8(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -95,7 +104,7 @@ impl i8x64 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(min_i8_m512i(self.0, rhs.0))
+            Self(_mm512_min_epi8(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -137,7 +146,7 @@ impl i8x64 {
     pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(add_saturating_i8_m512i(self.0, rhs.0))
+            Self(_mm512_adds_epi8(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_add(rhs.0.lo),
@@ -151,7 +160,7 @@ impl i8x64 {
     pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(sub_saturating_i8_m512i(self.0, rhs.0))
+            Self(_mm512_subs_epi8(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_sub(rhs.0.lo),
@@ -201,7 +210,7 @@ impl i8x64 {
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            Self(abs_i8_m512i(self.0))
+            Self(_mm512_abs_epi8(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.abs(),

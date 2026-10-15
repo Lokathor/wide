@@ -19,7 +19,7 @@ impl i32x8 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_gt_mask_i32_m256i(rhs.0, self.0))
+            Self(_mm256_cmpgt_epi32(rhs.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_lt(rhs.0.lo),
@@ -33,7 +33,7 @@ impl i32x8 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_gt_mask_i32_m256i(self.0, rhs.0))
+            Self(_mm256_cmpgt_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -76,8 +76,8 @@ impl i32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // ensure same behavior as scalar
-            let shift_by = bitand_m256i(rhs.0, set_splat_i32_m256i(31));
-            Self(shr_each_i32_m256i(self.0, shift_by ))
+            let shift_by = _mm256_and_si256(rhs.0, _mm256_set1_epi32(31));
+            Self(_mm256_srav_epi32(self.0, shift_by ))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs.0.lo,
@@ -93,7 +93,7 @@ impl i32x8 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 31, 0]);
-            Self(shr_all_i32_m256i(self.0, shift))
+            Self(_mm256_sra_epi32(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs,
@@ -107,7 +107,7 @@ impl i32x8 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(max_i32_m256i(self.0, rhs.0))
+            Self(_mm256_max_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -121,7 +121,7 @@ impl i32x8 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(min_i32_m256i(self.0, rhs.0))
+            Self(_mm256_min_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -147,7 +147,7 @@ impl i32x8 {
     pub(crate) fn unbounded_shr_backend(self, rhs: u32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_each_i32_m256i(self.0, rhs.0))
+            Self(_mm256_srav_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -161,7 +161,7 @@ impl i32x8 {
     pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_all_i32_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_sra_epi32(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr_scalar(rhs),
@@ -224,25 +224,25 @@ impl i32x8 {
           if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
             let shuffle_indices = const { i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0 };
 
-            let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
-            let odd_wide_mul = mul_i64_low_bits_m256i(
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.0),
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
+            let even_wide_mul = _mm256_mul_epi32(self.0, rhs.0);
+            let odd_wide_mul = _mm256_mul_epi32(
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(self.0),
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(rhs.0),
             );
             let even_then_odd = cast::<[__m256i; 2], __m512i>([even_wide_mul, odd_wide_mul]);
-            i64x8(permute_i64_m512i(shuffle_indices, even_then_odd))
+            i64x8(_mm512_permutexvar_epi64(shuffle_indices, even_then_odd))
           } else if #[cfg(target_feature="avx2")] {
-            let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
-            let odd_wide_mul = mul_i64_low_bits_m256i(
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.0),
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
+            let even_wide_mul = _mm256_mul_epi32(self.0, rhs.0);
+            let odd_wide_mul = _mm256_mul_epi32(
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(self.0),
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(rhs.0),
             );
-            let m0145 = unpack_low_i64_m256i(even_wide_mul, odd_wide_mul);
-            let m2367 = unpack_high_i64_m256i(even_wide_mul, odd_wide_mul);
+            let m0145 = _mm256_unpacklo_epi64(even_wide_mul, odd_wide_mul);
+            let m2367 = _mm256_unpackhi_epi64(even_wide_mul, odd_wide_mul);
 
             cast([
-              shuffle_abi_i128z_all_m256i::<0b_0010_0000>(m0145, m2367),
-              shuffle_abi_i128z_all_m256i::<0b_0011_0001>(m0145, m2367),
+              _mm256_permute2x128_si256::<0b_0010_0000>(m0145, m2367),
+              _mm256_permute2x128_si256::<0b_0011_0001>(m0145, m2367),
             ])
           } else {
             let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
@@ -257,17 +257,17 @@ impl i32x8 {
     pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u32x8, i32x8) {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
-            let odd_wide_mul = mul_i64_low_bits_m256i(
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.0),
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
+            let even_wide_mul = _mm256_mul_epi32(self.0, rhs.0);
+            let odd_wide_mul = _mm256_mul_epi32(
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(self.0),
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(rhs.0),
             );
-            let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
-            let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
+            let ll_hh_1 = _mm256_unpacklo_epi32(even_wide_mul, odd_wide_mul);
+            let ll_hh_2 = _mm256_unpackhi_epi32(even_wide_mul, odd_wide_mul);
 
             (
-              u32x8(unpack_low_i64_m256i(ll_hh_1, ll_hh_2)),
-              i32x8(unpack_high_i64_m256i(ll_hh_1, ll_hh_2)),
+              u32x8(_mm256_unpacklo_epi64(ll_hh_1, ll_hh_2)),
+              i32x8(_mm256_unpackhi_epi64(ll_hh_1, ll_hh_2)),
             )
           } else {
             let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
@@ -287,15 +287,15 @@ impl i32x8 {
     pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let even_wide_mul = mul_i64_low_bits_m256i(self.0, rhs.0);
-            let odd_wide_mul = mul_i64_low_bits_m256i(
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.0),
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
+            let even_wide_mul = _mm256_mul_epi32(self.0, rhs.0);
+            let odd_wide_mul = _mm256_mul_epi32(
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(self.0),
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(rhs.0),
             );
-            let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
-            let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
+            let ll_hh_1 = _mm256_unpacklo_epi32(even_wide_mul, odd_wide_mul);
+            let ll_hh_2 = _mm256_unpackhi_epi32(even_wide_mul, odd_wide_mul);
 
-            Self(unpack_high_i64_m256i(ll_hh_1, ll_hh_2))
+            Self(_mm256_unpackhi_epi64(ll_hh_1, ll_hh_2))
           } else {
             let [self_a, self_b] = cast::<i32x8, [i32x4; 2]>(self);
             let [rhs_a, rhs_b] = cast::<i32x8, [i32x4; 2]>(rhs);
@@ -309,7 +309,7 @@ impl i32x8 {
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(abs_i32_m256i(self.0))
+            Self(_mm256_abs_epi32(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.abs(),
@@ -353,11 +353,11 @@ impl i32x8 {
     pub(crate) fn from_i16x8_backend(v: i16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i32x8(convert_to_i32_m256i_from_i16_m128i(v.0))
+            i32x8(_mm256_cvtepi16_epi32(v.0))
           } else if #[cfg(target_feature="sse2")] {
             Self(Inner {
-              lo: i32x4(shr_imm_i32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
-              hi: i32x4(shr_imm_i32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
+              lo: i32x4(_mm_srai_epi32::<16>( _mm_unpacklo_epi16(v.0, v.0))),
+              hi: i32x4(_mm_srai_epi32::<16>( _mm_unpackhi_epi16(v.0, v.0))),
             })
           } else {
             i32x8::from_array([
@@ -378,11 +378,11 @@ impl i32x8 {
     pub(crate) fn from_u16x8_backend(v: u16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            i32x8(convert_to_i32_m256i_from_u16_m128i(v.0))
+            i32x8(_mm256_cvtepu16_epi32(v.0))
           } else if #[cfg(target_feature="sse2")] {
             Self(Inner {
-              lo: i32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
-              hi: i32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
+              lo: i32x4(_mm_srli_epi32::<16>( _mm_unpacklo_epi16(v.0, v.0))),
+              hi: i32x4(_mm_srli_epi32::<16>( _mm_unpackhi_epi16(v.0, v.0))),
             })
           } else {
             i32x8::from_array([
@@ -403,7 +403,7 @@ impl i32x8 {
     pub(crate) fn round_float_backend(self) -> f32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            cast(convert_to_m256_from_i32_m256i(self.0))
+            cast(_mm256_cvtepi32_ps(self.0))
           } else {
             cast([
               self.0.lo.round_float(),
