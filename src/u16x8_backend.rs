@@ -593,10 +593,6 @@ impl u16x8 {
     pub(crate) fn shuffle_backend(self, indices: u16x8) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_permutexvar_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_permutexvar_epi16;
             // TODO(safe_arch): Add `_mm_permutexvar_epi16`
             Self(m128i(_mm_permutexvar_epi16(indices.0.0, self.0.0)))
           } else if #[cfg(any(
@@ -659,10 +655,6 @@ impl u16x8 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x8) -> u16x8 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_permutex2var_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_permutex2var_epi16;
             // TODO(safe_arch): add `_mm_permutex2var_epi16`.
             u16x8(m128i(_mm_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else {
@@ -867,11 +859,6 @@ impl u16x8 {
     pub(crate) fn shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_sllv_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_sllv_epi16;
-
             // Mask `rhs` to 15 to match `wrapping_shl`.
             let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
             // TODO(safe_arch): Add `_mm_sllv_epi16`.
@@ -929,11 +916,6 @@ impl u16x8 {
     pub(crate) fn shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_srlv_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_srlv_epi16;
-
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
             // TODO(safe_arch): Add `_mm_srlv_epi16`.
@@ -1102,11 +1084,6 @@ impl u16x8 {
     pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_sllv_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_sllv_epi16;
-
             // TODO(safe_arch): Add `_mm_sllv_epi16`.
             cast(_mm_sllv_epi16(self.0.0, rhs.0.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
@@ -1160,11 +1137,6 @@ impl u16x8 {
     pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_srlv_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_srlv_epi16;
-
             // TODO(safe_arch): Add `_mm_srlv_epi16`.
             cast(_mm_srlv_epi16(self.0.0, rhs.0.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {

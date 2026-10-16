@@ -442,11 +442,6 @@ impl u8x16 {
               16.. => unreachable!()
             }
           } else if #[cfg(target_feature = "sse2")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_slli_si128;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_slli_si128;
-
             let replace_mask = const {
               let mut replace_mask = Self::ZERO;
               if INDEX < 16 {
@@ -504,11 +499,6 @@ impl u8x16 {
               16.. => unreachable!()
             }
           } else if #[cfg(all(target_feature = "sse2"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_srli_si128;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_srli_si128;
-
             // Shift bytes so that the element at `INDEX` becomes the lowest one
             let shifted_self = match INDEX {
               0 => self.0,
@@ -836,11 +826,6 @@ impl u8x16 {
     pub(crate) fn shuffle_wrapping_backend(self, indices: u8x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_permutexvar_epi8;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_permutexvar_epi8;
-
             // TODO(safe_arch): add `_mm_permutexvar_epi8`.
             Self(m128i(_mm_permutexvar_epi8(indices.0.0, self.0.0)))
           } else {
@@ -853,11 +838,6 @@ impl u8x16 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x16) -> u8x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_permutex2var_epi8;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_permutex2var_epi8;
-
             // TODO(safe_arch): add `_mm_permutex2var_epi8`.
             u8x16(m128i(_mm_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {

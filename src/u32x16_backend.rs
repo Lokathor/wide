@@ -209,11 +209,6 @@ impl u32x16 {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_mask_set1_epi32;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_mask_set1_epi32;
-
             // TODO(safe_arch): Add `_mm512_mask_set1_epi32`
             Self(m512i(_mm512_mask_set1_epi32(
                 self.0.0,
@@ -261,11 +256,6 @@ impl u32x16 {
       ) => {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_extracti32x4_epi32;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_extracti32x4_epi32;
-
             // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
             match INDEX {
               $($INDEX => {
@@ -766,11 +756,6 @@ impl u32x16 {
     pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
-
             let even_wide_mul = mul_u32_wide_m512i(self.0, rhs.0);
             let odd_wide_mul = mul_u32_wide_m512i(
               shuffle_i32_m512i::<0b_00_11_00_01>(self.0),
