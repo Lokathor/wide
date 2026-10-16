@@ -20,6 +20,9 @@
 * [#339](https://github.com/Lokathor/wide/pull/339): Rename various functions
   (for a precise list, see the PR description)
 
+* [#355](https://github.com/Lokathor/wide/pull/355): Remove the `safe_arch`
+  dependency
+
 * [#333](https://github.com/Lokathor/wide/pull/333): Switch to a custom
   implementation of `serde::Deserialize`. This could slightly change the
   function's behavior
