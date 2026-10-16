@@ -241,6 +241,10 @@ mod backend_imports {
     pub use core::arch::aarch64::*;
     #[cfg(target_feature = "simd128")]
     pub use core::arch::wasm32::*;
+    #[cfg(target_arch = "x86")]
+    pub use core::arch::x86::*;
+    #[cfg(target_arch = "x86_64")]
+    pub use core::arch::x86_64::*;
     #[allow(unused_imports)]
     #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
     pub use safe_arch::*;
