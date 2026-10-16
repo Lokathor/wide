@@ -877,6 +877,69 @@ impl u64x2 {
         ])
     }
 
+    #[inline]
+    pub(crate) fn shuffle_consts_backend<const I0: usize, const I1: usize>(self) -> Self {
+        if const { I0 == 0 && I1 == 0 } {
+            pick! {
+                if #[cfg(target_feature = "sse3")] {
+                    Self(_mm_castpd_si128(_mm_movedup_pd(_mm_castsi128_pd(self.0))))
+                } else if #[cfg(target_feature = "sse2")] {
+                    Self(_mm_unpacklo_epi64(self.0, self.0))
+                } else if #[cfg(all(
+                    target_arch = "aarch64",
+                    target_feature = "neon",
+                    target_endian = "little",
+                ))] {
+                    Self(vdupq_laneq_u64::<0>(self.0))
+                } else if #[cfg(target_feature = "simd128")] {
+                    Self(u64x2_shuffle::<0, 0>(self.0, self.0))
+                } else {
+                    let self_array = self.to_array();
+                    Self::from_array([self_array[0], self_array[0]])
+                }
+            }
+        } else if const { I0 == 0 && I1 == 1 } {
+            self
+        } else if const { I0 == 1 && I1 == 0 } {
+            pick! {
+                if #[cfg(target_feature = "sse2")] {
+                    let input = _mm_castsi128_pd(self.0);
+                    Self(_mm_castpd_si128(_mm_shuffle_pd::<0b01>(input, input)))
+                } else if #[cfg(all(
+                    target_arch = "aarch64",
+                    target_feature = "neon",
+                    target_endian = "little",
+                ))] {
+                    Self(vextq_u64::<1>(self.0, self.0))
+                } else if #[cfg(target_feature = "simd128")] {
+                    Self(u64x2_shuffle::<1, 0>(self.0, self.0))
+                } else {
+                    let self_array = self.to_array();
+                    Self::from_array([self_array[1], self_array[0]])
+                }
+            }
+        } else if const { I0 == 1 && I1 == 1 } {
+            pick! {
+                if #[cfg(target_feature = "sse2")] {
+                    Self(_mm_unpackhi_epi64(self.0, self.0))
+                } else if #[cfg(all(
+                    target_arch = "aarch64",
+                    target_feature = "neon",
+                    target_endian = "little",
+                ))] {
+                    Self(vdupq_laneq_u64::<1>(self.0))
+                } else if #[cfg(target_feature = "simd128")] {
+                    Self(u64x2_shuffle::<1, 1>(self.0, self.0))
+                } else {
+                    let self_array = self.to_array();
+                    Self::from_array([self_array[1], self_array[1]])
+                }
+            }
+        } else {
+          unreachable!();
+        }
+    }
+
     /// A helper for shuffle functions that turns indices of 64-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
     ///

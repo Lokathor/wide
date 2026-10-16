@@ -2465,6 +2465,30 @@ fn test_shuffle() {
 }
 
 #[test]
+fn test_shuffle_const_n2() {
+    let array = [21, 32];
+    let simd = u64x2::from_array(array);
+
+    // All permutations must be tested and there does not seem to be a nicer to do
+    // this
+    macro_rules! permutations {
+        ($([$I0:literal, $I1:literal]),* $(,)?) => {$(
+            assert_eq!(
+                simd.shuffle_consts::<$I0, $I1>(),
+                u64x2::from_array([array[$I0], array[$I1]]),
+            );
+        )*};
+        ($([$I0:literal]),* $(,)?) => {
+            permutations!($(
+                [$I0, 0],
+                [$I0, 1],
+            )*);
+        };
+    }
+    permutations!([0], [1]);
+}
+
+#[test]
 fn test_shuffle_const_n4() {
     let array = [21, 32, 43, 54];
     let simd = u32x4::from_array(array);
