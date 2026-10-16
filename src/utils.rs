@@ -74,6 +74,7 @@ macro_rules! safe_target_feature {
                 #[cfg_attr(target_feature = "neon", target_feature(enable = "neon"))]
                 #[cfg_attr(target_feature = "sse", target_feature(enable = "sse"))]
                 #[cfg_attr(target_feature = "sse2", target_feature(enable = "sse2"))]
+                #[cfg_attr(target_feature = "sse3", target_feature(enable = "sse3"))]
                 #[cfg_attr(target_feature = "sse4.1", target_feature(enable = "sse4.1"))]
                 #[cfg_attr(target_feature = "sse4.2", target_feature(enable = "sse4.2"))]
                 #[cfg_attr(target_feature = "ssse3", target_feature(enable = "ssse3"))]
