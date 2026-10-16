@@ -10,6 +10,11 @@
 * [#331](https://github.com/Lokathor/wide/pull/331): Add float methods
   `reduce_max`, `fast_reduce_max`, `reduce_min`, `fast_reduce_min`
 
+### Fixed
+
+* [#354](https://github.com/Lokathor/wide/pull/354): Fix unsound usage of
+  `avx512bw` and `avx512dq` intrinsics when only `avx512f` is enabled
+
 ### Changed
 
 * [#339](https://github.com/Lokathor/wide/pull/339): Rename various functions
