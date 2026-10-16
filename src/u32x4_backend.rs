@@ -1141,10 +1141,6 @@ impl u32x4 {
                 // arbitrary `const` blocks for values in immediates.
 
                 use core::arch::asm;
-                #[cfg(target_arch = "x86")]
-                use core::arch::x86::__m128i;
-                #[cfg(target_arch = "x86_64")]
-                use core::arch::x86_64::__m128i;
 
                 let value: __m128i = self.0.0;
                 let result: __m128i;

@@ -75,11 +75,6 @@ impl i16x32 {
     pub(crate) fn shr_backend(self, rhs: u16x32) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_srav_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_srav_epi16;
-
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m512i(rhs.0, set_splat_i16_m512i(15));
             // TODO(safe_arch): Add `_mm512_srav_epi16`.
@@ -153,11 +148,6 @@ impl i16x32 {
     pub(crate) fn unbounded_shr_backend(self, rhs: u16x32) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_srav_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_srav_epi16;
-
             // TODO(safe_arch): Add `_mm512_srav_epi16`.
             Self(m512i(_mm512_srav_epi16(self.0.0, rhs.0.0)))
           } else {

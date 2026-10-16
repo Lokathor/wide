@@ -265,10 +265,6 @@ impl f32x16 {
           if #[cfg(target_feature="avx512f")] {
             // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
             // safe.
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_reduce_mul_ps;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_reduce_mul_ps;
 
             _mm512_reduce_mul_ps(self.0.0)
           } else {

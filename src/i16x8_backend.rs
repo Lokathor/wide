@@ -118,11 +118,6 @@ impl i16x8 {
     pub(crate) fn shr_backend(self, rhs: u16x8) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_srav_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_srav_epi16;
-
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
             // TODO(safe_arch): Add `_mm_srav_epi16`.
@@ -269,11 +264,6 @@ impl i16x8 {
     pub(crate) fn unbounded_shr_backend(self, rhs: u16x8) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm_srav_epi16;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm_srav_epi16;
-
             // TODO(safe_arch): Add `_mm_srav_epi16`.
             cast(_mm_srav_epi16(self.0.0, rhs.0.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
@@ -632,8 +622,6 @@ impl i16x8 {
           } else if #[cfg(target_feature="simd128")] {
             i16x8(i16x8_narrow_i32x4(v.0.lo.0, v.0.hi.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            use core::arch::aarch64::*;
-
             i16x8(vcombine_s16(vqmovn_s32(v.0.lo.0), vqmovn_s32(v.0.hi.0)))
           } else {
             fn clamp(a : i32) -> i16 {

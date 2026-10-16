@@ -194,11 +194,6 @@ impl u8x64 {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512bw")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_mask_set1_epi8;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_mask_set1_epi8;
-
             // TODO(safe_arch): Add `_mm512_mask_set1_epi8`
             Self(m512i(_mm512_mask_set1_epi8(
                 self.0.0,
@@ -256,11 +251,6 @@ impl u8x64 {
       ) => {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_extracti32x4_epi32;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_extracti32x4_epi32;
-
             // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
             match INDEX {
               $($INDEX => {
@@ -461,10 +451,6 @@ impl u8x64 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x64) -> u8x64 {
         pick! {
           if #[cfg(target_feature = "avx512vbmi")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_permutex2var_epi8;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_permutex2var_epi8;
             // TODO(safe_arch): add `_mm512_permutex2var_epi8`.
             u8x64(m512i(_mm512_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else {

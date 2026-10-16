@@ -640,11 +640,6 @@ impl f64x8 {
     pub(crate) fn round_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_cvtpd_epi64;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_cvtpd_epi64;
-
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
@@ -667,11 +662,6 @@ impl f64x8 {
     pub(crate) fn fast_round_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_cvtpd_epi64;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_cvtpd_epi64;
-
             // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
             cast(m512i(_mm512_cvtpd_epi64(self.0.0)))
           } else {
@@ -717,11 +707,6 @@ impl f64x8 {
     pub(crate) fn trunc_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_cvttpd_epi64;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_cvttpd_epi64;
-
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
@@ -744,11 +729,6 @@ impl f64x8 {
     pub(crate) fn fast_trunc_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_cvttpd_epi64;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_cvttpd_epi64;
-
             // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
             cast(m512i(_mm512_cvttpd_epi64(self.0.0)))
           } else {

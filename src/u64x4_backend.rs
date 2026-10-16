@@ -400,10 +400,6 @@ impl u64x4 {
     pub(crate) fn shuffle_backend(self, indices: u64x4) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx512vl"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm256_permutexvar_epi64;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm256_permutexvar_epi64;
             // TODO(safe_arch): Add `_mm256_permutexvar_epi64`.
             Self(m256i(_mm256_permutexvar_epi64(indices.0.0, self.0.0)))
           } else if #[cfg(any(

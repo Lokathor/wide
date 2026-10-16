@@ -217,11 +217,6 @@ impl u64x8 {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_mask_set1_epi64;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_mask_set1_epi64;
-
             // TODO(safe_arch): Add `_mm512_mask_set1_epi64`
             Self(m512i(_mm512_mask_set1_epi64(
                 self.0.0,
@@ -265,11 +260,6 @@ impl u64x8 {
       ) => {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_extracti32x4_epi32;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_extracti32x4_epi32;
-
             // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
             match INDEX {
               $($INDEX => {

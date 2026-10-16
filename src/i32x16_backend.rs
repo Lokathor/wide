@@ -75,11 +75,6 @@ impl i32x16 {
     pub(crate) fn shr_backend(self, rhs: u32x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_srav_epi32;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_srav_epi32;
-
             // Mask `rhs` to 31 to match `wrapping_shr`.
             let rhs = bitand_m512i(rhs.0, set_splat_i32_m512i(31));
             // TODO(safe_arch): Add `_mm512_srav_epi32`.
@@ -153,11 +148,6 @@ impl i32x16 {
     pub(crate) fn unbounded_shr_backend(self, rhs: u32x16) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_srav_epi32;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_srav_epi32;
-
             // TODO(safe_arch): Add `_mm512_srav_epi32`.
             Self(m512i(_mm512_srav_epi32(self.0.0, rhs.0.0)))
           } else {
@@ -234,11 +224,6 @@ impl i32x16 {
     pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u32x16, i32x16) {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::{_mm512_unpackhi_epi64, _mm512_unpacklo_epi64};
-
             let even_wide_mul = mul_i32_wide_m512i(self.0, rhs.0);
             let odd_wide_mul = mul_i32_wide_m512i(
               shuffle_i32_m512i::<0b_00_11_00_01>(self.0),
@@ -269,11 +254,6 @@ impl i32x16 {
     pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx512dq"))] {
-            #[cfg(target_arch = "x86")]
-            use core::arch::x86::_mm512_unpackhi_epi64;
-            #[cfg(target_arch = "x86_64")]
-            use core::arch::x86_64::_mm512_unpackhi_epi64;
-
             let even_wide_mul = mul_i32_wide_m512i(self.0, rhs.0);
             let odd_wide_mul = mul_i32_wide_m512i(
               shuffle_i32_m512i::<0b_00_11_00_01>(self.0),
