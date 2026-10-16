@@ -590,7 +590,6 @@ impl u16x8 {
     pub(crate) fn shuffle_backend(self, indices: u16x8) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            // TODO(safe_arch): Add `_mm_permutexvar_epi16`
             Self(m128i(_mm_permutexvar_epi16(indices.0.0, self.0.0)))
           } else if #[cfg(any(
             target_feature = "ssse3",
@@ -652,7 +651,6 @@ impl u16x8 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x8) -> u16x8 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
-            // TODO(safe_arch): add `_mm_permutex2var_epi16`.
             u16x8(m128i(_mm_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else {
             let self_bytes = cast::<[u16x8; 2], [u8x16; 2]>(inputs);
@@ -858,7 +856,6 @@ impl u16x8 {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shl`.
             let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
-            // TODO(safe_arch): Add `_mm_sllv_epi16`.
             cast(_mm_sllv_epi16(self.0.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             // Mask `rhs` to 15 to match `wrapping_shl`.
@@ -915,7 +912,6 @@ impl u16x8 {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
-            // TODO(safe_arch): Add `_mm_srlv_epi16`.
             cast(_mm_srlv_epi16(self.0.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`, and negate it because
@@ -1081,7 +1077,6 @@ impl u16x8 {
     pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            // TODO(safe_arch): Add `_mm_sllv_epi16`.
             cast(_mm_sllv_epi16(self.0.0, rhs.0.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             // The intrinsic has different semantics so we need to mask ourselves.
@@ -1134,7 +1129,6 @@ impl u16x8 {
     pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            // TODO(safe_arch): Add `_mm_srlv_epi16`.
             cast(_mm_srlv_epi16(self.0.0, rhs.0.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             // Negate `rhs` because there is no direct shift-right intrinsic, and

@@ -75,7 +75,7 @@ impl i64x8 {
     pub(crate) fn shr_backend(self, rhs: u64x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
+            // TODO(perf): Consider using this implementation:
             // Self(shr_each_i64_m512i(self.0, rhs.0) }
             // Fallback for now:
             let a: [i64; 8] = cast(self);
@@ -158,7 +158,7 @@ impl i64x8 {
 
     #[inline]
     pub(crate) fn unbounded_shr_backend(self, rhs: u64x8) -> Self {
-        // TODO(safe_arch): add shr_each_i64_m512i (arithmetic right shift)
+        // TODO(perf): Consider using this implementation:
         // Self(shr_each_i64_m512i(self.0, rhs.0) }
         // Fallback for now:
 
