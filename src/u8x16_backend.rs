@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="sse2")] {
-    pub(crate) type Inner = m128i;
+    pub(crate) type Inner = __m128i;
   } else if #[cfg(target_feature="simd128")] {
     pub(crate) type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -27,7 +27,7 @@ impl u8x16 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(add_i8_m128i(self.0, rhs.0))
+            Self(_mm_add_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_add(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -59,7 +59,7 @@ impl u8x16 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(sub_i8_m128i(self.0, rhs.0))
+            Self(_mm_sub_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_sub(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -125,7 +125,7 @@ impl u8x16 {
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(bitand_m128i(self.0, rhs.0))
+            Self(_mm_and_si128(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_and(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -157,7 +157,7 @@ impl u8x16 {
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(bitor_m128i(self.0, rhs.0))
+            Self(_mm_or_si128(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_or(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -189,7 +189,7 @@ impl u8x16 {
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(bitxor_m128i(self.0, rhs.0))
+            Self(_mm_xor_si128(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_xor(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -221,7 +221,7 @@ impl u8x16 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(cmp_eq_mask_i8_m128i(self.0, rhs.0))
+            Self(_mm_cmpeq_epi8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_eq(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -289,7 +289,7 @@ impl u8x16 {
             let offset = Self::splat(0x80);
             let self_i8 = (self ^ offset).0;
             let rhs_i8 = (rhs ^ offset).0;
-            Self(cmp_lt_mask_i8_m128i(self_i8, rhs_i8))
+            Self(_mm_cmplt_epi8(self_i8, rhs_i8))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -325,7 +325,7 @@ impl u8x16 {
             let offset = Self::splat(0x80);
             let self_i8 = (self ^ offset).0;
             let rhs_i8 = (rhs ^ offset).0;
-            Self(cmp_gt_mask_i8_m128i(self_i8, rhs_i8))
+            Self(_mm_cmpgt_epi8(self_i8, rhs_i8))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -362,7 +362,7 @@ impl u8x16 {
             let self_i8 = (self ^ offset).0;
             let rhs_i8 = (rhs ^ offset).0;
             // a <= b  is equivalent to  !(b < a)  or  !(a > b)
-            let gt_mask = u8x16(cmp_gt_mask_i8_m128i(self_i8, rhs_i8));
+            let gt_mask = u8x16(_mm_cmpgt_epi8(self_i8, rhs_i8));
             gt_mask ^ u8x16::splat(0xFF)
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_le(self.0, rhs.0))
@@ -400,7 +400,7 @@ impl u8x16 {
             let self_i8 = (self ^ offset).0;
             let rhs_i8 = (rhs ^ offset).0;
             // a >= b  is equivalent to  !(b > a)  or  !(a < b)
-            let lt_mask = u8x16(cmp_lt_mask_i8_m128i(self_i8, rhs_i8));
+            let lt_mask = u8x16(_mm_cmplt_epi8(self_i8, rhs_i8));
             lt_mask ^ u8x16::splat(0xFF)
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_ge(self.0, rhs.0))
@@ -438,7 +438,7 @@ impl u8x16 {
         pick! {
           if #[cfg(target_feature = "sse4.1")] {
             match INDEX {
-              $($INDEX => Self(insert_i8_imm_m128i::<$INDEX>(self.0, value as i32)),)*
+              $($INDEX => Self(_mm_insert_epi8::<$INDEX>(self.0, value as i32)),)*
               16.. => unreachable!()
             }
           } else if #[cfg(target_feature = "sse2")] {
@@ -452,8 +452,8 @@ impl u8x16 {
 
             match INDEX {
               $($INDEX => {
-                let value = set_i32_m128i_s(value as i32);
-                let shifted_value = Self(m128i(_mm_slli_si128::<$INDEX>(value.0)));
+                let value = _mm_cvtsi32_si128(value as i32);
+                let shifted_value = Self(_mm_slli_si128::<$INDEX>(value));
 
                 replace_mask.select(shifted_value, self)
               })*
@@ -494,18 +494,18 @@ impl u8x16 {
         pick! {
           if #[cfg(target_feature = "sse4.1")] {
             match INDEX {
-              $($INDEX => extract_i8_as_i32_imm_m128i::<$INDEX>(self.0).cast_unsigned() as u8,)*
+              $($INDEX => _mm_extract_epi8::<$INDEX>(self.0).cast_unsigned() as u8,)*
               16.. => unreachable!()
             }
           } else if #[cfg(all(target_feature = "sse2"))] {
             // Shift bytes so that the element at `INDEX` becomes the lowest one
             let shifted_self = match INDEX {
               0 => self.0,
-              $($INDEX_FROM_1 => m128i(_mm_srli_si128::<$INDEX_FROM_1>(self.0.0)),)*
+              $($INDEX_FROM_1 => _mm_srli_si128::<$INDEX_FROM_1>(self.0),)*
               16.. => unreachable!(),
             };
 
-            get_i32_from_m128i_s(shifted_self).cast_unsigned() as u8
+            _mm_cvtsi128_si32(shifted_self).cast_unsigned() as u8
           } else if #[cfg(all(
             target_arch = "aarch64",
             target_feature = "neon",
@@ -547,15 +547,15 @@ impl u8x16 {
 
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
-            let sum = add_i8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(sum, SHUFFLE_2.0);
-            let sum = add_i8_m128i(sum, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(sum, SHUFFLE_3.0);
-            let sum = add_i8_m128i(sum, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(sum, SHUFFLE_4.0);
-            let sum = add_i8_m128i(sum, rhs);
-            get_i32_from_m128i_s(sum) as u8
+            let rhs = _mm_shuffle_epi8(self.0, SHUFFLE_1.0);
+            let sum = _mm_add_epi8(self.0, rhs);
+            let rhs = _mm_shuffle_epi8(sum, SHUFFLE_2.0);
+            let sum = _mm_add_epi8(sum, rhs);
+            let rhs = _mm_shuffle_epi8(sum, SHUFFLE_3.0);
+            let sum = _mm_add_epi8(sum, rhs);
+            let rhs = _mm_shuffle_epi8(sum, SHUFFLE_4.0);
+            let sum = _mm_add_epi8(sum, rhs);
+            _mm_cvtsi128_si32(sum) as u8
           } else if #[cfg(target_feature="simd128")] {
             let rhs = u8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.0, self.0);
             let sum = u8x16_add(self.0, rhs);
@@ -615,7 +615,7 @@ impl u8x16 {
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(bitor_m128i(bitand_m128i(if_one.0, self.0), bitandnot_m128i(self.0, if_zero.0)))
+            Self(_mm_or_si128(_mm_and_si128(if_one.0, self.0), _mm_andnot_si128(self.0, if_zero.0)))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_one.0, if_zero.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -630,7 +630,7 @@ impl u8x16 {
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
-            Self(blend_varying_i8_m128i(if_false.0, if_true.0, self.0))
+            Self(_mm_blendv_epi8(if_false.0, if_true.0, self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_true.0, if_false.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -645,7 +645,7 @@ impl u8x16 {
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            move_mask_i8_m128i(self.0) as u32
+            _mm_movemask_epi8(self.0) as u32
           } else if #[cfg(target_feature="simd128")] {
             u8x16_bitmask(self.0) as u32
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -691,7 +691,7 @@ impl u8x16 {
     pub(crate) fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            move_mask_i8_m128i(self.0) != 0
+            _mm_movemask_epi8(self.0) != 0
           } else if #[cfg(target_feature="simd128")] {
             u8x16_bitmask(self.0) != 0
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
@@ -707,7 +707,7 @@ impl u8x16 {
     pub(crate) fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            move_mask_i8_m128i(self.0) == 0b1111_1111_1111_1111
+            _mm_movemask_epi8(self.0) == 0b1111_1111_1111_1111
           } else if #[cfg(target_feature="simd128")] {
             u8x16_bitmask(self.0) == 0b1111_1111_1111_1111
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
@@ -723,7 +723,7 @@ impl u8x16 {
     pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
         pick! {
             if #[cfg(target_feature = "sse2")] {
-                u8x16(unpack_low_i8_m128i(self.0, other.0))
+                u8x16(_mm_unpacklo_epi8(self.0, other.0))
             } else if #[cfg(target_feature = "simd128")] {
               u8x16(u8x16_shuffle::<0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23>(self.0, other.0))
             } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
@@ -751,7 +751,7 @@ impl u8x16 {
     pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
         pick! {
             if #[cfg(target_feature = "sse2")] {
-                u8x16(unpack_high_i8_m128i(self.0, other.0))
+                u8x16(_mm_unpackhi_epi8(self.0, other.0))
             } else if #[cfg(target_feature = "simd128")] {
                 u8x16(u8x16_shuffle::<8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31>(self.0, other.0))
             } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
@@ -779,7 +779,7 @@ impl u8x16 {
     pub(crate) fn shuffle_backend(self, indices: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            Self(shuffle_av_i8z_all_m128i(self.0, indices.0))
+            Self(_mm_shuffle_epi8(self.0, indices.0))
           } else if #[cfg(target_feature="relaxed-simd")] {
             Self(u8x16_relaxed_swizzle(self.0, indices.0))
           } else if #[cfg(target_feature="simd128")] {
@@ -807,9 +807,9 @@ impl u8x16 {
     pub(crate) fn shuffle_zeroing_backend(self, indices: u8x16) -> Self {
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            Self(shuffle_av_i8z_all_m128i(
+            Self(_mm_shuffle_epi8(
               self.0,
-              add_saturating_u8_m128i(indices.0, set_splat_i8_m128i(0x70)),
+              _mm_adds_epu8(indices.0, _mm_set1_epi8(0x70)),
             ))
           } else if #[cfg(target_feature="simd128")] {
             Self(i8x16_swizzle(self.0, indices.0))
@@ -824,7 +824,7 @@ impl u8x16 {
     pub(crate) fn shuffle_wrapping_backend(self, indices: u8x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            Self(m128i(_mm_permutexvar_epi8(indices.0.0, self.0.0)))
+            Self(_mm_permutexvar_epi8(indices.0, self.0))
           } else {
             self.shuffle(indices & 15)
           }
@@ -835,7 +835,7 @@ impl u8x16 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u8x16) -> u8x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512vbmi", target_feature = "avx512vl"))] {
-            u8x16(m128i(_mm_permutex2var_epi8(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
+            u8x16(_mm_permutex2var_epi8(inputs[0].0, indices.0, inputs[1].0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             let table = uint8x16x2_t(inputs[0].0, inputs[1].0);
             u8x16(vqtbl2q_u8(table, indices.0))
@@ -1081,7 +1081,7 @@ impl u8x16 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(max_u8_m128i(self.0, rhs.0))
+            Self(_mm_max_epu8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_max(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -1113,7 +1113,7 @@ impl u8x16 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(min_u8_m128i(self.0, rhs.0))
+            Self(_mm_min_epu8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_min(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -1158,15 +1158,15 @@ impl u8x16 {
 
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
-            let max = max_u8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_2.0);
-            let max = max_u8_m128i(max, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_3.0);
-            let max = max_u8_m128i(max, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(max, SHUFFLE_4.0);
-            let max = max_u8_m128i(max, rhs);
-            get_i32_from_m128i_s(max) as u8
+            let rhs = _mm_shuffle_epi8(self.0, SHUFFLE_1.0);
+            let max = _mm_max_epu8(self.0, rhs);
+            let rhs = _mm_shuffle_epi8(max, SHUFFLE_2.0);
+            let max = _mm_max_epu8(max, rhs);
+            let rhs = _mm_shuffle_epi8(max, SHUFFLE_3.0);
+            let max = _mm_max_epu8(max, rhs);
+            let rhs = _mm_shuffle_epi8(max, SHUFFLE_4.0);
+            let max = _mm_max_epu8(max, rhs);
+            _mm_cvtsi128_si32(max) as u8
           } else if #[cfg(target_feature="simd128")] {
             let rhs = u8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.0, self.0);
             let max = u8x16_max(self.0, rhs);
@@ -1211,15 +1211,15 @@ impl u8x16 {
 
         pick! {
           if #[cfg(target_feature="ssse3")] {
-            let rhs = shuffle_av_i8z_all_m128i(self.0, SHUFFLE_1.0);
-            let min = min_u8_m128i(self.0, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_2.0);
-            let min = min_u8_m128i(min, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_3.0);
-            let min = min_u8_m128i(min, rhs);
-            let rhs = shuffle_av_i8z_all_m128i(min, SHUFFLE_4.0);
-            let min = min_u8_m128i(min, rhs);
-            get_i32_from_m128i_s(min) as u8
+            let rhs = _mm_shuffle_epi8(self.0, SHUFFLE_1.0);
+            let min = _mm_min_epu8(self.0, rhs);
+            let rhs = _mm_shuffle_epi8(min, SHUFFLE_2.0);
+            let min = _mm_min_epu8(min, rhs);
+            let rhs = _mm_shuffle_epi8(min, SHUFFLE_3.0);
+            let min = _mm_min_epu8(min, rhs);
+            let rhs = _mm_shuffle_epi8(min, SHUFFLE_4.0);
+            let min = _mm_min_epu8(min, rhs);
+            _mm_cvtsi128_si32(min) as u8
           } else if #[cfg(target_feature="simd128")] {
             let rhs = u8x16_shuffle::<8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7>(self.0, self.0);
             let min = u8x16_min(self.0, rhs);
@@ -1363,7 +1363,7 @@ impl u8x16 {
     pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(add_saturating_u8_m128i(self.0, rhs.0))
+            Self(_mm_adds_epu8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_add_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -1395,7 +1395,7 @@ impl u8x16 {
     pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(sub_saturating_u8_m128i(self.0, rhs.0))
+            Self(_mm_subs_epu8(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u8x16_sub_sat(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -1591,7 +1591,7 @@ impl u8x16 {
     pub(crate) fn narrow_i16x8_backend(lhs: i16x8, rhs: i16x8) -> Self {
         pick! {
             if #[cfg(target_feature = "sse2")] {
-                u8x16(pack_i16_to_u8_m128i(lhs.0, rhs.0))
+                u8x16(_mm_packus_epi16(lhs.0, rhs.0))
             } else if #[cfg(target_feature = "simd128")] {
                 u8x16(u8x16_narrow_i16x8(lhs.0, rhs.0))
             } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {

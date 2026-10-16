@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx")] {
-    pub(crate) type Inner = m256;
+    pub(crate) type Inner = __m256;
   } else {
     #[repr(C, align(32))]
     #[derive(Clone, Copy)]
@@ -26,7 +26,7 @@ impl f32x8 {
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(bitxor_m256(self.0, Self::splat(-0.0).0))
+            Self(_mm256_xor_ps(self.0, Self::splat(-0.0).0))
           } else {
             Self(Inner {
               lo: -self.0.lo,
@@ -40,7 +40,8 @@ impl f32x8 {
     pub(crate) fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(!self.0)
+            let all_bits = const { Self::from_bits(u32x8::MAX) };
+            self ^ all_bits
           } else {
             Self(Inner {
               lo: !self.0.lo,
@@ -54,7 +55,7 @@ impl f32x8 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(add_m256(self.0, rhs.0))
+            Self(_mm256_add_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -68,7 +69,7 @@ impl f32x8 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(sub_m256(self.0, rhs.0))
+            Self(_mm256_sub_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -82,7 +83,7 @@ impl f32x8 {
     pub(crate) fn mul_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(mul_m256(self.0, rhs.0))
+            Self(_mm256_mul_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo * rhs.0.lo,
@@ -96,7 +97,7 @@ impl f32x8 {
     pub(crate) fn div_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(div_m256(self.0, rhs.0))
+            Self(_mm256_div_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo / rhs.0.lo,
@@ -124,7 +125,7 @@ impl f32x8 {
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(bitand_m256(self.0, rhs.0))
+            Self(_mm256_and_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo & rhs.0.lo,
@@ -138,7 +139,7 @@ impl f32x8 {
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(bitor_m256(self.0, rhs.0))
+            Self(_mm256_or_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo | rhs.0.lo,
@@ -152,7 +153,7 @@ impl f32x8 {
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(bitxor_m256(self.0, rhs.0))
+            Self(_mm256_xor_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
@@ -166,7 +167,7 @@ impl f32x8 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
+            Self(_mm256_cmp_ps::<{_CMP_EQ_OQ}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -180,7 +181,7 @@ impl f32x8 {
     pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
+            Self(_mm256_cmp_ps::<{_CMP_NEQ_UQ}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ne(rhs.0.lo),
@@ -194,7 +195,7 @@ impl f32x8 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
+            Self(_mm256_cmp_ps::<{_CMP_LT_OQ}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_lt(rhs.0.lo),
@@ -208,7 +209,7 @@ impl f32x8 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
+            Self(_mm256_cmp_ps::<{_CMP_GT_OQ}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -222,7 +223,7 @@ impl f32x8 {
     pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
+            Self(_mm256_cmp_ps::<{_CMP_LE_OQ}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_le(rhs.0.lo),
@@ -236,7 +237,7 @@ impl f32x8 {
     pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
+            Self(_mm256_cmp_ps::<{_CMP_GE_OQ}>(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ge(rhs.0.lo),
@@ -251,16 +252,16 @@ impl f32x8 {
         pick! {
           // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
           if #[cfg(target_feature="avx")]{
-            let hi_quad = extract_m128_from_m256::<1>(self.0);
-            let lo_quad = cast_to_m128_from_m256(self.0);
-            let sum_quad = add_m128(lo_quad,hi_quad);
+            let hi_quad = _mm256_extractf128_ps::<1>(self.0);
+            let lo_quad = _mm256_castps256_ps128(self.0);
+            let sum_quad = _mm_add_ps(lo_quad,hi_quad);
             let lo_dual = sum_quad;
-            let hi_dual = move_high_low_m128(sum_quad,sum_quad);
-            let sum_dual = add_m128(lo_dual,hi_dual);
+            let hi_dual = _mm_movehl_ps(sum_quad,sum_quad);
+            let sum_dual = _mm_add_ps(lo_dual,hi_dual);
             let lo = sum_dual;
-            let hi = shuffle_abi_f32_all_m128::<0b_01>(sum_dual, sum_dual);
-            let sum = add_m128_s(lo, hi);
-            get_f32_from_m128_s(sum)
+            let hi = _mm_shuffle_ps::<0b_01>(sum_dual, sum_dual);
+            let sum = _mm_add_ss(lo, hi);
+            _mm_cvtss_f32(sum)
           } else {
             self.0.lo.reduce_add() + self.0.hi.reduce_add()
           }
@@ -272,16 +273,16 @@ impl f32x8 {
         pick! {
           // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
           if #[cfg(target_feature="avx")] {
-            let hi_quad = extract_m128_from_m256::<1>(self.0);
-            let lo_quad = cast_to_m128_from_m256(self.0);
-            let product_quad = mul_m128(lo_quad,hi_quad);
+            let hi_quad = _mm256_extractf128_ps::<1>(self.0);
+            let lo_quad = _mm256_castps256_ps128(self.0);
+            let product_quad = _mm_mul_ps(lo_quad,hi_quad);
             let lo_dual = product_quad;
-            let hi_dual = move_high_low_m128(product_quad, product_quad);
-            let product_dual = mul_m128(lo_dual,hi_dual);
+            let hi_dual = _mm_movehl_ps(product_quad, product_quad);
+            let product_dual = _mm_mul_ps(lo_dual,hi_dual);
             let lo = product_dual;
-            let hi = shuffle_abi_f32_all_m128::<0b_01>(product_dual, product_dual);
-            let product = mul_m128_s(lo, hi);
-            get_f32_from_m128_s(product)
+            let hi = _mm_shuffle_ps::<0b_01>(product_dual, product_dual);
+            let product = _mm_mul_ss(lo, hi);
+            _mm_cvtss_f32(product)
           } else {
             self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
           }
@@ -292,9 +293,9 @@ impl f32x8 {
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(bitor_m256(
-                bitand_m256(if_one.0, self.0),
-                bitandnot_m256(self.0, if_zero.0),
+            Self(_mm256_or_ps(
+                _mm256_and_ps(if_one.0, self.0),
+                _mm256_andnot_ps(self.0, if_zero.0),
             ))
           } else {
             Self(Inner {
@@ -309,7 +310,7 @@ impl f32x8 {
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(blend_varying_m256(if_false.0, if_true.0, self.0))
+            Self(_mm256_blendv_ps(if_false.0, if_true.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -323,7 +324,7 @@ impl f32x8 {
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
           if #[cfg(target_feature="avx")] {
-            move_mask_m256(self.0) as u32
+            _mm256_movemask_ps(self.0) as u32
           } else {
             (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
           }
@@ -334,7 +335,7 @@ impl f32x8 {
     pub(crate) fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx")] {
-            move_mask_m256(self.0) != 0
+            _mm256_movemask_ps(self.0) != 0
           } else {
             self.0.lo.any() || self.0.hi.any()
           }
@@ -345,7 +346,7 @@ impl f32x8 {
     pub(crate) fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx")] {
-            move_mask_m256(self.0) == 0b11111111
+            _mm256_movemask_ps(self.0) == 0b11111111
           } else {
             self.0.lo.all() && self.0.hi.all()
           }
@@ -366,14 +367,14 @@ impl f32x8 {
     pub(crate) fn transpose_backend(data: [f32x8; 8]) -> [f32x8; 8] {
         pick! {
           if #[cfg(target_feature="avx")] {
-            let a0 = unpack_lo_m256(data[0].0, data[1].0);
-            let a1 = unpack_hi_m256(data[0].0, data[1].0);
-            let a2 = unpack_lo_m256(data[2].0, data[3].0);
-            let a3 = unpack_hi_m256(data[2].0, data[3].0);
-            let a4 = unpack_lo_m256(data[4].0, data[5].0);
-            let a5 = unpack_hi_m256(data[4].0, data[5].0);
-            let a6 = unpack_lo_m256(data[6].0, data[7].0);
-            let a7 = unpack_hi_m256(data[6].0, data[7].0);
+            let a0 = _mm256_unpacklo_ps(data[0].0, data[1].0);
+            let a1 = _mm256_unpackhi_ps(data[0].0, data[1].0);
+            let a2 = _mm256_unpacklo_ps(data[2].0, data[3].0);
+            let a3 = _mm256_unpackhi_ps(data[2].0, data[3].0);
+            let a4 = _mm256_unpacklo_ps(data[4].0, data[5].0);
+            let a5 = _mm256_unpackhi_ps(data[4].0, data[5].0);
+            let a6 = _mm256_unpacklo_ps(data[6].0, data[7].0);
+            let a7 = _mm256_unpackhi_ps(data[6].0, data[7].0);
 
             pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
               (z << 6) | (y << 4) | (x << 2) | w
@@ -384,24 +385,24 @@ impl f32x8 {
 
             // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
             // (since blend runs on a different port than shuffle)
-            let b0 = shuffle_m256::<SHUFF_LO>(a0,a2);
-            let b1 = shuffle_m256::<SHUFF_HI>(a0,a2);
-            let b2 = shuffle_m256::<SHUFF_LO>(a1,a3);
-            let b3 = shuffle_m256::<SHUFF_HI>(a1,a3);
-            let b4 = shuffle_m256::<SHUFF_LO>(a4,a6);
-            let b5 = shuffle_m256::<SHUFF_HI>(a4,a6);
-            let b6 = shuffle_m256::<SHUFF_LO>(a5,a7);
-            let b7 = shuffle_m256::<SHUFF_HI>(a5,a7);
+            let b0 = _mm256_shuffle_ps::<SHUFF_LO>(a0,a2);
+            let b1 = _mm256_shuffle_ps::<SHUFF_HI>(a0,a2);
+            let b2 = _mm256_shuffle_ps::<SHUFF_LO>(a1,a3);
+            let b3 = _mm256_shuffle_ps::<SHUFF_HI>(a1,a3);
+            let b4 = _mm256_shuffle_ps::<SHUFF_LO>(a4,a6);
+            let b5 = _mm256_shuffle_ps::<SHUFF_HI>(a4,a6);
+            let b6 = _mm256_shuffle_ps::<SHUFF_LO>(a5,a7);
+            let b7 = _mm256_shuffle_ps::<SHUFF_HI>(a5,a7);
 
             [
-              f32x8(permute2z_m256::<0x20>(b0, b4)),
-              f32x8(permute2z_m256::<0x20>(b1, b5)),
-              f32x8(permute2z_m256::<0x20>(b2, b6)),
-              f32x8(permute2z_m256::<0x20>(b3, b7)),
-              f32x8(permute2z_m256::<0x31>(b0, b4)),
-              f32x8(permute2z_m256::<0x31>(b1, b5)),
-              f32x8(permute2z_m256::<0x31>(b2, b6)),
-              f32x8(permute2z_m256::<0x31>(b3, b7))
+              f32x8(_mm256_permute2f128_ps::<0x20>(b0, b4)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b1, b5)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b2, b6)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b3, b7)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b0, b4)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b1, b5)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b2, b6)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b3, b7))
             ]
           } else {
             // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
@@ -438,7 +439,7 @@ impl f32x8 {
     pub(crate) fn is_nan_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(cmp_op_mask_m256::<{cmp_op!(Unordered)}>(self.0, self.0))
+            Self(_mm256_cmp_ps::<{_CMP_UNORD_Q}>(self.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.is_nan(),
@@ -490,7 +491,7 @@ impl f32x8 {
     pub(crate) fn recip_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(reciprocal_m256(self.0))
+            Self(_mm256_rcp_ps(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.recip(),
@@ -504,7 +505,7 @@ impl f32x8 {
     pub(crate) fn recip_sqrt_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(reciprocal_sqrt_m256(self.0))
+            Self(_mm256_rsqrt_ps(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.recip_sqrt(),
@@ -518,10 +519,10 @@ impl f32x8 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            // max_m256 seems to do rhs < self ? self : rhs. So if there's any NaN
+            // _mm256_max_ps seems to do rhs < self ? self : rhs. So if there's any NaN
             // involved, it chooses rhs, so we need to specifically check rhs for
             // NaN.
-            rhs.is_nan().select(self, Self(max_m256(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(_mm256_max_ps(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -536,7 +537,7 @@ impl f32x8 {
     pub(crate) fn fast_max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(max_m256(self.0, rhs.0))
+            Self(_mm256_max_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_max(rhs.0.lo),
@@ -550,10 +551,10 @@ impl f32x8 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            // min_m256 seems to do rhs > self ? self : rhs. So if there's any NaN
+            // _mm256_min_ps seems to do rhs > self ? self : rhs. So if there's any NaN
             // involved, it chooses rhs, so we need to specifically check rhs for
             // NaN.
-            rhs.is_nan().select(self, Self(min_m256(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(_mm256_min_ps(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -567,7 +568,7 @@ impl f32x8 {
     pub(crate) fn fast_min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(min_m256(self.0, rhs.0))
+            Self(_mm256_min_ps(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_min(rhs.0.lo),
@@ -597,9 +598,9 @@ impl f32x8 {
     pub(crate) fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            // For both `min_m256` and `max_m256` if any input is NaN, `rhs` gets
+            // For both `_mm256_min_ps` and `_mm256_max_ps` if any input is NaN, `rhs` gets
             // chosen. For `self` to be chosen, `self` must be the second argument.
-            Self(max_m256(min.0, min_m256(max.0, self.0)))
+            Self(_mm256_max_ps(min.0, _mm256_min_ps(max.0, self.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
@@ -652,7 +653,7 @@ impl f32x8 {
     pub(crate) fn floor_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(floor_m256(self.0))
+            Self(_mm256_floor_ps(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.floor(),
@@ -666,7 +667,7 @@ impl f32x8 {
     pub(crate) fn ceil_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(ceil_m256(self.0))
+            Self(_mm256_ceil_ps(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.ceil(),
@@ -686,13 +687,13 @@ impl f32x8 {
             let self_abs = self.abs();
 
             let adjusted_self = self_abs + Self::HALF;
-            let result_abs = Self(round_m256::<{round_op!(Zero)}>(adjusted_self.0));
+            let result_abs = Self(_mm256_round_ps::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_ZERO}>(adjusted_self.0));
             // The addition breaks for `0.5.next_down()` which incorrectly rounds to
             // `1.0`. This resets the result back to `0.0`.
             let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
             // Large value, infinity and NaN need special handling.
-            let bounds_mask: Self = cast(cmp_gt_mask_i32_m256i(cast(BOUNDS_LIMIT), cast(self_abs)));
+            let bounds_mask: Self = cast(_mm256_cmpgt_epi32(cast(BOUNDS_LIMIT), cast(self_abs)));
 
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
@@ -711,7 +712,7 @@ impl f32x8 {
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
             let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
-            let cast: i32x8 = cast(convert_to_i32_m256i_from_m256(non_nan.0));
+            let cast: i32x8 = cast(_mm256_cvtps_epi32(non_nan.0));
             flip_to_max ^ cast
           } else {
             cast([
@@ -726,7 +727,7 @@ impl f32x8 {
     pub(crate) fn fast_round_int_backend(self) -> i32x8 {
         pick! {
           if #[cfg(target_feature="avx")] {
-            cast(convert_to_i32_m256i_from_m256(self.0))
+            cast(_mm256_cvtps_epi32(self.0))
           } else {
             cast([
               self.0.lo.fast_round_int(),
@@ -740,7 +741,7 @@ impl f32x8 {
         pick! {
           // NOTE: Is there an SSE2 version of this? f32x4 version probably translates but I've not had time to figure it out
           if #[cfg(target_feature="avx")] {
-            Self(round_m256::<{round_op!(Nearest)}>(self.0))
+            Self(_mm256_round_ps::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_NEAREST_INT}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.round_ties_even(),
@@ -754,7 +755,7 @@ impl f32x8 {
     pub(crate) fn trunc_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(round_m256::<{round_op!(Zero)}>(self.0))
+            Self(_mm256_round_ps::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_ZERO}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.trunc(),
@@ -772,7 +773,7 @@ impl f32x8 {
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
             let flip_to_max: i32x8 = cast(self.simd_ge(Self::splat(2147483648.0)));
-            let cast: i32x8 = cast(convert_truncate_to_i32_m256i_from_m256(non_nan.0));
+            let cast: i32x8 = cast(_mm256_cvttps_epi32(non_nan.0));
             flip_to_max ^ cast
           } else {
             cast([
@@ -787,7 +788,7 @@ impl f32x8 {
     pub(crate) fn fast_trunc_int_backend(self) -> i32x8 {
         pick! {
           if #[cfg(all(target_feature="avx"))] {
-            cast(convert_truncate_to_i32_m256i_from_m256(self.0))
+            cast(_mm256_cvttps_epi32(self.0))
           } else {
             cast([
               self.0.lo.fast_trunc_int(),
@@ -801,7 +802,7 @@ impl f32x8 {
     pub(crate) fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-            Self(fused_mul_add_m256(self.0, a.0, b.0))
+            Self(_mm256_fmadd_ps(self.0, a.0, b.0))
           } else if #[cfg(target_feature="avx")] {
             // still want to use 256 bit ops
             (self * a) + b
@@ -818,7 +819,7 @@ impl f32x8 {
     pub(crate) fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-            Self(fused_mul_sub_m256(self.0, a.0, b.0))
+            Self(_mm256_fmsub_ps(self.0, a.0, b.0))
           } else if #[cfg(target_feature="avx")] {
             // still want to use 256 bit ops
             (self * a) - b
@@ -835,7 +836,7 @@ impl f32x8 {
     pub(crate) fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-            Self(fused_mul_neg_add_m256(self.0, a.0, b.0))
+            Self(_mm256_fnmadd_ps(self.0, a.0, b.0))
           } else if #[cfg(target_feature="avx")] {
             // still want to use 256 bit ops
             b - (self * a)
@@ -852,7 +853,7 @@ impl f32x8 {
     pub(crate) fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
-            Self(fused_mul_neg_sub_m256(self.0, a.0, b.0))
+            Self(_mm256_fnmsub_ps(self.0, a.0, b.0))
           } else if #[cfg(target_feature="avx")] {
             // still want to use 256 bit ops
             -(self * a) - b
@@ -978,7 +979,7 @@ impl f32x8 {
     pub(crate) fn sqrt_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
-            Self(sqrt_m256(self.0))
+            Self(_mm256_sqrt_ps(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.sqrt(),
@@ -1654,7 +1655,7 @@ impl f32x8 {
     pub(crate) fn from_i32x8_backend(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(convert_to_m256_from_i32_m256i(v.0))
+            Self(_mm256_cvtepi32_ps(v.0))
           } else {
             Self::from_array([
                 v.as_array()[0] as f32,

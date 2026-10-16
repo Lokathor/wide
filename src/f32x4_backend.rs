@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="sse")] {
-    pub(crate) type Inner = m128;
+    pub(crate) type Inner = __m128;
   } else if #[cfg(target_feature="simd128")] {
     pub(crate) type Inner = v128;
   } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
@@ -29,7 +29,7 @@ impl f32x4 {
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(bitxor_m128(self.0, Self::splat(-0.0).0))
+            Self(_mm_xor_ps(self.0, Self::splat(-0.0).0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_neg(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -54,7 +54,7 @@ impl f32x4 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(add_m128(self.0, rhs.0))
+            Self(_mm_add_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_add(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -74,7 +74,7 @@ impl f32x4 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(sub_m128(self.0, rhs.0))
+            Self(_mm_sub_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_sub(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -94,7 +94,7 @@ impl f32x4 {
     pub(crate) fn mul_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(mul_m128(self.0, rhs.0))
+            Self(_mm_mul_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_mul(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -114,7 +114,7 @@ impl f32x4 {
     pub(crate) fn div_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(div_m128(self.0, rhs.0))
+            Self(_mm_div_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_div(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -144,7 +144,7 @@ impl f32x4 {
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(bitand_m128(self.0, rhs.0))
+            Self(_mm_and_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_and(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -164,7 +164,7 @@ impl f32x4 {
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(bitor_m128(self.0, rhs.0))
+            Self(_mm_or_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_or(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -184,7 +184,7 @@ impl f32x4 {
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(bitxor_m128(self.0, rhs.0))
+            Self(_mm_xor_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_xor(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -204,7 +204,7 @@ impl f32x4 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(cmp_eq_mask_m128(self.0, rhs.0))
+            Self(_mm_cmpeq_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_eq(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -224,7 +224,7 @@ impl f32x4 {
     pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(cmp_neq_mask_m128(self.0, rhs.0))
+            Self(_mm_cmpneq_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_ne(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -244,7 +244,7 @@ impl f32x4 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(cmp_lt_mask_m128(self.0, rhs.0))
+            Self(_mm_cmplt_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_lt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -264,7 +264,7 @@ impl f32x4 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(cmp_gt_mask_m128(self.0, rhs.0))
+            Self(_mm_cmpgt_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -284,7 +284,7 @@ impl f32x4 {
     pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(cmp_le_mask_m128(self.0, rhs.0))
+            Self(_mm_cmple_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_le(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -304,7 +304,7 @@ impl f32x4 {
     pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(cmp_ge_mask_m128(self.0, rhs.0))
+            Self(_mm_cmpge_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_ge(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -336,7 +336,7 @@ impl f32x4 {
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(bitor_m128(bitand_m128(if_one.0, self.0), bitandnot_m128(self.0, if_zero.0)))
+            Self(_mm_or_ps(_mm_and_ps(if_one.0, self.0), _mm_andnot_ps(self.0, if_zero.0)))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_one.0, if_zero.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -351,7 +351,7 @@ impl f32x4 {
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
-            Self(blend_varying_m128(if_false.0, if_true.0, self.0))
+            Self(_mm_blendv_ps(if_false.0, if_true.0, self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(v128_bitselect(if_true.0, if_false.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -366,7 +366,7 @@ impl f32x4 {
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
           if #[cfg(target_feature="sse")] {
-            move_mask_m128(self.0) as u32
+            _mm_movemask_ps(self.0) as u32
           } else if #[cfg(target_feature="simd128")] {
             u32x4_bitmask(self.0) as u32
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -415,7 +415,7 @@ impl f32x4 {
     pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(unpack_low_m128(self.0, other.0))
+            Self(_mm_unpacklo_ps(self.0, other.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u32x4_shuffle::<0, 4, 1, 5>(self.0, other.0))
           } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))]{
@@ -435,7 +435,7 @@ impl f32x4 {
     pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(unpack_high_m128(self.0, other.0))
+            Self(_mm_unpackhi_ps(self.0, other.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(u32x4_shuffle::<2, 6, 3, 7>(self.0, other.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -460,7 +460,7 @@ impl f32x4 {
             let mut e2 = data[2];
             let mut e3 = data[3];
 
-            transpose_four_m128(&mut e0.0, &mut e1.0, &mut e2.0, &mut e3.0);
+            _MM_TRANSPOSE4_PS(&mut e0.0, &mut e1.0, &mut e2.0, &mut e3.0);
 
             [e0, e1, e2, e3]
           } else if #[cfg(any(all(target_feature="neon",target_arch="aarch64"), target_feature="simd128"))] {
@@ -500,7 +500,7 @@ impl f32x4 {
     pub(crate) fn is_nan_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(cmp_unord_mask_m128(self.0, self.0))
+            Self(_mm_cmpunord_ps(self.0, self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_ne(self.0, self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -558,7 +558,7 @@ impl f32x4 {
     pub(crate) fn recip_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(reciprocal_m128(self.0))
+            Self(_mm_rcp_ps(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_div(f32x4_splat(1.0), self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -578,7 +578,7 @@ impl f32x4 {
     pub(crate) fn recip_sqrt_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(reciprocal_sqrt_m128(self.0))
+            Self(_mm_rsqrt_ps(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_div(f32x4_splat(1.0), f32x4_sqrt(self.0)))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -605,10 +605,10 @@ impl f32x4 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            // max_m128 seems to do rhs < self ? self : rhs. So if there's any NaN
+            // _mm_max_ps seems to do rhs < self ? self : rhs. So if there's any NaN
             // involved, it chooses rhs, so we need to specifically check rhs for
             // NaN.
-            rhs.is_nan().select(self, Self(max_m128(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(_mm_max_ps(self.0, rhs.0)))
           } else if #[cfg(target_feature="simd128")] {
             // WASM has two max intrinsics:
             // - max: This propagates NaN, that's the opposite of what we need.
@@ -638,7 +638,7 @@ impl f32x4 {
     pub(crate) fn fast_max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(max_m128(self.0, rhs.0))
+            Self(_mm_max_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_pmax(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -658,10 +658,10 @@ impl f32x4 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            // min_m128 seems to do self < rhs ? self : rhs. So if there's any NaN
+            // _mm_min_ps seems to do self < rhs ? self : rhs. So if there's any NaN
             // involved, it chooses rhs, so we need to specifically check rhs for
             // NaN.
-            rhs.is_nan().select(self, Self(min_m128(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(_mm_min_ps(self.0, rhs.0)))
           } else if #[cfg(target_feature="simd128")] {
             // WASM has two min intrinsics:
             // - min: This propagates NaN, that's the opposite of what we need.
@@ -691,7 +691,7 @@ impl f32x4 {
     pub(crate) fn fast_min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(min_m128(self.0, rhs.0))
+            Self(_mm_min_ps(self.0, rhs.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_pmin(self.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -727,9 +727,9 @@ impl f32x4 {
     pub(crate) fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            // For both `min_m128` and `max_m128` if any input is NaN, `rhs` gets
+            // For both `_mm_min_ps` and `_mm_max_ps` if any input is NaN, `rhs` gets
             // chosen. For `self` to be chosen, `self` must be the second argument.
-            Self(max_m128(min.0, min_m128(max.0, self.0)))
+            Self(_mm_max_ps(min.0, _mm_min_ps(max.0, self.0)))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_max(f32x4_min(self.0, max.0), min.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
@@ -829,7 +829,7 @@ impl f32x4 {
           if #[cfg(target_feature="simd128")] {
             Self(f32x4_floor(self.0))
           } else if #[cfg(target_feature="sse4.1")] {
-            Self(floor_m128(self.0))
+            Self(_mm_floor_ps(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             Self(vrndmq_f32(self.0))
           } else if #[cfg(target_feature = "sse2")] {
@@ -845,11 +845,11 @@ impl f32x4 {
               self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
             );
 
-            let self_trunc = Self(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.0)));
+            let self_trunc = Self(_mm_cvtepi32_ps(_mm_cvttps_epi32(self.0)));
 
             let gt_self = self_trunc.simd_gt(self);
             // This is a faster way to compute `gt_self.select(0.0, -1.0)`
-            let offset = Self(convert_to_m128_from_i32_m128i(cast(gt_self)));
+            let offset = Self(_mm_cvtepi32_ps(cast(gt_self)));
 
             let result = self_trunc + offset;
             in_bounds.abs().bitselect(result, self)
@@ -875,7 +875,7 @@ impl f32x4 {
           if #[cfg(target_feature="simd128")] {
             Self(f32x4_ceil(self.0))
           } else if #[cfg(target_feature="sse4.1")] {
-            Self(ceil_m128(self.0))
+            Self(_mm_ceil_ps(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             Self(vrndpq_f32(self.0))
           } else if #[cfg(target_feature = "sse2")] {
@@ -891,11 +891,11 @@ impl f32x4 {
               self.abs().to_bits().cast_signed().simd_lt(BOUNDS_LIMIT).cast_unsigned(),
             );
 
-            let self_trunc = Self(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.0)));
+            let self_trunc = Self(_mm_cvtepi32_ps(_mm_cvttps_epi32(self.0)));
 
             let lt_self = self_trunc.simd_lt(self);
             // This is a faster way to compute `lt_self.select(0.0, -1.0)`
-            let offset = Self(convert_to_m128_from_i32_m128i(cast(lt_self)));
+            let offset = Self(_mm_cvtepi32_ps(cast(lt_self)));
 
             let result = self_trunc - offset;
             in_bounds.abs().bitselect(result, self)
@@ -925,13 +925,13 @@ impl f32x4 {
             let self_abs = self.abs();
 
             let adjusted_self = self_abs + Self::HALF;
-            let result_abs = Self(round_m128::<{round_op!(Zero)}>(adjusted_self.0));
+            let result_abs = Self(_mm_round_ps::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_ZERO}>(adjusted_self.0));
             // The addition breaks for `0.5.next_down()` which incorrectly rounds to
             // `1.0`. This resets the result back to `0.0`.
             let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
             // Large value, infinity and NaN need special handling.
-            let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
+            let bounds_mask: Self = cast(_mm_cmplt_epi32(cast(self_abs), cast(BOUNDS_LIMIT)));
 
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
@@ -943,14 +943,14 @@ impl f32x4 {
 
             let adjusted_self = self_abs + Self::HALF;
             let result_abs = Self(
-              convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(adjusted_self.0)),
+              _mm_cvtepi32_ps(_mm_cvttps_epi32(adjusted_self.0)),
             );
             // The addition breaks for `0.5.next_down()` which incorrectly rounds to
             // `1.0`. This resets the result back to `0.0`.
             let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
             // Large value, infinity and NaN need special handling.
-            let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(cast(self_abs), cast(BOUNDS_LIMIT)));
+            let bounds_mask: Self = cast(_mm_cmplt_epi32(cast(self_abs), cast(BOUNDS_LIMIT)));
 
             // `abs` keeps the original sign.
             bounds_mask.abs().bitselect(result_abs, self)
@@ -1007,7 +1007,7 @@ impl f32x4 {
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
             let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
-            let cast: i32x4 = cast(convert_to_i32_m128i_from_m128(non_nan.0));
+            let cast: i32x4 = cast(_mm_cvtps_epi32(non_nan.0));
             flip_to_max ^ cast
           } else if #[cfg(target_feature="simd128")] {
             cast(Self(i32x4_trunc_sat_f32x4(f32x4_nearest(self.0))))
@@ -1029,7 +1029,7 @@ impl f32x4 {
     pub(crate) fn fast_round_int_backend(self) -> i32x4 {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            cast(convert_to_i32_m128i_from_m128(self.0))
+            cast(_mm_cvtps_epi32(self.0))
           } else {
             self.round_int()
           }
@@ -1040,10 +1040,10 @@ impl f32x4 {
     pub(crate) fn round_ties_even_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
-            Self(round_m128::<{round_op!(Nearest)}>(self.0))
+            Self(_mm_round_ps::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_NEAREST_INT}>(self.0))
           } else if #[cfg(target_feature="sse2")] {
-            let mi: m128i = convert_to_i32_m128i_from_m128(self.0);
-            let f: f32x4 = f32x4(convert_to_m128_from_i32_m128i(mi));
+            let mi: __m128i = _mm_cvtps_epi32(self.0);
+            let f: f32x4 = f32x4(_mm_cvtepi32_ps(mi));
             let i: i32x4 = cast(mi);
             let mask: f32x4 = cast(i.simd_eq(i32x4::from(0x80000000_u32 as i32)));
             mask.select(self, f)
@@ -1086,16 +1086,16 @@ impl f32x4 {
     pub(crate) fn trunc_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
-            Self(round_m128::<{round_op!(Zero)}>(self.0))
+            Self(_mm_round_ps::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_ZERO}>(self.0))
           } else if #[cfg(target_feature="sse2")] {
             // Ported from https://docs.rs/glam/latest/glam/f32/struct.Vec4.html#method.trunc
             // Based on https://github.com/microsoft/DirectXMath `XMVectorTruncate`
-            let result: Self = cast(convert_to_m128_from_i32_m128i(truncate_m128_to_m128i(self.0)));
+            let result: Self = cast(_mm_cvtepi32_ps(_mm_cvttps_epi32(self.0)));
 
             // Out of range values are either already round, infinite or NaN.
-            let bounds_mask: Self = cast(cmp_lt_mask_i32_m128i(
+            let bounds_mask: Self = cast(_mm_cmplt_epi32(
                 cast(self.abs()),
-                set_splat_i32_m128i(8388608_f32.to_bits() as i32),
+                _mm_set1_epi32(8388608_f32.to_bits() as i32),
             ));
 
             // Reset the sign bit of the mask to preverse the sign of `self`.
@@ -1131,7 +1131,7 @@ impl f32x4 {
             let non_nan_mask = self.simd_eq(self);
             let non_nan = self & non_nan_mask;
             let flip_to_max: i32x4 = cast(self.simd_ge(Self::splat(2147483648.0)));
-            let cast: i32x4 = cast(truncate_m128_to_m128i(non_nan.0));
+            let cast: i32x4 = cast(_mm_cvttps_epi32(non_nan.0));
             flip_to_max ^ cast
           } else if #[cfg(target_feature="simd128")] {
             cast(Self(i32x4_trunc_sat_f32x4(self.0)))
@@ -1153,7 +1153,7 @@ impl f32x4 {
     pub(crate) fn fast_trunc_int_backend(self) -> i32x4 {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            cast(truncate_m128_to_m128i(self.0))
+            cast(_mm_cvttps_epi32(self.0))
           } else {
             self.trunc_int()
           }
@@ -1164,7 +1164,7 @@ impl f32x4 {
     pub(crate) fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-            Self(fused_mul_add_m128(self.0, a.0, b.0))
+            Self(_mm_fmadd_ps(self.0, a.0, b.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             Self(vfmaq_f32(b.0, self.0, a.0))
           } else {
@@ -1177,7 +1177,7 @@ impl f32x4 {
     pub(crate) fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-            Self(fused_mul_sub_m128(self.0, a.0, b.0))
+            Self(_mm_fmsub_ps(self.0, a.0, b.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             Self(vfmaq_f32(vnegq_f32(b.0), self.0, a.0))
           } else {
@@ -1190,7 +1190,7 @@ impl f32x4 {
     pub(crate) fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-            Self(fused_mul_neg_add_m128(self.0, a.0, b.0))
+            Self(_mm_fnmadd_ps(self.0, a.0, b.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             Self(vfmsq_f32(b.0, self.0, a.0))
           } else {
@@ -1203,7 +1203,7 @@ impl f32x4 {
     pub(crate) fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="sse2",target_feature="fma"))] {
-            Self(fused_mul_neg_sub_m128(self.0, a.0, b.0))
+            Self(_mm_fnmsub_ps(self.0, a.0, b.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             Self(vnegq_f32(vfmaq_f32(b.0, self.0, a.0)))
           } else {
@@ -1330,7 +1330,7 @@ impl f32x4 {
     pub(crate) fn sqrt_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
-            Self(sqrt_m128(self.0))
+            Self(_mm_sqrt_ps(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_sqrt(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -2019,7 +2019,7 @@ impl f32x4 {
     pub(crate) fn from_i32x4_backend(v: i32x4) -> Self {
         pick! {
           if #[cfg(target_feature="sse2")] {
-            Self(convert_to_m128_from_i32_m128i(v.0))
+            Self(_mm_cvtepi32_ps(v.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(f32x4_convert_i32x4(v.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {

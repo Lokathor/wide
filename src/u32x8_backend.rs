@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    pub(crate) type Inner = m256i;
+    pub(crate) type Inner = __m256i;
   } else {
     #[repr(C, align(32))]
     #[derive(Clone, Copy)]
@@ -19,7 +19,7 @@ impl u32x8 {
     pub(crate) fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(!self.0)
+            self ^ Self::MAX
           } else {
             Self(Inner {
               lo: !self.0.lo,
@@ -33,7 +33,7 @@ impl u32x8 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(add_i32_m256i(self.0, rhs.0))
+            Self(_mm256_add_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -47,7 +47,7 @@ impl u32x8 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(sub_i32_m256i(self.0, rhs.0))
+            Self(_mm256_sub_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -61,7 +61,7 @@ impl u32x8 {
     pub(crate) fn mul_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(mul_i32_keep_low_m256i(self.0, rhs.0))
+            Self(_mm256_mullo_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo * rhs.0.lo,
@@ -75,7 +75,7 @@ impl u32x8 {
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitand_m256i(self.0, rhs.0))
+            Self(_mm256_and_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo & rhs.0.lo,
@@ -89,7 +89,7 @@ impl u32x8 {
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitor_m256i(self.0, rhs.0))
+            Self(_mm256_or_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo | rhs.0.lo,
@@ -103,7 +103,7 @@ impl u32x8 {
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitxor_m256i(self.0, rhs.0))
+            Self(_mm256_xor_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
@@ -117,7 +117,7 @@ impl u32x8 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_eq_mask_i32_m256i(self.0, rhs.0 ))
+            Self(_mm256_cmpeq_epi32(self.0, rhs.0 ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -153,7 +153,7 @@ impl u32x8 {
           if #[cfg(target_feature="avx2")] {
             // no unsigned gt than so inverting the high bit will get the correct result
             let highbit = u32x8::splat(1 << 31);
-            Self(cmp_gt_mask_i32_m256i((self ^ highbit).0, (rhs ^ highbit).0 ))
+            Self(_mm256_cmpgt_epi32((self ^ highbit).0, (rhs ^ highbit).0 ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -186,7 +186,7 @@ impl u32x8 {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             match INDEX {
-              $($INDEX => Self(insert_i32_to_m256i::<$INDEX>(self.0, value.cast_signed())),)*
+              $($INDEX => Self(_mm256_insert_epi32::<$INDEX>(self.0, value.cast_signed())),)*
               8.. => unreachable!(),
             }
           } else {
@@ -231,7 +231,7 @@ impl u32x8 {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             match INDEX {
-              $($INDEX => extract_i32_from_m256i::<$INDEX>(self.0).cast_unsigned(),)*
+              $($INDEX => _mm256_extract_epi32::<$INDEX>(self.0).cast_unsigned(),)*
               8.. => unreachable!(),
             }
           } else {
@@ -275,9 +275,9 @@ impl u32x8 {
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitor_m256i(
-                bitand_m256i(if_one.0, self.0),
-                bitandnot_m256i(self.0, if_zero.0),
+            Self(_mm256_or_si256(
+                _mm256_and_si256(if_one.0, self.0),
+                _mm256_andnot_si256(self.0, if_zero.0),
             ))
           } else {
             Self(Inner {
@@ -292,7 +292,7 @@ impl u32x8 {
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(blend_varying_i8_m256i(if_false.0, if_true.0, self.0))
+            Self(_mm256_blendv_epi8(if_false.0, if_true.0, self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -307,7 +307,7 @@ impl u32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // use f32 move_mask since it is the same size as i32
-            move_mask_m256(cast(self.0)) as u32
+            _mm256_movemask_ps(cast(self.0)) as u32
           } else {
             self.0.lo.to_bitmask() | (self.0.hi.to_bitmask() << 4)
           }
@@ -318,7 +318,7 @@ impl u32x8 {
     pub(crate) fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            move_mask_m256(cast(self.0)) != 0
+            _mm256_movemask_ps(cast(self.0)) != 0
           } else {
             (self.0.lo | self.0.hi).any()
           }
@@ -329,7 +329,7 @@ impl u32x8 {
     pub(crate) fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            move_mask_m256(cast(self.0)) == 0b11111111
+            _mm256_movemask_ps(cast(self.0)) == 0b11111111
           } else {
             (self.0.lo & self.0.hi).all()
           }
@@ -340,7 +340,7 @@ impl u32x8 {
     pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            // `unpack_low_i32_m256i` cannot be used because it acts within each
+            // `_mm256_unpacklo_epi32` cannot be used because it acts within each
             // 128-bit lane, which is a different operation.
             let [aa, _]: [u32x4; 2] = cast(self);
             let [ba, _]: [u32x4; 2] = cast(other);
@@ -355,7 +355,7 @@ impl u32x8 {
     pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            // `unpack_high_i32_m256i` cannot be used because it acts within each
+            // `_mm256_unpackhi_epi32` cannot be used because it acts within each
             // 128-bit lane, which is a different operation.
             let [_, ab]: [u32x4; 2] = cast(self);
             let [_, bb]: [u32x4; 2] = cast(other);
@@ -370,9 +370,9 @@ impl u32x8 {
     pub(crate) fn shuffle_backend(self, indices: u32x8) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            Self(m256i(_mm256_permutexvar_epi32(indices.0.0, self.0.0)))
+            Self(_mm256_permutexvar_epi32(indices.0, self.0))
           } else if #[cfg(target_feature = "avx2")] {
-            Self(shuffle_av_i32_all_m256i(self.0, indices.0))
+            Self(_mm256_permutevar8x32_epi32(self.0, indices.0))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),
@@ -433,7 +433,7 @@ impl u32x8 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u32x8) -> u32x8 {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            u32x8(shuffle_abv_i32_all_m256i(inputs[0].0, indices.0, inputs[1].0))
+            u32x8(_mm256_permutex2var_epi32(inputs[0].0, indices.0, inputs[1].0))
           } else {
             let self_bytes = cast::<[u32x8; 2], [u8x32; 2]>(inputs);
             let byte_indices = indices.to_byte_indices();
@@ -506,14 +506,14 @@ impl u32x8 {
     pub(crate) fn transpose_backend(data: [Self; 8]) -> [Self; 8] {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let a0 = unpack_low_i32_m256i(data[0].0, data[1].0);
-            let a1 = unpack_high_i32_m256i(data[0].0, data[1].0);
-            let a2 = unpack_low_i32_m256i(data[2].0, data[3].0);
-            let a3 = unpack_high_i32_m256i(data[2].0, data[3].0);
-            let a4 = unpack_low_i32_m256i(data[4].0, data[5].0);
-            let a5 = unpack_high_i32_m256i(data[4].0, data[5].0);
-            let a6 = unpack_low_i32_m256i(data[6].0, data[7].0);
-            let a7 = unpack_high_i32_m256i(data[6].0, data[7].0);
+            let a0 = _mm256_unpacklo_epi32(data[0].0, data[1].0);
+            let a1 = _mm256_unpackhi_epi32(data[0].0, data[1].0);
+            let a2 = _mm256_unpacklo_epi32(data[2].0, data[3].0);
+            let a3 = _mm256_unpackhi_epi32(data[2].0, data[3].0);
+            let a4 = _mm256_unpacklo_epi32(data[4].0, data[5].0);
+            let a5 = _mm256_unpackhi_epi32(data[4].0, data[5].0);
+            let a6 = _mm256_unpacklo_epi32(data[6].0, data[7].0);
+            let a7 = _mm256_unpackhi_epi32(data[6].0, data[7].0);
 
             pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
               (z << 6) | (y << 4) | (x << 2) | w
@@ -524,24 +524,24 @@ impl u32x8 {
 
             // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
             // (since blend runs on a different port than shuffle)
-            let b0 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a0),cast(a2)));
-            let b1 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a0),cast(a2)));
-            let b2 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a1),cast(a3)));
-            let b3 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a1),cast(a3)));
-            let b4 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a4),cast(a6)));
-            let b5 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a4),cast(a6)));
-            let b6 = cast::<m256,m256i>(shuffle_m256::<SHUFF_LO>(cast(a5),cast(a7)));
-            let b7 = cast::<m256,m256i>(shuffle_m256::<SHUFF_HI>(cast(a5),cast(a7)));
+            let b0 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_LO>(cast(a0),cast(a2)));
+            let b1 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_HI>(cast(a0),cast(a2)));
+            let b2 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_LO>(cast(a1),cast(a3)));
+            let b3 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_HI>(cast(a1),cast(a3)));
+            let b4 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_LO>(cast(a4),cast(a6)));
+            let b5 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_HI>(cast(a4),cast(a6)));
+            let b6 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_LO>(cast(a5),cast(a7)));
+            let b7 = cast::<__m256,__m256i>(_mm256_shuffle_ps::<SHUFF_HI>(cast(a5),cast(a7)));
 
             [
-              u32x8(permute2z_m256i::<0x20>(b0, b4)),
-              u32x8(permute2z_m256i::<0x20>(b1, b5)),
-              u32x8(permute2z_m256i::<0x20>(b2, b6)),
-              u32x8(permute2z_m256i::<0x20>(b3, b7)),
-              u32x8(permute2z_m256i::<0x31>(b0, b4)),
-              u32x8(permute2z_m256i::<0x31>(b1, b5)),
-              u32x8(permute2z_m256i::<0x31>(b2, b6)),
-              u32x8(permute2z_m256i::<0x31>(b3, b7))
+              u32x8(_mm256_permute2f128_si256::<0x20>(b0, b4)),
+              u32x8(_mm256_permute2f128_si256::<0x20>(b1, b5)),
+              u32x8(_mm256_permute2f128_si256::<0x20>(b2, b6)),
+              u32x8(_mm256_permute2f128_si256::<0x20>(b3, b7)),
+              u32x8(_mm256_permute2f128_si256::<0x31>(b0, b4)),
+              u32x8(_mm256_permute2f128_si256::<0x31>(b1, b5)),
+              u32x8(_mm256_permute2f128_si256::<0x31>(b2, b6)),
+              u32x8(_mm256_permute2f128_si256::<0x31>(b3, b7))
             ]
           } else {
             // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
@@ -579,8 +579,8 @@ impl u32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // ensure same behavior as scalar wrapping_shl
-            let shift_by = bitand_m256i(rhs.0, set_splat_i32_m256i(31));
-            Self(shl_each_u32_m256i(self.0, shift_by))
+            let shift_by = _mm256_and_si256(rhs.0, _mm256_set1_epi32(31));
+            Self(_mm256_sllv_epi32(self.0, shift_by))
           } else {
             Self(Inner {
               lo: self.0.lo << rhs.0.lo,
@@ -596,7 +596,7 @@ impl u32x8 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 31, 0]);
-            Self(shl_all_u32_m256i(self.0, shift))
+            Self(_mm256_sll_epi32(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo << rhs,
@@ -611,8 +611,8 @@ impl u32x8 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // ensure same behavior as scalar wrapping_shr
-            let shift_by = bitand_m256i(rhs.0, set_splat_i32_m256i(31));
-            Self(shr_each_u32_m256i(self.0, shift_by ))
+            let shift_by = _mm256_and_si256(rhs.0, _mm256_set1_epi32(31));
+            Self(_mm256_srlv_epi32(self.0, shift_by ))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs.0.lo,
@@ -628,7 +628,7 @@ impl u32x8 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 31, 0]);
-            Self(shr_all_u32_m256i(self.0, shift))
+            Self(_mm256_srl_epi32(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs,
@@ -642,7 +642,7 @@ impl u32x8 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(max_u32_m256i(self.0, rhs.0 ))
+            Self(_mm256_max_epu32(self.0, rhs.0 ))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -656,7 +656,7 @@ impl u32x8 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(min_u32_m256i(self.0, rhs.0 ))
+            Self(_mm256_min_epu32(self.0, rhs.0 ))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -682,7 +682,7 @@ impl u32x8 {
     pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shl_each_u32_m256i(self.0, rhs.0))
+            Self(_mm256_sllv_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shl(rhs.0.lo),
@@ -696,7 +696,7 @@ impl u32x8 {
     pub(crate) fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shl_all_u32_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_sll_epi32(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shl_scalar(rhs),
@@ -710,7 +710,7 @@ impl u32x8 {
     pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_each_u32_m256i(self.0, rhs.0))
+            Self(_mm256_srlv_epi32(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -724,7 +724,7 @@ impl u32x8 {
     pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_all_u32_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_srl_epi32(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr_scalar(rhs),
@@ -779,15 +779,15 @@ impl u32x8 {
     pub(crate) fn widening_mul_backend(self, rhs: Self) -> u64x8 {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
-            const SHUFFLE_INDICES: m512i = i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0;
+            const SHUFFLE_INDICES: __m512i = i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0;
 
-            let even_wide_mul = mul_u64_low_bits_m256i(self.0, rhs.0);
-            let odd_wide_mul = mul_u64_low_bits_m256i(
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.0),
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
+            let even_wide_mul = _mm256_mul_epu32(self.0, rhs.0);
+            let odd_wide_mul = _mm256_mul_epu32(
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(self.0),
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(rhs.0),
             );
-            let even_then_odd = cast::<[m256i; 2], m512i>([even_wide_mul, odd_wide_mul]);
-            u64x8(permute_i64_m512i(SHUFFLE_INDICES, even_then_odd))
+            let even_then_odd = cast::<[__m256i; 2], __m512i>([even_wide_mul, odd_wide_mul]);
+            u64x8(_mm512_permutexvar_epi64(SHUFFLE_INDICES, even_then_odd))
           } else {
             let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);
             let [rhs_a, rhs_b] = cast::<u32x8, [u32x4; 2]>(rhs);
@@ -801,16 +801,16 @@ impl u32x8 {
     pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            let even_wide_mul = mul_u64_low_bits_m256i(self.0, rhs.0);
-            let odd_wide_mul = mul_u64_low_bits_m256i(
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(self.0),
-              shuffle_ai_i32_half_m256i::<0b_00_11_00_01>(rhs.0),
+            let even_wide_mul = _mm256_mul_epu32(self.0, rhs.0);
+            let odd_wide_mul = _mm256_mul_epu32(
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(self.0),
+              _mm256_shuffle_epi32::<0b_00_11_00_01>(rhs.0),
             );
-            let ll_hh_1 = unpack_low_i32_m256i(even_wide_mul, odd_wide_mul);
-            let ll_hh_2 = unpack_high_i32_m256i(even_wide_mul, odd_wide_mul);
+            let ll_hh_1 = _mm256_unpacklo_epi32(even_wide_mul, odd_wide_mul);
+            let ll_hh_2 = _mm256_unpackhi_epi32(even_wide_mul, odd_wide_mul);
             (
-              Self(unpack_low_i64_m256i(ll_hh_1, ll_hh_2)),
-              Self(unpack_high_i64_m256i(ll_hh_1, ll_hh_2)),
+              Self(_mm256_unpacklo_epi64(ll_hh_1, ll_hh_2)),
+              Self(_mm256_unpackhi_epi64(ll_hh_1, ll_hh_2)),
             )
           } else {
             let [self_a, self_b] = cast::<u32x8, [u32x4; 2]>(self);
@@ -834,8 +834,8 @@ impl u32x8 {
             let b : [u32;8]= cast(rhs);
 
             // let the compiler shuffle the values around, it does the right thing
-            let r1 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
-            let r2 : [u32;8] = cast(mul_u64_low_bits_m256i(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
+            let r1 : [u32;8] = cast(_mm256_mul_epu32(cast([a[0], 0, a[1], 0, a[2], 0, a[3], 0]), cast([b[0], 0, b[1], 0, b[2], 0, b[3], 0])));
+            let r2 : [u32;8] = cast(_mm256_mul_epu32(cast([a[4], 0, a[5], 0, a[6], 0, a[7], 0]), cast([b[4], 0, b[5], 0, b[6], 0, b[7], 0])));
 
             cast([r1[1], r1[3], r1[5], r1[7], r2[1], r2[3], r2[5], r2[7]])
           } else {
@@ -875,11 +875,11 @@ impl u32x8 {
     pub(crate) fn from_u16x8_backend(v: u16x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(convert_to_i32_m256i_from_u16_m128i(v.0))
+            Self(_mm256_cvtepu16_epi32(v.0))
           } else if #[cfg(target_feature="sse2")] {
             Self(Inner {
-              lo: u32x4(shr_imm_u32_m128i::<16>( unpack_low_i16_m128i(v.0, v.0))),
-              hi: u32x4(shr_imm_u32_m128i::<16>( unpack_high_i16_m128i(v.0, v.0))),
+              lo: u32x4(_mm_srli_epi32::<16>( _mm_unpacklo_epi16(v.0, v.0))),
+              hi: u32x4(_mm_srli_epi32::<16>( _mm_unpackhi_epi16(v.0, v.0))),
             })
           } else {
             u32x8::from_array([

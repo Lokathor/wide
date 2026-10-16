@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    pub(crate) type Inner = m256i;
+    pub(crate) type Inner = __m256i;
   } else {
     #[repr(C, align(32))]
     #[derive(Clone, Copy)]
@@ -19,7 +19,7 @@ impl u64x4 {
     pub(crate) fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(!self.0)
+            self ^ Self::MAX
           } else {
             Self(Inner {
               lo: !self.0.lo,
@@ -33,7 +33,7 @@ impl u64x4 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(add_i64_m256i(self.0, rhs.0))
+            Self(_mm256_add_epi64(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -47,7 +47,7 @@ impl u64x4 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(sub_i64_m256i(self.0, rhs.0))
+            Self(_mm256_sub_epi64(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -79,7 +79,7 @@ impl u64x4 {
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitand_m256i(self.0, rhs.0))
+            Self(_mm256_and_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo & rhs.0.lo,
@@ -93,7 +93,7 @@ impl u64x4 {
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
         if #[cfg(target_feature="avx2")] {
-            Self(bitor_m256i(self.0, rhs.0))
+            Self(_mm256_or_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo | rhs.0.lo,
@@ -107,7 +107,7 @@ impl u64x4 {
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitxor_m256i(self.0, rhs.0))
+            Self(_mm256_xor_si256(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
@@ -121,7 +121,7 @@ impl u64x4 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_eq_mask_i64_m256i(self.0, rhs.0))
+            Self(_mm256_cmpeq_epi64(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -157,7 +157,7 @@ impl u64x4 {
           if #[cfg(target_feature="avx2")] {
             // no unsigned gt than so inverting the high bit will get the correct result
             let highbit = u64x4::splat(1 << 63);
-            Self(cmp_gt_mask_i64_m256i((self ^ highbit).0, (rhs ^ highbit).0))
+            Self(_mm256_cmpgt_epi64((self ^ highbit).0, (rhs ^ highbit).0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -208,7 +208,7 @@ impl u64x4 {
         pick! {
           if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
             match INDEX {
-              $($INDEX => Self(insert_i64_to_m256i::<$INDEX>(self.0, value.cast_signed())),)*
+              $($INDEX => Self(_mm256_insert_epi64::<$INDEX>(self.0, value.cast_signed())),)*
               4.. => unreachable!(),
             }
           } else {
@@ -249,7 +249,7 @@ impl u64x4 {
         pick! {
           if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
             match INDEX {
-              $($INDEX => extract_i64_from_m256i::<$INDEX>(self.0).cast_unsigned(),)*
+              $($INDEX => _mm256_extract_epi64::<$INDEX>(self.0).cast_unsigned(),)*
               4.. => unreachable!(),
             }
           } else {
@@ -277,11 +277,11 @@ impl u64x4 {
     pub(crate) fn reduce_add_backend(self) -> u64 {
         pick! {
           if #[cfg(all(target_arch="x86_64", target_feature="avx2"))] {
-            let zwxx  = shuffle_ai_i64_all_m256i::<0b00_00_11_10>(self.0);
-            let xz_yw = add_i64_m256i(zwxx, self.0);
-            let yw_xz  = shuffle_ai_i64_all_m256i::<0b00_00_00_01>(xz_yw);
-            let sum = add_i64_m256i(xz_yw, yw_xz);
-            extract_i64_from_m256i::<0>(sum).cast_unsigned()
+            let zwxx  = _mm256_permute4x64_epi64::<0b00_00_11_10>(self.0);
+            let xz_yw = _mm256_add_epi64(zwxx, self.0);
+            let yw_xz  = _mm256_permute4x64_epi64::<0b00_00_00_01>(xz_yw);
+            let sum = _mm256_add_epi64(xz_yw, yw_xz);
+            _mm256_extract_epi64::<0>(sum).cast_unsigned()
           } else {
             let array: [u64; 4] = cast(self);
             array[0]
@@ -305,9 +305,9 @@ impl u64x4 {
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(bitor_m256i(
-                bitand_m256i(if_one.0, self.0),
-                bitandnot_m256i(self.0, if_zero.0),
+            Self(_mm256_or_si256(
+                _mm256_and_si256(if_one.0, self.0),
+                _mm256_andnot_si256(self.0, if_zero.0),
             ))
           } else {
             Self(Inner {
@@ -322,7 +322,7 @@ impl u64x4 {
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(blend_varying_i8_m256i(if_false.0,if_true.0,self.0))
+            Self(_mm256_blendv_epi8(if_false.0,if_true.0,self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
@@ -337,7 +337,7 @@ impl u64x4 {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // use f64 move_mask since it is the same size as i64
-            move_mask_m256d(cast(self.0)) as u32
+            _mm256_movemask_pd(cast(self.0)) as u32
           } else {
             self.0.lo.to_bitmask() | (self.0.hi.to_bitmask() << 2)
           }
@@ -348,7 +348,7 @@ impl u64x4 {
     pub(crate) fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            move_mask_m256d(cast(self.0)) != 0
+            _mm256_movemask_pd(cast(self.0)) != 0
           } else {
             (self.0.lo | self.0.hi).any()
           }
@@ -359,7 +359,7 @@ impl u64x4 {
     pub(crate) fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            move_mask_m256d(cast(self.0)) == 0b1111
+            _mm256_movemask_pd(cast(self.0)) == 0b1111
           } else {
             (self.0.lo & self.0.hi).all()
           }
@@ -370,7 +370,7 @@ impl u64x4 {
     pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            // `unpack_low_i64_m256i` cannot be used because it acts within each
+            // `_mm256_unpacklo_epi64` cannot be used because it acts within each
             // 128-bit lane, which is a different operation.
             let [aa, _]: [u64x2; 2] = cast(self);
             let [ba, _]: [u64x2; 2] = cast(other);
@@ -385,7 +385,7 @@ impl u64x4 {
     pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            // `unpack_high_i64_m256i` cannot be used because it acts within each
+            // `_mm256_unpackhi_epi64` cannot be used because it acts within each
             // 128-bit lane, which is a different operation.
             let [_, ab]: [u64x2; 2] = cast(self);
             let [_, bb]: [u64x2; 2] = cast(other);
@@ -400,7 +400,7 @@ impl u64x4 {
     pub(crate) fn shuffle_backend(self, indices: u64x4) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx512vl"))] {
-            Self(m256i(_mm256_permutexvar_epi64(indices.0.0, self.0.0)))
+            Self(_mm256_permutexvar_epi64(indices.0, self.0))
           } else if #[cfg(any(
             target_feature = "ssse3",
             all(target_arch = "aarch64", target_feature = "neon"),
@@ -461,7 +461,7 @@ impl u64x4 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u64x4) -> u64x4 {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            u64x4(shuffle_abv_i64_all_m256i(inputs[0].0, indices.0, inputs[1].0))
+            u64x4(_mm256_permutex2var_epi64(inputs[0].0, indices.0, inputs[1].0))
           } else {
             let self_bytes = cast::<[u64x4; 2], [u8x32; 2]>(inputs);
             let byte_indices = indices.to_byte_indices();
@@ -573,7 +573,7 @@ impl u64x4 {
           if #[cfg(target_feature="avx2")] {
             // mask the shift count to 63 to have same behavior on all platforms
             let shift_by = rhs & Self::splat(63);
-            Self(shl_each_u64_m256i(self.0, shift_by.0))
+            Self(_mm256_sllv_epi64(self.0, shift_by.0))
           } else {
             Self(Inner {
               lo: self.0.lo << rhs.0.lo,
@@ -589,7 +589,7 @@ impl u64x4 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 63, 0]);
-            Self(shl_all_u64_m256i(self.0, shift))
+            Self(_mm256_sll_epi64(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo << rhs,
@@ -605,7 +605,7 @@ impl u64x4 {
           if #[cfg(target_feature="avx2")] {
             // mask the shift count to 63 to have same behavior on all platforms
             let shift_by = rhs & Self::splat(63);
-            Self(shr_each_u64_m256i(self.0, shift_by.0))
+            Self(_mm256_srlv_epi64(self.0, shift_by.0))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs.0.lo,
@@ -621,7 +621,7 @@ impl u64x4 {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 64` to perform wrapping shift and not unbounded shift.
             let shift = cast([rhs as u64 & 63, 0]);
-            Self(shr_all_u64_m256i(self.0, shift))
+            Self(_mm256_srl_epi64(self.0, shift))
           } else {
             Self(Inner {
               lo: self.0.lo >> rhs,
@@ -657,7 +657,7 @@ impl u64x4 {
     pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shl_each_u64_m256i(self.0, rhs.0))
+            Self(_mm256_sllv_epi64(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shl(rhs.0.lo),
@@ -671,7 +671,7 @@ impl u64x4 {
     pub(crate) fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shl_all_u64_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_sll_epi64(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shl_scalar(rhs),
@@ -685,7 +685,7 @@ impl u64x4 {
     pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_each_u64_m256i(self.0, rhs.0))
+            Self(_mm256_srlv_epi64(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr(rhs.0.lo),
@@ -699,7 +699,7 @@ impl u64x4 {
     pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shr_all_u64_m256i(self.0, cast([rhs as u64, 0])))
+            Self(_mm256_srl_epi64(self.0, cast([rhs as u64, 0])))
           } else {
             Self(Inner {
               lo: self.0.lo.unbounded_shr_scalar(rhs),
@@ -865,7 +865,7 @@ impl u64x4 {
               (a & mask, b & mask)
             };
 
-            Self(mul_u64_low_bits_m256i(a.0, b.0))
+            Self(_mm256_mul_epu32(a.0, b.0))
           } else {
             let mask = add_mul_operand_mask_u64::<W>();
             let a = a.to_array();
@@ -881,7 +881,7 @@ impl u64x4 {
           if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.
             if W == 52 {
-              return Self(add_mul_low_u52_m256i(self.0, a.0, b.0));
+              return Self(_mm256_madd52lo_epu64(self.0, a.0, b.0));
             }
           }
         }
@@ -907,7 +907,7 @@ impl u64x4 {
           if #[cfg(all(target_feature="avx512ifma", target_feature="avx512vl"))] {
             // IFMA is fixed at 52 bits; any other width takes the generic path.
             if W == 52 {
-              return Self(add_mul_high_u52_m256i(self.0, a.0, b.0));
+              return Self(_mm256_madd52hi_epu64(self.0, a.0, b.0));
             }
           }
         }

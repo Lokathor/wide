@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    pub(crate) type Inner = m256i;
+    pub(crate) type Inner = __m256i;
   } else {
     #[repr(C, align(32))]
     #[derive(Clone, Copy)]
@@ -24,7 +24,7 @@ impl i8x32 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_gt_mask_i8_m256i(self.0,rhs.0))
+            Self(_mm256_cmpgt_epi8(self.0,rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -85,7 +85,7 @@ impl i8x32 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(max_i8_m256i(self.0,rhs.0))
+            Self(_mm256_max_epi8(self.0,rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -99,7 +99,7 @@ impl i8x32 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(min_i8_m256i(self.0,rhs.0))
+            Self(_mm256_min_epi8(self.0,rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -147,7 +147,7 @@ impl i8x32 {
     pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(add_saturating_i8_m256i(self.0, rhs.0))
+            Self(_mm256_adds_epi8(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_add(rhs.0.lo),
@@ -161,7 +161,7 @@ impl i8x32 {
     pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(sub_saturating_i8_m256i(self.0, rhs.0))
+            Self(_mm256_subs_epi8(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.saturating_sub(rhs.0.lo),
@@ -222,7 +222,7 @@ impl i8x32 {
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(abs_i8_m256i(self.0))
+            Self(_mm256_abs_epi8(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.abs(),
@@ -266,7 +266,7 @@ impl i8x32 {
     pub(crate) fn swizzle_half_backend(self, rhs: i8x32) -> i8x32 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shuffle_av_i8z_half_m256i(self.0, add_saturating_u8_m256i(rhs.0, set_splat_i8_m256i(0x70))))
+            Self(_mm256_shuffle_epi8(self.0, _mm256_adds_epu8(rhs.0, _mm256_set1_epi8(0x70))))
           } else {
               Self(Inner {
                 lo: self.0.lo.shuffle_zeroing(rhs.0.lo.cast_unsigned()),
@@ -280,7 +280,7 @@ impl i8x32 {
     pub(crate) fn swizzle_half_relaxed_backend(self, rhs: i8x32) -> i8x32 {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(shuffle_av_i8z_half_m256i(self.0, rhs.0))
+            Self(_mm256_shuffle_epi8(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.shuffle(rhs.0.lo.cast_unsigned()),

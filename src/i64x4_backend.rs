@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx2")] {
-    pub(crate) type Inner = m256i;
+    pub(crate) type Inner = __m256i;
   } else {
     #[repr(C, align(32))]
     #[derive(Clone, Copy)]
@@ -19,7 +19,7 @@ impl i64x4 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(!(cmp_gt_mask_i64_m256i(self.0, rhs.0) ^ cmp_eq_mask_i64_m256i(self.0, rhs.0)))
+            !Self(_mm256_xor_si256(_mm256_cmpgt_epi64(self.0, rhs.0), _mm256_cmpeq_epi64(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_lt(rhs.0.lo),
@@ -33,7 +33,7 @@ impl i64x4 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
-            Self(cmp_gt_mask_i64_m256i(self.0, rhs.0))
+            Self(_mm256_cmpgt_epi64(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),

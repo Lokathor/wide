@@ -2,7 +2,7 @@ use crate::backend_imports::*;
 
 pick! {
   if #[cfg(target_feature="avx512f")] {
-    pub(crate) type Inner = m512d;
+    pub(crate) type Inner = __m512d;
   } else {
     #[repr(C, align(64))]
     #[derive(Clone, Copy)]
@@ -25,13 +25,11 @@ impl f64x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512d(self.0, Self::splat(-0.0).0))
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_xor_pd(self.0, Self::splat(-0.0).0))
           } else {
-            Self(Inner {
-              lo: -self.0.lo,
-              hi: -self.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            cast([-self_lo, -self_hi])
           }
         }
     }
@@ -39,13 +37,11 @@ impl f64x8 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512d(self.0, set_splat_m512d(f64::from_bits(u64::MAX))))
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_xor_pd(self.0, _mm512_set1_pd(f64::from_bits(u64::MAX))))
           } else {
-            Self(Inner {
-              lo: !self.0.lo,
-              hi: !self.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            cast([!self_lo, !self_hi])
           }
         }
     }
@@ -54,7 +50,7 @@ impl f64x8 {
     pub(crate) fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(add_m512d(self.0, rhs.0))
+            Self(_mm512_add_pd(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo + rhs.0.lo,
@@ -68,7 +64,7 @@ impl f64x8 {
     pub(crate) fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(sub_m512d(self.0, rhs.0))
+            Self(_mm512_sub_pd(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo - rhs.0.lo,
@@ -82,7 +78,7 @@ impl f64x8 {
     pub(crate) fn mul_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(mul_m512d(self.0, rhs.0))
+            Self(_mm512_mul_pd(self.0, rhs.0))
           } else {
             Self(Inner { lo: self.0.lo * rhs.0.lo, hi: self.0.hi * rhs.0.hi })
           }
@@ -93,7 +89,7 @@ impl f64x8 {
     pub(crate) fn div_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(div_m512d(self.0, rhs.0))
+            Self(_mm512_div_pd(self.0, rhs.0))
           } else {
             Self(Inner { lo: self.0.lo / rhs.0.lo, hi: self.0.hi / rhs.0.hi })
           }
@@ -117,13 +113,12 @@ impl f64x8 {
     #[inline]
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitand_m512d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_and_pd(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo & rhs.0.lo,
-              hi: self.0.hi & rhs.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            let [rhs_lo, rhs_hi] = cast::<f64x8, [f64x4; 2]>(rhs);
+            cast([self_lo & rhs_lo, self_hi & rhs_hi])
           }
         }
     }
@@ -131,13 +126,12 @@ impl f64x8 {
     #[inline]
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
-        if #[cfg(target_feature="avx512f")] {
-            Self(bitor_m512d(self.0, rhs.0))
+        if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_or_pd(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo | rhs.0.lo,
-              hi: self.0.hi | rhs.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            let [rhs_lo, rhs_hi] = cast::<f64x8, [f64x4; 2]>(rhs);
+            cast([self_lo | rhs_lo, self_hi | rhs_hi])
           }
         }
     }
@@ -145,13 +139,12 @@ impl f64x8 {
     #[inline]
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitxor_m512d(self.0, rhs.0))
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_xor_pd(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo ^ rhs.0.lo,
-              hi: self.0.hi ^ rhs.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            let [rhs_lo, rhs_hi] = cast::<f64x8, [f64x4; 2]>(rhs);
+            cast([self_lo ^ rhs_lo, self_hi ^ rhs_hi])
           }
         }
     }
@@ -160,7 +153,10 @@ impl f64x8 {
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512d::<{cmp_op!(EqualOrdered)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_EQ_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_eq(rhs.0.lo),
@@ -174,7 +170,10 @@ impl f64x8 {
     pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512d::<{cmp_op!(NotEqualUnordered)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_NEQ_UQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ne(rhs.0.lo),
@@ -188,7 +187,10 @@ impl f64x8 {
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512d::<{cmp_op!(LessThanOrdered)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_LT_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_lt(rhs.0.lo),
@@ -202,7 +204,10 @@ impl f64x8 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512d::<{cmp_op!(GreaterThanOrdered)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_GT_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_gt(rhs.0.lo),
@@ -216,7 +221,10 @@ impl f64x8 {
     pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512d::<{cmp_op!(LessEqualOrdered)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_LE_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_le(rhs.0.lo),
@@ -230,7 +238,10 @@ impl f64x8 {
     pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512d::<{cmp_op!(GreaterEqualOrdered)}>(self.0, rhs.0))
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_GE_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.simd_ge(rhs.0.lo),
@@ -245,14 +256,14 @@ impl f64x8 {
         pick! {
           if #[cfg(target_feature="avx512f")] {
             // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-            let lo = cast_to_m256d_from_m512d(self.0);
-            let hi = extract_m256d_from_m512d::<1>(self.0);
-            let v  = add_m256d(lo, hi);                // [a0+a4, a1+a5, a2+a6, a3+a7]
-            let t  = add_horizontal_m256d(v, v);       // [s01, s23, s01, s23]
-            let lo = cast_to_m128d_from_m256d(t);      // s01
-            let hi = extract_m128d_from_m256d::<1>(t); // s23
-            let s  = add_m128d(lo, hi);                // [sum, ...]
-            get_f64_from_m128d_s(s)
+            let lo = _mm512_castpd512_pd256(self.0);
+            let hi = _mm512_extractf64x4_pd::<1>(self.0);
+            let v  = _mm256_add_pd(lo, hi);         // [a0+a4, a1+a5, a2+a6, a3+a7]
+            let t  = _mm256_hadd_pd(v, v);          // [s01, s23, s01, s23]
+            let lo = _mm256_castpd256_pd128(t);     // s01
+            let hi = _mm256_extractf128_pd::<1>(t); // s23
+            let s  = _mm_add_pd(lo, hi);            // [sum, ...]
+            _mm_cvtsd_f64(s)
           } else {
             self.0.lo.reduce_add() + self.0.hi.reduce_add()
           }
@@ -264,15 +275,15 @@ impl f64x8 {
         pick! {
           if #[cfg(target_feature="avx512f")] {
             // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
-            let lo = cast_to_m256d_from_m512d(self.0);
-            let hi = extract_m256d_from_m512d::<1>(self.0);
-            let v  = mul_m256d(lo, hi);
-            let lo = cast_to_m128d_from_m256d(v);
-            let hi = extract_m128d_from_m256d::<1>(v);
-            let lo = mul_m128d(lo,hi);
-            let hi64 = unpack_high_m128d(lo,lo);
-            let product = mul_m128d_s(lo,hi64);
-            get_f64_from_m128d_s(product)
+            let lo = _mm512_castpd512_pd256(self.0);
+            let hi = _mm512_extractf64x4_pd::<1>(self.0);
+            let v  = _mm256_mul_pd(lo, hi);
+            let lo = _mm256_castpd256_pd128(v);
+            let hi = _mm256_extractf128_pd::<1>(v);
+            let lo = _mm_mul_pd(lo,hi);
+            let hi64 = _mm_unpackhi_pd(lo,lo);
+            let product = _mm_mul_sd(lo,hi64);
+            _mm_cvtsd_f64(product)
           } else {
             self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
           }
@@ -282,16 +293,19 @@ impl f64x8 {
     #[inline]
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(bitor_m512d(
-                bitand_m512d(if_one.0, self.0),
-                bitandnot_m512d(self.0, if_zero.0),
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_or_pd(
+                _mm512_and_pd(if_one.0, self.0),
+                _mm512_andnot_pd(self.0, if_zero.0),
             ))
           } else {
-            Self(Inner {
-              lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
-              hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
-            })
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            let [if_one_lo, if_one_hi] = cast::<f64x8, [f64x4; 2]>(if_one);
+            let [if_zero_lo, if_zero_hi] = cast::<f64x8, [f64x4; 2]>(if_zero);
+            cast([
+              self_lo.bitselect(if_one_lo, if_zero_lo),
+              self_hi.bitselect(if_one_hi, if_zero_hi),
+            ])
           }
         }
     }
@@ -299,13 +313,20 @@ impl f64x8 {
     #[inline]
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(blend_varying_m512d(if_false.0, if_true.0, movepi64_mask_m512d(self.0)))
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_mask_blend_pd(
+              _mm512_movepi64_mask(_mm512_castpd_si512(self.0)),
+              if_false.0,
+              if_true.0,
+            ))
           } else {
-            Self(Inner {
-              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
-              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
-            })
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            let [if_true_lo, if_true_hi] = cast::<f64x8, [f64x4; 2]>(if_true);
+            let [if_false_lo, if_false_hi] = cast::<f64x8, [f64x4; 2]>(if_false);
+            cast([
+              self_lo.select(if_true_lo, if_false_lo),
+              self_hi.select(if_true_hi, if_false_hi),
+            ])
           }
         }
     }
@@ -313,10 +334,11 @@ impl f64x8 {
     #[inline]
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            movepi64_mask_m512d(self.0) as u32
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) as u32
           } else {
-            (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            (self_hi.to_bitmask() << 4) | self_lo.to_bitmask()
           }
         }
     }
@@ -324,10 +346,11 @@ impl f64x8 {
     #[inline]
     pub(crate) fn any_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            movepi64_mask_m512d(self.0) != 0
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) != 0
           } else {
-            self.0.lo.any() || self.0.hi.any()
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            self_lo.any() || self_hi.any()
           }
         }
     }
@@ -335,10 +358,11 @@ impl f64x8 {
     #[inline]
     pub(crate) fn all_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
-            movepi64_mask_m512d(self.0) == 0b11111111
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) == 0b11111111
           } else {
-            self.0.lo.all() && self.0.hi.all()
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            self_lo.all() && self_hi.all()
           }
         }
     }
@@ -387,7 +411,10 @@ impl f64x8 {
     pub(crate) fn is_nan_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(cmp_op_mask_m512d::<{cmp_op!(Unordered)}>(self.0, self.0))
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_UNORD_Q}>(self.0, self.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
           } else {
             Self(Inner {
               lo: self.0.lo.is_nan(),
@@ -453,7 +480,7 @@ impl f64x8 {
     pub(crate) fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            rhs.is_nan().select(self, Self(max_m512d(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(_mm512_max_pd(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.max(rhs.0.lo),
@@ -467,7 +494,7 @@ impl f64x8 {
     pub(crate) fn fast_max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(max_m512d(self.0, rhs.0))
+            Self(_mm512_max_pd(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_max(rhs.0.lo),
@@ -481,7 +508,7 @@ impl f64x8 {
     pub(crate) fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            rhs.is_nan().select(self, Self(min_m512d(self.0, rhs.0)))
+            rhs.is_nan().select(self, Self(_mm512_min_pd(self.0, rhs.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.min(rhs.0.lo),
@@ -495,7 +522,7 @@ impl f64x8 {
     pub(crate) fn fast_min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(min_m512d(self.0, rhs.0))
+            Self(_mm512_min_pd(self.0, rhs.0))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_min(rhs.0.lo),
@@ -525,9 +552,9 @@ impl f64x8 {
     pub(crate) fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            // For both `min_m512d` and `max_m512d` if any input is NaN, `rhs` gets
+            // For both `_mm512_min_pd` and `_mm512_max_pd` if any input is NaN, `rhs` gets
             // chosen. For `self` to be chosen, `self` must be the second argument.
-            Self(max_m512d(min.0, min_m512d(max.0, self.0)))
+            Self(_mm512_max_pd(min.0, _mm512_min_pd(max.0, self.0)))
           } else {
             Self(Inner {
               lo: self.0.lo.fast_clamp(min.0.lo, max.0.lo),
@@ -580,7 +607,7 @@ impl f64x8 {
     pub(crate) fn floor_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(round_m512d::<{round_op!(NegInf)}>(self.0))
+            Self(_mm512_roundscale_pd::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_NEG_INF}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.floor(),
@@ -594,7 +621,7 @@ impl f64x8 {
     pub(crate) fn ceil_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(round_m512d::<{round_op!(PosInf)}>(self.0))
+            Self(_mm512_roundscale_pd::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_POS_INF}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.ceil(),
@@ -614,15 +641,15 @@ impl f64x8 {
             let self_abs = self.abs();
 
             let adjusted_self = self_abs + Self::HALF;
-            let result_abs = Self(round_m512d::<{round_op!(Zero)}>(adjusted_self.0));
+            let result_abs = Self(_mm512_roundscale_pd::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_ZERO}>(adjusted_self.0));
             // The addition breaks for `0.5.next_down()` which incorrectly rounds to
             // `1.0`. This resets the result back to `0.0`.
             let result_abs = result_abs & self_abs.simd_ne(HALF_NEXT_DOWN);
 
             // Large value, infinity and NaN need special handling.
-            let bounds_mask: Self = cast(cmp_op_mask_i64_m512i::<{cmp_int_op!(Lt)}>(
-              cast(self_abs),
-              cast(BOUNDS_LIMIT),
+            let bounds_mask: Self = cast(_mm512_maskz_mov_epi64(
+              _mm512_cmp_epi64_mask::<{_MM_CMPINT_LT}>(cast(self_abs), cast(BOUNDS_LIMIT)),
+              _mm512_set1_epi64(-1),
             ));
 
             // `abs` keeps the original sign.
@@ -645,7 +672,7 @@ impl f64x8 {
             let non_nan = self & non_nan_mask;
             let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            let cast: i64x8 = cast(m512i(_mm512_cvtpd_epi64(non_nan.0.0)));
+            let cast: i64x8 = cast(_mm512_cvtpd_epi64(non_nan.0));
             flip_to_max ^ cast
           } else {
             let [a,b]: [f64x4;2] = cast(self);
@@ -661,7 +688,7 @@ impl f64x8 {
     pub(crate) fn fast_round_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            cast(m512i(_mm512_cvtpd_epi64(self.0.0)))
+            cast(_mm512_cvtpd_epi64(self.0))
           } else {
 
             let [a,b]: [f64x4;2] = cast(self);
@@ -677,7 +704,7 @@ impl f64x8 {
     pub(crate) fn round_ties_even_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(round_m512d::<{round_op!(Nearest)}>(self.0))
+            Self(_mm512_roundscale_pd::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_NEAREST_INT}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.round_ties_even(),
@@ -691,7 +718,7 @@ impl f64x8 {
     pub(crate) fn trunc_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(round_m512d::<{round_op!(Zero)}>(self.0))
+            Self(_mm512_roundscale_pd::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_ZERO}>(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.trunc(),
@@ -710,7 +737,7 @@ impl f64x8 {
             let non_nan = self & non_nan_mask;
             let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            let cast: i64x8 = cast(m512i(_mm512_cvttpd_epi64(non_nan.0.0)));
+            let cast: i64x8 = cast(_mm512_cvttpd_epi64(non_nan.0));
             flip_to_max ^ cast
           } else {
             let [a,b]: [f64x4;2] = cast(self);
@@ -726,7 +753,7 @@ impl f64x8 {
     pub(crate) fn fast_trunc_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            cast(m512i(_mm512_cvttpd_epi64(self.0.0)))
+            cast(_mm512_cvttpd_epi64(self.0))
           } else {
             let [a,b]: [f64x4;2] = cast(self);
             cast([
@@ -741,7 +768,7 @@ impl f64x8 {
     pub(crate) fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-            Self(fused_mul_add_m512d(self.0, a.0, b.0))
+            Self(_mm512_fmadd_pd(self.0, a.0, b.0))
           } else if #[cfg(target_feature="avx512f")] {
             // still want to use 512 bit ops
             (self * a) + b
@@ -758,7 +785,7 @@ impl f64x8 {
     pub(crate) fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-            Self(fused_mul_sub_m512d(self.0, a.0, b.0))
+            Self(_mm512_fmsub_pd(self.0, a.0, b.0))
           } else if #[cfg(target_feature="avx512f")] {
             // still want to use 512 bit ops
             (self * a) - b
@@ -775,7 +802,7 @@ impl f64x8 {
     pub(crate) fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-            Self(fused_mul_neg_add_m512d(self.0, a.0, b.0))
+            Self(_mm512_fnmadd_pd(self.0, a.0, b.0))
           } else if #[cfg(target_feature="avx512f")] {
             // still want to use 512 bit ops
             b - (self * a)
@@ -792,7 +819,7 @@ impl f64x8 {
     pub(crate) fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
            if #[cfg(all(target_feature="avx512f",target_feature="fma"))] {
-             Self(fused_mul_neg_sub_m512d(self.0, a.0, b.0))
+             Self(_mm512_fnmsub_pd(self.0, a.0, b.0))
             } else if #[cfg(target_feature="avx512f")] {
               // still want to use 512 bit ops
               -(self * a) - b
@@ -928,7 +955,7 @@ impl f64x8 {
     pub(crate) fn sqrt_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(sqrt_m512d(self.0))
+            Self(_mm512_sqrt_pd(self.0))
           } else {
             Self(Inner {
               lo: self.0.lo.sqrt(),
@@ -1837,7 +1864,7 @@ impl f64x8 {
     pub(crate) fn from_i32x8_backend(v: i32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            Self(convert_to_m512d_from_i32_m256i(v.0))
+            Self(_mm512_cvtepi32_pd(v.0))
           } else {
             Self::from_array([
               v.as_array()[0] as f64,
