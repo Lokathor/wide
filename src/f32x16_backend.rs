@@ -263,9 +263,6 @@ impl f32x16 {
     pub(crate) fn reduce_mul_backend(self) -> f32 {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            // TODO: Add `reduce_mul_m512` to `safe_arch` then make this function
-            // safe.
-
             _mm512_reduce_mul_ps(self.0.0)
           } else {
             self.0.lo.reduce_mul() * self.0.hi.reduce_mul()
@@ -349,8 +346,8 @@ impl f32x16 {
 
     #[inline]
     pub(crate) fn transpose_backend(data: [f32x16; 16]) -> [f32x16; 16] {
-        // TODO: Add `_mm512_unpackhi_ps` to `safe_arch`, looks like it is missing,
-        // then try adding an optimized `avx512f` implementation.
+        // TODO(perf): Try to add an optimized `avx512` implementation using
+        // `_mm512_unpackhi_ps`.
 
         #[inline(always)]
         fn transpose_column(data: &[f32x16; 16], index: usize) -> f32x16 {
@@ -450,9 +447,8 @@ impl f32x16 {
     pub(crate) fn recip_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            // TODO: Add `_mm512_rcp14_ps` to `safe_arch`, looks like it is missing,
-            // then consider updating this implementation if the relative error is
-            // acceptable.
+            // TODO(perf): Consider using `_mm512_rcp14_ps` if the relative
+            // error is acceptable.
             1.0 / self
           } else {
             Self(Inner {
@@ -467,8 +463,7 @@ impl f32x16 {
     pub(crate) fn recip_sqrt_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
-            // TODO: Add `_mm512_rsqrt14_ps` to `safe_arch`, looks like it is
-            // missing, then consider updating this implementation if the relative
+            // TODO(perf): Consider using `_mm512_rsqrt14_ps` if the relative
             // error is acceptable.
             self.sqrt().recip()
           } else {

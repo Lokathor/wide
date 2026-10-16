@@ -217,7 +217,6 @@ impl u64x8 {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
-            // TODO(safe_arch): Add `_mm512_mask_set1_epi64`
             Self(m512i(_mm512_mask_set1_epi64(
                 self.0.0,
                 const { 1 << INDEX },
@@ -260,7 +259,6 @@ impl u64x8 {
       ) => {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
-            // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
             match INDEX {
               $($INDEX => {
                 let quarter = cast::<m128i, u64x2>(m128i(

@@ -77,7 +77,6 @@ impl i16x32 {
           if #[cfg(target_feature="avx512bw")] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m512i(rhs.0, set_splat_i16_m512i(15));
-            // TODO(safe_arch): Add `_mm512_srav_epi16`.
             Self(m512i(_mm512_srav_epi16(self.0.0, rhs.0)))
           } else {
             let [self_a, self_b]: [i16x16; 2] = cast(self);
@@ -148,7 +147,6 @@ impl i16x32 {
     pub(crate) fn unbounded_shr_backend(self, rhs: u16x32) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
-            // TODO(safe_arch): Add `_mm512_srav_epi16`.
             Self(m512i(_mm512_srav_epi16(self.0.0, rhs.0.0)))
           } else {
             let [self_a, self_b] = cast::<i16x32, [i16x16; 2]>(self);

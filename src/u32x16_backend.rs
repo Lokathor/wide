@@ -209,7 +209,6 @@ impl u32x16 {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512f")] {
-            // TODO(safe_arch): Add `_mm512_mask_set1_epi32`
             Self(m512i(_mm512_mask_set1_epi32(
                 self.0.0,
                 const { 1 << INDEX },
@@ -256,7 +255,6 @@ impl u32x16 {
       ) => {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
-            // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
             match INDEX {
               $($INDEX => {
                 let quarter = cast::<m128i, u32x4>(m128i(
@@ -764,7 +762,6 @@ impl u32x16 {
 
             let ll_hh_1 = unpack_low_i32_m512i(even_wide_mul, odd_wide_mul);
             let ll_hh_2 = unpack_high_i32_m512i(even_wide_mul, odd_wide_mul);
-            // TODO(safe_arch): Add `_mm512_unpacklo_epi64` and `_mm512_unpackhi_epi64`.
             (
               Self(m512i(_mm512_unpacklo_epi64(ll_hh_1.0, ll_hh_2.0))),
               Self(m512i(_mm512_unpackhi_epi64(ll_hh_1.0, ll_hh_2.0))),

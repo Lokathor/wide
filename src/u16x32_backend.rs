@@ -206,7 +206,6 @@ impl u16x32 {
       ) => {
         pick! {
           if #[cfg(target_feature = "avx512bw")] {
-            // TODO(safe_arch): Add `_mm512_mask_set1_epi16`
             Self(m512i(_mm512_mask_set1_epi16(
                 self.0.0,
                 const { 1 << INDEX },
@@ -256,7 +255,6 @@ impl u16x32 {
       ) => {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
-            // TODO(safe_arch): Add `_mm512_extracti32x4_epi32`
             match INDEX {
               $($INDEX => {
                 let quarter = cast::<m128i, u16x8>(m128i(
@@ -399,7 +397,6 @@ impl u16x32 {
     pub(crate) fn shuffle_backend(self, indices: u16x32) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw"))] {
-            // TODO(safe_arch): Add `_mm512_permutexvar_epi16`
             Self(m512i(_mm512_permutexvar_epi16(indices.0.0, self.0.0)))
           } else {
             let self_halfs = cast::<u16x32, [u16x16; 2]>(self);
@@ -443,7 +440,6 @@ impl u16x32 {
     pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x32) -> u16x32 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw"))] {
-            // TODO(safe_arch): add `_mm512_permutex2var_epi16`.
             u16x32(m512i(_mm512_permutex2var_epi16(inputs[0].0.0, indices.0.0, inputs[1].0.0)))
           } else {
             inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 32)

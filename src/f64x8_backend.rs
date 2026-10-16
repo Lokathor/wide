@@ -645,7 +645,6 @@ impl f64x8 {
             let non_nan = self & non_nan_mask;
             let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
             let cast: i64x8 = cast(m512i(_mm512_cvtpd_epi64(non_nan.0.0)));
             flip_to_max ^ cast
           } else {
@@ -662,7 +661,6 @@ impl f64x8 {
     pub(crate) fn fast_round_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            // TODO(safe_arch): Add `_mm512_cvtpd_epi64`.
             cast(m512i(_mm512_cvtpd_epi64(self.0.0)))
           } else {
 
@@ -712,7 +710,6 @@ impl f64x8 {
             let non_nan = self & non_nan_mask;
             let flip_to_max: i64x8 = cast(self.simd_ge(Self::splat(9223372036854775808.0)));
 
-            // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
             let cast: i64x8 = cast(m512i(_mm512_cvttpd_epi64(non_nan.0.0)));
             flip_to_max ^ cast
           } else {
@@ -729,7 +726,6 @@ impl f64x8 {
     pub(crate) fn fast_trunc_int_backend(self) -> i64x8 {
         pick! {
           if #[cfg(target_feature="avx512dq")] {
-            // TODO(safe_arch): Add `_mm512_cvttpd_epi64`.
             cast(m512i(_mm512_cvttpd_epi64(self.0.0)))
           } else {
             let [a,b]: [f64x4;2] = cast(self);

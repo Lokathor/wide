@@ -120,7 +120,6 @@ impl i16x8 {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
             let rhs = bitand_m128i(rhs.0, set_splat_i16_m128i(15));
-            // TODO(safe_arch): Add `_mm_srav_epi16`.
             cast(_mm_srav_epi16(self.0.0, rhs.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`, and negate it because
@@ -264,7 +263,6 @@ impl i16x8 {
     pub(crate) fn unbounded_shr_backend(self, rhs: u16x8) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
-            // TODO(safe_arch): Add `_mm_srav_epi16`.
             cast(_mm_srav_epi16(self.0.0, rhs.0.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
             // Negate `rhs` because there is no direct shift-right intrinsic, and
