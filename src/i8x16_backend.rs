@@ -726,8 +726,6 @@ impl i8x16 {
           } else if #[cfg(target_feature="sse2")] {
             i8x16(pack_i16_to_i8_m128i( v.0.lo.0, v.0.hi.0 ))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            use core::arch::aarch64::*;
-
             i8x16(vcombine_s8(vqmovn_s16(v.0.lo.0), vqmovn_s16(v.0.hi.0)))
           } else if #[cfg(target_feature="simd128")] {
             i8x16(i8x16_narrow_i16x8(v.0.lo.0, v.0.hi.0))

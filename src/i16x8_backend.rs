@@ -622,8 +622,6 @@ impl i16x8 {
           } else if #[cfg(target_feature="simd128")] {
             i16x8(i16x8_narrow_i32x4(v.0.lo.0, v.0.hi.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            use core::arch::aarch64::*;
-
             i16x8(vcombine_s16(vqmovn_s32(v.0.lo.0), vqmovn_s32(v.0.hi.0)))
           } else {
             fn clamp(a : i32) -> i16 {

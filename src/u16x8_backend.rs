@@ -225,8 +225,6 @@ impl u16x8 {
     pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature = "sse2")] {
-            use safe_arch::*;
-
             let bias = m128i::from([0x8000u16; 8]);
 
             let a_biased = sub_i16_m128i(self.0, bias);
@@ -237,7 +235,6 @@ impl u16x8 {
           } else if #[cfg(target_feature="simd128")] {
             Self(u16x8_gt(self.0, rhs.0))
           } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-            use core::arch::aarch64::*;
             Self(vcgtq_u16(self.0, rhs.0))
           } else {
             Self::from_array([
