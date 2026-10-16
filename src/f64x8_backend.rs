@@ -258,11 +258,11 @@ impl f64x8 {
             // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
             let lo = _mm512_castpd512_pd256(self.0);
             let hi = _mm512_extractf64x4_pd::<1>(self.0);
-            let v  = _mm256_add_pd(lo, hi);                // [a0+a4, a1+a5, a2+a6, a3+a7]
-            let t  = _mm256_hadd_pd(v, v);       // [s01, s23, s01, s23]
-            let lo = _mm256_castpd256_pd128(t);      // s01
+            let v  = _mm256_add_pd(lo, hi);         // [a0+a4, a1+a5, a2+a6, a3+a7]
+            let t  = _mm256_hadd_pd(v, v);          // [s01, s23, s01, s23]
+            let lo = _mm256_castpd256_pd128(t);     // s01
             let hi = _mm256_extractf128_pd::<1>(t); // s23
-            let s  = _mm_add_pd(lo, hi);                // [sum, ...]
+            let s  = _mm_add_pd(lo, hi);            // [sum, ...]
             _mm_cvtsd_f64(s)
           } else {
             self.0.lo.reduce_add() + self.0.hi.reduce_add()
