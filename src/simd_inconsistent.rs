@@ -114,6 +114,18 @@ impl f32x16 {
 /// The following functionality exists only for [`f64x2`], or only for
 /// particular types inconsistently.
 impl f64x2 {
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// constant indices.
+    ///
+    /// If an index is out of bounds, compilation fails.
+    ///
+    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_consts<const I0: usize, const I1: usize>(self) -> Self {
+        Self::from_bits(self.to_bits().shuffle_consts::<I0, I1>())
+    }
+
     /// Converts the lower two elements of `v` from [`i32`] to [`f64`], dropping
     /// the higher two elements.
     #[inline]
@@ -532,6 +544,20 @@ impl i32x16 {
 /// The following functionality exists only for [`i64x2`], or only for
 /// particular types inconsistently.
 impl i64x2 {
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// constant indices.
+    ///
+    /// If an index is out of bounds, compilation fails.
+    ///
+    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_consts<const I0: usize, const I1: usize>(self) -> Self {
+        self.cast_unsigned()
+            .shuffle_consts::<I0, I1>()
+            .cast_signed()
+    }
+
     /// Converts each element from [`i64`] to [`f64`].
     #[inline]
     #[must_use]
@@ -840,6 +866,23 @@ impl u32x16 {
 /// The following functionality exists only for [`u64x2`], or only for
 /// particular types inconsistently.
 impl u64x2 {
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// constant indices.
+    ///
+    /// If an index is out of bounds, compilation fails.
+    ///
+    /// Equivalent to `[self[I0], self[I1], ..., self[I{N-1}]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_consts<const I0: usize, const I1: usize>(self) -> Self {
+        const {
+            assert!(I0 < 2);
+            assert!(I1 < 2);
+        }
+
+        self.shuffle_consts_backend::<I0, I1>()
+    }
+
     /// `self + ((a * b) mod 2^W)`, reading only the low `W` bits of each lane of
     /// `a` and `b`. `W` must be in `1..=64`.
     #[inline]
