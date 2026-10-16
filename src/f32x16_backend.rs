@@ -25,7 +25,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_xor_ps(self.0, Self::splat(-0.0).0))
           } else {
             Self(Inner {
@@ -39,7 +39,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_xor_ps(self.0, _mm512_set1_ps(f32::from_bits(u32::MAX))))
           } else {
             Self(Inner {
@@ -125,7 +125,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_and_ps(self.0, rhs.0))
           } else {
             Self(Inner {
@@ -139,7 +139,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
-        if #[cfg(target_feature="avx512f")] {
+        if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_or_ps(self.0, rhs.0))
           } else {
             Self(Inner {
@@ -153,7 +153,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_xor_ps(self.0, rhs.0))
           } else {
             Self(Inner {
@@ -291,7 +291,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_or_ps(
                 _mm512_and_ps(if_one.0, self.0),
                 _mm512_andnot_ps(self.0, if_zero.0),
@@ -308,7 +308,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_mask_blend_ps(
               _mm512_movepi32_mask(_mm512_castps_si512(self.0)),
               if_false.0,
@@ -326,7 +326,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn to_bitmask_backend(self) -> u32 {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(_mm512_castps_si512(self.0)) as u32
           } else {
             (self.0.hi.to_bitmask() << 8) | self.0.lo.to_bitmask()
@@ -337,7 +337,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn any_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(_mm512_castps_si512(self.0)) != 0
           } else {
             self.0.lo.any() || self.0.hi.any()
@@ -348,7 +348,7 @@ impl f32x16 {
     #[inline]
     pub(crate) fn all_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(_mm512_castps_si512(self.0)) == !0_u16
           } else {
             self.0.lo.all() && self.0.hi.all()

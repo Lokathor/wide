@@ -337,7 +337,7 @@ impl u64x8 {
     #[inline]
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_mask_blend_epi8(_mm512_movepi8_mask(self.0), if_false.0,if_true.0))
           } else {
             Self(Inner {
@@ -363,7 +363,7 @@ impl u64x8 {
     #[inline]
     pub(crate) fn any_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi64_mask(self.0) != 0
           } else {
             let [a, b]: [i64x4; 2] = cast(self);
@@ -375,7 +375,7 @@ impl u64x8 {
     #[inline]
     pub(crate) fn all_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512bw")] {
+          if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi64_mask(self.0) == 0b11111111
           } else {
             let [a, b]: [i64x4; 2] = cast(self);

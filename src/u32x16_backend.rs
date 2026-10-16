@@ -337,7 +337,7 @@ impl u32x16 {
     #[inline]
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_mask_blend_epi8(_mm512_movepi8_mask(self.0), if_false.0,if_true.0))
           } else {
             Self(Inner {
@@ -362,7 +362,7 @@ impl u32x16 {
     #[inline]
     pub(crate) fn any_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512bw")] {
+          if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(self.0) != 0
           } else {
             let [a, b]: [u32x8; 2] = cast(self);
@@ -374,7 +374,7 @@ impl u32x16 {
     #[inline]
     pub(crate) fn all_backend(self) -> bool {
         pick! {
-          if #[cfg(target_feature="avx512bw")] {
+          if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(self.0) == 0xFFFF
           } else {
             let [a, b]: [u32x8; 2] = cast(self);
@@ -799,7 +799,7 @@ impl u32x16 {
     #[inline]
     pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
-          if #[cfg(target_feature="avx512f")] {
+          if #[cfg(target_feature="avx512dq")] {
             let alo = _mm512_extracti32x8_epi32::<0>(self.0);
             let ahi = _mm512_extracti32x8_epi32::<1>(self.0);
             let blo = _mm512_extracti32x8_epi32::<0>(rhs.0);
