@@ -286,10 +286,8 @@ impl i32x16 {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_abs_epi32(self.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo.abs(),
-              hi: self.0.hi.abs(),
-            })
+            let [self_lo, self_hi] = cast::<i32x16, [i32x8; 2]>(self);
+            cast([self_lo.abs(), self_hi.abs()])
           }
         }
     }

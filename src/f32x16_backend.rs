@@ -28,10 +28,8 @@ impl f32x16 {
           if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_xor_ps(self.0, Self::splat(-0.0).0))
           } else {
-            Self(Inner {
-              lo: -self.0.lo,
-              hi: -self.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            cast([-self_lo, -self_hi])
           }
         }
     }
@@ -42,10 +40,8 @@ impl f32x16 {
           if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_xor_ps(self.0, _mm512_set1_ps(f32::from_bits(u32::MAX))))
           } else {
-            Self(Inner {
-              lo: !self.0.lo,
-              hi: !self.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            cast([!self_lo, !self_hi])
           }
         }
     }
@@ -128,10 +124,9 @@ impl f32x16 {
           if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_and_ps(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo & rhs.0.lo,
-              hi: self.0.hi & rhs.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            let [rhs_lo, rhs_hi] = cast::<f32x16, [f32x8; 2]>(rhs);
+            cast([self_lo & rhs_lo, self_hi & rhs_hi])
           }
         }
     }
@@ -142,10 +137,9 @@ impl f32x16 {
         if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_or_ps(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo | rhs.0.lo,
-              hi: self.0.hi | rhs.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            let [rhs_lo, rhs_hi] = cast::<f32x16, [f32x8; 2]>(rhs);
+            cast([self_lo | rhs_lo, self_hi | rhs_hi])
           }
         }
     }
@@ -156,10 +150,9 @@ impl f32x16 {
           if #[cfg(target_feature="avx512dq")] {
             Self(_mm512_xor_ps(self.0, rhs.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo ^ rhs.0.lo,
-              hi: self.0.hi ^ rhs.0.hi,
-            })
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            let [rhs_lo, rhs_hi] = cast::<f32x16, [f32x8; 2]>(rhs);
+            cast([self_lo ^ rhs_lo, self_hi ^ rhs_hi])
           }
         }
     }
@@ -297,10 +290,13 @@ impl f32x16 {
                 _mm512_andnot_ps(self.0, if_zero.0),
             ))
           } else {
-            Self(Inner {
-              lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
-              hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
-            })
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            let [if_one_lo, if_one_hi] = cast::<f32x16, [f32x8; 2]>(if_one);
+            let [if_zero_lo, if_zero_hi] = cast::<f32x16, [f32x8; 2]>(if_zero);
+            cast([
+              self_lo.bitselect(if_one_lo, if_zero_lo),
+              self_hi.bitselect(if_one_hi, if_zero_hi),
+            ])
           }
         }
     }
@@ -315,10 +311,13 @@ impl f32x16 {
               if_true.0,
             ))
           } else {
-            Self(Inner {
-              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
-              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
-            })
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            let [if_true_lo, if_true_hi] = cast::<f32x16, [f32x8; 2]>(if_true);
+            let [if_false_lo, if_false_hi] = cast::<f32x16, [f32x8; 2]>(if_false);
+            cast([
+              self_lo.select(if_true_lo, if_false_lo),
+              self_hi.select(if_true_hi, if_false_hi),
+            ])
           }
         }
     }
@@ -329,7 +328,8 @@ impl f32x16 {
           if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(_mm512_castps_si512(self.0)) as u32
           } else {
-            (self.0.hi.to_bitmask() << 8) | self.0.lo.to_bitmask()
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            (self_hi.to_bitmask() << 8) | self_lo.to_bitmask()
           }
         }
     }
@@ -340,7 +340,8 @@ impl f32x16 {
           if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(_mm512_castps_si512(self.0)) != 0
           } else {
-            self.0.lo.any() || self.0.hi.any()
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            self_lo.any() || self_hi.any()
           }
         }
     }
@@ -351,7 +352,8 @@ impl f32x16 {
           if #[cfg(target_feature="avx512dq")] {
             _mm512_movepi32_mask(_mm512_castps_si512(self.0)) == !0_u16
           } else {
-            self.0.lo.all() && self.0.hi.all()
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            self_lo.all() && self_hi.all()
           }
         }
     }

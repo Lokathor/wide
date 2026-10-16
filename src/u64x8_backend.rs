@@ -340,10 +340,13 @@ impl u64x8 {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_mask_blend_epi8(_mm512_movepi8_mask(self.0), if_false.0,if_true.0))
           } else {
-            Self(Inner {
-              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
-              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
-            })
+            let [self_lo, self_hi] = cast::<u64x8, [u64x4; 2]>(self);
+            let [if_true_lo, if_true_hi] = cast::<u64x8, [u64x4; 2]>(if_true);
+            let [if_false_lo, if_false_hi] = cast::<u64x8, [u64x4; 2]>(if_false);
+            cast([
+              self_lo.select(if_true_lo, if_false_lo),
+              self_hi.select(if_true_hi, if_false_hi),
+            ])
           }
         }
     }

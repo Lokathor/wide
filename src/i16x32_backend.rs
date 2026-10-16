@@ -311,10 +311,9 @@ impl i16x32 {
           if #[cfg(target_feature="avx512bw")] {
             i32x16(_mm512_madd_epi16(self.0, rhs.0))
           } else {
-            i32x16(crate::i32x16_backend::Inner {
-              lo: self.0.lo.dot(rhs.0.lo),
-              hi: self.0.hi.dot(rhs.0.hi),
-            })
+            let [self_lo, self_hi] = cast::<i16x32, [i16x16; 2]>(self);
+            let [rhs_lo, rhs_hi] = cast::<i16x32, [i16x16; 2]>(rhs);
+            cast([self_lo.dot(rhs_lo), self_hi.dot(rhs_hi)])
           }
         }
     }
