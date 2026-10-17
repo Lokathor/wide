@@ -10,8 +10,9 @@
 * [#331](https://github.com/Lokathor/wide/pull/331): Add float methods
   `reduce_max`, `fast_reduce_max`, `reduce_min`, `fast_reduce_min`
 
-* [#356](https://github.com/Lokathor/wide/pull/356): Add `shuffle_consts` for
-  `u64x2`, `i64x2` and `f64x2`
+* [#328](https://github.com/Lokathor/wide/pull/328),
+  [#356](https://github.com/Lokathor/wide/pull/356): Add `shuffle_consts` for
+  `u32x4`, `u64x2`, `i32x4`, `i64x2`, `f32x4` and `f64x2`
 
 ### Fixed
 
