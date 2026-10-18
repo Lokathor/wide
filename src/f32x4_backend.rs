@@ -527,7 +527,7 @@ impl f32x4 {
 
     #[inline]
     pub(crate) fn is_finite_backend(self) -> Self {
-        let shifted_exp_mask = u32x4::from(0xFF000000);
+        let shifted_exp_mask = const { u32x4::splat(0xFF000000) };
         let u: u32x4 = cast(self);
         let shift_u = u << 1_u64;
         let out = !(shift_u & shifted_exp_mask).simd_eq(shifted_exp_mask);
