@@ -413,11 +413,6 @@ macro_rules! define_simd {
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
   ) => {
     #[doc = concat!("A SIMD vector with ", $N_STR, " elements of type [`", stringify!($T), "`].")]
-    ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
     pub type $Simd = Simd<$T, $N>;
 
     /// Constructs a specific SIMD type from its `Inner` type using its
