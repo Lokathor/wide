@@ -420,6 +420,21 @@ macro_rules! define_simd {
     /// [crate level documentation]: crate
     pub type $Simd = Simd<$T, $N>;
 
+    /// Constructs a specific SIMD type from its `Inner` type using its
+    /// type-alias name.
+    ///
+    /// This function is used because type-aliases do not support tuple-struct
+    /// construction syntax.
+    ///
+    /// TODO(generics): Decide if this function should be removed in favor of
+    /// constructing non-`Self` SIMD types using `Simd(inner)` instead of
+    /// `{simd-type}(Inner)`. Wait until the generics API is ready to be merged
+    /// onto `main`, only then remove this function if decided so (wait to avoid
+    /// merge conflicts with `main`).
+    pub(crate) fn $Simd(inner: <$Simd as SimdBackend>::Inner) -> $Simd {
+      Simd(inner)
+    }
+
     impl SupportedSimd for Simd<$T, $N> {}
 
     // Invoke a macro that automatically implements some of this API's backend
