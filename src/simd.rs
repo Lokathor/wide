@@ -418,9 +418,9 @@ macro_rules! define_simd {
     /// vectors.
     ///
     /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct $Simd(pub(crate) crate::$backend_mod::Inner);
+    pub type $Simd = Simd<$T, $N>;
+
+    impl SupportedSimd for Simd<$T, $N> {}
 
     // Invoke a macro that automatically implements some of this API's backend
     // functions. This macro is `float_auto_impl` for floats, `signed_auto_impl`
@@ -1560,7 +1560,14 @@ impl Sealed for u64 {}
 impl Sealed for u128 {}
 impl Sealed for usize {}
 
-impl<Simd, const N: usize> Sealed for [Simd; N] {}
+impl<T, const N: usize> Sealed for [T; N] {}
+
+impl<T, const N: usize> Sealed for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+}
 
 /// `serde` does not implement `Deserialize` for `[T; 64]`, so this manual
 /// implementation is used.
