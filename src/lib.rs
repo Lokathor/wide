@@ -13,6 +13,9 @@
 
 //! A crate to help you go wide.
 //!
+//! TODO(generics): The crate-level documentation should probably be updated for
+//! the new API changes.
+//!
 //! This crate provides SIMD-compatible data types.
 //!
 //! When possible, explicit SIMD is used with all the math operations here. As a
