@@ -4,6 +4,54 @@ use bytemuck::{Pod, Zeroable, cast, pod_align_to, pod_align_to_mut};
 #[cfg(feature = "serde")]
 use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
+/// TODO(generics): Add documentation and explain how to use SIMD vectors.
+///
+/// # Layout
+///
+/// TODO(generics): Define this type's precise layout guarantees (size,
+/// alignment, what about non-power-of-two lane counts).
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+pub struct Simd<T, const N: usize>(pub(crate) <Self as SimdBackend>::Inner)
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd;
+
+/// A trait for types that can be used as SIMD vector elements.
+///
+/// Note that because [`Simd<T, N>`] only supports certain combinations of `T`
+/// and `N`, there may be `T` types that implement [`SimdElement`] but are not
+/// actually supported in any real SIMD type. For example, [`usize`] implements
+/// [`SimdElement`], but there is currently no [`Simd<usize, N>`] type that
+/// implements [`SupportedSimd`].
+#[expect(private_bounds)]
+pub trait SimdElement: Sealed {
+    /// Add a dummy associated constant in order to avoid marking this trait as
+    /// dyn compatible.
+    ///
+    /// This cannot be done with a `Sized` super trait because we do not want to
+    /// guarantee that all SIMD element types implement `Sized`.
+    #[doc(hidden)]
+    const NOT_DYN_COMPATIBLE_MARKER: () = ();
+}
+
+/// A trait for [`Simd<T, N>`] types that are actually supported.
+///
+/// Due to Rust language limitations, [`Simd<T, N>`] only supports certain
+/// combinations of `T` and `N`. The trait bound `Simd<T, N>: SupportedSimd`
+/// must be used in generic contexts to make sure the given SIMD type is
+/// supported.
+///
+/// In the future, if Rust stabilizes the appropriate language features,
+/// [`Simd<T, N>`] would support all combinations of `T` and `N`, the trait
+/// bound would be removed and this trait would be deprecated.
+#[expect(private_bounds)]
+pub trait SupportedSimd: Sealed + SimdBackend {}
+
+pub(crate) trait SimdBackend {
+    type Inner: Copy;
+}
+
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
