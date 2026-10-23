@@ -383,6 +383,21 @@ where
 
 trait Sealed {}
 
+impl SimdElement for f32 {}
+impl SimdElement for f64 {}
+impl SimdElement for i8 {}
+impl SimdElement for i16 {}
+impl SimdElement for i32 {}
+impl SimdElement for i64 {}
+impl SimdElement for i128 {}
+impl SimdElement for isize {}
+impl SimdElement for u8 {}
+impl SimdElement for u16 {}
+impl SimdElement for u32 {}
+impl SimdElement for u64 {}
+impl SimdElement for u128 {}
+impl SimdElement for usize {}
+
 macro_rules! define_simd {
   (
       T = $T:ident,
@@ -1529,6 +1544,21 @@ macro_rules! unsigned_auto_impl {
         // There are currently no such functions.
     };
 }
+
+impl Sealed for f32 {}
+impl Sealed for f64 {}
+impl Sealed for i8 {}
+impl Sealed for i16 {}
+impl Sealed for i32 {}
+impl Sealed for i64 {}
+impl Sealed for i128 {}
+impl Sealed for isize {}
+impl Sealed for u8 {}
+impl Sealed for u16 {}
+impl Sealed for u32 {}
+impl Sealed for u64 {}
+impl Sealed for u128 {}
+impl Sealed for usize {}
 
 impl<Simd, const N: usize> Sealed for [Simd; N] {}
 
