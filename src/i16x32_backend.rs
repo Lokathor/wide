@@ -1,16 +1,21 @@
 use crate::backend_imports::*;
 
-pick! {
-  if #[cfg(target_feature="avx512bw")] {
-    pub(crate) type Inner = __m512i;
-  } else {
-    #[repr(C, align(64))]
-    #[derive(Clone, Copy)]
-    pub(crate) struct Inner {
-      pub lo: i16x16,
-      pub hi: i16x16,
+#[cfg(not(target_feature = "avx512bw"))]
+#[repr(C, align(64))]
+#[derive(Clone, Copy)]
+pub(crate) struct Inner {
+    pub lo: i16x16,
+    pub hi: i16x16,
+}
+
+impl SimdBackend for i16x32 {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        type Inner = __m512i;
+      } else {
+        type Inner = Inner;
+      }
     }
-  }
 }
 
 safe_target_feature! {

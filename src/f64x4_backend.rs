@@ -1,16 +1,21 @@
 use crate::backend_imports::*;
 
-pick! {
-  if #[cfg(target_feature="avx")] {
-    pub(crate) type Inner = __m256d;
-  } else {
-    #[repr(C, align(32))]
-    #[derive(Clone, Copy)]
-    pub(crate) struct Inner {
-      pub lo: f64x2,
-      pub hi: f64x2,
+#[cfg(not(target_feature = "avx"))]
+#[repr(C, align(32))]
+#[derive(Clone, Copy)]
+pub(crate) struct Inner {
+    pub lo: f64x2,
+    pub hi: f64x2,
+}
+
+impl SimdBackend for f64x4 {
+    pick! {
+      if #[cfg(target_feature="avx")] {
+        type Inner = __m256d;
+      } else {
+        type Inner = Inner;
+      }
     }
-  }
 }
 
 macro_rules! const_f64_as_f64x4 {

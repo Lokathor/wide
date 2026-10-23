@@ -1,19 +1,28 @@
 use crate::backend_imports::*;
 
-pick! {
-  if #[cfg(target_feature="sse2")] {
-    pub(crate) type Inner = __m128d;
-  } else if #[cfg(target_feature="simd128")] {
-    pub(crate) type Inner = v128;
-  } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-    pub(crate) type Inner = float64x2_t;
-  } else {
-    #[repr(C, align(16))]
-    #[derive(Clone, Copy)]
-    pub(crate) struct Inner {
-      pub arr: [f64; 2],
+#[cfg(not(any(
+    target_feature = "sse2",
+    target_feature = "simd128",
+    all(target_feature = "neon", target_arch = "aarch64")
+)))]
+#[repr(C, align(16))]
+#[derive(Clone, Copy)]
+pub(crate) struct Inner {
+    pub arr: [f64; 2],
+}
+
+impl SimdBackend for f64x2 {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        type Inner = __m128d;
+      } else if #[cfg(target_feature="simd128")] {
+        type Inner = v128;
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        type Inner = float64x2_t;
+      } else {
+        type Inner = Inner;
+      }
     }
-  }
 }
 
 macro_rules! const_f64_as_f64x2 {
