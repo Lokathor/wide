@@ -442,17 +442,6 @@ impl u64x2 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u64x2 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u64x2 {
-}
-}
-
-safe_target_feature! {
-impl u64x2 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         self ^ cast::<u128, u64x2>(u128::MAX)
@@ -893,7 +882,12 @@ impl u64x2 {
             ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
         ])
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u64x2 {
     #[inline]
     pub(crate) fn shuffle_consts_backend<const I0: usize, const I1: usize>(self) -> Self {
         if const { I0 == 0 && I1 == 0 } {
