@@ -770,6 +770,37 @@ macro_rules! impl_simd_float {
         unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
       }
 
+      /// Creates a SIMD vector from a native-endian byte array.
+      ///
+      /// The bytes are interpreted as the raw memory representation of the
+      /// vector. This is equivalent to the `from_ne_bytes` functions on the
+      /// primitive scalar types, but operates on the entire vector at once.
+      ///
+      /// This is the inverse of [`to_ne_bytes`].
+      ///
+      /// [`to_ne_bytes`]: Self::to_ne_bytes
+      #[inline]
+      #[must_use]
+      pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
+        // SAFETY: `$Simd` accepts all bit-patterns and only contains
+        // initialized memory, and the byte array has the same size.
+        unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
+      }
+
+      /// Returns the raw memory representation of `self` as a native-endian
+      /// byte array.
+      ///
+      /// This is the inverse of [`from_ne_bytes`].
+      ///
+      /// [`from_ne_bytes`]: Self::from_ne_bytes
+      #[inline]
+      #[must_use]
+      pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
+        // SAFETY: `$Simd` accepts all bit-patterns and only contains
+        // initialized memory, and the byte array has the same size.
+        unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
+      }
+
       /// Bitwise selection.
       ///
       /// For each bit of `self`:
