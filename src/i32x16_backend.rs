@@ -19,7 +19,6 @@ impl SimdBackend for i32x16 {
 }
 
 safe_target_feature! {
-// Backend of general-SIMD functions.
 impl i32x16 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -88,12 +87,7 @@ impl i32x16 {
           }
         }
     }
-}
-}
 
-safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i32x16 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u32x16) -> Self {
         pick! {
@@ -290,12 +284,7 @@ impl i32x16 {
           }
         }
     }
-}
-}
 
-safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i32x16 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
@@ -337,12 +326,7 @@ impl i32x16 {
           }
         }
     }
-}
-}
 
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl i32x16 {
     #[inline]
     pub(crate) fn from_i16x16_backend(v: i16x16) -> Self {
         pick! {

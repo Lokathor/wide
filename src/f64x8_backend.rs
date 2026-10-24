@@ -26,211 +26,6 @@ macro_rules! const_f64_as_f64x8 {
 }
 
 safe_target_feature! {
-// Backend of general-SIMD functions.
-impl f64x8 {
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_pd(
-              _mm512_cmp_pd_mask::<{_CMP_EQ_OQ}>(self.0, rhs.0),
-              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_eq(rhs.0.lo),
-              hi: self.0.hi.simd_eq(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_pd(
-              _mm512_cmp_pd_mask::<{_CMP_NEQ_UQ}>(self.0, rhs.0),
-              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ne(rhs.0.lo),
-              hi: self.0.hi.simd_ne(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_pd(
-              _mm512_cmp_pd_mask::<{_CMP_LT_OQ}>(self.0, rhs.0),
-              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_lt(rhs.0.lo),
-              hi: self.0.hi.simd_lt(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_pd(
-              _mm512_cmp_pd_mask::<{_CMP_GT_OQ}>(self.0, rhs.0),
-              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_gt(rhs.0.lo),
-              hi: self.0.hi.simd_gt(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_pd(
-              _mm512_cmp_pd_mask::<{_CMP_LE_OQ}>(self.0, rhs.0),
-              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_le(rhs.0.lo),
-              hi: self.0.hi.simd_le(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_pd(
-              _mm512_cmp_pd_mask::<{_CMP_GE_OQ}>(self.0, rhs.0),
-              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ge(rhs.0.lo),
-              hi: self.0.hi.simd_ge(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            Self(_mm512_mask_blend_pd(
-              _mm512_movepi64_mask(_mm512_castpd_si512(self.0)),
-              if_false.0,
-              if_true.0,
-            ))
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            let [if_true_lo, if_true_hi] = cast::<f64x8, [f64x4; 2]>(if_true);
-            let [if_false_lo, if_false_hi] = cast::<f64x8, [f64x4; 2]>(if_false);
-            cast([
-              self_lo.select(if_true_lo, if_false_lo),
-              self_hi.select(if_true_hi, if_false_hi),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) as u32
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            (self_hi.to_bitmask() << 4) | self_lo.to_bitmask()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) != 0
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            self_lo.any() || self_hi.any()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) == 0b11111111
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            self_lo.all() && self_hi.all()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [f64x8; 8]) -> [f64x8; 8] {
-        // Can this be optimized?
-
-        #[inline(always)]
-        fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
-            f64x8::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-                data[4].as_array()[index],
-                data[5].as_array()[index],
-                data[6].as_array()[index],
-                data[7].as_array()[index],
-            ])
-        }
-
-        [
-            transpose_column(&data, 0),
-            transpose_column(&data, 1),
-            transpose_column(&data, 2),
-            transpose_column(&data, 3),
-            transpose_column(&data, 4),
-            transpose_column(&data, 5),
-            transpose_column(&data, 6),
-            transpose_column(&data, 7),
-        ]
-    }
-}
-}
-
-safe_target_feature! {
-// Backend of SIMD float functions.
 impl f64x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
@@ -360,6 +155,108 @@ impl f64x8 {
     }
 
     #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_EQ_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_eq(rhs.0.lo),
+              hi: self.0.hi.simd_eq(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_NEQ_UQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ne(rhs.0.lo),
+              hi: self.0.hi.simd_ne(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_LT_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_lt(rhs.0.lo),
+              hi: self.0.hi.simd_lt(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_GT_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_gt(rhs.0.lo),
+              hi: self.0.hi.simd_gt(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_LE_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_le(rhs.0.lo),
+              hi: self.0.hi.simd_le(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_pd(
+              _mm512_cmp_pd_mask::<{_CMP_GE_OQ}>(self.0, rhs.0),
+              _mm512_castsi512_pd(_mm512_set1_epi64(-1)),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ge(rhs.0.lo),
+              hi: self.0.hi.simd_ge(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
     pub(crate) fn reduce_add_backend(self) -> f64 {
         pick! {
           if #[cfg(target_feature="avx512f")] {
@@ -416,6 +313,103 @@ impl f64x8 {
             ])
           }
         }
+    }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_mask_blend_pd(
+              _mm512_movepi64_mask(_mm512_castpd_si512(self.0)),
+              if_false.0,
+              if_true.0,
+            ))
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            let [if_true_lo, if_true_hi] = cast::<f64x8, [f64x4; 2]>(if_true);
+            let [if_false_lo, if_false_hi] = cast::<f64x8, [f64x4; 2]>(if_false);
+            cast([
+              self_lo.select(if_true_lo, if_false_lo),
+              self_hi.select(if_true_hi, if_false_hi),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) as u32
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            (self_hi.to_bitmask() << 4) | self_lo.to_bitmask()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) != 0
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            self_lo.any() || self_hi.any()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) == 0b11111111
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            self_lo.all() && self_hi.all()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [f64x8; 8]) -> [f64x8; 8] {
+        // Can this be optimized?
+
+        #[inline(always)]
+        fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
+            f64x8::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+                data[4].as_array()[index],
+                data[5].as_array()[index],
+                data[6].as_array()[index],
+                data[7].as_array()[index],
+            ])
+        }
+
+        [
+            transpose_column(&data, 0),
+            transpose_column(&data, 1),
+            transpose_column(&data, 2),
+            transpose_column(&data, 3),
+            transpose_column(&data, 4),
+            transpose_column(&data, 5),
+            transpose_column(&data, 6),
+            transpose_column(&data, 7),
+        ]
     }
 
     #[inline]
@@ -1806,12 +1800,7 @@ impl f64x8 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
-}
-}
 
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl f64x8 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f64_as_f64x8!(pow2_52, 4503599627370496.0);

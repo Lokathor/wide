@@ -26,7 +26,6 @@ impl SimdBackend for i64x2 {
 }
 
 safe_target_feature! {
-// Backend of general-SIMD functions.
 impl i64x2 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -108,12 +107,7 @@ impl i64x2 {
           }
         }
     }
-}
-}
 
-safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i64x2 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u64x2) -> Self {
         pick! {
@@ -313,12 +307,7 @@ impl i64x2 {
             ((self_array[1] as i128).wrapping_mul(rhs_array[1] as i128) >> 64) as i64,
         ])
     }
-}
-}
 
-safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i64x2 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
@@ -359,12 +348,7 @@ impl i64x2 {
           }
         }
     }
-}
-}
 
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl i64x2 {
     #[inline]
     pub(crate) fn round_float_backend(self) -> f64x2 {
         let arr: [i64; 2] = cast(self);
