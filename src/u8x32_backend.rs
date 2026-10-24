@@ -496,17 +496,6 @@ impl u8x32 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u8x32 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u8x32 {
-}
-}
-
-safe_target_feature! {
-impl u8x32 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
@@ -856,7 +845,12 @@ impl u8x32 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u8x32 {
     #[inline]
     pub(crate) fn swizzle_half_backend(self, rhs: i8x32) -> i8x32 {
         cast(i8x32::swizzle_half(cast(self), cast(rhs)))
@@ -866,12 +860,7 @@ impl u8x32 {
     pub(crate) fn swizzle_half_relaxed_backend(self, rhs: u8x32) -> u8x32 {
         cast(i8x32::swizzle_half_relaxed(cast(self), cast(rhs)))
     }
-}
-}
 
-#[cfg(target_feature = "avx2")]
-safe_target_feature! {
-impl u8x32 {
     // There's no `u8` shift instruction, so we cheat: widen every byte to a
     // `u16`, shift in the wider lane, then shrink back down to `u8`. Shifting
     // left can push bits past `u8::MAX`, so we keep only the low 8 bits before
