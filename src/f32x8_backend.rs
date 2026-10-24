@@ -13,13 +13,6 @@ pick! {
   }
 }
 
-macro_rules! const_f32_as_f32x8 {
-    ($i:ident, $f:expr) => {
-        #[allow(non_upper_case_globals)]
-        pub const $i: f32x8 = f32x8::from_array([$f; 8]);
-    };
-}
-
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl f32x8 {
