@@ -29,6 +29,7 @@ macro_rules! impl_simd_float {
       SignedSimd = $SignedSimd:ident,
       UnsignedT = $UnsignedT:ident,
       UnsignedSimd = $UnsignedSimd:ident,
+      old_powf_simd_fn_name = $old_powf_simd_fn_name:ident,
   ) => {
     impl_unary_operator!(
       $Simd,
@@ -779,58 +780,6 @@ macro_rules! impl_simd_float {
         unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
       }
 
-      /// Creates a SIMD vector from a native-endian byte array.
-      ///
-      /// The bytes are interpreted as the raw memory representation of the
-      /// vector. This is equivalent to the `from_ne_bytes` functions on
-      /// primitive float types, but operates on the entire vector at once.
-      ///
-      /// This is the inverse of [`to_ne_bytes`].
-      ///
-      /// [`to_ne_bytes`]: Self::to_ne_bytes
-      #[inline]
-      #[must_use]
-      pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
-        // SAFETY: `$Simd` accepts all bit-patterns and only contains
-        // initialized memory, and the byte array has the same size.
-        unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
-      }
-
-      /// Returns the raw memory representation of `self` as a native-endian
-      /// byte array.
-      ///
-      /// This is the inverse of [`from_ne_bytes`].
-      ///
-      /// [`from_ne_bytes`]: Self::from_ne_bytes
-      #[inline]
-      #[must_use]
-      pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
-        // SAFETY: `$Simd` accepts all bit-patterns and only contains
-        // initialized memory, and the byte array has the same size.
-        unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
-      }
-
-      /// Bitwise selection.
-      ///
-      /// For each bit of `self`:
-      ///
-      /// - If the bit is one, return the corresponding bit of `if_one`
-      /// - If the bit is zero, return the corresponding bit of `if_zero`
-      ///
-      /// This computes a bitwise operation, even for NaNs, and even though
-      /// bitwise operators are not implemented for Rust's primitive floats.
-      ///
-      /// If you know `self` is a [mask], meaning each element is either all
-      /// zeros or all ones, consider using [`select`] which is faster.
-      ///
-      /// [mask]: crate#masks
-      /// [`select`]: Self::select
-      #[inline]
-      #[must_use]
-      pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-        self.bitselect_backend(if_one, if_zero)
-      }
-
       /// Restrict a value to a certain interval unless it is NaN.
       ///
       /// If `self`, `min` or `max` are NaN, the result is NaN. If `min > max`,
@@ -1539,6 +1488,25 @@ macro_rules! impl_simd_float {
         self.fast_mul_neg_sub(a, b)
       }
 
+      /// Raises each element of the number `self` to the corresponding element
+      /// of the floating point power `n`.
+      ///
+      /// This function has been renamed to [`powf_simd`].
+      ///
+      /// # Non-deterministic
+      ///
+      /// The exact result of this function is non-deterministic. This means it
+      /// can vary by platform, version, and could even differ within the same
+      /// execution from one invocation to the next.
+      ///
+      /// [`powf_simd`]: Self::powf_simd
+      #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+      #[inline]
+      #[must_use]
+      pub fn $old_powf_simd_fn_name(self, n: Self) -> Self {
+        self.powf_simd(n)
+      }
+
       /// Raises each element of the number `self` to the scalar floating point
       /// power `n`.
       ///
@@ -1566,6 +1534,7 @@ impl_simd_float!(
     SignedSimd = i32x4,
     UnsignedT = u32,
     UnsignedSimd = u32x4,
+    old_powf_simd_fn_name = pow_f32x4,
 );
 impl_simd_float!(
     T = f32,
@@ -1573,6 +1542,7 @@ impl_simd_float!(
     SignedSimd = i32x8,
     UnsignedT = u32,
     UnsignedSimd = u32x8,
+    old_powf_simd_fn_name = pow_f32x8,
 );
 impl_simd_float!(
     T = f32,
@@ -1580,6 +1550,7 @@ impl_simd_float!(
     SignedSimd = i32x16,
     UnsignedT = u32,
     UnsignedSimd = u32x16,
+    old_powf_simd_fn_name = pow_f32x16,
 );
 impl_simd_float!(
     T = f64,
@@ -1587,6 +1558,7 @@ impl_simd_float!(
     SignedSimd = i64x2,
     UnsignedT = u64,
     UnsignedSimd = u64x2,
+    old_powf_simd_fn_name = pow_f64x2,
 );
 impl_simd_float!(
     T = f64,
@@ -1594,6 +1566,7 @@ impl_simd_float!(
     SignedSimd = i64x4,
     UnsignedT = u64,
     UnsignedSimd = u64x4,
+    old_powf_simd_fn_name = pow_f64x4,
 );
 impl_simd_float!(
     T = f64,
@@ -1601,4 +1574,5 @@ impl_simd_float!(
     SignedSimd = i64x8,
     UnsignedT = u64,
     UnsignedSimd = u64x8,
+    old_powf_simd_fn_name = pow_f64x8,
 );

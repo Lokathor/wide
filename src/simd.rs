@@ -882,6 +882,37 @@ macro_rules! define_simd {
         unsafe { core::mem::transmute::<&mut $Simd, &mut [$T; $N]>(self) }
       }
 
+      /// Creates a SIMD vector from a native-endian byte array.
+      ///
+      /// The bytes are interpreted as the raw memory representation of the
+      /// vector. This is equivalent to the `from_ne_bytes` functions on the
+      /// primitive scalar types, but operates on the entire vector at once.
+      ///
+      /// This is the inverse of [`to_ne_bytes`].
+      ///
+      /// [`to_ne_bytes`]: Self::to_ne_bytes
+      #[inline]
+      #[must_use]
+      pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
+        // SAFETY: `$Simd` accepts all bit-patterns and only contains
+        // initialized memory, and the byte array has the same size.
+        unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
+      }
+
+      /// Returns the raw memory representation of `self` as a native-endian
+      /// byte array.
+      ///
+      /// This is the inverse of [`from_ne_bytes`].
+      ///
+      /// [`from_ne_bytes`]: Self::from_ne_bytes
+      #[inline]
+      #[must_use]
+      pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
+        // SAFETY: `$Simd` accepts all bit-patterns and only contains
+        // initialized memory, and the byte array has the same size.
+        unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
+      }
+
       /// Returns a [mask] that checks if each element of `self` is equal to the
       /// corresponding element of `other`.
       ///
@@ -989,6 +1020,24 @@ macro_rules! define_simd {
         self.extract_const_backend::<INDEX>()
       }
 
+      /// Bitwise selection.
+      ///
+      /// For each bit of `self`:
+      ///
+      /// - If the bit is one, return the corresponding bit of `if_one`
+      /// - If the bit is zero, return the corresponding bit of `if_zero`
+      ///
+      /// If you know `self` is a [mask], meaning each element is either all
+      /// zeros or all ones, consider using [`select`] which is faster.
+      ///
+      /// [mask]: crate#masks
+      /// [`select`]: Self::select
+      #[inline]
+      #[must_use]
+      pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+        self.bitselect_backend(if_one, if_zero)
+      }
+
       /// Lanewise SIMD selection.
       ///
       /// For each lane:
@@ -1006,7 +1055,7 @@ macro_rules! define_simd {
       /// if you implement `Select<Composite> for Simd`.
       ///
       /// [mask]: crate#masks
-      /// [`bitselect`]: f32x4::bitselect
+      /// [`bitselect`]: Self::bitselect
       #[inline]
       #[must_use]
       pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
@@ -1184,7 +1233,7 @@ macro_rules! define_simd {
       /// [mask]: crate#masks
       /// [`blend`]: Self::blend
       /// [`select`]: Self::select
-      /// [`bitselect`]: f32x4::bitselect
+      /// [`bitselect`]: Self::bitselect
       #[deprecated(
         since = "1.6.0",
         note = "split into `select` and `bitselect` functions"
@@ -1383,6 +1432,13 @@ macro_rules! signed_auto_impl {
             #[inline]
             fn extract_const_backend<const INDEX: usize>(self) -> $T {
                 self.cast_unsigned().extract_const::<INDEX>().cast_signed()
+            }
+
+            #[inline]
+            fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+                self.cast_unsigned()
+                    .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
+                    .cast_signed()
             }
 
             #[inline]
