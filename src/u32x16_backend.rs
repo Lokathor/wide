@@ -449,17 +449,6 @@ impl u32x16 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u32x16 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u32x16 {
-}
-}
-
-safe_target_feature! {
-impl u32x16 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
@@ -848,7 +837,12 @@ impl u32x16 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u32x16 {
     #[inline]
     pub(crate) fn from_u16x16_backend(v: u16x16) -> Self {
         pick! {
