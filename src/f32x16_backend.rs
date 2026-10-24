@@ -244,17 +244,6 @@ impl f32x16 {
 safe_target_feature! {
 // Backend of SIMD float functions.
 impl f32x16 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl f32x16 {
-}
-}
-
-safe_target_feature! {
-impl f32x16 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
@@ -1596,7 +1585,12 @@ impl f32x16 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl f32x16 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f32_as_f32x16!(pow2_23, 8388608.0);
