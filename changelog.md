@@ -56,9 +56,11 @@
   between unsigned and signed integers into their own `impl` block in
   documentation
 
-* [#341](https://github.com/Lokathor/wide/pull/341): Move `reduce_add` and
-  `reduce_mul` to the separate `impl` blocks of floats and integers, and improve
-  documentation of operators
+* [#341](https://github.com/Lokathor/wide/pull/341),
+  [#364](https://github.com/Lokathor/wide/pull/364): Move `reduce_add`,
+  `reduce_mul`, `from_ne_bytes`, `to_ne_bytes` and `bitselect` from the `impl`
+  block of general-SIMD functionality to the separate `impl` blocks of floats
+  and integers, and improve the documentation of those functions and operators
 
 * [#343](https://github.com/Lokathor/wide/pull/343): Remove type-specific
   documentation extensions from functions available for categories of SIMD types
