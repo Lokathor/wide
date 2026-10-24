@@ -492,17 +492,6 @@ impl u32x4 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u32x4 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u32x4 {
-}
-}
-
-safe_target_feature! {
-impl u32x4 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         self ^ cast::<u128, u32x4>(u128::MAX)
@@ -1134,7 +1123,12 @@ impl u32x4 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u32x4 {
     #[inline]
     pub(crate) fn shuffle_consts_backend<
         const I0: usize,
