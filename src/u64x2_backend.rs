@@ -19,6 +19,108 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl u64x2 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            Self(_mm_cmpeq_epi64(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_eq(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vceqq_u64(self.0, rhs.0))
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] == r[0] { -1_i64 } else { 0 },
+              if s[1] == r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            !self.simd_eq(rhs)
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u64x2_ne(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_eq(rhs)
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] != r[0] { -1_i64 } else { 0 },
+              if s[1] != r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        // lt is just gt the other way around
+        rhs.simd_gt(self)
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.2")] {
+            // no unsigned gt so inverting the high bit will get the correct result
+            let highbit = u64x2::splat(1 << 63);
+            Self(_mm_cmpgt_epi64((self ^ highbit).0, (rhs ^ highbit).0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vcgtq_u64(self.0, rhs.0))
+          } else {
+            // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] > r[0] { u64::MAX } else { 0 },
+              if s[1] > r[1] { u64::MAX } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            !self.simd_gt(rhs)
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_gt(rhs)
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] <= r[0] { -1_i64 } else { 0 },
+              if s[1] <= r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            !self.simd_lt(rhs)
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_lt(rhs)
+          } else {
+            let s: [u64;2] = cast(self);
+            let r: [u64;2] = cast(rhs);
+            cast([
+              if s[0] >= r[0] { -1_i64 } else { 0 },
+              if s[1] >= r[1] { -1_i64 } else { 0 },
+            ])
+          }
+        }
+    }
 }
 }
 
@@ -143,109 +245,6 @@ impl u64x2 {
             Self::from_array([
               self.0.arr[0] ^ rhs.0.arr[0],
               self.0.arr[1] ^ rhs.0.arr[1],
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.1")] {
-            Self(_mm_cmpeq_epi64(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u64x2_eq(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vceqq_u64(self.0, rhs.0))
-          } else {
-            let s: [u64;2] = cast(self);
-            let r: [u64;2] = cast(rhs);
-            cast([
-              if s[0] == r[0] { -1_i64 } else { 0 },
-              if s[1] == r[1] { -1_i64 } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.1")] {
-            !self.simd_eq(rhs)
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u64x2_ne(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !self.simd_eq(rhs)
-          } else {
-            let s: [u64;2] = cast(self);
-            let r: [u64;2] = cast(rhs);
-            cast([
-              if s[0] != r[0] { -1_i64 } else { 0 },
-              if s[1] != r[1] { -1_i64 } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        // lt is just gt the other way around
-        rhs.simd_gt(self)
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.2")] {
-            // no unsigned gt so inverting the high bit will get the correct result
-            let highbit = u64x2::splat(1 << 63);
-            Self(_mm_cmpgt_epi64((self ^ highbit).0, (rhs ^ highbit).0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vcgtq_u64(self.0, rhs.0))
-          } else {
-            // u64x2_gt on WASM is not a thing. https://github.com/WebAssembly/simd/pull/414
-            let s: [u64;2] = cast(self);
-            let r: [u64;2] = cast(rhs);
-            cast([
-              if s[0] > r[0] { u64::MAX } else { 0 },
-              if s[1] > r[1] { u64::MAX } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.1")] {
-            !self.simd_gt(rhs)
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !self.simd_gt(rhs)
-          } else {
-            let s: [u64;2] = cast(self);
-            let r: [u64;2] = cast(rhs);
-            cast([
-              if s[0] <= r[0] { -1_i64 } else { 0 },
-              if s[1] <= r[1] { -1_i64 } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.1")] {
-            !self.simd_lt(rhs)
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !self.simd_lt(rhs)
-          } else {
-            let s: [u64;2] = cast(self);
-            let r: [u64;2] = cast(rhs);
-            cast([
-              if s[0] >= r[0] { -1_i64 } else { 0 },
-              if s[1] >= r[1] { -1_i64 } else { 0 },
             ])
           }
         }

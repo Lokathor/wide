@@ -16,6 +16,95 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl u8x32 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self(_mm256_cmpeq_epi8(self.0,rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_eq(rhs.0.lo),
+              hi: self.0.hi.simd_eq(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            !self.simd_eq(rhs)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ne(rhs.0.lo),
+              hi: self.0.hi.simd_ne(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // Convert from u8 to i8.
+            let offset = Self::splat(0x80);
+            let self_i8 = (self ^ offset).0;
+            let rhs_i8 = (rhs ^ offset).0;
+            Self(_mm256_cmpgt_epi8(rhs_i8, self_i8))
+          } else {
+            Self(Inner { lo: self.0.lo.simd_lt(rhs.0.lo), hi: self.0.hi.simd_lt(rhs.0.hi) })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // Convert from u8 to i8.
+            let offset = Self::splat(0x80);
+            let self_i8 = (self ^ offset).0;
+            let rhs_i8 = (rhs ^ offset).0;
+            Self(_mm256_cmpgt_epi8(self_i8,rhs_i8))
+          } else {
+            Self(Inner { lo: self.0.lo.simd_gt(rhs.0.lo), hi: self.0.hi.simd_gt(rhs.0.hi) })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // Convert from u8 to i8.
+            let offset = Self::splat(0x80);
+            let self_i8 = (self ^ offset).0;
+            let rhs_i8 = (rhs ^ offset).0;
+            let gt_mask = Self(_mm256_cmpgt_epi8(self_i8,rhs_i8));
+            gt_mask ^ Self::splat(0xFF)
+          } else {
+            Self(Inner { lo: self.0.lo.simd_le(rhs.0.lo), hi: self.0.hi.simd_le(rhs.0.hi) })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // Convert from u8 to i8.
+            let offset = Self::splat(0x80);
+            let self_i8 = (self ^ offset).0;
+            let rhs_i8 = (rhs ^ offset).0;
+            let lt_mask = Self(_mm256_cmpgt_epi8(rhs_i8, self_i8));
+            lt_mask ^ Self::splat(0xFF)
+          } else {
+            Self(Inner { lo: self.0.lo.simd_ge(rhs.0.lo), hi: self.0.hi.simd_ge(rhs.0.hi) })
+          }
+        }
+    }
 }
 }
 
@@ -123,96 +212,6 @@ impl u8x32 {
               lo: self.0.lo ^ rhs.0.lo,
               hi: self.0.hi ^ rhs.0.hi,
             })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            Self(_mm256_cmpeq_epi8(self.0,rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_eq(rhs.0.lo),
-              hi: self.0.hi.simd_eq(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            !self.simd_eq(rhs)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ne(rhs.0.lo),
-              hi: self.0.hi.simd_ne(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Convert from u8 to i8.
-            let offset = Self::splat(0x80);
-            let self_i8 = (self ^ offset).0;
-            let rhs_i8 = (rhs ^ offset).0;
-            Self(_mm256_cmpgt_epi8(rhs_i8, self_i8))
-          } else {
-            Self(Inner { lo: self.0.lo.simd_lt(rhs.0.lo), hi: self.0.hi.simd_lt(rhs.0.hi) })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Convert from u8 to i8.
-            let offset = Self::splat(0x80);
-            let self_i8 = (self ^ offset).0;
-            let rhs_i8 = (rhs ^ offset).0;
-            Self(_mm256_cmpgt_epi8(self_i8,rhs_i8))
-          } else {
-            Self(Inner { lo: self.0.lo.simd_gt(rhs.0.lo), hi: self.0.hi.simd_gt(rhs.0.hi) })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Convert from u8 to i8.
-            let offset = Self::splat(0x80);
-            let self_i8 = (self ^ offset).0;
-            let rhs_i8 = (rhs ^ offset).0;
-            let gt_mask = Self(_mm256_cmpgt_epi8(self_i8,rhs_i8));
-            gt_mask ^ Self::splat(0xFF)
-          } else {
-            Self(Inner { lo: self.0.lo.simd_le(rhs.0.lo), hi: self.0.hi.simd_le(rhs.0.hi) })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // Convert from u8 to i8.
-            let offset = Self::splat(0x80);
-            let self_i8 = (self ^ offset).0;
-            let rhs_i8 = (rhs ^ offset).0;
-            let lt_mask = Self(_mm256_cmpgt_epi8(rhs_i8, self_i8));
-            lt_mask ^ Self::splat(0xFF)
-          } else {
-            Self(Inner { lo: self.0.lo.simd_ge(rhs.0.lo), hi: self.0.hi.simd_ge(rhs.0.hi) })
           }
         }
     }

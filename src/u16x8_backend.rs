@@ -19,6 +19,137 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl u16x8 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpeq_epi16(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_eq(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vceqq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] == rhs.0.arr[0] { u16::MAX } else { 0 },
+              if self.0.arr[1] == rhs.0.arr[1] { u16::MAX } else { 0 },
+              if self.0.arr[2] == rhs.0.arr[2] { u16::MAX } else { 0 },
+              if self.0.arr[3] == rhs.0.arr[3] { u16::MAX } else { 0 },
+              if self.0.arr[4] == rhs.0.arr[4] { u16::MAX } else { 0 },
+              if self.0.arr[5] == rhs.0.arr[5] { u16::MAX } else { 0 },
+              if self.0.arr[6] == rhs.0.arr[6] { u16::MAX } else { 0 },
+              if self.0.arr[7] == rhs.0.arr[7] { u16::MAX } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            !self.simd_eq(rhs)
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_ne(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_eq(rhs)
+          } else {
+            Self::from_array([
+              if self.0.arr[0] != rhs.0.arr[0] { u16::MAX } else { 0 },
+              if self.0.arr[1] != rhs.0.arr[1] { u16::MAX } else { 0 },
+              if self.0.arr[2] != rhs.0.arr[2] { u16::MAX } else { 0 },
+              if self.0.arr[3] != rhs.0.arr[3] { u16::MAX } else { 0 },
+              if self.0.arr[4] != rhs.0.arr[4] { u16::MAX } else { 0 },
+              if self.0.arr[5] != rhs.0.arr[5] { u16::MAX } else { 0 },
+              if self.0.arr[6] != rhs.0.arr[6] { u16::MAX } else { 0 },
+              if self.0.arr[7] != rhs.0.arr[7] { u16::MAX } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        // no lt, so reverse gt
+        Self::simd_gt(rhs, self)
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature = "sse2")] {
+            let bias = Self::from_array([0x8000u16; 8]).0;
+
+            let a_biased = _mm_sub_epi16(self.0, bias);
+            let b_biased = _mm_sub_epi16(rhs.0, bias);
+            let mask = _mm_cmpgt_epi16(a_biased, b_biased);
+
+            Self(mask)
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_gt(self.0, rhs.0))
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+            Self(vcgtq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+                if self.0.arr[0] > rhs.0.arr[0] { u16::MAX } else { 0 },
+                if self.0.arr[1] > rhs.0.arr[1] { u16::MAX } else { 0 },
+                if self.0.arr[2] > rhs.0.arr[2] { u16::MAX } else { 0 },
+                if self.0.arr[3] > rhs.0.arr[3] { u16::MAX } else { 0 },
+                if self.0.arr[4] > rhs.0.arr[4] { u16::MAX } else { 0 },
+                if self.0.arr[5] > rhs.0.arr[5] { u16::MAX } else { 0 },
+                if self.0.arr[6] > rhs.0.arr[6] { u16::MAX } else { 0 },
+                if self.0.arr[7] > rhs.0.arr[7] { u16::MAX } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            !self.simd_gt(rhs)
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_le(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_gt(rhs)
+          } else {
+            Self::from_array([
+              if self.0.arr[0] <= rhs.0.arr[0] { u16::MAX } else { 0 },
+              if self.0.arr[1] <= rhs.0.arr[1] { u16::MAX } else { 0 },
+              if self.0.arr[2] <= rhs.0.arr[2] { u16::MAX } else { 0 },
+              if self.0.arr[3] <= rhs.0.arr[3] { u16::MAX } else { 0 },
+              if self.0.arr[4] <= rhs.0.arr[4] { u16::MAX } else { 0 },
+              if self.0.arr[5] <= rhs.0.arr[5] { u16::MAX } else { 0 },
+              if self.0.arr[6] <= rhs.0.arr[6] { u16::MAX } else { 0 },
+              if self.0.arr[7] <= rhs.0.arr[7] { u16::MAX } else { 0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            !self.simd_lt(rhs)
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_ge(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !self.simd_lt(rhs)
+          } else {
+            Self::from_array([
+              if self.0.arr[0] >= rhs.0.arr[0] { u16::MAX } else { 0 },
+              if self.0.arr[1] >= rhs.0.arr[1] { u16::MAX } else { 0 },
+              if self.0.arr[2] >= rhs.0.arr[2] { u16::MAX } else { 0 },
+              if self.0.arr[3] >= rhs.0.arr[3] { u16::MAX } else { 0 },
+              if self.0.arr[4] >= rhs.0.arr[4] { u16::MAX } else { 0 },
+              if self.0.arr[5] >= rhs.0.arr[5] { u16::MAX } else { 0 },
+              if self.0.arr[6] >= rhs.0.arr[6] { u16::MAX } else { 0 },
+              if self.0.arr[7] >= rhs.0.arr[7] { u16::MAX } else { 0 },
+            ])
+          }
+        }
+    }
 }
 }
 
@@ -180,138 +311,6 @@ impl u16x8 {
               self.0.arr[5] ^ rhs.0.arr[5],
               self.0.arr[6] ^ rhs.0.arr[6],
               self.0.arr[7] ^ rhs.0.arr[7],
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpeq_epi16(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_eq(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vceqq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] == rhs.0.arr[0] { u16::MAX } else { 0 },
-              if self.0.arr[1] == rhs.0.arr[1] { u16::MAX } else { 0 },
-              if self.0.arr[2] == rhs.0.arr[2] { u16::MAX } else { 0 },
-              if self.0.arr[3] == rhs.0.arr[3] { u16::MAX } else { 0 },
-              if self.0.arr[4] == rhs.0.arr[4] { u16::MAX } else { 0 },
-              if self.0.arr[5] == rhs.0.arr[5] { u16::MAX } else { 0 },
-              if self.0.arr[6] == rhs.0.arr[6] { u16::MAX } else { 0 },
-              if self.0.arr[7] == rhs.0.arr[7] { u16::MAX } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            !self.simd_eq(rhs)
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_ne(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !self.simd_eq(rhs)
-          } else {
-            Self::from_array([
-              if self.0.arr[0] != rhs.0.arr[0] { u16::MAX } else { 0 },
-              if self.0.arr[1] != rhs.0.arr[1] { u16::MAX } else { 0 },
-              if self.0.arr[2] != rhs.0.arr[2] { u16::MAX } else { 0 },
-              if self.0.arr[3] != rhs.0.arr[3] { u16::MAX } else { 0 },
-              if self.0.arr[4] != rhs.0.arr[4] { u16::MAX } else { 0 },
-              if self.0.arr[5] != rhs.0.arr[5] { u16::MAX } else { 0 },
-              if self.0.arr[6] != rhs.0.arr[6] { u16::MAX } else { 0 },
-              if self.0.arr[7] != rhs.0.arr[7] { u16::MAX } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        // no lt, so reverse gt
-        Self::simd_gt(rhs, self)
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature = "sse2")] {
-            let bias = Self::from_array([0x8000u16; 8]).0;
-
-            let a_biased = _mm_sub_epi16(self.0, bias);
-            let b_biased = _mm_sub_epi16(rhs.0, bias);
-            let mask = _mm_cmpgt_epi16(a_biased, b_biased);
-
-            Self(mask)
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_gt(self.0, rhs.0))
-          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
-            Self(vcgtq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-                if self.0.arr[0] > rhs.0.arr[0] { u16::MAX } else { 0 },
-                if self.0.arr[1] > rhs.0.arr[1] { u16::MAX } else { 0 },
-                if self.0.arr[2] > rhs.0.arr[2] { u16::MAX } else { 0 },
-                if self.0.arr[3] > rhs.0.arr[3] { u16::MAX } else { 0 },
-                if self.0.arr[4] > rhs.0.arr[4] { u16::MAX } else { 0 },
-                if self.0.arr[5] > rhs.0.arr[5] { u16::MAX } else { 0 },
-                if self.0.arr[6] > rhs.0.arr[6] { u16::MAX } else { 0 },
-                if self.0.arr[7] > rhs.0.arr[7] { u16::MAX } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            !self.simd_gt(rhs)
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_le(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !self.simd_gt(rhs)
-          } else {
-            Self::from_array([
-              if self.0.arr[0] <= rhs.0.arr[0] { u16::MAX } else { 0 },
-              if self.0.arr[1] <= rhs.0.arr[1] { u16::MAX } else { 0 },
-              if self.0.arr[2] <= rhs.0.arr[2] { u16::MAX } else { 0 },
-              if self.0.arr[3] <= rhs.0.arr[3] { u16::MAX } else { 0 },
-              if self.0.arr[4] <= rhs.0.arr[4] { u16::MAX } else { 0 },
-              if self.0.arr[5] <= rhs.0.arr[5] { u16::MAX } else { 0 },
-              if self.0.arr[6] <= rhs.0.arr[6] { u16::MAX } else { 0 },
-              if self.0.arr[7] <= rhs.0.arr[7] { u16::MAX } else { 0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            !self.simd_lt(rhs)
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_ge(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !self.simd_lt(rhs)
-          } else {
-            Self::from_array([
-              if self.0.arr[0] >= rhs.0.arr[0] { u16::MAX } else { 0 },
-              if self.0.arr[1] >= rhs.0.arr[1] { u16::MAX } else { 0 },
-              if self.0.arr[2] >= rhs.0.arr[2] { u16::MAX } else { 0 },
-              if self.0.arr[3] >= rhs.0.arr[3] { u16::MAX } else { 0 },
-              if self.0.arr[4] >= rhs.0.arr[4] { u16::MAX } else { 0 },
-              if self.0.arr[5] >= rhs.0.arr[5] { u16::MAX } else { 0 },
-              if self.0.arr[6] >= rhs.0.arr[6] { u16::MAX } else { 0 },
-              if self.0.arr[7] >= rhs.0.arr[7] { u16::MAX } else { 0 },
             ])
           }
         }

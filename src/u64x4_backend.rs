@@ -16,6 +16,83 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl u64x4 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self(_mm256_cmpeq_epi64(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_eq(rhs.0.lo),
+              hi: self.0.hi.simd_eq(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            !self.simd_eq(rhs)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ne(rhs.0.lo),
+              hi: self.0.hi.simd_ne(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        // lt is just gt the other way around
+        rhs.simd_gt(self)
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // no unsigned gt than so inverting the high bit will get the correct result
+            let highbit = u64x4::splat(1 << 63);
+            Self(_mm256_cmpgt_epi64((self ^ highbit).0, (rhs ^ highbit).0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_gt(rhs.0.lo),
+              hi: self.0.hi.simd_gt(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            !self.simd_gt(rhs)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_le(rhs.0.lo),
+              hi: self.0.hi.simd_le(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            !self.simd_lt(rhs)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ge(rhs.0.lo),
+              hi: self.0.hi.simd_ge(rhs.0.hi),
+            })
+          }
+        }
+    }
 }
 }
 
@@ -130,84 +207,6 @@ impl u64x4 {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
               hi: self.0.hi ^ rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            Self(_mm256_cmpeq_epi64(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_eq(rhs.0.lo),
-              hi: self.0.hi.simd_eq(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            !self.simd_eq(rhs)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ne(rhs.0.lo),
-              hi: self.0.hi.simd_ne(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        // lt is just gt the other way around
-        rhs.simd_gt(self)
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // no unsigned gt than so inverting the high bit will get the correct result
-            let highbit = u64x4::splat(1 << 63);
-            Self(_mm256_cmpgt_epi64((self ^ highbit).0, (rhs ^ highbit).0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_gt(rhs.0.lo),
-              hi: self.0.hi.simd_gt(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            !self.simd_gt(rhs)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_le(rhs.0.lo),
-              hi: self.0.hi.simd_le(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            !self.simd_lt(rhs)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ge(rhs.0.lo),
-              hi: self.0.hi.simd_ge(rhs.0.hi),
             })
           }
         }

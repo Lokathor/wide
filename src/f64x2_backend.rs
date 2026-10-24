@@ -26,6 +26,115 @@ macro_rules! const_f64_as_f64x2 {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl f64x2 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpeq_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_eq(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] == rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpneq_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_ne(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] != rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmplt_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_lt(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] < rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm_cmp_pd::<{_CMP_GT_OQ}>(self.0, rhs.0))
+          } else if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpgt_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_gt(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] > rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmple_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_le(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] <= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpge_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_ge(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] >= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
 }
 }
 
@@ -209,116 +318,6 @@ impl f64x2 {
             Self::from_array([
               f64::from_bits(self.0.arr[0].to_bits() ^ rhs.0.arr[0].to_bits()),
               f64::from_bits(self.0.arr[1].to_bits() ^ rhs.0.arr[1].to_bits()),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpeq_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_eq(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] == rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpneq_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_ne(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] != rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmplt_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_lt(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] < rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm_cmp_pd::<{_CMP_GT_OQ}>(self.0, rhs.0))
-          } else if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpgt_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_gt(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] > rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmple_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_le(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] <= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpge_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_ge(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] >= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
             ])
           }
         }

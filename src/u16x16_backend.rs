@@ -16,6 +16,86 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl u16x16 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            Self(_mm256_cmpeq_epi16(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_eq(rhs.0.lo),
+              hi: self.0.hi.simd_eq(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            !self.simd_eq(rhs)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ne(rhs.0.lo),
+              hi: self.0.hi.simd_ne(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        // no gt, so just reverse to get same answer
+        Self::simd_gt(rhs, self)
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature = "avx2")] {
+            let bias = Self::from_array([0x8000u16; 16]).0;
+            let a_biased = _mm256_sub_epi16(self.0, bias);
+            let b_biased = _mm256_sub_epi16(rhs.0, bias);
+            let mask = _mm256_cmpgt_epi16(a_biased, b_biased);
+
+            Self(mask)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_gt(rhs.0.lo),
+              hi: self.0.hi.simd_gt(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            !self.simd_gt(rhs)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_le(rhs.0.lo),
+              hi: self.0.hi.simd_le(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            !self.simd_lt(rhs)
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ge(rhs.0.lo),
+              hi: self.0.hi.simd_ge(rhs.0.hi),
+            })
+          }
+        }
+    }
 }
 }
 
@@ -127,87 +207,6 @@ impl u16x16 {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
               hi: self.0.hi ^ rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            Self(_mm256_cmpeq_epi16(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_eq(rhs.0.lo),
-              hi: self.0.hi.simd_eq(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            !self.simd_eq(rhs)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ne(rhs.0.lo),
-              hi: self.0.hi.simd_ne(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        // no gt, so just reverse to get same answer
-        Self::simd_gt(rhs, self)
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature = "avx2")] {
-            let bias = Self::from_array([0x8000u16; 16]).0;
-            let a_biased = _mm256_sub_epi16(self.0, bias);
-            let b_biased = _mm256_sub_epi16(rhs.0, bias);
-            let mask = _mm256_cmpgt_epi16(a_biased, b_biased);
-
-            Self(mask)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_gt(rhs.0.lo),
-              hi: self.0.hi.simd_gt(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            !self.simd_gt(rhs)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_le(rhs.0.lo),
-              hi: self.0.hi.simd_le(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            !self.simd_lt(rhs)
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ge(rhs.0.lo),
-              hi: self.0.hi.simd_ge(rhs.0.hi),
             })
           }
         }

@@ -16,6 +16,107 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl u32x16 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_EQ}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_eq(rhs.0.lo),
+              hi: self.0.hi.simd_eq(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NE}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ne(rhs.0.lo),
+              hi: self.0.hi.simd_ne(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_LT}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
+          } else {
+            Self(Inner {
+              lo: rhs.0.lo.simd_gt(self.0.lo),
+              hi: rhs.0.hi.simd_gt(self.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NLE}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_gt(rhs.0.lo),
+              hi: self.0.hi.simd_gt(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_LE}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_le(rhs.0.lo),
+              hi: self.0.hi.simd_le(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            Self(_mm512_maskz_mov_epi32(
+              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NLT}>(self.0, rhs.0),
+              _mm512_set1_epi32(-1),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ge(rhs.0.lo),
+              hi: self.0.hi.simd_ge(rhs.0.hi),
+            })
+          }
+        }
+    }
 }
 }
 
@@ -126,108 +227,6 @@ impl u32x16 {
             Self(Inner {
               lo: self.0.lo ^ rhs.0.lo,
               hi: self.0.hi ^ rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_epi32(
-              _mm512_cmp_epu32_mask::<{_MM_CMPINT_EQ}>(self.0, rhs.0),
-              _mm512_set1_epi32(-1),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_eq(rhs.0.lo),
-              hi: self.0.hi.simd_eq(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_epi32(
-              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NE}>(self.0, rhs.0),
-              _mm512_set1_epi32(-1),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ne(rhs.0.lo),
-              hi: self.0.hi.simd_ne(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_epi32(
-              _mm512_cmp_epu32_mask::<{_MM_CMPINT_LT}>(self.0, rhs.0),
-              _mm512_set1_epi32(-1),
-            ))
-          } else {
-            Self(Inner {
-              lo: rhs.0.lo.simd_gt(self.0.lo),
-              hi: rhs.0.hi.simd_gt(self.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_epi32(
-              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NLE}>(self.0, rhs.0),
-              _mm512_set1_epi32(-1),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_gt(rhs.0.lo),
-              hi: self.0.hi.simd_gt(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_epi32(
-              _mm512_cmp_epu32_mask::<{_MM_CMPINT_LE}>(self.0, rhs.0),
-              _mm512_set1_epi32(-1),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_le(rhs.0.lo),
-              hi: self.0.hi.simd_le(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            Self(_mm512_maskz_mov_epi32(
-              _mm512_cmp_epu32_mask::<{_MM_CMPINT_NLT}>(self.0, rhs.0),
-              _mm512_set1_epi32(-1),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ge(rhs.0.lo),
-              hi: self.0.hi.simd_ge(rhs.0.hi),
             })
           }
         }
