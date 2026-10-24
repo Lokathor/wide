@@ -404,6 +404,88 @@ impl u32x4 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u32) -> Self {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (0..4 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => Self(_mm_insert_epi32::<$INDEX>(self.0, value as i32)),)*
+              4.. => unreachable!()
+            }
+          } else if #[cfg(target_feature = "sse2")] {
+            match INDEX {
+              $($INDEX => {
+                const INDEX_A: i32 = $INDEX * 2;
+                const INDEX_B: i32 = $INDEX * 2 + 1;
+
+                let [value_low, value_high] = [value, value >> 16];
+
+                let replace_a = _mm_insert_epi16::<INDEX_A>(self.0, value_low.cast_signed());
+                let replace_b = _mm_insert_epi16::<INDEX_B>(replace_a, value_high.cast_signed());
+                Self(replace_b)
+              })*
+              4.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            match INDEX {
+              $($INDEX => Self(vsetq_lane_u32::<$INDEX>(value, self.0)),)*
+              4.. => unreachable!(),
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self(u32x4_replace_lane::<INDEX>(self.0, value))
+          } else {
+            let mut result = self;
+            result.as_mut_array()[INDEX] = value;
+            result
+          }
+        }
+      };
+    }
+        use_indices! { 0..4 = [0, 1, 2, 3] }
+    }
+
+    #[inline]
+    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u32 {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (0..4 = [$($INDEX:literal),*], 1..4 = [$($INDEX_FROM_1:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => _mm_extract_epi32::<$INDEX>(self.0).cast_unsigned(),)*
+              4.. => unreachable!()
+            }
+          } else if #[cfg(all(target_feature = "sse2"))] {
+            _mm_cvtsi128_si32(self.shuffle_consts::<INDEX, 0, 0, 0>().0).cast_unsigned()
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            match INDEX {
+              $($INDEX => vgetq_lane_u32::<$INDEX>(self.0),)*
+              4.. => unreachable!(),
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            u32x4_extract_lane::<INDEX>(self.0)
+          } else {
+            self.to_array()[INDEX]
+          }
+        }
+      };
+    }
+        use_indices! { 0..4 = [0, 1, 2, 3], 1..4 = [1, 2, 3] }
+    }
 }
 }
 
@@ -546,88 +628,6 @@ impl u32x4 {
             ])
           }
         }
-    }
-
-    #[inline]
-    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u32) -> Self {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (0..4 = [$($INDEX:literal),*]) => {
-        pick! {
-          if #[cfg(target_feature = "sse4.1")] {
-            match INDEX {
-              $($INDEX => Self(_mm_insert_epi32::<$INDEX>(self.0, value as i32)),)*
-              4.. => unreachable!()
-            }
-          } else if #[cfg(target_feature = "sse2")] {
-            match INDEX {
-              $($INDEX => {
-                const INDEX_A: i32 = $INDEX * 2;
-                const INDEX_B: i32 = $INDEX * 2 + 1;
-
-                let [value_low, value_high] = [value, value >> 16];
-
-                let replace_a = _mm_insert_epi16::<INDEX_A>(self.0, value_low.cast_signed());
-                let replace_b = _mm_insert_epi16::<INDEX_B>(replace_a, value_high.cast_signed());
-                Self(replace_b)
-              })*
-              4.. => unreachable!(),
-            }
-          } else if #[cfg(all(
-            target_arch = "aarch64",
-            target_feature = "neon",
-            target_endian = "little",
-          ))] {
-            match INDEX {
-              $($INDEX => Self(vsetq_lane_u32::<$INDEX>(value, self.0)),)*
-              4.. => unreachable!(),
-            }
-          } else if #[cfg(target_feature = "simd128")] {
-            Self(u32x4_replace_lane::<INDEX>(self.0, value))
-          } else {
-            let mut result = self;
-            result.as_mut_array()[INDEX] = value;
-            result
-          }
-        }
-      };
-    }
-        use_indices! { 0..4 = [0, 1, 2, 3] }
-    }
-
-    #[inline]
-    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u32 {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (0..4 = [$($INDEX:literal),*], 1..4 = [$($INDEX_FROM_1:literal),*]) => {
-        pick! {
-          if #[cfg(target_feature = "sse4.1")] {
-            match INDEX {
-              $($INDEX => _mm_extract_epi32::<$INDEX>(self.0).cast_unsigned(),)*
-              4.. => unreachable!()
-            }
-          } else if #[cfg(all(target_feature = "sse2"))] {
-            _mm_cvtsi128_si32(self.shuffle_consts::<INDEX, 0, 0, 0>().0).cast_unsigned()
-          } else if #[cfg(all(
-            target_arch = "aarch64",
-            target_feature = "neon",
-            target_endian = "little",
-          ))] {
-            match INDEX {
-              $($INDEX => vgetq_lane_u32::<$INDEX>(self.0),)*
-              4.. => unreachable!(),
-            }
-          } else if #[cfg(target_feature = "simd128")] {
-            u32x4_extract_lane::<INDEX>(self.0)
-          } else {
-            self.to_array()[INDEX]
-          }
-        }
-      };
-    }
-        use_indices! { 0..4 = [0, 1, 2, 3], 1..4 = [1, 2, 3] }
     }
 
     #[inline]

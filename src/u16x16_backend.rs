@@ -348,6 +348,92 @@ impl u16x16 {
             transpose_column(&data, 15),
         ]
     }
+
+    #[inline]
+    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (
+        0..16 = [$($INDEX:literal),*],
+        0..8 = [$($LOW_INDEX:literal),*],
+        8..16 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "avx2")] {
+            match INDEX {
+              $($INDEX => Self(_mm256_insert_epi16::<$INDEX>(self.0, value.cast_signed())),)*
+              16.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
+
+            if const { INDEX < 8 } {
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
+                8.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 8 }>(value),)*
+                ..8 | 16.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+        use_indices! {
+          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
+          8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
+        }
+    }
+
+    #[inline]
+    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u16 {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (
+        0..16 = [$($INDEX:literal),*],
+        0..8 = [$($LOW_INDEX:literal),*],
+        8..16 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "avx2")] {
+            match INDEX {
+              $($INDEX => _mm256_extract_epi16::<$INDEX>(self.0).cast_unsigned() as u16,)*
+              16.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
+
+            if const { INDEX < 8 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
+                8.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 8 }>(),)*
+                ..8 | 16.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+        use_indices! {
+          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
+          8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
+        }
+    }
 }
 }
 
@@ -461,92 +547,6 @@ impl u16x16 {
               hi: self.0.hi ^ rhs.0.hi,
             })
           }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (
-        0..16 = [$($INDEX:literal),*],
-        0..8 = [$($LOW_INDEX:literal),*],
-        8..16 = [$($HIGH_INDEX:literal),*]
-      ) => {
-        pick! {
-          if #[cfg(target_feature = "avx2")] {
-            match INDEX {
-              $($INDEX => Self(_mm256_insert_epi16::<$INDEX>(self.0, value.cast_signed())),)*
-              16.. => unreachable!(),
-            }
-          } else {
-            let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
-
-            if const { INDEX < 8 } {
-              let result_a = match INDEX {
-                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
-                8.. => unreachable!(),
-              };
-
-              cast([result_a, self_b])
-            } else {
-              let result_b = match INDEX {
-                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 8 }>(value),)*
-                ..8 | 16.. => unreachable!(),
-              };
-
-              cast([self_a, result_b])
-            }
-          }
-        }
-      };
-    }
-        use_indices! {
-          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-          0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
-          8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
-        }
-    }
-
-    #[inline]
-    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u16 {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (
-        0..16 = [$($INDEX:literal),*],
-        0..8 = [$($LOW_INDEX:literal),*],
-        8..16 = [$($HIGH_INDEX:literal),*]
-      ) => {
-        pick! {
-          if #[cfg(target_feature = "avx2")] {
-            match INDEX {
-              $($INDEX => _mm256_extract_epi16::<$INDEX>(self.0).cast_unsigned() as u16,)*
-              16.. => unreachable!(),
-            }
-          } else {
-            let [self_a, self_b] = cast::<u16x16, [u16x8; 2]>(self);
-
-            if const { INDEX < 8 } {
-              match INDEX {
-                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
-                8.. => unreachable!(),
-              }
-            } else {
-              match INDEX {
-                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 8 }>(),)*
-                ..8 | 16.. => unreachable!(),
-              }
-            }
-          }
-        }
-      };
-    }
-        use_indices! {
-          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-          0..8 = [0, 1, 2, 3, 4, 5, 6, 7],
-          8..16 = [8, 9, 10, 11, 12, 13, 14, 15]
         }
     }
 

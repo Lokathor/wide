@@ -563,6 +563,107 @@ impl u8x16 {
             transpose_column(&data, 15),
         ]
     }
+
+    #[inline]
+    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u8) -> Self {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (0..16 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => Self(_mm_insert_epi8::<$INDEX>(self.0, value as i32)),)*
+              16.. => unreachable!()
+            }
+          } else if #[cfg(target_feature = "sse2")] {
+            let replace_mask = const {
+              let mut replace_mask = Self::ZERO;
+              if INDEX < 16 {
+                replace_mask.as_mut_array()[INDEX] = u8::MAX;
+              }
+              replace_mask
+            };
+
+            match INDEX {
+              $($INDEX => {
+                let value = _mm_cvtsi32_si128(value as i32);
+                let shifted_value = Self(_mm_slli_si128::<$INDEX>(value));
+
+                replace_mask.select(shifted_value, self)
+              })*
+              16.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            match INDEX {
+              $($INDEX => Self(vsetq_lane_u8::<$INDEX>(value, self.0)),)*
+              16.. => unreachable!(),
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self(u8x16_replace_lane::<INDEX>(self.0, value))
+          } else {
+            let mut result = self;
+            result.as_mut_array()[INDEX] = value;
+            result
+          }
+        }
+      };
+    }
+        use_indices! { 0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+    }
+
+    #[inline]
+    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u8 {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (
+        0..16 = [$($INDEX:literal),*],
+        1..16 = [$($INDEX_FROM_1:literal),*],
+        4..16 = [$($INDEX_FROM_4:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "sse4.1")] {
+            match INDEX {
+              $($INDEX => _mm_extract_epi8::<$INDEX>(self.0).cast_unsigned() as u8,)*
+              16.. => unreachable!()
+            }
+          } else if #[cfg(all(target_feature = "sse2"))] {
+            // Shift bytes so that the element at `INDEX` becomes the lowest one
+            let shifted_self = match INDEX {
+              0 => self.0,
+              $($INDEX_FROM_1 => _mm_srli_si128::<$INDEX_FROM_1>(self.0),)*
+              16.. => unreachable!(),
+            };
+
+            _mm_cvtsi128_si32(shifted_self).cast_unsigned() as u8
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            match INDEX {
+              $($INDEX => vgetq_lane_u8::<$INDEX>(self.0),)*
+              16.. => unreachable!(),
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            u8x16_extract_lane::<INDEX>(self.0)
+          } else {
+            self.to_array()[INDEX]
+          }
+        }
+      };
+    }
+        use_indices! {
+          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          1..16 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          4..16 = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        }
+    }
 }
 }
 
@@ -776,107 +877,6 @@ impl u8x16 {
               self.0.arr[15] ^ rhs.0.arr[15],
             ])
           }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u8) -> Self {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (0..16 = [$($INDEX:literal),*]) => {
-        pick! {
-          if #[cfg(target_feature = "sse4.1")] {
-            match INDEX {
-              $($INDEX => Self(_mm_insert_epi8::<$INDEX>(self.0, value as i32)),)*
-              16.. => unreachable!()
-            }
-          } else if #[cfg(target_feature = "sse2")] {
-            let replace_mask = const {
-              let mut replace_mask = Self::ZERO;
-              if INDEX < 16 {
-                replace_mask.as_mut_array()[INDEX] = u8::MAX;
-              }
-              replace_mask
-            };
-
-            match INDEX {
-              $($INDEX => {
-                let value = _mm_cvtsi32_si128(value as i32);
-                let shifted_value = Self(_mm_slli_si128::<$INDEX>(value));
-
-                replace_mask.select(shifted_value, self)
-              })*
-              16.. => unreachable!(),
-            }
-          } else if #[cfg(all(
-            target_arch = "aarch64",
-            target_feature = "neon",
-            target_endian = "little",
-          ))] {
-            match INDEX {
-              $($INDEX => Self(vsetq_lane_u8::<$INDEX>(value, self.0)),)*
-              16.. => unreachable!(),
-            }
-          } else if #[cfg(target_feature = "simd128")] {
-            Self(u8x16_replace_lane::<INDEX>(self.0, value))
-          } else {
-            let mut result = self;
-            result.as_mut_array()[INDEX] = value;
-            result
-          }
-        }
-      };
-    }
-        use_indices! { 0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
-    }
-
-    #[inline]
-    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u8 {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (
-        0..16 = [$($INDEX:literal),*],
-        1..16 = [$($INDEX_FROM_1:literal),*],
-        4..16 = [$($INDEX_FROM_4:literal),*]
-      ) => {
-        pick! {
-          if #[cfg(target_feature = "sse4.1")] {
-            match INDEX {
-              $($INDEX => _mm_extract_epi8::<$INDEX>(self.0).cast_unsigned() as u8,)*
-              16.. => unreachable!()
-            }
-          } else if #[cfg(all(target_feature = "sse2"))] {
-            // Shift bytes so that the element at `INDEX` becomes the lowest one
-            let shifted_self = match INDEX {
-              0 => self.0,
-              $($INDEX_FROM_1 => _mm_srli_si128::<$INDEX_FROM_1>(self.0),)*
-              16.. => unreachable!(),
-            };
-
-            _mm_cvtsi128_si32(shifted_self).cast_unsigned() as u8
-          } else if #[cfg(all(
-            target_arch = "aarch64",
-            target_feature = "neon",
-            target_endian = "little",
-          ))] {
-            match INDEX {
-              $($INDEX => vgetq_lane_u8::<$INDEX>(self.0),)*
-              16.. => unreachable!(),
-            }
-          } else if #[cfg(target_feature = "simd128")] {
-            u8x16_extract_lane::<INDEX>(self.0)
-          } else {
-            self.to_array()[INDEX]
-          }
-        }
-      };
-    }
-        use_indices! {
-          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-          1..16 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-          4..16 = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         }
     }
 

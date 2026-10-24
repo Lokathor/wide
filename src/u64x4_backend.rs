@@ -342,6 +342,84 @@ impl u64x4 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u64) -> Self {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (
+        0..4 = [$($INDEX:literal),*],
+        0..2 = [$($LOW_INDEX:literal),*],
+        2..4 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
+            match INDEX {
+              $($INDEX => Self(_mm256_insert_epi64::<$INDEX>(self.0, value.cast_signed())),)*
+              4.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u64x4, [u64x2; 2]>(self);
+
+            if const { INDEX < 2 } {
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
+                2.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 2 }>(value),)*
+                ..2 | 4.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+        use_indices! { 0..4 = [0, 1, 2, 3], 0..2 = [0, 1], 2..4 = [2, 3] }
+    }
+
+    #[inline]
+    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u64 {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (
+        0..4 = [$($INDEX:literal),*],
+        0..2 = [$($LOW_INDEX:literal),*],
+        2..4 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
+            match INDEX {
+              $($INDEX => _mm256_extract_epi64::<$INDEX>(self.0).cast_unsigned(),)*
+              4.. => unreachable!(),
+            }
+          } else {
+            let [self_a, self_b] = cast::<u64x4, [u64x2; 2]>(self);
+
+            if const { INDEX < 2 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
+                2.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 2 }>(),)*
+                ..2 | 4.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+        use_indices! { 0..4 = [0, 1, 2, 3], 0..2 = [0, 1], 2..4 = [2, 3] }
+    }
 }
 }
 
@@ -459,84 +537,6 @@ impl u64x4 {
             })
           }
         }
-    }
-
-    #[inline]
-    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u64) -> Self {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (
-        0..4 = [$($INDEX:literal),*],
-        0..2 = [$($LOW_INDEX:literal),*],
-        2..4 = [$($HIGH_INDEX:literal),*]
-      ) => {
-        pick! {
-          if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
-            match INDEX {
-              $($INDEX => Self(_mm256_insert_epi64::<$INDEX>(self.0, value.cast_signed())),)*
-              4.. => unreachable!(),
-            }
-          } else {
-            let [self_a, self_b] = cast::<u64x4, [u64x2; 2]>(self);
-
-            if const { INDEX < 2 } {
-              let result_a = match INDEX {
-                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
-                2.. => unreachable!(),
-              };
-
-              cast([result_a, self_b])
-            } else {
-              let result_b = match INDEX {
-                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 2 }>(value),)*
-                ..2 | 4.. => unreachable!(),
-              };
-
-              cast([self_a, result_b])
-            }
-          }
-        }
-      };
-    }
-        use_indices! { 0..4 = [0, 1, 2, 3], 0..2 = [0, 1], 2..4 = [2, 3] }
-    }
-
-    #[inline]
-    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u64 {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (
-        0..4 = [$($INDEX:literal),*],
-        0..2 = [$($LOW_INDEX:literal),*],
-        2..4 = [$($HIGH_INDEX:literal),*]
-      ) => {
-        pick! {
-          if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
-            match INDEX {
-              $($INDEX => _mm256_extract_epi64::<$INDEX>(self.0).cast_unsigned(),)*
-              4.. => unreachable!(),
-            }
-          } else {
-            let [self_a, self_b] = cast::<u64x4, [u64x2; 2]>(self);
-
-            if const { INDEX < 2 } {
-              match INDEX {
-                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
-                2.. => unreachable!(),
-              }
-            } else {
-              match INDEX {
-                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 2 }>(),)*
-                ..2 | 4.. => unreachable!(),
-              }
-            }
-          }
-        }
-      };
-    }
-        use_indices! { 0..4 = [0, 1, 2, 3], 0..2 = [0, 1], 2..4 = [2, 3] }
     }
 
     #[inline]
