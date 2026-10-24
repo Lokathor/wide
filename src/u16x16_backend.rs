@@ -440,17 +440,6 @@ impl u16x16 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u16x16 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u16x16 {
-}
-}
-
-safe_target_feature! {
-impl u16x16 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
@@ -811,7 +800,12 @@ impl u16x16 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u16x16 {
     /// A helper for shuffle functions that turns indices of 16-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
     ///
