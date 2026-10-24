@@ -712,8 +712,8 @@ macro_rules! impl_simd_integer {
             /// Creates a SIMD vector from a native-endian byte array.
             ///
             /// The bytes are interpreted as the raw memory representation of the
-            /// vector. This is equivalent to the `from_ne_bytes` functions on the
-            /// primitive scalar types, but operates on the entire vector at once.
+            /// vector. This is equivalent to the `from_ne_bytes` functions on
+            /// primitive integer types, but operates on the entire vector at once.
             ///
             /// This is the inverse of [`to_ne_bytes`].
             ///
