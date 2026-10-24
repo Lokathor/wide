@@ -104,23 +104,6 @@ impl i32x4 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl i32x4 {
-}
-}
-
-safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i32x4 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl i32x4 {
-}
-}
-
-safe_target_feature! {
-impl i32x4 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u32x4) -> Self {
         pick! {
@@ -462,7 +445,12 @@ impl i32x4 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Backend of SIMD signed integer functions.
+impl i32x4 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
@@ -505,7 +493,12 @@ impl i32x4 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl i32x4 {
     #[inline]
     pub(crate) fn round_float_backend(self) -> f32x4 {
         pick! {
