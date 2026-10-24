@@ -19,6 +19,7 @@ impl SimdBackend for i8x64 {
 }
 
 safe_target_feature! {
+// Backend of general-SIMD functions.
 impl i8x64 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -75,7 +76,12 @@ impl i8x64 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Backend of SIMD integer functions.
+impl i8x64 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u8x64) -> Self {
         // There's no dedicated `i8` shift instruction, so we split into halves
@@ -210,7 +216,12 @@ impl i8x64 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
+}
+}
 
+safe_target_feature! {
+// Backend of SIMD signed integer functions.
+impl i8x64 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {

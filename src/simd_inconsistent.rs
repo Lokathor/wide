@@ -57,6 +57,19 @@ impl f32x4 {
     pub fn sign_bit(self) -> Self {
         self.is_sign_negative()
     }
+
+    /// Raises each element of the number `self` to the corresponding element
+    /// of the floating point power `n`.
+    ///
+    /// This function has been renamed to [`powf_simd`].
+    ///
+    /// [`powf_simd`]: Self::powf_simd
+    #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+    #[inline]
+    #[must_use]
+    pub fn pow_f32x4(self, n: Self) -> Self {
+        self.powf_simd(n)
+    }
 }
 
 /// The following functionality exists only for [`f32x8`], or only for
@@ -82,6 +95,19 @@ impl f32x8 {
     #[deprecated(since = "1.4.0", note = "renamed to `is_sign_negative`")]
     pub fn sign_bit(self) -> Self {
         self.is_sign_negative()
+    }
+
+    /// Raises each element of the number `self` to the corresponding element
+    /// of the floating point power `n`.
+    ///
+    /// This function has been renamed to [`powf_simd`].
+    ///
+    /// [`powf_simd`]: Self::powf_simd
+    #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+    #[inline]
+    #[must_use]
+    pub fn pow_f32x8(self, n: Self) -> Self {
+        self.powf_simd(n)
     }
 }
 
@@ -109,6 +135,19 @@ impl f32x16 {
     pub fn sign_bit(self) -> Self {
         self.is_sign_negative()
     }
+
+    /// Raises each element of the number `self` to the corresponding element
+    /// of the floating point power `n`.
+    ///
+    /// This function has been renamed to [`powf_simd`].
+    ///
+    /// [`powf_simd`]: Self::powf_simd
+    #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+    #[inline]
+    #[must_use]
+    pub fn pow_f32x16(self, n: Self) -> Self {
+        self.powf_simd(n)
+    }
 }
 
 /// The following functionality exists only for [`f64x2`], or only for
@@ -132,6 +171,34 @@ impl f64x2 {
     pub fn from_i32x4_lower2(v: i32x4) -> Self {
         Self::from_i32x4_lower2_backend(v)
     }
+
+    /// Raises each element of the number `self` to the corresponding element
+    /// of the floating point power `n`.
+    ///
+    /// This function has been renamed to [`powf_simd`].
+    ///
+    /// [`powf_simd`]: Self::powf_simd
+    #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+    #[inline]
+    #[must_use]
+    pub fn pow_f64x2(self, n: Self) -> Self {
+        self.powf_simd(n)
+    }
+}
+
+impl f64x4 {
+    /// Raises each element of the number `self` to the corresponding element
+    /// of the floating point power `n`.
+    ///
+    /// This function has been renamed to [`powf_simd`].
+    ///
+    /// [`powf_simd`]: Self::powf_simd
+    #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+    #[inline]
+    #[must_use]
+    pub fn pow_f64x4(self, n: Self) -> Self {
+        self.powf_simd(n)
+    }
 }
 
 /// The following functionality exists only for [`f64x8`], or only for
@@ -141,6 +208,19 @@ impl f64x8 {
     #[inline]
     pub fn from_i32x8(v: i32x8) -> Self {
         Self::from_i32x8_backend(v)
+    }
+
+    /// Raises each element of the number `self` to the corresponding element
+    /// of the floating point power `n`.
+    ///
+    /// This function has been renamed to [`powf_simd`].
+    ///
+    /// [`powf_simd`]: Self::powf_simd
+    #[deprecated(since = "1.6.0", note = "renamed to `powf_simd`")]
+    #[inline]
+    #[must_use]
+    pub fn pow_f64x8(self, n: Self) -> Self {
+        self.powf_simd(n)
     }
 }
 

@@ -26,156 +26,8 @@ impl SimdBackend for u16x8 {
 }
 
 safe_target_feature! {
+// Backend of general-SIMD functions.
 impl u16x8 {
-    #[inline]
-    pub(crate) fn not_backend(self) -> Self {
-        self ^ cast::<u128, u16x8>(u128::MAX)
-    }
-
-    #[inline]
-    pub(crate) fn add_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_add_epi16(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_add(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vaddq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-              self.0.arr[0].wrapping_add(rhs.0.arr[0]),
-              self.0.arr[1].wrapping_add(rhs.0.arr[1]),
-              self.0.arr[2].wrapping_add(rhs.0.arr[2]),
-              self.0.arr[3].wrapping_add(rhs.0.arr[3]),
-              self.0.arr[4].wrapping_add(rhs.0.arr[4]),
-              self.0.arr[5].wrapping_add(rhs.0.arr[5]),
-              self.0.arr[6].wrapping_add(rhs.0.arr[6]),
-              self.0.arr[7].wrapping_add(rhs.0.arr[7]),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn sub_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_sub_epi16(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_sub(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vsubq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-              self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
-              self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
-              self.0.arr[2].wrapping_sub(rhs.0.arr[2]),
-              self.0.arr[3].wrapping_sub(rhs.0.arr[3]),
-              self.0.arr[4].wrapping_sub(rhs.0.arr[4]),
-              self.0.arr[5].wrapping_sub(rhs.0.arr[5]),
-              self.0.arr[6].wrapping_sub(rhs.0.arr[6]),
-              self.0.arr[7].wrapping_sub(rhs.0.arr[7]),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn mul_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_mullo_epi16(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u16x8_mul(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vmulq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-              self.0.arr[0].wrapping_mul(rhs.0.arr[0]),
-              self.0.arr[1].wrapping_mul(rhs.0.arr[1]),
-              self.0.arr[2].wrapping_mul(rhs.0.arr[2]),
-              self.0.arr[3].wrapping_mul(rhs.0.arr[3]),
-              self.0.arr[4].wrapping_mul(rhs.0.arr[4]),
-              self.0.arr[5].wrapping_mul(rhs.0.arr[5]),
-              self.0.arr[6].wrapping_mul(rhs.0.arr[6]),
-              self.0.arr[7].wrapping_mul(rhs.0.arr[7]),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_and_si128(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(v128_and(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vandq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-              self.0.arr[0] & rhs.0.arr[0],
-              self.0.arr[1] & rhs.0.arr[1],
-              self.0.arr[2] & rhs.0.arr[2],
-              self.0.arr[3] & rhs.0.arr[3],
-              self.0.arr[4] & rhs.0.arr[4],
-              self.0.arr[5] & rhs.0.arr[5],
-              self.0.arr[6] & rhs.0.arr[6],
-              self.0.arr[7] & rhs.0.arr[7],
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_or_si128(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(v128_or(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vorrq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-              self.0.arr[0] | rhs.0.arr[0],
-              self.0.arr[1] | rhs.0.arr[1],
-              self.0.arr[2] | rhs.0.arr[2],
-              self.0.arr[3] | rhs.0.arr[3],
-              self.0.arr[4] | rhs.0.arr[4],
-              self.0.arr[5] | rhs.0.arr[5],
-              self.0.arr[6] | rhs.0.arr[6],
-              self.0.arr[7] | rhs.0.arr[7],
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_xor_si128(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(v128_xor(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(veorq_u16(self.0, rhs.0))
-          } else {
-            Self::from_array([
-              self.0.arr[0] ^ rhs.0.arr[0],
-              self.0.arr[1] ^ rhs.0.arr[1],
-              self.0.arr[2] ^ rhs.0.arr[2],
-              self.0.arr[3] ^ rhs.0.arr[3],
-              self.0.arr[4] ^ rhs.0.arr[4],
-              self.0.arr[5] ^ rhs.0.arr[5],
-              self.0.arr[6] ^ rhs.0.arr[6],
-              self.0.arr[7] ^ rhs.0.arr[7],
-            ])
-          }
-        }
-    }
-
     #[inline]
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
@@ -304,160 +156,6 @@ impl u16x8 {
               if self.0.arr[6] >= rhs.0.arr[6] { u16::MAX } else { 0 },
               if self.0.arr[7] >= rhs.0.arr[7] { u16::MAX } else { 0 },
             ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (0..8 = [$($INDEX:literal),*]) => {
-        pick! {
-          if #[cfg(target_feature = "sse2")] {
-            match INDEX {
-              $($INDEX => Self(_mm_insert_epi16::<$INDEX>(self.0, value as i32)),)*
-              8.. => unreachable!(),
-            }
-          } else if #[cfg(all(
-            target_arch = "aarch64",
-            target_feature = "neon",
-            target_endian = "little",
-          ))] {
-            match INDEX {
-              $($INDEX => Self(vsetq_lane_u16::<$INDEX>(value, self.0)),)*
-              8.. => unreachable!(),
-            }
-          } else if #[cfg(target_feature = "simd128")] {
-            Self(u16x8_replace_lane::<INDEX>(self.0, value))
-          } else {
-            let mut result = self;
-            result.as_mut_array()[INDEX] = value;
-            result
-          }
-        }
-      };
-    }
-        use_indices! { 0..8 = [0, 1, 2, 3, 4, 5, 6, 7] }
-    }
-
-    #[inline]
-    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u16 {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (0..8 = [$($INDEX:literal),*]) => {
-        pick! {
-          if #[cfg(target_feature = "sse2")] {
-            match INDEX {
-              $($INDEX => _mm_extract_epi16::<$INDEX>(self.0).cast_unsigned() as u16,)*
-              8.. => unreachable!(),
-            }
-          } else if #[cfg(all(
-            target_arch = "aarch64",
-            target_feature = "neon",
-            target_endian = "little",
-          ))] {
-            match INDEX {
-              $($INDEX => vgetq_lane_u16::<$INDEX>(self.0),)*
-              8.. => unreachable!(),
-            }
-          } else if #[cfg(target_feature = "simd128")] {
-            u16x8_extract_lane::<INDEX>(self.0)
-          } else {
-            self.to_array()[INDEX]
-          }
-        }
-      };
-    }
-        use_indices! { 0..8 = [0, 1, 2, 3, 4, 5, 6, 7] }
-    }
-
-    #[inline]
-    pub(crate) fn reduce_add_backend(self) -> u16 {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // there is a horizontal add instruction on ssse3, but apparently it is very slow on some AMD CPUs
-            let hi64 = _mm_shuffle_epi32::<0b01_00_11_10>(self.0);
-            let sum64 = _mm_add_epi16(self.0, hi64);
-            let hi32 = _mm_shuffle_epi32::<0b11_10_00_01>(sum64);
-            let sum32 = _mm_add_epi16(sum64, hi32);
-            let lo16 = _mm_srli_epi32::<16>(sum32);
-            let sum16 = _mm_add_epi16(sum32, lo16);
-            _mm_extract_epi16::<0>(sum16) as u16
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            vaddvq_u16(self.0)
-          } else {
-            let arr: [u16; 8] = cast(self);
-
-            // most boring implementation possible so optimizer doesn't overthink this
-            let mut r = arr[0];
-            r = r.wrapping_add(arr[1]);
-            r = r.wrapping_add(arr[2]);
-            r = r.wrapping_add(arr[3]);
-            r = r.wrapping_add(arr[4]);
-            r = r.wrapping_add(arr[5]);
-            r = r.wrapping_add(arr[6]);
-            r.wrapping_add(arr[7])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn reduce_mul_backend(self) -> u16 {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            let high_64 = _mm_shuffle_epi32::<0b01_00_11_10>(self.0);
-            let reduce_64 = _mm_mullo_epi16(self.0, high_64);
-            let high_32 = _mm_shuffle_epi32::<0b11_10_00_01>(reduce_64);
-            let reduce_32 = _mm_mullo_epi16(reduce_64, high_32);
-            let high_16 = _mm_srli_epi32::<16>(reduce_32);
-            let reduce_16 = _mm_mullo_epi16(reduce_32, high_16);
-            _mm_extract_epi16::<0>(reduce_16) as u16
-          } else if #[cfg(target_feature="simd128")] {
-            let high_64 = u64x2_shuffle::<1, 0>(self.0, self.0);
-            let reduce_64 = u16x8_mul(self.0, high_64);
-            let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
-            let reduce_32 = u16x8_mul(reduce_64, high_32);
-            let high_16 = u16x8_shuffle::<1, 0, 0, 0, 0, 0, 0, 0>(reduce_32, reduce_32);
-            let reduce_16 = u16x8_mul(reduce_32, high_16);
-            u16x8_extract_lane::<0>(reduce_16)
-          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            let high_64 = vextq_u16::<4>(self.0, self.0);
-            let reduce_64 = vmulq_u16(self.0, high_64);
-            let high_32 = vrev64q_u16(reduce_64);
-            let reduce_32 = vmulq_u16(reduce_64, high_32);
-            let high_16 = vrev32q_u16(reduce_32);
-            let reduce_16 = vmulq_u16(reduce_32, high_16);
-            vgetq_lane_u16::<0>(reduce_16)
-          } else {
-            let array = self.to_array();
-
-            // most boring implementation possible so optimizer doesn't overthink this
-            let mut result = array[0];
-            result = result.wrapping_mul(array[1]);
-            result = result.wrapping_mul(array[2]);
-            result = result.wrapping_mul(array[3]);
-            result = result.wrapping_mul(array[4]);
-            result = result.wrapping_mul(array[5]);
-            result = result.wrapping_mul(array[6]);
-            result.wrapping_mul(array[7])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_or_si128(_mm_and_si128(if_one.0, self.0), _mm_andnot_si128(self.0, if_zero.0)))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(v128_bitselect(if_one.0, if_zero.0, self.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vbslq_u16(self.0, if_one.0, if_zero.0))
-          } else {
-            generic_bit_blend(self, if_one, if_zero)
           }
         }
     }
@@ -855,6 +553,314 @@ impl u16x8 {
               transpose_column(&data, 6),
               transpose_column(&data, 7),
             ]
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (0..8 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse2")] {
+            match INDEX {
+              $($INDEX => Self(_mm_insert_epi16::<$INDEX>(self.0, value as i32)),)*
+              8.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            match INDEX {
+              $($INDEX => Self(vsetq_lane_u16::<$INDEX>(value, self.0)),)*
+              8.. => unreachable!(),
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            Self(u16x8_replace_lane::<INDEX>(self.0, value))
+          } else {
+            let mut result = self;
+            result.as_mut_array()[INDEX] = value;
+            result
+          }
+        }
+      };
+    }
+        use_indices! { 0..8 = [0, 1, 2, 3, 4, 5, 6, 7] }
+    }
+
+    #[inline]
+    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u16 {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (0..8 = [$($INDEX:literal),*]) => {
+        pick! {
+          if #[cfg(target_feature = "sse2")] {
+            match INDEX {
+              $($INDEX => _mm_extract_epi16::<$INDEX>(self.0).cast_unsigned() as u16,)*
+              8.. => unreachable!(),
+            }
+          } else if #[cfg(all(
+            target_arch = "aarch64",
+            target_feature = "neon",
+            target_endian = "little",
+          ))] {
+            match INDEX {
+              $($INDEX => vgetq_lane_u16::<$INDEX>(self.0),)*
+              8.. => unreachable!(),
+            }
+          } else if #[cfg(target_feature = "simd128")] {
+            u16x8_extract_lane::<INDEX>(self.0)
+          } else {
+            self.to_array()[INDEX]
+          }
+        }
+      };
+    }
+        use_indices! { 0..8 = [0, 1, 2, 3, 4, 5, 6, 7] }
+    }
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD integer functions.
+impl u16x8 {
+    #[inline]
+    pub(crate) fn not_backend(self) -> Self {
+        self ^ cast::<u128, u16x8>(u128::MAX)
+    }
+
+    #[inline]
+    pub(crate) fn add_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_add_epi16(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_add(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vaddq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+              self.0.arr[0].wrapping_add(rhs.0.arr[0]),
+              self.0.arr[1].wrapping_add(rhs.0.arr[1]),
+              self.0.arr[2].wrapping_add(rhs.0.arr[2]),
+              self.0.arr[3].wrapping_add(rhs.0.arr[3]),
+              self.0.arr[4].wrapping_add(rhs.0.arr[4]),
+              self.0.arr[5].wrapping_add(rhs.0.arr[5]),
+              self.0.arr[6].wrapping_add(rhs.0.arr[6]),
+              self.0.arr[7].wrapping_add(rhs.0.arr[7]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn sub_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_sub_epi16(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_sub(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vsubq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+              self.0.arr[0].wrapping_sub(rhs.0.arr[0]),
+              self.0.arr[1].wrapping_sub(rhs.0.arr[1]),
+              self.0.arr[2].wrapping_sub(rhs.0.arr[2]),
+              self.0.arr[3].wrapping_sub(rhs.0.arr[3]),
+              self.0.arr[4].wrapping_sub(rhs.0.arr[4]),
+              self.0.arr[5].wrapping_sub(rhs.0.arr[5]),
+              self.0.arr[6].wrapping_sub(rhs.0.arr[6]),
+              self.0.arr[7].wrapping_sub(rhs.0.arr[7]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn mul_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_mullo_epi16(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u16x8_mul(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vmulq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+              self.0.arr[0].wrapping_mul(rhs.0.arr[0]),
+              self.0.arr[1].wrapping_mul(rhs.0.arr[1]),
+              self.0.arr[2].wrapping_mul(rhs.0.arr[2]),
+              self.0.arr[3].wrapping_mul(rhs.0.arr[3]),
+              self.0.arr[4].wrapping_mul(rhs.0.arr[4]),
+              self.0.arr[5].wrapping_mul(rhs.0.arr[5]),
+              self.0.arr[6].wrapping_mul(rhs.0.arr[6]),
+              self.0.arr[7].wrapping_mul(rhs.0.arr[7]),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_and_si128(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_and(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vandq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+              self.0.arr[0] & rhs.0.arr[0],
+              self.0.arr[1] & rhs.0.arr[1],
+              self.0.arr[2] & rhs.0.arr[2],
+              self.0.arr[3] & rhs.0.arr[3],
+              self.0.arr[4] & rhs.0.arr[4],
+              self.0.arr[5] & rhs.0.arr[5],
+              self.0.arr[6] & rhs.0.arr[6],
+              self.0.arr[7] & rhs.0.arr[7],
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_or_si128(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_or(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vorrq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+              self.0.arr[0] | rhs.0.arr[0],
+              self.0.arr[1] | rhs.0.arr[1],
+              self.0.arr[2] | rhs.0.arr[2],
+              self.0.arr[3] | rhs.0.arr[3],
+              self.0.arr[4] | rhs.0.arr[4],
+              self.0.arr[5] | rhs.0.arr[5],
+              self.0.arr[6] | rhs.0.arr[6],
+              self.0.arr[7] | rhs.0.arr[7],
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_xor_si128(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_xor(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(veorq_u16(self.0, rhs.0))
+          } else {
+            Self::from_array([
+              self.0.arr[0] ^ rhs.0.arr[0],
+              self.0.arr[1] ^ rhs.0.arr[1],
+              self.0.arr[2] ^ rhs.0.arr[2],
+              self.0.arr[3] ^ rhs.0.arr[3],
+              self.0.arr[4] ^ rhs.0.arr[4],
+              self.0.arr[5] ^ rhs.0.arr[5],
+              self.0.arr[6] ^ rhs.0.arr[6],
+              self.0.arr[7] ^ rhs.0.arr[7],
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn reduce_add_backend(self) -> u16 {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            // there is a horizontal add instruction on ssse3, but apparently it is very slow on some AMD CPUs
+            let hi64 = _mm_shuffle_epi32::<0b01_00_11_10>(self.0);
+            let sum64 = _mm_add_epi16(self.0, hi64);
+            let hi32 = _mm_shuffle_epi32::<0b11_10_00_01>(sum64);
+            let sum32 = _mm_add_epi16(sum64, hi32);
+            let lo16 = _mm_srli_epi32::<16>(sum32);
+            let sum16 = _mm_add_epi16(sum32, lo16);
+            _mm_extract_epi16::<0>(sum16) as u16
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            vaddvq_u16(self.0)
+          } else {
+            let arr: [u16; 8] = cast(self);
+
+            // most boring implementation possible so optimizer doesn't overthink this
+            let mut r = arr[0];
+            r = r.wrapping_add(arr[1]);
+            r = r.wrapping_add(arr[2]);
+            r = r.wrapping_add(arr[3]);
+            r = r.wrapping_add(arr[4]);
+            r = r.wrapping_add(arr[5]);
+            r = r.wrapping_add(arr[6]);
+            r.wrapping_add(arr[7])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn reduce_mul_backend(self) -> u16 {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            let high_64 = _mm_shuffle_epi32::<0b01_00_11_10>(self.0);
+            let reduce_64 = _mm_mullo_epi16(self.0, high_64);
+            let high_32 = _mm_shuffle_epi32::<0b11_10_00_01>(reduce_64);
+            let reduce_32 = _mm_mullo_epi16(reduce_64, high_32);
+            let high_16 = _mm_srli_epi32::<16>(reduce_32);
+            let reduce_16 = _mm_mullo_epi16(reduce_32, high_16);
+            _mm_extract_epi16::<0>(reduce_16) as u16
+          } else if #[cfg(target_feature="simd128")] {
+            let high_64 = u64x2_shuffle::<1, 0>(self.0, self.0);
+            let reduce_64 = u16x8_mul(self.0, high_64);
+            let high_32 = u32x4_shuffle::<1, 0, 0, 0>(reduce_64, reduce_64);
+            let reduce_32 = u16x8_mul(reduce_64, high_32);
+            let high_16 = u16x8_shuffle::<1, 0, 0, 0, 0, 0, 0, 0>(reduce_32, reduce_32);
+            let reduce_16 = u16x8_mul(reduce_32, high_16);
+            u16x8_extract_lane::<0>(reduce_16)
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            let high_64 = vextq_u16::<4>(self.0, self.0);
+            let reduce_64 = vmulq_u16(self.0, high_64);
+            let high_32 = vrev64q_u16(reduce_64);
+            let reduce_32 = vmulq_u16(reduce_64, high_32);
+            let high_16 = vrev32q_u16(reduce_32);
+            let reduce_16 = vmulq_u16(reduce_32, high_16);
+            vgetq_lane_u16::<0>(reduce_16)
+          } else {
+            let array = self.to_array();
+
+            // most boring implementation possible so optimizer doesn't overthink this
+            let mut result = array[0];
+            result = result.wrapping_mul(array[1]);
+            result = result.wrapping_mul(array[2]);
+            result = result.wrapping_mul(array[3]);
+            result = result.wrapping_mul(array[4]);
+            result = result.wrapping_mul(array[5]);
+            result = result.wrapping_mul(array[6]);
+            result.wrapping_mul(array[7])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_or_si128(_mm_and_si128(if_one.0, self.0), _mm_andnot_si128(self.0, if_zero.0)))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_bitselect(if_one.0, if_zero.0, self.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vbslq_u16(self.0, if_one.0, if_zero.0))
+          } else {
+            generic_bit_blend(self, if_one, if_zero)
           }
         }
     }
@@ -1385,7 +1391,12 @@ impl u16x8 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u16x8 {
     #[inline]
     pub(crate) fn from_u8x16_low_backend(u: u8x16) -> Self {
         pick! {

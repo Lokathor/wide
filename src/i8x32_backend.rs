@@ -19,6 +19,7 @@ impl SimdBackend for i8x32 {
 }
 
 safe_target_feature! {
+// Backend of general-SIMD functions.
 impl i8x32 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
@@ -66,7 +67,12 @@ impl i8x32 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Backend of SIMD integer functions.
+impl i8x32 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u8x32) -> Self {
         // For x86, this technically can be done explicitly by converting to `i16`
@@ -222,7 +228,12 @@ impl i8x32 {
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
     }
+}
+}
 
+safe_target_feature! {
+// Backend of SIMD signed integer functions.
+impl i8x32 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
@@ -266,7 +277,12 @@ impl i8x32 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl i8x32 {
     #[inline]
     pub(crate) fn swizzle_half_backend(self, rhs: i8x32) -> i8x32 {
         pick! {

@@ -25,14 +25,225 @@ impl SimdBackend for f64x2 {
     }
 }
 
-macro_rules! const_f64_as_f64x2 {
-    ($i:ident, $f:expr) => {
-        #[allow(non_upper_case_globals)]
-        pub const $i: f64x2 = f64x2::from_array([$f; 2]);
-    };
+safe_target_feature! {
+// Backend of general-SIMD functions.
+impl f64x2 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpeq_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_eq(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] == rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpneq_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_ne(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            !Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] != rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmplt_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_lt(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] < rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm_cmp_pd::<{_CMP_GT_OQ}>(self.0, rhs.0))
+          } else if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpgt_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_gt(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] > rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmple_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_le(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] <= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_cmpge_pd(self.0, rhs.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(f64x2_ge(self.0, rhs.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)))
+          } else {
+            Self::from_array([
+              if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
+              if self.0.arr[1] >= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            Self(_mm_blendv_pd(if_false.0, if_true.0, self.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_bitselect(if_true.0, if_false.0, self.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_true.0, if_false.0))
+          } else {
+            generic_bit_blend(self, if_true, if_false)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            _mm_movemask_pd(self.0) as u32
+          } else if #[cfg(target_feature="simd128")] {
+            u64x2_bitmask(self.0) as u32
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            let e = vreinterpretq_u64_f64(self.0);
+
+            (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
+          } else {
+            (((self.0.arr[0].to_bits() as i64) < 0) as u32) |
+            (((self.0.arr[1].to_bits() as i64) < 0) as u32) << 1
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="simd128")] {
+            v128_any_true(self.0)
+          } else {
+            self.to_bitmask() != 0
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="simd128")] {
+            u64x2_all_true(self.0)
+          } else {
+            // two lanes
+            self.to_bitmask() == 0b11
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_unpacklo_pd(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(i64x2_shuffle::<0, 2>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+            Self(vzip1q_f64(self.0, other.0))
+          } else {
+            Self::from_array([self.as_array()[0], other.as_array()[0]])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_unpackhi_pd(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(i64x2_shuffle::<1, 3>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+            Self(vzip2q_f64(self.0, other.0))
+          } else {
+            Self::from_array([self.as_array()[1], other.as_array()[1]])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [f64x2; 2]) -> [f64x2; 2] {
+        pick! {
+          if #[cfg(any(
+            target_feature="sse2",
+            all(target_feature="neon",target_arch="aarch64"),
+            target_feature="simd128",
+          ))] {
+            [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
+          } else {
+            let [x, y, z, w]: [f64; 4] = cast(data);
+            cast([x, z, y, w])
+          }
+        }
+    }
+}
 }
 
 safe_target_feature! {
+// Backend of SIMD float functions.
 impl f64x2 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
@@ -206,116 +417,6 @@ impl f64x2 {
     }
 
     #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpeq_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_eq(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] == rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] == rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpneq_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_ne(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            !Self(vreinterpretq_f64_u64(vceqq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] != rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] != rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmplt_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_lt(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcltq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] < rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] < rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm_cmp_pd::<{_CMP_GT_OQ}>(self.0, rhs.0))
-          } else if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpgt_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_gt(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcgtq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] > rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] > rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmple_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_le(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcleq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] <= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] <= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_cmpge_pd(self.0, rhs.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(f64x2_ge(self.0, rhs.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vreinterpretq_f64_u64(vcgeq_f64(self.0, rhs.0)))
-          } else {
-            Self::from_array([
-              if self.0.arr[0] >= rhs.0.arr[0] { f64::from_bits(u64::MAX) } else { 0.0 },
-              if self.0.arr[1] >= rhs.0.arr[1] { f64::from_bits(u64::MAX) } else { 0.0 },
-            ])
-          }
-        }
-    }
-
-    #[inline]
     pub(crate) fn reduce_add_backend(self) -> f64 {
         pick! {
           if #[cfg(target_feature="ssse3")] {
@@ -349,108 +450,6 @@ impl f64x2 {
             Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_one.0, if_zero.0))
           } else {
             generic_bit_blend(self, if_one, if_zero)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.1")] {
-            Self(_mm_blendv_pd(if_false.0, if_true.0, self.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(v128_bitselect(if_true.0, if_false.0, self.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vbslq_f64(vreinterpretq_u64_f64(self.0), if_true.0, if_false.0))
-          } else {
-            generic_bit_blend(self, if_true, if_false)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            _mm_movemask_pd(self.0) as u32
-          } else if #[cfg(target_feature="simd128")] {
-            u64x2_bitmask(self.0) as u32
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            let e = vreinterpretq_u64_f64(self.0);
-
-            (vgetq_lane_u64(e,0) >> 63 | ((vgetq_lane_u64(e,1) >> 62) & 0x2)) as u32
-          } else {
-            (((self.0.arr[0].to_bits() as i64) < 0) as u32) |
-            (((self.0.arr[1].to_bits() as i64) < 0) as u32) << 1
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="simd128")] {
-            v128_any_true(self.0)
-          } else {
-            self.to_bitmask() != 0
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="simd128")] {
-            u64x2_all_true(self.0)
-          } else {
-            // two lanes
-            self.to_bitmask() == 0b11
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_unpacklo_pd(self.0, other.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(i64x2_shuffle::<0, 2>(self.0, other.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            Self(vzip1q_f64(self.0, other.0))
-          } else {
-            Self::from_array([self.as_array()[0], other.as_array()[0]])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_unpackhi_pd(self.0, other.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(i64x2_shuffle::<1, 3>(self.0, other.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            Self(vzip2q_f64(self.0, other.0))
-          } else {
-            Self::from_array([self.as_array()[1], other.as_array()[1]])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [f64x2; 2]) -> [f64x2; 2] {
-        pick! {
-          if #[cfg(any(
-            target_feature="sse2",
-            all(target_feature="neon",target_arch="aarch64"),
-            target_feature="simd128",
-          ))] {
-            [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
-          } else {
-            let [x, y, z, w]: [f64; 4] = cast(data);
-            cast([x, z, y, w])
           }
         }
     }
@@ -1990,7 +1989,12 @@ impl f64x2 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl f64x2 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f64_as_f64x2!(pow2_52, 4503599627370496.0);
