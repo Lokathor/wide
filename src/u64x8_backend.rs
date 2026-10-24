@@ -426,17 +426,6 @@ impl u64x8 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u64x8 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u64x8 {
-}
-}
-
-safe_target_feature! {
-impl u64x8 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
@@ -876,7 +865,12 @@ impl u64x8 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u64x8 {
     /// The exact per-lane product of `a` and `b` masked to `W` bits.
     ///
     /// Only exact for `W <= 32`, where the product still fits a lane, and
