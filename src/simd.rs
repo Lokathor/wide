@@ -51,7 +51,7 @@ pub trait SupportedSimd: Sealed + SimdBackend {
     /// dyn compatible.
     ///
     /// This cannot be done with a `Sized` super trait because we do not want to
-    /// guarantee that all SIMD element types implement `Sized`.
+    /// guarantee that all SIMD vector types implement `Sized`.
     #[doc(hidden)]
     const NOT_DYN_COMPATIBLE_MARKER: () = ();
 }
