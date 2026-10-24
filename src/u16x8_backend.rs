@@ -619,17 +619,6 @@ impl u16x8 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u16x8 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u16x8 {
-}
-}
-
-safe_target_feature! {
-impl u16x8 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         self ^ cast::<u128, u16x8>(u128::MAX)
@@ -1393,7 +1382,12 @@ impl u16x8 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u16x8 {
     #[inline]
     pub(crate) fn from_u8x16_low_backend(u: u8x16) -> Self {
         pick! {
