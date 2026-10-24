@@ -13,13 +13,6 @@ pick! {
   }
 }
 
-macro_rules! const_f32_as_f32x16 {
-    ($i:ident, $f:expr) => {
-        #[allow(non_upper_case_globals)]
-        pub const $i: f32x16 = f32x16::from_array([$f; 16]);
-    };
-}
-
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl f32x16 {

@@ -602,6 +602,48 @@ macro_rules! impl_shift_operator {
   }
 }
 
+macro_rules! const_f32_as_f32x4 {
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f32x4 = f32x4::from_array([$f; 4]);
+    };
+}
+
+macro_rules! const_f32_as_f32x8 {
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f32x8 = f32x8::from_array([$f; 8]);
+    };
+}
+
+macro_rules! const_f32_as_f32x16 {
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f32x16 = f32x16::from_array([$f; 16]);
+    };
+}
+
+macro_rules! const_f64_as_f64x2 {
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f64x2 = f64x2::from_array([$f; 2]);
+    };
+}
+
+macro_rules! const_f64_as_f64x4 {
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f64x4 = f64x4::from_array([$f; 4]);
+    };
+}
+
+macro_rules! const_f64_as_f64x8 {
+    ($i:ident, $f:expr) => {
+        #[allow(non_upper_case_globals)]
+        pub const $i: f64x8 = f64x8::from_array([$f; 8]);
+    };
+}
+
 // TODO: make these generic over `fast_mul_add`? Worth it?
 
 macro_rules! polynomial_2 {
