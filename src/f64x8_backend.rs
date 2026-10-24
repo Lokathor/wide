@@ -124,6 +124,103 @@ impl f64x8 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_mask_blend_pd(
+              _mm512_movepi64_mask(_mm512_castpd_si512(self.0)),
+              if_false.0,
+              if_true.0,
+            ))
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            let [if_true_lo, if_true_hi] = cast::<f64x8, [f64x4; 2]>(if_true);
+            let [if_false_lo, if_false_hi] = cast::<f64x8, [f64x4; 2]>(if_false);
+            cast([
+              self_lo.select(if_true_lo, if_false_lo),
+              self_hi.select(if_true_hi, if_false_hi),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) as u32
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            (self_hi.to_bitmask() << 4) | self_lo.to_bitmask()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) != 0
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            self_lo.any() || self_hi.any()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) == 0b11111111
+          } else {
+            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
+            self_lo.all() && self_hi.all()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [f64x8; 8]) -> [f64x8; 8] {
+        // Can this be optimized?
+
+        #[inline(always)]
+        fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
+            f64x8::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+                data[4].as_array()[index],
+                data[5].as_array()[index],
+                data[6].as_array()[index],
+                data[7].as_array()[index],
+            ])
+        }
+
+        [
+            transpose_column(&data, 0),
+            transpose_column(&data, 1),
+            transpose_column(&data, 2),
+            transpose_column(&data, 3),
+            transpose_column(&data, 4),
+            transpose_column(&data, 5),
+            transpose_column(&data, 6),
+            transpose_column(&data, 7),
+        ]
+    }
 }
 }
 
@@ -325,103 +422,6 @@ impl f64x8 {
             ])
           }
         }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            Self(_mm512_mask_blend_pd(
-              _mm512_movepi64_mask(_mm512_castpd_si512(self.0)),
-              if_false.0,
-              if_true.0,
-            ))
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            let [if_true_lo, if_true_hi] = cast::<f64x8, [f64x4; 2]>(if_true);
-            let [if_false_lo, if_false_hi] = cast::<f64x8, [f64x4; 2]>(if_false);
-            cast([
-              self_lo.select(if_true_lo, if_false_lo),
-              self_hi.select(if_true_hi, if_false_hi),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) as u32
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            (self_hi.to_bitmask() << 4) | self_lo.to_bitmask()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) != 0
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            self_lo.any() || self_hi.any()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(_mm512_castpd_si512(self.0)) == 0b11111111
-          } else {
-            let [self_lo, self_hi] = cast::<f64x8, [f64x4; 2]>(self);
-            self_lo.all() && self_hi.all()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [f64x8; 8]) -> [f64x8; 8] {
-        // Can this be optimized?
-
-        #[inline(always)]
-        fn transpose_column(data: &[f64x8; 8], index: usize) -> f64x8 {
-            f64x8::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-                data[4].as_array()[index],
-                data[5].as_array()[index],
-                data[6].as_array()[index],
-                data[7].as_array()[index],
-            ])
-        }
-
-        [
-            transpose_column(&data, 0),
-            transpose_column(&data, 1),
-            transpose_column(&data, 2),
-            transpose_column(&data, 3),
-            transpose_column(&data, 4),
-            transpose_column(&data, 5),
-            transpose_column(&data, 6),
-            transpose_column(&data, 7),
-        ]
     }
 
     #[inline]

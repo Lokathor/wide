@@ -121,6 +121,238 @@ impl u64x2 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            Self(_mm_blendv_epi8(if_false.0, if_true.0, self.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_bitselect(if_true.0, if_false.0, self.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vbslq_u64(self.0, if_true.0, if_false.0))
+          } else {
+            generic_bit_blend(self, if_true, if_false)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="sse")] {
+            // use f64 move_mask since it is the same size as i64
+            _mm_movemask_pd(cast(self.0)) as u32
+          } else if #[cfg(target_feature="simd128")] {
+            i64x2_bitmask(self.0) as u32
+          } else {
+            // nothing amazingly efficient for neon
+            let arr: [u64; 2] = cast(self);
+            (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as u32
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="sse")] {
+            // use f64 move_mask since it is the same size as i64
+            _mm_movemask_pd(cast(self.0)) != 0
+          } else if #[cfg(target_feature="simd128")] {
+            i64x2_bitmask(self.0) != 0
+          } else {
+            let v : [u64;2] = cast(self);
+            ((v[0] | v[1]) & 0x8000000000000000) != 0
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // use f64 move_mask since it is the same size as i64
+            _mm_movemask_pd(cast(self.0)) == 0b11
+          }  else if #[cfg(target_feature="simd128")] {
+            i64x2_bitmask(self.0) == 0b11
+          } else {
+            let v : [u64;2] = cast(self);
+            ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_unpacklo_epi64(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(i64x2_shuffle::<0, 2>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            Self(vzip1q_u64(self.0, other.0))
+          } else {
+            Self::from_array([self.as_array()[0], other.as_array()[0]])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_unpackhi_epi64(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(i64x2_shuffle::<1, 3>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            Self(vzip2q_u64(self.0, other.0))
+          } else {
+            Self::from_array([self.as_array()[1], other.as_array()[1]])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_backend(self, indices: u64x2) -> Self {
+        pick! {
+          if #[cfg(target_feature = "sse2")] {
+            let e0 = Self(_mm_shuffle_epi32::<0b01_00_01_00>(self.0));
+            let e1 = Self(_mm_shuffle_epi32::<0b11_10_11_10>(self.0));
+
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          } else if #[cfg(target_feature = "simd128")] {
+            let e0 = Self(u64x2_shuffle::<0, 0>(self.0, self.0));
+            let e1 = Self(u64x2_shuffle::<1, 1>(self.0, self.0));
+
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]{
+            let e0 = Self(vdupq_n_u64(vget_lane_u64::<0>(vget_low_u64(self.0))));
+            let e1 = Self(vdupq_n_u64(vget_lane_u64::<0>(vget_high_u64(self.0))));
+
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          } else {
+            let e0 = Self::splat(self.as_array()[0]);
+            let e1 = Self::splat(self.as_array()[1]);
+
+            // We can assume that each index is either `0` or `1`, and negating that
+            // always gives us either all bits zero or all bits one.
+            (-indices).select(e1, e0)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_backend(self, indices: u64x2) -> Self {
+        // Since all implementations use the `select` trick, we always need to mask
+        self.shuffle(indices) & indices.simd_lt(2)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_backend(self, indices: u64x2) -> Self {
+        // Since all implementations use the `select` trick, we always need to mask
+        self.shuffle(indices & 1)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            u64x2(_mm_permutex2var_epi64(inputs[0].0, indices.0, inputs[1].0))
+          } else {
+            let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(inputs);
+            let byte_indices = indices.to_byte_indices();
+
+            cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(4)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            // `avx512` shuffle intrinsics are wrapping
+            inputs.shuffle(indices)
+          } else {
+            inputs.shuffle(indices & 3)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+        let self_bytes = cast::<[u64x2; 3], [u8x16; 3]>(inputs);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(6)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
+        inputs.shuffle(indices % 6)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+        let self_bytes = cast::<[u64x2; 4], [u8x16; 4]>(inputs);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(8)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
+        inputs.shuffle(indices & 7)
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [Self; 2]) -> [Self; 2] {
+        pick! {
+          if #[cfg(any(
+            target_feature="sse2",
+            all(target_feature="neon",target_arch="aarch64"),
+            target_feature="simd128",
+          ))] {
+            // TODO: Remove the casts once unpack functions exist for `Self`.
+            // [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
+            [
+              data[0].cast_signed().interleave_low(data[1].cast_signed()).cast_unsigned(),
+              data[0].cast_signed().interleave_high(data[1].cast_signed()).cast_unsigned(),
+            ]
+          } else {
+            let [x, y, z, w]: [u64; 4] = cast(data);
+            cast([x, z, y, w])
+          }
+        }
+    }
 }
 }
 
@@ -372,238 +604,6 @@ impl u64x2 {
             Self(vbslq_u64(self.0, if_one.0, if_zero.0))
           } else {
             generic_bit_blend(self, if_one, if_zero)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.1")] {
-            Self(_mm_blendv_epi8(if_false.0, if_true.0, self.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(v128_bitselect(if_true.0, if_false.0, self.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vbslq_u64(self.0, if_true.0, if_false.0))
-          } else {
-            generic_bit_blend(self, if_true, if_false)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="sse")] {
-            // use f64 move_mask since it is the same size as i64
-            _mm_movemask_pd(cast(self.0)) as u32
-          } else if #[cfg(target_feature="simd128")] {
-            i64x2_bitmask(self.0) as u32
-          } else {
-            // nothing amazingly efficient for neon
-            let arr: [u64; 2] = cast(self);
-            (arr[0] >> 63 | ((arr[1] >> 62) & 2)) as u32
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="sse")] {
-            // use f64 move_mask since it is the same size as i64
-            _mm_movemask_pd(cast(self.0)) != 0
-          } else if #[cfg(target_feature="simd128")] {
-            i64x2_bitmask(self.0) != 0
-          } else {
-            let v : [u64;2] = cast(self);
-            ((v[0] | v[1]) & 0x8000000000000000) != 0
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx2")] {
-            // use f64 move_mask since it is the same size as i64
-            _mm_movemask_pd(cast(self.0)) == 0b11
-          }  else if #[cfg(target_feature="simd128")] {
-            i64x2_bitmask(self.0) == 0b11
-          } else {
-            let v : [u64;2] = cast(self);
-            ((v[0] & v[1]) & 0x8000000000000000) == 0x8000000000000000
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_unpacklo_epi64(self.0, other.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(i64x2_shuffle::<0, 2>(self.0, other.0))
-          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(vzip1q_u64(self.0, other.0))
-          } else {
-            Self::from_array([self.as_array()[0], other.as_array()[0]])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_unpackhi_epi64(self.0, other.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(i64x2_shuffle::<1, 3>(self.0, other.0))
-          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(vzip2q_u64(self.0, other.0))
-          } else {
-            Self::from_array([self.as_array()[1], other.as_array()[1]])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_backend(self, indices: u64x2) -> Self {
-        pick! {
-          if #[cfg(target_feature = "sse2")] {
-            let e0 = Self(_mm_shuffle_epi32::<0b01_00_01_00>(self.0));
-            let e1 = Self(_mm_shuffle_epi32::<0b11_10_11_10>(self.0));
-
-            // We can assume that each index is either `0` or `1`, and negating that
-            // always gives us either all bits zero or all bits one.
-            (-indices).select(e1, e0)
-          } else if #[cfg(target_feature = "simd128")] {
-            let e0 = Self(u64x2_shuffle::<0, 0>(self.0, self.0));
-            let e1 = Self(u64x2_shuffle::<1, 1>(self.0, self.0));
-
-            // We can assume that each index is either `0` or `1`, and negating that
-            // always gives us either all bits zero or all bits one.
-            (-indices).select(e1, e0)
-          } else if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))]{
-            let e0 = Self(vdupq_n_u64(vget_lane_u64::<0>(vget_low_u64(self.0))));
-            let e1 = Self(vdupq_n_u64(vget_lane_u64::<0>(vget_high_u64(self.0))));
-
-            // We can assume that each index is either `0` or `1`, and negating that
-            // always gives us either all bits zero or all bits one.
-            (-indices).select(e1, e0)
-          } else {
-            let e0 = Self::splat(self.as_array()[0]);
-            let e1 = Self::splat(self.as_array()[1]);
-
-            // We can assume that each index is either `0` or `1`, and negating that
-            // always gives us either all bits zero or all bits one.
-            (-indices).select(e1, e0)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_backend(self, indices: u64x2) -> Self {
-        // Since all implementations use the `select` trick, we always need to mask
-        self.shuffle(indices) & indices.simd_lt(2)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_backend(self, indices: u64x2) -> Self {
-        // Since all implementations use the `select` trick, we always need to mask
-        self.shuffle(indices & 1)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            u64x2(_mm_permutex2var_epi64(inputs[0].0, indices.0, inputs[1].0))
-          } else {
-            let self_bytes = cast::<[u64x2; 2], [u8x16; 2]>(inputs);
-            let byte_indices = indices.to_byte_indices();
-
-            cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
-        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
-        // 8-bit can trigger an overflow causing incorrect behavior
-        inputs.shuffle(indices) & indices.simd_lt(4)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u64x2) -> u64x2 {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            // `avx512` shuffle intrinsics are wrapping
-            inputs.shuffle(indices)
-          } else {
-            inputs.shuffle(indices & 3)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
-        let self_bytes = cast::<[u64x2; 3], [u8x16; 3]>(inputs);
-        let byte_indices = indices.to_byte_indices();
-
-        cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
-        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
-        // 8-bit can trigger an overflow causing incorrect behavior
-        inputs.shuffle(indices) & indices.simd_lt(6)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u64x2) -> u64x2 {
-        inputs.shuffle(indices % 6)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
-        let self_bytes = cast::<[u64x2; 4], [u8x16; 4]>(inputs);
-        let byte_indices = indices.to_byte_indices();
-
-        cast::<u8x16, u64x2>(self_bytes.shuffle(byte_indices))
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
-        // Even if the `u8x16::shuffle` implementation is zeroing, our 64-bit to
-        // 8-bit can trigger an overflow causing incorrect behavior
-        inputs.shuffle(indices) & indices.simd_lt(8)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u64x2) -> u64x2 {
-        inputs.shuffle(indices & 7)
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [Self; 2]) -> [Self; 2] {
-        pick! {
-          if #[cfg(any(
-            target_feature="sse2",
-            all(target_feature="neon",target_arch="aarch64"),
-            target_feature="simd128",
-          ))] {
-            // TODO: Remove the casts once unpack functions exist for `Self`.
-            // [data[0].interleave_low(data[1]), data[0].interleave_high(data[1])]
-            [
-              data[0].cast_signed().interleave_low(data[1].cast_signed()).cast_unsigned(),
-              data[0].cast_signed().interleave_high(data[1].cast_signed()).cast_unsigned(),
-            ]
-          } else {
-            let [x, y, z, w]: [u64; 4] = cast(data);
-            cast([x, z, y, w])
           }
         }
     }

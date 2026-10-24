@@ -106,6 +106,135 @@ impl f32x8 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_blendv_ps(if_false.0, if_true.0, self.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
+              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_ps(self.0) as u32
+          } else {
+            (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_ps(self.0) != 0
+          } else {
+            self.0.lo.any() || self.0.hi.any()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_ps(self.0) == 0b11111111
+          } else {
+            self.0.lo.all() && self.0.hi.all()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [f32x8; 8]) -> [f32x8; 8] {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            let a0 = _mm256_unpacklo_ps(data[0].0, data[1].0);
+            let a1 = _mm256_unpackhi_ps(data[0].0, data[1].0);
+            let a2 = _mm256_unpacklo_ps(data[2].0, data[3].0);
+            let a3 = _mm256_unpackhi_ps(data[2].0, data[3].0);
+            let a4 = _mm256_unpacklo_ps(data[4].0, data[5].0);
+            let a5 = _mm256_unpackhi_ps(data[4].0, data[5].0);
+            let a6 = _mm256_unpacklo_ps(data[6].0, data[7].0);
+            let a7 = _mm256_unpackhi_ps(data[6].0, data[7].0);
+
+            pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
+              (z << 6) | (y << 4) | (x << 2) | w
+            }
+
+            const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
+            const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
+
+            // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
+            // (since blend runs on a different port than shuffle)
+            let b0 = _mm256_shuffle_ps::<SHUFF_LO>(a0,a2);
+            let b1 = _mm256_shuffle_ps::<SHUFF_HI>(a0,a2);
+            let b2 = _mm256_shuffle_ps::<SHUFF_LO>(a1,a3);
+            let b3 = _mm256_shuffle_ps::<SHUFF_HI>(a1,a3);
+            let b4 = _mm256_shuffle_ps::<SHUFF_LO>(a4,a6);
+            let b5 = _mm256_shuffle_ps::<SHUFF_HI>(a4,a6);
+            let b6 = _mm256_shuffle_ps::<SHUFF_LO>(a5,a7);
+            let b7 = _mm256_shuffle_ps::<SHUFF_HI>(a5,a7);
+
+            [
+              f32x8(_mm256_permute2f128_ps::<0x20>(b0, b4)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b1, b5)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b2, b6)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b3, b7)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b0, b4)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b1, b5)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b2, b6)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b3, b7))
+            ]
+          } else {
+            // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
+
+            #[inline(always)]
+            fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
+              f32x8::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+                data[4].as_array()[index],
+                data[5].as_array()[index],
+                data[6].as_array()[index],
+                data[7].as_array()[index],
+              ])
+            }
+
+            [
+              transpose_column(&data, 0),
+              transpose_column(&data, 1),
+              transpose_column(&data, 2),
+              transpose_column(&data, 3),
+              transpose_column(&data, 4),
+              transpose_column(&data, 5),
+              transpose_column(&data, 6),
+              transpose_column(&data, 7),
+            ]
+          }
+        }
+    }
 }
 }
 
@@ -319,135 +448,6 @@ impl f32x8 {
               lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
               hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
             })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_blendv_ps(if_false.0, if_true.0, self.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
-              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_ps(self.0) as u32
-          } else {
-            (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_ps(self.0) != 0
-          } else {
-            self.0.lo.any() || self.0.hi.any()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_ps(self.0) == 0b11111111
-          } else {
-            self.0.lo.all() && self.0.hi.all()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [f32x8; 8]) -> [f32x8; 8] {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            let a0 = _mm256_unpacklo_ps(data[0].0, data[1].0);
-            let a1 = _mm256_unpackhi_ps(data[0].0, data[1].0);
-            let a2 = _mm256_unpacklo_ps(data[2].0, data[3].0);
-            let a3 = _mm256_unpackhi_ps(data[2].0, data[3].0);
-            let a4 = _mm256_unpacklo_ps(data[4].0, data[5].0);
-            let a5 = _mm256_unpackhi_ps(data[4].0, data[5].0);
-            let a6 = _mm256_unpacklo_ps(data[6].0, data[7].0);
-            let a7 = _mm256_unpackhi_ps(data[6].0, data[7].0);
-
-            pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
-              (z << 6) | (y << 4) | (x << 2) | w
-            }
-
-            const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
-            const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
-
-            // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
-            // (since blend runs on a different port than shuffle)
-            let b0 = _mm256_shuffle_ps::<SHUFF_LO>(a0,a2);
-            let b1 = _mm256_shuffle_ps::<SHUFF_HI>(a0,a2);
-            let b2 = _mm256_shuffle_ps::<SHUFF_LO>(a1,a3);
-            let b3 = _mm256_shuffle_ps::<SHUFF_HI>(a1,a3);
-            let b4 = _mm256_shuffle_ps::<SHUFF_LO>(a4,a6);
-            let b5 = _mm256_shuffle_ps::<SHUFF_HI>(a4,a6);
-            let b6 = _mm256_shuffle_ps::<SHUFF_LO>(a5,a7);
-            let b7 = _mm256_shuffle_ps::<SHUFF_HI>(a5,a7);
-
-            [
-              f32x8(_mm256_permute2f128_ps::<0x20>(b0, b4)),
-              f32x8(_mm256_permute2f128_ps::<0x20>(b1, b5)),
-              f32x8(_mm256_permute2f128_ps::<0x20>(b2, b6)),
-              f32x8(_mm256_permute2f128_ps::<0x20>(b3, b7)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b0, b4)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b1, b5)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b2, b6)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b3, b7))
-            ]
-          } else {
-            // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
-
-            #[inline(always)]
-            fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
-              f32x8::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-                data[4].as_array()[index],
-                data[5].as_array()[index],
-                data[6].as_array()[index],
-                data[7].as_array()[index],
-              ])
-            }
-
-            [
-              transpose_column(&data, 0),
-              transpose_column(&data, 1),
-              transpose_column(&data, 2),
-              transpose_column(&data, 3),
-              transpose_column(&data, 4),
-              transpose_column(&data, 5),
-              transpose_column(&data, 6),
-              transpose_column(&data, 7),
-            ]
           }
         }
     }

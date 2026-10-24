@@ -124,6 +124,120 @@ impl f32x16 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            Self(_mm512_mask_blend_ps(
+              _mm512_movepi32_mask(_mm512_castps_si512(self.0)),
+              if_false.0,
+              if_true.0,
+            ))
+          } else {
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            let [if_true_lo, if_true_hi] = cast::<f32x16, [f32x8; 2]>(if_true);
+            let [if_false_lo, if_false_hi] = cast::<f32x16, [f32x8; 2]>(if_false);
+            cast([
+              self_lo.select(if_true_lo, if_false_lo),
+              self_hi.select(if_true_hi, if_false_hi),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi32_mask(_mm512_castps_si512(self.0)) as u32
+          } else {
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            (self_hi.to_bitmask() << 8) | self_lo.to_bitmask()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi32_mask(_mm512_castps_si512(self.0)) != 0
+          } else {
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            self_lo.any() || self_hi.any()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi32_mask(_mm512_castps_si512(self.0)) == !0_u16
+          } else {
+            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
+            self_lo.all() && self_hi.all()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [f32x16; 16]) -> [f32x16; 16] {
+        // TODO(perf): Try to add an optimized `avx512` implementation using
+        // `_mm512_unpackhi_ps`.
+
+        #[inline(always)]
+        fn transpose_column(data: &[f32x16; 16], index: usize) -> f32x16 {
+            f32x16::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+                data[4].as_array()[index],
+                data[5].as_array()[index],
+                data[6].as_array()[index],
+                data[7].as_array()[index],
+                data[8].as_array()[index],
+                data[9].as_array()[index],
+                data[10].as_array()[index],
+                data[11].as_array()[index],
+                data[12].as_array()[index],
+                data[13].as_array()[index],
+                data[14].as_array()[index],
+                data[15].as_array()[index],
+            ])
+        }
+
+        [
+            transpose_column(&data, 0),
+            transpose_column(&data, 1),
+            transpose_column(&data, 2),
+            transpose_column(&data, 3),
+            transpose_column(&data, 4),
+            transpose_column(&data, 5),
+            transpose_column(&data, 6),
+            transpose_column(&data, 7),
+            transpose_column(&data, 8),
+            transpose_column(&data, 9),
+            transpose_column(&data, 10),
+            transpose_column(&data, 11),
+            transpose_column(&data, 12),
+            transpose_column(&data, 13),
+            transpose_column(&data, 14),
+            transpose_column(&data, 15),
+        ]
+    }
 }
 }
 
@@ -316,120 +430,6 @@ impl f32x16 {
             ])
           }
         }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            Self(_mm512_mask_blend_ps(
-              _mm512_movepi32_mask(_mm512_castps_si512(self.0)),
-              if_false.0,
-              if_true.0,
-            ))
-          } else {
-            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
-            let [if_true_lo, if_true_hi] = cast::<f32x16, [f32x8; 2]>(if_true);
-            let [if_false_lo, if_false_hi] = cast::<f32x16, [f32x8; 2]>(if_false);
-            cast([
-              self_lo.select(if_true_lo, if_false_lo),
-              self_hi.select(if_true_hi, if_false_hi),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi32_mask(_mm512_castps_si512(self.0)) as u32
-          } else {
-            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
-            (self_hi.to_bitmask() << 8) | self_lo.to_bitmask()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi32_mask(_mm512_castps_si512(self.0)) != 0
-          } else {
-            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
-            self_lo.any() || self_hi.any()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi32_mask(_mm512_castps_si512(self.0)) == !0_u16
-          } else {
-            let [self_lo, self_hi] = cast::<f32x16, [f32x8; 2]>(self);
-            self_lo.all() && self_hi.all()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [f32x16; 16]) -> [f32x16; 16] {
-        // TODO(perf): Try to add an optimized `avx512` implementation using
-        // `_mm512_unpackhi_ps`.
-
-        #[inline(always)]
-        fn transpose_column(data: &[f32x16; 16], index: usize) -> f32x16 {
-            f32x16::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-                data[4].as_array()[index],
-                data[5].as_array()[index],
-                data[6].as_array()[index],
-                data[7].as_array()[index],
-                data[8].as_array()[index],
-                data[9].as_array()[index],
-                data[10].as_array()[index],
-                data[11].as_array()[index],
-                data[12].as_array()[index],
-                data[13].as_array()[index],
-                data[14].as_array()[index],
-                data[15].as_array()[index],
-            ])
-        }
-
-        [
-            transpose_column(&data, 0),
-            transpose_column(&data, 1),
-            transpose_column(&data, 2),
-            transpose_column(&data, 3),
-            transpose_column(&data, 4),
-            transpose_column(&data, 5),
-            transpose_column(&data, 6),
-            transpose_column(&data, 7),
-            transpose_column(&data, 8),
-            transpose_column(&data, 9),
-            transpose_column(&data, 10),
-            transpose_column(&data, 11),
-            transpose_column(&data, 12),
-            transpose_column(&data, 13),
-            transpose_column(&data, 14),
-            transpose_column(&data, 15),
-        ]
     }
 
     #[inline]

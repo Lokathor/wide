@@ -117,6 +117,227 @@ impl u64x8 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_mask_blend_epi8(_mm512_movepi8_mask(self.0), if_false.0,if_true.0))
+          } else {
+            let [self_lo, self_hi] = cast::<u64x8, [u64x4; 2]>(self);
+            let [if_true_lo, if_true_hi] = cast::<u64x8, [u64x4; 2]>(if_true);
+            let [if_false_lo, if_false_hi] = cast::<u64x8, [u64x4; 2]>(if_false);
+            cast([
+              self_lo.select(if_true_lo, if_false_lo),
+              self_hi.select(if_true_hi, if_false_hi),
+            ])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            // use f64 move_mask since it is the same size as i64
+            _mm512_movepi64_mask(self.0) as u32
+          } else {
+            f64x8::to_bitmask(cast(self))
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(self.0) != 0
+          } else {
+            let [a, b]: [i64x4; 2] = cast(self);
+            (a | b).any()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx512dq")] {
+            _mm512_movepi64_mask(self.0) == 0b11111111
+          } else {
+            let [a, b]: [i64x4; 2] = cast(self);
+            (a & b).all()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            // `_mm512_unpacklo_epi64` cannot be used because it acts within each
+            // 128-bit lane, which is a different operation.
+            let [aa, _]: [u64x4; 2] = cast(self);
+            let [ba, _]: [u64x4; 2] = cast(other);
+            cast([aa.interleave_low(ba), aa.interleave_high(ba)])
+          } else {
+            Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            // `_mm512_unpackhi_epi64` cannot be used because it acts within each
+            // 128-bit lane, which is a different operation.
+            let [_, ab]: [u64x4; 2] = cast(self);
+            let [_, bb]: [u64x4; 2] = cast(other);
+            cast([ab.interleave_low(bb), ab.interleave_high(bb)])
+          } else {
+            Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_backend(self, indices: u64x8) -> Self {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f"))] {
+            Self(_mm512_permutexvar_epi64(indices.0, self.0))
+          } else {
+            let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
+            let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
+
+            cast([self_halfs.shuffle(indices_a), self_halfs.shuffle(indices_b)])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_backend(self, indices: u64x8) -> Self {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f"))] {
+            self.shuffle(indices) & indices.simd_lt(8)
+          } else {
+            let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
+            let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
+
+            cast([self_halfs.shuffle_zeroing(indices_a), self_halfs.shuffle_zeroing(indices_b)])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_backend(self, indices: u64x8) -> Self {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f"))] {
+            // `avx512` shuffle intrinsics are wrapping
+            self.shuffle(indices)
+          } else {
+            let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
+            let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
+
+            cast([self_halfs.shuffle_wrapping(indices_a), self_halfs.shuffle_wrapping(indices_b)])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u64x8) -> u64x8 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f"))] {
+            u64x8(_mm512_permutex2var_epi64(inputs[0].0, indices.0, inputs[1].0))
+          } else {
+            inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 8)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u64x8) -> u64x8 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f"))] {
+            inputs.shuffle(indices) & indices.simd_lt(16)
+          } else {
+            inputs.shuffle(indices)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u64x8) -> u64x8 {
+        pick! {
+          if #[cfg(target_feature = "avx512f")] {
+            // `avx512` shuffle intrinsics are wrapping
+            inputs.shuffle(indices)
+          } else {
+            inputs.shuffle(indices & 15)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u64x8) -> u64x8 {
+        [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 16)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u64x8) -> u64x8 {
+        inputs.shuffle(indices)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u64x8) -> u64x8 {
+        inputs.shuffle(indices % 24)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u64x8) -> u64x8 {
+        [inputs[0], inputs[1]].shuffle_zeroing(indices)
+            | [inputs[2], inputs[3]].shuffle_zeroing(indices - 16)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u64x8) -> u64x8 {
+        inputs.shuffle(indices)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u64x8) -> u64x8 {
+        inputs.shuffle(indices & 31)
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [Self; 8]) -> [Self; 8] {
+        // Can this be optimized?
+
+        #[inline(always)]
+        fn transpose_column(data: &[u64x8; 8], index: usize) -> u64x8 {
+            u64x8::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+                data[4].as_array()[index],
+                data[5].as_array()[index],
+                data[6].as_array()[index],
+                data[7].as_array()[index],
+            ])
+        }
+
+        [
+            transpose_column(&data, 0),
+            transpose_column(&data, 1),
+            transpose_column(&data, 2),
+            transpose_column(&data, 3),
+            transpose_column(&data, 4),
+            transpose_column(&data, 5),
+            transpose_column(&data, 6),
+            transpose_column(&data, 7),
+        ]
+    }
 }
 }
 
@@ -349,227 +570,6 @@ impl u64x8 {
             })
           }
         }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_mask_blend_epi8(_mm512_movepi8_mask(self.0), if_false.0,if_true.0))
-          } else {
-            let [self_lo, self_hi] = cast::<u64x8, [u64x4; 2]>(self);
-            let [if_true_lo, if_true_hi] = cast::<u64x8, [u64x4; 2]>(if_true);
-            let [if_false_lo, if_false_hi] = cast::<u64x8, [u64x4; 2]>(if_false);
-            cast([
-              self_lo.select(if_true_lo, if_false_lo),
-              self_hi.select(if_true_hi, if_false_hi),
-            ])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            // use f64 move_mask since it is the same size as i64
-            _mm512_movepi64_mask(self.0) as u32
-          } else {
-            f64x8::to_bitmask(cast(self))
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(self.0) != 0
-          } else {
-            let [a, b]: [i64x4; 2] = cast(self);
-            (a | b).any()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx512dq")] {
-            _mm512_movepi64_mask(self.0) == 0b11111111
-          } else {
-            let [a, b]: [i64x4; 2] = cast(self);
-            (a & b).all()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // `_mm512_unpacklo_epi64` cannot be used because it acts within each
-            // 128-bit lane, which is a different operation.
-            let [aa, _]: [u64x4; 2] = cast(self);
-            let [ba, _]: [u64x4; 2] = cast(other);
-            cast([aa.interleave_low(ba), aa.interleave_high(ba)])
-          } else {
-            Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512f")] {
-            // `_mm512_unpackhi_epi64` cannot be used because it acts within each
-            // 128-bit lane, which is a different operation.
-            let [_, ab]: [u64x4; 2] = cast(self);
-            let [_, bb]: [u64x4; 2] = cast(other);
-            cast([ab.interleave_low(bb), ab.interleave_high(bb)])
-          } else {
-            Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_backend(self, indices: u64x8) -> Self {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f"))] {
-            Self(_mm512_permutexvar_epi64(indices.0, self.0))
-          } else {
-            let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
-            let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
-
-            cast([self_halfs.shuffle(indices_a), self_halfs.shuffle(indices_b)])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_backend(self, indices: u64x8) -> Self {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f"))] {
-            self.shuffle(indices) & indices.simd_lt(8)
-          } else {
-            let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
-            let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
-
-            cast([self_halfs.shuffle_zeroing(indices_a), self_halfs.shuffle_zeroing(indices_b)])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_backend(self, indices: u64x8) -> Self {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f"))] {
-            // `avx512` shuffle intrinsics are wrapping
-            self.shuffle(indices)
-          } else {
-            let self_halfs = cast::<u64x8, [u64x4; 2]>(self);
-            let [indices_a, indices_b] = cast::<u64x8, [u64x4; 2]>(indices);
-
-            cast([self_halfs.shuffle_wrapping(indices_a), self_halfs.shuffle_wrapping(indices_b)])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u64x8) -> u64x8 {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f"))] {
-            u64x8(_mm512_permutex2var_epi64(inputs[0].0, indices.0, inputs[1].0))
-          } else {
-            inputs[0].shuffle_zeroing(indices) | inputs[1].shuffle_zeroing(indices - 8)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u64x8) -> u64x8 {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f"))] {
-            inputs.shuffle(indices) & indices.simd_lt(16)
-          } else {
-            inputs.shuffle(indices)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u64x8) -> u64x8 {
-        pick! {
-          if #[cfg(target_feature = "avx512f")] {
-            // `avx512` shuffle intrinsics are wrapping
-            inputs.shuffle(indices)
-          } else {
-            inputs.shuffle(indices & 15)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u64x8) -> u64x8 {
-        [inputs[0], inputs[1]].shuffle_zeroing(indices) | inputs[2].shuffle_zeroing(indices - 16)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u64x8) -> u64x8 {
-        inputs.shuffle(indices)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u64x8) -> u64x8 {
-        inputs.shuffle(indices % 24)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u64x8) -> u64x8 {
-        [inputs[0], inputs[1]].shuffle_zeroing(indices)
-            | [inputs[2], inputs[3]].shuffle_zeroing(indices - 16)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u64x8) -> u64x8 {
-        inputs.shuffle(indices)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u64x8) -> u64x8 {
-        inputs.shuffle(indices & 31)
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [Self; 8]) -> [Self; 8] {
-        // Can this be optimized?
-
-        #[inline(always)]
-        fn transpose_column(data: &[u64x8; 8], index: usize) -> u64x8 {
-            u64x8::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-                data[4].as_array()[index],
-                data[5].as_array()[index],
-                data[6].as_array()[index],
-                data[7].as_array()[index],
-            ])
-        }
-
-        [
-            transpose_column(&data, 0),
-            transpose_column(&data, 1),
-            transpose_column(&data, 2),
-            transpose_column(&data, 3),
-            transpose_column(&data, 4),
-            transpose_column(&data, 5),
-            transpose_column(&data, 6),
-            transpose_column(&data, 7),
-        ]
     }
 
     #[inline]

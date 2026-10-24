@@ -117,242 +117,6 @@ impl u16x32 {
           }
         }
     }
-}
-}
-
-safe_target_feature! {
-// Backend of SIMD integer functions.
-impl u16x32 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u16x32 {
-}
-}
-
-safe_target_feature! {
-impl u16x32 {
-    #[inline]
-    pub(crate) fn not_backend(self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_xor_si512(self.0, _mm512_set1_epi16(-1)))
-          } else {
-            Self(Inner {
-              lo: !self.0.lo,
-              hi: !self.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn add_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_add_epi16(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo + rhs.0.lo,
-              hi: self.0.hi + rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn sub_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_sub_epi16(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo - rhs.0.lo,
-              hi: self.0.hi - rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn mul_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_mullo_epi16(self.0, rhs.0))
-          } else {
-            Self(Inner { lo: self.0.lo * rhs.0.lo, hi: self.0.hi * rhs.0.hi })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_and_si512(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo & rhs.0.lo,
-              hi: self.0.hi & rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
-        pick! {
-        if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_or_si512(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo | rhs.0.lo,
-              hi: self.0.hi | rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_xor_si512(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo ^ rhs.0.lo,
-              hi: self.0.hi ^ rhs.0.hi,
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (
-        0..32 = [$($INDEX:literal),*],
-        0..16 = [$($LOW_INDEX:literal),*],
-        16..32 = [$($HIGH_INDEX:literal),*]
-      ) => {
-        pick! {
-          if #[cfg(target_feature = "avx512bw")] {
-            Self(_mm512_mask_set1_epi16(
-                self.0,
-                const { 1 << INDEX },
-                value.cast_signed(),
-            ))
-          } else {
-            let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
-
-            if const { INDEX < 16 } {
-              let result_a = match INDEX {
-                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
-                16.. => unreachable!(),
-              };
-
-              cast([result_a, self_b])
-            } else {
-              let result_b = match INDEX {
-                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 16 }>(value),)*
-                ..16 | 32.. => unreachable!(),
-              };
-
-              cast([self_a, result_b])
-            }
-          }
-        }
-      };
-    }
-        use_indices! {
-          0..32 = [
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-            25, 26, 27, 28, 29, 30, 31
-          ],
-          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-          16..32 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
-        }
-    }
-
-    #[inline]
-    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u16 {
-        /// Because of limitations in const generics, this must have separate
-        /// branches per index. This macro is used to avoid duplication.
-        macro_rules! use_indices {
-      (
-        0..32 = [$($INDEX:literal),*],
-        0..16 = [$($LOW_INDEX:literal),*],
-        16..32 = [$($HIGH_INDEX:literal),*]
-      ) => {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
-            match INDEX {
-              $($INDEX => {
-                let quarter = u16x8(_mm512_extracti32x4_epi32::<{ $INDEX / 8 }>(self.0));
-                quarter.extract_const::<{ $INDEX % 8 }>()
-              })*
-              32.. => unreachable!()
-            }
-          } else {
-            let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
-
-            if const { INDEX < 16 } {
-              match INDEX {
-                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
-                16.. => unreachable!(),
-              }
-            } else {
-              match INDEX {
-                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 16 }>(),)*
-                ..16 | 32.. => unreachable!(),
-              }
-            }
-          }
-        }
-      };
-    }
-        use_indices! {
-          0..32 = [
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-            25, 26, 27, 28, 29, 30, 31
-          ],
-          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-          16..32 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
-        }
-    }
-
-    #[inline]
-    pub(crate) fn reduce_add_backend(self) -> u16 {
-        let array: [u16x16; 2] = cast(self);
-        (array[0] + array[1]).reduce_add()
-    }
-
-    #[inline]
-    pub(crate) fn reduce_mul_backend(self) -> u16 {
-        let array: [u16x16; 2] = cast(self);
-        (array[0] * array[1]).reduce_mul()
-    }
-
-    #[inline]
-    pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx512bw")] {
-            Self(_mm512_or_si512(
-                _mm512_and_si512(if_one.0, self.0),
-                _mm512_andnot_si512(self.0, if_zero.0),
-            ))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
-              hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
-            })
-          }
-        }
-    }
 
     #[inline]
     pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
@@ -610,6 +374,242 @@ impl u16x32 {
             transpose_column(&data, 30),
             transpose_column(&data, 31),
         ]
+    }
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD integer functions.
+impl u16x32 {
+}
+}
+
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u16x32 {
+}
+}
+
+safe_target_feature! {
+impl u16x32 {
+    #[inline]
+    pub(crate) fn not_backend(self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_xor_si512(self.0, _mm512_set1_epi16(-1)))
+          } else {
+            Self(Inner {
+              lo: !self.0.lo,
+              hi: !self.0.hi,
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn add_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_add_epi16(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo + rhs.0.lo,
+              hi: self.0.hi + rhs.0.hi,
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn sub_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_sub_epi16(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo - rhs.0.lo,
+              hi: self.0.hi - rhs.0.hi,
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn mul_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_mullo_epi16(self.0, rhs.0))
+          } else {
+            Self(Inner { lo: self.0.lo * rhs.0.lo, hi: self.0.hi * rhs.0.hi })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_and_si512(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo & rhs.0.lo,
+              hi: self.0.hi & rhs.0.hi,
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
+        pick! {
+        if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_or_si512(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo | rhs.0.lo,
+              hi: self.0.hi | rhs.0.hi,
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_xor_si512(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo ^ rhs.0.lo,
+              hi: self.0.hi ^ rhs.0.hi,
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (
+        0..32 = [$($INDEX:literal),*],
+        0..16 = [$($LOW_INDEX:literal),*],
+        16..32 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(target_feature = "avx512bw")] {
+            Self(_mm512_mask_set1_epi16(
+                self.0,
+                const { 1 << INDEX },
+                value.cast_signed(),
+            ))
+          } else {
+            let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+
+            if const { INDEX < 16 } {
+              let result_a = match INDEX {
+                $($LOW_INDEX => self_a.replace_const::<$LOW_INDEX>(value),)*
+                16.. => unreachable!(),
+              };
+
+              cast([result_a, self_b])
+            } else {
+              let result_b = match INDEX {
+                $($HIGH_INDEX => self_b.replace_const::<{ $HIGH_INDEX - 16 }>(value),)*
+                ..16 | 32.. => unreachable!(),
+              };
+
+              cast([self_a, result_b])
+            }
+          }
+        }
+      };
+    }
+        use_indices! {
+          0..32 = [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31
+          ],
+          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          16..32 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+        }
+    }
+
+    #[inline]
+    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u16 {
+        /// Because of limitations in const generics, this must have separate
+        /// branches per index. This macro is used to avoid duplication.
+        macro_rules! use_indices {
+      (
+        0..32 = [$($INDEX:literal),*],
+        0..16 = [$($LOW_INDEX:literal),*],
+        16..32 = [$($HIGH_INDEX:literal),*]
+      ) => {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512bw"))] {
+            match INDEX {
+              $($INDEX => {
+                let quarter = u16x8(_mm512_extracti32x4_epi32::<{ $INDEX / 8 }>(self.0));
+                quarter.extract_const::<{ $INDEX % 8 }>()
+              })*
+              32.. => unreachable!()
+            }
+          } else {
+            let [self_a, self_b] = cast::<u16x32, [u16x16; 2]>(self);
+
+            if const { INDEX < 16 } {
+              match INDEX {
+                $($LOW_INDEX => self_a.extract_const::<$LOW_INDEX>(),)*
+                16.. => unreachable!(),
+              }
+            } else {
+              match INDEX {
+                $($HIGH_INDEX => self_b.extract_const::<{ $HIGH_INDEX - 16 }>(),)*
+                ..16 | 32.. => unreachable!(),
+              }
+            }
+          }
+        }
+      };
+    }
+        use_indices! {
+          0..32 = [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31
+          ],
+          0..16 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          16..32 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+        }
+    }
+
+    #[inline]
+    pub(crate) fn reduce_add_backend(self) -> u16 {
+        let array: [u16x16; 2] = cast(self);
+        (array[0] + array[1]).reduce_add()
+    }
+
+    #[inline]
+    pub(crate) fn reduce_mul_backend(self) -> u16 {
+        let array: [u16x16; 2] = cast(self);
+        (array[0] * array[1]).reduce_mul()
+    }
+
+    #[inline]
+    pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512bw")] {
+            Self(_mm512_or_si512(
+                _mm512_and_si512(if_one.0, self.0),
+                _mm512_andnot_si512(self.0, if_zero.0),
+            ))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
+              hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
+            })
+          }
+        }
     }
 
     #[inline]

@@ -106,6 +106,119 @@ impl f64x4 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_blendv_pd(if_false.0, if_true.0, self.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
+              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_pd(self.0) as u32
+          } else {
+            (self.0.hi.to_bitmask() << 2) | self.0.lo.to_bitmask()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_pd(self.0) != 0
+          } else {
+            self.0.lo.any() || self.0.hi.any()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_pd(self.0) == 0b1111
+          } else {
+            self.0.lo.all() && self.0.hi.all()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            // `_mm256_unpacklo_pd` cannot be used because it actually performs
+            // a different operation.
+            let [aa, _]: [f64x2; 2] = cast(self);
+            let [ba, _]: [f64x2; 2] = cast(other);
+            cast([aa.interleave_low(ba), aa.interleave_high(ba)])
+          } else {
+            Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            // `_mm256_unpackhi_pd` cannot be used because it actually performs
+            // a different operation.
+            let [_, ab]: [f64x2; 2] = cast(self);
+            let [_, bb]: [f64x2; 2] = cast(other);
+            cast([ab.interleave_low(bb), ab.interleave_high(bb)])
+          } else {
+            Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [f64x4; 4]) -> [f64x4; 4] {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            // Can this be optimized?
+            let a = data[0].interleave_low(data[2]);
+            let b = data[1].interleave_low(data[3]);
+            let c = data[0].interleave_high(data[2]);
+            let d = data[1].interleave_high(data[3]);
+            [
+              a.interleave_low(b),
+              a.interleave_high(b),
+              c.interleave_low(d),
+              c.interleave_high(d),
+            ]
+          } else {
+            #[inline(always)]
+            fn transpose_column(data: &[f64x4; 4], index: usize) -> f64x4 {
+              f64x4::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+              ])
+            }
+
+            [
+              transpose_column(&data, 0),
+              transpose_column(&data, 1),
+              transpose_column(&data, 2),
+              transpose_column(&data, 3),
+            ]
+          }
+        }
+    }
 }
 }
 
@@ -307,119 +420,6 @@ impl f64x4 {
               lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
               hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
             })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_blendv_pd(if_false.0, if_true.0, self.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
-              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_pd(self.0) as u32
-          } else {
-            (self.0.hi.to_bitmask() << 2) | self.0.lo.to_bitmask()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_pd(self.0) != 0
-          } else {
-            self.0.lo.any() || self.0.hi.any()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_pd(self.0) == 0b1111
-          } else {
-            self.0.lo.all() && self.0.hi.all()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            // `_mm256_unpacklo_pd` cannot be used because it actually performs
-            // a different operation.
-            let [aa, _]: [f64x2; 2] = cast(self);
-            let [ba, _]: [f64x2; 2] = cast(other);
-            cast([aa.interleave_low(ba), aa.interleave_high(ba)])
-          } else {
-            Self(Inner { lo: self.0.lo.interleave_low(other.0.lo), hi: self.0.lo.interleave_high(other.0.lo) })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            // `_mm256_unpackhi_pd` cannot be used because it actually performs
-            // a different operation.
-            let [_, ab]: [f64x2; 2] = cast(self);
-            let [_, bb]: [f64x2; 2] = cast(other);
-            cast([ab.interleave_low(bb), ab.interleave_high(bb)])
-          } else {
-            Self(Inner { lo: self.0.hi.interleave_low(other.0.hi), hi: self.0.hi.interleave_high(other.0.hi) })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [f64x4; 4]) -> [f64x4; 4] {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            // Can this be optimized?
-            let a = data[0].interleave_low(data[2]);
-            let b = data[1].interleave_low(data[3]);
-            let c = data[0].interleave_high(data[2]);
-            let d = data[1].interleave_high(data[3]);
-            [
-              a.interleave_low(b),
-              a.interleave_high(b),
-              c.interleave_low(d),
-              c.interleave_high(d),
-            ]
-          } else {
-            #[inline(always)]
-            fn transpose_column(data: &[f64x4; 4], index: usize) -> f64x4 {
-              f64x4::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-              ])
-            }
-
-            [
-              transpose_column(&data, 0),
-              transpose_column(&data, 1),
-              transpose_column(&data, 2),
-              transpose_column(&data, 3),
-            ]
           }
         }
     }

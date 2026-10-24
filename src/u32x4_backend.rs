@@ -126,6 +126,284 @@ impl u32x4 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse4.1")] {
+            Self(_mm_blendv_epi8(if_false.0, if_true.0, self.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(v128_bitselect(if_true.0, if_false.0, self.0))
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            Self(vbslq_u32(self.0, if_true.0, if_false.0))
+          } else {
+            generic_bit_blend(self, if_true, if_false)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            // use f32 move_mask since it is the same size as i32
+            _mm_movemask_ps(cast(self.0)) as u32
+          } else if #[cfg(target_feature="simd128")] {
+            u32x4_bitmask(self.0) as u32
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // set all to 1 if top bit is set, else 0
+            let masked = vcltq_s32(self.cast_signed().0, vdupq_n_s32(0));
+
+            // select the right bit out of each lane
+            let selectbit = Self::from_array([1, 2, 4, 8]).0;
+            let r = vandq_u32(masked, selectbit);
+
+            // horizontally add the 32-bit lanes
+            vaddvq_u32(r) as u32
+          } else {
+            self.0.arr[0] >> 31 |
+            self.0.arr[1] >> 31 << 1 |
+            self.0.arr[2] >> 31 << 2 |
+            self.0.arr[3] >> 31 << 3
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            // use f32 move_mask since it is the same size as i32
+            _mm_movemask_ps(cast(self.0)) != 0
+          } else if #[cfg(target_feature="simd128")] {
+            u32x4_bitmask(self.0) != 0
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
+            // some lanes are negative
+            vminvq_s32(self.cast_signed().0) < 0
+          } else {
+            let v : [u64;2] = cast(self);
+            ((v[0] | v[1]) & 0x8000000080000000) != 0
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            // use f32 move_mask since it is the same size as i32
+            _mm_movemask_ps(cast(self.0)) == 0b1111
+          } else if #[cfg(target_feature="simd128")] {
+            u32x4_bitmask(self.0) == 0b1111
+          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+            // all lanes are negative
+            vmaxvq_s32(self.cast_signed().0) < 0
+          } else {
+            let v : [u64;2] = cast(self);
+            (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_unpacklo_epi32(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u32x4_shuffle::<0, 4, 1, 5>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            Self(vzip1q_u32(self.0, other.0))
+          } else {
+            let s = self.as_array();
+            let b = other.as_array();
+            Self::from_array([s[0], b[0], s[1], b[1]])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="sse2")] {
+            Self(_mm_unpackhi_epi32(self.0, other.0))
+          } else if #[cfg(target_feature="simd128")] {
+            Self(u32x4_shuffle::<2, 6, 3, 7>(self.0, other.0))
+          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
+            Self(vzip2q_u32(self.0, other.0))
+          } else {
+            let s = self.as_array();
+            let b = other.as_array();
+            Self::from_array([s[2], b[2], s[3], b[3]])
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_backend(self, indices: u32x4) -> Self {
+        pick! {
+          if #[cfg(target_feature = "avx")] {
+            cast(_mm_permutevar_ps(cast(self), indices.0))
+          } else if #[cfg(any(
+            target_feature = "ssse3",
+            all(target_arch = "aarch64", target_feature = "neon"),
+            target_feature = "simd128",
+          ))] {
+            let self_bytes = cast::<u32x4, u8x16>(self);
+            let byte_indices = indices.to_byte_indices();
+
+            cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+          } else {
+            let self_array = self.to_array();
+            let indices_array = indices.to_array();
+
+            let mut result = [0; 4];
+            for i in 0..4 {
+              let index = indices_array[i] as usize;
+              if index < 4 {
+                result[i] = self_array[index];
+              }
+            }
+
+            Self::from_array(result)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_backend(self, indices: u32x4) -> Self {
+        pick! {
+          if #[cfg(any(
+            target_feature = "avx",
+            target_feature = "ssse3",
+            all(target_arch = "aarch64", target_feature = "neon"),
+            target_feature = "simd128",
+          ))] {
+            // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+            // 8-bit can trigger an overflow causing incorrect behavior
+            self.shuffle(indices) & indices.simd_lt(4)
+          } else {
+            // The fallback branch of `shuffle` already has the behavior we want
+            self.shuffle(indices)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_backend(self, indices: u32x4) -> Self {
+        self.shuffle(indices & 3)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u32x4) -> u32x4 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            u32x4(_mm_permutex2var_epi32(inputs[0].0, indices.0, inputs[1].0))
+          } else {
+            let self_bytes = cast::<[u32x4; 2], [u8x16; 2]>(inputs);
+            let byte_indices = indices.to_byte_indices();
+
+            cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u32x4) -> u32x4 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(8)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u32x4) -> u32x4 {
+        pick! {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            // `avx512` shuffle intrinsics are wrapping
+            inputs.shuffle(indices)
+          } else {
+            inputs.shuffle(indices & 7)
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u32x4) -> u32x4 {
+        let self_bytes = cast::<[u32x4; 3], [u8x16; 3]>(inputs);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u32x4) -> u32x4 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(12)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u32x4) -> u32x4 {
+        inputs.shuffle(indices % 12)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u32x4) -> u32x4 {
+        let self_bytes = cast::<[u32x4; 4], [u8x16; 4]>(inputs);
+        let byte_indices = indices.to_byte_indices();
+
+        cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u32x4) -> u32x4 {
+        // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
+        // 8-bit can trigger an overflow causing incorrect behavior
+        inputs.shuffle(indices) & indices.simd_lt(16)
+    }
+
+    #[inline]
+    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u32x4) -> u32x4 {
+        inputs.shuffle(indices & 15)
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [Self; 4]) -> [Self; 4] {
+        pick! {
+          if #[cfg(target_feature="sse")] {
+            let mut e0 = data[0];
+            let mut e1 = data[1];
+            let mut e2 = data[2];
+            let mut e3 = data[3];
+
+            _MM_TRANSPOSE4_PS(
+              cast_mut(&mut e0.0),
+              cast_mut(&mut e1.0),
+              cast_mut(&mut e2.0),
+              cast_mut(&mut e3.0),
+            );
+
+            [e0, e1, e2, e3]
+          } else {
+            #[inline(always)]
+            fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
+              u32x4::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+              ])
+            }
+
+            [
+              transpose_column(&data, 0),
+              transpose_column(&data, 1),
+              transpose_column(&data, 2),
+              transpose_column(&data, 3),
+            ]
+          }
+        }
+    }
 }
 }
 
@@ -408,284 +686,6 @@ impl u32x4 {
             Self(vbslq_u32(self.0, if_one.0, if_zero.0))
           } else {
             generic_bit_blend(self, if_one, if_zero)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse4.1")] {
-            Self(_mm_blendv_epi8(if_false.0, if_true.0, self.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(v128_bitselect(if_true.0, if_false.0, self.0))
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            Self(vbslq_u32(self.0, if_true.0, if_false.0))
-          } else {
-            generic_bit_blend(self, if_true, if_false)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // use f32 move_mask since it is the same size as i32
-            _mm_movemask_ps(cast(self.0)) as u32
-          } else if #[cfg(target_feature="simd128")] {
-            u32x4_bitmask(self.0) as u32
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // set all to 1 if top bit is set, else 0
-            let masked = vcltq_s32(self.cast_signed().0, vdupq_n_s32(0));
-
-            // select the right bit out of each lane
-            let selectbit = Self::from_array([1, 2, 4, 8]).0;
-            let r = vandq_u32(masked, selectbit);
-
-            // horizontally add the 32-bit lanes
-            vaddvq_u32(r) as u32
-          } else {
-            self.0.arr[0] >> 31 |
-            self.0.arr[1] >> 31 << 1 |
-            self.0.arr[2] >> 31 << 2 |
-            self.0.arr[3] >> 31 << 3
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // use f32 move_mask since it is the same size as i32
-            _mm_movemask_ps(cast(self.0)) != 0
-          } else if #[cfg(target_feature="simd128")] {
-            u32x4_bitmask(self.0) != 0
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))] {
-            // some lanes are negative
-            vminvq_s32(self.cast_signed().0) < 0
-          } else {
-            let v : [u64;2] = cast(self);
-            ((v[0] | v[1]) & 0x8000000080000000) != 0
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            // use f32 move_mask since it is the same size as i32
-            _mm_movemask_ps(cast(self.0)) == 0b1111
-          } else if #[cfg(target_feature="simd128")] {
-            u32x4_bitmask(self.0) == 0b1111
-          } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
-            // all lanes are negative
-            vmaxvq_s32(self.cast_signed().0) < 0
-          } else {
-            let v : [u64;2] = cast(self);
-            (v[0] & v[1] & 0x8000000080000000) == 0x8000000080000000
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_unpacklo_epi32(self.0, other.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u32x4_shuffle::<0, 4, 1, 5>(self.0, other.0))
-          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(vzip1q_u32(self.0, other.0))
-          } else {
-            let s = self.as_array();
-            let b = other.as_array();
-            Self::from_array([s[0], b[0], s[1], b[1]])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="sse2")] {
-            Self(_mm_unpackhi_epi32(self.0, other.0))
-          } else if #[cfg(target_feature="simd128")] {
-            Self(u32x4_shuffle::<2, 6, 3, 7>(self.0, other.0))
-          } else if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            Self(vzip2q_u32(self.0, other.0))
-          } else {
-            let s = self.as_array();
-            let b = other.as_array();
-            Self::from_array([s[2], b[2], s[3], b[3]])
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_backend(self, indices: u32x4) -> Self {
-        pick! {
-          if #[cfg(target_feature = "avx")] {
-            cast(_mm_permutevar_ps(cast(self), indices.0))
-          } else if #[cfg(any(
-            target_feature = "ssse3",
-            all(target_arch = "aarch64", target_feature = "neon"),
-            target_feature = "simd128",
-          ))] {
-            let self_bytes = cast::<u32x4, u8x16>(self);
-            let byte_indices = indices.to_byte_indices();
-
-            cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
-          } else {
-            let self_array = self.to_array();
-            let indices_array = indices.to_array();
-
-            let mut result = [0; 4];
-            for i in 0..4 {
-              let index = indices_array[i] as usize;
-              if index < 4 {
-                result[i] = self_array[index];
-              }
-            }
-
-            Self::from_array(result)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_backend(self, indices: u32x4) -> Self {
-        pick! {
-          if #[cfg(any(
-            target_feature = "avx",
-            target_feature = "ssse3",
-            all(target_arch = "aarch64", target_feature = "neon"),
-            target_feature = "simd128",
-          ))] {
-            // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
-            // 8-bit can trigger an overflow causing incorrect behavior
-            self.shuffle(indices) & indices.simd_lt(4)
-          } else {
-            // The fallback branch of `shuffle` already has the behavior we want
-            self.shuffle(indices)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_backend(self, indices: u32x4) -> Self {
-        self.shuffle(indices & 3)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u32x4) -> u32x4 {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            u32x4(_mm_permutex2var_epi32(inputs[0].0, indices.0, inputs[1].0))
-          } else {
-            let self_bytes = cast::<[u32x4; 2], [u8x16; 2]>(inputs);
-            let byte_indices = indices.to_byte_indices();
-
-            cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u32x4) -> u32x4 {
-        // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
-        // 8-bit can trigger an overflow causing incorrect behavior
-        inputs.shuffle(indices) & indices.simd_lt(8)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u32x4) -> u32x4 {
-        pick! {
-          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
-            // `avx512` shuffle intrinsics are wrapping
-            inputs.shuffle(indices)
-          } else {
-            inputs.shuffle(indices & 7)
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u32x4) -> u32x4 {
-        let self_bytes = cast::<[u32x4; 3], [u8x16; 3]>(inputs);
-        let byte_indices = indices.to_byte_indices();
-
-        cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u32x4) -> u32x4 {
-        // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
-        // 8-bit can trigger an overflow causing incorrect behavior
-        inputs.shuffle(indices) & indices.simd_lt(12)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u32x4) -> u32x4 {
-        inputs.shuffle(indices % 12)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u32x4) -> u32x4 {
-        let self_bytes = cast::<[u32x4; 4], [u8x16; 4]>(inputs);
-        let byte_indices = indices.to_byte_indices();
-
-        cast::<u8x16, u32x4>(self_bytes.shuffle(byte_indices))
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u32x4) -> u32x4 {
-        // Even if the `u8x16::shuffle` implementation is zeroing, our 32-bit to
-        // 8-bit can trigger an overflow causing incorrect behavior
-        inputs.shuffle(indices) & indices.simd_lt(16)
-    }
-
-    #[inline]
-    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u32x4) -> u32x4 {
-        inputs.shuffle(indices & 15)
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [Self; 4]) -> [Self; 4] {
-        pick! {
-          if #[cfg(target_feature="sse")] {
-            let mut e0 = data[0];
-            let mut e1 = data[1];
-            let mut e2 = data[2];
-            let mut e3 = data[3];
-
-            _MM_TRANSPOSE4_PS(
-              cast_mut(&mut e0.0),
-              cast_mut(&mut e1.0),
-              cast_mut(&mut e2.0),
-              cast_mut(&mut e3.0),
-            );
-
-            [e0, e1, e2, e3]
-          } else {
-            #[inline(always)]
-            fn transpose_column(data: &[u32x4; 4], index: usize) -> u32x4 {
-              u32x4::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-              ])
-            }
-
-            [
-              transpose_column(&data, 0),
-              transpose_column(&data, 1),
-              transpose_column(&data, 2),
-              transpose_column(&data, 3),
-            ]
           }
         }
     }
