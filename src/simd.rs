@@ -46,7 +46,15 @@ pub trait SimdElement: Sealed {
 /// [`Simd<T, N>`] would support all combinations of `T` and `N`, the trait
 /// bound would be removed and this trait would be deprecated.
 #[expect(private_bounds)]
-pub trait SupportedSimd: Sealed + SimdBackend {}
+pub trait SupportedSimd: Sealed + SimdBackend {
+    /// Add a dummy associated constant in order to avoid marking this trait as
+    /// dyn compatible.
+    ///
+    /// This cannot be done with a `Sized` super trait because we do not want to
+    /// guarantee that all SIMD element types implement `Sized`.
+    #[doc(hidden)]
+    const NOT_DYN_COMPATIBLE_MARKER: () = ();
+}
 
 pub(crate) trait SimdBackend {
     type Inner: Copy;
