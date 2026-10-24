@@ -426,17 +426,6 @@ impl u64x4 {
 safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u64x4 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl u64x4 {
-}
-}
-
-safe_target_feature! {
-impl u64x4 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
@@ -837,7 +826,12 @@ impl u64x4 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u64x4 {
     /// A helper for shuffle functions that turns indices of 64-bit lanes into
     /// byte indices that can be used with 8-bit shuffle intrinsics.
     ///
