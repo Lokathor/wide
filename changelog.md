@@ -62,6 +62,11 @@
   block of general-SIMD functionality to the separate `impl` blocks of floats
   and integers, and improve the documentation of those functions and operators
 
+* [#365](https://github.com/Lokathor/wide/pull/365): Move the deprecated
+  `pow_{simd-ty}` functions from the `impl` block of SIMD-float functionality to
+  the `impl` block of inconsistent functionality and slightly change the
+  function's documentation
+
 * [#343](https://github.com/Lokathor/wide/pull/343): Remove type-specific
   documentation extensions from functions available for categories of SIMD types
 
