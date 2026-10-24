@@ -16,29 +16,6 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl i64x4 {
-}
-}
-
-safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i64x4 {
-}
-}
-
-safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i64x4 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl i64x4 {
-}
-}
-
-safe_target_feature! {
-impl i64x4 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
@@ -94,7 +71,29 @@ impl i64x4 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Backend of SIMD integer functions.
+impl i64x4 {
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD signed integer functions.
+impl i64x4 {
+}
+}
+
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl i64x4 {
+}
+}
+
+safe_target_feature! {
+impl i64x4 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u64x4) -> Self {
         pick! {

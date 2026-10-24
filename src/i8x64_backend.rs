@@ -16,29 +16,6 @@ pick! {
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl i8x64 {
-}
-}
-
-safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i8x64 {
-}
-}
-
-safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i8x64 {
-}
-}
-
-safe_target_feature! {
-// Internal helpers and backend of inconsistent functions.
-impl i8x64 {
-}
-}
-
-safe_target_feature! {
-impl i8x64 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         rhs.simd_gt(self)
@@ -94,7 +71,29 @@ impl i8x64 {
           }
         }
     }
+}
+}
 
+safe_target_feature! {
+// Backend of SIMD integer functions.
+impl i8x64 {
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD signed integer functions.
+impl i8x64 {
+}
+}
+
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl i8x64 {
+}
+}
+
+safe_target_feature! {
+impl i8x64 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u8x64) -> Self {
         // There's no dedicated `i8` shift instruction, so we split into halves
