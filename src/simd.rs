@@ -4,6 +4,62 @@ use bytemuck::{Pod, Zeroable, cast, pod_align_to, pod_align_to_mut};
 #[cfg(feature = "serde")]
 use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
+/// TODO(generics): Add documentation and explain how to use SIMD vectors.
+///
+/// # Layout
+///
+/// TODO(generics): Define this type's precise layout guarantees (size,
+/// alignment, what about non-power-of-two lane counts).
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+pub struct Simd<T, const N: usize>(pub(crate) <Self as SimdBackend>::Inner)
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd;
+
+/// A trait for types that can be used as SIMD vector elements.
+///
+/// Note that because [`Simd<T, N>`] only supports certain combinations of `T`
+/// and `N`, there may be `T` types that implement [`SimdElement`] but are not
+/// actually supported in any real SIMD type. For example, [`usize`] implements
+/// [`SimdElement`], but there is currently no [`Simd<usize, N>`] type that
+/// implements [`SupportedSimd`].
+#[expect(private_bounds)]
+pub trait SimdElement: Sealed {
+    /// Add a dummy associated constant in order to avoid marking this trait as
+    /// dyn compatible.
+    ///
+    /// This cannot be done with a `Sized` super trait because we do not want to
+    /// guarantee that all SIMD element types implement `Sized`.
+    #[doc(hidden)]
+    const NOT_DYN_COMPATIBLE_MARKER: () = ();
+}
+
+/// A trait for [`Simd<T, N>`] types that are actually supported.
+///
+/// Due to Rust language limitations, [`Simd<T, N>`] only supports certain
+/// combinations of `T` and `N`. The trait bound `Simd<T, N>: SupportedSimd`
+/// must be used in generic contexts to make sure the given SIMD type is
+/// supported.
+///
+/// In the future, if Rust stabilizes the appropriate language features,
+/// [`Simd<T, N>`] would support all combinations of `T` and `N`, the trait
+/// bound would be removed and this trait would be deprecated.
+#[expect(private_bounds)]
+pub trait SupportedSimd: Sealed + SimdBackend {
+    /// Add a dummy associated constant in order to avoid marking this trait as
+    /// dyn compatible.
+    ///
+    /// This cannot be done with a `Sized` super trait because we do not want to
+    /// guarantee that all SIMD vector types implement `Sized`.
+    #[doc(hidden)]
+    const NOT_DYN_COMPATIBLE_MARKER: () = ();
+}
+
+pub(crate) trait SimdBackend {
+    type Inner: Copy;
+}
+
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
@@ -335,13 +391,27 @@ where
 
 trait Sealed {}
 
+impl SimdElement for f32 {}
+impl SimdElement for f64 {}
+impl SimdElement for i8 {}
+impl SimdElement for i16 {}
+impl SimdElement for i32 {}
+impl SimdElement for i64 {}
+impl SimdElement for i128 {}
+impl SimdElement for isize {}
+impl SimdElement for u8 {}
+impl SimdElement for u16 {}
+impl SimdElement for u32 {}
+impl SimdElement for u64 {}
+impl SimdElement for u128 {}
+impl SimdElement for usize {}
+
 macro_rules! define_simd {
   (
       T = $T:ident,
       N = $N:literal,
       N_STR = $N_STR:literal,
       Simd = $Simd:ident,
-      backend_mod = $backend_mod:ident,
       auto_impl = $auto_impl:ident,
       UnsignedSimd = $UnsignedSimd:ident,
       Bitmask = $Bitmask:ident,
@@ -350,14 +420,24 @@ macro_rules! define_simd {
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
   ) => {
     #[doc = concat!("A SIMD vector with ", $N_STR, " elements of type [`", stringify!($T), "`].")]
+    pub type $Simd = Simd<$T, $N>;
+
+    /// Constructs a specific SIMD type from its `Inner` type using its
+    /// type-alias name.
     ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
+    /// This function is used because type-aliases do not support tuple-struct
+    /// construction syntax.
     ///
-    /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct $Simd(pub(crate) crate::$backend_mod::Inner);
+    /// TODO(generics): Decide if this function should be removed in favor of
+    /// constructing non-`Self` SIMD types using `Simd(inner)` instead of
+    /// `{simd-type}(Inner)`. Wait until the generics API is ready to be merged
+    /// onto `main`, only then remove this function if decided so (wait to avoid
+    /// merge conflicts with `main`).
+    pub(crate) fn $Simd(inner: <$Simd as SimdBackend>::Inner) -> $Simd {
+      Simd(inner)
+    }
+
+    impl SupportedSimd for Simd<$T, $N> {}
 
     // Invoke a macro that automatically implements some of this API's backend
     // functions. This macro is `float_auto_impl` for floats, `signed_auto_impl`
@@ -1426,7 +1506,29 @@ macro_rules! unsigned_auto_impl {
     };
 }
 
-impl<Simd, const N: usize> Sealed for [Simd; N] {}
+impl Sealed for f32 {}
+impl Sealed for f64 {}
+impl Sealed for i8 {}
+impl Sealed for i16 {}
+impl Sealed for i32 {}
+impl Sealed for i64 {}
+impl Sealed for i128 {}
+impl Sealed for isize {}
+impl Sealed for u8 {}
+impl Sealed for u16 {}
+impl Sealed for u32 {}
+impl Sealed for u64 {}
+impl Sealed for u128 {}
+impl Sealed for usize {}
+
+impl<T, const N: usize> Sealed for [T; N] {}
+
+impl<T, const N: usize> Sealed for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+}
 
 /// `serde` does not implement `Deserialize` for `[T; 64]`, so this manual
 /// implementation is used.
@@ -1479,7 +1581,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = f32x4,
-    backend_mod = f32x4_backend,
     auto_impl = float_auto_impl,
     UnsignedSimd = u32x4,
     Bitmask = u32,
@@ -1492,7 +1593,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = f32x8,
-    backend_mod = f32x8_backend,
     auto_impl = float_auto_impl,
     UnsignedSimd = u32x8,
     Bitmask = u32,
@@ -1505,7 +1605,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = f32x16,
-    backend_mod = f32x16_backend,
     auto_impl = float_auto_impl,
     UnsignedSimd = u32x16,
     Bitmask = u32,
@@ -1518,7 +1617,6 @@ define_simd!(
     N = 2,
     N_STR = "two",
     Simd = f64x2,
-    backend_mod = f64x2_backend,
     auto_impl = float_auto_impl,
     UnsignedSimd = u64x2,
     Bitmask = u32,
@@ -1531,7 +1629,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = f64x4,
-    backend_mod = f64x4_backend,
     auto_impl = float_auto_impl,
     UnsignedSimd = u64x4,
     Bitmask = u32,
@@ -1544,7 +1641,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = f64x8,
-    backend_mod = f64x8_backend,
     auto_impl = float_auto_impl,
     UnsignedSimd = u64x8,
     Bitmask = u32,
@@ -1557,7 +1653,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = i8x16,
-    backend_mod = i8x16_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u8x16,
     Bitmask = u32,
@@ -1570,7 +1665,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = i8x32,
-    backend_mod = i8x32_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u8x32,
     Bitmask = u32,
@@ -1583,7 +1677,6 @@ define_simd!(
     N = 64,
     N_STR = "64",
     Simd = i8x64,
-    backend_mod = i8x64_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u8x64,
     Bitmask = u64,
@@ -1596,7 +1689,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = i16x8,
-    backend_mod = i16x8_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u16x8,
     Bitmask = u32,
@@ -1609,7 +1701,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = i16x16,
-    backend_mod = i16x16_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u16x16,
     Bitmask = u32,
@@ -1622,7 +1713,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = i16x32,
-    backend_mod = i16x32_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u16x32,
     Bitmask = u32,
@@ -1635,7 +1725,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = i32x4,
-    backend_mod = i32x4_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u32x4,
     Bitmask = u32,
@@ -1648,7 +1737,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = i32x8,
-    backend_mod = i32x8_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u32x8,
     Bitmask = u32,
@@ -1661,7 +1749,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = i32x16,
-    backend_mod = i32x16_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u32x16,
     Bitmask = u32,
@@ -1674,7 +1761,6 @@ define_simd!(
     N = 2,
     N_STR = "two",
     Simd = i64x2,
-    backend_mod = i64x2_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u64x2,
     Bitmask = u32,
@@ -1687,7 +1773,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = i64x4,
-    backend_mod = i64x4_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u64x4,
     Bitmask = u32,
@@ -1700,7 +1785,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = i64x8,
-    backend_mod = i64x8_backend,
     auto_impl = signed_auto_impl,
     UnsignedSimd = u64x8,
     Bitmask = u32,
@@ -1713,7 +1797,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = u8x16,
-    backend_mod = u8x16_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u8x16,
     Bitmask = u32,
@@ -1726,7 +1809,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = u8x32,
-    backend_mod = u8x32_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u8x32,
     Bitmask = u32,
@@ -1739,7 +1821,6 @@ define_simd!(
     N = 64,
     N_STR = "64",
     Simd = u8x64,
-    backend_mod = u8x64_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u8x64,
     Bitmask = u64,
@@ -1752,7 +1833,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = u16x8,
-    backend_mod = u16x8_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u16x8,
     Bitmask = u32,
@@ -1765,7 +1845,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = u16x16,
-    backend_mod = u16x16_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u16x16,
     Bitmask = u32,
@@ -1778,7 +1857,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = u16x32,
-    backend_mod = u16x32_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u16x32,
     Bitmask = u32,
@@ -1791,7 +1869,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = u32x4,
-    backend_mod = u32x4_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u32x4,
     Bitmask = u32,
@@ -1804,7 +1881,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = u32x8,
-    backend_mod = u32x8_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u32x8,
     Bitmask = u32,
@@ -1817,7 +1893,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = u32x16,
-    backend_mod = u32x16_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u32x16,
     Bitmask = u32,
@@ -1830,7 +1905,6 @@ define_simd!(
     N = 2,
     N_STR = "two",
     Simd = u64x2,
-    backend_mod = u64x2_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u64x2,
     Bitmask = u32,
@@ -1843,7 +1917,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = u64x4,
-    backend_mod = u64x4_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u64x4,
     Bitmask = u32,
@@ -1856,7 +1929,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = u64x8,
-    backend_mod = u64x8_backend,
     auto_impl = unsigned_auto_impl,
     UnsignedSimd = u64x8,
     Bitmask = u32,
