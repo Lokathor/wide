@@ -15,6 +15,13 @@ use crate::{
 /// intended usage.
 pub trait PrimitiveUnsigned: PrimitiveInteger {}
 
+impl PrimitiveUnsigned for u8 {}
+impl PrimitiveUnsigned for u16 {}
+impl PrimitiveUnsigned for u32 {}
+impl PrimitiveUnsigned for u64 {}
+impl PrimitiveUnsigned for u128 {}
+impl PrimitiveUnsigned for usize {}
+
 macro_rules! impl_simd_unsigned {
   (
     T = $T:ident,

@@ -17,6 +17,13 @@ use crate::{
 /// intended usage.
 pub trait PrimitiveSigned: PrimitiveInteger {}
 
+impl PrimitiveSigned for i8 {}
+impl PrimitiveSigned for i16 {}
+impl PrimitiveSigned for i32 {}
+impl PrimitiveSigned for i64 {}
+impl PrimitiveSigned for i128 {}
+impl PrimitiveSigned for isize {}
+
 macro_rules! impl_simd_signed {
   (
     T = $T:ident,

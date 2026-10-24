@@ -20,6 +20,19 @@ use crate::{
 /// intended usage.
 pub trait PrimitiveInteger: SimdElement {}
 
+impl PrimitiveInteger for i8 {}
+impl PrimitiveInteger for i16 {}
+impl PrimitiveInteger for i32 {}
+impl PrimitiveInteger for i64 {}
+impl PrimitiveInteger for i128 {}
+impl PrimitiveInteger for isize {}
+impl PrimitiveInteger for u8 {}
+impl PrimitiveInteger for u16 {}
+impl PrimitiveInteger for u32 {}
+impl PrimitiveInteger for u64 {}
+impl PrimitiveInteger for u128 {}
+impl PrimitiveInteger for usize {}
+
 macro_rules! impl_simd_integer {
     (
         T = $T:ident,
