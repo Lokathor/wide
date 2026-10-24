@@ -709,6 +709,25 @@ macro_rules! impl_simd_integer {
                 self.mul_keep_high_backend(rhs)
             }
 
+            /// Bitwise selection.
+            ///
+            /// For each bit of `self`:
+            ///
+            /// - If the bit is one, return the corresponding bit of `if_one`
+            /// - If the bit is zero, return the corresponding bit of `if_zero`
+            ///
+            /// If you know `self` is a [mask], meaning each element is either
+            /// all zeros or all ones, consider using [`select`] which is
+            /// faster.
+            ///
+            /// [mask]: crate#masks
+            /// [`select`]: Self::select
+            #[inline]
+            #[must_use]
+            pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+                self.bitselect_backend(if_one, if_zero)
+            }
+
             #[inline]
             #[track_caller]
             fn div_backend(self, rhs: Self) -> Self {
@@ -862,6 +881,13 @@ macro_rules! signed_auto_impl {
                 // The second field is equivalent to
                 // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
                 (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+            }
+
+            #[inline]
+            fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+                self.cast_unsigned()
+                    .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
+                    .cast_signed()
             }
         }
     };

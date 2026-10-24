@@ -770,6 +770,27 @@ macro_rules! impl_simd_float {
         unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
       }
 
+      /// Bitwise selection.
+      ///
+      /// For each bit of `self`:
+      ///
+      /// - If the bit is one, return the corresponding bit of `if_one`
+      /// - If the bit is zero, return the corresponding bit of `if_zero`
+      ///
+      /// This computes a bitwise operation, even for NaNs, and even though
+      /// bitwise operators are not implemented for Rust's primitive floats.
+      ///
+      /// If you know `self` is a [mask], meaning each element is either all
+      /// zeros or all ones, consider using [`select`] which is faster.
+      ///
+      /// [mask]: crate#masks
+      /// [`select`]: Self::select
+      #[inline]
+      #[must_use]
+      pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+        self.bitselect_backend(if_one, if_zero)
+      }
+
       /// Restrict a value to a certain interval unless it is NaN.
       ///
       /// If `self`, `min` or `max` are NaN, the result is NaN. If `min > max`,

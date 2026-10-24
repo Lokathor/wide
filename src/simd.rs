@@ -940,24 +940,6 @@ macro_rules! define_simd {
         self.extract_const_backend::<INDEX>()
       }
 
-      /// Bitwise selection.
-      ///
-      /// For each bit of `self`:
-      ///
-      /// - If the bit is one, return the corresponding bit of `if_one`
-      /// - If the bit is zero, return the corresponding bit of `if_zero`
-      ///
-      /// If you know `self` is a [mask], meaning each element is either all
-      /// zeros or all ones, consider using [`select`] which is faster.
-      ///
-      /// [mask]: crate#masks
-      /// [`select`]: Self::select
-      #[inline]
-      #[must_use]
-      pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-        self.bitselect_backend(if_one, if_zero)
-      }
-
       /// Lanewise SIMD selection.
       ///
       /// For each lane:
@@ -975,7 +957,7 @@ macro_rules! define_simd {
       /// if you implement `Select<Composite> for Simd`.
       ///
       /// [mask]: crate#masks
-      /// [`bitselect`]: Self::bitselect
+      /// [`bitselect`]: f32x4::bitselect
       #[inline]
       #[must_use]
       pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
@@ -1153,7 +1135,7 @@ macro_rules! define_simd {
       /// [mask]: crate#masks
       /// [`blend`]: Self::blend
       /// [`select`]: Self::select
-      /// [`bitselect`]: Self::bitselect
+      /// [`bitselect`]: f32x4::bitselect
       #[deprecated(
         since = "1.6.0",
         note = "split into `select` and `bitselect` functions"
@@ -1352,13 +1334,6 @@ macro_rules! signed_auto_impl {
             #[inline]
             fn extract_const_backend<const INDEX: usize>(self) -> $T {
                 self.cast_unsigned().extract_const::<INDEX>().cast_signed()
-            }
-
-            #[inline]
-            fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
-                self.cast_unsigned()
-                    .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
-                    .cast_signed()
             }
 
             #[inline]
