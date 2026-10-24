@@ -21,6 +21,225 @@ macro_rules! const_f32_as_f32x8 {
 }
 
 safe_target_feature! {
+// Backend of general-SIMD functions.
+impl f32x8 {
+    #[inline]
+    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_cmp_ps::<{_CMP_EQ_OQ}>(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_eq(rhs.0.lo),
+              hi: self.0.hi.simd_eq(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_cmp_ps::<{_CMP_NEQ_UQ}>(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ne(rhs.0.lo),
+              hi: self.0.hi.simd_ne(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_cmp_ps::<{_CMP_LT_OQ}>(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_lt(rhs.0.lo),
+              hi: self.0.hi.simd_lt(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_cmp_ps::<{_CMP_GT_OQ}>(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_gt(rhs.0.lo),
+              hi: self.0.hi.simd_gt(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_cmp_ps::<{_CMP_LE_OQ}>(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_le(rhs.0.lo),
+              hi: self.0.hi.simd_le(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_cmp_ps::<{_CMP_GE_OQ}>(self.0, rhs.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.simd_ge(rhs.0.lo),
+              hi: self.0.hi.simd_ge(rhs.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            Self(_mm256_blendv_ps(if_false.0, if_true.0, self.0))
+          } else {
+            Self(Inner {
+              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
+              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_bitmask_backend(self) -> u32 {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_ps(self.0) as u32
+          } else {
+            (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn any_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_ps(self.0) != 0
+          } else {
+            self.0.lo.any() || self.0.hi.any()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn all_backend(self) -> bool {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            _mm256_movemask_ps(self.0) == 0b11111111
+          } else {
+            self.0.lo.all() && self.0.hi.all()
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
+    }
+
+    #[inline]
+    pub(crate) fn transpose_backend(data: [f32x8; 8]) -> [f32x8; 8] {
+        pick! {
+          if #[cfg(target_feature="avx")] {
+            let a0 = _mm256_unpacklo_ps(data[0].0, data[1].0);
+            let a1 = _mm256_unpackhi_ps(data[0].0, data[1].0);
+            let a2 = _mm256_unpacklo_ps(data[2].0, data[3].0);
+            let a3 = _mm256_unpackhi_ps(data[2].0, data[3].0);
+            let a4 = _mm256_unpacklo_ps(data[4].0, data[5].0);
+            let a5 = _mm256_unpackhi_ps(data[4].0, data[5].0);
+            let a6 = _mm256_unpacklo_ps(data[6].0, data[7].0);
+            let a7 = _mm256_unpackhi_ps(data[6].0, data[7].0);
+
+            pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
+              (z << 6) | (y << 4) | (x << 2) | w
+            }
+
+            const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
+            const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
+
+            // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
+            // (since blend runs on a different port than shuffle)
+            let b0 = _mm256_shuffle_ps::<SHUFF_LO>(a0,a2);
+            let b1 = _mm256_shuffle_ps::<SHUFF_HI>(a0,a2);
+            let b2 = _mm256_shuffle_ps::<SHUFF_LO>(a1,a3);
+            let b3 = _mm256_shuffle_ps::<SHUFF_HI>(a1,a3);
+            let b4 = _mm256_shuffle_ps::<SHUFF_LO>(a4,a6);
+            let b5 = _mm256_shuffle_ps::<SHUFF_HI>(a4,a6);
+            let b6 = _mm256_shuffle_ps::<SHUFF_LO>(a5,a7);
+            let b7 = _mm256_shuffle_ps::<SHUFF_HI>(a5,a7);
+
+            [
+              f32x8(_mm256_permute2f128_ps::<0x20>(b0, b4)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b1, b5)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b2, b6)),
+              f32x8(_mm256_permute2f128_ps::<0x20>(b3, b7)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b0, b4)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b1, b5)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b2, b6)),
+              f32x8(_mm256_permute2f128_ps::<0x31>(b3, b7))
+            ]
+          } else {
+            // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
+
+            #[inline(always)]
+            fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
+              f32x8::from_array([
+                data[0].as_array()[index],
+                data[1].as_array()[index],
+                data[2].as_array()[index],
+                data[3].as_array()[index],
+                data[4].as_array()[index],
+                data[5].as_array()[index],
+                data[6].as_array()[index],
+                data[7].as_array()[index],
+              ])
+            }
+
+            [
+              transpose_column(&data, 0),
+              transpose_column(&data, 1),
+              transpose_column(&data, 2),
+              transpose_column(&data, 3),
+              transpose_column(&data, 4),
+              transpose_column(&data, 5),
+              transpose_column(&data, 6),
+              transpose_column(&data, 7),
+            ]
+          }
+        }
+    }
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD float functions.
 impl f32x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
@@ -164,90 +383,6 @@ impl f32x8 {
     }
 
     #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_cmp_ps::<{_CMP_EQ_OQ}>(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_eq(rhs.0.lo),
-              hi: self.0.hi.simd_eq(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_cmp_ps::<{_CMP_NEQ_UQ}>(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ne(rhs.0.lo),
-              hi: self.0.hi.simd_ne(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_cmp_ps::<{_CMP_LT_OQ}>(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_lt(rhs.0.lo),
-              hi: self.0.hi.simd_lt(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_cmp_ps::<{_CMP_GT_OQ}>(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_gt(rhs.0.lo),
-              hi: self.0.hi.simd_gt(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_cmp_ps::<{_CMP_LE_OQ}>(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_le(rhs.0.lo),
-              hi: self.0.hi.simd_le(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_cmp_ps::<{_CMP_GE_OQ}>(self.0, rhs.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.simd_ge(rhs.0.lo),
-              hi: self.0.hi.simd_ge(rhs.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
     pub(crate) fn reduce_add_backend(self) -> f32 {
         pick! {
           // From https://stackoverflow.com/questions/13219146/how-to-sum-m256-horizontally
@@ -302,135 +437,6 @@ impl f32x8 {
               lo: self.0.lo.bitselect(if_one.0.lo, if_zero.0.lo),
               hi: self.0.hi.bitselect(if_one.0.hi, if_zero.0.hi),
             })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            Self(_mm256_blendv_ps(if_false.0, if_true.0, self.0))
-          } else {
-            Self(Inner {
-              lo: self.0.lo.select(if_true.0.lo, if_false.0.lo),
-              hi: self.0.hi.select(if_true.0.hi, if_false.0.hi),
-            })
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_ps(self.0) as u32
-          } else {
-            (self.0.hi.to_bitmask() << 4) | self.0.lo.to_bitmask()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn any_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_ps(self.0) != 0
-          } else {
-            self.0.lo.any() || self.0.hi.any()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn all_backend(self) -> bool {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            _mm256_movemask_ps(self.0) == 0b11111111
-          } else {
-            self.0.lo.all() && self.0.hi.all()
-          }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_low(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
-        Self::from_bits(self.to_bits().interleave_high(other.to_bits()))
-    }
-
-    #[inline]
-    pub(crate) fn transpose_backend(data: [f32x8; 8]) -> [f32x8; 8] {
-        pick! {
-          if #[cfg(target_feature="avx")] {
-            let a0 = _mm256_unpacklo_ps(data[0].0, data[1].0);
-            let a1 = _mm256_unpackhi_ps(data[0].0, data[1].0);
-            let a2 = _mm256_unpacklo_ps(data[2].0, data[3].0);
-            let a3 = _mm256_unpackhi_ps(data[2].0, data[3].0);
-            let a4 = _mm256_unpacklo_ps(data[4].0, data[5].0);
-            let a5 = _mm256_unpackhi_ps(data[4].0, data[5].0);
-            let a6 = _mm256_unpacklo_ps(data[6].0, data[7].0);
-            let a7 = _mm256_unpackhi_ps(data[6].0, data[7].0);
-
-            pub const fn mm_shuffle(z: i32, y: i32, x: i32, w: i32) -> i32 {
-              (z << 6) | (y << 4) | (x << 2) | w
-            }
-
-            const SHUFF_LO : i32 = mm_shuffle(1,0,1,0);
-            const SHUFF_HI : i32 = mm_shuffle(3,2,3,2);
-
-            // possible todo: intel performance manual suggests alternative with blend to avoid port 5 pressure
-            // (since blend runs on a different port than shuffle)
-            let b0 = _mm256_shuffle_ps::<SHUFF_LO>(a0,a2);
-            let b1 = _mm256_shuffle_ps::<SHUFF_HI>(a0,a2);
-            let b2 = _mm256_shuffle_ps::<SHUFF_LO>(a1,a3);
-            let b3 = _mm256_shuffle_ps::<SHUFF_HI>(a1,a3);
-            let b4 = _mm256_shuffle_ps::<SHUFF_LO>(a4,a6);
-            let b5 = _mm256_shuffle_ps::<SHUFF_HI>(a4,a6);
-            let b6 = _mm256_shuffle_ps::<SHUFF_LO>(a5,a7);
-            let b7 = _mm256_shuffle_ps::<SHUFF_HI>(a5,a7);
-
-            [
-              f32x8(_mm256_permute2f128_ps::<0x20>(b0, b4)),
-              f32x8(_mm256_permute2f128_ps::<0x20>(b1, b5)),
-              f32x8(_mm256_permute2f128_ps::<0x20>(b2, b6)),
-              f32x8(_mm256_permute2f128_ps::<0x20>(b3, b7)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b0, b4)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b1, b5)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b2, b6)),
-              f32x8(_mm256_permute2f128_ps::<0x31>(b3, b7))
-            ]
-          } else {
-            // possible todo: not sure that 128bit SIMD gives us a a lot of speedup here
-
-            #[inline(always)]
-            fn transpose_column(data: &[f32x8; 8], index: usize) -> f32x8 {
-              f32x8::from_array([
-                data[0].as_array()[index],
-                data[1].as_array()[index],
-                data[2].as_array()[index],
-                data[3].as_array()[index],
-                data[4].as_array()[index],
-                data[5].as_array()[index],
-                data[6].as_array()[index],
-                data[7].as_array()[index],
-              ])
-            }
-
-            [
-              transpose_column(&data, 0),
-              transpose_column(&data, 1),
-              transpose_column(&data, 2),
-              transpose_column(&data, 3),
-              transpose_column(&data, 4),
-              transpose_column(&data, 5),
-              transpose_column(&data, 6),
-              transpose_column(&data, 7),
-            ]
           }
         }
     }
@@ -1588,7 +1594,12 @@ impl f32x8 {
         let result = small.select(self, exp_based);
         large.select(Self::ONE.flipsign(self), result)
     }
+}
+}
 
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl f32x8 {
     #[inline]
     fn vm_pow2n(self) -> Self {
         const_f32_as_f32x8!(pow2_23, 8388608.0);
