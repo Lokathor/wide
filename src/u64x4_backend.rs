@@ -14,6 +14,24 @@ pick! {
 }
 
 safe_target_feature! {
+// Backend of general-SIMD functions.
+impl u64x4 {
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD integer functions.
+impl u64x4 {
+}
+}
+
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl u64x4 {
+}
+}
+
+safe_target_feature! {
 impl u64x4 {
     #[inline]
     pub(crate) fn not_backend(self) -> Self {

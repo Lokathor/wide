@@ -24,6 +24,24 @@ macro_rules! const_f32_as_f32x4 {
 }
 
 safe_target_feature! {
+// Backend of general-SIMD functions.
+impl f32x4 {
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD float functions.
+impl f32x4 {
+}
+}
+
+safe_target_feature! {
+// Internal helpers and backend of inconsistent functions.
+impl f32x4 {
+}
+}
+
+safe_target_feature! {
 impl f32x4 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
