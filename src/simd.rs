@@ -359,21 +359,6 @@ macro_rules! define_simd {
     #[derive(Clone, Copy)]
     pub struct $Simd(pub(crate) crate::$backend_mod::Inner);
 
-    // Invoke a macro that automatically fills some of this API's backend
-    // functions. There is a separate macro for floats, signed integers and
-    // unsigned integers.
-    //
-    // This is used for functions that do not have the same implementation for
-    // all SIMD types, but do have the same implementation for all SIMD float
-    // types, or for all SIMD signed integer types, etc.
-    $autofill!(
-      T = $T,
-      N = $N,
-      Simd = $Simd,
-      UnsignedSimd = $UnsignedSimd,
-      Bitmask = $Bitmask,
-    );
-
     impl PartialEq for $Simd {
       #[inline]
       fn eq(&self, other: &Self) -> bool {
@@ -1145,6 +1130,21 @@ macro_rules! define_simd {
       pub fn unpack_hi(self, other: Self) -> Self {
         self.interleave_high(other)
       }
+
+      // Invoke a macro that automatically fills some of this API's backend
+      // functions. There is a separate macro for floats, signed integers and
+      // unsigned integers.
+      //
+      // This is used for functions that do not have the same implementation for
+      // all SIMD types, but do have the same implementation for all SIMD float
+      // types, or for all SIMD signed integer types, etc.
+      $autofill!(
+        T = $T,
+        N = $N,
+        Simd = $Simd,
+        UnsignedSimd = $UnsignedSimd,
+        Bitmask = $Bitmask,
+      );
     }
 
     // SAFETY: All SIMD types in this library contain fully initialized memory
@@ -1194,7 +1194,6 @@ macro_rules! simd_backend_float_autofill {
         UnsignedSimd = $UnsignedSimd:ident,
         Bitmask = $Bitmask:ident,
     ) => {
-        impl $Simd {
             #[inline]
             fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
                 Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
@@ -1264,7 +1263,6 @@ macro_rules! simd_backend_float_autofill {
             fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
                 cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
             }
-        }
     };
 }
 
@@ -1278,7 +1276,6 @@ macro_rules! simd_backend_signed_autofill {
         UnsignedSimd = $UnsignedSimd:ident,
         Bitmask = $Bitmask:ident,
     ) => {
-        impl $Simd {
             #[inline]
             fn simd_eq_backend(self, other: Self) -> Self {
                 self.cast_unsigned()
@@ -1408,7 +1405,6 @@ macro_rules! simd_backend_signed_autofill {
                     [$UnsignedSimd; $N],
                 >(data)))
             }
-        }
     };
 }
 

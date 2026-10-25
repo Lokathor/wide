@@ -26,20 +26,6 @@ macro_rules! impl_simd_integer {
         T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
         INDICES = [$($INDEX:literal),* $(,)?],
     ) => {
-        // Invoke a macro that automatically fills some of this API's backend
-        // functions. There is a separate macro for signed integers and unsigned
-        // integers.
-        //
-        // This is used for functions that do not have the same implementation
-        // for all SIMD integer types, but do have the same implementation for
-        // all SIMD signed integer types, or for all SIMD unsigned integer
-        // types.
-        $autofill!(
-            T = $T,
-            Simd = $Simd,
-            UnsignedSimd = $UnsignedSimd,
-        );
-
         impl Eq for $Simd {}
 
         impl_unary_operator!(
@@ -776,6 +762,20 @@ macro_rules! impl_simd_integer {
 
                 Self::from_array([$(self_array[$INDEX].wrapping_rem(rhs_array[$INDEX])),*])
             }
+
+            // Invoke a macro that automatically fills some of this API's
+            // backend functions. There is a separate macro for signed integers
+            // and unsigned integers.
+            //
+            // This is used for functions that do not have the same
+            // implementation for all SIMD integer types, but do have the same
+            // implementation for all SIMD signed integer types, or for all SIMD
+            // unsigned integer types.
+            $autofill!(
+                T = $T,
+                Simd = $Simd,
+                UnsignedSimd = $UnsignedSimd,
+            );
         }
     };
 }
@@ -788,7 +788,6 @@ macro_rules! simd_integer_backend_signed_autofill {
         Simd = $Simd:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
-        impl $Simd {
             #[inline]
             fn not_backend(self) -> Self {
                 cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
@@ -920,7 +919,6 @@ macro_rules! simd_integer_backend_signed_autofill {
                     .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
                     .cast_signed()
             }
-        }
     };
 }
 
@@ -932,7 +930,6 @@ macro_rules! simd_integer_backend_unsigned_autofill {
         Simd = $Simd:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
-        impl $Simd {
             #[inline]
             fn saturating_mul_backend(self, rhs: Self) -> Self {
                 let (low, high) = self.mul_keep_low_high(rhs);
@@ -964,7 +961,6 @@ macro_rules! simd_integer_backend_unsigned_autofill {
             fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
                 (self % rhs, Self::ZERO)
             }
-        }
     };
 }
 
