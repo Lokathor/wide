@@ -1194,75 +1194,75 @@ macro_rules! simd_backend_float_autofill {
         UnsignedSimd = $UnsignedSimd:ident,
         Bitmask = $Bitmask:ident,
     ) => {
-            #[inline]
-            fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
-                Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
-            }
+        #[inline]
+        fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
+            Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
+        }
 
-            #[inline]
-            fn extract_const_backend<const INDEX: usize>(self) -> $T {
-                $T::from_bits(self.to_bits().extract_const::<INDEX>())
-            }
+        #[inline]
+        fn extract_const_backend<const INDEX: usize>(self) -> $T {
+            $T::from_bits(self.to_bits().extract_const::<INDEX>())
+        }
 
-            #[inline]
-            fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
-                Self::from_bits(self.to_bits().shuffle(indices))
-            }
+        #[inline]
+        fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+            Self::from_bits(self.to_bits().shuffle(indices))
+        }
 
-            #[inline]
-            fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
-                Self::from_bits(self.to_bits().shuffle_zeroing(indices))
-            }
+        #[inline]
+        fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+            Self::from_bits(self.to_bits().shuffle_zeroing(indices))
+        }
 
-            #[inline]
-            fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
-                Self::from_bits(self.to_bits().shuffle_wrapping(indices))
-            }
+        #[inline]
+        fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+            Self::from_bits(self.to_bits().shuffle_wrapping(indices))
+        }
 
-            #[inline]
-            fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
-            }
+        #[inline]
+        fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+        }
 
-            #[inline]
-            fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
-            }
+        #[inline]
+        fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+        }
 
-            #[inline]
-            fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
-            }
+        #[inline]
+        fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+        }
 
-            #[inline]
-            fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
-            }
+        #[inline]
+        fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+        }
 
-            #[inline]
-            fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
-            }
+        #[inline]
+        fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+        }
 
-            #[inline]
-            fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
-            }
+        #[inline]
+        fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+        }
 
-            #[inline]
-            fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
-            }
+        #[inline]
+        fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+        }
 
-            #[inline]
-            fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
-            }
+        #[inline]
+        fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+        }
 
-            #[inline]
-            fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
-            }
+        #[inline]
+        fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+        }
     };
 }
 
@@ -1276,135 +1276,135 @@ macro_rules! simd_backend_signed_autofill {
         UnsignedSimd = $UnsignedSimd:ident,
         Bitmask = $Bitmask:ident,
     ) => {
-            #[inline]
-            fn simd_eq_backend(self, other: Self) -> Self {
-                self.cast_unsigned()
-                    .simd_eq(other.cast_unsigned())
-                    .cast_signed()
-            }
+        #[inline]
+        fn simd_eq_backend(self, other: Self) -> Self {
+            self.cast_unsigned()
+                .simd_eq(other.cast_unsigned())
+                .cast_signed()
+        }
 
-            #[inline]
-            fn simd_ne_backend(self, other: Self) -> Self {
-                self.cast_unsigned()
-                    .simd_ne(other.cast_unsigned())
-                    .cast_signed()
-            }
+        #[inline]
+        fn simd_ne_backend(self, other: Self) -> Self {
+            self.cast_unsigned()
+                .simd_ne(other.cast_unsigned())
+                .cast_signed()
+        }
 
-            #[inline]
-            fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
-                self.cast_unsigned()
-                    .replace_const::<INDEX>(value.cast_unsigned())
-                    .cast_signed()
-            }
+        #[inline]
+        fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
+            self.cast_unsigned()
+                .replace_const::<INDEX>(value.cast_unsigned())
+                .cast_signed()
+        }
 
-            #[inline]
-            fn extract_const_backend<const INDEX: usize>(self) -> $T {
-                self.cast_unsigned().extract_const::<INDEX>().cast_signed()
-            }
+        #[inline]
+        fn extract_const_backend<const INDEX: usize>(self) -> $T {
+            self.cast_unsigned().extract_const::<INDEX>().cast_signed()
+        }
 
-            #[inline]
-            fn select_backend(self, if_true: Self, if_false: Self) -> Self {
-                self.cast_unsigned()
-                    .select(if_true.cast_unsigned(), if_false.cast_unsigned())
-                    .cast_signed()
-            }
+        #[inline]
+        fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+            self.cast_unsigned()
+                .select(if_true.cast_unsigned(), if_false.cast_unsigned())
+                .cast_signed()
+        }
 
-            #[inline]
-            fn to_bitmask_backend(self) -> $Bitmask {
-                self.cast_unsigned().to_bitmask()
-            }
+        #[inline]
+        fn to_bitmask_backend(self) -> $Bitmask {
+            self.cast_unsigned().to_bitmask()
+        }
 
-            #[inline]
-            fn any_backend(self) -> bool {
-                self.cast_unsigned().any()
-            }
+        #[inline]
+        fn any_backend(self) -> bool {
+            self.cast_unsigned().any()
+        }
 
-            #[inline]
-            fn all_backend(self) -> bool {
-                self.cast_unsigned().all()
-            }
+        #[inline]
+        fn all_backend(self) -> bool {
+            self.cast_unsigned().all()
+        }
 
-            #[inline]
-            fn interleave_low_backend(self, other: Self) -> Self {
-                self.cast_unsigned()
-                    .interleave_low(other.cast_unsigned())
-                    .cast_signed()
-            }
+        #[inline]
+        fn interleave_low_backend(self, other: Self) -> Self {
+            self.cast_unsigned()
+                .interleave_low(other.cast_unsigned())
+                .cast_signed()
+        }
 
-            #[inline]
-            fn interleave_high_backend(self, other: Self) -> Self {
-                self.cast_unsigned()
-                    .interleave_high(other.cast_unsigned())
-                    .cast_signed()
-            }
+        #[inline]
+        fn interleave_high_backend(self, other: Self) -> Self {
+            self.cast_unsigned()
+                .interleave_high(other.cast_unsigned())
+                .cast_signed()
+        }
 
-            #[inline]
-            fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
-                self.cast_unsigned().shuffle(indices).cast_signed()
-            }
+        #[inline]
+        fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+            self.cast_unsigned().shuffle(indices).cast_signed()
+        }
 
-            #[inline]
-            fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
-                self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
-            }
+        #[inline]
+        fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+            self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
+        }
 
-            #[inline]
-            fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
-                self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
-            }
+        #[inline]
+        fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+            self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
+        }
 
-            #[inline]
-            fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
-            }
+        #[inline]
+        fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+        }
 
-            #[inline]
-            fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
-            }
+        #[inline]
+        fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+        }
 
-            #[inline]
-            fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
-            }
+        #[inline]
+        fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+        }
 
-            #[inline]
-            fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
-            }
+        #[inline]
+        fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+        }
 
-            #[inline]
-            fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
-            }
+        #[inline]
+        fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+        }
 
-            #[inline]
-            fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
-            }
+        #[inline]
+        fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+        }
 
-            #[inline]
-            fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
-            }
+        #[inline]
+        fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+        }
 
-            #[inline]
-            fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
-            }
+        #[inline]
+        fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+        }
 
-            #[inline]
-            fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-                cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
-            }
+        #[inline]
+        fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
+            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+        }
 
-            #[inline]
-            fn transpose_backend(data: [Self; $N]) -> [Self; $N] {
-                cast($UnsignedSimd::transpose(cast::<
-                    [$Simd; $N],
-                    [$UnsignedSimd; $N],
-                >(data)))
-            }
+        #[inline]
+        fn transpose_backend(data: [Self; $N]) -> [Self; $N] {
+            cast($UnsignedSimd::transpose(cast::<
+                [$Simd; $N],
+                [$UnsignedSimd; $N],
+            >(data)))
+        }
     };
 }
 

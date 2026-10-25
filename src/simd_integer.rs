@@ -788,137 +788,137 @@ macro_rules! simd_integer_backend_signed_autofill {
         Simd = $Simd:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
-            #[inline]
-            fn not_backend(self) -> Self {
-                cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
-            }
+        #[inline]
+        fn not_backend(self) -> Self {
+            cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
+        }
 
-            #[inline]
-            fn add_backend(self, rhs: Self) -> Self {
-                // Wrapping addition is the same for signed and unsigned integers.
-                cast::<$UnsignedSimd, $Simd>(
-                    cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
-                )
-            }
+        #[inline]
+        fn add_backend(self, rhs: Self) -> Self {
+            // Wrapping addition is the same for signed and unsigned integers.
+            cast::<$UnsignedSimd, $Simd>(
+                cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
+            )
+        }
 
-            #[inline]
-            fn sub_backend(self, rhs: Self) -> Self {
-                // Wrapping subtraction is the same for signed and unsigned integers.
-                cast::<$UnsignedSimd, $Simd>(
-                    cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
-                )
-            }
+        #[inline]
+        fn sub_backend(self, rhs: Self) -> Self {
+            // Wrapping subtraction is the same for signed and unsigned integers.
+            cast::<$UnsignedSimd, $Simd>(
+                cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
+            )
+        }
 
-            #[inline]
-            fn mul_backend(self, rhs: Self) -> Self {
-                // Wrapping multiplication is the same for signed and unsigned integers.
-                cast::<$UnsignedSimd, $Simd>(
-                    cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
-                )
-            }
+        #[inline]
+        fn mul_backend(self, rhs: Self) -> Self {
+            // Wrapping multiplication is the same for signed and unsigned integers.
+            cast::<$UnsignedSimd, $Simd>(
+                cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
+            )
+        }
 
-            #[inline]
-            fn bitand_backend(self, rhs: Self) -> Self {
-                cast::<$UnsignedSimd, $Simd>(
-                    cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
-                )
-            }
+        #[inline]
+        fn bitand_backend(self, rhs: Self) -> Self {
+            cast::<$UnsignedSimd, $Simd>(
+                cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
+            )
+        }
 
-            #[inline]
-            fn bitor_backend(self, rhs: Self) -> Self {
-                cast::<$UnsignedSimd, $Simd>(
-                    cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
-                )
-            }
+        #[inline]
+        fn bitor_backend(self, rhs: Self) -> Self {
+            cast::<$UnsignedSimd, $Simd>(
+                cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
+            )
+        }
 
-            #[inline]
-            fn bitxor_backend(self, rhs: Self) -> Self {
-                cast::<$UnsignedSimd, $Simd>(
-                    cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
-                )
-            }
+        #[inline]
+        fn bitxor_backend(self, rhs: Self) -> Self {
+            cast::<$UnsignedSimd, $Simd>(
+                cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
+            )
+        }
 
-            #[inline]
-            fn shl_backend(self, rhs: $UnsignedSimd) -> Self {
-                cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
-            }
+        #[inline]
+        fn shl_backend(self, rhs: $UnsignedSimd) -> Self {
+            cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+        }
 
-            #[inline]
-            fn shl_scalar_backend(self, rhs: u32) -> Self {
-                cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
-            }
+        #[inline]
+        fn shl_scalar_backend(self, rhs: u32) -> Self {
+            cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+        }
 
-            #[inline]
-            fn reduce_add_backend(self) -> $T {
-                // Wrapping addition is the same for signed and unsigned integers.
-                cast::<$Simd, $UnsignedSimd>(self)
-                    .reduce_add()
-                    .cast_signed()
-            }
+        #[inline]
+        fn reduce_add_backend(self) -> $T {
+            // Wrapping addition is the same for signed and unsigned integers.
+            cast::<$Simd, $UnsignedSimd>(self)
+                .reduce_add()
+                .cast_signed()
+        }
 
-            #[inline]
-            fn reduce_mul_backend(self) -> $T {
-                // Wrapping multiplication is the same for signed and unsigned integers.
-                cast::<$Simd, $UnsignedSimd>(self)
-                    .reduce_mul()
-                    .cast_signed()
-            }
+        #[inline]
+        fn reduce_mul_backend(self) -> $T {
+            // Wrapping multiplication is the same for signed and unsigned integers.
+            cast::<$Simd, $UnsignedSimd>(self)
+                .reduce_mul()
+                .cast_signed()
+        }
 
-            #[inline]
-            fn unbounded_shl_backend(self, rhs: $UnsignedSimd) -> Self {
-                // Shift left is the same for unsigned and signed integers.
-                cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
-            }
+        #[inline]
+        fn unbounded_shl_backend(self, rhs: $UnsignedSimd) -> Self {
+            // Shift left is the same for unsigned and signed integers.
+            cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
+        }
 
-            #[inline]
-            fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
-                // Shift left is the same for unsigned and signed integers.
-                cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
-            }
+        #[inline]
+        fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
+            // Shift left is the same for unsigned and signed integers.
+            cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
+        }
 
-            #[inline]
-            fn saturating_mul_backend(self, rhs: Self) -> Self {
-                let (result, overflow) = self.overflowing_mul(rhs);
-                let limit = Self::MAX ^ (self ^ rhs).is_negative();
-                overflow.select(limit, result)
-            }
+        #[inline]
+        fn saturating_mul_backend(self, rhs: Self) -> Self {
+            let (result, overflow) = self.overflowing_mul(rhs);
+            let limit = Self::MAX ^ (self ^ rhs).is_negative();
+            overflow.select(limit, result)
+        }
 
-            #[inline]
-            fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
-                let result = self + rhs;
-                let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+        #[inline]
+        fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self + rhs;
+            let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
 
-                (result, overflow)
-            }
+            (result, overflow)
+        }
 
-            #[inline]
-            fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
-                let result = self - rhs;
-                let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+        #[inline]
+        fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self - rhs;
+            let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
 
-                (result, overflow)
-            }
+            (result, overflow)
+        }
 
-            #[inline]
-            fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
-                // The second field is equivalent to
-                // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
-                (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
-            }
+        #[inline]
+        fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
+            // The second field is equivalent to
+            // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+            (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+        }
 
-            #[inline]
-            fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
-                // The second field is equivalent to
-                // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
-                (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
-            }
+        #[inline]
+        fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
+            // The second field is equivalent to
+            // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+            (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+        }
 
-            #[inline]
-            fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
-                self.cast_unsigned()
-                    .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
-                    .cast_signed()
-            }
+        #[inline]
+        fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+            self.cast_unsigned()
+                .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
+                .cast_signed()
+        }
     };
 }
 
@@ -930,37 +930,37 @@ macro_rules! simd_integer_backend_unsigned_autofill {
         Simd = $Simd:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
-            #[inline]
-            fn saturating_mul_backend(self, rhs: Self) -> Self {
-                let (low, high) = self.mul_keep_low_high(rhs);
-                low | high.simd_ne(Self::ZERO)
-            }
+        #[inline]
+        fn saturating_mul_backend(self, rhs: Self) -> Self {
+            let (low, high) = self.mul_keep_low_high(rhs);
+            low | high.simd_ne(Self::ZERO)
+        }
 
-            #[inline]
-            fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
-                let result = self + rhs;
-                let overflow = result.simd_lt(self);
+        #[inline]
+        fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self + rhs;
+            let overflow = result.simd_lt(self);
 
-                (result, overflow)
-            }
+            (result, overflow)
+        }
 
-            #[inline]
-            fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
-                let result = self - rhs;
-                let overflow = result.simd_gt(self);
+        #[inline]
+        fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self - rhs;
+            let overflow = result.simd_gt(self);
 
-                (result, overflow)
-            }
+            (result, overflow)
+        }
 
-            #[inline]
-            fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
-                (self / rhs, Self::ZERO)
-            }
+        #[inline]
+        fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
+            (self / rhs, Self::ZERO)
+        }
 
-            #[inline]
-            fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
-                (self % rhs, Self::ZERO)
-            }
+        #[inline]
+        fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
+            (self % rhs, Self::ZERO)
+        }
     };
 }
 
