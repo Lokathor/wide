@@ -11,7 +11,7 @@ use crate::{
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveSigned`, update the documentation of this trait to explain its
 /// intended usage.
-pub trait PrimitiveUnsigned: PrimitiveInteger {}
+pub trait PrimitiveUnsigned: PrimitiveInteger<Unsigned = Self> {}
 
 impl PrimitiveUnsigned for u8 {}
 impl PrimitiveUnsigned for u16 {}
