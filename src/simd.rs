@@ -69,6 +69,12 @@ pub trait SupportedSimd: Sealed + SimdBackend {
     /// guarantee that all SIMD vector types implement `Sized`.
     #[doc(hidden)]
     const NOT_DYN_COMPATIBLE_MARKER: () = ();
+
+    /// The unsigned integer used in [`Simd::to_bitmask`].
+    ///
+    /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
+    /// is [`u64`].
+    type Bitmask: PrimitiveUnsigned;
 }
 
 pub(crate) trait SimdBackend {
@@ -494,7 +500,9 @@ macro_rules! define_simd {
       Simd(inner)
     }
 
-    impl SupportedSimd for Simd<$T, $N> {}
+    impl SupportedSimd for Simd<$T, $N> {
+      type Bitmask = $Bitmask;
+    }
 
     impl PartialEq for $Simd {
       #[inline]
