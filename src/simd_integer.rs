@@ -18,7 +18,7 @@ macro_rules! impl_simd_integer {
         T = $T:ident,
         N = $N:literal,
         Simd = $Simd:ident,
-        auto_impl = $auto_impl:ident,
+        autofill = $autofill:ident,
         UnsignedSimd = $UnsignedSimd:ident,
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
@@ -26,15 +26,15 @@ macro_rules! impl_simd_integer {
         T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
         INDICES = [$($INDEX:literal),* $(,)?],
     ) => {
-        // Invoke a macro that automatically implements some of this
-        // API's backend functions. This macro is `signed_auto_impl` for signed
-        // integers and `unsigned_auto_impl` for unsigned integers.
+        // Invoke a macro that automatically fills some of this API's backend
+        // functions. There is a separate macro for signed integers and unsigned
+        // integers.
         //
         // This is used for functions that do not have the same implementation
         // for all SIMD integer types, but do have the same implementation for
-        // all SIMD signed-integer types, or for all SIMD unsigned-integer
+        // all SIMD signed integer types, or for all SIMD unsigned integer
         // types.
-        $auto_impl!(
+        $autofill!(
             T = $T,
             Simd = $Simd,
             UnsignedSimd = $UnsignedSimd,
@@ -780,9 +780,9 @@ macro_rules! impl_simd_integer {
     };
 }
 
-/// Automatically implements backend functions that have the same implementation
-/// for all SIMD signed-integer types.
-macro_rules! signed_auto_impl {
+/// Automatically fills SIMD integer backend functions that have the same
+/// implementation for all SIMD signed integer types.
+macro_rules! simd_integer_backend_signed_autofill {
     (
         T = $T:ident,
         Simd = $Simd:ident,
@@ -924,9 +924,9 @@ macro_rules! signed_auto_impl {
     };
 }
 
-/// Automatically implements backend functions that have the same implementation
-/// for all SIMD unsigned-integer types.
-macro_rules! unsigned_auto_impl {
+/// Automatically fills SIMD integer backend functions that have the same
+/// implementation for all SIMD unsigned integer types.
+macro_rules! simd_integer_backend_unsigned_autofill {
     (
         T = $T:ident,
         Simd = $Simd:ident,
@@ -972,7 +972,7 @@ impl_simd_integer!(
     T = i8,
     N = 16,
     Simd = i8x16,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u8x16,
     SignedSimd = i8x16,
     WiderSimd = { i16x16 },
@@ -984,7 +984,7 @@ impl_simd_integer!(
     T = i8,
     N = 32,
     Simd = i8x32,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u8x32,
     SignedSimd = i8x32,
     WiderSimd = { i16x32 },
@@ -999,7 +999,7 @@ impl_simd_integer!(
     T = i8,
     N = 64,
     Simd = i8x64,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u8x64,
     SignedSimd = i8x64,
     WiderSimd = { /*i16x64*/ },
@@ -1015,7 +1015,7 @@ impl_simd_integer!(
     T = i16,
     N = 8,
     Simd = i16x8,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u16x8,
     SignedSimd = i16x8,
     WiderSimd = { i32x8 },
@@ -1027,7 +1027,7 @@ impl_simd_integer!(
     T = i16,
     N = 16,
     Simd = i16x16,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u16x16,
     SignedSimd = i16x16,
     WiderSimd = { i32x16 },
@@ -1039,7 +1039,7 @@ impl_simd_integer!(
     T = i16,
     N = 32,
     Simd = i16x32,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u16x32,
     SignedSimd = i16x32,
     WiderSimd = { /*i32x32*/ },
@@ -1054,7 +1054,7 @@ impl_simd_integer!(
     T = i32,
     N = 4,
     Simd = i32x4,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u32x4,
     SignedSimd = i32x4,
     WiderSimd = { i64x4 },
@@ -1066,7 +1066,7 @@ impl_simd_integer!(
     T = i32,
     N = 8,
     Simd = i32x8,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u32x8,
     SignedSimd = i32x8,
     WiderSimd = { i64x8 },
@@ -1078,7 +1078,7 @@ impl_simd_integer!(
     T = i32,
     N = 16,
     Simd = i32x16,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u32x16,
     SignedSimd = i32x16,
     WiderSimd = { /*i64x16*/ },
@@ -1090,7 +1090,7 @@ impl_simd_integer!(
     T = i64,
     N = 2,
     Simd = i64x2,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u64x2,
     SignedSimd = i64x2,
     WiderSimd = { /*i128x2*/ },
@@ -1102,7 +1102,7 @@ impl_simd_integer!(
     T = i64,
     N = 4,
     Simd = i64x4,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u64x4,
     SignedSimd = i64x4,
     WiderSimd = { /*i128x4*/ },
@@ -1114,7 +1114,7 @@ impl_simd_integer!(
     T = i64,
     N = 8,
     Simd = i64x8,
-    auto_impl = signed_auto_impl,
+    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u64x8,
     SignedSimd = i64x8,
     WiderSimd = { /*i128x8*/ },
@@ -1126,7 +1126,7 @@ impl_simd_integer!(
     T = u8,
     N = 16,
     Simd = u8x16,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u8x16,
     SignedSimd = i8x16,
     WiderSimd = { u16x16 },
@@ -1138,7 +1138,7 @@ impl_simd_integer!(
     T = u8,
     N = 32,
     Simd = u8x32,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u8x32,
     SignedSimd = i8x32,
     WiderSimd = { u16x32 },
@@ -1153,7 +1153,7 @@ impl_simd_integer!(
     T = u8,
     N = 64,
     Simd = u8x64,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u8x64,
     SignedSimd = i8x64,
     WiderSimd = { /*u16x64*/ },
@@ -1169,7 +1169,7 @@ impl_simd_integer!(
     T = u16,
     N = 8,
     Simd = u16x8,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u16x8,
     SignedSimd = i16x8,
     WiderSimd = { u32x8 },
@@ -1181,7 +1181,7 @@ impl_simd_integer!(
     T = u16,
     N = 16,
     Simd = u16x16,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u16x16,
     SignedSimd = i16x16,
     WiderSimd = { u32x16 },
@@ -1193,7 +1193,7 @@ impl_simd_integer!(
     T = u16,
     N = 32,
     Simd = u16x32,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u16x32,
     SignedSimd = i16x32,
     WiderSimd = { /*u32x32*/ },
@@ -1208,7 +1208,7 @@ impl_simd_integer!(
     T = u32,
     N = 4,
     Simd = u32x4,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u32x4,
     SignedSimd = i32x4,
     WiderSimd = { u64x4 },
@@ -1220,7 +1220,7 @@ impl_simd_integer!(
     T = u32,
     N = 8,
     Simd = u32x8,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u32x8,
     SignedSimd = i32x8,
     WiderSimd = { u64x8 },
@@ -1232,7 +1232,7 @@ impl_simd_integer!(
     T = u32,
     N = 16,
     Simd = u32x16,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u32x16,
     SignedSimd = i32x16,
     WiderSimd = { /*u64x16*/ },
@@ -1244,7 +1244,7 @@ impl_simd_integer!(
     T = u64,
     N = 2,
     Simd = u64x2,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u64x2,
     SignedSimd = i64x2,
     WiderSimd = { /*u128x2*/ },
@@ -1256,7 +1256,7 @@ impl_simd_integer!(
     T = u64,
     N = 4,
     Simd = u64x4,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u64x4,
     SignedSimd = i64x4,
     WiderSimd = { /*u128x4*/ },
@@ -1268,7 +1268,7 @@ impl_simd_integer!(
     T = u64,
     N = 8,
     Simd = u64x8,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u64x8,
     SignedSimd = i64x8,
     WiderSimd = { /*u128x8*/ },

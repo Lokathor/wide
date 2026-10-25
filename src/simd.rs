@@ -342,7 +342,7 @@ macro_rules! define_simd {
       N_STR = $N_STR:literal,
       Simd = $Simd:ident,
       backend_mod = $backend_mod:ident,
-      auto_impl = $auto_impl:ident,
+      autofill = $autofill:ident,
       UnsignedSimd = $UnsignedSimd:ident,
       Bitmask = $Bitmask:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
@@ -359,14 +359,14 @@ macro_rules! define_simd {
     #[derive(Clone, Copy)]
     pub struct $Simd(pub(crate) crate::$backend_mod::Inner);
 
-    // Invoke a macro that automatically implements some of this API's backend
-    // functions. This macro is `float_auto_impl` for floats, `signed_auto_impl`
-    // for signed integers and `unsigned_auto_impl` for unsigned integers.
+    // Invoke a macro that automatically fills some of this API's backend
+    // functions. There is a separate macro for floats, signed integers and
+    // unsigned integers.
     //
     // This is used for functions that do not have the same implementation for
     // all SIMD types, but do have the same implementation for all SIMD float
-    // types, or for all SIMD signed-integer types, etc.
-    $auto_impl!(
+    // types, or for all SIMD signed integer types, etc.
+    $autofill!(
       T = $T,
       N = $N,
       Simd = $Simd,
@@ -1184,9 +1184,9 @@ macro_rules! define_simd {
   };
 }
 
-/// Automatically implements backend functions that have the same implementation
+/// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD float types.
-macro_rules! float_auto_impl {
+macro_rules! simd_backend_float_autofill {
     (
         T = $T:ident,
         N = $N:literal,
@@ -1268,9 +1268,9 @@ macro_rules! float_auto_impl {
     };
 }
 
-/// Automatically implements backend functions that have the same implementation
-/// for all SIMD signed-integer types.
-macro_rules! signed_auto_impl {
+/// Automatically fills SIMD backend functions that have the same implementation
+/// for all SIMD signed integer types.
+macro_rules! simd_backend_signed_autofill {
     (
         T = $T:ident,
         N = $N:literal,
@@ -1412,9 +1412,9 @@ macro_rules! signed_auto_impl {
     };
 }
 
-/// Automatically implements backend functions that have the same implementation
-/// for all SIMD unsigned-integer types.
-macro_rules! unsigned_auto_impl {
+/// Automatically fills SIMD backend functions that have the same implementation
+/// for all SIMD unsigned integer types.
+macro_rules! simd_backend_unsigned_autofill {
     (
         T = $T:ident,
         N = $N:literal,
@@ -1480,7 +1480,7 @@ define_simd!(
     N_STR = "four",
     Simd = f32x4,
     backend_mod = f32x4_backend,
-    auto_impl = float_auto_impl,
+    autofill = simd_backend_float_autofill,
     UnsignedSimd = u32x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128 },
@@ -1493,7 +1493,7 @@ define_simd!(
     N_STR = "eight",
     Simd = f32x8,
     backend_mod = f32x8_backend,
-    auto_impl = float_auto_impl,
+    autofill = simd_backend_float_autofill,
     UnsignedSimd = u32x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256 },
@@ -1506,7 +1506,7 @@ define_simd!(
     N_STR = "16",
     Simd = f32x16,
     backend_mod = f32x16_backend,
-    auto_impl = float_auto_impl,
+    autofill = simd_backend_float_autofill,
     UnsignedSimd = u32x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512 },
@@ -1519,7 +1519,7 @@ define_simd!(
     N_STR = "two",
     Simd = f64x2,
     backend_mod = f64x2_backend,
-    auto_impl = float_auto_impl,
+    autofill = simd_backend_float_autofill,
     UnsignedSimd = u64x2,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128d },
@@ -1532,7 +1532,7 @@ define_simd!(
     N_STR = "four",
     Simd = f64x4,
     backend_mod = f64x4_backend,
-    auto_impl = float_auto_impl,
+    autofill = simd_backend_float_autofill,
     UnsignedSimd = u64x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256d },
@@ -1545,7 +1545,7 @@ define_simd!(
     N_STR = "eight",
     Simd = f64x8,
     backend_mod = f64x8_backend,
-    auto_impl = float_auto_impl,
+    autofill = simd_backend_float_autofill,
     UnsignedSimd = u64x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512d },
@@ -1558,7 +1558,7 @@ define_simd!(
     N_STR = "16",
     Simd = i8x16,
     backend_mod = i8x16_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u8x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1571,7 +1571,7 @@ define_simd!(
     N_STR = "32",
     Simd = i8x32,
     backend_mod = i8x32_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u8x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1584,7 +1584,7 @@ define_simd!(
     N_STR = "64",
     Simd = i8x64,
     backend_mod = i8x64_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u8x64,
     Bitmask = u64,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1597,7 +1597,7 @@ define_simd!(
     N_STR = "eight",
     Simd = i16x8,
     backend_mod = i16x8_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u16x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1610,7 +1610,7 @@ define_simd!(
     N_STR = "16",
     Simd = i16x16,
     backend_mod = i16x16_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u16x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1623,7 +1623,7 @@ define_simd!(
     N_STR = "32",
     Simd = i16x32,
     backend_mod = i16x32_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u16x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1636,7 +1636,7 @@ define_simd!(
     N_STR = "four",
     Simd = i32x4,
     backend_mod = i32x4_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u32x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1649,7 +1649,7 @@ define_simd!(
     N_STR = "eight",
     Simd = i32x8,
     backend_mod = i32x8_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u32x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1662,7 +1662,7 @@ define_simd!(
     N_STR = "16",
     Simd = i32x16,
     backend_mod = i32x16_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u32x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1675,7 +1675,7 @@ define_simd!(
     N_STR = "two",
     Simd = i64x2,
     backend_mod = i64x2_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u64x2,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1688,7 +1688,7 @@ define_simd!(
     N_STR = "four",
     Simd = i64x4,
     backend_mod = i64x4_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u64x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1701,7 +1701,7 @@ define_simd!(
     N_STR = "eight",
     Simd = i64x8,
     backend_mod = i64x8_backend,
-    auto_impl = signed_auto_impl,
+    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u64x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1714,7 +1714,7 @@ define_simd!(
     N_STR = "16",
     Simd = u8x16,
     backend_mod = u8x16_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u8x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1727,7 +1727,7 @@ define_simd!(
     N_STR = "32",
     Simd = u8x32,
     backend_mod = u8x32_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u8x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1740,7 +1740,7 @@ define_simd!(
     N_STR = "64",
     Simd = u8x64,
     backend_mod = u8x64_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u8x64,
     Bitmask = u64,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1753,7 +1753,7 @@ define_simd!(
     N_STR = "eight",
     Simd = u16x8,
     backend_mod = u16x8_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u16x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1766,7 +1766,7 @@ define_simd!(
     N_STR = "16",
     Simd = u16x16,
     backend_mod = u16x16_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u16x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1779,7 +1779,7 @@ define_simd!(
     N_STR = "32",
     Simd = u16x32,
     backend_mod = u16x32_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u16x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1792,7 +1792,7 @@ define_simd!(
     N_STR = "four",
     Simd = u32x4,
     backend_mod = u32x4_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u32x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1805,7 +1805,7 @@ define_simd!(
     N_STR = "eight",
     Simd = u32x8,
     backend_mod = u32x8_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u32x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1818,7 +1818,7 @@ define_simd!(
     N_STR = "16",
     Simd = u32x16,
     backend_mod = u32x16_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u32x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1831,7 +1831,7 @@ define_simd!(
     N_STR = "two",
     Simd = u64x2,
     backend_mod = u64x2_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u64x2,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1844,7 +1844,7 @@ define_simd!(
     N_STR = "four",
     Simd = u64x4,
     backend_mod = u64x4_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u64x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1857,7 +1857,7 @@ define_simd!(
     N_STR = "eight",
     Simd = u64x8,
     backend_mod = u64x8_backend,
-    auto_impl = unsigned_auto_impl,
+    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u64x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
