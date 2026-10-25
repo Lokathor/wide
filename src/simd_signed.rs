@@ -13,7 +13,7 @@ use crate::{
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveSigned`, update the documentation of this trait to explain its
 /// intended usage.
-pub trait PrimitiveSigned: PrimitiveInteger {}
+pub trait PrimitiveSigned: PrimitiveInteger<Signed = Self> {}
 
 impl PrimitiveSigned for i8 {}
 impl PrimitiveSigned for i16 {}
