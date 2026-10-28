@@ -572,6 +572,21 @@ fn test_saturating_div() {
 }
 
 #[test]
+fn test_overflowing_neg() {
+    for_simd_types!(|T: Integer, N| {
+        for value in random_iter::<[T; N]>() {
+            let expected = (
+                Simd::from_array(value.map(|v| v.overflowing_neg().0)),
+                Simd::from_array(value.map(|v| if v.overflowing_neg().1 { !0 } else { 0 })),
+            );
+            let actual = Simd::from_array(value).overflowing_neg();
+
+            assert_eq!(actual, expected, "   value: {value:?}");
+        }
+    });
+}
+
+#[test]
 fn test_overflowing_add() {
     for_simd_types!(|T: Integer, N| {
         for [left, right] in simd_chunks!(

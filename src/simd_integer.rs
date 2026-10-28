@@ -574,6 +574,22 @@ macro_rules! impl_simd_integer {
                 Self::from_array([$(self_array[$INDEX].saturating_div(rhs_array[$INDEX])),*])
             }
 
+            /// Returns `-self` and whether an overflow occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The negation (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            ///
+            /// For signed integers, overflow only occurs for `Self::MIN`.
+            /// For unsigned integers, overflow occurs for all values except
+            /// zero.
+            #[inline]
+            #[must_use]
+            pub fn overflowing_neg(self) -> (Self, Self) {
+                self.overflowing_neg_backend()
+            }
+
             /// Returns `self + rhs` and whether an overflow occured.
             ///
             /// Returns a tuple with:
@@ -896,6 +912,11 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
+        fn overflowing_neg_backend(self) -> (Self, Self) {
+            (-self, self.simd_eq(Self::MIN))
+        }
+
+        #[inline]
         fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
             let result = self + rhs;
             let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
@@ -946,6 +967,11 @@ macro_rules! simd_integer_backend_unsigned_autofill {
         fn saturating_mul_backend(self, rhs: Self) -> Self {
             let (low, high) = self.mul_keep_low_high(rhs);
             low | high.simd_ne(Self::ZERO)
+        }
+
+        #[inline]
+        fn overflowing_neg_backend(self) -> (Self, Self) {
+            (-self, self.simd_ne(Self::ZERO))
         }
 
         #[inline]
