@@ -40,6 +40,38 @@ macro_rules! impl_simd_unsigned {
             pub fn sub_signed(self, rhs: $SignedSimd) -> Self {
                 self - rhs.cast_unsigned()
             }
+
+            /// Returns `self + rhs` with a signed `rhs` and whether an overflow
+            /// occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The addition (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            #[inline]
+            #[must_use]
+            pub fn overflowing_add_signed(self, rhs: $SignedSimd) -> (Self, Self) {
+                let result = self.add_signed(rhs);
+                let overflow = result.simd_lt(self) ^ rhs.is_negative().cast_unsigned();
+
+                (result, overflow)
+            }
+
+            /// Returns `self - rhs` with a signed `rhs` and whether an overflow
+            /// occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The subtraction (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            #[inline]
+            #[must_use]
+            pub fn overflowing_sub_signed(self, rhs: $SignedSimd) -> (Self, Self) {
+                let result = self.sub_signed(rhs);
+                let overflow = result.simd_gt(self) ^ rhs.is_negative().cast_unsigned();
+
+                (result, overflow)
+            }
         }
     };
 }

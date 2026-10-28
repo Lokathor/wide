@@ -95,6 +95,52 @@ fn test_sub_unsigned() {
 }
 
 #[test]
+fn test_overflowing_add_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| {
+                    a[i].overflowing_add_unsigned(b[i]).0
+                })),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_add_unsigned(b[i]).1 {
+                        !0
+                    } else {
+                        0
+                    }
+                })),
+            );
+            let actual = Simd::from_array(a).overflowing_add_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "\n{a:?}\n{b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_overflowing_sub_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| {
+                    a[i].overflowing_sub_unsigned(b[i]).0
+                })),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_sub_unsigned(b[i]).1 {
+                        !0
+                    } else {
+                        0
+                    }
+                })),
+            );
+            let actual = Simd::from_array(a).overflowing_sub_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "\n{a:?}\n{b:?}");
+        }
+    });
+}
+
+#[test]
 fn test_mul_scale_round() {
     // `mul_scale_round` is inconsistently missing from types.
 
