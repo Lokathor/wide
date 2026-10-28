@@ -105,6 +105,14 @@ macro_rules! impl_simd_signed {
                 self - rhs.cast_signed()
             }
 
+            /// Saturating integer negation. Computes `-self`, returning `MAX`
+            /// if `self == MIN` instead of overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_neg(self) -> Self {
+                self.saturating_neg_backend()
+            }
+
             /// Saturating addition with an unsigned `rhs`. Computes
             /// `self + rhs`, saturating at the numeric bounds instead of
             /// overflowing.

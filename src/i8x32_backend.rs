@@ -272,6 +272,20 @@ impl i8x32 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+              Self(_mm256_subs_epi8(_mm256_setzero_si256(), self.0))
+          } else {
+              Self(Inner {
+                  lo: self.0.lo.saturating_neg(),
+                  hi: self.0.hi.saturating_neg(),
+              })
+          }
+        }
+    }
 }
 }
 

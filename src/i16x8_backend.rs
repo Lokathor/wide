@@ -578,6 +578,23 @@ impl i16x8 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature="sse2")] {
+                Self(_mm_subs_epi16(_mm_setzero_si128(), self.0))
+            } else if #[cfg(target_feature="simd128")] {
+                Self(i16x8_sub_sat(Self::ZERO.0, self.0))
+            } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+                Self(vqnegq_s16(self.0))
+            } else {
+                // Efficient computation of
+                // `-self + self.simd_eq(Self::MIN).select(-Self::ONE, Self::ZERO)`
+                self.simd_eq(Self::MIN) - self
+            }
+        }
+    }
 }
 }
 

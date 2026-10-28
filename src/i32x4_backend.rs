@@ -493,6 +493,19 @@ impl i32x4 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+                Self(vqnegq_s32(self.0))
+            } else {
+                // Efficient computation of
+                // `-self + self.simd_eq(Self::MIN).select(-Self::ONE, Self::ZERO)`
+                self.simd_eq(Self::MIN) - self
+            }
+        }
+    }
 }
 }
 

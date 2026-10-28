@@ -258,5 +258,19 @@ impl i8x64 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature="avx512bw")] {
+                Self(_mm512_subs_epi8(_mm512_setzero_si512(), self.0))
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_neg(),
+                    hi: self.0.hi.saturating_neg(),
+                })
+            }
+        }
+    }
 }
 }

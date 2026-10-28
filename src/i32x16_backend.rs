@@ -332,6 +332,22 @@ impl i32x16 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx512f")] {
+            // Efficient computation of
+            // `-self + self.simd_eq(Self::MIN).select(-Self::ONE, Self::ZERO)`
+            self.simd_eq(Self::MIN) - self
+          } else {
+            Self(Inner {
+              lo: self.0.lo.saturating_neg(),
+              hi: self.0.hi.saturating_neg(),
+            })
+          }
+        }
+    }
 }
 }
 
