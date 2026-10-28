@@ -7,11 +7,11 @@ use crate::{
 
 macro_rules! impl_simd_unsigned {
     (
-    T = $T:ident,
-    N = $N:literal,
-    Simd = $Simd:ident,
-    SignedSimd = $SignedSimd:ident,
-  ) => {
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        SignedSimd = $SignedSimd:ident,
+    ) => {
         /// The following functionality exists for all SIMD vectors of unsigned
         /// integers.
         impl $Simd {

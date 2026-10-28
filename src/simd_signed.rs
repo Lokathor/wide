@@ -9,11 +9,11 @@ use crate::{
 
 macro_rules! impl_simd_signed {
     (
-    T = $T:ident,
-    N = $N:literal,
-    Simd = $Simd:ident,
-    UnsignedSimd = $UnsignedSimd:ident,
-  ) => {
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+    ) => {
         impl Select<$Simd> for $UnsignedSimd {
             #[inline]
             fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
