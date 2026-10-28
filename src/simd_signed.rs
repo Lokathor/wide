@@ -105,6 +105,26 @@ macro_rules! impl_simd_signed {
                 self - rhs.cast_signed()
             }
 
+            /// Saturating addition with an unsigned `rhs`. Computes
+            /// `self + rhs`, saturating at the numeric bounds instead of
+            /// overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_add_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            }
+
+            /// Saturating subtraction with an unsigned `rhs`. Computes
+            /// `self - rhs`, saturating at the numeric bounds instead of
+            /// overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_sub_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                let (result, overflow) = self.overflowing_sub_unsigned(rhs);
+                overflow.select(Self::MIN, result)
+            }
+
             /// Returns `self + rhs` with an unsigned `rhs` and whether an overflow
             /// occured.
             ///
