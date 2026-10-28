@@ -88,6 +88,22 @@ macro_rules! impl_simd_signed {
             pub fn is_negative(self) -> Self {
                 self.is_negative_backend()
             }
+
+            /// Wrapping (modular) addition with an unsigned `rhs`. Computes
+            /// `self + rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn add_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                self + rhs.cast_signed()
+            }
+
+            /// Wrapping (modular) subtraction with an unsigned `rhs`. Computes
+            /// `self - rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn sub_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                self - rhs.cast_signed()
+            }
         }
     };
 }

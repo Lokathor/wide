@@ -69,6 +69,32 @@ fn test_signum() {
 }
 
 #[test]
+fn test_add_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| a[i].wrapping_add_unsigned(b[i])));
+            let actual = Simd::from_array(a).add_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_sub_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| a[i].wrapping_sub_unsigned(b[i])));
+            let actual = Simd::from_array(a).sub_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
 fn test_mul_scale_round() {
     // `mul_scale_round` is inconsistently missing from types.
 

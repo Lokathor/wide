@@ -24,6 +24,22 @@ macro_rules! impl_simd_unsigned {
                 // initialized memory.
                 unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
             }
+
+            /// Wrapping (modular) addition with a signed `rhs`. Computes
+            /// `self + rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn add_signed(self, rhs: $SignedSimd) -> Self {
+                self + rhs.cast_unsigned()
+            }
+
+            /// Wrapping (modular) subtraction with a signed `rhs`. Computes
+            /// `self - rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn sub_signed(self, rhs: $SignedSimd) -> Self {
+                self - rhs.cast_unsigned()
+            }
         }
     };
 }
