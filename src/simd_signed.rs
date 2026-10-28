@@ -1,7 +1,5 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
-use core::ops::Neg;
-
 use bytemuck::cast;
 
 use crate::{
@@ -10,101 +8,88 @@ use crate::{
 };
 
 macro_rules! impl_simd_signed {
-  (
-    T = $T:ident,
-    N = $N:literal,
-    Simd = $Simd:ident,
-    UnsignedSimd = $UnsignedSimd:ident,
-  ) => {
-    impl_unary_operator!(
-      $Simd,
-      Neg,
-      neg,
-      neg_backend,
-      /// Computes wrapping negation for each element of `self`.
-    );
+    (
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+    ) => {
+        impl Select<$Simd> for $UnsignedSimd {
+            #[inline]
+            fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
+                self.cast_signed().select(if_true, if_false)
+            }
+        }
 
-    impl Select<$Simd> for $UnsignedSimd {
-      #[inline]
-      fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
-        self.cast_signed().select(if_true, if_false)
-      }
-    }
+        impl Select<$UnsignedSimd> for $Simd {
+            #[inline]
+            fn select(self, if_true: $UnsignedSimd, if_false: $UnsignedSimd) -> $UnsignedSimd {
+                self.cast_unsigned().select(if_true, if_false)
+            }
+        }
 
-    impl Select<$UnsignedSimd> for $Simd {
-      #[inline]
-      fn select(self, if_true: $UnsignedSimd, if_false: $UnsignedSimd) -> $UnsignedSimd {
-        self.cast_unsigned().select(if_true, if_false)
-      }
-    }
+        /// The following functionality exists for all SIMD vectors of signed
+        /// integers.
+        impl $Simd {
+            /// Returns the bit patterns of `self` reinterpreted as unsigned integers
+            /// of the same size.
+            #[inline]
+            #[must_use]
+            pub const fn cast_unsigned(self) -> $UnsignedSimd {
+                // SAFETY: Both types accept all bit-patterns and only contain
+                // initialized memory.
+                unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+            }
 
-    /// The following functionality exists for all SIMD vectors of signed
-    /// integers.
-    impl $Simd {
-      /// Returns the bit patterns of `self` reinterpreted as unsigned integers
-      /// of the same size.
-      #[inline]
-      #[must_use]
-      pub const fn cast_unsigned(self) -> $UnsignedSimd {
-        // SAFETY: Both types accept all bit-patterns and only contain
-        // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
-      }
+            /// Computes the absolute value of each input element, returned as an
+            /// unsigned integer in order to avoid wrapping.
+            #[inline]
+            #[must_use]
+            pub fn unsigned_abs(self) -> $UnsignedSimd {
+                cast::<$Simd, $UnsignedSimd>(self.abs())
+            }
 
-      /// Computes the absolute value of each input element, returned as an
-      /// unsigned integer in order to avoid wrapping.
-      #[inline]
-      #[must_use]
-      pub fn unsigned_abs(self) -> $UnsignedSimd {
-        cast::<$Simd, $UnsignedSimd>(self.abs())
-      }
+            /// Returns the absolute value of each input element.
+            #[inline]
+            #[must_use]
+            pub fn abs(self) -> Self {
+                self.abs_backend()
+            }
 
-      /// Returns the absolute value of each input element.
-      #[inline]
-      #[must_use]
-      pub fn abs(self) -> Self {
-        self.abs_backend()
-      }
+            /// Returns numbers representing the sign of each element.
+            ///
+            /// - `0` if the element is zero
+            /// - `1` if the element is positive
+            /// - `-1` if the element is negative
+            #[inline]
+            #[must_use]
+            pub fn signum(self) -> Self {
+                // Flip signs because the result for true in `is_positive/negative` is
+                // `-1` (all bits set).
+                self.is_negative() - self.is_positive()
+            }
 
-      /// Returns numbers representing the sign of each element.
-      ///
-      /// - `0` if the element is zero
-      /// - `1` if the element is positive
-      /// - `-1` if the element is negative
-      #[inline]
-      #[must_use]
-      pub fn signum(self) -> Self {
-        // Flip signs because the result for true in `is_positive/negative` is
-        // `-1` (all bits set).
-        self.is_negative() - self.is_positive()
-      }
+            /// Returns a [mask] that is true for each positive element, and false if
+            /// it is zero or negative.
+            ///
+            /// [mask]: crate#masks
+            #[inline]
+            #[must_use]
+            pub fn is_positive(self) -> Self {
+                self.is_positive_backend()
+            }
 
-      /// Returns a [mask] that is true for each positive element, and false if
-      /// it is zero or negative.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn is_positive(self) -> Self {
-        self.is_positive_backend()
-      }
-
-      /// Returns a [mask] that is true for each negative element, and false if
-      /// it is zero or positive.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn is_negative(self) -> Self {
-        self.is_negative_backend()
-      }
-
-      #[inline]
-      fn neg_backend(self) -> Self {
-        Self::default() - self
-      }
-    }
-  };
+            /// Returns a [mask] that is true for each negative element, and false if
+            /// it is zero or positive.
+            ///
+            /// [mask]: crate#masks
+            #[inline]
+            #[must_use]
+            pub fn is_negative(self) -> Self {
+                self.is_negative_backend()
+            }
+        }
+    };
 }
 impl_simd_signed!(T = i8, N = 16, Simd = i8x16, UnsignedSimd = u8x16,);
 impl_simd_signed!(T = i8, N = 32, Simd = i8x32, UnsignedSimd = u8x32,);
