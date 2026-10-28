@@ -6,26 +6,26 @@ use crate::{
 };
 
 macro_rules! impl_simd_unsigned {
-  (
+    (
     T = $T:ident,
     N = $N:literal,
     Simd = $Simd:ident,
     SignedSimd = $SignedSimd:ident,
   ) => {
-    /// The following functionality exists for all SIMD vectors of unsigned
-    /// integers.
-    impl $Simd {
-      /// Returns the bit patterns of `self` reinterpreted as signed integers of
-      /// the same size.
-      #[inline]
-      #[must_use]
-      pub const fn cast_signed(self) -> $SignedSimd {
-        // SAFETY: Both types accept all bit-patterns and only contain
-        // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
-      }
-    }
-  };
+        /// The following functionality exists for all SIMD vectors of unsigned
+        /// integers.
+        impl $Simd {
+            /// Returns the bit patterns of `self` reinterpreted as signed integers of
+            /// the same size.
+            #[inline]
+            #[must_use]
+            pub const fn cast_signed(self) -> $SignedSimd {
+                // SAFETY: Both types accept all bit-patterns and only contain
+                // initialized memory.
+                unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
+            }
+        }
+    };
 }
 impl_simd_unsigned!(T = u8, N = 16, Simd = u8x16, SignedSimd = i8x16,);
 impl_simd_unsigned!(T = u8, N = 32, Simd = u8x32, SignedSimd = i8x32,);
