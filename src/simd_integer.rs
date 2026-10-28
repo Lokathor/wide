@@ -3,7 +3,7 @@
 
 use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 
 use bytemuck::{Zeroable, cast};
@@ -28,6 +28,13 @@ macro_rules! impl_simd_integer {
     ) => {
         impl Eq for $Simd {}
 
+        impl_unary_operator!(
+            $Simd,
+            Neg,
+            neg,
+            neg_backend,
+            /// Computes wrapping negation for each element of `self`.
+        );
         impl_unary_operator!(
             $Simd,
             Not,
@@ -743,6 +750,11 @@ macro_rules! impl_simd_integer {
             #[must_use]
             pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
                 self.bitselect_backend(if_one, if_zero)
+            }
+
+            #[inline]
+            fn neg_backend(self) -> Self {
+                Self::default() - self
             }
 
             #[inline]

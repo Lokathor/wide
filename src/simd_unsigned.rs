@@ -1,7 +1,5 @@
 //! Defines APIs applicable to SIMD vectors of unsigned integers.
 
-use core::ops::Neg;
-
 use crate::{
     i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16,
     u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
@@ -14,17 +12,6 @@ macro_rules! impl_simd_unsigned {
     Simd = $Simd:ident,
     SignedSimd = $SignedSimd:ident,
   ) => {
-    impl_unary_operator!(
-      $Simd,
-      Neg,
-      neg,
-      neg_backend,
-      /// Computes wrapping negation for each element of `self`.
-      ///
-      /// This computes wrapping `0 - self`, even though the `-` operator is not
-      /// implemented for Rust's primitive unsigned integers.
-    );
-
     /// The following functionality exists for all SIMD vectors of unsigned
     /// integers.
     impl $Simd {
@@ -36,11 +23,6 @@ macro_rules! impl_simd_unsigned {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
         unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
-      }
-
-      #[inline]
-      fn neg_backend(self) -> Self {
-        Self::default() - self
       }
     }
   };

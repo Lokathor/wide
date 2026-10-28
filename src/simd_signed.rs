@@ -1,7 +1,5 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
-use core::ops::Neg;
-
 use bytemuck::cast;
 
 use crate::{
@@ -16,14 +14,6 @@ macro_rules! impl_simd_signed {
     Simd = $Simd:ident,
     UnsignedSimd = $UnsignedSimd:ident,
   ) => {
-    impl_unary_operator!(
-      $Simd,
-      Neg,
-      neg,
-      neg_backend,
-      /// Computes wrapping negation for each element of `self`.
-    );
-
     impl Select<$Simd> for $UnsignedSimd {
       #[inline]
       fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
@@ -97,11 +87,6 @@ macro_rules! impl_simd_signed {
       #[must_use]
       pub fn is_negative(self) -> Self {
         self.is_negative_backend()
-      }
-
-      #[inline]
-      fn neg_backend(self) -> Self {
-        Self::default() - self
       }
     }
   };
