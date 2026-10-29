@@ -107,6 +107,18 @@ fn test_saturating_neg() {
 }
 
 #[test]
+fn test_saturating_abs() {
+    for_simd_types!(|T: Signed, N| {
+        for value in random_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(T::saturating_abs));
+            let actual = Simd::from_array(value).saturating_abs();
+
+            assert_eq!(actual, expected, "value: {value:?}");
+        }
+    });
+}
+
+#[test]
 fn test_saturating_add_unsigned() {
     for_simd_types!(|T: Signed, N| {
         for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {

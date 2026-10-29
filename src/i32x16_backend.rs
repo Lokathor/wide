@@ -348,6 +348,22 @@ impl i32x16 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx512f")] {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_abs(),
+                    hi: self.0.hi.saturating_abs(),
+                })
+            }
+        }
+    }
 }
 }
 

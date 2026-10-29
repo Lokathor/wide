@@ -113,6 +113,14 @@ macro_rules! impl_simd_signed {
                 self.saturating_neg_backend()
             }
 
+            /// Saturating absolute value. Computes `self.abs()`, returning
+            /// `MAX` if `self == MIN` instead of overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_abs(self) -> Self {
+                self.saturating_abs_backend()
+            }
+
             /// Saturating addition with an unsigned `rhs`. Computes
             /// `self + rhs`, saturating at the numeric bounds instead of
             /// overflowing.

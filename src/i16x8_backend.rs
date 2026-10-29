@@ -595,6 +595,19 @@ impl i16x8 {
             }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vqabsq_s16(self.0))
+            } else {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            }
+        }
+    }
 }
 }
 
