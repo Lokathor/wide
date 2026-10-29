@@ -133,6 +133,23 @@ fn test_saturating_sub_unsigned() {
 }
 
 #[test]
+fn test_overflowing_abs() {
+    for_simd_types!(|T: Signed, N| {
+        for value in random_iter::<[T; N]>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| value[i].overflowing_abs().0)),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if value[i].overflowing_abs().1 { !0 } else { 0 }
+                })),
+            );
+            let actual = Simd::from_array(value).overflowing_abs();
+
+            assert_eq!(actual, expected, "value: {value:?}");
+        }
+    });
+}
+
+#[test]
 fn test_overflowing_add_unsigned() {
     for_simd_types!(|T: Signed, N| {
         for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {

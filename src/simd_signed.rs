@@ -133,6 +133,20 @@ macro_rules! impl_simd_signed {
                 overflow.select(Self::MIN, result)
             }
 
+            /// Computes the absolute value of self.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The absolute value (returns the wrapped value if an overflow
+            ///   occured)
+            /// - A mask indicating whether an overflow occured (only occurs
+            ///   when `self == MIN`)
+            #[inline]
+            #[must_use]
+            pub fn overflowing_abs(self) -> (Self, Self) {
+                (self.abs(), self.simd_eq(Self::MIN))
+            }
+
             /// Returns `self + rhs` with an unsigned `rhs` and whether an overflow
             /// occured.
             ///
