@@ -321,14 +321,13 @@ impl i32x16 {
     #[inline]
     pub(crate) fn is_negative_backend(self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            // `neon` has dedicated less-than-zero intrinsics.
+          if #[cfg(target_feature = "avx512f")] {
+            Self(_mm512_srai_epi32::<31>(self.0))
+          } else {
             Self(Inner {
               lo: self.0.lo.is_negative(),
               hi: self.0.hi.is_negative(),
             })
-          } else {
-            self.simd_lt(Self::ZERO)
           }
         }
     }

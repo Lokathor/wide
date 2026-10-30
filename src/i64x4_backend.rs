@@ -298,14 +298,15 @@ impl i64x4 {
     #[inline]
     pub(crate) fn is_negative_backend(self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            // `neon` has dedicated less-than-zero intrinsics.
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            Self(_mm256_srai_epi64::<63>(self.0))
+          } else if #[cfg(target_feature = "avx2")] {
+            self.simd_lt(Self::ZERO)
+          } else {
             Self(Inner {
               lo: self.0.lo.is_negative(),
               hi: self.0.hi.is_negative(),
             })
-          } else {
-            self.simd_lt(Self::ZERO)
           }
         }
     }

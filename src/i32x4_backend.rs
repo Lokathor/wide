@@ -492,6 +492,8 @@ impl i32x4 {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             Self(vreinterpretq_s32_u32(vcltzq_s32(self.0)))
+          } else if #[cfg(target_feature = "sse2")] {
+            Self(_mm_srai_epi32::<31>(self.0))
           } else {
             self.simd_lt(Self::ZERO)
           }

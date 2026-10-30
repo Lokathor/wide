@@ -350,6 +350,8 @@ impl i64x2 {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             Self(vreinterpretq_s64_u64(vcltzq_s64(self.0)))
+          } else if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            Self(_mm_srai_epi64::<63>(self.0))
           } else {
             self.simd_lt(Self::ZERO)
           }
