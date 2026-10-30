@@ -31,66 +31,76 @@ macro_rules! safe_target_feature {
 
     (
         Self = $Self:ty,
-        {$(
-            // Match a function item
-            $(#[$meta:meta])+
-            $vis:vis
-            $($keyword_or_name:ident)+ // This trick enables support for keywords before `fn`
-            $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),* $(,)?>)?
-            ($($param:ident $(: $ParamTy:ty)?),* $(,)?) // The type is optional so that `self` works
-            $(-> $OutputTy:ty)?
-            $body:block
-        )*}
-    ) => {$(
-        // Paste the original function signature
-        $(#[$meta])+
-        $vis $($keyword_or_name)+
-        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
-        ($($param $(: $ParamTy)?),*)
-        $(-> $OutputTy)?
-        // Paste a modified body
         {
-            // Internally paste the original function. This trait is used so
-            // that the function is not exposed outside of this block.
-            trait OriginalFn: Sized {
-                #[track_caller]
-                unsafe fn original_fn
-                $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
-                ($($param $(: $ParamTy)?),*)
-                $(-> $OutputTy)?;
-            }
+            // `impl` blocks that use `safe_target_feature` may contain macro
+            // calls at the start, so accept them and re-emit them
+            $($macro_name:ident!$macro_args:tt)*
 
-            impl OriginalFn for $Self {
-                // Enable target features that are guaranteed at compile time
-                #[cfg_attr(target_feature = "avx", target_feature(enable = "avx"))]
-                #[cfg_attr(target_feature = "avx2", target_feature(enable = "avx2"))]
-                #[cfg_attr(target_feature = "avx512bw", target_feature(enable = "avx512bw"))]
-                #[cfg_attr(target_feature = "avx512dq", target_feature(enable = "avx512dq"))]
-                #[cfg_attr(target_feature = "avx512f", target_feature(enable = "avx512f"))]
-                #[cfg_attr(target_feature = "avx512ifma", target_feature(enable = "avx512ifma"))]
-                #[cfg_attr(target_feature = "avx512vbmi", target_feature(enable = "avx512vbmi"))]
-                #[cfg_attr(target_feature = "avx512vl", target_feature(enable = "avx512vl"))]
-                #[cfg_attr(target_feature = "fma", target_feature(enable = "fma"))]
-                #[cfg_attr(target_feature = "neon", target_feature(enable = "neon"))]
-                #[cfg_attr(target_feature = "sse", target_feature(enable = "sse"))]
-                #[cfg_attr(target_feature = "sse2", target_feature(enable = "sse2"))]
-                #[cfg_attr(target_feature = "sse3", target_feature(enable = "sse3"))]
-                #[cfg_attr(target_feature = "sse4.1", target_feature(enable = "sse4.1"))]
-                #[cfg_attr(target_feature = "sse4.2", target_feature(enable = "sse4.2"))]
-                #[cfg_attr(target_feature = "ssse3", target_feature(enable = "ssse3"))]
-                #[inline]
-                unsafe fn original_fn
-                $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
-                ($($param $(: $ParamTy)?),*)
-                $(-> $OutputTy)?
-                $body
-            }
-
-            // SAFETY: `original_fn` only enables target features that are
-            // guaranteed at compile time via cfg.
-            unsafe { <Self as OriginalFn>::original_fn$(::<$($CONST_PARAM),*>)?($($param),*) }
+            $(
+                // Match a function item
+                $(#[$meta:meta])+
+                $vis:vis
+                $($keyword_or_name:ident)+ // This trick enables support for keywords before `fn`
+                $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),* $(,)?>)?
+                ($($param:ident $(: $ParamTy:ty)?),* $(,)?) // The type is optional so that `self` works
+                $(-> $OutputTy:ty)?
+                $body:block
+            )*
         }
-    )*};
+    ) => {
+        $($macro_name!$macro_args)*
+
+        $(
+            // Paste the original function signature
+            $(#[$meta])+
+            $vis $($keyword_or_name)+
+            $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+            ($($param $(: $ParamTy)?),*)
+            $(-> $OutputTy)?
+            // Paste a modified body
+            {
+                // Internally paste the original function. This trait is used so
+                // that the function is not exposed outside of this block.
+                trait OriginalFn: Sized {
+                    #[track_caller]
+                    unsafe fn original_fn
+                    $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                    ($($param $(: $ParamTy)?),*)
+                    $(-> $OutputTy)?;
+                }
+
+                impl OriginalFn for $Self {
+                    // Enable target features that are guaranteed at compile time
+                    #[cfg_attr(target_feature = "avx", target_feature(enable = "avx"))]
+                    #[cfg_attr(target_feature = "avx2", target_feature(enable = "avx2"))]
+                    #[cfg_attr(target_feature = "avx512bw", target_feature(enable = "avx512bw"))]
+                    #[cfg_attr(target_feature = "avx512dq", target_feature(enable = "avx512dq"))]
+                    #[cfg_attr(target_feature = "avx512f", target_feature(enable = "avx512f"))]
+                    #[cfg_attr(target_feature = "avx512ifma", target_feature(enable = "avx512ifma"))]
+                    #[cfg_attr(target_feature = "avx512vbmi", target_feature(enable = "avx512vbmi"))]
+                    #[cfg_attr(target_feature = "avx512vl", target_feature(enable = "avx512vl"))]
+                    #[cfg_attr(target_feature = "fma", target_feature(enable = "fma"))]
+                    #[cfg_attr(target_feature = "neon", target_feature(enable = "neon"))]
+                    #[cfg_attr(target_feature = "sse", target_feature(enable = "sse"))]
+                    #[cfg_attr(target_feature = "sse2", target_feature(enable = "sse2"))]
+                    #[cfg_attr(target_feature = "sse3", target_feature(enable = "sse3"))]
+                    #[cfg_attr(target_feature = "sse4.1", target_feature(enable = "sse4.1"))]
+                    #[cfg_attr(target_feature = "sse4.2", target_feature(enable = "sse4.2"))]
+                    #[cfg_attr(target_feature = "ssse3", target_feature(enable = "ssse3"))]
+                    #[inline]
+                    unsafe fn original_fn
+                    $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                    ($($param $(: $ParamTy)?),*)
+                    $(-> $OutputTy)?
+                    $body
+                }
+
+                // SAFETY: `original_fn` only enables target features that are
+                // guaranteed at compile time via cfg.
+                unsafe { <Self as OriginalFn>::original_fn$(::<$($CONST_PARAM),*>)?($($param),*) }
+            }
+        )*
+    };
 }
 
 macro_rules! pick {
