@@ -456,6 +456,10 @@ impl i32x4 {
         pick! {
           if #[cfg(target_feature="ssse3")] {
             Self(_mm_abs_epi32(self.0))
+          } else if #[cfg(target_feature="sse2")] {
+            let is_negative = self.is_negative();
+            // This trick efficiently performs `is_negative.select(!self + 1, self)`
+            (self ^ is_negative) - is_negative
           } else if #[cfg(target_feature="simd128")] {
             Self(i32x4_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
