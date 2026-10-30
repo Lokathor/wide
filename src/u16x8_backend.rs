@@ -623,7 +623,7 @@ impl u16x8 {
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
             if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-                Self(vnegq_s16(self.0))
+                Self(vreinterpretq_u16_s16(vnegq_s16(vreinterpretq_s16_u16(self.0))))
             } else {
                 Self::default() - self
             }

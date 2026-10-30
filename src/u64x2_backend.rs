@@ -446,7 +446,7 @@ impl u64x2 {
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
             if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-                Self(vnegq_s64(self.0))
+                Self(vreinterpretq_u64_s64(vnegq_s64(vreinterpretq_s64_u64(self.0))))
             } else {
                 Self::default() - self
             }
