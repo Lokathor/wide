@@ -585,7 +585,7 @@ fn test_overflowing_neg() {
             );
             let actual = Simd::from_array(value).overflowing_neg();
 
-            assert_eq!(actual, expected, "   value: {value:?}");
+            assert_eq!(actual, expected, "value: {value:?}");
         }
     });
 }

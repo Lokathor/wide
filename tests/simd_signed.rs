@@ -191,7 +191,7 @@ fn test_overflowing_add_unsigned() {
             );
             let actual = Simd::from_array(a).overflowing_add_unsigned(SimdUnsigned::from_array(b));
 
-            assert_eq!(actual, expected, "\n{a:?}\n{b:?}");
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
         }
     });
 }
@@ -214,7 +214,7 @@ fn test_overflowing_sub_unsigned() {
             );
             let actual = Simd::from_array(a).overflowing_sub_unsigned(SimdUnsigned::from_array(b));
 
-            assert_eq!(actual, expected, "\n{a:?}\n{b:?}");
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
         }
     });
 }
