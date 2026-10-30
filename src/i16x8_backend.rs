@@ -531,11 +531,11 @@ impl i16x8 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="sse2")] {
+          if #[cfg(target_feature="ssse3")] {
+            Self(_mm_abs_epi16(self.0))
+          } else if #[cfg(target_feature="sse2")] {
             let mask = _mm_srai_epi16::<15>(self.0);
             Self(_mm_xor_si128(_mm_add_epi16(self.0, mask), mask))
-          } else if #[cfg(target_feature="ssse3")] {
-            Self(_mm_abs_epi16(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
