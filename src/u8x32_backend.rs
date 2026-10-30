@@ -497,6 +497,20 @@ safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u8x32 {
     #[inline]
+    pub(crate) fn neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx2")] {
+                Self::default() - self
+            } else {
+                Self(Inner {
+                    lo: -self.0.lo,
+                    hi: -self.0.hi,
+                })
+            }
+        }
+    }
+
+    #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
