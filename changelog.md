@@ -57,6 +57,19 @@
 * [#349](https://github.com/Lokathor/wide/pull/349): Add optimized `neon` path
   for `f64x2::round`, `f64x2::round_ties_even` and `f64x2::trunc`
 
+* [#375](https://github.com/Lokathor/wide/pull/375): Add additional optimized
+  `x86` paths for signed integer `abs`
+
+* [#375](https://github.com/Lokathor/wide/pull/375): Add optimized `neon` path
+  for the integer unary `-` operator
+
+* [#375](https://github.com/Lokathor/wide/pull/375): Use `_mm*_srai_epi*` in
+  signed integer `is_negative` where appropriate, which could be faster than the
+  previous implementation
+
+* [#375](https://github.com/Lokathor/wide/pull/375): Add the same optimizations
+  as signed integer `is_negative` to float `is_sign_negative`
+
 ### Documentation
 
 * [#340](https://github.com/Lokathor/wide/pull/340): Make documentation about
