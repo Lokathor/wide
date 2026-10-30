@@ -167,11 +167,24 @@ macro_rules! impl_simd_signed {
             #[inline]
             #[must_use]
             pub fn overflowing_add_unsigned(self, rhs: $UnsignedSimd) -> (Self, Self) {
-                let rhs = rhs.cast_signed();
-                let result = self + rhs;
-                let overflow = ((!(self ^ rhs) & (self ^ result)) ^ rhs).is_negative();
+                pick! {
+                    // On NEON, `saturating_add_unsigned` is implement using a
+                    // direct intrinsic. It should be faster to call the
+                    // intrinsics for wrapping and saturating addition, then
+                    // compare the results, rather than to use the fallback
+                    // overflow check.
+                    if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+                        let result = self.add_unsigned(rhs);
+                        let saturating_result = self.saturating_add_unsigned(rhs);
+                        (result, result.simd_ne(saturating_result))
+                    } else {
+                        let rhs = rhs.cast_signed();
+                        let result = self + rhs;
+                        let overflow = ((!(self ^ rhs) & (self ^ result)) ^ rhs).is_negative();
 
-                (result, overflow)
+                        (result, overflow)
+                    }
+                }
             }
 
             /// Returns `self - rhs` with an unsigned `rhs` and whether an overflow
