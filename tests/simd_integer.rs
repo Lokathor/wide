@@ -574,7 +574,11 @@ fn test_saturating_div() {
 #[test]
 fn test_overflowing_neg() {
     for_simd_types!(|T: Integer, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in [0, 1, T::MAX, T::MIN]
+            .into_iter()
+            .map(|v| [v; N])
+            .chain(random_iter())
+        {
             let expected = (
                 Simd::from_array(value.map(|v| v.overflowing_neg().0)),
                 Simd::from_array(value.map(|v| if v.overflowing_neg().1 { !0 } else { 0 })),

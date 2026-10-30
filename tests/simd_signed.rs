@@ -97,7 +97,11 @@ fn test_sub_unsigned() {
 #[test]
 fn test_saturating_neg() {
     for_simd_types!(|T: Signed, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in [0, 1, T::MAX, T::MIN]
+            .into_iter()
+            .map(|v| [v; N])
+            .chain(random_iter())
+        {
             let expected = Simd::from_array(value.map(T::saturating_neg));
             let actual = Simd::from_array(value).saturating_neg();
 
@@ -109,7 +113,11 @@ fn test_saturating_neg() {
 #[test]
 fn test_saturating_abs() {
     for_simd_types!(|T: Signed, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in [0, 1, T::MAX, T::MIN]
+            .into_iter()
+            .map(|v| [v; N])
+            .chain(random_iter())
+        {
             let expected = Simd::from_array(value.map(T::saturating_abs));
             let actual = Simd::from_array(value).saturating_abs();
 
@@ -147,7 +155,11 @@ fn test_saturating_sub_unsigned() {
 #[test]
 fn test_overflowing_abs() {
     for_simd_types!(|T: Signed, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in [0, 1, T::MAX, T::MIN]
+            .into_iter()
+            .map(|v| [v; N])
+            .chain(random_iter())
+        {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| value[i].overflowing_abs().0)),
                 Simd::from_array(std::array::from_fn(|i| {
