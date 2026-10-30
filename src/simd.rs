@@ -4,6 +4,8 @@ use bytemuck::{Pod, Zeroable, cast, pod_align_to, pod_align_to_mut};
 #[cfg(feature = "serde")]
 use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
+use crate::{PrimitiveSigned, PrimitiveUnsigned};
+
 /// TODO(generics): Add documentation and explain how to use SIMD vectors.
 ///
 /// # Layout
@@ -33,6 +35,19 @@ pub trait SimdElement: Sealed {
     /// guarantee that all SIMD element types implement `Sized`.
     #[doc(hidden)]
     const NOT_DYN_COMPATIBLE_MARKER: () = ();
+
+    /// An unsigned integer with the same size as `self`.
+    ///
+    /// For floats and integers, the unsigned type is guaranteed to have their
+    /// exact size. However, it is possible that SIMD element types added in the
+    /// future will not have an exact unsigned integer equivalent, and will use
+    /// a type with a different size.
+    type Unsigned: PrimitiveUnsigned<Signed = Self::Signed>;
+
+    /// A signed integer with the same size as `self`.
+    ///
+    /// This is the signed variant of [`Self::Unsigned`].
+    type Signed: PrimitiveSigned<Unsigned = Self::Unsigned>;
 }
 
 /// A trait for [`Simd<T, N>`] types that are actually supported.
@@ -54,6 +69,12 @@ pub trait SupportedSimd: Sealed + SimdBackend {
     /// guarantee that all SIMD vector types implement `Sized`.
     #[doc(hidden)]
     const NOT_DYN_COMPATIBLE_MARKER: () = ();
+
+    /// The unsigned integer used in [`Simd::to_bitmask`].
+    ///
+    /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
+    /// is [`u64`].
+    type Bitmask: PrimitiveUnsigned;
 }
 
 pub(crate) trait SimdBackend {
@@ -391,20 +412,62 @@ where
 
 trait Sealed {}
 
-impl SimdElement for f32 {}
-impl SimdElement for f64 {}
-impl SimdElement for i8 {}
-impl SimdElement for i16 {}
-impl SimdElement for i32 {}
-impl SimdElement for i64 {}
-impl SimdElement for i128 {}
-impl SimdElement for isize {}
-impl SimdElement for u8 {}
-impl SimdElement for u16 {}
-impl SimdElement for u32 {}
-impl SimdElement for u64 {}
-impl SimdElement for u128 {}
-impl SimdElement for usize {}
+impl SimdElement for f32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for f64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for i8 {
+    type Unsigned = u8;
+    type Signed = i8;
+}
+impl SimdElement for i16 {
+    type Unsigned = u16;
+    type Signed = i16;
+}
+impl SimdElement for i32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for i64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for i128 {
+    type Unsigned = u128;
+    type Signed = i128;
+}
+impl SimdElement for isize {
+    type Unsigned = usize;
+    type Signed = isize;
+}
+impl SimdElement for u8 {
+    type Unsigned = u8;
+    type Signed = i8;
+}
+impl SimdElement for u16 {
+    type Unsigned = u16;
+    type Signed = i16;
+}
+impl SimdElement for u32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for u64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for u128 {
+    type Unsigned = u128;
+    type Signed = i128;
+}
+impl SimdElement for usize {
+    type Unsigned = usize;
+    type Signed = isize;
+}
 
 macro_rules! define_simd {
   (
@@ -437,7 +500,9 @@ macro_rules! define_simd {
       Simd(inner)
     }
 
-    impl SupportedSimd for Simd<$T, $N> {}
+    impl SupportedSimd for Simd<$T, $N> {
+      type Bitmask = $Bitmask;
+    }
 
     impl PartialEq for $Simd {
       #[inline]
