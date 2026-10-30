@@ -857,11 +857,6 @@ macro_rules! impl_simd_integer {
             }
 
             #[inline]
-            fn neg_backend(self) -> Self {
-                Self::default() - self
-            }
-
-            #[inline]
             #[track_caller]
             fn div_backend(self, rhs: Self) -> Self {
                 let self_array = self.to_array();
@@ -904,6 +899,11 @@ macro_rules! simd_integer_backend_signed_autofill {
         Simd = $Simd:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
+        #[inline]
+        fn neg_backend(self) -> Self {
+            (-self.cast_unsigned()).cast_signed()
+        }
+
         #[inline]
         fn not_backend(self) -> Self {
             cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))

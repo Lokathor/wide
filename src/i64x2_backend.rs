@@ -313,8 +313,13 @@ impl i64x2 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
-          // x86 doesn't have this builtin
-          if #[cfg(target_feature="simd128")] {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            Self(_mm_abs_epi64(self.0))
+          } else if #[cfg(target_feature="sse2")] {
+            let is_negative = self.is_negative();
+            // This trick efficiently performs `is_negative.select(!self + 1, self)`
+            (self ^ is_negative) - is_negative
+          } else if #[cfg(target_feature="simd128")] {
             Self(i64x2_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
             Self(vabsq_s64(self.0))
@@ -345,6 +350,8 @@ impl i64x2 {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             Self(vreinterpretq_s64_u64(vcltzq_s64(self.0)))
+          } else if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            Self(_mm_srai_epi64::<63>(self.0))
           } else {
             self.simd_lt(Self::ZERO)
           }

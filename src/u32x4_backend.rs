@@ -493,6 +493,17 @@ safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u32x4 {
     #[inline]
+    pub(crate) fn neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+                Self(vreinterpretq_u32_s32(vnegq_s32(vreinterpretq_s32_u32(self.0))))
+            } else {
+                Self::default() - self
+            }
+        }
+    }
+
+    #[inline]
     pub(crate) fn not_backend(self) -> Self {
         self ^ cast::<u128, u32x4>(u128::MAX)
     }
