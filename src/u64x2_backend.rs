@@ -886,6 +886,23 @@ impl u64x2 {
 }
 
 safe_target_feature! {
+// Backend of SIMD unsigned integer functions.
+impl u64x2 {
+    #[inline]
+    pub(crate) fn saturating_add_signed_backend(self, rhs: i64x2) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vsqaddq_u64(self.0, rhs.0))
+            } else {
+                let (result, overflow) = self.overflowing_add_signed(rhs);
+                overflow.select(rhs.is_positive().cast_unsigned(), result)
+            }
+        }
+    }
+}
+}
+
+safe_target_feature! {
 // Internal helpers and backend of inconsistent functions.
 impl u64x2 {
     #[inline]
