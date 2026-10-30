@@ -313,7 +313,9 @@ impl i64x2 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="sse2")] {
+          if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
+            Self(_mm_abs_epi64(self.0))
+          } else if #[cfg(target_feature="sse2")] {
             let is_negative = self.is_negative();
             // This trick efficiently performs `is_negative.select(!self + 1, self)`
             (self ^ is_negative) - is_negative
