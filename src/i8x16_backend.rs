@@ -758,6 +758,18 @@ impl i8x16 {
             }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u8x16) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vuqaddq_s8(self.0, rhs.0))
+            } else {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            }
+        }
+    }
 }
 }
 

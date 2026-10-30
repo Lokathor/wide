@@ -127,8 +127,8 @@ macro_rules! impl_simd_signed {
             #[inline]
             #[must_use]
             pub fn saturating_add_unsigned(self, rhs: $UnsignedSimd) -> Self {
-                let (result, overflow) = self.overflowing_add_unsigned(rhs);
-                overflow.select(Self::MAX, result)
+                // NEON has a direct intrinsic for this operation
+                self.saturating_add_unsigned_backend(rhs)
             }
 
             /// Saturating subtraction with an unsigned `rhs`. Computes
@@ -137,6 +137,8 @@ macro_rules! impl_simd_signed {
             #[inline]
             #[must_use]
             pub fn saturating_sub_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                // Unlike for `saturating_add_unsigned`, NEON does not have a
+                // direct intrinsic for this operation
                 let (result, overflow) = self.overflowing_sub_unsigned(rhs);
                 overflow.select(Self::MIN, result)
             }

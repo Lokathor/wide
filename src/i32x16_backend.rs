@@ -364,6 +364,21 @@ impl i32x16 {
             }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u32x16) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx512f")] {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_add_unsigned(rhs.0.lo),
+                    hi: self.0.hi.saturating_add_unsigned(rhs.0.hi),
+                })
+            }
+        }
+    }
 }
 }
 
