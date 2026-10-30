@@ -69,6 +69,157 @@ fn test_signum() {
 }
 
 #[test]
+fn test_add_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| a[i].wrapping_add_unsigned(b[i])));
+            let actual = Simd::from_array(a).add_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_sub_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| a[i].wrapping_sub_unsigned(b[i])));
+            let actual = Simd::from_array(a).sub_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_saturating_neg() {
+    for_simd_types!(|T: Signed, N| {
+        for value in [0, 1, T::MAX, T::MIN]
+            .into_iter()
+            .map(|v| [v; N])
+            .chain(random_iter())
+        {
+            let expected = Simd::from_array(value.map(T::saturating_neg));
+            let actual = Simd::from_array(value).saturating_neg();
+
+            assert_eq!(actual, expected, "value: {value:?}");
+        }
+    });
+}
+
+#[test]
+fn test_saturating_abs() {
+    for_simd_types!(|T: Signed, N| {
+        for value in [0, 1, T::MAX, T::MIN]
+            .into_iter()
+            .map(|v| [v; N])
+            .chain(random_iter())
+        {
+            let expected = Simd::from_array(value.map(T::saturating_abs));
+            let actual = Simd::from_array(value).saturating_abs();
+
+            assert_eq!(actual, expected, "value: {value:?}");
+        }
+    });
+}
+
+#[test]
+fn test_saturating_add_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| a[i].saturating_add_unsigned(b[i])));
+            let actual = Simd::from_array(a).saturating_add_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_saturating_sub_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected =
+                Simd::from_array(std::array::from_fn(|i| a[i].saturating_sub_unsigned(b[i])));
+            let actual = Simd::from_array(a).saturating_sub_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_overflowing_abs() {
+    for_simd_types!(|T: Signed, N| {
+        for value in [0, 1, T::MAX, T::MIN]
+            .into_iter()
+            .map(|v| [v; N])
+            .chain(random_iter())
+        {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| value[i].overflowing_abs().0)),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if value[i].overflowing_abs().1 { !0 } else { 0 }
+                })),
+            );
+            let actual = Simd::from_array(value).overflowing_abs();
+
+            assert_eq!(actual, expected, "value: {value:?}");
+        }
+    });
+}
+
+#[test]
+fn test_overflowing_add_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| {
+                    a[i].overflowing_add_unsigned(b[i]).0
+                })),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_add_unsigned(b[i]).1 {
+                        !0
+                    } else {
+                        0
+                    }
+                })),
+            );
+            let actual = Simd::from_array(a).overflowing_add_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_overflowing_sub_unsigned() {
+    for_simd_types!(|T: Signed, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| {
+                    a[i].overflowing_sub_unsigned(b[i]).0
+                })),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_sub_unsigned(b[i]).1 {
+                        !0
+                    } else {
+                        0
+                    }
+                })),
+            );
+            let actual = Simd::from_array(a).overflowing_sub_unsigned(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
 fn test_mul_scale_round() {
     // `mul_scale_round` is inconsistently missing from types.
 

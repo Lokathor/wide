@@ -502,6 +502,20 @@ safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u8x32 {
     #[inline]
+    pub(crate) fn neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx2")] {
+                Self::default() - self
+            } else {
+                Self(Inner {
+                    lo: -self.0.lo,
+                    hi: -self.0.hi,
+                })
+            }
+        }
+    }
+
+    #[inline]
     pub(crate) fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
@@ -849,6 +863,26 @@ impl u8x32 {
         let [rhs_a, rhs_b] = cast::<u8x32, [u8x16; 2]>(rhs);
 
         cast([self_a.mul_keep_high(rhs_a), self_b.mul_keep_high(rhs_b)])
+    }
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD unsigned integer functions.
+impl u8x32 {
+    #[inline]
+    pub(crate) fn saturating_add_signed_backend(self, rhs: i8x32) -> Self {
+        pick! {
+            if #[cfg(target_feature="avx2")] {
+                let (result, overflow) = self.overflowing_add_signed(rhs);
+                overflow.select(rhs.is_positive().cast_unsigned(), result)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_add_signed(rhs.0.lo),
+                    hi: self.0.hi.saturating_add_signed(rhs.0.hi),
+                })
+            }
+        }
     }
 }
 }

@@ -18,13 +18,6 @@ impl SimdBackend for f32x8 {
     }
 }
 
-macro_rules! const_f32_as_f32x8 {
-    ($i:ident, $f:expr) => {
-        #[allow(non_upper_case_globals)]
-        pub const $i: f32x8 = f32x8::from_array([$f; 8]);
-    };
-}
-
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl f32x8 {
@@ -485,16 +478,6 @@ impl f32x8 {
         let bits = cast::<f32x8, u32x8>(self);
         let sign = bits & SIGN_MASK;
         let result = sign.simd_eq(u32x8::ZERO);
-        cast::<u32x8, f32x8>(result)
-    }
-
-    #[inline]
-    pub(crate) fn is_sign_negative_backend(self) -> Self {
-        const SIGN_MASK: u32x8 = u32x8::splat((-0.0_f32).to_bits());
-
-        let bits = cast::<f32x8, u32x8>(self);
-        let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(SIGN_MASK);
         cast::<u32x8, f32x8>(result)
     }
 

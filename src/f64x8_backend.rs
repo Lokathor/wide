@@ -18,13 +18,6 @@ impl SimdBackend for f64x8 {
     }
 }
 
-macro_rules! const_f64_as_f64x8 {
-    ($i:ident, $f:expr) => {
-        #[allow(non_upper_case_globals)]
-        pub const $i: f64x8 = f64x8::from_array([$f; 8]);
-    };
-}
-
 safe_target_feature! {
 // Backend of general-SIMD functions.
 impl f64x8 {
@@ -460,16 +453,6 @@ impl f64x8 {
         let bits = cast::<f64x8, u64x8>(self);
         let sign = bits & SIGN_MASK;
         let result = sign.simd_eq(u64x8::ZERO);
-        cast::<u64x8, f64x8>(result)
-    }
-
-    #[inline]
-    pub(crate) fn is_sign_negative_backend(self) -> Self {
-        const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
-
-        let bits = cast::<f64x8, u64x8>(self);
-        let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(SIGN_MASK);
         cast::<u64x8, f64x8>(result)
     }
 

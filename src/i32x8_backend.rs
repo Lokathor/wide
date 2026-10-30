@@ -353,15 +353,61 @@ impl i32x8 {
     #[inline]
     pub(crate) fn is_negative_backend(self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            // `neon` has dedicated less-than-zero intrinsics.
+          if #[cfg(target_feature = "avx2")] {
+            Self(_mm256_srai_epi32::<31>(self.0))
+          } else {
             Self(Inner {
               lo: self.0.lo.is_negative(),
               hi: self.0.hi.is_negative(),
             })
-          } else {
-            self.simd_lt(Self::ZERO)
           }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+            // Efficient computation of
+            // `-self + self.simd_eq(Self::MIN).select(-Self::ONE, Self::ZERO)`
+            self.simd_eq(Self::MIN) - self
+          } else {
+            Self(Inner {
+              lo: self.0.lo.saturating_neg(),
+              hi: self.0.hi.saturating_neg(),
+            })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx2")] {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_abs(),
+                    hi: self.0.hi.saturating_abs(),
+                })
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u32x8) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx2")] {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_add_unsigned(rhs.0.lo),
+                    hi: self.0.hi.saturating_add_unsigned(rhs.0.hi),
+                })
+            }
         }
     }
 }

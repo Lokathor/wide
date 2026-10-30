@@ -452,6 +452,17 @@ safe_target_feature! {
 // Backend of SIMD integer functions.
 impl u64x2 {
     #[inline]
+    pub(crate) fn neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+                Self(vreinterpretq_u64_s64(vnegq_s64(vreinterpretq_s64_u64(self.0))))
+            } else {
+                Self::default() - self
+            }
+        }
+    }
+
+    #[inline]
     pub(crate) fn not_backend(self) -> Self {
         self ^ cast::<u128, u64x2>(u128::MAX)
     }
@@ -890,6 +901,23 @@ impl u64x2 {
             ((arr1[0] as u128 * arr2[0] as u128) >> 64) as u64,
             ((arr1[1] as u128 * arr2[1] as u128) >> 64) as u64,
         ])
+    }
+}
+}
+
+safe_target_feature! {
+// Backend of SIMD unsigned integer functions.
+impl u64x2 {
+    #[inline]
+    pub(crate) fn saturating_add_signed_backend(self, rhs: i64x2) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vsqaddq_u64(self.0, rhs.0))
+            } else {
+                let (result, overflow) = self.overflowing_add_signed(rhs);
+                overflow.select(rhs.is_positive().cast_unsigned(), result)
+            }
+        }
     }
 }
 }
