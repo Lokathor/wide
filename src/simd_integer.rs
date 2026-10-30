@@ -9,8 +9,9 @@ use core::ops::{
 use bytemuck::Zeroable;
 
 use crate::{
-    SimdElement, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4,
-    i64x8, u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+    Simd, SimdElement, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2,
+    i64x4, i64x8, u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4,
+    u64x8,
 };
 
 /// A sealed trait for all primitive integer types.
@@ -902,11 +903,7 @@ macro_rules! impl_simd_integer {
             // implementation for all SIMD integer types, but do have the same
             // implementation for all SIMD signed integer types, or for all SIMD
             // unsigned integer types.
-            $autofill!(
-                T = $T,
-                Simd = $Simd,
-                UnsignedSimd = $UnsignedSimd,
-            );
+            $autofill!($T, $N);
         }
     };
 }
@@ -914,11 +911,7 @@ macro_rules! impl_simd_integer {
 /// Automatically fills SIMD integer backend functions that have the same
 /// implementation for all SIMD signed integer types.
 macro_rules! simd_integer_backend_signed_autofill {
-    (
-        T = $T:ident,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn neg_backend(self) -> Self {
             (-self.cast_unsigned()).cast_signed()
@@ -963,7 +956,7 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
-        fn shl_backend(self, rhs: $UnsignedSimd) -> Self {
+        fn shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             (self.cast_unsigned() << rhs).cast_signed()
         }
 
@@ -985,7 +978,7 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
-        fn unbounded_shl_backend(self, rhs: $UnsignedSimd) -> Self {
+        fn unbounded_shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             // Shift left is the same for unsigned and signed integers.
             self.cast_unsigned().unbounded_shl(rhs).cast_signed()
         }
@@ -1050,11 +1043,7 @@ macro_rules! simd_integer_backend_signed_autofill {
 /// Automatically fills SIMD integer backend functions that have the same
 /// implementation for all SIMD unsigned integer types.
 macro_rules! simd_integer_backend_unsigned_autofill {
-    (
-        T = $T:ident,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn saturating_mul_backend(self, rhs: Self) -> Self {
             let (low, high) = self.mul_keep_low_high(rhs);
