@@ -6,7 +6,7 @@ use core::ops::{
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 
-use bytemuck::{Zeroable, cast};
+use bytemuck::Zeroable;
 
 use crate::{
     i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16,
@@ -906,90 +906,74 @@ macro_rules! simd_integer_backend_signed_autofill {
 
         #[inline]
         fn not_backend(self) -> Self {
-            cast::<$UnsignedSimd, $Simd>(!cast::<$Simd, $UnsignedSimd>(self))
+            (!self.cast_unsigned()).cast_signed()
         }
 
         #[inline]
         fn add_backend(self, rhs: Self) -> Self {
             // Wrapping addition is the same for signed and unsigned integers.
-            cast::<$UnsignedSimd, $Simd>(
-                cast::<$Simd, $UnsignedSimd>(self) + cast::<$Simd, $UnsignedSimd>(rhs),
-            )
+            (self.cast_unsigned() + rhs.cast_unsigned()).cast_signed()
         }
 
         #[inline]
         fn sub_backend(self, rhs: Self) -> Self {
             // Wrapping subtraction is the same for signed and unsigned integers.
-            cast::<$UnsignedSimd, $Simd>(
-                cast::<$Simd, $UnsignedSimd>(self) - cast::<$Simd, $UnsignedSimd>(rhs),
-            )
+            (self.cast_unsigned() - rhs.cast_unsigned()).cast_signed()
         }
 
         #[inline]
         fn mul_backend(self, rhs: Self) -> Self {
             // Wrapping multiplication is the same for signed and unsigned integers.
-            cast::<$UnsignedSimd, $Simd>(
-                cast::<$Simd, $UnsignedSimd>(self) * cast::<$Simd, $UnsignedSimd>(rhs),
-            )
+            (self.cast_unsigned() * rhs.cast_unsigned()).cast_signed()
         }
 
         #[inline]
         fn bitand_backend(self, rhs: Self) -> Self {
-            cast::<$UnsignedSimd, $Simd>(
-                cast::<$Simd, $UnsignedSimd>(self) & cast::<$Simd, $UnsignedSimd>(rhs),
-            )
+            (self.cast_unsigned() & rhs.cast_unsigned()).cast_signed()
         }
 
         #[inline]
         fn bitor_backend(self, rhs: Self) -> Self {
-            cast::<$UnsignedSimd, $Simd>(
-                cast::<$Simd, $UnsignedSimd>(self) | cast::<$Simd, $UnsignedSimd>(rhs),
-            )
+            (self.cast_unsigned() | rhs.cast_unsigned()).cast_signed()
         }
 
         #[inline]
         fn bitxor_backend(self, rhs: Self) -> Self {
-            cast::<$UnsignedSimd, $Simd>(
-                cast::<$Simd, $UnsignedSimd>(self) ^ cast::<$Simd, $UnsignedSimd>(rhs),
-            )
+            (self.cast_unsigned() ^ rhs.cast_unsigned()).cast_signed()
         }
 
         #[inline]
         fn shl_backend(self, rhs: $UnsignedSimd) -> Self {
-            cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+            (self.cast_unsigned() << rhs).cast_signed()
         }
 
         #[inline]
         fn shl_scalar_backend(self, rhs: u32) -> Self {
-            cast(cast::<$Simd, $UnsignedSimd>(self) << rhs)
+            (self.cast_unsigned() << rhs).cast_signed()
         }
 
         #[inline]
         fn reduce_add_backend(self) -> $T {
             // Wrapping addition is the same for signed and unsigned integers.
-            cast::<$Simd, $UnsignedSimd>(self)
-                .reduce_add()
-                .cast_signed()
+            self.cast_unsigned().reduce_add().cast_signed()
         }
 
         #[inline]
         fn reduce_mul_backend(self) -> $T {
             // Wrapping multiplication is the same for signed and unsigned integers.
-            cast::<$Simd, $UnsignedSimd>(self)
-                .reduce_mul()
-                .cast_signed()
+            self.cast_unsigned().reduce_mul().cast_signed()
         }
 
         #[inline]
         fn unbounded_shl_backend(self, rhs: $UnsignedSimd) -> Self {
             // Shift left is the same for unsigned and signed integers.
-            cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl(rhs))
+            self.cast_unsigned().unbounded_shl(rhs).cast_signed()
         }
 
         #[inline]
         fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
             // Shift left is the same for unsigned and signed integers.
-            cast(cast::<$Simd, $UnsignedSimd>(self).unbounded_shl_scalar(rhs))
+            self.cast_unsigned().unbounded_shl_scalar(rhs).cast_signed()
         }
 
         #[inline]

@@ -352,7 +352,7 @@ macro_rules! impl_shift_operator {
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        self.$op_backend(cast::<$SignedSimd, $UnsignedSimd>(rhs))
+        self.$op_backend(rhs.cast_unsigned())
       }
     }
 
