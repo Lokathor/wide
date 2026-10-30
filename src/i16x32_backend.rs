@@ -294,15 +294,59 @@ impl i16x32 {
     #[inline]
     pub(crate) fn is_negative_backend(self) -> Self {
         pick! {
-          if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
-            // `neon` has dedicated less-than-zero intrinsics.
+          if #[cfg(target_feature = "avx512bw")] {
+            Self(_mm512_srai_epi16::<15>(self.0))
+          } else {
             Self(Inner {
               lo: self.0.lo.is_negative(),
               hi: self.0.hi.is_negative(),
             })
-          } else {
-            self.simd_lt(Self::ZERO)
           }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature="avx512bw")] {
+                Self(_mm512_subs_epi16(_mm512_setzero_si512(), self.0))
+            } else {
+                Self(Inner {
+                  lo: self.0.lo.saturating_neg(),
+                  hi: self.0.hi.saturating_neg(),
+                })
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx512bw")] {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_abs(),
+                    hi: self.0.hi.saturating_abs(),
+                })
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u16x32) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx512bw")] {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_add_unsigned(rhs.0.lo),
+                    hi: self.0.hi.saturating_add_unsigned(rhs.0.hi),
+                })
+            }
         }
     }
 }

@@ -499,7 +499,9 @@ macro_rules! impl_simd_float {
       #[inline]
       #[must_use]
       pub fn is_sign_negative(self) -> Self {
-        self.is_sign_negative_backend()
+        // Both float `is_sign_negative` and signed integer `is_negative` check
+        // whether the most significant bit is set.
+        Self::from_bits(self.to_bits().cast_signed().is_negative().cast_unsigned())
       }
 
       /// Approximates the reciprocal (inverse) of a number, `1/x`.

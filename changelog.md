@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* [#374](https://github.com/Lokathor/wide/pull/374): Bump the
+  MSRV (Minimum Supported Rust Version) from `1.89` to `1.90`
+
 ### Added
 
 * [#332](https://github.com/Lokathor/wide/pull/332): Add `replace_const` and
@@ -17,6 +20,13 @@
 * [#329](https://github.com/Lokathor/wide/pull/329): Add `unpack_lo` and
   `unpack_hi` for remaining types (these functions were renamed to
   `interleave_low` and `interleave_high`)
+
+* [#374](https://github.com/Lokathor/wide/pull/374): Add signed integer
+  `add/sub_unsigned` and unsigned integer `add/sub_signed`, including saturating
+  and overflowing variants
+
+* [#374](https://github.com/Lokathor/wide/pull/374): Add appropriate saturating
+  and overflowing variants of integer `neg`, `abs` and shifts
 
 ### Fixed
 
@@ -46,6 +56,19 @@
 
 * [#349](https://github.com/Lokathor/wide/pull/349): Add optimized `neon` path
   for `f64x2::round`, `f64x2::round_ties_even` and `f64x2::trunc`
+
+* [#375](https://github.com/Lokathor/wide/pull/375): Add additional optimized
+  `x86` paths for signed integer `abs`
+
+* [#375](https://github.com/Lokathor/wide/pull/375): Add optimized `neon` path
+  for the integer unary `-` operator
+
+* [#375](https://github.com/Lokathor/wide/pull/375): Use `_mm*_srai_epi*` in
+  signed integer `is_negative` where appropriate, which could be faster than the
+  previous implementation
+
+* [#375](https://github.com/Lokathor/wide/pull/375): Add the same optimizations
+  as signed integer `is_negative` to float `is_sign_negative`
 
 ### Documentation
 

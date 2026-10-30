@@ -540,11 +540,11 @@ impl i16x8 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
-          if #[cfg(target_feature="sse2")] {
+          if #[cfg(target_feature="ssse3")] {
+            Self(_mm_abs_epi16(self.0))
+          } else if #[cfg(target_feature="sse2")] {
             let mask = _mm_srai_epi16::<15>(self.0);
             Self(_mm_xor_si128(_mm_add_epi16(self.0, mask), mask))
-          } else if #[cfg(target_feature="ssse3")] {
-            Self(_mm_abs_epi16(self.0))
           } else if #[cfg(target_feature="simd128")] {
             Self(i16x8_abs(self.0))
           } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
@@ -582,9 +582,53 @@ impl i16x8 {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             Self(vreinterpretq_s16_u16(vcltzq_s16(self.0)))
+          } else if #[cfg(target_feature = "sse2")] {
+            Self(_mm_srai_epi16::<15>(self.0))
           } else {
             self.simd_lt(Self::ZERO)
           }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature="sse2")] {
+                Self(_mm_subs_epi16(_mm_setzero_si128(), self.0))
+            } else if #[cfg(target_feature="simd128")] {
+                Self(i16x8_sub_sat(Self::ZERO.0, self.0))
+            } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+                Self(vqnegq_s16(self.0))
+            } else {
+                // Efficient computation of
+                // `-self + self.simd_eq(Self::MIN).select(-Self::ONE, Self::ZERO)`
+                self.simd_eq(Self::MIN) - self
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vqabsq_s16(self.0))
+            } else {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u16x8) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vuqaddq_s16(self.0, rhs.0))
+            } else {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            }
         }
     }
 }

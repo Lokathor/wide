@@ -1,7 +1,5 @@
 //! Defines APIs applicable to SIMD vectors of unsigned integers.
 
-use core::ops::Neg;
-
 use crate::{
     PrimitiveInteger, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2,
     i64x4, i64x8, u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4,
@@ -23,42 +21,95 @@ impl PrimitiveUnsigned for u128 {}
 impl PrimitiveUnsigned for usize {}
 
 macro_rules! impl_simd_unsigned {
-  (
-    T = $T:ident,
-    N = $N:literal,
-    Simd = $Simd:ident,
-    SignedSimd = $SignedSimd:ident,
-  ) => {
-    impl_unary_operator!(
-      $Simd,
-      Neg,
-      neg,
-      neg_backend,
-      /// Computes wrapping negation for each element of `self`.
-      ///
-      /// This computes wrapping `0 - self`, even though the `-` operator is not
-      /// implemented for Rust's primitive unsigned integers.
-    );
+    (
+        T = $T:ident,
+        N = $N:literal,
+        Simd = $Simd:ident,
+        SignedSimd = $SignedSimd:ident,
+    ) => {
+        /// The following functionality exists for all SIMD vectors of unsigned
+        /// integers.
+        impl $Simd {
+            /// Returns the bit patterns of `self` reinterpreted as signed integers of
+            /// the same size.
+            #[inline]
+            #[must_use]
+            pub const fn cast_signed(self) -> $SignedSimd {
+                // SAFETY: Both types accept all bit-patterns and only contain
+                // initialized memory.
+                unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
+            }
 
-    /// The following functionality exists for all SIMD vectors of unsigned
-    /// integers.
-    impl $Simd {
-      /// Returns the bit patterns of `self` reinterpreted as signed integers of
-      /// the same size.
-      #[inline]
-      #[must_use]
-      pub const fn cast_signed(self) -> $SignedSimd {
-        // SAFETY: Both types accept all bit-patterns and only contain
-        // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, $SignedSimd>(self) }
-      }
+            /// Wrapping (modular) addition with a signed `rhs`. Computes
+            /// `self + rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn add_signed(self, rhs: $SignedSimd) -> Self {
+                self + rhs.cast_unsigned()
+            }
 
-      #[inline]
-      fn neg_backend(self) -> Self {
-        Self::default() - self
-      }
-    }
-  };
+            /// Wrapping (modular) subtraction with a signed `rhs`. Computes
+            /// `self - rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn sub_signed(self, rhs: $SignedSimd) -> Self {
+                self - rhs.cast_unsigned()
+            }
+
+            /// Saturating addition with a signed `rhs`. Computes `self + rhs`,
+            /// saturating at the numeric bounds instead of overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_add_signed(self, rhs: $SignedSimd) -> Self {
+                // NEON has a direct intrinsic for this operation
+                self.saturating_add_signed_backend(rhs)
+            }
+
+            /// Saturating subtraction with a signed `rhs`. Computes
+            /// `self - rhs`, saturating at the numeric bounds instead of
+            /// overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_sub_signed(self, rhs: $SignedSimd) -> Self {
+                // Unlike for `saturating_add_signed`, NEON does not have a
+                // direct intrinsic for this operation
+                let (result, overflow) = self.overflowing_sub_signed(rhs);
+                overflow.select(rhs.is_negative().cast_unsigned(), result)
+            }
+
+            /// Returns `self + rhs` with a signed `rhs` and whether an overflow
+            /// occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The addition (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            #[inline]
+            #[must_use]
+            pub fn overflowing_add_signed(self, rhs: $SignedSimd) -> (Self, Self) {
+                let result = self.add_signed(rhs);
+                let overflow = result.simd_lt(self) ^ rhs.is_negative().cast_unsigned();
+
+                (result, overflow)
+            }
+
+            /// Returns `self - rhs` with a signed `rhs` and whether an overflow
+            /// occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The subtraction (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            #[inline]
+            #[must_use]
+            pub fn overflowing_sub_signed(self, rhs: $SignedSimd) -> (Self, Self) {
+                let result = self.sub_signed(rhs);
+                let overflow = result.simd_gt(self) ^ rhs.is_negative().cast_unsigned();
+
+                (result, overflow)
+            }
+        }
+    };
 }
 impl_simd_unsigned!(T = u8, N = 16, Simd = u8x16, SignedSimd = i8x16,);
 impl_simd_unsigned!(T = u8, N = 32, Simd = u8x32, SignedSimd = i8x32,);

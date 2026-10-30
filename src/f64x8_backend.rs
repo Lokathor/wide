@@ -457,16 +457,6 @@ impl f64x8 {
     }
 
     #[inline]
-    pub(crate) fn is_sign_negative_backend(self) -> Self {
-        const SIGN_MASK: u64x8 = u64x8::splat((-0.0_f64).to_bits());
-
-        let bits = cast::<f64x8, u64x8>(self);
-        let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(SIGN_MASK);
-        cast::<u64x8, f64x8>(result)
-    }
-
-    #[inline]
     pub(crate) fn recip_backend(self) -> Self {
         // There does not seem to be a `recip` intrinsic for any architecture. The
         // closest is `_mm512_rcp14_pd` which has relative error.

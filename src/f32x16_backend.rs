@@ -465,16 +465,6 @@ impl f32x16 {
     }
 
     #[inline]
-    pub(crate) fn is_sign_negative_backend(self) -> Self {
-        const SIGN_MASK: u32x16 = u32x16::splat((-0.0_f32).to_bits());
-
-        let bits = cast::<f32x16, u32x16>(self);
-        let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(SIGN_MASK);
-        cast::<u32x16, f32x16>(result)
-    }
-
-    #[inline]
     pub(crate) fn recip_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512f")] {
