@@ -849,6 +849,26 @@ impl u8x32 {
 }
 
 safe_target_feature! {
+// Backend of SIMD unsigned integer functions.
+impl u8x32 {
+    #[inline]
+    pub(crate) fn saturating_add_signed_backend(self, rhs: i8x32) -> Self {
+        pick! {
+            if #[cfg(target_feature="avx2")] {
+                let (result, overflow) = self.overflowing_add_signed(rhs);
+                overflow.select(rhs.is_positive().cast_unsigned(), result)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_add_signed(rhs.0.lo),
+                    hi: self.0.hi.saturating_add_signed(rhs.0.hi),
+                })
+            }
+        }
+    }
+}
+}
+
+safe_target_feature! {
 // Internal helpers and backend of inconsistent functions.
 impl u8x32 {
     #[inline]

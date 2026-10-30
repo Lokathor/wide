@@ -272,6 +272,51 @@ impl i8x32 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+          if #[cfg(target_feature="avx2")] {
+              Self(_mm256_subs_epi8(_mm256_setzero_si256(), self.0))
+          } else {
+              Self(Inner {
+                  lo: self.0.lo.saturating_neg(),
+                  hi: self.0.hi.saturating_neg(),
+              })
+          }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx2")] {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_abs(),
+                    hi: self.0.hi.saturating_abs(),
+                })
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u8x32) -> Self {
+        pick! {
+            if #[cfg(target_feature = "avx2")] {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            } else {
+                Self(Inner {
+                    lo: self.0.lo.saturating_add_unsigned(rhs.0.lo),
+                    hi: self.0.hi.saturating_add_unsigned(rhs.0.hi),
+                })
+            }
+        }
+    }
 }
 }
 

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* [#374](https://github.com/Lokathor/wide/pull/374): Bump the
+  MSRV (Minimum Supported Rust Version) from `1.89` to `1.90`
+
 ### Added
 
 * [#332](https://github.com/Lokathor/wide/pull/332): Add `replace_const` and
@@ -17,6 +20,13 @@
 * [#329](https://github.com/Lokathor/wide/pull/329): Add `unpack_lo` and
   `unpack_hi` for remaining types (these functions were renamed to
   `interleave_low` and `interleave_high`)
+
+* [#374](https://github.com/Lokathor/wide/pull/374): Add signed integer
+  `add/sub_unsigned` and unsigned integer `add/sub_signed`, including saturating
+  and overflowing variants
+
+* [#374](https://github.com/Lokathor/wide/pull/374): Add appropriate saturating
+  and overflowing variants of integer `neg`, `abs` and shifts
 
 ### Fixed
 

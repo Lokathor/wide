@@ -493,6 +493,44 @@ impl i32x4 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+                Self(vqnegq_s32(self.0))
+            } else {
+                // Efficient computation of
+                // `-self + self.simd_eq(Self::MIN).select(-Self::ONE, Self::ZERO)`
+                self.simd_eq(Self::MIN) - self
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vqabsq_s32(self.0))
+            } else {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u32x4) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vuqaddq_s32(self.0, rhs.0))
+            } else {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            }
+        }
+    }
 }
 }
 

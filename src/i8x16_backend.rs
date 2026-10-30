@@ -728,6 +728,48 @@ impl i8x16 {
           }
         }
     }
+
+    #[inline]
+    pub(crate) fn saturating_neg_backend(self) -> Self {
+        pick! {
+            if #[cfg(target_feature="sse2")] {
+                Self(_mm_subs_epi8(_mm_setzero_si128(), self.0))
+            } else if #[cfg(target_feature="simd128")] {
+                Self(i8x16_sub_sat(Self::ZERO.0, self.0))
+            } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+                Self(vqnegq_s8(self.0))
+            } else {
+                // Efficient computation of
+                // `-self + self.simd_eq(Self::MIN).select(-Self::ONE, Self::ZERO)`
+                self.simd_eq(Self::MIN) - self
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_abs_backend(self) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vqabsq_s8(self.0))
+            } else {
+                // If `self == MIN`, flip all bits to change the result from
+                // `MIN` to `MAX`
+                self.abs() ^ self.simd_eq(Self::MIN)
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u8x16) -> Self {
+        pick! {
+            if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
+                Self(vuqaddq_s8(self.0, rhs.0))
+            } else {
+                let (result, overflow) = self.overflowing_add_unsigned(rhs);
+                overflow.select(Self::MAX, result)
+            }
+        }
+    }
 }
 }
 

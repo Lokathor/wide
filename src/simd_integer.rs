@@ -574,6 +574,22 @@ macro_rules! impl_simd_integer {
                 Self::from_array([$(self_array[$INDEX].saturating_div(rhs_array[$INDEX])),*])
             }
 
+            /// Returns `-self` and whether an overflow occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The negation (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            ///
+            /// For signed integers, overflow only occurs for `Self::MIN`.
+            /// For unsigned integers, overflow occurs for all values except
+            /// zero.
+            #[inline]
+            #[must_use]
+            pub fn overflowing_neg(self) -> (Self, Self) {
+                self.overflowing_neg_backend()
+            }
+
             /// Returns `self + rhs` and whether an overflow occured.
             ///
             /// Returns a tuple with:
@@ -644,6 +660,94 @@ macro_rules! impl_simd_integer {
             #[must_use]
             pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
                 self.overflowing_rem_backend(rhs)
+            }
+
+            /// Shifts left each element of `self` by the corresponding element
+            /// of `rhs` and returns whether overflow occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
+            #[doc = concat!(" - A mask indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            ///
+            /// Note that on most targets, this operation is slower than
+            /// [`unbounded_shl`], so consider using that instead. If you intend
+            /// to shift all elements by the same value, consider using
+            /// [`overflowing_shl_scalar`] which is faster.
+            ///
+            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+            /// [`unbounded_shl`]: Self::unbounded_shl
+            /// [`overflowing_shl_scalar`]: Self::overflowing_shl_scalar
+            #[inline]
+            #[must_use]
+            pub fn overflowing_shl(self, rhs: $UnsignedSimd) -> (Self, $UnsignedSimd) {
+                (self << rhs, rhs.simd_ge(const { $UnsignedSimd::splat($T::BITS as _) }))
+            }
+
+            /// Shifts left each element of `self` by the uniform scalar `rhs`
+            /// and returns whether overflow occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
+            #[doc = concat!(" - A boolean indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            ///
+            /// Note that on most targets, this operation is slower than
+            /// [`unbounded_shl_scalar`], so consider using that instead.
+            ///
+            /// This function is faster than `self.overflowing_shl(splat(rhs))`
+            /// because it has special hardware support.
+            ///
+            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+            /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
+            #[inline]
+            #[must_use]
+            pub fn overflowing_shl_scalar(self, rhs: u32) -> (Self, bool) {
+                (self << rhs, rhs >= $T::BITS)
+            }
+
+            /// Shifts right each element of `self` by the corresponding element
+            /// of `rhs` and returns whether overflow occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
+            #[doc = concat!(" - A mask indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            ///
+            /// Note that on most targets, this operation is slower than
+            /// [`unbounded_shr`], so consider using that instead. If you intend
+            /// to shift all elements by the same value, consider using
+            /// [`overflowing_shr_scalar`] which is faster.
+            ///
+            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+            /// [`unbounded_shr`]: Self::unbounded_shr
+            /// [`overflowing_shr_scalar`]: Self::overflowing_shr_scalar
+            #[inline]
+            #[must_use]
+            pub fn overflowing_shr(self, rhs: $UnsignedSimd) -> (Self, $UnsignedSimd) {
+                (self >> rhs, rhs.simd_ge(const { $UnsignedSimd::splat($T::BITS as _) }))
+            }
+
+            /// Shifts right each element of `self` by the uniform scalar `rhs`
+            /// and returns whether overflow occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
+            #[doc = concat!(" - A boolean indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            ///
+            /// Note that on most targets, this operation is slower than
+            /// [`unbounded_shr_scalar`], so consider using that instead.
+            ///
+            /// This function is faster than `self.overflowing_shr(splat(rhs))`
+            /// because it has special hardware support.
+            ///
+            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+            /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
+            #[inline]
+            #[must_use]
+            pub fn overflowing_shr_scalar(self, rhs: u32) -> (Self, bool) {
+                (self >> rhs, rhs >= $T::BITS)
             }
 
             $(
@@ -896,6 +1000,11 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
+        fn overflowing_neg_backend(self) -> (Self, Self) {
+            (-self, self.simd_eq(Self::MIN))
+        }
+
+        #[inline]
         fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
             let result = self + rhs;
             let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
@@ -946,6 +1055,11 @@ macro_rules! simd_integer_backend_unsigned_autofill {
         fn saturating_mul_backend(self, rhs: Self) -> Self {
             let (low, high) = self.mul_keep_low_high(rhs);
             low | high.simd_ne(Self::ZERO)
+        }
+
+        #[inline]
+        fn overflowing_neg_backend(self) -> (Self, Self) {
+            (-self, self.simd_ne(Self::ZERO))
         }
 
         #[inline]

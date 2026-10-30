@@ -88,6 +88,121 @@ macro_rules! impl_simd_signed {
             pub fn is_negative(self) -> Self {
                 self.is_negative_backend()
             }
+
+            /// Wrapping (modular) addition with an unsigned `rhs`. Computes
+            /// `self + rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn add_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                self + rhs.cast_signed()
+            }
+
+            /// Wrapping (modular) subtraction with an unsigned `rhs`. Computes
+            /// `self - rhs`, wrapping around at the boundary of the type.
+            #[inline]
+            #[must_use]
+            pub fn sub_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                self - rhs.cast_signed()
+            }
+
+            /// Saturating integer negation. Computes `-self`, returning `MAX`
+            /// if `self == MIN` instead of overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_neg(self) -> Self {
+                self.saturating_neg_backend()
+            }
+
+            /// Saturating absolute value. Computes `self.abs()`, returning
+            /// `MAX` if `self == MIN` instead of overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_abs(self) -> Self {
+                self.saturating_abs_backend()
+            }
+
+            /// Saturating addition with an unsigned `rhs`. Computes
+            /// `self + rhs`, saturating at the numeric bounds instead of
+            /// overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_add_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                // NEON has a direct intrinsic for this operation
+                self.saturating_add_unsigned_backend(rhs)
+            }
+
+            /// Saturating subtraction with an unsigned `rhs`. Computes
+            /// `self - rhs`, saturating at the numeric bounds instead of
+            /// overflowing.
+            #[inline]
+            #[must_use]
+            pub fn saturating_sub_unsigned(self, rhs: $UnsignedSimd) -> Self {
+                // Unlike for `saturating_add_unsigned`, NEON does not have a
+                // direct intrinsic for this operation
+                let (result, overflow) = self.overflowing_sub_unsigned(rhs);
+                overflow.select(Self::MIN, result)
+            }
+
+            /// Computes the absolute value of self.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The absolute value (returns the wrapped value if an overflow
+            ///   occured)
+            /// - A mask indicating whether an overflow occured (only occurs
+            ///   when `self == MIN`)
+            #[inline]
+            #[must_use]
+            pub fn overflowing_abs(self) -> (Self, Self) {
+                (self.abs(), self.simd_eq(Self::MIN))
+            }
+
+            /// Returns `self + rhs` with an unsigned `rhs` and whether an overflow
+            /// occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The addition (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            #[inline]
+            #[must_use]
+            pub fn overflowing_add_unsigned(self, rhs: $UnsignedSimd) -> (Self, Self) {
+                pick! {
+                    // On NEON, `saturating_add_unsigned` is implement using a
+                    // direct intrinsic. It should be faster to call the
+                    // intrinsics for wrapping and saturating addition, then
+                    // compare the results, rather than to use the fallback
+                    // overflow check.
+                    if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
+                        let result = self.add_unsigned(rhs);
+                        let saturating_result = self.saturating_add_unsigned(rhs);
+                        (result, result.simd_ne(saturating_result))
+                    } else {
+                        let rhs = rhs.cast_signed();
+                        let result = self + rhs;
+                        let overflow = ((!(self ^ rhs) & (self ^ result)) ^ rhs).is_negative();
+
+                        (result, overflow)
+                    }
+                }
+            }
+
+            /// Returns `self - rhs` with an unsigned `rhs` and whether an overflow
+            /// occured.
+            ///
+            /// Returns a tuple with:
+            ///
+            /// - The subtraction (returns the wrapped value if an overflow occured)
+            /// - A mask indicating whether an overflow occured
+            #[inline]
+            #[must_use]
+            pub fn overflowing_sub_unsigned(self, rhs: $UnsignedSimd) -> (Self, Self) {
+                let rhs = rhs.cast_signed();
+                let result = self - rhs;
+                let overflow = (((self ^ rhs) & (self ^ result)) ^ rhs).is_negative();
+
+                (result, overflow)
+            }
         }
     };
 }

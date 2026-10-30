@@ -11,22 +11,22 @@ jobs:
       matrix:
         rust:
         # x86
-        - { target: i686-pc-windows-msvc, toolchain: "1.89", os: windows-latest }
+        - { target: i686-pc-windows-msvc, toolchain: "1.90", os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: stable, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: beta, os: windows-latest }
         - { target: i686-pc-windows-msvc, toolchain: nightly, os: windows-latest }
         # x86_64
-        - { target: x86_64-unknown-linux-gnu, toolchain: "1.89", os: ubuntu-latest }
+        - { target: x86_64-unknown-linux-gnu, toolchain: "1.90", os: ubuntu-latest }
         - { target: x86_64-unknown-linux-gnu, toolchain: stable, os: ubuntu-latest }
         - { target: x86_64-unknown-linux-gnu, toolchain: beta, os: ubuntu-latest }
         - { target: x86_64-unknown-linux-gnu, toolchain: nightly, os: ubuntu-latest }
         # aarch64
-        - { target: aarch64-apple-darwin, toolchain: "1.89", os: macos-latest }
+        - { target: aarch64-apple-darwin, toolchain: "1.90", os: macos-latest }
         - { target: aarch64-apple-darwin, toolchain: stable, os: macos-latest }
         - { target: aarch64-apple-darwin, toolchain: beta, os: macos-latest }
         - { target: aarch64-apple-darwin, toolchain: nightly, os: macos-latest }
         # wasm32
-        - { target: wasm32-wasip1, toolchain: "1.89", os: ubuntu-latest, wasmtime: v39.0.1 }
+        - { target: wasm32-wasip1, toolchain: "1.90", os: ubuntu-latest, wasmtime: v39.0.1 }
         - { target: wasm32-wasip1, toolchain: stable, os: ubuntu-latest, wasmtime: v39.0.1 }
         - { target: wasm32-wasip1, toolchain: beta, os: ubuntu-latest, wasmtime: v39.0.1 }
         - { target: wasm32-wasip1, toolchain: nightly, os: ubuntu-latest, wasmtime: v39.0.1 }
@@ -130,7 +130,7 @@ jobs:
         rust:
           # `wide` is a CPU-arch math library, so emulating the AVX-512 tests on
           # a single OS is enough. See https://github.com/Lokathor/wide/issues/308
-          - { target: x86_64-unknown-linux-gnu, toolchain: "1.89",  os: ubuntu-latest }
+          - { target: x86_64-unknown-linux-gnu, toolchain: "1.90",  os: ubuntu-latest }
           - { target: x86_64-unknown-linux-gnu, toolchain: stable,  os: ubuntu-latest }
           - { target: x86_64-unknown-linux-gnu, toolchain: beta,    os: ubuntu-latest }
           - { target: x86_64-unknown-linux-gnu, toolchain: nightly, os: ubuntu-latest }
