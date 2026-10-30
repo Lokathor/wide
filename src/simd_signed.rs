@@ -1,7 +1,5 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
-use bytemuck::cast;
-
 use crate::{
     Select, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
@@ -46,7 +44,7 @@ macro_rules! impl_simd_signed {
             #[inline]
             #[must_use]
             pub fn unsigned_abs(self) -> $UnsignedSimd {
-                cast::<$Simd, $UnsignedSimd>(self.abs())
+                self.abs().cast_unsigned()
             }
 
             /// Returns the absolute value of each input element.
