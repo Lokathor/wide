@@ -32,6 +32,10 @@ macro_rules! safe_target_feature {
     (
         Self = $Self:ty,
         {
+            // `impl` blocks that use `safe_target_feature` may contain macro
+            // calls at the start, so accept them and re-emit them
+            $($macro_name:ident!$macro_args:tt)*
+
             $(
                 // Match a function item
                 $(#[$meta:meta])+
@@ -44,6 +48,8 @@ macro_rules! safe_target_feature {
             )*
         }
     ) => {
+        $($macro_name!$macro_args)*
+
         $(
             // Paste the original function signature
             $(#[$meta])+
