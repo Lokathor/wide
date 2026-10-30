@@ -544,16 +544,6 @@ impl f32x4 {
     }
 
     #[inline]
-    pub(crate) fn is_sign_negative_backend(self) -> Self {
-        const SIGN_MASK: u32x4 = u32x4::splat((-0.0_f32).to_bits());
-
-        let bits = cast::<f32x4, u32x4>(self);
-        let sign = bits & SIGN_MASK;
-        let result = sign.simd_eq(SIGN_MASK);
-        cast::<u32x4, f32x4>(result)
-    }
-
-    #[inline]
     pub(crate) fn recip_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="sse")] {
