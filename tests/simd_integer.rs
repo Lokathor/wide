@@ -939,6 +939,96 @@ fn test_overflowing_rem() {
 }
 
 #[test]
+fn test_overflowing_shl() {
+    for_simd_types!(|T: Integer, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shl(b[i] as u32).0)),
+                SimdUnsigned::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_shl(b[i] as u32).1 {
+                        !0
+                    } else {
+                        0
+                    }
+                })),
+            );
+            let actual = Simd::from_array(a).overflowing_shl(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_overflowing_shl_scalar() {
+    for_simd_types!(|T: Integer, N| {
+        for (a, b) in random_iter::<([T; N], u32)>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shl(b).0)),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_shl(b).1 { !0 } else { 0 }
+                })),
+            );
+            let actual = (
+                Simd::from_array(a).overflowing_shl_scalar(b).0,
+                if Simd::from_array(a).overflowing_shl_scalar(b).1 {
+                    !Simd::ZERO
+                } else {
+                    Simd::ZERO
+                },
+            );
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_overflowing_shr() {
+    for_simd_types!(|T: Integer, N| {
+        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shr(b[i] as u32).0)),
+                SimdUnsigned::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_shr(b[i] as u32).1 {
+                        !0
+                    } else {
+                        0
+                    }
+                })),
+            );
+            let actual = Simd::from_array(a).overflowing_shr(SimdUnsigned::from_array(b));
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
+fn test_overflowing_shr_scalar() {
+    for_simd_types!(|T: Integer, N| {
+        for (a, b) in random_iter::<([T; N], u32)>() {
+            let expected = (
+                Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shr(b).0)),
+                Simd::from_array(std::array::from_fn(|i| {
+                    if a[i].overflowing_shr(b).1 { !0 } else { 0 }
+                })),
+            );
+            let actual = (
+                Simd::from_array(a).overflowing_shr_scalar(b).0,
+                if Simd::from_array(a).overflowing_shr_scalar(b).1 {
+                    !Simd::ZERO
+                } else {
+                    Simd::ZERO
+                },
+            );
+
+            assert_eq!(actual, expected, "a: {a:?}\nb: {b:?}");
+        }
+    });
+}
+
+#[test]
 fn test_widening_mul() {
     for_simd_types!(|T: Signed, N, DoubleSizedSimd| {
         for [left, right] in simd_chunks!(
