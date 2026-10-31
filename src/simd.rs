@@ -1147,7 +1147,7 @@ where
 
 impl<T, const N: usize> AlignTo for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + Pod + Default + PartialEq,
     Simd<T, N>: SupportedSimd,
 {
     type Elem = T;
