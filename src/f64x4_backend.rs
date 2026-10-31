@@ -19,7 +19,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+    fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")]{
             Self(_mm256_cmp_pd::<{_CMP_EQ_OQ}>(self.0, rhs.0))
@@ -33,7 +33,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+    fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")]{
             Self(_mm256_cmp_pd::<{_CMP_NEQ_UQ}>(self.0, rhs.0))
@@ -47,7 +47,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+    fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")]{
             Self(_mm256_cmp_pd::<{_CMP_LT_OQ}>(self.0, rhs.0))
@@ -61,7 +61,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+    fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")]{
             Self(_mm256_cmp_pd::<{_CMP_GT_OQ}>(self.0, rhs.0))
@@ -75,7 +75,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+    fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")]{
             Self(_mm256_cmp_pd::<{_CMP_LE_OQ}>(self.0, rhs.0))
@@ -89,7 +89,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+    fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")]{
             Self(_mm256_cmp_pd::<{_CMP_GE_OQ}>(self.0, rhs.0))
@@ -103,7 +103,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+    fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_blendv_pd(if_false.0, if_true.0, self.0))
@@ -117,7 +117,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
+    fn to_bitmask_backend(self) -> u32 {
         pick! {
           if #[cfg(target_feature="avx")] {
             _mm256_movemask_pd(self.0) as u32
@@ -128,7 +128,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn any_backend(self) -> bool {
+    fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx")] {
             _mm256_movemask_pd(self.0) != 0
@@ -139,7 +139,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn all_backend(self) -> bool {
+    fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx")] {
             _mm256_movemask_pd(self.0) == 0b1111
@@ -150,7 +150,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+    fn interleave_low_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             // `_mm256_unpacklo_pd` cannot be used because it actually performs
@@ -165,7 +165,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+    fn interleave_high_backend(self, other: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             // `_mm256_unpackhi_pd` cannot be used because it actually performs
@@ -180,7 +180,7 @@ impl SimdBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn transpose_backend(data: [f64x4; 4]) -> [f64x4; 4] {
+    fn transpose_backend(data: [f64x4; 4]) -> [f64x4; 4] {
         pick! {
           if #[cfg(target_feature="avx")] {
             // Can this be optimized?
@@ -220,7 +220,7 @@ impl SimdBackend for f64x4 {
 safe_target_feature! {
 impl SimdFloatBackend for f64x4 {
     #[inline]
-    pub(crate) fn neg_backend(self) -> Self {
+    fn neg_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_xor_pd(self.0, Self::splat(-0.0).0))
@@ -234,7 +234,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn not_backend(self) -> Self {
+    fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             let all_bits = const { Self::from_bits(u64x4::MAX) };
@@ -249,7 +249,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn add_backend(self, rhs: Self) -> Self {
+    fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_add_pd(self.0, rhs.0))
@@ -263,7 +263,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn sub_backend(self, rhs: Self) -> Self {
+    fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_sub_pd(self.0, rhs.0))
@@ -277,7 +277,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn mul_backend(self, rhs: Self) -> Self {
+    fn mul_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_mul_pd(self.0, rhs.0))
@@ -291,7 +291,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn div_backend(self, rhs: Self) -> Self {
+    fn div_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_div_pd(self.0, rhs.0))
@@ -305,7 +305,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn rem_backend(self, rhs: Self) -> Self {
+    fn rem_backend(self, rhs: Self) -> Self {
         Self::from_array([
             self.to_array()[0] % rhs.to_array()[0],
             self.to_array()[1] % rhs.to_array()[1],
@@ -315,7 +315,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
+    fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_and_pd(self.0, rhs.0))
@@ -329,7 +329,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
+    fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_or_pd(self.0, rhs.0))
@@ -343,7 +343,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
+    fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_xor_pd(self.0, rhs.0))
@@ -357,7 +357,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn reduce_add_backend(self) -> f64 {
+    fn reduce_add_backend(self) -> f64 {
         pick! {
           if #[cfg(target_feature="avx")] {
             // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
@@ -374,7 +374,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn reduce_mul_backend(self) -> f64 {
+    fn reduce_mul_backend(self) -> f64 {
         pick! {
           if #[cfg(target_feature="avx")] {
             // From https://stackoverflow.com/questions/49941645/get-sum-of-values-stored-in-m256d-with-sse-avx
@@ -391,7 +391,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_or_pd(
@@ -408,7 +408,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn is_nan_backend(self) -> Self {
+    fn is_nan_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_cmp_pd::<{_CMP_UNORD_Q}>(self.0, self.0 ))
@@ -422,7 +422,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn is_infinite_backend(self) -> Self {
+    fn is_infinite_backend(self) -> Self {
         let shifted_inf = u64x4::from(0xFFE0000000000000);
         let u: u64x4 = cast(self);
         let shift_u = u << 1_u64;
@@ -431,7 +431,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn is_finite_backend(self) -> Self {
+    fn is_finite_backend(self) -> Self {
         let shifted_exp_mask = u64x4::from(0xFFE0000000000000);
         let u: u64x4 = cast(self);
         let shift_u = u << 1_u64;
@@ -440,7 +440,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn is_sign_positive_backend(self) -> Self {
+    fn is_sign_positive_backend(self) -> Self {
         const SIGN_MASK: u64x4 = u64x4::splat((-0.0_f64).to_bits());
 
         let bits = cast::<f64x4, u64x4>(self);
@@ -450,21 +450,21 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn recip_backend(self) -> Self {
+    fn recip_backend(self) -> Self {
         // There does not seem to be a `recip` intrinsic for any architecture. The
         // closest is `_mm256_rcp14_pd` which has relative error.
         Self::ONE / self
     }
 
     #[inline]
-    pub(crate) fn recip_sqrt_backend(self) -> Self {
+    fn recip_sqrt_backend(self) -> Self {
         // There does not seem to be a `recip_sqrt` intrinsic for any architecture.
         // The closest is `_mm256_rsqrt14_pd` which has relative error.
         Self::ONE / self.sqrt()
     }
 
     #[inline]
-    pub(crate) fn max_backend(self, rhs: Self) -> Self {
+    fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             // _mm256_max_pd seems to do rhs < self ? self : rhs. So if there's any NaN
@@ -481,7 +481,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_max_backend(self, rhs: Self) -> Self {
+    fn fast_max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_max_pd(self.0, rhs.0))
@@ -495,7 +495,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn min_backend(self, rhs: Self) -> Self {
+    fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             // _mm256_min_pd seems to do rhs < self ? self : rhs. So if there's any NaN
@@ -512,7 +512,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_min_backend(self, rhs: Self) -> Self {
+    fn fast_min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_min_pd(self.0, rhs.0))
@@ -526,7 +526,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn clamp_backend(self, min: Self, max: Self) -> Self {
+    fn clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             // This works since all bits set is NaN.
@@ -542,7 +542,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
+    fn fast_clamp_backend(self, min: Self, max: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             // For both `_mm256_min_pd` and `_mm256_max_pd` if any input is NaN, `rhs` gets
@@ -558,31 +558,31 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn reduce_max_backend(self) -> f64 {
+    fn reduce_max_backend(self) -> f64 {
         let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
         self_a.max(self_b).reduce_max()
     }
 
     #[inline]
-    pub(crate) fn fast_reduce_max_backend(self) -> f64 {
+    fn fast_reduce_max_backend(self) -> f64 {
         let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
         self_a.fast_max(self_b).fast_reduce_max()
     }
 
     #[inline]
-    pub(crate) fn reduce_min_backend(self) -> f64 {
+    fn reduce_min_backend(self) -> f64 {
         let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
         self_a.min(self_b).reduce_min()
     }
 
     #[inline]
-    pub(crate) fn fast_reduce_min_backend(self) -> f64 {
+    fn fast_reduce_min_backend(self) -> f64 {
         let [self_a, self_b] = cast::<f64x4, [f64x2; 2]>(self);
         self_a.fast_min(self_b).fast_reduce_min()
     }
 
     #[inline]
-    pub(crate) fn abs_backend(self) -> Self {
+    fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             let non_sign_bits = f64x4::from(f64::from_bits(i64::MAX as u64));
@@ -597,7 +597,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn floor_backend(self) -> Self {
+    fn floor_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_floor_pd(self.0))
@@ -611,7 +611,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn ceil_backend(self) -> Self {
+    fn ceil_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_ceil_pd(self.0))
@@ -625,7 +625,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn round_backend(self) -> Self {
+    fn round_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             const_f64_as_f64x4!(HALF_NEXT_DOWN, 0.5_f64.next_down());
@@ -652,7 +652,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn round_int_backend(self) -> i64x4 {
+    fn round_int_backend(self) -> i64x4 {
         pick! {
           if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
@@ -670,7 +670,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_round_int_backend(self) -> i64x4 {
+    fn fast_round_int_backend(self) -> i64x4 {
         pick! {
           if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
             cast(_mm256_cvtpd_epi64(self.0))
@@ -682,7 +682,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn round_ties_even_backend(self) -> Self {
+    fn round_ties_even_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_round_pd::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_NEAREST_INT}>(self.0))
@@ -696,7 +696,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn trunc_backend(self) -> Self {
+    fn trunc_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_round_pd::<{_MM_FROUND_NO_EXC | _MM_FROUND_TO_ZERO}>(self.0))
@@ -710,7 +710,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn trunc_int_backend(self) -> i64x4 {
+    fn trunc_int_backend(self) -> i64x4 {
         pick! {
           if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
             // Based on: https://github.com/v8/v8/blob/210987a552a2bf2a854b0baa9588a5959ff3979d/src/codegen/shared-ia32-x64/macro-assembler-shared-ia32-x64.h#L489-L504
@@ -728,7 +728,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_trunc_int_backend(self) -> i64x4 {
+    fn fast_trunc_int_backend(self) -> i64x4 {
         pick! {
           if #[cfg(all(target_feature="avx512dq", target_feature="avx512vl"))] {
             cast(_mm256_cvttpd_epi64(self.0))
@@ -740,7 +740,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
+    fn fast_mul_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
             Self(_mm256_fmadd_pd(self.0, a.0, b.0))
@@ -757,7 +757,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
+    fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
             Self(_mm256_fmsub_pd(self.0, a.0, b.0))
@@ -774,7 +774,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
+    fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx",target_feature="fma"))] {
             Self(_mm256_fnmadd_pd(self.0, a.0, b.0))
@@ -791,7 +791,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
+    fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self {
         pick! {
            if #[cfg(all(target_feature="avx",target_feature="fma"))] {
              Self(_mm256_fnmsub_pd(self.0, a.0, b.0))
@@ -808,7 +808,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn powf_simd_backend(self, n: Self) -> Self {
+    fn powf_simd_backend(self, n: Self) -> Self {
         const_f64_as_f64x4!(ln2d_hi, 0.693145751953125);
         const_f64_as_f64x4!(ln2d_lo, 1.42860682030941723212E-6);
         const_f64_as_f64x4!(P0log, 2.0039553499201281259648E1);
@@ -927,7 +927,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn sqrt_backend(self) -> Self {
+    fn sqrt_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx")] {
             Self(_mm256_sqrt_pd(self.0))
@@ -941,7 +941,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn exp_backend(self) -> Self {
+    fn exp_backend(self) -> Self {
         const_f64_as_f64x4!(P2, 1.0 / 2.0);
         const_f64_as_f64x4!(P3, 1.0 / 6.0);
         const_f64_as_f64x4!(P4, 1.0 / 24.0);
@@ -992,7 +992,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn exp2_backend(self) -> Self {
+    fn exp2_backend(self) -> Self {
         const_f64_as_f64x4!(P2, 1.0 / 2.0);
         const_f64_as_f64x4!(P3, 1.0 / 6.0);
         const_f64_as_f64x4!(P4, 1.0 / 24.0);
@@ -1042,7 +1042,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn ln_backend(self) -> Self {
+    fn ln_backend(self) -> Self {
         const_f64_as_f64x4!(HALF, 0.5);
         const_f64_as_f64x4!(P0, 7.70838733755885391666E0);
         const_f64_as_f64x4!(P1, 1.79368678507819816313E1);
@@ -1102,7 +1102,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn cbrt_backend(self) -> Self {
+    fn cbrt_backend(self) -> Self {
         let a = self.abs();
         let zero = a.simd_eq(Self::ZERO);
         if zero.all() {
@@ -1164,7 +1164,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn asin_backend(self) -> Self {
+    fn asin_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
         const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
@@ -1250,7 +1250,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn acos_backend(self) -> Self {
+    fn acos_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
         const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
@@ -1336,7 +1336,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn atan_backend(self) -> Self {
+    fn atan_backend(self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
         const_f64_as_f64x4!(MORE_BITS, 6.123233995736765886130E-17);
@@ -1392,7 +1392,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn atan2_backend(self, x: Self) -> Self {
+    fn atan2_backend(self, x: Self) -> Self {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
         const_f64_as_f64x4!(MORE_BITS, 6.123233995736765886130E-17);
@@ -1472,7 +1472,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn sin_cos_backend(self) -> (Self, Self) {
+    fn sin_cos_backend(self) -> (Self, Self) {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
 
@@ -1536,7 +1536,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn asin_acos_backend(self) -> (Self, Self) {
+    fn asin_acos_backend(self) -> (Self, Self) {
         // Based on the Agner Fog "vector class library":
         // https://github.com/vectorclass/version2/blob/master/vectormath_trig.h
         const_f64_as_f64x4!(R4asin, 2.967721961301243206100E-3);
@@ -1628,7 +1628,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn exp_m1_backend(self) -> Self {
+    fn exp_m1_backend(self) -> Self {
         const_f64_as_f64x4!(P2, 1.0 / 2.0);
         const_f64_as_f64x4!(P3, 1.0 / 6.0);
         const_f64_as_f64x4!(P4, 1.0 / 24.0);
@@ -1690,7 +1690,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn ln_1p_backend(self) -> Self {
+    fn ln_1p_backend(self) -> Self {
         // Based on the identity ln(1+x) = x·ln(1+x)/((1+x)-1), i.e. x·ln(u)/(u-1)
         // where u = 1+x. From MUSL libc (Rich Felker et al., https://musl.libc.org) src/math/log1p.c
         // and fdlibm (Sun Microsystems, https://www.netlib.org/fdlibm/) s_log1p.c.
@@ -1708,7 +1708,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn sinh_backend(self) -> Self {
+    fn sinh_backend(self) -> Self {
         const_f64_as_f64x4!(P0, 1.0);
         const_f64_as_f64x4!(P1, 1.0 / 6.0);
         const_f64_as_f64x4!(P2, 1.0 / 120.0);
@@ -1730,7 +1730,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn cosh_backend(self) -> Self {
+    fn cosh_backend(self) -> Self {
         const_f64_as_f64x4!(P0, 1.0);
         const_f64_as_f64x4!(P1, 1.0 / 2.0);
         const_f64_as_f64x4!(P2, 1.0 / 24.0);
@@ -1752,7 +1752,7 @@ impl SimdFloatBackend for f64x4 {
     }
 
     #[inline]
-    pub(crate) fn tanh_backend(self) -> Self {
+    fn tanh_backend(self) -> Self {
         // |x| < 5e-8: tanh(x) ≈ x, error x³/3 < 16·ULP(x)
         // bound: x² < 48·2⁻⁵² → x < 1.03e-7; 5e-8 has 2× margin
         // |x| > 19.062: tanh(x) = ±1 to f64 precision (e⁻²ˣ < 2⁻⁵⁴)

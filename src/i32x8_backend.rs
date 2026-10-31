@@ -19,7 +19,7 @@ impl SimdBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+    fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_cmpgt_epi32(rhs.0, self.0))
@@ -33,7 +33,7 @@ impl SimdBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+    fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_cmpgt_epi32(self.0, rhs.0))
@@ -47,7 +47,7 @@ impl SimdBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+    fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             !self.simd_gt(rhs)
@@ -61,7 +61,7 @@ impl SimdBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+    fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             !self.simd_lt(rhs)
@@ -79,7 +79,7 @@ impl SimdBackend for i32x8 {
 safe_target_feature! {
 impl SimdIntegerBackend for i32x8 {
     #[inline]
-    pub(crate) fn shr_backend(self, rhs: u32x8) -> Self {
+    fn shr_backend(self, rhs: u32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // ensure same behavior as scalar
@@ -95,7 +95,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
+    fn shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 32` to perform wrapping shift and not unbounded shift.
@@ -111,7 +111,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn max_backend(self, rhs: Self) -> Self {
+    fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_max_epi32(self.0, rhs.0))
@@ -125,7 +125,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn min_backend(self, rhs: Self) -> Self {
+    fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_min_epi32(self.0, rhs.0))
@@ -139,19 +139,19 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn reduce_max_backend(self) -> i32 {
+    fn reduce_max_backend(self) -> i32 {
         let arr: [i32x4; 2] = cast(self);
         arr[0].max(arr[1]).reduce_max()
     }
 
     #[inline]
-    pub(crate) fn reduce_min_backend(self) -> i32 {
+    fn reduce_min_backend(self) -> i32 {
         let arr: [i32x4; 2] = cast(self);
         arr[0].min(arr[1]).reduce_min()
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_backend(self, rhs: u32x8) -> Self {
+    fn unbounded_shr_backend(self, rhs: u32x8) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_srav_epi32(self.0, rhs.0))
@@ -165,7 +165,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_sra_epi32(self.0, cast([rhs as u64, 0])))
@@ -179,7 +179,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
+    fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             let result = self + rhs;
@@ -198,7 +198,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
+    fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             let result = self - rhs;
@@ -217,7 +217,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
         let (low, high) = self.mul_keep_low_high(rhs);
         let low = cast::<u32x8, i32x8>(low);
 
@@ -226,7 +226,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn widening_mul_backend(self, rhs: Self) -> i64x8 {
+    fn widening_mul_backend(self, rhs: Self) -> i64x8 {
         pick! {
           if #[cfg(all(target_feature="avx512f", target_feature="avx2"))] {
             let shuffle_indices = const { i64x8::from_array([0, 4, 1, 5, 2, 6, 3, 7]).0 };
@@ -261,7 +261,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u32x8, i32x8) {
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (u32x8, i32x8) {
         pick! {
           if #[cfg(target_feature="avx2")] {
             let even_wide_mul = _mm256_mul_epi32(self.0, rhs.0);
@@ -291,7 +291,7 @@ impl SimdIntegerBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
+    fn mul_keep_high_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             let even_wide_mul = _mm256_mul_epi32(self.0, rhs.0);
@@ -317,7 +317,7 @@ impl SimdIntegerBackend for i32x8 {
 safe_target_feature! {
 impl SimdSignedBackend for i32x8 {
     #[inline]
-    pub(crate) fn abs_backend(self) -> Self {
+    fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_abs_epi32(self.0))
@@ -331,7 +331,7 @@ impl SimdSignedBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn is_positive_backend(self) -> Self {
+    fn is_positive_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             // `neon` has dedicated greater-than-zero intrinsics.
@@ -346,7 +346,7 @@ impl SimdSignedBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn is_negative_backend(self) -> Self {
+    fn is_negative_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             Self(_mm256_srai_epi32::<31>(self.0))
@@ -360,7 +360,7 @@ impl SimdSignedBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn saturating_neg_backend(self) -> Self {
+    fn saturating_neg_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // Efficient computation of
@@ -376,7 +376,7 @@ impl SimdSignedBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn saturating_abs_backend(self) -> Self {
+    fn saturating_abs_backend(self) -> Self {
         pick! {
             if #[cfg(target_feature = "avx2")] {
                 // If `self == MIN`, flip all bits to change the result from
@@ -392,7 +392,7 @@ impl SimdSignedBackend for i32x8 {
     }
 
     #[inline]
-    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u32x8) -> Self {
+    fn saturating_add_unsigned_backend(self, rhs: u32x8) -> Self {
         pick! {
             if #[cfg(target_feature = "avx2")] {
                 let (result, overflow) = self.overflowing_add_unsigned(rhs);

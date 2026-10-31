@@ -26,7 +26,7 @@ impl SimdBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+    fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.2")] {
             // only has gt, so flip arguments around to get lt
@@ -47,7 +47,7 @@ impl SimdBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+    fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.2")] {
             Self(_mm_cmpgt_epi64(self.0, rhs.0))
@@ -67,7 +67,7 @@ impl SimdBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+    fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
             !self.simd_gt(rhs)
@@ -87,7 +87,7 @@ impl SimdBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+    fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="sse4.1")] {
             !self.simd_lt(rhs)
@@ -111,7 +111,7 @@ impl SimdBackend for i64x2 {
 safe_target_feature! {
 impl SimdIntegerBackend for i64x2 {
     #[inline]
-    pub(crate) fn shr_backend(self, rhs: u64x2) -> Self {
+    fn shr_backend(self, rhs: u64x2) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             // mask the shift count to 63 to have same behavior on all platforms
@@ -130,7 +130,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
+    fn shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="simd128")] {
             Self(i64x2_shr(self.0, rhs))
@@ -145,17 +145,17 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn max_backend(self, rhs: Self) -> Self {
+    fn max_backend(self, rhs: Self) -> Self {
         self.simd_gt(rhs).select(self, rhs)
     }
 
     #[inline]
-    pub(crate) fn min_backend(self, rhs: Self) -> Self {
+    fn min_backend(self, rhs: Self) -> Self {
         self.simd_lt(rhs).select(self, rhs)
     }
 
     #[inline]
-    pub(crate) fn reduce_max_backend(self) -> i64 {
+    fn reduce_max_backend(self) -> i64 {
         pick! {
           if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
             let array: [i64; 2] = cast(self);
@@ -169,7 +169,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn reduce_min_backend(self) -> i64 {
+    fn reduce_min_backend(self) -> i64 {
         pick! {
           if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
             let array: [i64; 2] = cast(self);
@@ -183,7 +183,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_backend(self, rhs: u64x2) -> Self {
+    fn unbounded_shr_backend(self, rhs: u64x2) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             // Negate `rhs` because there is no direct shift-right intrinsic, and
@@ -201,7 +201,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="simd128")] {
             if rhs < 64 { Self(i64x2_shr(self.0, rhs)) } else { self.is_negative() }
@@ -217,7 +217,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
+    fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
             let result = self + rhs;
@@ -238,7 +238,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
+    fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(any(target_feature="sse2", target_feature="simd128"))] {
             let result = self - rhs;
@@ -259,7 +259,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
         // TODO(perf): This implementation looks quite bad. Is there a better
         // one? This intentionally avoids `mul_keep_low_high` because getting the
         // high bits of 64-bit multiplication could be slow.
@@ -278,7 +278,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u64x2, i64x2) {
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (u64x2, i64x2) {
         // TODO(perf): This implementation looks quite bad. Is there a better
         // one?
 
@@ -300,7 +300,7 @@ impl SimdIntegerBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
+    fn mul_keep_high_backend(self, rhs: Self) -> Self {
         let self_array = self.to_array();
         let rhs_array = rhs.to_array();
 
@@ -315,7 +315,7 @@ impl SimdIntegerBackend for i64x2 {
 safe_target_feature! {
 impl SimdSignedBackend for i64x2 {
     #[inline]
-    pub(crate) fn abs_backend(self) -> Self {
+    fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512f", target_feature = "avx512vl"))] {
             Self(_mm_abs_epi64(self.0))
@@ -339,7 +339,7 @@ impl SimdSignedBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn is_positive_backend(self) -> Self {
+    fn is_positive_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             Self(vreinterpretq_s64_u64(vcgtzq_s64(self.0)))
@@ -350,7 +350,7 @@ impl SimdSignedBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn is_negative_backend(self) -> Self {
+    fn is_negative_backend(self) -> Self {
         pick! {
           if #[cfg(all(target_feature="neon", target_arch="aarch64"))] {
             Self(vreinterpretq_s64_u64(vcltzq_s64(self.0)))
@@ -363,7 +363,7 @@ impl SimdSignedBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn saturating_neg_backend(self) -> Self {
+    fn saturating_neg_backend(self) -> Self {
         pick! {
             if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
                 Self(vqnegq_s64(self.0))
@@ -376,7 +376,7 @@ impl SimdSignedBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn saturating_abs_backend(self) -> Self {
+    fn saturating_abs_backend(self) -> Self {
         pick! {
             if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
                 Self(vqabsq_s64(self.0))
@@ -389,7 +389,7 @@ impl SimdSignedBackend for i64x2 {
     }
 
     #[inline]
-    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u64x2) -> Self {
+    fn saturating_add_unsigned_backend(self, rhs: u64x2) -> Self {
         pick! {
             if #[cfg(all(target_feature = "neon", target_arch = "aarch64"))] {
                 Self(vuqaddq_s64(self.0, rhs.0))
