@@ -447,6 +447,8 @@ impl SimdBackend for u64x2 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for u64x2 {
+    simd_integer_backend_unsigned_autofill! { u64, 2 }
+
     #[inline]
     fn neg_backend(self) -> Self {
         pick! {

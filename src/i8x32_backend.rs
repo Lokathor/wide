@@ -18,6 +18,8 @@ impl SimdBackend for i8x32 {
       }
     }
 
+    simd_backend_signed_autofill! { i8, 32 }
+
     #[inline]
     fn simd_lt_backend(self, rhs: Self) -> Self {
         rhs.simd_gt(self)
@@ -69,6 +71,8 @@ impl SimdBackend for i8x32 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i8x32 {
+    simd_integer_backend_signed_autofill! { i8, 32 }
+
     #[inline]
     fn shr_backend(self, rhs: u8x32) -> Self {
         // For x86, this technically can be done explicitly by converting to `i16`

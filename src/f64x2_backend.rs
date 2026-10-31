@@ -25,6 +25,8 @@ impl SimdBackend for f64x2 {
       }
     }
 
+    simd_backend_float_autofill! { f64, 2 }
+
     #[inline]
     fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {

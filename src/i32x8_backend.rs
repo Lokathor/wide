@@ -18,6 +18,8 @@ impl SimdBackend for i32x8 {
       }
     }
 
+    simd_backend_signed_autofill! { i32, 8 }
+
     #[inline]
     fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
@@ -78,6 +80,8 @@ impl SimdBackend for i32x8 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i32x8 {
+    simd_integer_backend_signed_autofill! { i32, 8 }
+
     #[inline]
     fn shr_backend(self, rhs: u32x8) -> Self {
         pick! {

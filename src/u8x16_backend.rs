@@ -675,6 +675,8 @@ impl SimdBackend for u8x16 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for u8x16 {
+    simd_integer_backend_unsigned_autofill! { u8, 16 }
+
     #[inline]
     fn neg_backend(self) -> Self {
         pick! {

@@ -18,6 +18,8 @@ impl SimdBackend for i8x64 {
       }
     }
 
+    simd_backend_signed_autofill! { i8, 64 }
+
     #[inline]
     fn simd_lt_backend(self, rhs: Self) -> Self {
         rhs.simd_gt(self)
@@ -78,6 +80,8 @@ impl SimdBackend for i8x64 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i8x64 {
+    simd_integer_backend_signed_autofill! { i8, 64 }
+
     #[inline]
     fn shr_backend(self, rhs: u8x64) -> Self {
         // There's no dedicated `i8` shift instruction, so we split into halves

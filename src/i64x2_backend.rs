@@ -25,6 +25,8 @@ impl SimdBackend for i64x2 {
       }
     }
 
+    simd_backend_signed_autofill! { i64, 2 }
+
     #[inline]
     fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
@@ -110,6 +112,8 @@ impl SimdBackend for i64x2 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i64x2 {
+    simd_integer_backend_signed_autofill! { i64, 2 }
+
     #[inline]
     fn shr_backend(self, rhs: u64x2) -> Self {
         pick! {
