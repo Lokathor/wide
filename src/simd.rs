@@ -217,16 +217,13 @@ pub(crate) trait SupportSimdOf<U> {
     type SimdOfU;
 }
 
-/// A marker trait for SIMD element types that support mask operations.
+/// A sealed trait for SIMD element types that support mask operations.
 ///
 /// All current SIMD element types implement this. However, it is possible that
 /// in the future, there will be SIMD element types that do not satisfy
 /// [`Pod`]-like requirements, and thus cannot support the existing mask
 /// operations.
-///
-/// For simplicity sake, this trait is not exposed publicly. Instead, it is used
-/// as a super-trait of `PrimitiveFloat` and `PrimitiveInteger`.
-pub(crate) trait MaskOps {}
+pub trait MaskOps: Sealed {}
 
 /// A trait for lanewise SIMD selection.
 ///
@@ -766,7 +763,9 @@ where
 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.simd_eq(*other).all()
+        // Use `all_backend` and not `all` in order to ignore the `T: MaskOps`
+        // bound
+        self.simd_eq(*other).all_backend()
     }
 }
 
@@ -894,7 +893,7 @@ impl_formatting_trait!(core::fmt::UpperExp);
 
 impl<T, const N: usize> Select<Simd<T, N>> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + MaskOps,
     Simd<T, N>: SupportedSimd,
 {
     #[inline]
@@ -1344,6 +1343,7 @@ where
     #[must_use]
     pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
     where
+        T: MaskOps,
         Self: Select<Output>,
     {
         Select::select(self, if_true, if_false)
@@ -1364,7 +1364,10 @@ where
     #[inline]
     #[must_use]
     #[doc(alias("movemask", "move_mask"))]
-    pub fn to_bitmask(self) -> <Self as SupportedSimd>::Bitmask {
+    pub fn to_bitmask(self) -> <Self as SupportedSimd>::Bitmask
+    where
+        T: MaskOps,
+    {
         self.to_bitmask_backend()
     }
 
@@ -1377,7 +1380,10 @@ where
     /// [mask]: crate#masks
     #[inline]
     #[must_use]
-    pub fn any(self) -> bool {
+    pub fn any(self) -> bool
+    where
+        T: MaskOps,
+    {
         self.any_backend()
     }
 
@@ -1390,7 +1396,10 @@ where
     /// [mask]: crate#masks
     #[inline]
     #[must_use]
-    pub fn all(self) -> bool {
+    pub fn all(self) -> bool
+    where
+        T: MaskOps,
+    {
         self.all_backend()
     }
 
@@ -1403,7 +1412,10 @@ where
     /// [mask]: crate#masks
     #[inline]
     #[must_use]
-    pub fn none(self) -> bool {
+    pub fn none(self) -> bool
+    where
+        T: MaskOps,
+    {
         !self.any()
     }
 
@@ -1533,7 +1545,10 @@ where
     )]
     #[inline]
     #[must_use]
-    pub fn blend(self, if_true: Self, if_false: Self) -> Self {
+    pub fn blend(self, if_true: Self, if_false: Self) -> Self
+    where
+        T: MaskOps,
+    {
         self.select(if_true, if_false)
     }
 
