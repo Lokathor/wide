@@ -759,13 +759,20 @@ macro_rules! define_simd {
 
 impl<T, const N: usize> PartialEq for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialEq,
     Simd<T, N>: SupportedSimd,
 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.simd_eq(*other).all()
     }
+}
+
+impl<T, const N: usize> Eq for Simd<T, N>
+where
+    T: SimdElement + Eq,
+    Simd<T, N>: SupportedSimd,
+{
 }
 
 impl<T, const N: usize> Default for Simd<T, N>
@@ -970,7 +977,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpEq for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialEq,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -984,7 +991,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpEq<T> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialEq,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -998,7 +1005,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpNe for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialEq,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1012,7 +1019,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpNe<T> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialEq,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1026,7 +1033,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpLt for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1040,7 +1047,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpLt<T> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1054,7 +1061,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpGt for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1068,7 +1075,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpGt<T> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1082,7 +1089,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpLe for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1096,7 +1103,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpLe<T> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1110,7 +1117,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpGe for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1124,7 +1131,7 @@ where
 #[expect(deprecated)]
 impl<T, const N: usize> CmpGe<T> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + PartialOrd,
     Simd<T, N>: SupportedSimd,
 {
     type Output = Self;
@@ -1200,6 +1207,7 @@ where
     #[expect(deprecated)]
     pub fn simd_eq<Rhs>(self, other: Rhs) -> <Self as CmpEq<Rhs>>::Output
     where
+        T: PartialEq,
         Self: CmpEq<Rhs>,
     {
         CmpEq::simd_eq(self, other)
@@ -1213,6 +1221,7 @@ where
     #[expect(deprecated)]
     pub fn simd_ne<Rhs>(self, other: Rhs) -> <Self as CmpNe<Rhs>>::Output
     where
+        T: PartialEq,
         Self: CmpNe<Rhs>,
     {
         CmpNe::simd_ne(self, other)
@@ -1226,6 +1235,7 @@ where
     #[expect(deprecated)]
     pub fn simd_lt<Rhs>(self, other: Rhs) -> <Self as CmpLt<Rhs>>::Output
     where
+        T: PartialOrd,
         Self: CmpLt<Rhs>,
     {
         CmpLt::simd_lt(self, other)
@@ -1239,6 +1249,7 @@ where
     #[expect(deprecated)]
     pub fn simd_gt<Rhs>(self, other: Rhs) -> <Self as CmpGt<Rhs>>::Output
     where
+        T: PartialOrd,
         Self: CmpGt<Rhs>,
     {
         CmpGt::simd_gt(self, other)
@@ -1252,6 +1263,7 @@ where
     #[expect(deprecated)]
     pub fn simd_le<Rhs>(self, other: Rhs) -> <Self as CmpLe<Rhs>>::Output
     where
+        T: PartialOrd,
         Self: CmpLe<Rhs>,
     {
         CmpLe::simd_le(self, other)
@@ -1265,6 +1277,7 @@ where
     #[expect(deprecated)]
     pub fn simd_ge<Rhs>(self, other: Rhs) -> <Self as CmpGe<Rhs>>::Output
     where
+        T: PartialOrd,
         Self: CmpGe<Rhs>,
     {
         CmpGe::simd_ge(self, other)

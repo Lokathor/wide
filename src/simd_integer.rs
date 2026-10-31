@@ -195,8 +195,6 @@ macro_rules! impl_simd_integer {
         T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
         INDICES = [$($INDEX:literal),* $(,)?],
     ) => {
-        impl Eq for $Simd {}
-
         impl_unary_operator!(
             $Simd,
             Neg,
