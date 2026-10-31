@@ -487,124 +487,107 @@ macro_rules! impl_simd_float {
       /// A SIMD vector with all elements set to `0.0`.
       pub const ZERO: Self = Self::splat(0.0);
 
-      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::EPSILON`].")]
+      /// A SIMD vector with all elements set to [`T::EPSILON`](f32::EPSILON).
       pub const EPSILON: Self = Self::splat($T::EPSILON);
 
-      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
+      /// A SIMD vector with all elements set to [`T::MIN`](f32::MIN).
       pub const MIN: Self = Self::splat($T::MIN);
 
-      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN_POSITIVE`].")]
+      /// A SIMD vector with all elements set to
+      /// [`T::MIN_POSITIVE`](f32::MIN_POSITIVE).
       pub const MIN_POSITIVE: Self = Self::splat($T::MIN_POSITIVE);
 
-      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
+      /// A SIMD vector with all elements set to [`T::MAX`](f32::MAX).
       pub const MAX: Self = Self::splat($T::MAX);
 
-      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::NAN`].")]
+      /// A SIMD vector with all elements set to [`T::NAN`](f32::NAN).
       pub const NAN: Self = Self::splat($T::NAN);
 
-      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::INFINITY`].")]
+      /// A SIMD vector with all elements set to [`T::INFINITY`](f32::INFINITY).
       pub const INFINITY: Self = Self::splat($T::INFINITY);
 
-      #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::NEG_INFINITY`].")]
+      /// A SIMD vector with all elements set to
+      /// [`T::NEG_INFINITY`](f32::NEG_INFINITY).
       pub const NEG_INFINITY: Self = Self::splat($T::NEG_INFINITY);
 
-      /// A SIMD vector with all elements set to [Euler's number (e)].
-      ///
-      #[doc = concat!("[Euler's number (e)]: core::", stringify!($T), "::consts::E")]
+      /// A SIMD vector with all elements set to
+      /// [Euler's number (e)](core::f32::consts::E).
       pub const E: Self = Self::splat(core::$T::consts::E);
 
-      /// A SIMD vector with all elements set to [1/π].
-      ///
-      #[doc = concat!("[1/π]: core::", stringify!($T), "::consts::FRAC_1_PI")]
+      /// A SIMD vector with all elements set to
+      /// [1/π](core::f32::consts::FRAC_1_PI).
       pub const FRAC_1_PI: Self = Self::splat(core::$T::consts::FRAC_1_PI);
 
-      /// A SIMD vector with all elements set to [2/π].
-      ///
-      #[doc = concat!("[2/π]: core::", stringify!($T), "::consts::FRAC_2_PI")]
+      /// A SIMD vector with all elements set to
+      /// [2/π](core::f32::consts::FRAC_2_PI).
       pub const FRAC_2_PI: Self = Self::splat(core::$T::consts::FRAC_2_PI);
 
-      /// A SIMD vector with all elements set to [2/sqrt(π)].
-      ///
-      #[doc = concat!("[2/sqrt(π)]: core::", stringify!($T), "::consts::FRAC_2_SQRT_PI")]
+      /// A SIMD vector with all elements set to
+      /// [2/sqrt(π)](core::f32::consts::FRAC_2_SQRT_PI).
       pub const FRAC_2_SQRT_PI: Self =
         Self::splat(core::$T::consts::FRAC_2_SQRT_PI);
 
-      /// A SIMD vector with all elements set to [1/sqrt(2)].
-      ///
-      #[doc = concat!("[1/sqrt(2)]: core::", stringify!($T), "::consts::FRAC_1_SQRT_2")]
+      /// A SIMD vector with all elements set to
+      /// [1/sqrt(2)](core::f32::consts::FRAC_1_SQRT_2).
       pub const FRAC_1_SQRT_2: Self =
         Self::splat(core::$T::consts::FRAC_1_SQRT_2);
 
-      /// A SIMD vector with all elements set to [π/2].
-      ///
-      #[doc = concat!("[π/2]: core::", stringify!($T), "::consts::FRAC_PI_2")]
+      /// A SIMD vector with all elements set to
+      /// [π/2](core::f32::consts::FRAC_PI_2).
       pub const FRAC_PI_2: Self = Self::splat(core::$T::consts::FRAC_PI_2);
 
-      /// A SIMD vector with all elements set to [π/3].
-      ///
-      #[doc = concat!("[π/3]: core::", stringify!($T), "::consts::FRAC_PI_3")]
+      /// A SIMD vector with all elements set to
+      /// [π/3](core::f32::consts::FRAC_PI_3).
       pub const FRAC_PI_3: Self = Self::splat(core::$T::consts::FRAC_PI_3);
 
-      /// A SIMD vector with all elements set to [π/4].
-      ///
-      #[doc = concat!("[π/4]: core::", stringify!($T), "::consts::FRAC_PI_4")]
+      /// A SIMD vector with all elements set to
+      /// [π/4](core::f32::consts::FRAC_PI_4).
       pub const FRAC_PI_4: Self = Self::splat(core::$T::consts::FRAC_PI_4);
 
-      /// A SIMD vector with all elements set to [π/6].
-      ///
-      #[doc = concat!("[π/6]: core::", stringify!($T), "::consts::FRAC_PI_6")]
+      /// A SIMD vector with all elements set to
+      /// [π/6](core::f32::consts::FRAC_PI_6).
       pub const FRAC_PI_6: Self = Self::splat(core::$T::consts::FRAC_PI_6);
 
-      /// A SIMD vector with all elements set to [π/8].
-      ///
-      #[doc = concat!("[π/8]: core::", stringify!($T), "::consts::FRAC_PI_8")]
+      /// A SIMD vector with all elements set to
+      /// [π/8](core::f32::consts::FRAC_PI_8).
       pub const FRAC_PI_8: Self = Self::splat(core::$T::consts::FRAC_PI_8);
 
-      /// A SIMD vector with all elements set to [ln(2)].
-      ///
-      #[doc = concat!("[ln(2)]: core::", stringify!($T), "::consts::LN_2")]
+      /// A SIMD vector with all elements set to
+      /// [ln(2)](core::f32::consts::LN_2).
       pub const LN_2: Self = Self::splat(core::$T::consts::LN_2);
 
-      /// A SIMD vector with all elements set to [ln(10)].
-      ///
-      #[doc = concat!("[ln(10)]: core::", stringify!($T), "::consts::LN_10")]
+      /// A SIMD vector with all elements set to
+      /// [ln(10)](core::f32::consts::LN_10).
       pub const LN_10: Self = Self::splat(core::$T::consts::LN_10);
 
-      /// A SIMD vector with all elements set to [log<sub>2</sub>(e)].
-      ///
-      #[doc = concat!("[log<sub>2</sub>(e)]: core::", stringify!($T), "::consts::LOG2_E")]
+      /// A SIMD vector with all elements set to
+      /// [log<sub>2</sub>(e)](core::f32::consts::LOG2_E).
       pub const LOG2_E: Self = Self::splat(core::$T::consts::LOG2_E);
 
-      /// A SIMD vector with all elements set to [log<sub>10</sub>(e)].
-      ///
-      #[doc = concat!("[log<sub>10</sub>(e)]: core::", stringify!($T), "::consts::LOG10_E")]
+      /// A SIMD vector with all elements set to
+      /// [log<sub>10</sub>(e)](core::f32::consts::LOG10_E).
       pub const LOG10_E: Self = Self::splat(core::$T::consts::LOG10_E);
 
-      /// A SIMD vector with all elements set to [log<sub>10</sub>(2)].
-      ///
-      #[doc = concat!("[log<sub>10</sub>(2)]: core::", stringify!($T), "::consts::LOG10_2")]
+      /// A SIMD vector with all elements set to
+      /// [log<sub>10</sub>(2)](core::f32::consts::LOG10_2).
       pub const LOG10_2: Self = Self::splat(core::$T::consts::LOG10_2);
 
-      /// A SIMD vector with all elements set to [log<sub>2</sub>(10)].
-      ///
-      #[doc = concat!("[log<sub>2</sub>(10)]: core::", stringify!($T), "::consts::LOG2_10")]
+      /// A SIMD vector with all elements set to
+      /// [log<sub>2</sub>(10)](core::f32::consts::LOG2_10).
       pub const LOG2_10: Self = Self::splat(core::$T::consts::LOG2_10);
 
-      /// A SIMD vector with all elements set to [Archimedes’ constant (π)].
-      ///
-      #[doc = concat!("[Archimedes’ constant (π)]: core::", stringify!($T), "::consts::PI")]
+      /// A SIMD vector with all elements set to
+      /// [Archimedes’ constant (π)](core::f32::consts::PI).
       pub const PI: Self = Self::splat(core::$T::consts::PI);
 
-      /// A SIMD vector with all elements set to [sqrt(2)].
-      ///
-      #[doc = concat!("[sqrt(2)]: core::", stringify!($T), "::consts::SQRT_2")]
+      /// A SIMD vector with all elements set to
+      /// [sqrt(2)](core::f32::consts::SQRT_2).
       pub const SQRT_2: Self = Self::splat(core::$T::consts::SQRT_2);
 
-      /// A SIMD vector with all elements set to [the full circle constant (τ)].
+      /// A SIMD vector with all elements set to
+      /// [the full circle constant (τ)](core::f32::consts::TAU).
       ///
       /// Equal to 2π.
-      ///
-      #[doc = concat!("[the full circle constant (τ)]: core::", stringify!($T), "::consts::TAU")]
       pub const TAU: Self = Self::splat(core::$T::consts::TAU);
 
       /// Returns a [mask] that checks if each element is NaN.
@@ -666,11 +649,7 @@ macro_rules! impl_simd_float {
       /// can vary by platform, version, and could even differ within the same
       /// execution from one invocation to the next.
       ///
-      #[doc = concat!(
-        "To compute the reciprocal deterministically, use `",
-        stringify!($Simd),
-        "::ONE / x`."
-      )]
+      /// To compute the reciprocal deterministically, use `1.0 / x`.
       #[inline]
       #[must_use]
       pub fn recip(self) -> Self {
@@ -897,8 +876,8 @@ macro_rules! impl_simd_float {
       /// +inf and -inf is provided as arguments.
       ///
       /// This currently returns a less precise result than
-      #[doc = concat!("[`", stringify!($T), "::midpoint`]")]
-      /// in order to gain performance, but this may change in a future version.
+      /// [`T::midpoint`](f32::midpoint) in order to gain performance, but this
+      /// may change in a future version.
       ///
       /// # Non-deterministic
       ///
@@ -1246,7 +1225,7 @@ macro_rules! impl_simd_float {
       /// `self / rhs` rounded to the integer `n` such that `self >= n * rhs`.
       ///
       /// This function is not guaranteed to exactly match
-      #[doc = concat!("[`", stringify!($T), "::div_euclid`].")]
+      /// [`T::div_euclid`](f32::div_euclid).
       ///
       /// [`rem_euclid`]: Self::rem_euclid
       #[inline]
@@ -1271,7 +1250,7 @@ macro_rules! impl_simd_float {
       /// approximately.
       ///
       /// This function is not guaranteed to exactly match
-      #[doc = concat!("[`", stringify!($T), "::rem_euclid`].")]
+      /// [`T::rem_euclid`](f32::rem_euclid).
       #[inline]
       #[must_use]
       pub fn rem_euclid(self, rhs: Self) -> Self {
@@ -1700,7 +1679,7 @@ macro_rules! impl_simd_float {
       ///
       /// This function has been deprecated because it raises all elements of
       /// `x` to the same power, even though that brings no performance benefit.
-      #[doc = concat!("Use `x.powf_simd(", stringify!($Simd), "::splat(n))` instead.")]
+      /// Use `x.powf_simd(splat(n))` instead.
       ///
       /// # Non-deterministic
       ///

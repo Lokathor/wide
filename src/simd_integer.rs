@@ -548,10 +548,10 @@ macro_rules! impl_simd_integer {
             /// A SIMD vector with all elements set to `0`.
             pub const ZERO: Self = Self::splat(0);
 
-            #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
+            /// A SIMD vector with all elements set to [`T::MAX`](i32::MAX).
             pub const MAX: Self = Self::splat($T::MAX);
 
-            #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
+            /// A SIMD vector with all elements set to [`T::MIN`](i32::MIN).
             pub const MIN: Self = Self::splat($T::MIN);
 
             /// The number of elements in this SIMD vector.
