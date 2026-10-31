@@ -663,80 +663,6 @@ macro_rules! define_simd {
       type Bitmask = $Bitmask;
     }
 
-    impl PartialEq for $Simd {
-      #[inline]
-      fn eq(&self, other: &Self) -> bool {
-        self.simd_eq(*other).all()
-      }
-    }
-
-    impl Default for $Simd {
-      #[inline]
-      fn default() -> Self {
-        // Currently, all supported `T` types have a default value where all
-        // bits equal zero.
-        Self::zeroed()
-      }
-    }
-
-    impl From<[$T; $N]> for $Simd {
-      /// Converts an array to a SIMD vector.
-      #[inline]
-      fn from(arr: [$T; $N]) -> Self {
-        Self::from_array(arr)
-      }
-    }
-
-    impl From<$Simd> for [$T; $N] {
-      /// Converts a SIMD vector to an array.
-      #[inline]
-      fn from(simd: $Simd) -> Self {
-        simd.to_array()
-      }
-    }
-
-    impl From<$T> for $Simd {
-      /// Converts a single value to a SIMD vector by setting all elements to
-      /// that value.
-      #[inline]
-      fn from(elem: $T) -> Self {
-        Self::splat(elem)
-      }
-    }
-
-    impl From<&[$T]> for $Simd {
-      /// Converts a slice to a SIMD vector, filling in zeros if there are not
-      /// enough elements, and panicking if there are too many elements.
-      ///
-      /// Note that in the future, handling of too many elements may change.
-      #[inline]
-      fn from(value: &[$T]) -> Self {
-        assert!(
-          value.len() <= $N,
-          "slice has more elements than the SIMD vector can store",
-        );
-
-        // SAFETY: `$Simd` accepts all bit-patterns, including all zeros.
-        let mut result = unsafe { core::mem::zeroed::<$Simd>() };
-
-        // SAFETY: `value` is valid for its own length, and `result` is valid
-        // because its length is checked to be less than or equal to
-        // `value.len()`. Both pointers are properly aligned because they
-        // originate from a slice of `$T`. The regions of memory do not overlap
-        // because they originate from a shared reference and a mutable
-        // reference.
-        unsafe {
-          core::ptr::copy_nonoverlapping::<$T>(
-            value.as_ptr(),
-            result.as_mut_array().as_mut_ptr(),
-            value.len()
-          );
-        }
-
-        result
-      }
-    }
-
     $(
       #[cfg(target_arch = "x86")]
       impl From<core::arch::x86::$X86Inner> for $Simd {
@@ -828,6 +754,80 @@ macro_rules! define_simd {
         }
       }
     )?
+
+    impl PartialEq for $Simd {
+      #[inline]
+      fn eq(&self, other: &Self) -> bool {
+        self.simd_eq(*other).all()
+      }
+    }
+
+    impl Default for $Simd {
+      #[inline]
+      fn default() -> Self {
+        // Currently, all supported `T` types have a default value where all
+        // bits equal zero.
+        Self::zeroed()
+      }
+    }
+
+    impl From<[$T; $N]> for $Simd {
+      /// Converts an array to a SIMD vector.
+      #[inline]
+      fn from(arr: [$T; $N]) -> Self {
+        Self::from_array(arr)
+      }
+    }
+
+    impl From<$Simd> for [$T; $N] {
+      /// Converts a SIMD vector to an array.
+      #[inline]
+      fn from(simd: $Simd) -> Self {
+        simd.to_array()
+      }
+    }
+
+    impl From<$T> for $Simd {
+      /// Converts a single value to a SIMD vector by setting all elements to
+      /// that value.
+      #[inline]
+      fn from(elem: $T) -> Self {
+        Self::splat(elem)
+      }
+    }
+
+    impl From<&[$T]> for $Simd {
+      /// Converts a slice to a SIMD vector, filling in zeros if there are not
+      /// enough elements, and panicking if there are too many elements.
+      ///
+      /// Note that in the future, handling of too many elements may change.
+      #[inline]
+      fn from(value: &[$T]) -> Self {
+        assert!(
+          value.len() <= $N,
+          "slice has more elements than the SIMD vector can store",
+        );
+
+        // SAFETY: `$Simd` accepts all bit-patterns, including all zeros.
+        let mut result = unsafe { core::mem::zeroed::<$Simd>() };
+
+        // SAFETY: `value` is valid for its own length, and `result` is valid
+        // because its length is checked to be less than or equal to
+        // `value.len()`. Both pointers are properly aligned because they
+        // originate from a slice of `$T`. The regions of memory do not overlap
+        // because they originate from a shared reference and a mutable
+        // reference.
+        unsafe {
+          core::ptr::copy_nonoverlapping::<$T>(
+            value.as_ptr(),
+            result.as_mut_array().as_mut_ptr(),
+            value.len()
+          );
+        }
+
+        result
+      }
+    }
 
     macro_rules! impl_formatting_trait {
       ($Trait:path) => {
