@@ -223,6 +223,7 @@ pub(crate) trait SupportSimdOf<U> {
 /// in the future, there will be SIMD element types that do not satisfy
 /// [`Pod`]-like requirements, and thus cannot support the existing mask
 /// operations.
+#[expect(private_bounds)]
 pub trait MaskOps: Sealed {}
 
 /// A trait for lanewise SIMD selection.
@@ -1669,7 +1670,7 @@ where
                 let mut result = [MaybeUninit::uninit(); N];
 
                 for (index, element) in result.iter_mut().enumerate() {
-                    *element.write(
+                    element.write(
                         seq.next_element()?
                             .ok_or_else(|| A::Error::invalid_length(index, &self))?,
                     );

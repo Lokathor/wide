@@ -19,7 +19,6 @@ use crate::{
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveFloat`, update the documentation of this trait to explain its
 /// intended usage.
-#[expect(private_bounds)]
 pub trait PrimitiveFloat: SimdElement + MaskOps {}
 
 /// Defines the internal implementations of functions applicable to SIMD vectors

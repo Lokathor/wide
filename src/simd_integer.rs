@@ -20,7 +20,6 @@ use crate::{
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveInteger`, update the documentation of this trait to explain its
 /// intended usage.
-#[expect(private_bounds)]
 pub trait PrimitiveInteger: SimdElement + MaskOps {}
 
 /// An internal trait for primitive integer types that have a double-width
