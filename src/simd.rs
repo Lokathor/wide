@@ -1,5 +1,7 @@
 //! Defines the library's types and APIs applicable to arbitrary SIMD vectors.
 
+use core::mem::transmute_copy;
+
 use bytemuck::{Pod, Zeroable, pod_align_to, pod_align_to_mut};
 #[cfg(feature = "serde")]
 use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
@@ -1586,7 +1588,7 @@ where
 #[cfg(feature = "serde")]
 impl<T, const N: usize> Serialize for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + Serialize,
     Simd<T, N>: SupportedSimd,
 {
     #[inline]
@@ -1604,9 +1606,9 @@ where
 }
 
 #[cfg(feature = "serde")]
-impl<T, const N: usize, 'de> Deserialize<'de> for Simd<T, N>
+impl<'de, T, const N: usize> Deserialize<'de> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + Deserialize<'de>,
     Simd<T, N>: SupportedSimd,
 {
     #[inline]
@@ -1614,7 +1616,56 @@ where
     where
         D: serde_core::Deserializer<'de>,
     {
-        crate::simd::deserialize_impl(deserializer)
+        use core::mem::MaybeUninit;
+
+        use serde_core::de::Error;
+
+        struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
+
+        impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
+        where
+            T: SimdElement + Deserialize<'de>,
+        {
+            type Value = [T; N];
+
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                formatter.write_str("an array of length {N}")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
+            where
+                A: serde_core::de::SeqAccess<'de>,
+            {
+                let mut result = [MaybeUninit::uninit(); N];
+
+                for (index, element) in result.iter_mut().enumerate() {
+                    *element.write(
+                        seq.next_element()?
+                            .ok_or_else(|| A::Error::invalid_length(index, &self))?,
+                    );
+                }
+
+                // `<[MaybeUninit<T>; N]>::transpose` is unstable
+                // SAFETY: These types represent the same thing
+                let result =
+                    unsafe { transmute_copy::<[MaybeUninit<T>; N], MaybeUninit<[T; N]>>(&result) };
+
+                // SAFETY: If the function has not early-returned already, all
+                // `result` slots have been written to and initialized.
+                let result = unsafe { result.assume_init() };
+
+                if seq.next_element::<T>()?.is_some() {
+                    return Err(A::Error::invalid_length(N + 1, &self));
+                }
+
+                Ok(result)
+            }
+        }
+
+        Ok(Self::from_array(deserializer.deserialize_tuple(
+            N,
+            ArrayVisitor::<T, N>(core::marker::PhantomData),
+        )?))
     }
 }
 
@@ -2000,52 +2051,6 @@ where
     T: SimdElement,
     Simd<T, N>: SupportedSimd,
 {
-}
-
-/// `serde` does not implement `Deserialize` for `[T; 64]`, so this manual
-/// implementation is used.
-#[cfg(feature = "serde")]
-pub(crate) fn deserialize_impl<'de, Simd, T, const N: usize, D>(
-    deserializer: D,
-) -> Result<Simd, D::Error>
-where
-    D: serde_core::Deserializer<'de>,
-    T: serde_core::Deserialize<'de> + Default + Copy,
-    Simd: From<[T; N]>,
-{
-    struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
-
-    impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
-    where
-        T: serde_core::Deserialize<'de> + Default + Copy,
-    {
-        type Value = [T; N];
-
-        fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            formatter.write_str("an array of length {N}")
-        }
-
-        fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
-        where
-            A: serde_core::de::SeqAccess<'de>,
-        {
-            use serde_core::de::Error;
-            let mut array = [T::default(); N];
-            for (index, element) in array.iter_mut().enumerate() {
-                *element = seq
-                    .next_element()?
-                    .ok_or_else(|| A::Error::invalid_length(index, &self))?;
-            }
-            if seq.next_element::<T>()?.is_some() {
-                return Err(A::Error::invalid_length(N + 1, &self));
-            }
-            Ok(array)
-        }
-    }
-
-    Ok(deserializer
-        .deserialize_tuple(N, ArrayVisitor::<T, N>(core::marker::PhantomData))?
-        .into())
 }
 
 define_simd!(
