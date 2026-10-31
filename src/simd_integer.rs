@@ -370,8 +370,8 @@ macro_rules! impl_simd_integer {
             /// Note that on most targets, this operator is slower than
             /// [`unbounded_shl`], so consider using that instead.
             ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
+            /// [`wrapping_shl`]: i32::wrapping_shl
+            /// [`unbounded_shl`]: Self::unbounded_shl
             ,
             /// Shifts left each element of `self` by the scalar `rhs`.
             ///
@@ -381,8 +381,8 @@ macro_rules! impl_simd_integer {
             /// SIMD vector. Note that on most targets, this operator is slower than
             /// [`unbounded_shl_scalar`], so consider using that instead.
             ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            #[doc = concat!("[`unbounded_shl_scalar`]: ", stringify!($Simd), "::unbounded_shl_scalar")]
+            /// [`wrapping_shl`]: i32::wrapping_shl
+            /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
             ,
             /// Shifts left the scalar `self` by each element of `rhs`,
             /// returning a SIMD vector.
@@ -392,8 +392,8 @@ macro_rules! impl_simd_integer {
             /// Note that on most targets, this operator is slower than
             /// [`unbounded_shl`], so consider using that instead.
             ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
+            /// [`wrapping_shl`]: i32::wrapping_shl
+            /// [`unbounded_shl`]: Self::unbounded_shl
         );
         impl_shift_operator!(
             $T,
@@ -414,8 +414,8 @@ macro_rules! impl_simd_integer {
             /// Note that on most targets, this operator is slower than
             /// [`unbounded_shr`], so consider using that instead.
             ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
+            /// [`wrapping_shr`]: i32::wrapping_shr
+            /// [`unbounded_shr`]: Self::unbounded_shr
             ,
             /// Shifts right each element of `self` by the scalar `rhs`.
             ///
@@ -425,8 +425,9 @@ macro_rules! impl_simd_integer {
             /// a SIMD vector. Note that on most targets, this operator is
             /// slower than [`unbounded_shr`], so consider using that instead.
             ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")],
+            /// [`wrapping_shr`]: i32::wrapping_shr
+            /// [`unbounded_shr`]: Self::unbounded_shr
+            ,
             /// Shifts right the scalar `self` by each element of `rhs`,
             /// returning a SIMD vector.
             ///
@@ -435,8 +436,8 @@ macro_rules! impl_simd_integer {
             /// Note that on most targets, this operator is slower than
             /// [`unbounded_shr`], so consider using that instead.
             ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
+            /// [`wrapping_shr`]: i32::wrapping_shr
+            /// [`unbounded_shr`]: Self::unbounded_shr
         );
         impl_binary_operator!(
             $T,
@@ -627,7 +628,7 @@ macro_rules! impl_simd_integer {
             /// Shifts left each element of `self` by the corresponding element
             /// of `rhs`, without bounding `rhs`.
             ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+            /// If `rhs` is larger than or equal to the number of bits in `T`,
             /// the entire value is shifted out, and `0` is returned.
             ///
             /// This is different from the standard operator, which behaves like
@@ -637,7 +638,7 @@ macro_rules! impl_simd_integer {
             /// If you intend to shift all elements by the same value, consider using
             /// [`unbounded_shl_scalar`] which is faster.
             ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+            /// [`wrapping_shl`]: i32::wrapping_shl
             /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
             #[inline]
             #[must_use]
@@ -648,7 +649,7 @@ macro_rules! impl_simd_integer {
             /// Shifts left each element of `self` by the uniform scalar `rhs`,
             /// without bounding `rhs`.
             ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+            /// If `rhs` is larger than or equal to the number of bits in `T`,
             /// the entire value is shifted out, and `0` is returned.
             ///
             /// This is different from the standard operator, which behaves like
@@ -658,7 +659,7 @@ macro_rules! impl_simd_integer {
             /// This function is faster than `self.unbounded_shl(splat(rhs))`
             /// because it has special hardware support.
             ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+            /// [`wrapping_shl`]: i32::wrapping_shl
             #[inline]
             #[must_use]
             pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
@@ -668,7 +669,7 @@ macro_rules! impl_simd_integer {
             /// Shifts right each element of `self` by the corresponding element
             /// of `rhs`, without bounding `rhs`.
             ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+            /// If `rhs` is larger than or equal to the number of bits in `T`,
             /// the entire value is shifted out. For unsigned integers, this
             /// yields `0`. For signed integers, this yields `0` for a positive
             /// number and `-1` for a negative number.
@@ -680,7 +681,7 @@ macro_rules! impl_simd_integer {
             /// If you intend to shift all elements by the same value, consider using
             /// [`unbounded_shr_scalar`] which is faster.
             ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+            /// [`wrapping_shr`]: i32::wrapping_shr
             /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
             #[inline]
             #[must_use]
@@ -691,7 +692,7 @@ macro_rules! impl_simd_integer {
             /// Shifts right each element of `self` by the uniform scalar `rhs`,
             /// without bounding `rhs`.
             ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
+            /// If `rhs` is larger than or equal to the number of bits in `T`,
             /// the entire value is shifted out. For unsigned integers, this
             /// yields `0`. For signed integers, this yields `0` for a positive
             /// number and `-1` for a negative number.
@@ -703,7 +704,7 @@ macro_rules! impl_simd_integer {
             /// This function is faster than `self.unbounded_shr(splat(rhs))` because
             /// it has special hardware support.
             ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+            /// [`wrapping_shr`]: i32::wrapping_shr
             #[inline]
             #[must_use]
             pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
@@ -849,14 +850,14 @@ macro_rules! impl_simd_integer {
             /// Returns a tuple with:
             ///
             /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
-            #[doc = concat!(" - A mask indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            /// - A mask indicating whether an overflow occured (`rhs >= T::BITS`)
             ///
             /// Note that on most targets, this operation is slower than
             /// [`unbounded_shl`], so consider using that instead. If you intend
             /// to shift all elements by the same value, consider using
             /// [`overflowing_shl_scalar`] which is faster.
             ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+            /// [`wrapping_shl`]: i32::wrapping_shl
             /// [`unbounded_shl`]: Self::unbounded_shl
             /// [`overflowing_shl_scalar`]: Self::overflowing_shl_scalar
             #[inline]
@@ -871,7 +872,7 @@ macro_rules! impl_simd_integer {
             /// Returns a tuple with:
             ///
             /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
-            #[doc = concat!(" - A boolean indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            /// - A boolean indicating whether an overflow occured (`rhs >= T::BITS`)
             ///
             /// Note that on most targets, this operation is slower than
             /// [`unbounded_shl_scalar`], so consider using that instead.
@@ -879,7 +880,7 @@ macro_rules! impl_simd_integer {
             /// This function is faster than `self.overflowing_shl(splat(rhs))`
             /// because it has special hardware support.
             ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
+            /// [`wrapping_shl`]: i32::wrapping_shl
             /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
             #[inline]
             #[must_use]
@@ -893,14 +894,14 @@ macro_rules! impl_simd_integer {
             /// Returns a tuple with:
             ///
             /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
-            #[doc = concat!(" - A mask indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            /// - A mask indicating whether an overflow occured (`rhs >= T::BITS`)
             ///
             /// Note that on most targets, this operation is slower than
             /// [`unbounded_shr`], so consider using that instead. If you intend
             /// to shift all elements by the same value, consider using
             /// [`overflowing_shr_scalar`] which is faster.
             ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+            /// [`wrapping_shr`]: i32::wrapping_shr
             /// [`unbounded_shr`]: Self::unbounded_shr
             /// [`overflowing_shr_scalar`]: Self::overflowing_shr_scalar
             #[inline]
@@ -915,7 +916,7 @@ macro_rules! impl_simd_integer {
             /// Returns a tuple with:
             ///
             /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
-            #[doc = concat!(" - A boolean indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
+            /// - A boolean indicating whether an overflow occured (`rhs >= T::BITS`)
             ///
             /// Note that on most targets, this operation is slower than
             /// [`unbounded_shr_scalar`], so consider using that instead.
@@ -923,7 +924,7 @@ macro_rules! impl_simd_integer {
             /// This function is faster than `self.overflowing_shr(splat(rhs))`
             /// because it has special hardware support.
             ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
+            /// [`wrapping_shr`]: i32::wrapping_shr
             /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
             #[inline]
             #[must_use]
@@ -952,15 +953,9 @@ macro_rules! impl_simd_integer {
                 }
             )?
 
-            #[doc = concat!(
-                "Computes `self * rhs`, producing intermediate ",
-                $T_BITS_MUL_2,
-                "-bit integers, then returns their low ",
-                $T_BITS,
-                "-bit parts and high ",
-                $T_BITS,
-                "-bit parts in two seperate SIMD vectors."
-            )]
+            /// Computes `self * rhs`, producing intermediate double-width
+            /// integers, then returns their low parts and high parts in two
+            /// seperate SIMD vectors.
             ///
             /// This function is different from `widening_mul`, which returns a single
             /// SIMD vector of a larger integer type, instead of two seperate SIMD
@@ -974,13 +969,9 @@ macro_rules! impl_simd_integer {
                 self.mul_keep_low_high_backend(rhs)
             }
 
-            #[doc = concat!(
-                "Computes `self * rhs`, producing intermediate ",
-                $T_BITS_MUL_2,
-                "-bit integers, then returns their high ",
-                $T_BITS,
-                "-bit parts."
-            )]
+            /// Computes `self * rhs`, producing intermediate double-width
+            /// integers, then returns their high parts, discarding their low
+            /// parts.
             #[inline]
             #[must_use]
             pub fn mul_keep_high(self, rhs: Self) -> Self {
