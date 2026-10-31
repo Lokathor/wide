@@ -757,14 +757,22 @@ macro_rules! define_simd {
   };
 }
 
-impl<T, const N: usize> PartialEq for Simd<T, N> {
+impl<T, const N: usize> PartialEq for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.simd_eq(*other).all()
     }
 }
 
-impl<T, const N: usize> Default for Simd<T, N> {
+impl<T, const N: usize> Default for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     #[inline]
     fn default() -> Self {
         // Currently, all supported `T` types have a default value where all
@@ -773,7 +781,11 @@ impl<T, const N: usize> Default for Simd<T, N> {
     }
 }
 
-impl<T, const N: usize> From<[T; N]> for Simd<T, N> {
+impl<T, const N: usize> From<[T; N]> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     /// Converts an array to a SIMD vector.
     #[inline]
     fn from(arr: [T; N]) -> Self {
@@ -781,7 +793,11 @@ impl<T, const N: usize> From<[T; N]> for Simd<T, N> {
     }
 }
 
-impl<T, const N: usize> From<Simd<T, N>> for [T; N] {
+impl<T, const N: usize> From<Simd<T, N>> for [T; N]
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     /// Converts a SIMD vector to an array.
     #[inline]
     fn from(simd: Simd<T, N>) -> Self {
@@ -789,7 +805,11 @@ impl<T, const N: usize> From<Simd<T, N>> for [T; N] {
     }
 }
 
-impl<T, const N: usize> From<T> for Simd<T, N> {
+impl<T, const N: usize> From<T> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     /// Converts a single value to a SIMD vector by setting all elements to
     /// that value.
     #[inline]
@@ -798,7 +818,11 @@ impl<T, const N: usize> From<T> for Simd<T, N> {
     }
 }
 
-impl<T, const N: usize> From<&[T]> for Simd<T, N> {
+impl<T, const N: usize> From<&[T]> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     /// Converts a slice to a SIMD vector, filling in zeros if there are not
     /// enough elements, and panicking if there are too many elements.
     ///
@@ -833,7 +857,11 @@ impl<T, const N: usize> From<&[T]> for Simd<T, N> {
 
 macro_rules! impl_formatting_trait {
     ($Trait:path) => {
-        impl<T, const N: usize> $Trait for Simd<T, N> {
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: SimdElement,
+            Simd<T, N>: SupportedSimd,
+        {
             #[allow(clippy::missing_inline_in_public_items)]
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 write!(f, "(")?;
@@ -853,14 +881,22 @@ impl_formatting_trait!(core::fmt::Display);
 impl_formatting_trait!(core::fmt::LowerExp);
 impl_formatting_trait!(core::fmt::UpperExp);
 
-impl<T, const N: usize> Select<Simd<T, N>> for Simd<T, N> {
+impl<T, const N: usize> Select<Simd<T, N>> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     #[inline]
     fn select(self, if_true: Self, if_false: Self) -> Self {
         self.select_backend(if_true, if_false)
     }
 }
 
-impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2] {
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2]
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
 
@@ -880,7 +916,11 @@ impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2] {
     }
 }
 
-impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3] {
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3]
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
 
@@ -900,7 +940,11 @@ impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3] {
     }
 }
 
-impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4] {
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4]
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
 
@@ -921,7 +965,11 @@ impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4] {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpEq for Simd<T, N> {
+impl<T, const N: usize> CmpEq for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -931,7 +979,11 @@ impl<T, const N: usize> CmpEq for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpEq<T> for Simd<T, N> {
+impl<T, const N: usize> CmpEq<T> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -941,7 +993,11 @@ impl<T, const N: usize> CmpEq<T> for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpNe for Simd<T, N> {
+impl<T, const N: usize> CmpNe for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -951,7 +1007,11 @@ impl<T, const N: usize> CmpNe for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpNe<T> for Simd<T, N> {
+impl<T, const N: usize> CmpNe<T> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -961,7 +1021,11 @@ impl<T, const N: usize> CmpNe<T> for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpLt for Simd<T, N> {
+impl<T, const N: usize> CmpLt for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -971,7 +1035,11 @@ impl<T, const N: usize> CmpLt for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpLt<T> for Simd<T, N> {
+impl<T, const N: usize> CmpLt<T> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -981,7 +1049,11 @@ impl<T, const N: usize> CmpLt<T> for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpGt for Simd<T, N> {
+impl<T, const N: usize> CmpGt for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -991,7 +1063,11 @@ impl<T, const N: usize> CmpGt for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpGt<T> for Simd<T, N> {
+impl<T, const N: usize> CmpGt<T> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -1001,7 +1077,11 @@ impl<T, const N: usize> CmpGt<T> for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpLe for Simd<T, N> {
+impl<T, const N: usize> CmpLe for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -1011,7 +1091,11 @@ impl<T, const N: usize> CmpLe for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpLe<T> for Simd<T, N> {
+impl<T, const N: usize> CmpLe<T> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -1021,7 +1105,11 @@ impl<T, const N: usize> CmpLe<T> for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpGe for Simd<T, N> {
+impl<T, const N: usize> CmpGe for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -1031,7 +1119,11 @@ impl<T, const N: usize> CmpGe for Simd<T, N> {
 }
 
 #[expect(deprecated)]
-impl<T, const N: usize> CmpGe<T> for Simd<T, N> {
+impl<T, const N: usize> CmpGe<T> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Output = Self;
 
     #[inline]
@@ -1040,12 +1132,20 @@ impl<T, const N: usize> CmpGe<T> for Simd<T, N> {
     }
 }
 
-impl<T, const N: usize> AlignTo for Simd<T, N> {
+impl<T, const N: usize> AlignTo for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     type Elem = T;
 }
 
 /// The following functionality exists for all SIMD vectors.
-impl<T, const N: usize> Simd<T, N> {
+impl<T, const N: usize> Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     /// Converts an array to a SIMD vector.
     #[inline]
     #[must_use]
@@ -1442,14 +1542,28 @@ impl<T, const N: usize> Simd<T, N> {
 
 // SAFETY: All SIMD types in this library contain fully initialized memory
 // and accept all bits patterns.
-unsafe impl<T, const N: usize> Zeroable for Simd<T, N> {}
+unsafe impl<T, const N: usize> Zeroable for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+}
 
 // SAFETY: All SIMD types in this library contain fully initialized memory
 // and accept all bits patterns.
-unsafe impl<T, const N: usize> Pod for Simd<T, N> {}
+unsafe impl<T, const N: usize> Pod for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+}
 
 #[cfg(feature = "serde")]
-impl<T, const N: usize> Serialize for Simd<T, N> {
+impl<T, const N: usize> Serialize for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1465,7 +1579,11 @@ impl<T, const N: usize> Serialize for Simd<T, N> {
 }
 
 #[cfg(feature = "serde")]
-impl<T, const N: usize, 'de> Deserialize<'de> for Simd<T, N> {
+impl<T, const N: usize, 'de> Deserialize<'de> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
     #[inline]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
