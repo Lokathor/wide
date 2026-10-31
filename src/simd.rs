@@ -859,7 +859,7 @@ macro_rules! impl_formatting_trait {
     ($Trait:path) => {
         impl<T, const N: usize> $Trait for Simd<T, N>
         where
-            T: SimdElement,
+            T: SimdElement + $Trait,
             Simd<T, N>: SupportedSimd,
         {
             #[allow(clippy::missing_inline_in_public_items)]
