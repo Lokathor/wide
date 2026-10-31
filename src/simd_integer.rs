@@ -38,7 +38,7 @@ pub(crate) trait HasDoubleWidth {
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of integers (both signed and unsigned).
-pub(crate) trait SimdIntegerBackend {
+pub(crate) trait SimdIntegerBackend: Sized {
     fn neg_backend(self) -> Self;
 
     fn not_backend(self) -> Self;
@@ -107,29 +107,17 @@ pub(crate) trait SimdIntegerBackend {
 
     fn saturating_mul_backend(self, rhs: Self) -> Self;
 
-    fn overflowing_neg_backend(self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn overflowing_neg_backend(self) -> (Self, Self);
 
-    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self);
 
-    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self);
 
-    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self);
 
-    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self);
 
-    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self);
 
     fn widening_mul_backend(
         self,
@@ -151,8 +139,7 @@ pub(crate) trait SimdIntegerBackend {
 
     fn mul_keep_low_high_backend(self, rhs: Self) -> (Self::UnsignedSimd, Self)
     where
-        Self: Sized + SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>,
-        Self::UnsignedSimd: Sized;
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn mul_keep_high_backend(self, rhs: Self) -> Self;
 }
