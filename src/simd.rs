@@ -831,11 +831,12 @@ where
 
 impl<T, const N: usize> From<&[T]> for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + Default,
     Simd<T, N>: SupportedSimd,
 {
-    /// Converts a slice to a SIMD vector, filling in zeros if there are not
-    /// enough elements, and panicking if there are too many elements.
+    /// Converts a slice to a SIMD vector, filling in [`Default::default()`] if
+    /// there are not enough elements, and panicking if there are too many
+    /// elements.
     ///
     /// Note that in the future, handling of too many elements may change.
     #[inline]
@@ -845,8 +846,7 @@ where
             "slice has more elements than the SIMD vector can store",
         );
 
-        // SAFETY: `Simd<T, N>` accepts all bit-patterns, including all zeros.
-        let mut result = unsafe { core::mem::zeroed::<Simd<T, N>>() };
+        let mut result = Self::default();
 
         // SAFETY: `value` is valid for its own length, and `result` is valid
         // because its length is checked to be less than or equal to
