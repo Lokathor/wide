@@ -234,8 +234,7 @@ impl SimdBackend for f32x8 {
 }
 
 safe_target_feature! {
-// Backend of SIMD float functions.
-impl f32x8 {
+impl SimdFloatBackend for f32x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {

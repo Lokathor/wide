@@ -240,8 +240,7 @@ impl SimdBackend for f64x2 {
 }
 
 safe_target_feature! {
-// Backend of SIMD float functions.
-impl f64x2 {
+impl SimdFloatBackend for f64x2 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
