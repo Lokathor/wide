@@ -1154,7 +1154,6 @@ where
     type Elem = T;
 }
 
-/// The following functionality exists for all SIMD vectors.
 impl<T, const N: usize> Simd<T, N>
 where
     T: SimdElement,
