@@ -754,6 +754,8 @@ macro_rules! define_simd {
         }
       }
     )?
+  };
+}
 
     impl PartialEq for $Simd {
       #[inline]
@@ -1466,8 +1468,6 @@ macro_rules! define_simd {
         crate::simd::deserialize_impl(deserializer)
       }
     }
-  };
-}
 
 /// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD float types.
