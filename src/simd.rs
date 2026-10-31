@@ -28,14 +28,6 @@ where
 /// implements [`SupportedSimd`].
 #[expect(private_bounds)]
 pub trait SimdElement: Sealed + Copy {
-    /// Add a dummy associated constant in order to avoid marking this trait as
-    /// dyn compatible.
-    ///
-    /// This cannot be done with a `Sized` super trait because we do not want to
-    /// guarantee that all SIMD element types implement `Sized`.
-    #[doc(hidden)]
-    const NOT_DYN_COMPATIBLE_MARKER: () = ();
-
     /// An unsigned integer with the same size as `self`.
     ///
     /// For floats and integers, the unsigned type is guaranteed to have their
