@@ -109,8 +109,7 @@ impl SimdBackend for i64x2 {
 }
 
 safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i64x2 {
+impl SimdIntegerBackend for i64x2 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u64x2) -> Self {
         pick! {

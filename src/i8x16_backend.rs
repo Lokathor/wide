@@ -156,8 +156,7 @@ impl SimdBackend for i8x16 {
 }
 
 safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i8x16 {
+impl SimdIntegerBackend for i8x16 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u8x16) -> Self {
         // For x86, this technically can be done explicitly by converting

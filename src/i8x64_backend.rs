@@ -77,8 +77,7 @@ impl SimdBackend for i8x64 {
 }
 
 safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i8x64 {
+impl SimdIntegerBackend for i8x64 {
     #[inline]
     pub(crate) fn shr_backend(self, rhs: u8x64) -> Self {
         // There's no dedicated `i8` shift instruction, so we split into halves

@@ -453,8 +453,7 @@ impl SimdBackend for u32x8 {
 }
 
 safe_target_feature! {
-// Backend of SIMD integer functions.
-impl u32x8 {
+impl SimdIntegerBackend for u32x8 {
     #[inline]
     pub(crate) fn neg_backend(self) -> Self {
         pick! {
