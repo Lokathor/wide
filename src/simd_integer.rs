@@ -371,7 +371,7 @@ macro_rules! impl_simd_integer {
             /// [`unbounded_shl`], so consider using that instead.
             ///
             /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl`]: Self::unbounded_shl
+            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
             ,
             /// Shifts left each element of `self` by the scalar `rhs`.
             ///
@@ -382,7 +382,7 @@ macro_rules! impl_simd_integer {
             /// [`unbounded_shl_scalar`], so consider using that instead.
             ///
             /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
+            /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
             ,
             /// Shifts left the scalar `self` by each element of `rhs`,
             /// returning a SIMD vector.
@@ -393,7 +393,7 @@ macro_rules! impl_simd_integer {
             /// [`unbounded_shl`], so consider using that instead.
             ///
             /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl`]: Self::unbounded_shl
+            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
         );
         impl_shift_operator!(
             $T,
@@ -415,7 +415,7 @@ macro_rules! impl_simd_integer {
             /// [`unbounded_shr`], so consider using that instead.
             ///
             /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: Self::unbounded_shr
+            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
             ,
             /// Shifts right each element of `self` by the scalar `rhs`.
             ///
@@ -426,7 +426,7 @@ macro_rules! impl_simd_integer {
             /// slower than [`unbounded_shr`], so consider using that instead.
             ///
             /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: Self::unbounded_shr
+            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
             ,
             /// Shifts right the scalar `self` by each element of `rhs`,
             /// returning a SIMD vector.
@@ -437,7 +437,7 @@ macro_rules! impl_simd_integer {
             /// [`unbounded_shr`], so consider using that instead.
             ///
             /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: Self::unbounded_shr
+            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
         );
         impl_binary_operator!(
             $T,
@@ -639,7 +639,7 @@ macro_rules! impl_simd_integer {
             /// [`unbounded_shl_scalar`] which is faster.
             ///
             /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
+            /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
             #[inline]
             #[must_use]
             pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
@@ -682,7 +682,7 @@ macro_rules! impl_simd_integer {
             /// [`unbounded_shr_scalar`] which is faster.
             ///
             /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
+            /// [`unbounded_shr_scalar`]: crate::Simd::unbounded_shr_scalar
             #[inline]
             #[must_use]
             pub fn unbounded_shr(self, rhs: $UnsignedSimd) -> Self {
@@ -858,7 +858,7 @@ macro_rules! impl_simd_integer {
             /// [`overflowing_shl_scalar`] which is faster.
             ///
             /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl`]: Self::unbounded_shl
+            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
             /// [`overflowing_shl_scalar`]: Self::overflowing_shl_scalar
             #[inline]
             #[must_use]
@@ -881,7 +881,7 @@ macro_rules! impl_simd_integer {
             /// because it has special hardware support.
             ///
             /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
+            /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
             #[inline]
             #[must_use]
             pub fn overflowing_shl_scalar(self, rhs: u32) -> (Self, bool) {
@@ -902,7 +902,7 @@ macro_rules! impl_simd_integer {
             /// [`overflowing_shr_scalar`] which is faster.
             ///
             /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: Self::unbounded_shr
+            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
             /// [`overflowing_shr_scalar`]: Self::overflowing_shr_scalar
             #[inline]
             #[must_use]
@@ -925,7 +925,7 @@ macro_rules! impl_simd_integer {
             /// because it has special hardware support.
             ///
             /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
+            /// [`unbounded_shr_scalar`]: crate::Simd::unbounded_shr_scalar
             #[inline]
             #[must_use]
             pub fn overflowing_shr_scalar(self, rhs: u32) -> (Self, bool) {

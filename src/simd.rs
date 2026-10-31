@@ -703,11 +703,7 @@ macro_rules! define_simd {
       fn from(value: &[$T]) -> Self {
         assert!(
           value.len() <= $N,
-          concat!(
-            "slice has more elements than `",
-            stringify!($Simd),
-            "` can store",
-          ),
+          "slice has more elements than the SIMD vector can store",
         );
 
         // SAFETY: `$Simd` accepts all bit-patterns, including all zeros.
