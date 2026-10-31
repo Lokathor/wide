@@ -1,6 +1,6 @@
 //! Defines the library's types and APIs applicable to arbitrary SIMD vectors.
 
-use core::mem::transmute_copy;
+use core::mem::{transmute, transmute_copy};
 
 use bytemuck::{Pod, Zeroable, pod_align_to, pod_align_to_mut};
 #[cfg(feature = "serde")]
@@ -1163,23 +1163,36 @@ where
     #[inline]
     #[must_use]
     pub const fn from_array(array: [T; N]) -> Self {
-        unsafe { core::mem::transmute::<[T; N], Simd<T, N>>(array) }
+        // `transmute` cannot be used for generic types, so this must use
+        // `transmute_copy`
+
+        // SAFETY: All current SIMD types accept all bit-patterns and only
+        // contain initialized memory.
+        unsafe { transmute_copy::<[T; N], Simd<T, N>>(&array) }
     }
 
     /// Constructs a new SIMD vector with all elements set to the given value.
     #[inline]
     #[must_use]
     pub const fn splat(elem: T) -> Self {
-        unsafe { core::mem::transmute::<[T; N], Simd<T, N>>([elem; N]) }
+        // `transmute` cannot be used for generic types, so this must use
+        // `transmute_copy`
+
+        // SAFETY: All current SIMD types accept all bit-patterns and only
+        // contain initialized memory.
+        unsafe { transmute_copy::<[T; N], Simd<T, N>>(&[elem; N]) }
     }
 
     /// Converts a SIMD vector to an array.
     #[inline]
     #[must_use]
     pub const fn to_array(self) -> [T; N] {
-        // SAFETY: Both types accept all bit-patterns and only contain
-        // initialized memory.
-        unsafe { core::mem::transmute::<Simd<T, N>, [T; N]>(self) }
+        // `transmute` cannot be used for generic types, so this must use
+        // `transmute_copy`
+
+        // SAFETY: All current SIMD types accept all bit-patterns and only
+        // contain initialized memory.
+        unsafe { transmute_copy::<Simd<T, N>, [T; N]>(&self) }
     }
 
     /// Returns an array reference containing the entire SIMD vector.
@@ -1189,7 +1202,7 @@ where
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe { core::mem::transmute::<&Simd<T, N>, &[T; N]>(self) }
+        unsafe { transmute::<&Simd<T, N>, &[T; N]>(self) }
     }
 
     /// Returns a mutable array reference containing the entire SIMD vector.
@@ -1199,7 +1212,7 @@ where
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe { core::mem::transmute::<&mut Simd<T, N>, &mut [T; N]>(self) }
+        unsafe { transmute::<&mut Simd<T, N>, &mut [T; N]>(self) }
     }
 
     /// Returns a [mask] that checks if each element of `self` is equal to the
