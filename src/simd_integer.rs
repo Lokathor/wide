@@ -21,6 +21,20 @@ use crate::{
 /// intended usage.
 pub trait PrimitiveInteger: SimdElement {}
 
+/// An internal trait for primitive integer types that have a double-width
+/// variant.
+///
+/// This is used for `widening_mul`.
+///
+/// This trait could be exposed publicly, and that would enable users calling
+/// `widening_mul` in contexts generic over `T`. However, it is currently not
+/// exposed in order to avoid trait-bloat.
+pub(crate) trait HasDoubleWidth {
+    /// The primitive integer with double the width of `Self` and the same
+    /// signedness.
+    type DoubleWidth: PrimitiveInteger;
+}
+
 impl PrimitiveInteger for i8 {}
 impl PrimitiveInteger for i16 {}
 impl PrimitiveInteger for i32 {}
@@ -33,6 +47,31 @@ impl PrimitiveInteger for u32 {}
 impl PrimitiveInteger for u64 {}
 impl PrimitiveInteger for u128 {}
 impl PrimitiveInteger for usize {}
+
+impl HasDoubleWidth for i8 {
+    type DoubleWidth = i16;
+}
+impl HasDoubleWidth for i16 {
+    type DoubleWidth = i32;
+}
+impl HasDoubleWidth for i32 {
+    type DoubleWidth = i64;
+}
+impl HasDoubleWidth for i64 {
+    type DoubleWidth = i128;
+}
+impl HasDoubleWidth for u8 {
+    type DoubleWidth = u16;
+}
+impl HasDoubleWidth for u16 {
+    type DoubleWidth = u32;
+}
+impl HasDoubleWidth for u32 {
+    type DoubleWidth = u64;
+}
+impl HasDoubleWidth for u64 {
+    type DoubleWidth = u128;
+}
 
 macro_rules! impl_simd_integer {
     (
