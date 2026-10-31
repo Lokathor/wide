@@ -845,8 +845,7 @@ impl SimdIntegerBackend for u16x32 {
 }
 
 safe_target_feature! {
-// Backend of SIMD unsigned integer functions.
-impl u16x32 {
+impl SimdUnsignedBackend for u16x32 {
     #[inline]
     pub(crate) fn saturating_add_signed_backend(self, rhs: i16x32) -> Self {
         pick! {
