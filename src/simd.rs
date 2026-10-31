@@ -172,7 +172,7 @@ pub(crate) trait SimdBackend {
 /// Provides SIMD backend traits access to SIMD associated types.
 ///
 /// SIMD backend traits are not generic over `T` nor `N` (they cannot due to
-/// type-system limitations). As a result, they cannot easily reffer to types
+/// type-system limitations). As a result, they cannot easily refer to types
 /// that depends on `T` and `N`.
 ///
 /// Such types include `[Self; N]` (used in [`Simd::transpose`]) and
@@ -219,7 +219,7 @@ pub(crate) trait SimdAssociatedTypes: Sized {
 /// An extension of [`SimdAssociatedTypes`] for when `Self::SimdOf<U>` must
 /// implement [`SupportedSimd`].
 ///
-/// When SIMD backend functions reffer to SIMD vectors of generic `T` types
+/// When SIMD backend functions refer to SIMD vectors of generic `T` types
 /// other than `T` (using [`SimdAssociatedTypes::SimdOf<U>`]), they must have a
 /// trait bound that guarantees the type `Self::SimdOf<U>` is actually defined
 /// (which requires it to implement [`SupportedSimd`]).
