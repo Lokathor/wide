@@ -81,6 +81,68 @@ pub(crate) trait SimdBackend {
     type Inner: Copy;
 }
 
+/// Provides SIMD backend traits access to SIMD associated types.
+///
+/// SIMD backend traits are not generic over `T` nor `N` (they cannot due to
+/// type-system limitations). As a result, they cannot easily reffer to types
+/// that depends on `T` and `N`.
+///
+/// Such types include `[Self; N]` (used in [`Simd::transpose`]) and
+/// `Simd<T::Unsigned, N>` (used in [`Simd::shuffle`]).
+///
+/// To solve this problem, SIMD backend functions that need access to such types
+/// add `where Self: SimdAssociatedTypes` which gives them access to appropriate
+/// types.
+///
+/// [`SimdAssociatedTypes`] has one shared generic implementation for all
+/// supported [`Simd<T, N>`] types. This means that the compiler, in
+/// contexts generic over `T` and `N`, understands what these types actually are
+/// (for example, for `Self = Simd<T, N>`, that [`Self::T`]  is `T` and that
+/// [`Self::ArrayOf<U>`] is `[U; N]`).
+pub(crate) trait SimdAssociatedTypes: Sized {
+    /// For `Self = Simd<T, N>`, this type is `T`.
+    type T;
+
+    /// For `Self = Simd<T, N>`, this type is `[U; N]`.
+    type ArrayOf<U>;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<U, N>`.
+    type SimdOf<U>
+    where
+        Self: SupportSimdOf<U>;
+
+    /// For `Self = Simd<T, N>`, this type is `T::Unsigned`.
+    type UnsignedT;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<T::Unsigned, N>`.
+    type UnsignedSimd: ?Sized
+    where
+        Self: SupportSimdOf<Self::UnsignedT>;
+
+    /// For `Self = Simd<T, N>`, this type is `T::Signed`.
+    type SignedT;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<T::Signed, N>`.
+    type SignedSimd: ?Sized
+    where
+        Self: SupportSimdOf<Self::SignedT>;
+}
+
+/// An extension of [`SimdAssociatedTypes`] for when `Self::SimdOf<U>` must
+/// implement [`SupportedSimd`].
+///
+/// When SIMD backend functions reffer to SIMD vectors of generic `T` types
+/// other than `T` (using [`SimdAssociatedTypes::SimdOf<U>`]), they must have a
+/// trait bound that guarantees the type `Self::SimdOf<U>` is actually defined
+/// (which requires it to implement [`SupportedSimd`]).
+///
+/// The `Self::SimdOf<U>: SupportedSimd` bound cannot be used directly. That
+/// results in a cycle. Instead, that bound is represented with
+/// `Self: SupportSimdOf<U>` (for `Self::SimdOf<U>: SupportedSimd`.
+pub(crate) trait SupportSimdOf<U> {
+    type SimdOfU;
+}
+
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
@@ -1654,6 +1716,41 @@ macro_rules! simd_backend_unsigned_autofill {
     ($T:ident, $N:literal) => {
         // There are currently no such functions.
     };
+}
+
+impl<T, const N: usize> SimdAssociatedTypes for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+    type T = T;
+    type ArrayOf<U> = [U; N];
+    type SimdOf<U>
+        = <Self as SupportSimdOf<U>>::SimdOfU
+    where
+        Self: SupportSimdOf<U>;
+
+    type UnsignedT = T::Unsigned;
+    type UnsignedSimd
+        = <Self as SupportSimdOf<T::Unsigned>>::SimdOfU
+    where
+        Self: SupportSimdOf<T::Unsigned>;
+
+    type SignedT = T::Signed;
+    type SignedSimd
+        = <Self as SupportSimdOf<T::Signed>>::SimdOfU
+    where
+        Self: SupportSimdOf<T::Signed>;
+}
+
+impl<T, const N: usize, U> SupportSimdOf<U> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+    U: SimdElement,
+    Simd<U, N>: SupportedSimd,
+{
+    type SimdOfU = Simd<U, N>;
 }
 
 impl Sealed for f32 {}
