@@ -757,57 +757,57 @@ macro_rules! define_simd {
   };
 }
 
-    impl<T, const N: usize> PartialEq for Simd<T, N> {
-      #[inline]
-      fn eq(&self, other: &Self) -> bool {
+impl<T, const N: usize> PartialEq for Simd<T, N> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
         self.simd_eq(*other).all()
-      }
     }
+}
 
-    impl<T, const N: usize> Default for Simd<T, N> {
-      #[inline]
-      fn default() -> Self {
+impl<T, const N: usize> Default for Simd<T, N> {
+    #[inline]
+    fn default() -> Self {
         // Currently, all supported `T` types have a default value where all
         // bits equal zero.
         Self::zeroed()
-      }
     }
+}
 
-    impl<T, const N: usize> From<[T; N]> for Simd<T, N> {
-      /// Converts an array to a SIMD vector.
-      #[inline]
-      fn from(arr: [T; N]) -> Self {
+impl<T, const N: usize> From<[T; N]> for Simd<T, N> {
+    /// Converts an array to a SIMD vector.
+    #[inline]
+    fn from(arr: [T; N]) -> Self {
         Self::from_array(arr)
-      }
     }
+}
 
-    impl<T, const N: usize> From<Simd<T, N>> for [T; N] {
-      /// Converts a SIMD vector to an array.
-      #[inline]
-      fn from(simd: Simd<T, N>) -> Self {
+impl<T, const N: usize> From<Simd<T, N>> for [T; N] {
+    /// Converts a SIMD vector to an array.
+    #[inline]
+    fn from(simd: Simd<T, N>) -> Self {
         simd.to_array()
-      }
     }
+}
 
-    impl<T, const N: usize> From<T> for Simd<T, N> {
-      /// Converts a single value to a SIMD vector by setting all elements to
-      /// that value.
-      #[inline]
-      fn from(elem: T) -> Self {
+impl<T, const N: usize> From<T> for Simd<T, N> {
+    /// Converts a single value to a SIMD vector by setting all elements to
+    /// that value.
+    #[inline]
+    fn from(elem: T) -> Self {
         Self::splat(elem)
-      }
     }
+}
 
-    impl<T, const N: usize> From<&[T]> for Simd<T, N> {
-      /// Converts a slice to a SIMD vector, filling in zeros if there are not
-      /// enough elements, and panicking if there are too many elements.
-      ///
-      /// Note that in the future, handling of too many elements may change.
-      #[inline]
-      fn from(value: &[T]) -> Self {
+impl<T, const N: usize> From<&[T]> for Simd<T, N> {
+    /// Converts a slice to a SIMD vector, filling in zeros if there are not
+    /// enough elements, and panicking if there are too many elements.
+    ///
+    /// Note that in the future, handling of too many elements may change.
+    #[inline]
+    fn from(value: &[T]) -> Self {
         assert!(
-          value.len() <= N,
-          "slice has more elements than the SIMD vector can store",
+            value.len() <= N,
+            "slice has more elements than the SIMD vector can store",
         );
 
         // SAFETY: `Simd<T, N>` accepts all bit-patterns, including all zeros.
@@ -820,654 +820,660 @@ macro_rules! define_simd {
         // because they originate from a shared reference and a mutable
         // reference.
         unsafe {
-          core::ptr::copy_nonoverlapping::<T>(
-            value.as_ptr(),
-            result.as_mut_array().as_mut_ptr(),
-            value.len()
-          );
+            core::ptr::copy_nonoverlapping::<T>(
+                value.as_ptr(),
+                result.as_mut_array().as_mut_ptr(),
+                value.len(),
+            );
         }
 
         result
-      }
     }
+}
 
-    macro_rules! impl_formatting_trait {
-      ($Trait:path) => {
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
         impl<T, const N: usize> $Trait for Simd<T, N> {
-          #[allow(clippy::missing_inline_in_public_items)]
-          fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-            write!(f, "(")?;
-            for (i, x) in self.to_array().iter().enumerate() {
-              if i > 0 {
-                write!(f, ", ")?;
-              }
-              <T as $Trait>::fmt(x, f)?;
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_array().iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    <T as $Trait>::fmt(x, f)?;
+                }
+                write!(f, ")")
             }
-            write!(f, ")")
-          }
         }
-      }
-    }
-    impl_formatting_trait!(core::fmt::Debug);
-    impl_formatting_trait!(core::fmt::Display);
-    impl_formatting_trait!(core::fmt::LowerExp);
-    impl_formatting_trait!(core::fmt::UpperExp);
+    };
+}
+impl_formatting_trait!(core::fmt::Debug);
+impl_formatting_trait!(core::fmt::Display);
+impl_formatting_trait!(core::fmt::LowerExp);
+impl_formatting_trait!(core::fmt::UpperExp);
 
-    impl<T, const N: usize> Select<Simd<T, N>> for Simd<T, N> {
-      #[inline]
-      fn select(self, if_true: Self, if_false: Self) -> Self {
+impl<T, const N: usize> Select<Simd<T, N>> for Simd<T, N> {
+    #[inline]
+    fn select(self, if_true: Self, if_false: Self) -> Self {
         self.select_backend(if_true, if_false)
-      }
     }
+}
 
-    impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2] {
-      type Indices = Simd<T::Unsigned, N>;
-      type Output = Simd<T, N>;
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2] {
+    type Indices = Simd<T::Unsigned, N>;
+    type Output = Simd<T, N>;
 
-      #[inline]
-      fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_2_backend(self, indices)
-      }
+    }
 
-      #[inline]
-      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_zeroing_2_backend(self, indices)
-      }
+    }
 
-      #[inline]
-      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_wrapping_2_backend(self, indices)
-      }
     }
+}
 
-    impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3] {
-      type Indices = Simd<T::Unsigned, N>;
-      type Output = Simd<T, N>;
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3] {
+    type Indices = Simd<T::Unsigned, N>;
+    type Output = Simd<T, N>;
 
-      #[inline]
-      fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_3_backend(self, indices)
-      }
+    }
 
-      #[inline]
-      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_zeroing_3_backend(self, indices)
-      }
+    }
 
-      #[inline]
-      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_wrapping_3_backend(self, indices)
-      }
     }
+}
 
-    impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4] {
-      type Indices = Simd<T::Unsigned, N>;
-      type Output = Simd<T, N>;
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4] {
+    type Indices = Simd<T::Unsigned, N>;
+    type Output = Simd<T, N>;
 
-      #[inline]
-      fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_4_backend(self, indices)
-      }
+    }
 
-      #[inline]
-      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_zeroing_4_backend(self, indices)
-      }
+    }
 
-      #[inline]
-      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    #[inline]
+    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
         Simd::<T, N>::shuffle_wrapping_4_backend(self, indices)
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpEq for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpEq for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_eq(self, rhs: Self) -> Self {
+    #[inline]
+    fn simd_eq(self, rhs: Self) -> Self {
         self.simd_eq_backend(rhs)
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpEq<T> for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpEq<T> for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_eq(self, rhs: T) -> Self::Output {
+    #[inline]
+    fn simd_eq(self, rhs: T) -> Self::Output {
         self.simd_eq(Self::splat(rhs))
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpNe for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpNe for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_ne(self, rhs: Self) -> Self {
+    #[inline]
+    fn simd_ne(self, rhs: Self) -> Self {
         self.simd_ne_backend(rhs)
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpNe<T> for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpNe<T> for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_ne(self, rhs: T) -> Self::Output {
+    #[inline]
+    fn simd_ne(self, rhs: T) -> Self::Output {
         self.simd_ne(Self::splat(rhs))
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpLt for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLt for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_lt(self, rhs: Self) -> Self {
+    #[inline]
+    fn simd_lt(self, rhs: Self) -> Self {
         self.simd_lt_backend(rhs)
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpLt<T> for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLt<T> for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_lt(self, rhs: T) -> Self::Output {
+    #[inline]
+    fn simd_lt(self, rhs: T) -> Self::Output {
         self.simd_lt(Self::splat(rhs))
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpGt for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGt for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_gt(self, rhs: Self) -> Self {
+    #[inline]
+    fn simd_gt(self, rhs: Self) -> Self {
         self.simd_gt_backend(rhs)
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpGt<T> for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGt<T> for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_gt(self, rhs: T) -> Self::Output {
+    #[inline]
+    fn simd_gt(self, rhs: T) -> Self::Output {
         self.simd_gt(Self::splat(rhs))
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpLe for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLe for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_le(self, rhs: Self) -> Self {
+    #[inline]
+    fn simd_le(self, rhs: Self) -> Self {
         self.simd_le_backend(rhs)
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpLe<T> for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLe<T> for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_le(self, rhs: T) -> Self::Output {
+    #[inline]
+    fn simd_le(self, rhs: T) -> Self::Output {
         self.simd_le(Self::splat(rhs))
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpGe for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGe for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_ge(self, rhs: Self) -> Self {
+    #[inline]
+    fn simd_ge(self, rhs: Self) -> Self {
         self.simd_ge_backend(rhs)
-      }
     }
+}
 
-    #[expect(deprecated)]
-    impl<T, const N: usize> CmpGe<T> for Simd<T, N> {
-      type Output = Self;
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGe<T> for Simd<T, N> {
+    type Output = Self;
 
-      #[inline]
-      fn simd_ge(self, rhs: T) -> Self::Output {
+    #[inline]
+    fn simd_ge(self, rhs: T) -> Self::Output {
         self.simd_ge(Self::splat(rhs))
-      }
     }
+}
 
-    impl<T, const N: usize> AlignTo for Simd<T, N> {
-      type Elem = T;
-    }
+impl<T, const N: usize> AlignTo for Simd<T, N> {
+    type Elem = T;
+}
 
-    /// The following functionality exists for all SIMD vectors.
-    impl<T, const N: usize> Simd<T, N> {
-      /// Converts an array to a SIMD vector.
-      #[inline]
-      #[must_use]
-      pub const fn from_array(array: [T; N]) -> Self {
+/// The following functionality exists for all SIMD vectors.
+impl<T, const N: usize> Simd<T, N> {
+    /// Converts an array to a SIMD vector.
+    #[inline]
+    #[must_use]
+    pub const fn from_array(array: [T; N]) -> Self {
         unsafe { core::mem::transmute::<[T; N], Simd<T, N>>(array) }
-      }
+    }
 
-      /// Constructs a new SIMD vector with all elements set to the given value.
-      #[inline]
-      #[must_use]
-      pub const fn splat(elem: T) -> Self {
+    /// Constructs a new SIMD vector with all elements set to the given value.
+    #[inline]
+    #[must_use]
+    pub const fn splat(elem: T) -> Self {
         unsafe { core::mem::transmute::<[T; N], Simd<T, N>>([elem; N]) }
-      }
+    }
 
-      /// Converts a SIMD vector to an array.
-      #[inline]
-      #[must_use]
-      pub const fn to_array(self) -> [T; N] {
+    /// Converts a SIMD vector to an array.
+    #[inline]
+    #[must_use]
+    pub const fn to_array(self) -> [T; N] {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
         unsafe { core::mem::transmute::<Simd<T, N>, [T; N]>(self) }
-      }
+    }
 
-      /// Returns an array reference containing the entire SIMD vector.
-      #[inline]
-      #[must_use]
-      pub const fn as_array(&self) -> &[T; N] {
+    /// Returns an array reference containing the entire SIMD vector.
+    #[inline]
+    #[must_use]
+    pub const fn as_array(&self) -> &[T; N] {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
         unsafe { core::mem::transmute::<&Simd<T, N>, &[T; N]>(self) }
-      }
+    }
 
-      /// Returns a mutable array reference containing the entire SIMD vector.
-      #[inline]
-      #[must_use]
-      pub const fn as_mut_array(&mut self) -> &mut [T; N] {
+    /// Returns a mutable array reference containing the entire SIMD vector.
+    #[inline]
+    #[must_use]
+    pub const fn as_mut_array(&mut self) -> &mut [T; N] {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
         unsafe { core::mem::transmute::<&mut Simd<T, N>, &mut [T; N]>(self) }
-      }
+    }
 
-      /// Returns a [mask] that checks if each element of `self` is equal to the
-      /// corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_eq<Rhs>(self, other: Rhs) -> <Self as CmpEq<Rhs>>::Output
-      where
+    /// Returns a [mask] that checks if each element of `self` is equal to the
+    /// corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_eq<Rhs>(self, other: Rhs) -> <Self as CmpEq<Rhs>>::Output
+    where
         Self: CmpEq<Rhs>,
-      {
+    {
         CmpEq::simd_eq(self, other)
-      }
+    }
 
-      /// Returns a [mask] that checks if each element of `self` is not equal to
-      /// the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_ne<Rhs>(self, other: Rhs) -> <Self as CmpNe<Rhs>>::Output
-      where
+    /// Returns a [mask] that checks if each element of `self` is not equal to
+    /// the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_ne<Rhs>(self, other: Rhs) -> <Self as CmpNe<Rhs>>::Output
+    where
         Self: CmpNe<Rhs>,
-      {
+    {
         CmpNe::simd_ne(self, other)
-      }
+    }
 
-      /// Returns a [mask] that checks if each element of `self` is less than
-      /// the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_lt<Rhs>(self, other: Rhs) -> <Self as CmpLt<Rhs>>::Output
-      where
+    /// Returns a [mask] that checks if each element of `self` is less than
+    /// the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_lt<Rhs>(self, other: Rhs) -> <Self as CmpLt<Rhs>>::Output
+    where
         Self: CmpLt<Rhs>,
-      {
+    {
         CmpLt::simd_lt(self, other)
-      }
+    }
 
-      /// Returns a [mask] that checks if each element of `self` is greater than
-      /// the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_gt<Rhs>(self, other: Rhs) -> <Self as CmpGt<Rhs>>::Output
-      where
+    /// Returns a [mask] that checks if each element of `self` is greater than
+    /// the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_gt<Rhs>(self, other: Rhs) -> <Self as CmpGt<Rhs>>::Output
+    where
         Self: CmpGt<Rhs>,
-      {
+    {
         CmpGt::simd_gt(self, other)
-      }
+    }
 
-      /// Returns a [mask] that checks if each element of `self` is less than or
-      /// equal to the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_le<Rhs>(self, other: Rhs) -> <Self as CmpLe<Rhs>>::Output
-      where
+    /// Returns a [mask] that checks if each element of `self` is less than or
+    /// equal to the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_le<Rhs>(self, other: Rhs) -> <Self as CmpLe<Rhs>>::Output
+    where
         Self: CmpLe<Rhs>,
-      {
+    {
         CmpLe::simd_le(self, other)
-      }
+    }
 
-      /// Returns a [mask] that checks if each element of `self` is greater than
-      /// or equal to the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_ge<Rhs>(self, other: Rhs) -> <Self as CmpGe<Rhs>>::Output
-      where
+    /// Returns a [mask] that checks if each element of `self` is greater than
+    /// or equal to the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_ge<Rhs>(self, other: Rhs) -> <Self as CmpGe<Rhs>>::Output
+    where
         Self: CmpGe<Rhs>,
-      {
+    {
         CmpGe::simd_ge(self, other)
-      }
+    }
 
-      /// Returns `self` with the element at position `INDEX` replaced by
-      /// `value`.
-      ///
-      /// If `INDEX` is out of bounds, compilation fails.
-      #[doc(alias = "set", alias = "with")]
-      #[inline]
-      #[must_use]
-      pub fn replace_const<const INDEX: usize>(self, value: T) -> Self {
+    /// Returns `self` with the element at position `INDEX` replaced by
+    /// `value`.
+    ///
+    /// If `INDEX` is out of bounds, compilation fails.
+    #[doc(alias = "set", alias = "with")]
+    #[inline]
+    #[must_use]
+    pub fn replace_const<const INDEX: usize>(self, value: T) -> Self {
         const {
-          assert!(INDEX < N, "attempt to call `Simd::replace_const` with an out of bounds index");
+            assert!(
+                INDEX < N,
+                "attempt to call `Simd::replace_const` with an out of bounds index"
+            );
         }
 
         self.replace_const_backend::<INDEX>(value)
-      }
+    }
 
-      /// Returns the element of `self` at position `INDEX`.
-      ///
-      /// If `INDEX` is out of bounds, compilation fails.
-      #[doc(alias = "get")]
-      #[inline]
-      #[must_use]
-      pub fn extract_const<const INDEX: usize>(self) -> T {
+    /// Returns the element of `self` at position `INDEX`.
+    ///
+    /// If `INDEX` is out of bounds, compilation fails.
+    #[doc(alias = "get")]
+    #[inline]
+    #[must_use]
+    pub fn extract_const<const INDEX: usize>(self) -> T {
         const {
-          assert!(INDEX < N, "attempt to call `Simd::extract_const` with an out of bounds index");
+            assert!(
+                INDEX < N,
+                "attempt to call `Simd::extract_const` with an out of bounds index"
+            );
         }
 
         self.extract_const_backend::<INDEX>()
-      }
-
-      /// Lanewise SIMD selection.
-      ///
-      /// For each lane:
-      ///
-      /// - If all bits of `self` are one, return the corresponding lane of
-      ///   `if_true`
-      /// - If all bits of `self` are zero, return the corresponding lane of
-      ///   `if_false`
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. For bitwise selection use [`bitselect`].
-      ///
-      /// In addition to selecting SIMD vectors, this method can be used to
-      /// select composite types (e.g., a downstream `Vec3<f32x4>` structure)
-      /// if you implement `Select<Composite> for Simd`.
-      ///
-      /// [mask]: crate#masks
-      /// [`bitselect`]: f32x4::bitselect
-      #[inline]
-      #[must_use]
-      pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
-      where
-        Self: Select<Output>,
-      {
-        Select::select(self, if_true, if_false)
-      }
-
-      /// Converts to a bitmask, where each bit is `1` if the element of `self`
-      /// is true or `0` if the element of `self` is false.
-      ///
-      /// Each bit of the output corresponds to an element of `self`. The least
-      /// significant bit corresponds to the lowest element. Remaining bits are
-      /// `0`.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      #[doc(alias("movemask", "move_mask"))]
-      pub fn to_bitmask(self) -> <Self as SupportedSimd>::Bitmask {
-        self.to_bitmask_backend()
-      }
-
-      /// Returns `true` if any element of `self` is true.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn any(self) -> bool {
-        self.any_backend()
-      }
-
-      /// Returns `true` if all elements of `self` are true.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn all(self) -> bool {
-        self.all_backend()
-      }
-
-      /// Returns `true` if none of the elements of `self` are true.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn none(self) -> bool {
-        !self.any()
-      }
-
-      /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
-      /// halfs.
-      ///
-      /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
-      #[inline]
-      #[must_use]
-      pub fn interleave_low(self, other: Self) -> Self {
-        self.interleave_low_backend(other)
-      }
-
-      /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
-      /// halfs.
-      ///
-      /// Equivalent to
-      /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
-      #[inline]
-      #[must_use]
-      pub fn interleave_high(self, other: Self) -> Self {
-        self.interleave_high_backend(other)
-      }
-
-      /// Returns a SIMD vector whose elements are selected from `self` using
-      /// the corresponding runtime `indices`.
-      ///
-      /// If an index is out of bounds, the corresponding result element is
-      /// unspecified.
-      ///
-      /// Equivalent to
-      /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`.
-      ///
-      /// # Type-specific guarantees
-      ///
-      /// For [`u8x16`] and [`i8x16`], it is guaranteed that for out of bounds
-      /// indices, if the high bit of an index is set, zero is returned.
-      /// Otherwise, either zero is returned or the index wraps around,
-      /// non-deterministically.
-      ///
-      /// For all other 8-bit types, it is guaranteed that for out of bounds
-      /// indices, either zero is returned or the index wraps around,
-      /// non-deterministically (unlike other types, which can return arbitrary
-      /// values).
-      #[inline]
-      #[must_use]
-      pub fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Self {
-        self.shuffle_backend(indices)
-      }
-
-      /// Returns a SIMD vector whose elements are selected from `self` using
-      /// the corresponding runtime `indices`.
-      ///
-      /// If an index is out of bounds, the corresponding result element is
-      /// the number zero.
-      ///
-      /// Equivalent to
-      /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
-      /// with a zero fallback.
-      #[inline]
-      #[must_use]
-      pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self {
-        self.shuffle_zeroing_backend(indices)
-      }
-
-      /// Returns a SIMD vector whose elements are selected from `self` using
-      /// the corresponding runtime `indices`.
-      ///
-      /// Indices are wrapped by the number of elements in `self`.
-      ///
-      /// Equivalent to
-      /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
-      #[inline]
-      #[must_use]
-      pub fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Self {
-        self.shuffle_wrapping_backend(indices)
-      }
-
-      /// Transposes an array of SIMD vectors interpreted as a square matrix.
-      #[inline]
-      #[must_use]
-      pub fn transpose(data: [Self; N]) -> [Self; N] {
-        Self::transpose_backend(data)
-      }
-
-      /// Converts an array to a SIMD vector.
-      ///
-      /// This function has been deprecated and renamed to [`from_array`].
-      ///
-      /// [`from_array`]: Self::from_array
-      #[inline]
-      #[must_use]
-      #[deprecated(since = "1.8.0", note = "renamed to `from_array`")]
-      pub const fn new(array: [T; N]) -> Self {
-        Self::from_array(array)
-      }
-
-      /// Elementwise selection.
-      ///
-      /// For each element of `self`:
-      ///
-      /// - If all bits are one, return the corresponding element of `if_true`
-      /// - If all bits are zero, return the corresponding element of `if_false`
-      ///
-      /// Originally this function did not specify whether it supported per-bit
-      /// selection, or if it assumed `self` is a [mask], meaning each element
-      /// is either all zeros or all ones (for better performance). Because of
-      /// this, [`blend`] has been split into two new functions: [`select`] and
-      /// [`bitselect`].
-      ///
-      /// [mask]: crate#masks
-      /// [`blend`]: Self::blend
-      /// [`select`]: Self::select
-      /// [`bitselect`]: f32x4::bitselect
-      #[deprecated(
-        since = "1.6.0",
-        note = "split into `select` and `bitselect` functions"
-      )]
-      #[inline]
-      #[must_use]
-      pub fn blend(self, if_true: Self, if_false: Self) -> Self {
-        self.select(if_true, if_false)
-      }
-
-      /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
-      /// halfs.
-      ///
-      /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
-      ///
-      /// This function has been deprecated and renamed to [`interleave_low`].
-      ///
-      /// [`interleave_low`]: Self::interleave_low
-      #[inline]
-      #[must_use]
-      #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
-      pub fn unpack_lo(self, other: Self) -> Self {
-        self.interleave_low(other)
-      }
-
-      /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
-      /// halfs.
-      ///
-      /// Equivalent to
-      /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
-      ///
-      /// This function has been deprecated and renamed to [`interleave_high`].
-      ///
-      /// [`interleave_high`]: Self::interleave_high
-      #[inline]
-      #[must_use]
-      #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
-      pub fn unpack_hi(self, other: Self) -> Self {
-        self.interleave_high(other)
-      }
     }
 
-    // SAFETY: All SIMD types in this library contain fully initialized memory
-    // and accept all bits patterns.
-    unsafe impl<T, const N: usize> Zeroable for Simd<T, N> {}
+    /// Lanewise SIMD selection.
+    ///
+    /// For each lane:
+    ///
+    /// - If all bits of `self` are one, return the corresponding lane of
+    ///   `if_true`
+    /// - If all bits of `self` are zero, return the corresponding lane of
+    ///   `if_false`
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. For bitwise selection use [`bitselect`].
+    ///
+    /// In addition to selecting SIMD vectors, this method can be used to
+    /// select composite types (e.g., a downstream `Vec3<f32x4>` structure)
+    /// if you implement `Select<Composite> for Simd`.
+    ///
+    /// [mask]: crate#masks
+    /// [`bitselect`]: f32x4::bitselect
+    #[inline]
+    #[must_use]
+    pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
+    where
+        Self: Select<Output>,
+    {
+        Select::select(self, if_true, if_false)
+    }
 
-    // SAFETY: All SIMD types in this library contain fully initialized memory
-    // and accept all bits patterns.
-    unsafe impl<T, const N: usize> Pod for Simd<T, N> {}
+    /// Converts to a bitmask, where each bit is `1` if the element of `self`
+    /// is true or `0` if the element of `self` is false.
+    ///
+    /// Each bit of the output corresponds to an element of `self`. The least
+    /// significant bit corresponds to the lowest element. Remaining bits are
+    /// `0`.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    #[doc(alias("movemask", "move_mask"))]
+    pub fn to_bitmask(self) -> <Self as SupportedSimd>::Bitmask {
+        self.to_bitmask_backend()
+    }
 
-    #[cfg(feature = "serde")]
-    impl<T, const N: usize> Serialize for Simd<T, N> {
-      #[inline]
-      fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-      where
+    /// Returns `true` if any element of `self` is true.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    pub fn any(self) -> bool {
+        self.any_backend()
+    }
+
+    /// Returns `true` if all elements of `self` are true.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    pub fn all(self) -> bool {
+        self.all_backend()
+    }
+
+    /// Returns `true` if none of the elements of `self` are true.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    pub fn none(self) -> bool {
+        !self.any()
+    }
+
+    /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+    /// halfs.
+    ///
+    /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+    #[inline]
+    #[must_use]
+    pub fn interleave_low(self, other: Self) -> Self {
+        self.interleave_low_backend(other)
+    }
+
+    /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+    /// halfs.
+    ///
+    /// Equivalent to
+    /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+    #[inline]
+    #[must_use]
+    pub fn interleave_high(self, other: Self) -> Self {
+        self.interleave_high_backend(other)
+    }
+
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// the corresponding runtime `indices`.
+    ///
+    /// If an index is out of bounds, the corresponding result element is
+    /// unspecified.
+    ///
+    /// Equivalent to
+    /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`.
+    ///
+    /// # Type-specific guarantees
+    ///
+    /// For [`u8x16`] and [`i8x16`], it is guaranteed that for out of bounds
+    /// indices, if the high bit of an index is set, zero is returned.
+    /// Otherwise, either zero is returned or the index wraps around,
+    /// non-deterministically.
+    ///
+    /// For all other 8-bit types, it is guaranteed that for out of bounds
+    /// indices, either zero is returned or the index wraps around,
+    /// non-deterministically (unlike other types, which can return arbitrary
+    /// values).
+    #[inline]
+    #[must_use]
+    pub fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Self {
+        self.shuffle_backend(indices)
+    }
+
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// the corresponding runtime `indices`.
+    ///
+    /// If an index is out of bounds, the corresponding result element is
+    /// the number zero.
+    ///
+    /// Equivalent to
+    /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
+    /// with a zero fallback.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self {
+        self.shuffle_zeroing_backend(indices)
+    }
+
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// the corresponding runtime `indices`.
+    ///
+    /// Indices are wrapped by the number of elements in `self`.
+    ///
+    /// Equivalent to
+    /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Self {
+        self.shuffle_wrapping_backend(indices)
+    }
+
+    /// Transposes an array of SIMD vectors interpreted as a square matrix.
+    #[inline]
+    #[must_use]
+    pub fn transpose(data: [Self; N]) -> [Self; N] {
+        Self::transpose_backend(data)
+    }
+
+    /// Converts an array to a SIMD vector.
+    ///
+    /// This function has been deprecated and renamed to [`from_array`].
+    ///
+    /// [`from_array`]: Self::from_array
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.8.0", note = "renamed to `from_array`")]
+    pub const fn new(array: [T; N]) -> Self {
+        Self::from_array(array)
+    }
+
+    /// Elementwise selection.
+    ///
+    /// For each element of `self`:
+    ///
+    /// - If all bits are one, return the corresponding element of `if_true`
+    /// - If all bits are zero, return the corresponding element of `if_false`
+    ///
+    /// Originally this function did not specify whether it supported per-bit
+    /// selection, or if it assumed `self` is a [mask], meaning each element
+    /// is either all zeros or all ones (for better performance). Because of
+    /// this, [`blend`] has been split into two new functions: [`select`] and
+    /// [`bitselect`].
+    ///
+    /// [mask]: crate#masks
+    /// [`blend`]: Self::blend
+    /// [`select`]: Self::select
+    /// [`bitselect`]: f32x4::bitselect
+    #[deprecated(
+        since = "1.6.0",
+        note = "split into `select` and `bitselect` functions"
+    )]
+    #[inline]
+    #[must_use]
+    pub fn blend(self, if_true: Self, if_false: Self) -> Self {
+        self.select(if_true, if_false)
+    }
+
+    /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+    /// halfs.
+    ///
+    /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+    ///
+    /// This function has been deprecated and renamed to [`interleave_low`].
+    ///
+    /// [`interleave_low`]: Self::interleave_low
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
+    pub fn unpack_lo(self, other: Self) -> Self {
+        self.interleave_low(other)
+    }
+
+    /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+    /// halfs.
+    ///
+    /// Equivalent to
+    /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+    ///
+    /// This function has been deprecated and renamed to [`interleave_high`].
+    ///
+    /// [`interleave_high`]: Self::interleave_high
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
+    pub fn unpack_hi(self, other: Self) -> Self {
+        self.interleave_high(other)
+    }
+}
+
+// SAFETY: All SIMD types in this library contain fully initialized memory
+// and accept all bits patterns.
+unsafe impl<T, const N: usize> Zeroable for Simd<T, N> {}
+
+// SAFETY: All SIMD types in this library contain fully initialized memory
+// and accept all bits patterns.
+unsafe impl<T, const N: usize> Pod for Simd<T, N> {}
+
+#[cfg(feature = "serde")]
+impl<T, const N: usize> Serialize for Simd<T, N> {
+    #[inline]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
         S: serde_core::Serializer,
-      {
+    {
         let array = self.as_array();
         let mut seq = serializer.serialize_tuple(N)?;
         for e in array {
-          seq.serialize_element(e)?;
+            seq.serialize_element(e)?;
         }
         seq.end()
-      }
     }
+}
 
-    #[cfg(feature = "serde")]
-    impl<T, const N: usize, 'de> Deserialize<'de> for Simd<T, N> {
-      #[inline]
-      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where
+#[cfg(feature = "serde")]
+impl<T, const N: usize, 'de> Deserialize<'de> for Simd<T, N> {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
         D: serde_core::Deserializer<'de>,
-      {
+    {
         crate::simd::deserialize_impl(deserializer)
-      }
     }
+}
 
 /// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD float types.
