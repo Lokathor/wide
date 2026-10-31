@@ -27,7 +27,7 @@ where
 /// [`SimdElement`], but there is currently no [`Simd<usize, N>`] type that
 /// implements [`SupportedSimd`].
 #[expect(private_bounds)]
-pub trait SimdElement: Sealed {
+pub trait SimdElement: Sealed + Copy {
     /// Add a dummy associated constant in order to avoid marking this trait as
     /// dyn compatible.
     ///
