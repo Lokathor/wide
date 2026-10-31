@@ -757,14 +757,14 @@ macro_rules! define_simd {
   };
 }
 
-    impl<T, const N: usize> PartialEq for $Simd {
+    impl<T, const N: usize> PartialEq for Simd<T, N> {
       #[inline]
       fn eq(&self, other: &Self) -> bool {
         self.simd_eq(*other).all()
       }
     }
 
-    impl<T, const N: usize> Default for $Simd {
+    impl<T, const N: usize> Default for Simd<T, N> {
       #[inline]
       fn default() -> Self {
         // Currently, all supported `T` types have a default value where all
@@ -773,54 +773,54 @@ macro_rules! define_simd {
       }
     }
 
-    impl<T, const N: usize> From<[$T; $N]> for $Simd {
+    impl<T, const N: usize> From<[T; N]> for Simd<T, N> {
       /// Converts an array to a SIMD vector.
       #[inline]
-      fn from(arr: [$T; $N]) -> Self {
+      fn from(arr: [T; N]) -> Self {
         Self::from_array(arr)
       }
     }
 
-    impl<T, const N: usize> From<$Simd> for [$T; $N] {
+    impl<T, const N: usize> From<Simd<T, N>> for [T; N] {
       /// Converts a SIMD vector to an array.
       #[inline]
-      fn from(simd: $Simd) -> Self {
+      fn from(simd: Simd<T, N>) -> Self {
         simd.to_array()
       }
     }
 
-    impl<T, const N: usize> From<$T> for $Simd {
+    impl<T, const N: usize> From<T> for Simd<T, N> {
       /// Converts a single value to a SIMD vector by setting all elements to
       /// that value.
       #[inline]
-      fn from(elem: $T) -> Self {
+      fn from(elem: T) -> Self {
         Self::splat(elem)
       }
     }
 
-    impl<T, const N: usize> From<&[$T]> for $Simd {
+    impl<T, const N: usize> From<&[T]> for Simd<T, N> {
       /// Converts a slice to a SIMD vector, filling in zeros if there are not
       /// enough elements, and panicking if there are too many elements.
       ///
       /// Note that in the future, handling of too many elements may change.
       #[inline]
-      fn from(value: &[$T]) -> Self {
+      fn from(value: &[T]) -> Self {
         assert!(
-          value.len() <= $N,
+          value.len() <= N,
           "slice has more elements than the SIMD vector can store",
         );
 
-        // SAFETY: `$Simd` accepts all bit-patterns, including all zeros.
-        let mut result = unsafe { core::mem::zeroed::<$Simd>() };
+        // SAFETY: `Simd<T, N>` accepts all bit-patterns, including all zeros.
+        let mut result = unsafe { core::mem::zeroed::<Simd<T, N>>() };
 
         // SAFETY: `value` is valid for its own length, and `result` is valid
         // because its length is checked to be less than or equal to
         // `value.len()`. Both pointers are properly aligned because they
-        // originate from a slice of `$T`. The regions of memory do not overlap
+        // originate from a slice of `T`. The regions of memory do not overlap
         // because they originate from a shared reference and a mutable
         // reference.
         unsafe {
-          core::ptr::copy_nonoverlapping::<$T>(
+          core::ptr::copy_nonoverlapping::<T>(
             value.as_ptr(),
             result.as_mut_array().as_mut_ptr(),
             value.len()
@@ -833,7 +833,7 @@ macro_rules! define_simd {
 
     macro_rules! impl_formatting_trait {
       ($Trait:path) => {
-        impl<T, const N: usize> $Trait for $Simd {
+        impl<T, const N: usize> $Trait for Simd<T, N> {
           #[allow(clippy::missing_inline_in_public_items)]
           fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
             write!(f, "(")?;
@@ -841,7 +841,7 @@ macro_rules! define_simd {
               if i > 0 {
                 write!(f, ", ")?;
               }
-              <$T as $Trait>::fmt(x, f)?;
+              <T as $Trait>::fmt(x, f)?;
             }
             write!(f, ")")
           }
@@ -853,75 +853,75 @@ macro_rules! define_simd {
     impl_formatting_trait!(core::fmt::LowerExp);
     impl_formatting_trait!(core::fmt::UpperExp);
 
-    impl<T, const N: usize> Select<$Simd> for $Simd {
+    impl<T, const N: usize> Select<Simd<T, N>> for Simd<T, N> {
       #[inline]
       fn select(self, if_true: Self, if_false: Self) -> Self {
         self.select_backend(if_true, if_false)
       }
     }
 
-    impl<T, const N: usize> ShuffleExt for [$Simd; 2] {
-      type Indices = $UnsignedSimd;
-      type Output = $Simd;
+    impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2] {
+      type Indices = Simd<T::Unsigned, N>;
+      type Output = Simd<T, N>;
 
       #[inline]
       fn shuffle(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_2_backend(self, indices)
+        Simd::<T, N>::shuffle_2_backend(self, indices)
       }
 
       #[inline]
       fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_zeroing_2_backend(self, indices)
+        Simd::<T, N>::shuffle_zeroing_2_backend(self, indices)
       }
 
       #[inline]
       fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_wrapping_2_backend(self, indices)
+        Simd::<T, N>::shuffle_wrapping_2_backend(self, indices)
       }
     }
 
-    impl<T, const N: usize> ShuffleExt for [$Simd; 3] {
-      type Indices = $UnsignedSimd;
-      type Output = $Simd;
+    impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3] {
+      type Indices = Simd<T::Unsigned, N>;
+      type Output = Simd<T, N>;
 
       #[inline]
       fn shuffle(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_3_backend(self, indices)
+        Simd::<T, N>::shuffle_3_backend(self, indices)
       }
 
       #[inline]
       fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_zeroing_3_backend(self, indices)
+        Simd::<T, N>::shuffle_zeroing_3_backend(self, indices)
       }
 
       #[inline]
       fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_wrapping_3_backend(self, indices)
+        Simd::<T, N>::shuffle_wrapping_3_backend(self, indices)
       }
     }
 
-    impl<T, const N: usize> ShuffleExt for [$Simd; 4] {
-      type Indices = $UnsignedSimd;
-      type Output = $Simd;
+    impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4] {
+      type Indices = Simd<T::Unsigned, N>;
+      type Output = Simd<T, N>;
 
       #[inline]
       fn shuffle(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_4_backend(self, indices)
+        Simd::<T, N>::shuffle_4_backend(self, indices)
       }
 
       #[inline]
       fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_zeroing_4_backend(self, indices)
+        Simd::<T, N>::shuffle_zeroing_4_backend(self, indices)
       }
 
       #[inline]
       fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_wrapping_4_backend(self, indices)
+        Simd::<T, N>::shuffle_wrapping_4_backend(self, indices)
       }
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpEq for $Simd {
+    impl<T, const N: usize> CmpEq for Simd<T, N> {
       type Output = Self;
 
       #[inline]
@@ -931,17 +931,17 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpEq<$T> for $Simd {
+    impl<T, const N: usize> CmpEq<T> for Simd<T, N> {
       type Output = Self;
 
       #[inline]
-      fn simd_eq(self, rhs: $T) -> Self::Output {
+      fn simd_eq(self, rhs: T) -> Self::Output {
         self.simd_eq(Self::splat(rhs))
       }
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpNe for $Simd {
+    impl<T, const N: usize> CmpNe for Simd<T, N> {
       type Output = Self;
 
       #[inline]
@@ -951,17 +951,17 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpNe<$T> for $Simd {
+    impl<T, const N: usize> CmpNe<T> for Simd<T, N> {
       type Output = Self;
 
       #[inline]
-      fn simd_ne(self, rhs: $T) -> Self::Output {
+      fn simd_ne(self, rhs: T) -> Self::Output {
         self.simd_ne(Self::splat(rhs))
       }
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpLt for $Simd {
+    impl<T, const N: usize> CmpLt for Simd<T, N> {
       type Output = Self;
 
       #[inline]
@@ -971,17 +971,17 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpLt<$T> for $Simd {
+    impl<T, const N: usize> CmpLt<T> for Simd<T, N> {
       type Output = Self;
 
       #[inline]
-      fn simd_lt(self, rhs: $T) -> Self::Output {
+      fn simd_lt(self, rhs: T) -> Self::Output {
         self.simd_lt(Self::splat(rhs))
       }
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpGt for $Simd {
+    impl<T, const N: usize> CmpGt for Simd<T, N> {
       type Output = Self;
 
       #[inline]
@@ -991,17 +991,17 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpGt<$T> for $Simd {
+    impl<T, const N: usize> CmpGt<T> for Simd<T, N> {
       type Output = Self;
 
       #[inline]
-      fn simd_gt(self, rhs: $T) -> Self::Output {
+      fn simd_gt(self, rhs: T) -> Self::Output {
         self.simd_gt(Self::splat(rhs))
       }
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpLe for $Simd {
+    impl<T, const N: usize> CmpLe for Simd<T, N> {
       type Output = Self;
 
       #[inline]
@@ -1011,17 +1011,17 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpLe<$T> for $Simd {
+    impl<T, const N: usize> CmpLe<T> for Simd<T, N> {
       type Output = Self;
 
       #[inline]
-      fn simd_le(self, rhs: $T) -> Self::Output {
+      fn simd_le(self, rhs: T) -> Self::Output {
         self.simd_le(Self::splat(rhs))
       }
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpGe for $Simd {
+    impl<T, const N: usize> CmpGe for Simd<T, N> {
       type Output = Self;
 
       #[inline]
@@ -1031,62 +1031,62 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl<T, const N: usize> CmpGe<$T> for $Simd {
+    impl<T, const N: usize> CmpGe<T> for Simd<T, N> {
       type Output = Self;
 
       #[inline]
-      fn simd_ge(self, rhs: $T) -> Self::Output {
+      fn simd_ge(self, rhs: T) -> Self::Output {
         self.simd_ge(Self::splat(rhs))
       }
     }
 
-    impl<T, const N: usize> AlignTo for $Simd {
-      type Elem = $T;
+    impl<T, const N: usize> AlignTo for Simd<T, N> {
+      type Elem = T;
     }
 
     /// The following functionality exists for all SIMD vectors.
-    impl<T, const N: usize> $Simd {
+    impl<T, const N: usize> Simd<T, N> {
       /// Converts an array to a SIMD vector.
       #[inline]
       #[must_use]
-      pub const fn from_array(array: [$T; $N]) -> Self {
-        unsafe { core::mem::transmute::<[$T; $N], $Simd>(array) }
+      pub const fn from_array(array: [T; N]) -> Self {
+        unsafe { core::mem::transmute::<[T; N], Simd<T, N>>(array) }
       }
 
       /// Constructs a new SIMD vector with all elements set to the given value.
       #[inline]
       #[must_use]
-      pub const fn splat(elem: $T) -> Self {
-        unsafe { core::mem::transmute::<[$T; $N], $Simd>([elem; $N]) }
+      pub const fn splat(elem: T) -> Self {
+        unsafe { core::mem::transmute::<[T; N], Simd<T, N>>([elem; N]) }
       }
 
       /// Converts a SIMD vector to an array.
       #[inline]
       #[must_use]
-      pub const fn to_array(self) -> [$T; $N] {
+      pub const fn to_array(self) -> [T; N] {
         // SAFETY: Both types accept all bit-patterns and only contain
         // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, [$T; $N]>(self) }
+        unsafe { core::mem::transmute::<Simd<T, N>, [T; N]>(self) }
       }
 
       /// Returns an array reference containing the entire SIMD vector.
       #[inline]
       #[must_use]
-      pub const fn as_array(&self) -> &[$T; $N] {
+      pub const fn as_array(&self) -> &[T; N] {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe { core::mem::transmute::<&$Simd, &[$T; $N]>(self) }
+        unsafe { core::mem::transmute::<&Simd<T, N>, &[T; N]>(self) }
       }
 
       /// Returns a mutable array reference containing the entire SIMD vector.
       #[inline]
       #[must_use]
-      pub const fn as_mut_array(&mut self) -> &mut [$T; $N] {
+      pub const fn as_mut_array(&mut self) -> &mut [T; N] {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe { core::mem::transmute::<&mut $Simd, &mut [$T; $N]>(self) }
+        unsafe { core::mem::transmute::<&mut Simd<T, N>, &mut [T; N]>(self) }
       }
 
       /// Returns a [mask] that checks if each element of `self` is equal to the
@@ -1174,9 +1174,9 @@ macro_rules! define_simd {
       #[doc(alias = "set", alias = "with")]
       #[inline]
       #[must_use]
-      pub fn replace_const<const INDEX: usize>(self, value: $T) -> Self {
+      pub fn replace_const<const INDEX: usize>(self, value: T) -> Self {
         const {
-          assert!(INDEX < $N, "attempt to call `Simd::replace_const` with an out of bounds index");
+          assert!(INDEX < N, "attempt to call `Simd::replace_const` with an out of bounds index");
         }
 
         self.replace_const_backend::<INDEX>(value)
@@ -1188,9 +1188,9 @@ macro_rules! define_simd {
       #[doc(alias = "get")]
       #[inline]
       #[must_use]
-      pub fn extract_const<const INDEX: usize>(self) -> $T {
+      pub fn extract_const<const INDEX: usize>(self) -> T {
         const {
-          assert!(INDEX < $N, "attempt to call `Simd::extract_const` with an out of bounds index");
+          assert!(INDEX < N, "attempt to call `Simd::extract_const` with an out of bounds index");
         }
 
         self.extract_const_backend::<INDEX>()
@@ -1238,7 +1238,7 @@ macro_rules! define_simd {
       #[inline]
       #[must_use]
       #[doc(alias("movemask", "move_mask"))]
-      pub fn to_bitmask(self) -> $Bitmask {
+      pub fn to_bitmask(self) -> <Self as SupportedSimd>::Bitmask {
         self.to_bitmask_backend()
       }
 
@@ -1324,7 +1324,7 @@ macro_rules! define_simd {
       /// values).
       #[inline]
       #[must_use]
-      pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
+      pub fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Self {
         self.shuffle_backend(indices)
       }
 
@@ -1339,7 +1339,7 @@ macro_rules! define_simd {
       /// with a zero fallback.
       #[inline]
       #[must_use]
-      pub fn shuffle_zeroing(self, indices: $UnsignedSimd) -> Self {
+      pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self {
         self.shuffle_zeroing_backend(indices)
       }
 
@@ -1352,14 +1352,14 @@ macro_rules! define_simd {
       /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
       #[inline]
       #[must_use]
-      pub fn shuffle_wrapping(self, indices: $UnsignedSimd) -> Self {
+      pub fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Self {
         self.shuffle_wrapping_backend(indices)
       }
 
       /// Transposes an array of SIMD vectors interpreted as a square matrix.
       #[inline]
       #[must_use]
-      pub fn transpose(data: [Self; $N]) -> [Self; $N] {
+      pub fn transpose(data: [Self; N]) -> [Self; N] {
         Self::transpose_backend(data)
       }
 
@@ -1371,7 +1371,7 @@ macro_rules! define_simd {
       #[inline]
       #[must_use]
       #[deprecated(since = "1.8.0", note = "renamed to `from_array`")]
-      pub const fn new(array: [$T; $N]) -> Self {
+      pub const fn new(array: [T; N]) -> Self {
         Self::from_array(array)
       }
 
@@ -1436,21 +1436,21 @@ macro_rules! define_simd {
 
     // SAFETY: All SIMD types in this library contain fully initialized memory
     // and accept all bits patterns.
-    unsafe impl<T, const N: usize> Zeroable for $Simd {}
+    unsafe impl<T, const N: usize> Zeroable for Simd<T, N> {}
 
     // SAFETY: All SIMD types in this library contain fully initialized memory
     // and accept all bits patterns.
-    unsafe impl<T, const N: usize> Pod for $Simd {}
+    unsafe impl<T, const N: usize> Pod for Simd<T, N> {}
 
     #[cfg(feature = "serde")]
-    impl<T, const N: usize> Serialize for $Simd {
+    impl<T, const N: usize> Serialize for Simd<T, N> {
       #[inline]
       fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
       where
         S: serde_core::Serializer,
       {
         let array = self.as_array();
-        let mut seq = serializer.serialize_tuple($N)?;
+        let mut seq = serializer.serialize_tuple(N)?;
         for e in array {
           seq.serialize_element(e)?;
         }
@@ -1459,7 +1459,7 @@ macro_rules! define_simd {
     }
 
     #[cfg(feature = "serde")]
-    impl<T, const N: usize, 'de> Deserialize<'de> for $Simd {
+    impl<T, const N: usize, 'de> Deserialize<'de> for Simd<T, N> {
       #[inline]
       fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
       where
