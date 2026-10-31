@@ -757,14 +757,14 @@ macro_rules! define_simd {
   };
 }
 
-    impl PartialEq for $Simd {
+    impl<T, const N: usize> PartialEq for $Simd {
       #[inline]
       fn eq(&self, other: &Self) -> bool {
         self.simd_eq(*other).all()
       }
     }
 
-    impl Default for $Simd {
+    impl<T, const N: usize> Default for $Simd {
       #[inline]
       fn default() -> Self {
         // Currently, all supported `T` types have a default value where all
@@ -773,7 +773,7 @@ macro_rules! define_simd {
       }
     }
 
-    impl From<[$T; $N]> for $Simd {
+    impl<T, const N: usize> From<[$T; $N]> for $Simd {
       /// Converts an array to a SIMD vector.
       #[inline]
       fn from(arr: [$T; $N]) -> Self {
@@ -781,7 +781,7 @@ macro_rules! define_simd {
       }
     }
 
-    impl From<$Simd> for [$T; $N] {
+    impl<T, const N: usize> From<$Simd> for [$T; $N] {
       /// Converts a SIMD vector to an array.
       #[inline]
       fn from(simd: $Simd) -> Self {
@@ -789,7 +789,7 @@ macro_rules! define_simd {
       }
     }
 
-    impl From<$T> for $Simd {
+    impl<T, const N: usize> From<$T> for $Simd {
       /// Converts a single value to a SIMD vector by setting all elements to
       /// that value.
       #[inline]
@@ -798,7 +798,7 @@ macro_rules! define_simd {
       }
     }
 
-    impl From<&[$T]> for $Simd {
+    impl<T, const N: usize> From<&[$T]> for $Simd {
       /// Converts a slice to a SIMD vector, filling in zeros if there are not
       /// enough elements, and panicking if there are too many elements.
       ///
@@ -833,7 +833,7 @@ macro_rules! define_simd {
 
     macro_rules! impl_formatting_trait {
       ($Trait:path) => {
-        impl $Trait for $Simd {
+        impl<T, const N: usize> $Trait for $Simd {
           #[allow(clippy::missing_inline_in_public_items)]
           fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
             write!(f, "(")?;
@@ -853,14 +853,14 @@ macro_rules! define_simd {
     impl_formatting_trait!(core::fmt::LowerExp);
     impl_formatting_trait!(core::fmt::UpperExp);
 
-    impl Select<$Simd> for $Simd {
+    impl<T, const N: usize> Select<$Simd> for $Simd {
       #[inline]
       fn select(self, if_true: Self, if_false: Self) -> Self {
         self.select_backend(if_true, if_false)
       }
     }
 
-    impl ShuffleExt for [$Simd; 2] {
+    impl<T, const N: usize> ShuffleExt for [$Simd; 2] {
       type Indices = $UnsignedSimd;
       type Output = $Simd;
 
@@ -880,7 +880,7 @@ macro_rules! define_simd {
       }
     }
 
-    impl ShuffleExt for [$Simd; 3] {
+    impl<T, const N: usize> ShuffleExt for [$Simd; 3] {
       type Indices = $UnsignedSimd;
       type Output = $Simd;
 
@@ -900,7 +900,7 @@ macro_rules! define_simd {
       }
     }
 
-    impl ShuffleExt for [$Simd; 4] {
+    impl<T, const N: usize> ShuffleExt for [$Simd; 4] {
       type Indices = $UnsignedSimd;
       type Output = $Simd;
 
@@ -921,7 +921,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpEq for $Simd {
+    impl<T, const N: usize> CmpEq for $Simd {
       type Output = Self;
 
       #[inline]
@@ -931,7 +931,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpEq<$T> for $Simd {
+    impl<T, const N: usize> CmpEq<$T> for $Simd {
       type Output = Self;
 
       #[inline]
@@ -941,7 +941,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpNe for $Simd {
+    impl<T, const N: usize> CmpNe for $Simd {
       type Output = Self;
 
       #[inline]
@@ -951,7 +951,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpNe<$T> for $Simd {
+    impl<T, const N: usize> CmpNe<$T> for $Simd {
       type Output = Self;
 
       #[inline]
@@ -961,7 +961,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpLt for $Simd {
+    impl<T, const N: usize> CmpLt for $Simd {
       type Output = Self;
 
       #[inline]
@@ -971,7 +971,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpLt<$T> for $Simd {
+    impl<T, const N: usize> CmpLt<$T> for $Simd {
       type Output = Self;
 
       #[inline]
@@ -981,7 +981,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpGt for $Simd {
+    impl<T, const N: usize> CmpGt for $Simd {
       type Output = Self;
 
       #[inline]
@@ -991,7 +991,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpGt<$T> for $Simd {
+    impl<T, const N: usize> CmpGt<$T> for $Simd {
       type Output = Self;
 
       #[inline]
@@ -1001,7 +1001,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpLe for $Simd {
+    impl<T, const N: usize> CmpLe for $Simd {
       type Output = Self;
 
       #[inline]
@@ -1011,7 +1011,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpLe<$T> for $Simd {
+    impl<T, const N: usize> CmpLe<$T> for $Simd {
       type Output = Self;
 
       #[inline]
@@ -1021,7 +1021,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpGe for $Simd {
+    impl<T, const N: usize> CmpGe for $Simd {
       type Output = Self;
 
       #[inline]
@@ -1031,7 +1031,7 @@ macro_rules! define_simd {
     }
 
     #[expect(deprecated)]
-    impl CmpGe<$T> for $Simd {
+    impl<T, const N: usize> CmpGe<$T> for $Simd {
       type Output = Self;
 
       #[inline]
@@ -1040,12 +1040,12 @@ macro_rules! define_simd {
       }
     }
 
-    impl AlignTo for $Simd {
+    impl<T, const N: usize> AlignTo for $Simd {
       type Elem = $T;
     }
 
     /// The following functionality exists for all SIMD vectors.
-    impl $Simd {
+    impl<T, const N: usize> $Simd {
       /// Converts an array to a SIMD vector.
       #[inline]
       #[must_use]
@@ -1436,14 +1436,14 @@ macro_rules! define_simd {
 
     // SAFETY: All SIMD types in this library contain fully initialized memory
     // and accept all bits patterns.
-    unsafe impl Zeroable for $Simd {}
+    unsafe impl<T, const N: usize> Zeroable for $Simd {}
 
     // SAFETY: All SIMD types in this library contain fully initialized memory
     // and accept all bits patterns.
-    unsafe impl Pod for $Simd {}
+    unsafe impl<T, const N: usize> Pod for $Simd {}
 
     #[cfg(feature = "serde")]
-    impl Serialize for $Simd {
+    impl<T, const N: usize> Serialize for $Simd {
       #[inline]
       fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
       where
@@ -1459,7 +1459,7 @@ macro_rules! define_simd {
     }
 
     #[cfg(feature = "serde")]
-    impl<'de> Deserialize<'de> for $Simd {
+    impl<T, const N: usize, 'de> Deserialize<'de> for $Simd {
       #[inline]
       fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
       where
