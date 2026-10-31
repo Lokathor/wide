@@ -77,8 +77,96 @@ pub trait SupportedSimd: Sealed + SimdBackend {
     type Bitmask: PrimitiveUnsigned;
 }
 
+/// Defines the `Inner` type (the type contained inside `Simd<T, N>`) and the
+/// internal implementations of functions applicable to arbitrary SIMD vectors.
 pub(crate) trait SimdBackend {
     type Inner: Copy;
+
+    fn simd_eq_backend(self, other: Self) -> Self;
+
+    fn simd_ne_backend(self, other: Self) -> Self;
+
+    fn simd_lt_backend(self, other: Self) -> Self;
+
+    fn simd_gt_backend(self, other: Self) -> Self;
+
+    fn simd_le_backend(self, other: Self) -> Self;
+
+    fn simd_ge_backend(self, other: Self) -> Self;
+
+    fn select_backend(self, if_true: Self, if_false: Self) -> Self;
+
+    fn to_bitmask_backend(self) -> Self::Bitmask
+    where
+        Self: SupportedSimd;
+
+    fn any_backend(self) -> bool;
+
+    fn all_backend(self) -> bool;
+
+    fn interleave_low_backend(self, other: Self) -> Self;
+
+    fn interleave_high_backend(self, other: Self) -> Self;
+
+    fn shuffle_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn transpose_backend(data: Self::ArrayOf<Self>) -> Self::ArrayOf<Self>
+    where
+        Self: SimdAssociatedTypes;
+
+    fn replace_const_backend<const INDEX: usize>(self, value: Self::T) -> Self
+    where
+        Self: SimdAssociatedTypes;
+
+    fn extract_const_backend<const INDEX: usize>(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
 }
 
 /// Provides SIMD backend traits access to SIMD associated types.
