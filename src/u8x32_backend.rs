@@ -8,6 +8,7 @@ pub(crate) struct Inner {
     pub hi: u8x16,
 }
 
+safe_target_feature! {
 impl SimdBackend for u8x32 {
     pick! {
       if #[cfg(target_feature="avx2")] {
@@ -16,11 +17,7 @@ impl SimdBackend for u8x32 {
         type Inner = Inner;
       }
     }
-}
 
-safe_target_feature! {
-// Backend of general-SIMD functions.
-impl u8x32 {
     #[inline]
     pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {

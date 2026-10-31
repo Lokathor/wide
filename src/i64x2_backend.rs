@@ -11,6 +11,7 @@ pub(crate) struct Inner {
     pub arr: [i64; 2],
 }
 
+safe_target_feature! {
 impl SimdBackend for i64x2 {
     pick! {
       if #[cfg(target_feature="sse2")] {
@@ -23,11 +24,7 @@ impl SimdBackend for i64x2 {
         type Inner = Inner;
       }
     }
-}
 
-safe_target_feature! {
-// Backend of general-SIMD functions.
-impl i64x2 {
     #[inline]
     pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
         pick! {
