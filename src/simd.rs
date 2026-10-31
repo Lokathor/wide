@@ -215,6 +215,17 @@ pub(crate) trait SupportSimdOf<U> {
     type SimdOfU;
 }
 
+/// A marker trait for SIMD element types that support mask operations.
+///
+/// All current SIMD element types implement this. However, it is possible that
+/// in the future, there will be SIMD element types that do not satisfy
+/// [`Pod`]-like requirements, and thus cannot support the existing mask
+/// operations.
+///
+/// For simplicity sake, this trait is not exposed publicly. Instead, it is used
+/// as a super-trait of `PrimitiveFloat` and `PrimitiveInteger`.
+pub(crate) trait MaskOps {}
+
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
@@ -602,6 +613,21 @@ impl SimdElement for usize {
     type Unsigned = usize;
     type Signed = isize;
 }
+
+impl MaskOps for f32 {}
+impl MaskOps for f64 {}
+impl MaskOps for i8 {}
+impl MaskOps for i16 {}
+impl MaskOps for i32 {}
+impl MaskOps for i64 {}
+impl MaskOps for i128 {}
+impl MaskOps for isize {}
+impl MaskOps for u8 {}
+impl MaskOps for u16 {}
+impl MaskOps for u32 {}
+impl MaskOps for u64 {}
+impl MaskOps for u128 {}
+impl MaskOps for usize {}
 
 macro_rules! define_simd {
   (
