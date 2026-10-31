@@ -1,8 +1,235 @@
 //! Defines the library's types and APIs applicable to arbitrary SIMD vectors.
 
-use bytemuck::{Pod, Zeroable, cast, pod_align_to, pod_align_to_mut};
+use bytemuck::{Pod, Zeroable, pod_align_to, pod_align_to_mut};
 #[cfg(feature = "serde")]
 use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
+
+use crate::{PrimitiveSigned, PrimitiveUnsigned};
+
+/// TODO(generics): Add documentation and explain how to use SIMD vectors.
+///
+/// # Layout
+///
+/// TODO(generics): Define this type's precise layout guarantees (size,
+/// alignment, what about non-power-of-two lane counts).
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+pub struct Simd<T, const N: usize>(pub(crate) <Self as SimdBackend>::Inner)
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd;
+
+/// A trait for types that can be used as SIMD vector elements.
+///
+/// Note that because [`Simd<T, N>`] only supports certain combinations of `T`
+/// and `N`, there may be `T` types that implement [`SimdElement`] but are not
+/// actually supported in any real SIMD type. For example, [`usize`] implements
+/// [`SimdElement`], but there is currently no [`Simd<usize, N>`] type that
+/// implements [`SupportedSimd`].
+#[expect(private_bounds)]
+pub trait SimdElement: Sealed {
+    /// Add a dummy associated constant in order to avoid marking this trait as
+    /// dyn compatible.
+    ///
+    /// This cannot be done with a `Sized` super trait because we do not want to
+    /// guarantee that all SIMD element types implement `Sized`.
+    #[doc(hidden)]
+    const NOT_DYN_COMPATIBLE_MARKER: () = ();
+
+    /// An unsigned integer with the same size as `self`.
+    ///
+    /// For floats and integers, the unsigned type is guaranteed to have their
+    /// exact size. However, it is possible that SIMD element types added in the
+    /// future will not have an exact unsigned integer equivalent, and will use
+    /// a type with a different size.
+    type Unsigned: PrimitiveUnsigned<Signed = Self::Signed>;
+
+    /// A signed integer with the same size as `self`.
+    ///
+    /// This is the signed variant of [`Self::Unsigned`].
+    type Signed: PrimitiveSigned<Unsigned = Self::Unsigned>;
+}
+
+/// A trait for [`Simd<T, N>`] types that are actually supported.
+///
+/// Due to Rust language limitations, [`Simd<T, N>`] only supports certain
+/// combinations of `T` and `N`. The trait bound `Simd<T, N>: SupportedSimd`
+/// must be used in generic contexts to make sure the given SIMD type is
+/// supported.
+///
+/// In the future, if Rust stabilizes the appropriate language features,
+/// [`Simd<T, N>`] would support all combinations of `T` and `N`, the trait
+/// bound would be removed and this trait would be deprecated.
+#[expect(private_bounds)]
+pub trait SupportedSimd: Sealed + SimdBackend {
+    /// Add a dummy associated constant in order to avoid marking this trait as
+    /// dyn compatible.
+    ///
+    /// This cannot be done with a `Sized` super trait because we do not want to
+    /// guarantee that all SIMD vector types implement `Sized`.
+    #[doc(hidden)]
+    const NOT_DYN_COMPATIBLE_MARKER: () = ();
+
+    /// The unsigned integer used in [`Simd::to_bitmask`].
+    ///
+    /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
+    /// is [`u64`].
+    type Bitmask: PrimitiveUnsigned;
+}
+
+/// Defines the `Inner` type (the type contained inside `Simd<T, N>`) and the
+/// internal implementations of functions applicable to arbitrary SIMD vectors.
+pub(crate) trait SimdBackend {
+    type Inner: Copy;
+
+    fn simd_eq_backend(self, other: Self) -> Self;
+
+    fn simd_ne_backend(self, other: Self) -> Self;
+
+    fn simd_lt_backend(self, other: Self) -> Self;
+
+    fn simd_gt_backend(self, other: Self) -> Self;
+
+    fn simd_le_backend(self, other: Self) -> Self;
+
+    fn simd_ge_backend(self, other: Self) -> Self;
+
+    fn select_backend(self, if_true: Self, if_false: Self) -> Self;
+
+    fn to_bitmask_backend(self) -> Self::Bitmask
+    where
+        Self: SupportedSimd;
+
+    fn any_backend(self) -> bool;
+
+    fn all_backend(self) -> bool;
+
+    fn interleave_low_backend(self, other: Self) -> Self;
+
+    fn interleave_high_backend(self, other: Self) -> Self;
+
+    fn shuffle_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn transpose_backend(data: Self::ArrayOf<Self>) -> Self::ArrayOf<Self>
+    where
+        Self: SimdAssociatedTypes;
+
+    fn replace_const_backend<const INDEX: usize>(self, value: Self::T) -> Self
+    where
+        Self: SimdAssociatedTypes;
+
+    fn extract_const_backend<const INDEX: usize>(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+}
+
+/// Provides SIMD backend traits access to SIMD associated types.
+///
+/// SIMD backend traits are not generic over `T` nor `N` (they cannot due to
+/// type-system limitations). As a result, they cannot easily refer to types
+/// that depends on `T` and `N`.
+///
+/// Such types include `[Self; N]` (used in [`Simd::transpose`]) and
+/// `Simd<T::Unsigned, N>` (used in [`Simd::shuffle`]).
+///
+/// To solve this problem, SIMD backend functions that need access to such types
+/// add `where Self: SimdAssociatedTypes` which gives them access to appropriate
+/// types.
+///
+/// [`SimdAssociatedTypes`] has one shared generic implementation for all
+/// supported [`Simd<T, N>`] types. This means that the compiler, in
+/// contexts generic over `T` and `N`, understands what these types actually are
+/// (for example, for `Self = Simd<T, N>`, that [`Self::T`]  is `T` and that
+/// [`Self::ArrayOf<U>`] is `[U; N]`).
+pub(crate) trait SimdAssociatedTypes: Sized {
+    /// For `Self = Simd<T, N>`, this type is `T`.
+    type T;
+
+    /// For `Self = Simd<T, N>`, this type is `[U; N]`.
+    type ArrayOf<U>;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<U, N>`.
+    type SimdOf<U>
+    where
+        Self: SupportSimdOf<U>;
+
+    /// For `Self = Simd<T, N>`, this type is `T::Unsigned`.
+    type UnsignedT;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<T::Unsigned, N>`.
+    type UnsignedSimd: ?Sized
+    where
+        Self: SupportSimdOf<Self::UnsignedT>;
+
+    /// For `Self = Simd<T, N>`, this type is `T::Signed`.
+    type SignedT;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<T::Signed, N>`.
+    type SignedSimd: ?Sized
+    where
+        Self: SupportSimdOf<Self::SignedT>;
+}
+
+/// An extension of [`SimdAssociatedTypes`] for when `Self::SimdOf<U>` must
+/// implement [`SupportedSimd`].
+///
+/// When SIMD backend functions refer to SIMD vectors of generic `T` types
+/// other than `T` (using [`SimdAssociatedTypes::SimdOf<U>`]), they must have a
+/// trait bound that guarantees the type `Self::SimdOf<U>` is actually defined
+/// (which requires it to implement [`SupportedSimd`]).
+///
+/// The `Self::SimdOf<U>: SupportedSimd` bound cannot be used directly. That
+/// results in a cycle. Instead, that bound is represented with
+/// `Self: SupportSimdOf<U>` (for `Self::SimdOf<U>: SupportedSimd`.
+pub(crate) trait SupportSimdOf<U> {
+    type SimdOfU;
+}
 
 /// A trait for lanewise SIMD selection.
 ///
@@ -335,14 +562,69 @@ where
 
 trait Sealed {}
 
+impl SimdElement for f32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for f64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for i8 {
+    type Unsigned = u8;
+    type Signed = i8;
+}
+impl SimdElement for i16 {
+    type Unsigned = u16;
+    type Signed = i16;
+}
+impl SimdElement for i32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for i64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for i128 {
+    type Unsigned = u128;
+    type Signed = i128;
+}
+impl SimdElement for isize {
+    type Unsigned = usize;
+    type Signed = isize;
+}
+impl SimdElement for u8 {
+    type Unsigned = u8;
+    type Signed = i8;
+}
+impl SimdElement for u16 {
+    type Unsigned = u16;
+    type Signed = i16;
+}
+impl SimdElement for u32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for u64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for u128 {
+    type Unsigned = u128;
+    type Signed = i128;
+}
+impl SimdElement for usize {
+    type Unsigned = usize;
+    type Signed = isize;
+}
+
 macro_rules! define_simd {
   (
       T = $T:ident,
       N = $N:literal,
       N_STR = $N_STR:literal,
       Simd = $Simd:ident,
-      backend_mod = $backend_mod:ident,
-      autofill = $autofill:ident,
       UnsignedSimd = $UnsignedSimd:ident,
       Bitmask = $Bitmask:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
@@ -350,14 +632,26 @@ macro_rules! define_simd {
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
   ) => {
     #[doc = concat!("A SIMD vector with ", $N_STR, " elements of type [`", stringify!($T), "`].")]
+    pub type $Simd = Simd<$T, $N>;
+
+    /// Constructs a specific SIMD type from its `Inner` type using its
+    /// type-alias name.
     ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
+    /// This function is used because type-aliases do not support tuple-struct
+    /// construction syntax.
     ///
-    /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct $Simd(pub(crate) crate::$backend_mod::Inner);
+    /// TODO(generics): Decide if this function should be removed in favor of
+    /// constructing non-`Self` SIMD types using `Simd(inner)` instead of
+    /// `{simd-type}(Inner)`. Wait until the generics API is ready to be merged
+    /// onto `main`, only then remove this function if decided so (wait to avoid
+    /// merge conflicts with `main`).
+    pub(crate) fn $Simd(inner: <$Simd as SimdBackend>::Inner) -> $Simd {
+      Simd(inner)
+    }
+
+    impl SupportedSimd for Simd<$T, $N> {
+      type Bitmask = $Bitmask;
+    }
 
     impl PartialEq for $Simd {
       #[inline]
@@ -1130,21 +1424,6 @@ macro_rules! define_simd {
       pub fn unpack_hi(self, other: Self) -> Self {
         self.interleave_high(other)
       }
-
-      // Invoke a macro that automatically fills some of this API's backend
-      // functions. There is a separate macro for floats, signed integers and
-      // unsigned integers.
-      //
-      // This is used for functions that do not have the same implementation for
-      // all SIMD types, but do have the same implementation for all SIMD float
-      // types, or for all SIMD signed integer types, etc.
-      $autofill!(
-        T = $T,
-        N = $N,
-        Simd = $Simd,
-        UnsignedSimd = $UnsignedSimd,
-        Bitmask = $Bitmask,
-      );
     }
 
     // SAFETY: All SIMD types in this library contain fully initialized memory
@@ -1187,13 +1466,7 @@ macro_rules! define_simd {
 /// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD float types.
 macro_rules! simd_backend_float_autofill {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        Bitmask = $Bitmask:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
             Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
@@ -1205,63 +1478,120 @@ macro_rules! simd_backend_float_autofill {
         }
 
         #[inline]
-        fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             Self::from_bits(self.to_bits().shuffle(indices))
         }
 
         #[inline]
-        fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_zeroing_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             Self::from_bits(self.to_bits().shuffle_zeroing(indices))
         }
 
         #[inline]
-        fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_wrapping_backend(
+            self,
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
             Self::from_bits(self.to_bits().shuffle_wrapping(indices))
         }
 
         #[inline]
-        fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+        fn shuffle_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+        fn shuffle_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+        fn shuffle_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
     };
 }
@@ -1269,13 +1599,7 @@ macro_rules! simd_backend_float_autofill {
 /// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD signed integer types.
 macro_rules! simd_backend_signed_autofill {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        Bitmask = $Bitmask:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn simd_eq_backend(self, other: Self) -> Self {
             self.cast_unsigned()
@@ -1310,7 +1634,7 @@ macro_rules! simd_backend_signed_autofill {
         }
 
         #[inline]
-        fn to_bitmask_backend(self) -> $Bitmask {
+        fn to_bitmask_backend(self) -> <Self as SupportedSimd>::Bitmask {
             self.cast_unsigned().to_bitmask()
         }
 
@@ -1339,90 +1663,189 @@ macro_rules! simd_backend_signed_autofill {
         }
 
         #[inline]
-        fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             self.cast_unsigned().shuffle(indices).cast_signed()
         }
 
         #[inline]
-        fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_zeroing_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
         }
 
         #[inline]
-        fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_wrapping_backend(
+            self,
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
             self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
         }
 
         #[inline]
-        fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+        fn shuffle_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+        fn shuffle_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+        fn shuffle_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
         fn transpose_backend(data: [Self; $N]) -> [Self; $N] {
-            cast($UnsignedSimd::transpose(cast::<
-                [$Simd; $N],
-                [$UnsignedSimd; $N],
-            >(data)))
+            cast(Simd::<<$T as SimdElement>::Unsigned, $N>::transpose(
+                cast::<[Simd<$T, $N>; $N], [Simd<<$T as SimdElement>::Unsigned, $N>; $N]>(data),
+            ))
         }
     };
 }
 
-/// Automatically fills SIMD backend functions that have the same implementation
-/// for all SIMD unsigned integer types.
-macro_rules! simd_backend_unsigned_autofill {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        Bitmask = $Bitmask:ident,
-    ) => {
-        // There are currently no such functions.
-    };
+impl<T, const N: usize> SimdAssociatedTypes for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+    type T = T;
+    type ArrayOf<U> = [U; N];
+    type SimdOf<U>
+        = <Self as SupportSimdOf<U>>::SimdOfU
+    where
+        Self: SupportSimdOf<U>;
+
+    type UnsignedT = T::Unsigned;
+    type UnsignedSimd
+        = <Self as SupportSimdOf<T::Unsigned>>::SimdOfU
+    where
+        Self: SupportSimdOf<T::Unsigned>;
+
+    type SignedT = T::Signed;
+    type SignedSimd
+        = <Self as SupportSimdOf<T::Signed>>::SimdOfU
+    where
+        Self: SupportSimdOf<T::Signed>;
 }
 
-impl<Simd, const N: usize> Sealed for [Simd; N] {}
+impl<T, const N: usize, U> SupportSimdOf<U> for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+    U: SimdElement,
+    Simd<U, N>: SupportedSimd,
+{
+    type SimdOfU = Simd<U, N>;
+}
+
+impl Sealed for f32 {}
+impl Sealed for f64 {}
+impl Sealed for i8 {}
+impl Sealed for i16 {}
+impl Sealed for i32 {}
+impl Sealed for i64 {}
+impl Sealed for i128 {}
+impl Sealed for isize {}
+impl Sealed for u8 {}
+impl Sealed for u16 {}
+impl Sealed for u32 {}
+impl Sealed for u64 {}
+impl Sealed for u128 {}
+impl Sealed for usize {}
+
+impl<T, const N: usize> Sealed for [T; N] {}
+
+impl<T, const N: usize> Sealed for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+}
 
 /// `serde` does not implement `Deserialize` for `[T; 64]`, so this manual
 /// implementation is used.
@@ -1475,8 +1898,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = f32x4,
-    backend_mod = f32x4_backend,
-    autofill = simd_backend_float_autofill,
     UnsignedSimd = u32x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128 },
@@ -1488,8 +1909,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = f32x8,
-    backend_mod = f32x8_backend,
-    autofill = simd_backend_float_autofill,
     UnsignedSimd = u32x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256 },
@@ -1501,8 +1920,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = f32x16,
-    backend_mod = f32x16_backend,
-    autofill = simd_backend_float_autofill,
     UnsignedSimd = u32x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512 },
@@ -1514,8 +1931,6 @@ define_simd!(
     N = 2,
     N_STR = "two",
     Simd = f64x2,
-    backend_mod = f64x2_backend,
-    autofill = simd_backend_float_autofill,
     UnsignedSimd = u64x2,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128d },
@@ -1527,8 +1942,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = f64x4,
-    backend_mod = f64x4_backend,
-    autofill = simd_backend_float_autofill,
     UnsignedSimd = u64x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256d },
@@ -1540,8 +1953,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = f64x8,
-    backend_mod = f64x8_backend,
-    autofill = simd_backend_float_autofill,
     UnsignedSimd = u64x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512d },
@@ -1553,8 +1964,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = i8x16,
-    backend_mod = i8x16_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u8x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1566,8 +1975,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = i8x32,
-    backend_mod = i8x32_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u8x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1579,8 +1986,6 @@ define_simd!(
     N = 64,
     N_STR = "64",
     Simd = i8x64,
-    backend_mod = i8x64_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u8x64,
     Bitmask = u64,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1592,8 +1997,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = i16x8,
-    backend_mod = i16x8_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u16x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1605,8 +2008,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = i16x16,
-    backend_mod = i16x16_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u16x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1618,8 +2019,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = i16x32,
-    backend_mod = i16x32_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u16x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1631,8 +2030,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = i32x4,
-    backend_mod = i32x4_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u32x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1644,8 +2041,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = i32x8,
-    backend_mod = i32x8_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u32x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1657,8 +2052,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = i32x16,
-    backend_mod = i32x16_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u32x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1670,8 +2063,6 @@ define_simd!(
     N = 2,
     N_STR = "two",
     Simd = i64x2,
-    backend_mod = i64x2_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u64x2,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1683,8 +2074,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = i64x4,
-    backend_mod = i64x4_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u64x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1696,8 +2085,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = i64x8,
-    backend_mod = i64x8_backend,
-    autofill = simd_backend_signed_autofill,
     UnsignedSimd = u64x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1709,8 +2096,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = u8x16,
-    backend_mod = u8x16_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u8x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1722,8 +2107,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = u8x32,
-    backend_mod = u8x32_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u8x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1735,8 +2118,6 @@ define_simd!(
     N = 64,
     N_STR = "64",
     Simd = u8x64,
-    backend_mod = u8x64_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u8x64,
     Bitmask = u64,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1748,8 +2129,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = u16x8,
-    backend_mod = u16x8_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u16x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1761,8 +2140,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = u16x16,
-    backend_mod = u16x16_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u16x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1774,8 +2151,6 @@ define_simd!(
     N = 32,
     N_STR = "32",
     Simd = u16x32,
-    backend_mod = u16x32_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u16x32,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1787,8 +2162,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = u32x4,
-    backend_mod = u32x4_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u32x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1800,8 +2173,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = u32x8,
-    backend_mod = u32x8_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u32x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1813,8 +2184,6 @@ define_simd!(
     N = 16,
     N_STR = "16",
     Simd = u32x16,
-    backend_mod = u32x16_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u32x16,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },
@@ -1826,8 +2195,6 @@ define_simd!(
     N = 2,
     N_STR = "two",
     Simd = u64x2,
-    backend_mod = u64x2_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u64x2,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m128i },
@@ -1839,8 +2206,6 @@ define_simd!(
     N = 4,
     N_STR = "four",
     Simd = u64x4,
-    backend_mod = u64x4_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u64x4,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m256i },
@@ -1852,8 +2217,6 @@ define_simd!(
     N = 8,
     N_STR = "eight",
     Simd = u64x8,
-    backend_mod = u64x8_backend,
-    autofill = simd_backend_unsigned_autofill,
     UnsignedSimd = u64x8,
     Bitmask = u32,
     optional_type_x86_inner { X86Inner = __m512i },

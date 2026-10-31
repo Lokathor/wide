@@ -8,9 +8,173 @@ use core::ops::{
 use bytemuck::Zeroable;
 
 use crate::{
-    Select, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
+    Select, SimdElement, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16, i64x2,
+    i64x4, i64x8,
+    simd::{SimdAssociatedTypes, SupportSimdOf},
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
+
+/// A sealed trait for all primitive floating-point types.
+///
+/// TODO(generics): Once appropriate SIMD functionality becomes generic over
+/// `T: PrimitiveFloat`, update the documentation of this trait to explain its
+/// intended usage.
+pub trait PrimitiveFloat: SimdElement {}
+
+/// Defines the internal implementations of functions applicable to SIMD vectors
+/// of floats.
+pub(crate) trait SimdFloatBackend {
+    fn neg_backend(self) -> Self;
+
+    fn not_backend(self) -> Self;
+
+    fn add_backend(self, rhs: Self) -> Self;
+
+    fn sub_backend(self, rhs: Self) -> Self;
+
+    fn mul_backend(self, rhs: Self) -> Self;
+
+    fn div_backend(self, rhs: Self) -> Self;
+
+    fn rem_backend(self, rhs: Self) -> Self;
+
+    fn bitand_backend(self, rhs: Self) -> Self;
+
+    fn bitor_backend(self, rhs: Self) -> Self;
+
+    fn bitxor_backend(self, rhs: Self) -> Self;
+
+    fn reduce_add_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_mul_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
+
+    #[expect(clippy::wrong_self_convention)]
+    fn is_nan_backend(self) -> Self;
+
+    #[expect(clippy::wrong_self_convention)]
+    fn is_infinite_backend(self) -> Self;
+
+    #[expect(clippy::wrong_self_convention)]
+    fn is_finite_backend(self) -> Self;
+
+    #[expect(clippy::wrong_self_convention)]
+    fn is_sign_positive_backend(self) -> Self;
+
+    fn recip_backend(self) -> Self;
+
+    fn recip_sqrt_backend(self) -> Self;
+
+    fn max_backend(self, rhs: Self) -> Self;
+
+    fn fast_max_backend(self, rhs: Self) -> Self;
+
+    fn min_backend(self, rhs: Self) -> Self;
+
+    fn fast_min_backend(self, rhs: Self) -> Self;
+
+    fn clamp_backend(self, min: Self, max: Self) -> Self;
+
+    fn fast_clamp_backend(self, min: Self, max: Self) -> Self;
+
+    fn reduce_max_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn fast_reduce_max_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_min_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn fast_reduce_min_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn abs_backend(self) -> Self;
+
+    fn floor_backend(self) -> Self;
+
+    fn ceil_backend(self) -> Self;
+
+    fn round_backend(self) -> Self;
+
+    fn round_int_backend(self) -> Self::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::SignedT>;
+
+    fn fast_round_int_backend(self) -> Self::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::SignedT>;
+
+    fn round_ties_even_backend(self) -> Self;
+
+    fn trunc_backend(self) -> Self;
+
+    fn trunc_int_backend(self) -> Self::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::SignedT>;
+
+    fn fast_trunc_int_backend(self) -> Self::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::SignedT>;
+
+    fn fast_mul_add_backend(self, a: Self, b: Self) -> Self;
+
+    fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self;
+
+    fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self;
+
+    fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self;
+
+    fn powf_simd_backend(self, n: Self) -> Self;
+
+    fn sqrt_backend(self) -> Self;
+
+    fn exp_backend(self) -> Self;
+
+    fn exp2_backend(self) -> Self;
+
+    fn ln_backend(self) -> Self;
+
+    fn cbrt_backend(self) -> Self;
+
+    fn asin_backend(self) -> Self;
+
+    fn acos_backend(self) -> Self;
+
+    fn atan_backend(self) -> Self;
+
+    fn atan2_backend(self, x: Self) -> Self;
+
+    fn sin_cos_backend(self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn asin_acos_backend(self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn exp_m1_backend(self) -> Self;
+
+    fn ln_1p_backend(self) -> Self;
+
+    fn sinh_backend(self) -> Self;
+
+    fn cosh_backend(self) -> Self;
+
+    fn tanh_backend(self) -> Self;
+}
+
+impl PrimitiveFloat for f32 {}
+impl PrimitiveFloat for f64 {}
 
 macro_rules! impl_simd_float {
   (

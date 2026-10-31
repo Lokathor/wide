@@ -9,16 +9,197 @@ use core::ops::{
 use bytemuck::Zeroable;
 
 use crate::{
-    i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16,
-    u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+    SimdElement, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4,
+    i64x8,
+    simd::{SimdAssociatedTypes, SupportSimdOf},
+    u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
+
+/// A sealed trait for all primitive integer types.
+///
+/// TODO(generics): Once appropriate SIMD functionality becomes generic over
+/// `T: PrimitiveInteger`, update the documentation of this trait to explain its
+/// intended usage.
+pub trait PrimitiveInteger: SimdElement {}
+
+/// An internal trait for primitive integer types that have a double-width
+/// variant.
+///
+/// This is used for `widening_mul`.
+///
+/// This trait could be exposed publicly, and that would enable users calling
+/// `widening_mul` in contexts generic over `T`. However, it is currently not
+/// exposed in order to avoid trait-bloat.
+pub(crate) trait HasDoubleWidth {
+    /// The primitive integer with double the width of `Self` and the same
+    /// signedness.
+    type DoubleWidth: PrimitiveInteger;
+}
+
+/// Defines the internal implementations of functions applicable to SIMD vectors
+/// of integers (both signed and unsigned).
+pub(crate) trait SimdIntegerBackend {
+    fn neg_backend(self) -> Self;
+
+    fn not_backend(self) -> Self;
+
+    fn add_backend(self, rhs: Self) -> Self;
+
+    fn sub_backend(self, rhs: Self) -> Self;
+
+    fn mul_backend(self, rhs: Self) -> Self;
+
+    fn bitand_backend(self, rhs: Self) -> Self;
+
+    fn bitor_backend(self, rhs: Self) -> Self;
+
+    fn bitxor_backend(self, rhs: Self) -> Self;
+
+    fn reduce_add_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_mul_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
+
+    fn shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn max_backend(self, rhs: Self) -> Self;
+
+    fn min_backend(self, rhs: Self) -> Self;
+
+    fn reduce_max_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_min_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn unbounded_shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn unbounded_shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn saturating_add_backend(self, rhs: Self) -> Self;
+
+    fn saturating_sub_backend(self, rhs: Self) -> Self;
+
+    fn saturating_mul_backend(self, rhs: Self) -> Self;
+
+    fn overflowing_neg_backend(self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn widening_mul_backend(
+        self,
+        rhs: Self,
+    ) -> Self::SimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>
+    where
+        Self: SimdAssociatedTypes<T: HasDoubleWidth>
+            + SupportSimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>,
+    {
+        // Because not all concrete types support `widening_mul`, this default
+        // implementation must exist. Note that all concrete types that support
+        // `widening_mul` should override this implementation, otherwise callers
+        // would get this panic.
+        let _ = rhs;
+        unreachable!(
+            "if you encountered this panic, a `wide` type is unintentionally missing its internal implementation of `widening_mul`"
+        )
+    }
+
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (Self::UnsignedSimd, Self)
+    where
+        Self: Sized + SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>,
+        Self::UnsignedSimd: Sized;
+
+    fn mul_keep_high_backend(self, rhs: Self) -> Self;
+}
+
+impl PrimitiveInteger for i8 {}
+impl PrimitiveInteger for i16 {}
+impl PrimitiveInteger for i32 {}
+impl PrimitiveInteger for i64 {}
+impl PrimitiveInteger for i128 {}
+impl PrimitiveInteger for isize {}
+impl PrimitiveInteger for u8 {}
+impl PrimitiveInteger for u16 {}
+impl PrimitiveInteger for u32 {}
+impl PrimitiveInteger for u64 {}
+impl PrimitiveInteger for u128 {}
+impl PrimitiveInteger for usize {}
+
+impl HasDoubleWidth for i8 {
+    type DoubleWidth = i16;
+}
+impl HasDoubleWidth for i16 {
+    type DoubleWidth = i32;
+}
+impl HasDoubleWidth for i32 {
+    type DoubleWidth = i64;
+}
+impl HasDoubleWidth for i64 {
+    type DoubleWidth = i128;
+}
+impl HasDoubleWidth for u8 {
+    type DoubleWidth = u16;
+}
+impl HasDoubleWidth for u16 {
+    type DoubleWidth = u32;
+}
+impl HasDoubleWidth for u32 {
+    type DoubleWidth = u64;
+}
+impl HasDoubleWidth for u64 {
+    type DoubleWidth = u128;
+}
 
 macro_rules! impl_simd_integer {
     (
         T = $T:ident,
         N = $N:literal,
         Simd = $Simd:ident,
-        autofill = $autofill:ident,
         UnsignedSimd = $UnsignedSimd:ident,
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
@@ -873,20 +1054,6 @@ macro_rules! impl_simd_integer {
 
                 Self::from_array([$(self_array[$INDEX].wrapping_rem(rhs_array[$INDEX])),*])
             }
-
-            // Invoke a macro that automatically fills some of this API's
-            // backend functions. There is a separate macro for signed integers
-            // and unsigned integers.
-            //
-            // This is used for functions that do not have the same
-            // implementation for all SIMD integer types, but do have the same
-            // implementation for all SIMD signed integer types, or for all SIMD
-            // unsigned integer types.
-            $autofill!(
-                T = $T,
-                Simd = $Simd,
-                UnsignedSimd = $UnsignedSimd,
-            );
         }
     };
 }
@@ -894,11 +1061,7 @@ macro_rules! impl_simd_integer {
 /// Automatically fills SIMD integer backend functions that have the same
 /// implementation for all SIMD signed integer types.
 macro_rules! simd_integer_backend_signed_autofill {
-    (
-        T = $T:ident,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn neg_backend(self) -> Self {
             (-self.cast_unsigned()).cast_signed()
@@ -943,7 +1106,7 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
-        fn shl_backend(self, rhs: $UnsignedSimd) -> Self {
+        fn shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             (self.cast_unsigned() << rhs).cast_signed()
         }
 
@@ -965,7 +1128,7 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
-        fn unbounded_shl_backend(self, rhs: $UnsignedSimd) -> Self {
+        fn unbounded_shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             // Shift left is the same for unsigned and signed integers.
             self.cast_unsigned().unbounded_shl(rhs).cast_signed()
         }
@@ -1030,11 +1193,7 @@ macro_rules! simd_integer_backend_signed_autofill {
 /// Automatically fills SIMD integer backend functions that have the same
 /// implementation for all SIMD unsigned integer types.
 macro_rules! simd_integer_backend_unsigned_autofill {
-    (
-        T = $T:ident,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn saturating_mul_backend(self, rhs: Self) -> Self {
             let (low, high) = self.mul_keep_low_high(rhs);
@@ -1078,7 +1237,6 @@ impl_simd_integer!(
     T = i8,
     N = 16,
     Simd = i8x16,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u8x16,
     SignedSimd = i8x16,
     WiderSimd = { i16x16 },
@@ -1090,7 +1248,6 @@ impl_simd_integer!(
     T = i8,
     N = 32,
     Simd = i8x32,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u8x32,
     SignedSimd = i8x32,
     WiderSimd = { i16x32 },
@@ -1105,7 +1262,6 @@ impl_simd_integer!(
     T = i8,
     N = 64,
     Simd = i8x64,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u8x64,
     SignedSimd = i8x64,
     WiderSimd = { /*i16x64*/ },
@@ -1121,7 +1277,6 @@ impl_simd_integer!(
     T = i16,
     N = 8,
     Simd = i16x8,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u16x8,
     SignedSimd = i16x8,
     WiderSimd = { i32x8 },
@@ -1133,7 +1288,6 @@ impl_simd_integer!(
     T = i16,
     N = 16,
     Simd = i16x16,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u16x16,
     SignedSimd = i16x16,
     WiderSimd = { i32x16 },
@@ -1145,7 +1299,6 @@ impl_simd_integer!(
     T = i16,
     N = 32,
     Simd = i16x32,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u16x32,
     SignedSimd = i16x32,
     WiderSimd = { /*i32x32*/ },
@@ -1160,7 +1313,6 @@ impl_simd_integer!(
     T = i32,
     N = 4,
     Simd = i32x4,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u32x4,
     SignedSimd = i32x4,
     WiderSimd = { i64x4 },
@@ -1172,7 +1324,6 @@ impl_simd_integer!(
     T = i32,
     N = 8,
     Simd = i32x8,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u32x8,
     SignedSimd = i32x8,
     WiderSimd = { i64x8 },
@@ -1184,7 +1335,6 @@ impl_simd_integer!(
     T = i32,
     N = 16,
     Simd = i32x16,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u32x16,
     SignedSimd = i32x16,
     WiderSimd = { /*i64x16*/ },
@@ -1196,7 +1346,6 @@ impl_simd_integer!(
     T = i64,
     N = 2,
     Simd = i64x2,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u64x2,
     SignedSimd = i64x2,
     WiderSimd = { /*i128x2*/ },
@@ -1208,7 +1357,6 @@ impl_simd_integer!(
     T = i64,
     N = 4,
     Simd = i64x4,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u64x4,
     SignedSimd = i64x4,
     WiderSimd = { /*i128x4*/ },
@@ -1220,7 +1368,6 @@ impl_simd_integer!(
     T = i64,
     N = 8,
     Simd = i64x8,
-    autofill = simd_integer_backend_signed_autofill,
     UnsignedSimd = u64x8,
     SignedSimd = i64x8,
     WiderSimd = { /*i128x8*/ },
@@ -1232,7 +1379,6 @@ impl_simd_integer!(
     T = u8,
     N = 16,
     Simd = u8x16,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u8x16,
     SignedSimd = i8x16,
     WiderSimd = { u16x16 },
@@ -1244,7 +1390,6 @@ impl_simd_integer!(
     T = u8,
     N = 32,
     Simd = u8x32,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u8x32,
     SignedSimd = i8x32,
     WiderSimd = { u16x32 },
@@ -1259,7 +1404,6 @@ impl_simd_integer!(
     T = u8,
     N = 64,
     Simd = u8x64,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u8x64,
     SignedSimd = i8x64,
     WiderSimd = { /*u16x64*/ },
@@ -1275,7 +1419,6 @@ impl_simd_integer!(
     T = u16,
     N = 8,
     Simd = u16x8,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u16x8,
     SignedSimd = i16x8,
     WiderSimd = { u32x8 },
@@ -1287,7 +1430,6 @@ impl_simd_integer!(
     T = u16,
     N = 16,
     Simd = u16x16,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u16x16,
     SignedSimd = i16x16,
     WiderSimd = { u32x16 },
@@ -1299,7 +1441,6 @@ impl_simd_integer!(
     T = u16,
     N = 32,
     Simd = u16x32,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u16x32,
     SignedSimd = i16x32,
     WiderSimd = { /*u32x32*/ },
@@ -1314,7 +1455,6 @@ impl_simd_integer!(
     T = u32,
     N = 4,
     Simd = u32x4,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u32x4,
     SignedSimd = i32x4,
     WiderSimd = { u64x4 },
@@ -1326,7 +1466,6 @@ impl_simd_integer!(
     T = u32,
     N = 8,
     Simd = u32x8,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u32x8,
     SignedSimd = i32x8,
     WiderSimd = { u64x8 },
@@ -1338,7 +1477,6 @@ impl_simd_integer!(
     T = u32,
     N = 16,
     Simd = u32x16,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u32x16,
     SignedSimd = i32x16,
     WiderSimd = { /*u64x16*/ },
@@ -1350,7 +1488,6 @@ impl_simd_integer!(
     T = u64,
     N = 2,
     Simd = u64x2,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u64x2,
     SignedSimd = i64x2,
     WiderSimd = { /*u128x2*/ },
@@ -1362,7 +1499,6 @@ impl_simd_integer!(
     T = u64,
     N = 4,
     Simd = u64x4,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u64x4,
     SignedSimd = i64x4,
     WiderSimd = { /*u128x4*/ },
@@ -1374,7 +1510,6 @@ impl_simd_integer!(
     T = u64,
     N = 8,
     Simd = u64x8,
-    autofill = simd_integer_backend_unsigned_autofill,
     UnsignedSimd = u64x8,
     SignedSimd = i64x8,
     WiderSimd = { /*u128x8*/ },

@@ -1,23 +1,25 @@
 use crate::backend_imports::*;
 
-pick! {
-  if #[cfg(target_feature="avx2")] {
-    pub(crate) type Inner = __m256i;
-  } else {
-    #[repr(C, align(32))]
-    #[derive(Clone, Copy)]
-    pub(crate) struct Inner {
-      pub lo: u16x8,
-      pub hi: u16x8,
-    }
-  }
+#[cfg(not(target_feature = "avx2"))]
+#[repr(C, align(32))]
+#[derive(Clone, Copy)]
+pub(crate) struct Inner {
+    pub lo: u16x8,
+    pub hi: u16x8,
 }
 
 safe_target_feature! {
-// Backend of general-SIMD functions.
-impl u16x16 {
+impl SimdBackend for u16x16 {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        type Inner = __m256i;
+      } else {
+        type Inner = Inner;
+      }
+    }
+
     #[inline]
-    pub(crate) fn simd_eq_backend(self, rhs: Self) -> Self {
+    fn simd_eq_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_cmpeq_epi16(self.0, rhs.0))
@@ -31,7 +33,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn simd_ne_backend(self, rhs: Self) -> Self {
+    fn simd_ne_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             !self.simd_eq(rhs)
@@ -45,13 +47,13 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+    fn simd_lt_backend(self, rhs: Self) -> Self {
         // no gt, so just reverse to get same answer
         Self::simd_gt(rhs, self)
     }
 
     #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+    fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature = "avx2")] {
             let bias = Self::from_array([0x8000u16; 16]).0;
@@ -70,7 +72,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+    fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             !self.simd_gt(rhs)
@@ -84,7 +86,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+    fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             !self.simd_lt(rhs)
@@ -98,7 +100,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn select_backend(self, if_true: Self, if_false: Self) -> Self {
+    fn select_backend(self, if_true: Self, if_false: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_blendv_epi8(if_false.0, if_true.0, self.0))
@@ -112,7 +114,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn to_bitmask_backend(self) -> u32 {
+    fn to_bitmask_backend(self) -> u32 {
         pick! {
           if #[cfg(target_feature="sse2")] {
               let [a,b] = cast::<_,[__m128i;2]>(self);
@@ -124,7 +126,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn any_backend(self) -> bool {
+    fn any_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
             ((_mm256_movemask_epi8(self.0) as u32) & 0b10101010101010101010101010101010) != 0
@@ -135,7 +137,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn all_backend(self) -> bool {
+    fn all_backend(self) -> bool {
         pick! {
           if #[cfg(target_feature="avx2")] {
             ((_mm256_movemask_epi8(self.0) as u32) & 0b10101010101010101010101010101010) == 0b10101010101010101010101010101010
@@ -146,7 +148,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn interleave_low_backend(self, other: Self) -> Self {
+    fn interleave_low_backend(self, other: Self) -> Self {
         // `_mm256_unpacklo_epi16` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [self_a, _] = cast::<u16x16, [u16x8; 2]>(self);
@@ -158,7 +160,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn interleave_high_backend(self, other: Self) -> Self {
+    fn interleave_high_backend(self, other: Self) -> Self {
         // `_mm256_unpackhi_epi16` cannot be used because it acts within each
         // 128-bit lane, which is a different operation.
         let [_, self_b] = cast::<u16x16, [u16x8; 2]>(self);
@@ -170,7 +172,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_backend(self, indices: u16x16) -> Self {
+    fn shuffle_backend(self, indices: u16x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
             Self(_mm256_permutexvar_epi16(indices.0, self.0))
@@ -201,7 +203,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_zeroing_backend(self, indices: u16x16) -> Self {
+    fn shuffle_zeroing_backend(self, indices: u16x16) -> Self {
         pick! {
           if #[cfg(any(
             target_feature = "ssse3",
@@ -219,7 +221,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_wrapping_backend(self, indices: u16x16) -> Self {
+    fn shuffle_wrapping_backend(self, indices: u16x16) -> Self {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
             // `avx512` shuffle intrinsics are wrapping
@@ -231,7 +233,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
+    fn shuffle_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
             u16x16(_mm256_permutex2var_epi16(inputs[0].0, indices.0, inputs[1].0))
@@ -245,14 +247,14 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
+    fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
         // Even if the `u8x32` shuffle is zeroing, our 16-bit to 8-bit index
         // conversion breaks for out of bounds indices.
         inputs.shuffle(indices) & indices.simd_lt(32)
     }
 
     #[inline]
-    pub(crate) fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
+    fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: u16x16) -> u16x16 {
         pick! {
           if #[cfg(all(target_feature = "avx512bw", target_feature = "avx512vl"))] {
             // `avx512` shuffle intrinsics are wrapping
@@ -264,7 +266,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_3_backend(inputs: [Self; 3], indices: u16x16) -> u16x16 {
+    fn shuffle_3_backend(inputs: [Self; 3], indices: u16x16) -> u16x16 {
         let self_bytes = cast::<[u16x16; 3], [u8x32; 3]>(inputs);
         let byte_indices = indices.to_byte_indices();
 
@@ -272,19 +274,19 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u16x16) -> u16x16 {
+    fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: u16x16) -> u16x16 {
         // Even if the `u8x32` shuffle is zeroing, our 16-bit to 8-bit index
         // conversion breaks for out of bounds indices.
         inputs.shuffle(indices) & indices.simd_lt(48)
     }
 
     #[inline]
-    pub(crate) fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u16x16) -> u16x16 {
+    fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: u16x16) -> u16x16 {
         inputs.shuffle(indices % 48)
     }
 
     #[inline]
-    pub(crate) fn shuffle_4_backend(inputs: [Self; 4], indices: u16x16) -> u16x16 {
+    fn shuffle_4_backend(inputs: [Self; 4], indices: u16x16) -> u16x16 {
         let self_bytes = cast::<[u16x16; 4], [u8x32; 4]>(inputs);
         let byte_indices = indices.to_byte_indices();
 
@@ -292,19 +294,19 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u16x16) -> u16x16 {
+    fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: u16x16) -> u16x16 {
         // Even if the `u8x32` shuffle is zeroing, our 16-bit to 8-bit index
         // conversion breaks for out of bounds indices.
         inputs.shuffle(indices) & indices.simd_lt(64)
     }
 
     #[inline]
-    pub(crate) fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u16x16) -> u16x16 {
+    fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: u16x16) -> u16x16 {
         inputs.shuffle(indices & 63)
     }
 
     #[inline]
-    pub(crate) fn transpose_backend(data: [Self; 16]) -> [Self; 16] {
+    fn transpose_backend(data: [Self; 16]) -> [Self; 16] {
         // Can this be optimized?
 
         #[inline(always)]
@@ -350,7 +352,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
+    fn replace_const_backend<const INDEX: usize>(self, value: u16) -> Self {
         /// Because of limitations in const generics, this must have separate
         /// branches per index. This macro is used to avoid duplication.
         macro_rules! use_indices {
@@ -395,7 +397,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn extract_const_backend<const INDEX: usize>(self) -> u16 {
+    fn extract_const_backend<const INDEX: usize>(self) -> u16 {
         /// Because of limitations in const generics, this must have separate
         /// branches per index. This macro is used to avoid duplication.
         macro_rules! use_indices {
@@ -438,10 +440,11 @@ impl u16x16 {
 }
 
 safe_target_feature! {
-// Backend of SIMD integer functions.
-impl u16x16 {
+impl SimdIntegerBackend for u16x16 {
+    simd_integer_backend_unsigned_autofill! { u16, 16 }
+
     #[inline]
-    pub(crate) fn neg_backend(self) -> Self {
+    fn neg_backend(self) -> Self {
         pick! {
             if #[cfg(target_feature = "avx2")] {
                 Self::default() - self
@@ -455,7 +458,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn not_backend(self) -> Self {
+    fn not_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             self ^ Self::MAX
@@ -469,7 +472,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn add_backend(self, rhs: Self) -> Self {
+    fn add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_add_epi16(self.0, rhs.0))
@@ -483,7 +486,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn sub_backend(self, rhs: Self) -> Self {
+    fn sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_sub_epi16(self.0, rhs.0))
@@ -497,7 +500,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn mul_backend(self, rhs: Self) -> Self {
+    fn mul_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // non-widening multiplication is the same for unsigned and signed
@@ -512,7 +515,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn bitand_backend(self, rhs: Self) -> Self {
+    fn bitand_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_and_si256(self.0, rhs.0))
@@ -526,7 +529,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn bitor_backend(self, rhs: Self) -> Self {
+    fn bitor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_or_si256(self.0, rhs.0))
@@ -540,7 +543,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn bitxor_backend(self, rhs: Self) -> Self {
+    fn bitxor_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_xor_si256(self.0, rhs.0))
@@ -554,19 +557,19 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn reduce_add_backend(self) -> u16 {
+    fn reduce_add_backend(self) -> u16 {
         let array: [u16x8; 2] = cast(self);
         (array[0] + array[1]).reduce_add()
     }
 
     #[inline]
-    pub(crate) fn reduce_mul_backend(self) -> u16 {
+    fn reduce_mul_backend(self) -> u16 {
         let array: [u16x8; 2] = cast(self);
         (array[0] * array[1]).reduce_mul()
     }
 
     #[inline]
-    pub(crate) fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_or_si256(
@@ -583,7 +586,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shl_backend(self, rhs: Self) -> Self {
+    fn shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shl`.
@@ -599,7 +602,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shl_scalar_backend(self, rhs: u32) -> Self {
+    fn shl_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
@@ -615,7 +618,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shr_backend(self, rhs: Self) -> Self {
+    fn shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             // Mask `rhs` to 15 to match `wrapping_shr`.
@@ -631,7 +634,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
+    fn shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             // Use `rhs % 16` to perform wrapping shift and not unbounded shift.
@@ -647,7 +650,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn max_backend(self, rhs: Self) -> Self {
+    fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_max_epu16(self.0, rhs.0))
@@ -661,7 +664,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn min_backend(self, rhs: Self) -> Self {
+    fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_min_epu16(self.0, rhs.0))
@@ -675,19 +678,19 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn reduce_max_backend(self) -> u16 {
+    fn reduce_max_backend(self) -> u16 {
         let array: [u16x8; 2] = cast(self);
         array[0].max(array[1]).reduce_max()
     }
 
     #[inline]
-    pub(crate) fn reduce_min_backend(self) -> u16 {
+    fn reduce_min_backend(self) -> u16 {
         let array: [u16x8; 2] = cast(self);
         array[0].min(array[1]).reduce_min()
     }
 
     #[inline]
-    pub(crate) fn unbounded_shl_backend(self, rhs: Self) -> Self {
+    fn unbounded_shl_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             cast(_mm256_sllv_epi16(self.0, rhs.0))
@@ -701,7 +704,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
+    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_sll_epi16(self.0, cast([rhs as u64, 0])))
@@ -715,7 +718,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_backend(self, rhs: Self) -> Self {
+    fn unbounded_shr_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(all(target_feature="avx512bw", target_feature="avx512vl"))] {
             cast(_mm256_srlv_epi16(self.0, rhs.0))
@@ -729,7 +732,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_srl_epi16(self.0, cast([rhs as u64, 0])))
@@ -743,7 +746,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
+    fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_adds_epu16(self.0, rhs.0))
@@ -757,7 +760,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
+    fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx2")] {
             Self(_mm256_subs_epu16(self.0, rhs.0))
@@ -771,14 +774,14 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
         let (low, high) = self.mul_keep_low_high(rhs);
         let overflow = high.simd_ne(Self::ZERO);
         (low, overflow)
     }
 
     #[inline]
-    pub(crate) fn widening_mul_backend(self, rhs: Self) -> u32x16 {
+    fn widening_mul_backend(self, rhs: Self) -> u32x16 {
         // x86 has no `_mm256_mul_epu16` intrinsic so there is no `avx2`
         // optimization.
 
@@ -789,7 +792,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (Self, Self) {
         // x86 has no `_mm256_mul_epu16` intrinsic so there is no `avx2`
         // optimization.
 
@@ -805,7 +808,7 @@ impl u16x16 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
+    fn mul_keep_high_backend(self, rhs: Self) -> Self {
         // x86 has no `_mm256_mul_epu16` intrinsic so there is no `avx2`
         // optimization.
 
@@ -818,10 +821,9 @@ impl u16x16 {
 }
 
 safe_target_feature! {
-// Backend of SIMD unsigned integer functions.
-impl u16x16 {
+impl SimdUnsignedBackend for u16x16 {
     #[inline]
-    pub(crate) fn saturating_add_signed_backend(self, rhs: i16x16) -> Self {
+    fn saturating_add_signed_backend(self, rhs: i16x16) -> Self {
         pick! {
             if #[cfg(target_feature="avx2")] {
                 let (result, overflow) = self.overflowing_add_signed(rhs);
