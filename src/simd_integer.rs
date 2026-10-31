@@ -10,8 +10,9 @@ use bytemuck::Zeroable;
 
 use crate::{
     Simd, SimdElement, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2,
-    i64x4, i64x8, u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4,
-    u64x8,
+    i64x4, i64x8,
+    simd::{SimdAssociatedTypes, SupportSimdOf},
+    u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
 /// A sealed trait for all primitive integer types.
@@ -33,6 +34,127 @@ pub(crate) trait HasDoubleWidth {
     /// The primitive integer with double the width of `Self` and the same
     /// signedness.
     type DoubleWidth: PrimitiveInteger;
+}
+
+/// Defines the internal implementations of functions applicable to SIMD vectors
+/// of integers (both signed and unsigned).
+pub(crate) trait SimdIntegerBackend {
+    fn neg_backend(self) -> Self;
+
+    fn not_backend(self) -> Self;
+
+    fn add_backend(self, rhs: Self) -> Self;
+
+    fn sub_backend(self, rhs: Self) -> Self;
+
+    fn mul_backend(self, rhs: Self) -> Self;
+
+    fn bitand_backend(self, rhs: Self) -> Self;
+
+    fn bitor_backend(self, rhs: Self) -> Self;
+
+    fn bitxor_backend(self, rhs: Self) -> Self;
+
+    fn reduce_add_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_mul_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
+
+    fn shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn max_backend(self, rhs: Self) -> Self;
+
+    fn min_backend(self, rhs: Self) -> Self;
+
+    fn reduce_max_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_min_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn unbounded_shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn unbounded_shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn saturating_add_backend(self, rhs: Self) -> Self;
+
+    fn saturating_sub_backend(self, rhs: Self) -> Self;
+
+    fn saturating_mul_backend(self, rhs: Self) -> Self;
+
+    fn overflowing_neg_backend(self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self)
+    where
+        Self: Sized;
+
+    fn widening_mul_backend(
+        self,
+        rhs: Self,
+    ) -> Self::SimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>
+    where
+        Self: SimdAssociatedTypes<T: HasDoubleWidth>
+            + SupportSimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>,
+    {
+        // Because not all concrete types support `widening_mul`, this default
+        // implementation must exist. Note that all concrete types that support
+        // `widening_mul` should override this implementation, otherwise callers
+        // would get this panic.
+        let _ = rhs;
+        unreachable!(
+            "if you encountered this panic, a `wide` type is unintentionally missing its internal implementation of `widening_mul`"
+        )
+    }
+
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (Self::UnsignedSimd, Self)
+    where
+        Self: Sized + SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>,
+        Self::UnsignedSimd: Sized;
+
+    fn mul_keep_high_backend(self, rhs: Self) -> Self;
 }
 
 impl PrimitiveInteger for i8 {}
