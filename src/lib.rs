@@ -268,6 +268,7 @@ mod backend_imports {
         simd::SimdBackend,
         simd_float::SimdFloatBackend,
         simd_integer::SimdIntegerBackend,
+        simd_signed::SimdSignedBackend,
         u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
         utils::{
             add_mul_hi_lane_u32, add_mul_hi_lane_u64, add_mul_lo_lane_u32, add_mul_lo_lane_u64,

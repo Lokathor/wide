@@ -313,8 +313,7 @@ impl SimdIntegerBackend for i64x2 {
 }
 
 safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i64x2 {
+impl SimdSignedBackend for i64x2 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {

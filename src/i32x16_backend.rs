@@ -290,8 +290,7 @@ impl SimdIntegerBackend for i32x16 {
 }
 
 safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i32x16 {
+impl SimdSignedBackend for i32x16 {
     #[inline]
     pub(crate) fn abs_backend(self) -> Self {
         pick! {
