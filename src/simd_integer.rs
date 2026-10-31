@@ -11,7 +11,7 @@ use bytemuck::Zeroable;
 use crate::{
     SimdElement, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4,
     i64x8,
-    simd::{SimdAssociatedTypes, SupportSimdOf},
+    simd::{MaskOps, SimdAssociatedTypes, SupportSimdOf},
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
@@ -20,7 +20,7 @@ use crate::{
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveInteger`, update the documentation of this trait to explain its
 /// intended usage.
-pub trait PrimitiveInteger: SimdElement {}
+pub trait PrimitiveInteger: SimdElement + MaskOps {}
 
 /// An internal trait for primitive integer types that have a double-width
 /// variant.
@@ -194,8 +194,6 @@ macro_rules! impl_simd_integer {
         T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
         INDICES = [$($INDEX:literal),* $(,)?],
     ) => {
-        impl Eq for $Simd {}
-
         impl_unary_operator!(
             $Simd,
             Neg,
