@@ -23,7 +23,7 @@ pub trait PrimitiveFloat: SimdElement {}
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of floats.
-pub(crate) trait SimdFloatBackend {
+pub(crate) trait SimdFloatBackend: Sized {
     fn neg_backend(self) -> Self;
 
     fn not_backend(self) -> Self;
@@ -154,13 +154,9 @@ pub(crate) trait SimdFloatBackend {
 
     fn atan2_backend(self, x: Self) -> Self;
 
-    fn sin_cos_backend(self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn sin_cos_backend(self) -> (Self, Self);
 
-    fn asin_acos_backend(self) -> (Self, Self)
-    where
-        Self: Sized;
+    fn asin_acos_backend(self) -> (Self, Self);
 
     fn exp_m1_backend(self) -> Self;
 

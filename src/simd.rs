@@ -54,14 +54,6 @@ pub trait SimdElement: Sealed + Copy {
 /// bound would be removed and this trait would be deprecated.
 #[expect(private_bounds)]
 pub trait SupportedSimd: Sealed + SimdBackend {
-    /// Add a dummy associated constant in order to avoid marking this trait as
-    /// dyn compatible.
-    ///
-    /// This cannot be done with a `Sized` super trait because we do not want to
-    /// guarantee that all SIMD vector types implement `Sized`.
-    #[doc(hidden)]
-    const NOT_DYN_COMPATIBLE_MARKER: () = ();
-
     /// The unsigned integer used in [`Simd::to_bitmask`].
     ///
     /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
@@ -71,7 +63,7 @@ pub trait SupportedSimd: Sealed + SimdBackend {
 
 /// Defines the `Inner` type (the type contained inside `Simd<T, N>`) and the
 /// internal implementations of functions applicable to arbitrary SIMD vectors.
-pub(crate) trait SimdBackend {
+pub(crate) trait SimdBackend: Sized {
     type Inner: Copy;
 
     fn simd_eq_backend(self, other: Self) -> Self;
@@ -195,7 +187,7 @@ pub(crate) trait SimdAssociatedTypes: Sized {
     type UnsignedT;
 
     /// For `Self = Simd<T, N>`, this type is `Simd<T::Unsigned, N>`.
-    type UnsignedSimd: ?Sized
+    type UnsignedSimd
     where
         Self: SupportSimdOf<Self::UnsignedT>;
 
@@ -203,7 +195,7 @@ pub(crate) trait SimdAssociatedTypes: Sized {
     type SignedT;
 
     /// For `Self = Simd<T, N>`, this type is `Simd<T::Signed, N>`.
-    type SignedSimd: ?Sized
+    type SignedSimd
     where
         Self: SupportSimdOf<Self::SignedT>;
 }
