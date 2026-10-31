@@ -1565,20 +1565,20 @@ where
     }
 }
 
-// SAFETY: All SIMD types in this library contain fully initialized memory
-// and accept all bits patterns.
+// SAFETY: Currently, all SIMD types in this library contain fully initialized
+// memory and accept all bits patterns.
 unsafe impl<T, const N: usize> Zeroable for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + Zeroable,
     Simd<T, N>: SupportedSimd,
 {
 }
 
-// SAFETY: All SIMD types in this library contain fully initialized memory
-// and accept all bits patterns.
+// SAFETY: Currently, all SIMD types in this library contain fully initialized
+// memory and accept all bits patterns.
 unsafe impl<T, const N: usize> Pod for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + Pod,
     Simd<T, N>: SupportedSimd,
 {
 }
