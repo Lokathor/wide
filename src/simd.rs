@@ -896,6 +896,7 @@ impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2]
 where
     T: SimdElement,
     Simd<T, N>: SupportedSimd,
+    Simd<T::Unsigned, N>: SupportedSimd,
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
@@ -920,6 +921,7 @@ impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3]
 where
     T: SimdElement,
     Simd<T, N>: SupportedSimd,
+    Simd<T::Unsigned, N>: SupportedSimd,
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
@@ -944,6 +946,7 @@ impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4]
 where
     T: SimdElement,
     Simd<T, N>: SupportedSimd,
+    Simd<T::Unsigned, N>: SupportedSimd,
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
@@ -1430,7 +1433,10 @@ where
     /// values).
     #[inline]
     #[must_use]
-    pub fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Self {
+    pub fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Self
+    where
+        Simd<T::Unsigned, N>: SupportedSimd,
+    {
         self.shuffle_backend(indices)
     }
 
@@ -1445,7 +1451,10 @@ where
     /// with a zero fallback.
     #[inline]
     #[must_use]
-    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self {
+    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self
+    where
+        Simd<T::Unsigned, N>: SupportedSimd,
+    {
         self.shuffle_zeroing_backend(indices)
     }
 
@@ -1458,7 +1467,10 @@ where
     /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
     #[inline]
     #[must_use]
-    pub fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Self {
+    pub fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Self
+    where
+        Simd<T::Unsigned, N>: SupportedSimd,
+    {
         self.shuffle_wrapping_backend(indices)
     }
 
