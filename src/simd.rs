@@ -779,14 +779,16 @@ where
 
 impl<T, const N: usize> Default for Simd<T, N>
 where
-    T: SimdElement,
+    T: SimdElement + Default,
     Simd<T, N>: SupportedSimd,
 {
     #[inline]
     fn default() -> Self {
         // Currently, all supported `T` types have a default value where all
         // bits equal zero.
-        Self::zeroed()
+
+        // SAFETY: All current SIMD types accept the zero bit-pattern.
+        unsafe { core::mem::zeroed::<Simd<T, N>>() }
     }
 }
 
