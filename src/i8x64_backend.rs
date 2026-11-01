@@ -1,28 +1,32 @@
 use crate::backend_imports::*;
 
-pick! {
-  if #[cfg(target_feature="avx512bw")] {
-    pub(crate) type Inner = __m512i;
-  } else {
-    #[repr(C, align(64))]
-    #[derive(Clone, Copy)]
-    pub(crate) struct Inner {
-      pub lo: i8x32,
-      pub hi: i8x32,
-    }
-  }
+#[cfg(not(target_feature = "avx512bw"))]
+#[repr(C, align(64))]
+#[derive(Clone, Copy)]
+pub(crate) struct Inner {
+    pub lo: i8x32,
+    pub hi: i8x32,
 }
 
 safe_target_feature! {
-// Backend of general-SIMD functions.
-impl i8x64 {
+impl SimdBackend for i8x64 {
+    pick! {
+      if #[cfg(target_feature="avx512bw")] {
+        type Inner = __m512i;
+      } else {
+        type Inner = Inner;
+      }
+    }
+
+    simd_backend_signed_autofill! { i8, 64 }
+
     #[inline]
-    pub(crate) fn simd_lt_backend(self, rhs: Self) -> Self {
+    fn simd_lt_backend(self, rhs: Self) -> Self {
         rhs.simd_gt(self)
     }
 
     #[inline]
-    pub(crate) fn simd_gt_backend(self, rhs: Self) -> Self {
+    fn simd_gt_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_maskz_mov_epi8(
@@ -39,7 +43,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn simd_le_backend(self, rhs: Self) -> Self {
+    fn simd_le_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_maskz_mov_epi8(
@@ -56,7 +60,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn simd_ge_backend(self, rhs: Self) -> Self {
+    fn simd_ge_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_maskz_mov_epi8(
@@ -75,10 +79,11 @@ impl i8x64 {
 }
 
 safe_target_feature! {
-// Backend of SIMD integer functions.
-impl i8x64 {
+impl SimdIntegerBackend for i8x64 {
+    simd_integer_backend_signed_autofill! { i8, 64 }
+
     #[inline]
-    pub(crate) fn shr_backend(self, rhs: u8x64) -> Self {
+    fn shr_backend(self, rhs: u8x64) -> Self {
         // There's no dedicated `i8` shift instruction, so we split into halves
         // and let `i8x32` handle it.
         let [self_a, self_b]: [i8x32; 2] = cast(self);
@@ -87,13 +92,13 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn shr_scalar_backend(self, rhs: u32) -> Self {
+    fn shr_scalar_backend(self, rhs: u32) -> Self {
         let [self_a, self_b]: [i8x32; 2] = cast(self);
         cast([self_a >> rhs, self_b >> rhs])
     }
 
     #[inline]
-    pub(crate) fn max_backend(self, rhs: Self) -> Self {
+    fn max_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_max_epi8(self.0, rhs.0))
@@ -107,7 +112,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn min_backend(self, rhs: Self) -> Self {
+    fn min_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_min_epi8(self.0, rhs.0))
@@ -121,26 +126,26 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn reduce_max_backend(self) -> i8 {
+    fn reduce_max_backend(self) -> i8 {
         let array: [i8x32; 2] = cast(self);
         array[0].max(array[1]).reduce_max()
     }
 
     #[inline]
-    pub(crate) fn reduce_min_backend(self) -> i8 {
+    fn reduce_min_backend(self) -> i8 {
         let array: [i8x32; 2] = cast(self);
         array[0].min(array[1]).reduce_min()
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_backend(self, rhs: u8x64) -> Self {
+    fn unbounded_shr_backend(self, rhs: u8x64) -> Self {
         let [self_a, self_b] = cast::<i8x64, [i8x32; 2]>(self);
         let [rhs_a, rhs_b] = cast::<u8x64, [u8x32; 2]>(rhs);
         cast([self_a.unbounded_shr(rhs_a), self_b.unbounded_shr(rhs_b)])
     }
 
     #[inline]
-    pub(crate) fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self {
         let [self_a, self_b] = cast::<i8x64, [i8x32; 2]>(self);
         cast([
             self_a.unbounded_shr_scalar(rhs),
@@ -149,7 +154,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn saturating_add_backend(self, rhs: Self) -> Self {
+    fn saturating_add_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_adds_epi8(self.0, rhs.0))
@@ -163,7 +168,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn saturating_sub_backend(self, rhs: Self) -> Self {
+    fn saturating_sub_backend(self, rhs: Self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_subs_epi8(self.0, rhs.0))
@@ -177,7 +182,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self) {
         let (low, high) = self.mul_keep_low_high(rhs);
         let low = cast::<u8x64, i8x64>(low);
 
@@ -186,7 +191,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_low_high_backend(self, rhs: Self) -> (u8x64, i8x64) {
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (u8x64, i8x64) {
         // There is no `_mm512_mullo_epi8`/`_mm512_mulhi_epi8` intrinsic, so there
         // is no `avx512bw` optimization.
 
@@ -202,7 +207,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn mul_keep_high_backend(self, rhs: Self) -> Self {
+    fn mul_keep_high_backend(self, rhs: Self) -> Self {
         // There is no `_mm512_mulhi_epi8` intrinsic, so there is no `avx512bw`
         // optimization.
 
@@ -215,10 +220,9 @@ impl i8x64 {
 }
 
 safe_target_feature! {
-// Backend of SIMD signed integer functions.
-impl i8x64 {
+impl SimdSignedBackend for i8x64 {
     #[inline]
-    pub(crate) fn abs_backend(self) -> Self {
+    fn abs_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             Self(_mm512_abs_epi8(self.0))
@@ -232,7 +236,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn is_positive_backend(self) -> Self {
+    fn is_positive_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             self.simd_gt(Self::ZERO)
@@ -246,7 +250,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn is_negative_backend(self) -> Self {
+    fn is_negative_backend(self) -> Self {
         pick! {
           if #[cfg(target_feature="avx512bw")] {
             self.simd_lt(Self::ZERO)
@@ -260,7 +264,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn saturating_neg_backend(self) -> Self {
+    fn saturating_neg_backend(self) -> Self {
         pick! {
             if #[cfg(target_feature="avx512bw")] {
                 Self(_mm512_subs_epi8(_mm512_setzero_si512(), self.0))
@@ -274,7 +278,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn saturating_abs_backend(self) -> Self {
+    fn saturating_abs_backend(self) -> Self {
         pick! {
             if #[cfg(target_feature = "avx512bw")] {
                 // If `self == MIN`, flip all bits to change the result from
@@ -290,7 +294,7 @@ impl i8x64 {
     }
 
     #[inline]
-    pub(crate) fn saturating_add_unsigned_backend(self, rhs: u8x64) -> Self {
+    fn saturating_add_unsigned_backend(self, rhs: u8x64) -> Self {
         pick! {
             if #[cfg(target_feature = "avx512bw")] {
                 let (result, overflow) = self.overflowing_add_unsigned(rhs);
