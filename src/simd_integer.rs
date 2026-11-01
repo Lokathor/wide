@@ -506,9 +506,8 @@ macro_rules! impl_simd_integer {
         );
         impl_shift_operator!(
             $T,
+            $N,
             $Simd,
-            $UnsignedSimd,
-            $SignedSimd,
             Shl,
             shl,
             ShlAssign,
@@ -550,9 +549,8 @@ macro_rules! impl_simd_integer {
         );
         impl_shift_operator!(
             $T,
+            $N,
             $Simd,
-            $UnsignedSimd,
-            $SignedSimd,
             Shr,
             shr,
             ShrAssign,

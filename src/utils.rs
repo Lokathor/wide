@@ -333,9 +333,8 @@ macro_rules! impl_binary_operator {
 macro_rules! impl_shift_operator {
   (
     $T:ident,
+    $N:literal,
     $Simd:ident,
-    $UnsignedSimd:ident,
-    $SignedSimd:ident,
     $Op:ident,
     $op:ident,
     $OpAssign:ident,
@@ -346,195 +345,145 @@ macro_rules! impl_shift_operator {
     $(#[$doc_scalar:meta])*,
     $(#[$scalar_doc:meta])*
   ) => {
-    impl $Op<$UnsignedSimd> for $Simd {
+    impl<Rhs> $Op<Simd<Rhs, $N>> for $Simd
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
+      fn $op(self, rhs: Simd<Rhs, $N>) -> Self::Output {
+        // SAFETY: `Rhs` and `Rhs::Unsigned` are equallity-sized integers. Thus
+        // it is sound to transmute between the two.
+        let rhs = unsafe {
+            core::mem::transmute_copy::<Simd<Rhs, $N>, Simd<Rhs::Unsigned, $N>>(&rhs)
+        };
+
         self.$op_backend(rhs)
       }
     }
 
-    impl $Op<$SignedSimd> for $Simd {
+    impl<Rhs> $Op<Simd<Rhs, $N>> for $T
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
+      type Output = $Simd;
+
+      $(#[$scalar_doc])*
+      #[inline]
+      fn $op(self, rhs: Simd<Rhs, $N>) -> Self::Output {
+        $Simd::splat(self).$op(rhs)
+      }
+    }
+
+    impl<Rhs> $OpAssign<Simd<Rhs, $N>> for $Simd
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
+      $(#[$doc])*
+      #[inline]
+      fn $op_assign(&mut self, rhs: Simd<Rhs, $N>) {
+        *self = self.$op(rhs);
+      }
+    }
+
+    impl<Rhs> $Op<&Simd<Rhs, $N>> for $Simd
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
+      fn $op(self, rhs: &Simd<Rhs, $N>) -> Self::Output {
+        self.$op(*rhs)
       }
     }
 
-    impl $Op<$UnsignedSimd> for $T {
+    impl<Rhs> $Op<&Simd<Rhs, $N>> for $T
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
       type Output = $Simd;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs)
+      fn $op(self, rhs: &Simd<Rhs, $N>) -> Self::Output {
+        $Simd::splat(self).$op(*rhs)
       }
     }
 
-    impl $Op<$SignedSimd> for $T {
+    impl<Rhs> $OpAssign<&Simd<Rhs, $N>> for $Simd
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
+      $(#[$doc])*
+      #[inline]
+      fn $op_assign(&mut self, rhs: &Simd<Rhs, $N>) {
+        *self = self.$op(*rhs);
+      }
+    }
+
+    impl<Rhs> $Op<Simd<Rhs, $N>> for &$Simd
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
+      type Output = $Simd;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: Simd<Rhs, $N>) -> Self::Output {
+        (*self).$op(rhs)
+      }
+    }
+
+    impl<Rhs> $Op<Simd<Rhs, $N>> for &$T
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
       type Output = $Simd;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs.cast_unsigned())
+      fn $op(self, rhs: Simd<Rhs, $N>) -> Self::Output {
+        $Simd::splat(*self).$op(rhs)
       }
     }
 
-    impl $OpAssign<$UnsignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: $UnsignedSimd) {
-        *self = self.$op_backend(rhs);
-      }
-    }
-
-    impl $OpAssign<$SignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: $SignedSimd) {
-        *self = self.$op_backend(rhs.cast_unsigned());
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for $Simd {
-      type Output = Self;
+    impl<Rhs> $Op<&Simd<Rhs, $N>> for &$Simd
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
+      type Output = $Simd;
 
       $(#[$doc])*
       #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        self.$op_backend(*rhs)
+      fn $op(self, rhs: &Simd<Rhs, $N>) -> Self::Output {
+        (*self).$op(*rhs)
       }
     }
 
-    impl $Op<&$SignedSimd> for $Simd {
-      type Output = Self;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for $T {
+    impl<Rhs> $Op<&Simd<Rhs, $N>> for &$T
+    where
+        Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+        Simd<Rhs, $N>: SupportedSimd,
+    {
       type Output = $Simd;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(*rhs)
-      }
-    }
-
-    impl $Op<&$SignedSimd> for $T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $OpAssign<&$UnsignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: &$UnsignedSimd) {
-        *self = self.$op_backend(*rhs);
-      }
-    }
-
-    impl $OpAssign<&$SignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: &$SignedSimd) {
-        *self = self.$op_backend(rhs.cast_unsigned());
-      }
-    }
-
-    impl $Op<$UnsignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        self.$op_backend(rhs)
-      }
-    }
-
-    impl $Op<$SignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<$UnsignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs)
-      }
-    }
-
-    impl $Op<$SignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        self.$op_backend(*rhs)
-      }
-    }
-
-    impl $Op<&$SignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(*rhs)
-      }
-    }
-
-    impl $Op<&$SignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs.cast_unsigned())
+      fn $op(self, rhs: &Simd<Rhs, $N>) -> Self::Output {
+        $Simd::splat(*self).$op(*rhs)
       }
     }
 
