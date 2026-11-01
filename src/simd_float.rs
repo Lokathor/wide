@@ -173,8 +173,13 @@ pub(crate) trait SimdFloatBackend: Sized {
 /// type-system hack.
 trait NotPrimitiveFloat {}
 
-impl PrimitiveFloat for f32 {}
-impl PrimitiveFloat for f64 {}
+macro_rules! impl_primitive_float {
+    ($T:ident) => {
+        impl PrimitiveFloat for $T {}
+    };
+}
+impl_primitive_float!(f32);
+impl_primitive_float!(f64);
 
 impl NotPrimitiveFloat for i8 {}
 impl NotPrimitiveFloat for i16 {}

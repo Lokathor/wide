@@ -26,12 +26,17 @@ pub(crate) trait SimdUnsignedBackend {
 /// type-system hack.
 trait NotPrimitiveUnsigned {}
 
-impl PrimitiveUnsigned for u8 {}
-impl PrimitiveUnsigned for u16 {}
-impl PrimitiveUnsigned for u32 {}
-impl PrimitiveUnsigned for u64 {}
-impl PrimitiveUnsigned for u128 {}
-impl PrimitiveUnsigned for usize {}
+macro_rules! impl_primitive_unsigned {
+    ($T:ident) => {
+        impl PrimitiveUnsigned for $T {}
+    };
+}
+impl_primitive_unsigned!(u8);
+impl_primitive_unsigned!(u16);
+impl_primitive_unsigned!(u32);
+impl_primitive_unsigned!(u64);
+impl_primitive_unsigned!(u128);
+impl_primitive_unsigned!(usize);
 
 impl NotPrimitiveUnsigned for f32 {}
 impl NotPrimitiveUnsigned for f64 {}

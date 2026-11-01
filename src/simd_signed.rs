@@ -38,12 +38,17 @@ pub(crate) trait SimdSignedBackend {
 /// type-system hack.
 trait NotPrimitiveSigned {}
 
-impl PrimitiveSigned for i8 {}
-impl PrimitiveSigned for i16 {}
-impl PrimitiveSigned for i32 {}
-impl PrimitiveSigned for i64 {}
-impl PrimitiveSigned for i128 {}
-impl PrimitiveSigned for isize {}
+macro_rules! impl_primitive_signed {
+    ($T:ident) => {
+        impl PrimitiveSigned for $T {}
+    };
+}
+impl_primitive_signed!(i8);
+impl_primitive_signed!(i16);
+impl_primitive_signed!(i32);
+impl_primitive_signed!(i64);
+impl_primitive_signed!(i128);
+impl_primitive_signed!(isize);
 
 impl NotPrimitiveSigned for f32 {}
 impl NotPrimitiveSigned for f64 {}
