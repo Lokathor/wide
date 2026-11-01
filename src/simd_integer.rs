@@ -351,9 +351,7 @@ where
 }
 
 impl_shift_operator!(
-    $T,
-    $N,
-    $Simd,
+    T: PrimitiveInteger,
     Shl,
     shl,
     ShlAssign,
@@ -394,9 +392,7 @@ impl_shift_operator!(
     /// [`unbounded_shl`]: crate::Simd::unbounded_shl
 );
 impl_shift_operator!(
-    $T,
-    $N,
-    $Simd,
+    T: PrimitiveInteger,
     Shr,
     shr,
     ShrAssign,
