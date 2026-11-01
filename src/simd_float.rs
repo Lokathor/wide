@@ -169,6 +169,8 @@ pub(crate) trait SimdFloatBackend: Sized {
     fn tanh_backend(self) -> Self;
 }
 
+/// A marker trait representing `!PrimitiveFloat` used for an internal
+/// type-system hack.
 trait NotPrimitiveFloat {}
 
 impl PrimitiveFloat for f32 {}
@@ -183,6 +185,16 @@ impl NotPrimitiveFloat for u16 {}
 impl NotPrimitiveFloat for u32 {}
 impl NotPrimitiveFloat for u64 {}
 
+/// In order for the generic SIMD float API to work, [`SimdFloatBackend`] is
+/// used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdFloatBackend`] is only applicable
+/// to SIMD vectors of floats. However this seems to be the only way to do it on
+/// stable Rust.
+///
+/// This means that non-floats do need some implementation of
+/// [`SimdFloatBackend`]. This block is a dummy implementation for all
+/// non-floats that fills functions with [`unreachable!`].
 impl<T, const N: usize> SimdFloatBackend for Simd<T, N>
 where
     T: SimdElement + NotPrimitiveFloat,

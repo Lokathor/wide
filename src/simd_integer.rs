@@ -144,6 +144,8 @@ pub(crate) trait SimdIntegerBackend: Sized {
     fn mul_keep_high_backend(self, rhs: Self) -> Self;
 }
 
+/// A marker trait representing `!PrimitiveInteger` used for an internal
+/// type-system hack.
 trait NotPrimitiveInteger {}
 
 impl PrimitiveInteger for i8 {}
@@ -187,6 +189,16 @@ impl HasDoubleWidth for u64 {
 impl NotPrimitiveInteger for f32 {}
 impl NotPrimitiveInteger for f64 {}
 
+/// In order for the generic SIMD integer API to work, [`SimdIntegerBackend`] is
+/// used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdIntegerBackend`] is only applicable
+/// to SIMD vectors of integers. However this seems to be the only way to do it
+/// on stable Rust.
+///
+/// This means that non-integers do need some implementation of
+/// [`SimdIntegerBackend`]. This block is a dummy implementation for all
+/// non-integers that fills functions with [`unreachable!`].
 impl<T, const N: usize> SimdIntegerBackend for Simd<T, N>
 where
     T: SimdElement + NotPrimitiveInteger,

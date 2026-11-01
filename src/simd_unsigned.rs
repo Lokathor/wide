@@ -22,6 +22,8 @@ pub(crate) trait SimdUnsignedBackend {
         Self: SimdAssociatedTypes + SupportSimdOf<Self::SignedT>;
 }
 
+/// A marker trait representing `!PrimitiveUnsigned` used for an internal
+/// type-system hack.
 trait NotPrimitiveUnsigned {}
 
 impl PrimitiveUnsigned for u8 {}
@@ -38,6 +40,16 @@ impl NotPrimitiveUnsigned for i16 {}
 impl NotPrimitiveUnsigned for i32 {}
 impl NotPrimitiveUnsigned for i64 {}
 
+/// In order for the generic SIMD unsigned integer API to work,
+/// [`SimdUnsignedBackend`] is used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdUnsignedBackend`] is only
+/// applicable to SIMD vectors of unsigned integers. However this seems to be
+/// the only way to do it on stable Rust.
+///
+/// This means that non-unsigned-integers do need some implementation of
+/// [`SimdUnsignedBackend`]. This block is a dummy implementation for all
+/// non-unsigned-integers that fills functions with [`unreachable!`].
 impl<T, const N: usize> SimdUnsignedBackend for Simd<T, N>
 where
     T: SimdElement + NotPrimitiveUnsigned,

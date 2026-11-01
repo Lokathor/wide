@@ -34,6 +34,8 @@ pub(crate) trait SimdSignedBackend {
         Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 }
 
+/// A marker trait representing `!PrimitiveSigned` used for an internal
+/// type-system hack.
 trait NotPrimitiveSigned {}
 
 impl PrimitiveSigned for i8 {}
@@ -50,6 +52,16 @@ impl NotPrimitiveSigned for u16 {}
 impl NotPrimitiveSigned for u32 {}
 impl NotPrimitiveSigned for u64 {}
 
+/// In order for the generic SIMD signed integer API to work,
+/// [`SimdSignedBackend`] is used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdSignedBackend`] is only applicable
+/// to SIMD vectors of signed integers. However this seems to be the only way to
+/// do it on stable Rust.
+///
+/// This means that non-signed-integers do need some implementation of
+/// [`SimdSignedBackend`]. This block is a dummy implementation for all
+/// non-signed-integers that fills functions with [`unreachable!`].
 impl<T, const N: usize> SimdSignedBackend for Simd<T, N>
 where
     T: SimdElement + NotPrimitiveSigned,
