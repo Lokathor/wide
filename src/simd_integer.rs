@@ -350,6 +350,364 @@ where
     }
 }
 
+macro_rules! impl_shift_operator {
+  (
+    $Op:ident,
+    $op:ident,
+    $OpAssign:ident,
+    $op_assign:ident,
+    $op_backend:ident,
+    $op_scalar_backend:ident,
+    $(#[$doc:meta])*,
+    $(#[$doc_scalar:meta])*,
+    $(#[$scalar_doc:meta])*
+  ) => {
+    impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Self;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+        // SAFETY: `Rhs` and `Rhs::Unsigned` are equallity-sized integers. Thus
+        // it is sound to transmute between the two.
+        let rhs = unsafe {
+            core::mem::transmute_copy::<Simd<Rhs, N>, Simd<Rhs::Unsigned, N>>(&rhs)
+        };
+
+        self.$op_backend(rhs)
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $OpAssign<Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      $(#[$doc])*
+      #[inline]
+      fn $op_assign(&mut self, rhs: Simd<Rhs, N>) {
+        *self = self.$op(rhs);
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Self;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+        self.$op(*rhs)
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $OpAssign<&Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      $(#[$doc])*
+      #[inline]
+      fn $op_assign(&mut self, rhs: &Simd<Rhs, N>) {
+        *self = self.$op(*rhs);
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for &Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Simd<T, N>;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+        (*self).$op(rhs)
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for &Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Simd<T, N>;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+        (*self).$op(*rhs)
+      }
+    }
+
+    macro_rules! impl_scalar {
+      ($T:ident) => {
+        impl<T, const N: usize> $Op<$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Self;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: $T) -> Self::Output {
+            self.$op_scalar_backend(rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<Simd<Rhs, N>> for $T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(self).$op(rhs)
+          }
+        }
+
+        impl<T, const N: usize> $OpAssign<$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op_assign(&mut self, rhs: $T) {
+            *self = self.$op_scalar_backend(rhs as u32);
+          }
+        }
+
+        impl<T, const N: usize> $Op<&$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Self;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: &$T) -> Self::Output {
+            self.$op_scalar_backend(*rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<&Simd<Rhs, N>> for $T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(self).$op(*rhs)
+          }
+        }
+
+        impl<T, const N: usize> $OpAssign<&$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op_assign(&mut self, rhs: &$T) {
+            *self = self.$op_scalar_backend(*rhs as u32);
+          }
+        }
+
+        impl<T, const N: usize> $Op<$T> for &Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Simd<T, N>;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: $T) -> Self::Output {
+            self.$op_scalar_backend(rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<Simd<Rhs, N>> for &$T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(*self).$op(rhs)
+          }
+        }
+
+        impl<T, const N: usize> $Op<&$T> for &Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Simd<T, N>;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: &$T) -> Self::Output {
+            self.$op_scalar_backend(*rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<&Simd<Rhs, N>> for &$T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(*self).$op(*rhs)
+          }
+        }
+      };
+    }
+    impl_scalar!(i8);
+    impl_scalar!(i16);
+    impl_scalar!(i32);
+    impl_scalar!(i64);
+    impl_scalar!(i128);
+    impl_scalar!(isize);
+    impl_scalar!(u8);
+    impl_scalar!(u16);
+    impl_scalar!(u32);
+    impl_scalar!(u64);
+    impl_scalar!(u128);
+    impl_scalar!(usize);
+  };
+}
+impl_shift_operator!(
+    Shl,
+    shl,
+    ShlAssign,
+    shl_assign,
+    shl_backend,
+    shl_scalar_backend,
+    /// Shifts left each element of `self` by the corresponding element
+    /// of `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shl`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shl`], so consider using that instead.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl`]: crate::Simd::unbounded_shl
+    ,
+    /// Shifts left each element of `self` by the scalar `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shl`].
+    ///
+    /// On most targets, shifting by a scalar is faster than shifting by
+    /// SIMD vector. Note that on most targets, this operator is slower than
+    /// [`unbounded_shl_scalar`], so consider using that instead.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
+    ,
+    /// Shifts left the scalar `self` by each element of `rhs`,
+    /// returning a SIMD vector.
+    ///
+    /// This operator behaves like [`wrapping_shl`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shl`], so consider using that instead.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl`]: crate::Simd::unbounded_shl
+);
+impl_shift_operator!(
+    Shr,
+    shr,
+    ShrAssign,
+    shr_assign,
+    shr_backend,
+    shr_scalar_backend,
+    /// Shifts right each element of `self` by the corresponding element of
+    /// `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shr`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shr`], so consider using that instead.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+    ,
+    /// Shifts right each element of `self` by the scalar `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shr`].
+    ///
+    /// On most targets, shifting by a scalar is faster than shifting by
+    /// a SIMD vector. Note that on most targets, this operator is
+    /// slower than [`unbounded_shr`], so consider using that instead.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+    ,
+    /// Shifts right the scalar `self` by each element of `rhs`,
+    /// returning a SIMD vector.
+    ///
+    /// This operator behaves like [`wrapping_shr`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shr`], so consider using that instead.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+);
+
 macro_rules! impl_simd_integer {
     (
         T = $T:ident,
@@ -503,94 +861,6 @@ macro_rules! impl_simd_integer {
             /// # Panics
             ///
             /// Panics if any element of `rhs` is zero.
-        );
-        impl_shift_operator!(
-            $T,
-            $Simd,
-            $UnsignedSimd,
-            $SignedSimd,
-            Shl,
-            shl,
-            ShlAssign,
-            shl_assign,
-            shl_backend,
-            shl_scalar_backend,
-            /// Shifts left each element of `self` by the corresponding element
-            /// of `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shl`], so consider using that instead.
-            ///
-            /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
-            ,
-            /// Shifts left each element of `self` by the scalar `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// On most targets, shifting by a scalar is faster than shifting by
-            /// SIMD vector. Note that on most targets, this operator is slower than
-            /// [`unbounded_shl_scalar`], so consider using that instead.
-            ///
-            /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
-            ,
-            /// Shifts left the scalar `self` by each element of `rhs`,
-            /// returning a SIMD vector.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shl`], so consider using that instead.
-            ///
-            /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
-        );
-        impl_shift_operator!(
-            $T,
-            $Simd,
-            $UnsignedSimd,
-            $SignedSimd,
-            Shr,
-            shr,
-            ShrAssign,
-            shr_assign,
-            shr_backend,
-            shr_scalar_backend,
-            /// Shifts right each element of `self` by the corresponding element of
-            /// `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shr`], so consider using that instead.
-            ///
-            /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
-            ,
-            /// Shifts right each element of `self` by the scalar `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// On most targets, shifting by a scalar is faster than shifting by
-            /// a SIMD vector. Note that on most targets, this operator is
-            /// slower than [`unbounded_shr`], so consider using that instead.
-            ///
-            /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
-            ,
-            /// Shifts right the scalar `self` by each element of `rhs`,
-            /// returning a SIMD vector.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shr`], so consider using that instead.
-            ///
-            /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
         );
         impl_binary_operator!(
             $T,
