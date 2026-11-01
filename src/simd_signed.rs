@@ -1,8 +1,8 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
 use crate::{
-    PrimitiveInteger, Select, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16,
-    i64x2, i64x4, i64x8,
+    PrimitiveInteger, Select, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16,
+    i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
     simd::{SimdAssociatedTypes, SupportSimdOf},
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
@@ -34,12 +34,49 @@ pub(crate) trait SimdSignedBackend {
         Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 }
 
+trait NotPrimitiveSigned {}
+
 impl PrimitiveSigned for i8 {}
 impl PrimitiveSigned for i16 {}
 impl PrimitiveSigned for i32 {}
 impl PrimitiveSigned for i64 {}
 impl PrimitiveSigned for i128 {}
 impl PrimitiveSigned for isize {}
+
+impl NotPrimitiveSigned for f32 {}
+impl NotPrimitiveSigned for f64 {}
+impl NotPrimitiveSigned for u8 {}
+impl NotPrimitiveSigned for u16 {}
+impl NotPrimitiveSigned for u32 {}
+impl NotPrimitiveSigned for u64 {}
+
+impl<T, const N: usize> SimdSignedBackend for Simd<T, N>
+where
+    T: SimdElement + NotPrimitiveSigned,
+    Simd<T, N>: SupportedSimd,
+{
+    fn abs_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_negative_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_positive_backend(self) -> Self {
+        unreachable!()
+    }
+    fn saturating_abs_backend(self) -> Self {
+        unreachable!()
+    }
+    fn saturating_add_unsigned_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn saturating_neg_backend(self) -> Self {
+        unreachable!()
+    }
+}
 
 macro_rules! impl_simd_signed {
     (

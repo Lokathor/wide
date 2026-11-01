@@ -8,8 +8,8 @@ use core::ops::{
 use bytemuck::Zeroable;
 
 use crate::{
-    Select, SimdElement, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16, i64x2,
-    i64x4, i64x8,
+    Select, Simd, SimdElement, SupportedSimd, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4,
+    i32x8, i32x16, i64x2, i64x4, i64x8,
     simd::{MaskOps, SimdAssociatedTypes, SupportSimdOf},
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
@@ -169,8 +169,236 @@ pub(crate) trait SimdFloatBackend: Sized {
     fn tanh_backend(self) -> Self;
 }
 
+trait NotPrimitiveFloat {}
+
 impl PrimitiveFloat for f32 {}
 impl PrimitiveFloat for f64 {}
+
+impl NotPrimitiveFloat for i8 {}
+impl NotPrimitiveFloat for i16 {}
+impl NotPrimitiveFloat for i32 {}
+impl NotPrimitiveFloat for i64 {}
+impl NotPrimitiveFloat for u8 {}
+impl NotPrimitiveFloat for u16 {}
+impl NotPrimitiveFloat for u32 {}
+impl NotPrimitiveFloat for u64 {}
+
+impl<T, const N: usize> SimdFloatBackend for Simd<T, N>
+where
+    T: SimdElement + NotPrimitiveFloat,
+    Simd<T, N>: SupportedSimd,
+{
+    fn abs_backend(self) -> Self {
+        unreachable!()
+    }
+    fn acos_backend(self) -> Self {
+        unreachable!()
+    }
+    fn add_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn asin_acos_backend(self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn asin_backend(self) -> Self {
+        unreachable!()
+    }
+    fn atan2_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn atan_backend(self) -> Self {
+        unreachable!()
+    }
+    fn bitand_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitor_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitselect_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitxor_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn cbrt_backend(self) -> Self {
+        unreachable!()
+    }
+    fn ceil_backend(self) -> Self {
+        unreachable!()
+    }
+    fn clamp_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn cosh_backend(self) -> Self {
+        unreachable!()
+    }
+    fn div_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn exp2_backend(self) -> Self {
+        unreachable!()
+    }
+    fn exp_backend(self) -> Self {
+        unreachable!()
+    }
+    fn exp_m1_backend(self) -> Self {
+        unreachable!()
+    }
+    fn fast_clamp_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn fast_max_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn fast_min_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn fast_mul_add_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn fast_mul_neg_add_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn fast_mul_neg_sub_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn fast_mul_sub_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn fast_reduce_max_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn fast_reduce_min_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn fast_round_int_backend(self) -> <Self as SimdAssociatedTypes>::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::SignedT>,
+    {
+        unreachable!()
+    }
+    fn fast_trunc_int_backend(self) -> <Self as SimdAssociatedTypes>::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::SignedT>,
+    {
+        unreachable!()
+    }
+    fn floor_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_finite_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_infinite_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_nan_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_sign_positive_backend(self) -> Self {
+        unreachable!()
+    }
+    fn ln_1p_backend(self) -> Self {
+        unreachable!()
+    }
+    fn ln_backend(self) -> Self {
+        unreachable!()
+    }
+    fn max_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn min_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn mul_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn neg_backend(self) -> Self {
+        unreachable!()
+    }
+    fn not_backend(self) -> Self {
+        unreachable!()
+    }
+    fn powf_simd_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn recip_backend(self) -> Self {
+        unreachable!()
+    }
+    fn recip_sqrt_backend(self) -> Self {
+        unreachable!()
+    }
+    fn reduce_add_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_max_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_min_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_mul_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn rem_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn round_backend(self) -> Self {
+        unreachable!()
+    }
+    fn round_int_backend(self) -> <Self as SimdAssociatedTypes>::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::SignedT>,
+    {
+        unreachable!()
+    }
+    fn round_ties_even_backend(self) -> Self {
+        unreachable!()
+    }
+    fn sin_cos_backend(self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn sinh_backend(self) -> Self {
+        unreachable!()
+    }
+    fn sqrt_backend(self) -> Self {
+        unreachable!()
+    }
+    fn sub_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn tanh_backend(self) -> Self {
+        unreachable!()
+    }
+    fn trunc_backend(self) -> Self {
+        unreachable!()
+    }
+    fn trunc_int_backend(self) -> <Self as SimdAssociatedTypes>::SignedSimd
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::SignedT>,
+    {
+        unreachable!()
+    }
+}
 
 macro_rules! impl_simd_float {
   (
