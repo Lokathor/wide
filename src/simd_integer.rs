@@ -148,18 +148,23 @@ pub(crate) trait SimdIntegerBackend: Sized {
 /// type-system hack.
 trait NotPrimitiveInteger {}
 
-impl PrimitiveInteger for i8 {}
-impl PrimitiveInteger for i16 {}
-impl PrimitiveInteger for i32 {}
-impl PrimitiveInteger for i64 {}
-impl PrimitiveInteger for i128 {}
-impl PrimitiveInteger for isize {}
-impl PrimitiveInteger for u8 {}
-impl PrimitiveInteger for u16 {}
-impl PrimitiveInteger for u32 {}
-impl PrimitiveInteger for u64 {}
-impl PrimitiveInteger for u128 {}
-impl PrimitiveInteger for usize {}
+macro_rules! impl_primitive_integer {
+    ($T:ident) => {
+        impl PrimitiveInteger for $T {}
+    };
+}
+impl_primitive_integer!(i8);
+impl_primitive_integer!(i16);
+impl_primitive_integer!(i32);
+impl_primitive_integer!(i64);
+impl_primitive_integer!(i128);
+impl_primitive_integer!(isize);
+impl_primitive_integer!(u8);
+impl_primitive_integer!(u16);
+impl_primitive_integer!(u32);
+impl_primitive_integer!(u64);
+impl_primitive_integer!(u128);
+impl_primitive_integer!(usize);
 
 impl HasDoubleWidth for i8 {
     type DoubleWidth = i16;
