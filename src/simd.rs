@@ -6,7 +6,11 @@ use bytemuck::{Pod, Zeroable, pod_align_to, pod_align_to_mut};
 #[cfg(feature = "serde")]
 use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
-use crate::{PrimitiveSigned, PrimitiveUnsigned};
+use crate::{
+    PrimitiveSigned, PrimitiveUnsigned, simd_float::SimdFloatBackend,
+    simd_integer::SimdIntegerBackend, simd_signed::SimdSignedBackend,
+    simd_unsigned::SimdUnsignedBackend,
+};
 
 /// TODO(generics): Add documentation and explain how to use SIMD vectors.
 ///
@@ -55,7 +59,14 @@ pub trait SimdElement: Sealed + Copy {
 /// [`Simd<T, N>`] would support all combinations of `T` and `N`, the trait
 /// bound would be removed and this trait would be deprecated.
 #[expect(private_bounds)]
-pub trait SupportedSimd: Sealed + SimdBackend {
+pub trait SupportedSimd:
+    Sealed
+    + SimdBackend
+    + SimdFloatBackend
+    + SimdIntegerBackend
+    + SimdSignedBackend
+    + SimdUnsignedBackend
+{
     /// The unsigned integer used in [`Simd::to_bitmask`].
     ///
     /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
