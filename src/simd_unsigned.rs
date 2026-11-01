@@ -1,8 +1,8 @@
 //! Defines APIs applicable to SIMD vectors of unsigned integers.
 
 use crate::{
-    PrimitiveInteger, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2,
-    i64x4, i64x8,
+    PrimitiveInteger, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32,
+    i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
     simd::{SimdAssociatedTypes, SupportSimdOf},
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
@@ -22,12 +22,46 @@ pub(crate) trait SimdUnsignedBackend {
         Self: SimdAssociatedTypes + SupportSimdOf<Self::SignedT>;
 }
 
+/// A marker trait representing `!PrimitiveUnsigned` used for an internal
+/// type-system hack.
+trait NotPrimitiveUnsigned {}
+
 impl PrimitiveUnsigned for u8 {}
 impl PrimitiveUnsigned for u16 {}
 impl PrimitiveUnsigned for u32 {}
 impl PrimitiveUnsigned for u64 {}
 impl PrimitiveUnsigned for u128 {}
 impl PrimitiveUnsigned for usize {}
+
+impl NotPrimitiveUnsigned for f32 {}
+impl NotPrimitiveUnsigned for f64 {}
+impl NotPrimitiveUnsigned for i8 {}
+impl NotPrimitiveUnsigned for i16 {}
+impl NotPrimitiveUnsigned for i32 {}
+impl NotPrimitiveUnsigned for i64 {}
+
+/// In order for the generic SIMD unsigned integer API to work,
+/// [`SimdUnsignedBackend`] is used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdUnsignedBackend`] is only
+/// applicable to SIMD vectors of unsigned integers. However this seems to be
+/// the only way to do it on stable Rust.
+///
+/// This means that non-unsigned-integers do need some implementation of
+/// [`SimdUnsignedBackend`]. This block is a dummy implementation for all
+/// non-unsigned-integers that fills functions with [`unreachable!`].
+impl<T, const N: usize> SimdUnsignedBackend for Simd<T, N>
+where
+    T: SimdElement + NotPrimitiveUnsigned,
+    Simd<T, N>: SupportedSimd,
+{
+    fn saturating_add_signed_backend(self, _: <Self as SimdAssociatedTypes>::SignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::SignedT>,
+    {
+        unreachable!()
+    }
+}
 
 macro_rules! impl_simd_unsigned {
     (
