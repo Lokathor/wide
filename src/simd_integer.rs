@@ -350,6 +350,93 @@ where
     }
 }
 
+        impl_shift_operator!(
+            $T,
+            $N,
+            $Simd,
+            Shl,
+            shl,
+            ShlAssign,
+            shl_assign,
+            shl_backend,
+            shl_scalar_backend,
+            /// Shifts left each element of `self` by the corresponding element
+            /// of `rhs`.
+            ///
+            /// This operator behaves like [`wrapping_shl`].
+            ///
+            /// Note that on most targets, this operator is slower than
+            /// [`unbounded_shl`], so consider using that instead.
+            ///
+            /// [`wrapping_shl`]: i32::wrapping_shl
+            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
+            ,
+            /// Shifts left each element of `self` by the scalar `rhs`.
+            ///
+            /// This operator behaves like [`wrapping_shl`].
+            ///
+            /// On most targets, shifting by a scalar is faster than shifting by
+            /// SIMD vector. Note that on most targets, this operator is slower than
+            /// [`unbounded_shl_scalar`], so consider using that instead.
+            ///
+            /// [`wrapping_shl`]: i32::wrapping_shl
+            /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
+            ,
+            /// Shifts left the scalar `self` by each element of `rhs`,
+            /// returning a SIMD vector.
+            ///
+            /// This operator behaves like [`wrapping_shl`].
+            ///
+            /// Note that on most targets, this operator is slower than
+            /// [`unbounded_shl`], so consider using that instead.
+            ///
+            /// [`wrapping_shl`]: i32::wrapping_shl
+            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
+        );
+        impl_shift_operator!(
+            $T,
+            $N,
+            $Simd,
+            Shr,
+            shr,
+            ShrAssign,
+            shr_assign,
+            shr_backend,
+            shr_scalar_backend,
+            /// Shifts right each element of `self` by the corresponding element of
+            /// `rhs`.
+            ///
+            /// This operator behaves like [`wrapping_shr`].
+            ///
+            /// Note that on most targets, this operator is slower than
+            /// [`unbounded_shr`], so consider using that instead.
+            ///
+            /// [`wrapping_shr`]: i32::wrapping_shr
+            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+            ,
+            /// Shifts right each element of `self` by the scalar `rhs`.
+            ///
+            /// This operator behaves like [`wrapping_shr`].
+            ///
+            /// On most targets, shifting by a scalar is faster than shifting by
+            /// a SIMD vector. Note that on most targets, this operator is
+            /// slower than [`unbounded_shr`], so consider using that instead.
+            ///
+            /// [`wrapping_shr`]: i32::wrapping_shr
+            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+            ,
+            /// Shifts right the scalar `self` by each element of `rhs`,
+            /// returning a SIMD vector.
+            ///
+            /// This operator behaves like [`wrapping_shr`].
+            ///
+            /// Note that on most targets, this operator is slower than
+            /// [`unbounded_shr`], so consider using that instead.
+            ///
+            /// [`wrapping_shr`]: i32::wrapping_shr
+            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+        );
+
 macro_rules! impl_simd_integer {
     (
         T = $T:ident,
@@ -503,92 +590,6 @@ macro_rules! impl_simd_integer {
             /// # Panics
             ///
             /// Panics if any element of `rhs` is zero.
-        );
-        impl_shift_operator!(
-            $T,
-            $N,
-            $Simd,
-            Shl,
-            shl,
-            ShlAssign,
-            shl_assign,
-            shl_backend,
-            shl_scalar_backend,
-            /// Shifts left each element of `self` by the corresponding element
-            /// of `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shl`], so consider using that instead.
-            ///
-            /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
-            ,
-            /// Shifts left each element of `self` by the scalar `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// On most targets, shifting by a scalar is faster than shifting by
-            /// SIMD vector. Note that on most targets, this operator is slower than
-            /// [`unbounded_shl_scalar`], so consider using that instead.
-            ///
-            /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
-            ,
-            /// Shifts left the scalar `self` by each element of `rhs`,
-            /// returning a SIMD vector.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shl`], so consider using that instead.
-            ///
-            /// [`wrapping_shl`]: i32::wrapping_shl
-            /// [`unbounded_shl`]: crate::Simd::unbounded_shl
-        );
-        impl_shift_operator!(
-            $T,
-            $N,
-            $Simd,
-            Shr,
-            shr,
-            ShrAssign,
-            shr_assign,
-            shr_backend,
-            shr_scalar_backend,
-            /// Shifts right each element of `self` by the corresponding element of
-            /// `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shr`], so consider using that instead.
-            ///
-            /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
-            ,
-            /// Shifts right each element of `self` by the scalar `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// On most targets, shifting by a scalar is faster than shifting by
-            /// a SIMD vector. Note that on most targets, this operator is
-            /// slower than [`unbounded_shr`], so consider using that instead.
-            ///
-            /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
-            ,
-            /// Shifts right the scalar `self` by each element of `rhs`,
-            /// returning a SIMD vector.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shr`], so consider using that instead.
-            ///
-            /// [`wrapping_shr`]: i32::wrapping_shr
-            /// [`unbounded_shr`]: crate::Simd::unbounded_shr
         );
         impl_binary_operator!(
             $T,
