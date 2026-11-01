@@ -352,7 +352,6 @@ where
 
 macro_rules! impl_shift_operator {
   (
-    T: $ElementTrait:ident,
     $Op:ident,
     $op:ident,
     $OpAssign:ident,
@@ -365,7 +364,7 @@ macro_rules! impl_shift_operator {
   ) => {
     impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for Simd<T, N>
     where
-        T: $ElementTrait,
+        T: PrimitiveInteger,
         Simd<T, N>: SupportedSimd,
         Simd<T::Unsigned, N>: SupportedSimd,
         Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
@@ -388,7 +387,7 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $OpAssign<Simd<Rhs, N>> for Simd<T, N>
     where
-        T: $ElementTrait,
+        T: PrimitiveInteger,
         Simd<T, N>: SupportedSimd,
         Simd<T::Unsigned, N>: SupportedSimd,
         Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
@@ -403,7 +402,7 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for Simd<T, N>
     where
-        T: $ElementTrait,
+        T: PrimitiveInteger,
         Simd<T, N>: SupportedSimd,
         Simd<T::Unsigned, N>: SupportedSimd,
         Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
@@ -420,7 +419,7 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $OpAssign<&Simd<Rhs, N>> for Simd<T, N>
     where
-        T: $ElementTrait,
+        T: PrimitiveInteger,
         Simd<T, N>: SupportedSimd,
         Simd<T::Unsigned, N>: SupportedSimd,
         Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
@@ -435,7 +434,7 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for &Simd<T, N>
     where
-        T: $ElementTrait,
+        T: PrimitiveInteger,
         Simd<T, N>: SupportedSimd,
         Simd<T::Unsigned, N>: SupportedSimd,
         Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
@@ -452,7 +451,7 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for &Simd<T, N>
     where
-        T: $ElementTrait,
+        T: PrimitiveInteger,
         Simd<T, N>: SupportedSimd,
         Simd<T::Unsigned, N>: SupportedSimd,
         Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
@@ -471,7 +470,7 @@ macro_rules! impl_shift_operator {
       ($T:ident) => {
         impl<T, const N: usize> $Op<$T> for Simd<T, N>
         where
-          T: SimdElement,
+          T: PrimitiveInteger,
           Simd<T, N>: SupportedSimd,
         {
           type Output = Self;
@@ -501,7 +500,7 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $OpAssign<$T> for Simd<T, N>
         where
-          T: SimdElement,
+          T: PrimitiveInteger,
           Simd<T, N>: SupportedSimd,
         {
           $(#[$doc_scalar])*
@@ -513,7 +512,7 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $Op<&$T> for Simd<T, N>
         where
-          T: SimdElement,
+          T: PrimitiveInteger,
           Simd<T, N>: SupportedSimd,
         {
           type Output = Self;
@@ -543,7 +542,7 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $OpAssign<&$T> for Simd<T, N>
         where
-          T: SimdElement,
+          T: PrimitiveInteger,
           Simd<T, N>: SupportedSimd,
         {
           $(#[$doc_scalar])*
@@ -555,7 +554,7 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $Op<$T> for &Simd<T, N>
         where
-          T: SimdElement,
+          T: PrimitiveInteger,
           Simd<T, N>: SupportedSimd,
         {
           type Output = Simd<T, N>;
@@ -585,7 +584,7 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $Op<&$T> for &Simd<T, N>
         where
-          T: SimdElement,
+          T: PrimitiveInteger,
           Simd<T, N>: SupportedSimd,
         {
           type Output = Simd<T, N>;
@@ -612,7 +611,7 @@ macro_rules! impl_shift_operator {
             Simd::<$T, N>::splat(*self).$op(*rhs)
           }
         }
-      }
+      };
     }
     impl_scalar!(i8);
     impl_scalar!(i16);
@@ -626,10 +625,9 @@ macro_rules! impl_shift_operator {
     impl_scalar!(u64);
     impl_scalar!(u128);
     impl_scalar!(usize);
-  }
+  };
 }
 impl_shift_operator!(
-    T: PrimitiveInteger,
     Shl,
     shl,
     ShlAssign,
@@ -670,7 +668,6 @@ impl_shift_operator!(
     /// [`unbounded_shl`]: crate::Simd::unbounded_shl
 );
 impl_shift_operator!(
-    T: PrimitiveInteger,
     Shr,
     shr,
     ShrAssign,
