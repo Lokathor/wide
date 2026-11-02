@@ -382,9 +382,6 @@ macro_rules! impl_simd_integer {
         UnsignedSimd = $UnsignedSimd:ident,
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
-        T_BITS = $T_BITS:literal,
-        T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
-        INDICES = [$($INDEX:literal),* $(,)?],
     ) => {
         impl_unary_operator!(
             $Simd,
@@ -798,10 +795,15 @@ macro_rules! impl_simd_integer {
             #[inline]
             #[must_use]
             pub fn saturating_div(self, rhs: Self) -> Self {
+                // TODO(generics): Consider finding a way to remove the use of
+                // the closure which may lead to bad codegen
+
                 let self_array = self.to_array();
                 let rhs_array = rhs.to_array();
 
-                Self::from_array([$(self_array[$INDEX].saturating_div(rhs_array[$INDEX])),*])
+                Self::from_array(core::array::from_fn(|i| {
+                    self_array[i].saturating_div(rhs_array[i])
+                }))
             }
 
             /// Returns `-self` and whether an overflow occured.
@@ -1085,9 +1087,6 @@ impl_simd_integer!(
     UnsignedSimd = u8x16,
     SignedSimd = i8x16,
     WiderSimd = { i16x16 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 );
 impl_simd_integer!(
     T = i8,
@@ -1096,12 +1095,6 @@ impl_simd_integer!(
     UnsignedSimd = u8x32,
     SignedSimd = i8x32,
     WiderSimd = { i16x32 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
 );
 impl_simd_integer!(
     T = i8,
@@ -1110,13 +1103,6 @@ impl_simd_integer!(
     UnsignedSimd = u8x64,
     SignedSimd = i8x64,
     WiderSimd = { /*i16x64*/ },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-    ],
 );
 impl_simd_integer!(
     T = i16,
@@ -1125,9 +1111,6 @@ impl_simd_integer!(
     UnsignedSimd = u16x8,
     SignedSimd = i16x8,
     WiderSimd = { i32x8 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
 impl_simd_integer!(
     T = i16,
@@ -1136,9 +1119,6 @@ impl_simd_integer!(
     UnsignedSimd = u16x16,
     SignedSimd = i16x16,
     WiderSimd = { i32x16 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 );
 impl_simd_integer!(
     T = i16,
@@ -1147,12 +1127,6 @@ impl_simd_integer!(
     UnsignedSimd = u16x32,
     SignedSimd = i16x32,
     WiderSimd = { /*i32x32*/ },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
 );
 impl_simd_integer!(
     T = i32,
@@ -1161,9 +1135,6 @@ impl_simd_integer!(
     UnsignedSimd = u32x4,
     SignedSimd = i32x4,
     WiderSimd = { i64x4 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3],
 );
 impl_simd_integer!(
     T = i32,
@@ -1172,9 +1143,6 @@ impl_simd_integer!(
     UnsignedSimd = u32x8,
     SignedSimd = i32x8,
     WiderSimd = { i64x8 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
 impl_simd_integer!(
     T = i32,
@@ -1183,9 +1151,6 @@ impl_simd_integer!(
     UnsignedSimd = u32x16,
     SignedSimd = i32x16,
     WiderSimd = { /*i64x16*/ },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 );
 impl_simd_integer!(
     T = i64,
@@ -1194,9 +1159,6 @@ impl_simd_integer!(
     UnsignedSimd = u64x2,
     SignedSimd = i64x2,
     WiderSimd = { /*i128x2*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1],
 );
 impl_simd_integer!(
     T = i64,
@@ -1205,9 +1167,6 @@ impl_simd_integer!(
     UnsignedSimd = u64x4,
     SignedSimd = i64x4,
     WiderSimd = { /*i128x4*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3],
 );
 impl_simd_integer!(
     T = i64,
@@ -1216,9 +1175,6 @@ impl_simd_integer!(
     UnsignedSimd = u64x8,
     SignedSimd = i64x8,
     WiderSimd = { /*i128x8*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
 impl_simd_integer!(
     T = u8,
@@ -1227,9 +1183,6 @@ impl_simd_integer!(
     UnsignedSimd = u8x16,
     SignedSimd = i8x16,
     WiderSimd = { u16x16 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 );
 impl_simd_integer!(
     T = u8,
@@ -1238,12 +1191,6 @@ impl_simd_integer!(
     UnsignedSimd = u8x32,
     SignedSimd = i8x32,
     WiderSimd = { u16x32 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
 );
 impl_simd_integer!(
     T = u8,
@@ -1252,13 +1199,6 @@ impl_simd_integer!(
     UnsignedSimd = u8x64,
     SignedSimd = i8x64,
     WiderSimd = { /*u16x64*/ },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-    ],
 );
 impl_simd_integer!(
     T = u16,
@@ -1267,9 +1207,6 @@ impl_simd_integer!(
     UnsignedSimd = u16x8,
     SignedSimd = i16x8,
     WiderSimd = { u32x8 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
 impl_simd_integer!(
     T = u16,
@@ -1278,9 +1215,6 @@ impl_simd_integer!(
     UnsignedSimd = u16x16,
     SignedSimd = i16x16,
     WiderSimd = { u32x16 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 );
 impl_simd_integer!(
     T = u16,
@@ -1289,12 +1223,6 @@ impl_simd_integer!(
     UnsignedSimd = u16x32,
     SignedSimd = i16x32,
     WiderSimd = { /*u32x32*/ },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
 );
 impl_simd_integer!(
     T = u32,
@@ -1303,9 +1231,6 @@ impl_simd_integer!(
     UnsignedSimd = u32x4,
     SignedSimd = i32x4,
     WiderSimd = { u64x4 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3],
 );
 impl_simd_integer!(
     T = u32,
@@ -1314,9 +1239,6 @@ impl_simd_integer!(
     UnsignedSimd = u32x8,
     SignedSimd = i32x8,
     WiderSimd = { u64x8 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
 impl_simd_integer!(
     T = u32,
@@ -1325,9 +1247,6 @@ impl_simd_integer!(
     UnsignedSimd = u32x16,
     SignedSimd = i32x16,
     WiderSimd = { /*u64x16*/ },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 );
 impl_simd_integer!(
     T = u64,
@@ -1336,9 +1255,6 @@ impl_simd_integer!(
     UnsignedSimd = u64x2,
     SignedSimd = i64x2,
     WiderSimd = { /*u128x2*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1],
 );
 impl_simd_integer!(
     T = u64,
@@ -1347,9 +1263,6 @@ impl_simd_integer!(
     UnsignedSimd = u64x4,
     SignedSimd = i64x4,
     WiderSimd = { /*u128x4*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3],
 );
 impl_simd_integer!(
     T = u64,
@@ -1358,9 +1271,6 @@ impl_simd_integer!(
     UnsignedSimd = u64x8,
     SignedSimd = i64x8,
     WiderSimd = { /*u128x8*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
 
 macro_rules! integer {
