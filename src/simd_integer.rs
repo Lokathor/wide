@@ -414,9 +414,6 @@ macro_rules! impl_simd_integer {
             ,
             /// Computes wrapping addition for each element of `self` and the
             /// scalar `rhs`.
-            ,
-            /// Computes wrapping addition for the scalar `self` and each
-            /// element of `rhs`, returning a SIMD vector.
         );
         impl_binary_operator!(
             $T,
@@ -431,9 +428,6 @@ macro_rules! impl_simd_integer {
             ,
             /// Computes wrapping subtraction for each element of `self` and the
             /// scalar `rhs`.
-            ,
-            /// Computes wrapping subtraction for the scalar `self` and each
-            /// element of `rhs`, returning a SIMD vector.
         );
         impl_binary_operator!(
             $T,
@@ -448,9 +442,6 @@ macro_rules! impl_simd_integer {
             ,
             /// Computes wrapping multiplication for each element of `self` and
             /// the scalar `rhs`.
-            ,
-            /// Computes wrapping multiplication for the scalar `self` and each
-            /// element of `rhs`, returning a SIMD vector.
         );
         impl_binary_operator!(
             $T,
@@ -479,16 +470,6 @@ macro_rules! impl_simd_integer {
             /// # Panics
             ///
             /// Panics if `rhs` is zero.
-            ,
-            /// Computes wrapping division for the scalar `self` and each
-            /// element of `rhs`, returning a SIMD vector.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
         );
         impl_binary_operator!(
             $T,
@@ -517,16 +498,6 @@ macro_rules! impl_simd_integer {
             /// # Panics
             ///
             /// Panics if `rhs` is zero.
-            ,
-            /// Computes the wrapping remainder of the scalar `self` divided by
-            /// each element of `rhs`, returning a SIMD vector.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
         );
         impl_binary_operator!(
             $T,
@@ -541,9 +512,6 @@ macro_rules! impl_simd_integer {
             ,
             /// Computes bitwise AND for each element of `self` and the
             /// scalar `rhs`.
-            ,
-            /// Computes bitwise AND for the scalar `self` and each element of
-            /// `rhs`, returning a SIMD vector.
         );
         impl_binary_operator!(
             $T,
@@ -558,9 +526,6 @@ macro_rules! impl_simd_integer {
             ,
             /// Computes bitwise OR for each element of `self` and the
             /// scalar `rhs`.
-            ,
-            /// Computes bitwise OR for the scalar `self` and each element of
-            /// `rhs`, returning a SIMD vector.
         );
         impl_binary_operator!(
             $T,
@@ -575,9 +540,6 @@ macro_rules! impl_simd_integer {
             ,
             /// Computes bitwise XOR for each element of `self` and the
             /// scalar `rhs`.
-            ,
-            /// Computes bitwise XOR for the scalar `self` and each element of
-            /// `rhs`, returning a SIMD vector.
         );
 
         impl<Rhs> core::iter::Sum<Rhs> for $Simd
@@ -1113,24 +1075,6 @@ macro_rules! impl_simd_integer {
             pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
                 self.bitselect_backend(if_one, if_zero)
             }
-
-            #[inline]
-            #[track_caller]
-            fn div_backend(self, rhs: Self) -> Self {
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array([$(self_array[$INDEX].wrapping_div(rhs_array[$INDEX])),*])
-            }
-
-            #[inline]
-            #[track_caller]
-            fn rem_backend(self, rhs: Self) -> Self {
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array([$(self_array[$INDEX].wrapping_rem(rhs_array[$INDEX])),*])
-            }
         }
     };
 }
@@ -1418,6 +1362,146 @@ impl_simd_integer!(
     T_BITS_MUL_2 = 128,
     INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
+
+macro_rules! integer {
+    ($T:ident) => {
+        impl_binary_operator_for_scalar!(
+            $T,
+            Add,
+            add,
+            AddAssign,
+            add_assign,
+            add_backend,
+            /// Computes wrapping addition for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Sub,
+            sub,
+            SubAssign,
+            sub_assign,
+            sub_backend,
+            /// Computes wrapping subtraction for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Mul,
+            mul,
+            MulAssign,
+            mul_assign,
+            mul_backend,
+            /// Computes wrapping multiplication for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Div,
+            div,
+            DivAssign,
+            div_assign,
+            div_backend,
+            /// Computes wrapping division for the scalar `self` and each
+            /// element of `rhs`, returning a SIMD vector.
+            ///
+            /// Note that because division has no hardware support, this operation
+            /// is very slow and should be avoided if possible.
+            ///
+            /// # Panics
+            ///
+            /// Panics if any element of `rhs` is zero.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Rem,
+            rem,
+            RemAssign,
+            rem_assign,
+            rem_backend,
+            /// Computes the wrapping remainder of the scalar `self` divided by
+            /// each element of `rhs`, returning a SIMD vector.
+            ///
+            /// Note that because division has no hardware support, this operation
+            /// is very slow and should be avoided if possible.
+            ///
+            /// # Panics
+            ///
+            /// Panics if any element of `rhs` is zero.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            BitAnd,
+            bitand,
+            BitAndAssign,
+            bitand_assign,
+            bitand_backend,
+            /// Computes bitwise AND for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            BitOr,
+            bitor,
+            BitOrAssign,
+            bitor_assign,
+            bitor_backend,
+            /// Computes bitwise OR for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            BitXor,
+            bitxor,
+            BitXorAssign,
+            bitxor_assign,
+            bitxor_backend,
+            /// Computes bitwise XOR for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
+        );
+
+        impl<const N: usize> Simd<$T, N>
+        where
+            Simd<$T, N>: SupportedSimd,
+        {
+            #[inline]
+            #[track_caller]
+            fn div_backend(self, rhs: Self) -> Self {
+                // TODO(generics): Consider making this implementation easier to
+                // optimize
+
+                let self_array = self.to_array();
+                let rhs_array = rhs.to_array();
+
+                Self::from_array(core::array::from_fn(|i| self_array[i].wrapping_div(rhs_array[i])))
+            }
+
+            #[inline]
+            #[track_caller]
+            fn rem_backend(self, rhs: Self) -> Self {
+                // TODO(generics): Consider making this implementation easier to
+                // optimize
+
+                let self_array = self.to_array();
+                let rhs_array = rhs.to_array();
+
+                Self::from_array(core::array::from_fn(|i| self_array[i].wrapping_rem(rhs_array[i])))
+            }
+        }
+    };
+}
+integer!(i8);
+integer!(i16);
+integer!(i32);
+integer!(i64);
+integer!(i128);
+integer!(isize);
+integer!(u8);
+integer!(u16);
+integer!(u32);
+integer!(u64);
+integer!(u128);
+integer!(usize);
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of integers (both signed and unsigned).
