@@ -314,6 +314,9 @@ macro_rules! impl_simd_float {
 
     /// The following functionality exists for all SIMD vectors of floats.
     impl $Simd {
+      /// The size of this SIMD vector in bits.
+      pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
+
       /// A SIMD vector with all elements set to `1.0`.
       pub const ONE: Self = Self::splat(1.0);
 

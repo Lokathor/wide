@@ -373,9 +373,6 @@ macro_rules! impl_simd_integer {
             #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
             pub const MIN: Self = Self::splat($T::MIN);
 
-            /// The number of elements in this SIMD vector.
-            pub const LANES: u16 = $N;
-
             /// The size of this SIMD vector in bits.
             pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
 

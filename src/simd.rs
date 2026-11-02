@@ -744,6 +744,9 @@ macro_rules! define_simd {
 
     /// The following functionality exists for all SIMD vectors.
     impl $Simd {
+      /// The number of elements in this SIMD vector.
+      pub const LANES: u16 = $N;
+
       /// Converts an array to a SIMD vector.
       #[inline]
       #[must_use]
