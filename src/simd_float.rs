@@ -23,7 +23,6 @@ macro_rules! impl_simd_float {
       UnsignedT = $UnsignedT:ident,
       UnsignedSimd = $UnsignedSimd:ident,
   ) => {
-        /*
         impl_unary_operator!(
           $Simd,
           Neg,
@@ -231,7 +230,6 @@ macro_rules! impl_simd_float {
           /// This computes bitwise XOR, even though the `^` operator is not
           /// implemented for Rust's primitive floats.
         );
-        */
 
         impl<Rhs> core::iter::Sum<Rhs> for $Simd
         where
