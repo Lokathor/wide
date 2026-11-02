@@ -2,8 +2,8 @@
 //! unsigned).
 
 use core::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitOr, BitXor, Div, Mul, MulAssign, Rem, Shl, ShlAssign, Shr,
+    ShrAssign, Sub,
 };
 
 use bytemuck::Zeroable;
@@ -399,6 +399,139 @@ impl_unary_operator!(
     not_backend,
     /// Computes bitwise NOT for each element of `self`.
 );
+
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Add,
+    add,
+    AddAssign,
+    add_assign,
+    add_backend,
+    /// Computes wrapping addition for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes wrapping addition for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Sub,
+    sub,
+    SubAssign,
+    sub_assign,
+    sub_backend,
+    /// Computes wrapping subtraction for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes wrapping subtraction for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Mul,
+    mul,
+    MulAssign,
+    mul_assign,
+    mul_backend,
+    /// Computes wrapping multiplication for each element of `self` and
+    /// the corresponding element of `rhs`.
+    ,
+    /// Computes wrapping multiplication for each element of `self` and
+    /// the scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Div,
+    div,
+    DivAssign,
+    div_assign,
+    div_backend,
+    /// Computes wrapping division for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any element of `rhs` is zero.
+    ,
+    /// Computes wrapping division for each element of `self` and the
+    /// scalar `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs` is zero.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Rem,
+    rem,
+    RemAssign,
+    rem_assign,
+    rem_backend,
+    /// Computes the wrapping remainder of each element of `self`
+    /// divided by the corresponding element of `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any element of `rhs` is zero.
+    ,
+    /// Computes the wrapping remainder of each element of `self`
+    /// divided by the scalar `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs` is zero.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitAnd,
+    bitand,
+    BitAndAssign,
+    bitand_assign,
+    bitand_backend,
+    /// Computes bitwise AND for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise AND for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitOr,
+    bitor,
+    BitOrAssign,
+    bitor_assign,
+    bitor_backend,
+    /// Computes bitwise OR for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise OR for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitXor,
+    bitxor,
+    BitXorAssign,
+    bitxor_assign,
+    bitxor_backend,
+    /// Computes bitwise XOR for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise XOR for each element of `self` and the
+    /// scalar `rhs`.
+);
 */
 
 macro_rules! impl_simd_integer {
@@ -410,147 +543,6 @@ macro_rules! impl_simd_integer {
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
     ) => {
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Add,
-            add,
-            AddAssign,
-            add_assign,
-            add_backend,
-            /// Computes wrapping addition for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes wrapping addition for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Sub,
-            sub,
-            SubAssign,
-            sub_assign,
-            sub_backend,
-            /// Computes wrapping subtraction for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes wrapping subtraction for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Mul,
-            mul,
-            MulAssign,
-            mul_assign,
-            mul_backend,
-            /// Computes wrapping multiplication for each element of `self` and
-            /// the corresponding element of `rhs`.
-            ,
-            /// Computes wrapping multiplication for each element of `self` and
-            /// the scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Div,
-            div,
-            DivAssign,
-            div_assign,
-            div_backend,
-            /// Computes wrapping division for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
-            ,
-            /// Computes wrapping division for each element of `self` and the
-            /// scalar `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if `rhs` is zero.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Rem,
-            rem,
-            RemAssign,
-            rem_assign,
-            rem_backend,
-            /// Computes the wrapping remainder of each element of `self`
-            /// divided by the corresponding element of `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
-            ,
-            /// Computes the wrapping remainder of each element of `self`
-            /// divided by the scalar `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if `rhs` is zero.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            BitAnd,
-            bitand,
-            BitAndAssign,
-            bitand_assign,
-            bitand_backend,
-            /// Computes bitwise AND for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise AND for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            BitOr,
-            bitor,
-            BitOrAssign,
-            bitor_assign,
-            bitor_backend,
-            /// Computes bitwise OR for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise OR for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            BitXor,
-            bitxor,
-            BitXorAssign,
-            bitxor_assign,
-            bitxor_backend,
-            /// Computes bitwise XOR for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise XOR for each element of `self` and the
-            /// scalar `rhs`.
-        );
-
         impl<Rhs> core::iter::Sum<Rhs> for $Simd
         where
             $Simd: AddAssign<Rhs>,

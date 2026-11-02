@@ -1,9 +1,6 @@
 //! Defines APIs applicable to SIMD vectors of floats.
 
-use core::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Rem, RemAssign, Sub, SubAssign,
-};
+use core::ops::{Add, AddAssign, BitAnd, BitOr, BitXor, Div, Mul, MulAssign, Rem, Sub};
 
 use bytemuck::Zeroable;
 
@@ -45,161 +42,153 @@ impl_unary_operator!(
     /// This computes bitwise NOT, even though the `!` operator is not
     /// implemented for Rust's primitive floats.
 );
+
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Add,
+    add,
+    AddAssign,
+    add_assign,
+    add_backend,
+    /// Computes addition for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes addition for each element of `self` and the scalar `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Sub,
+    sub,
+    SubAssign,
+    sub_assign,
+    sub_backend,
+    /// Computes subtraction for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes subtraction for each element of `self` and the scalar `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Mul,
+    mul,
+    MulAssign,
+    mul_assign,
+    mul_backend,
+    /// Computes multiplication for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes multiplication for each element of `self` and the scalar
+    /// `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Div,
+    div,
+    DivAssign,
+    div_assign,
+    div_backend,
+    /// Computes division for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes division for each element of `self` and the scalar `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Rem,
+    rem,
+    RemAssign,
+    rem_assign,
+    rem_backend,
+    /// Computes the remainder for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes the remainder for each element of `self` and the scalar
+    /// `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    BitAnd,
+    bitand,
+    BitAndAssign,
+    bitand_assign,
+    bitand_backend,
+    /// Computes bitwise AND for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This computes bitwise AND, even though the `&` operator is not
+    /// implemented for Rust's primitive floats.
+    ,
+    /// Computes bitwise AND for each element of `self` and the scalar `rhs`.
+    ///
+    /// This computes bitwise AND, even though the `&` operator is not
+    /// implemented for Rust's primitive floats.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    BitOr,
+    bitor,
+    BitOrAssign,
+    bitor_assign,
+    bitor_backend,
+    /// Computes bitwise OR for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This computes bitwise OR, even though the `|` operator is not
+    /// implemented for Rust's primitive floats.
+    ,
+    /// Computes bitwise OR for each element of `self` and the scalar `rhs`.
+    ///
+    /// This computes bitwise OR, even though the `|` operator is not
+    /// implemented for Rust's primitive floats.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    BitXor,
+    bitxor,
+    BitXorAssign,
+    bitxor_assign,
+    bitxor_backend,
+    /// Computes bitwise XOR for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This computes bitwise XOR, even though the `^` operator is not
+    /// implemented for Rust's primitive floats.
+    ,
+    /// Computes bitwise XOR for each element of `self` and the scalar `rhs`.
+    ///
+    /// This computes bitwise XOR, even though the `^` operator is not
+    /// implemented for Rust's primitive floats.
+);
 */
 
 macro_rules! impl_simd_float {
     (
-      T = $T:ident,
-      Simd = $Simd:ident,
-      SignedSimd = $SignedSimd:ident,
-      UnsignedT = $UnsignedT:ident,
-      UnsignedSimd = $UnsignedSimd:ident,
-  ) => {
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Add,
-          add,
-          AddAssign,
-          add_assign,
-          add_backend,
-          /// Computes addition for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes addition for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Sub,
-          sub,
-          SubAssign,
-          sub_assign,
-          sub_backend,
-          /// Computes subtraction for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes subtraction for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Mul,
-          mul,
-          MulAssign,
-          mul_assign,
-          mul_backend,
-          /// Computes multiplication for each element of `self` and the
-          /// corresponding element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes multiplication for each element of `self` and the scalar
-          /// `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Div,
-          div,
-          DivAssign,
-          div_assign,
-          div_backend,
-          /// Computes division for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes division for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Rem,
-          rem,
-          RemAssign,
-          rem_assign,
-          rem_backend,
-          /// Computes the remainder for each element of `self` and the
-          /// corresponding element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes the remainder for each element of `self` and the scalar
-          /// `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          BitAnd,
-          bitand,
-          BitAndAssign,
-          bitand_assign,
-          bitand_backend,
-          /// Computes bitwise AND for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This computes bitwise AND, even though the `&` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise AND for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise AND, even though the `&` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          BitOr,
-          bitor,
-          BitOrAssign,
-          bitor_assign,
-          bitor_backend,
-          /// Computes bitwise OR for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This computes bitwise OR, even though the `|` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise OR for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise OR, even though the `|` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          BitXor,
-          bitxor,
-          BitXorAssign,
-          bitxor_assign,
-          bitxor_backend,
-          /// Computes bitwise XOR for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This computes bitwise XOR, even though the `^` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise XOR for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise XOR, even though the `^` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-
+        T = $T:ident,
+        Simd = $Simd:ident,
+        SignedSimd = $SignedSimd:ident,
+        UnsignedT = $UnsignedT:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+    ) => {
         impl<Rhs> core::iter::Sum<Rhs> for $Simd
         where
             $Simd: AddAssign<Rhs>,
