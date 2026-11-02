@@ -9,32 +9,12 @@ use core::ops::{
 use bytemuck::Zeroable;
 
 use crate::{
-    Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8,
-    i32x16, i64x2, i64x4, i64x8,
-    simd::{MaskOps, SimdAssociatedTypes, SupportSimdOf},
+    HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8,
+    i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
+    primitive_traits::NotPrimitiveInteger,
+    simd::{SimdAssociatedTypes, SupportSimdOf},
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
-
-/// A sealed trait for all primitive integer types.
-///
-/// TODO(generics): Once appropriate SIMD functionality becomes generic over
-/// `T: PrimitiveInteger`, update the documentation of this trait to explain its
-/// intended usage.
-pub trait PrimitiveInteger: SimdElement + MaskOps {}
-
-/// An internal trait for primitive integer types that have a double-width
-/// variant.
-///
-/// This is used for `widening_mul`.
-///
-/// This trait could be exposed publicly, and that would enable users calling
-/// `widening_mul` in contexts generic over `T`. However, it is currently not
-/// exposed in order to avoid trait-bloat.
-pub(crate) trait HasDoubleWidth {
-    /// The primitive integer with double the width of `Self` and the same
-    /// signedness.
-    type DoubleWidth: PrimitiveInteger;
-}
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of integers (both signed and unsigned).
@@ -143,56 +123,6 @@ pub(crate) trait SimdIntegerBackend: Sized {
 
     fn mul_keep_high_backend(self, rhs: Self) -> Self;
 }
-
-/// A marker trait representing `!PrimitiveInteger` used for an internal
-/// type-system hack.
-trait NotPrimitiveInteger {}
-
-macro_rules! impl_primitive_integer {
-    ($T:ident) => {
-        impl PrimitiveInteger for $T {}
-    };
-}
-impl_primitive_integer!(i8);
-impl_primitive_integer!(i16);
-impl_primitive_integer!(i32);
-impl_primitive_integer!(i64);
-impl_primitive_integer!(i128);
-impl_primitive_integer!(isize);
-impl_primitive_integer!(u8);
-impl_primitive_integer!(u16);
-impl_primitive_integer!(u32);
-impl_primitive_integer!(u64);
-impl_primitive_integer!(u128);
-impl_primitive_integer!(usize);
-
-impl HasDoubleWidth for i8 {
-    type DoubleWidth = i16;
-}
-impl HasDoubleWidth for i16 {
-    type DoubleWidth = i32;
-}
-impl HasDoubleWidth for i32 {
-    type DoubleWidth = i64;
-}
-impl HasDoubleWidth for i64 {
-    type DoubleWidth = i128;
-}
-impl HasDoubleWidth for u8 {
-    type DoubleWidth = u16;
-}
-impl HasDoubleWidth for u16 {
-    type DoubleWidth = u32;
-}
-impl HasDoubleWidth for u32 {
-    type DoubleWidth = u64;
-}
-impl HasDoubleWidth for u64 {
-    type DoubleWidth = u128;
-}
-
-impl NotPrimitiveInteger for f32 {}
-impl NotPrimitiveInteger for f64 {}
 
 /// In order for the generic SIMD integer API to work, [`SimdIntegerBackend`] is
 /// used as a super-trait of [`SupportedSimd`].

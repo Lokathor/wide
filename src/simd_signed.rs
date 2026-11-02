@@ -1,18 +1,12 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
 use crate::{
-    PrimitiveInteger, Select, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16,
-    i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
+    Select, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4,
+    i32x8, i32x16, i64x2, i64x4, i64x8,
+    primitive_traits::NotPrimitiveSigned,
     simd::{SimdAssociatedTypes, SupportSimdOf},
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
-
-/// A sealed trait for all primitive signed integer types.
-///
-/// TODO(generics): Once appropriate SIMD functionality becomes generic over
-/// `T: PrimitiveSigned`, update the documentation of this trait to explain its
-/// intended usage.
-pub trait PrimitiveSigned: PrimitiveInteger<Signed = Self> {}
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of signed integers.
@@ -33,29 +27,6 @@ pub(crate) trait SimdSignedBackend {
     where
         Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 }
-
-/// A marker trait representing `!PrimitiveSigned` used for an internal
-/// type-system hack.
-trait NotPrimitiveSigned {}
-
-macro_rules! impl_primitive_signed {
-    ($T:ident) => {
-        impl PrimitiveSigned for $T {}
-    };
-}
-impl_primitive_signed!(i8);
-impl_primitive_signed!(i16);
-impl_primitive_signed!(i32);
-impl_primitive_signed!(i64);
-impl_primitive_signed!(i128);
-impl_primitive_signed!(isize);
-
-impl NotPrimitiveSigned for f32 {}
-impl NotPrimitiveSigned for f64 {}
-impl NotPrimitiveSigned for u8 {}
-impl NotPrimitiveSigned for u16 {}
-impl NotPrimitiveSigned for u32 {}
-impl NotPrimitiveSigned for u64 {}
 
 /// In order for the generic SIMD signed integer API to work,
 /// [`SimdSignedBackend`] is used as a super-trait of [`SupportedSimd`].
