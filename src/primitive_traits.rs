@@ -14,14 +14,19 @@ use crate::{MaskOps, SimdElement};
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveFloat`, update the documentation of this trait to explain its
 /// intended usage.
-pub trait PrimitiveFloat: SimdElement + MaskOps {}
+#[expect(private_bounds)]
+pub trait PrimitiveFloat: SimdElement + MaskOps + FloatIntegerDisjointMarker<Marker = f32> {}
 
 /// A sealed trait for all primitive integer types.
 ///
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveInteger`, update the documentation of this trait to explain its
 /// intended usage.
-pub trait PrimitiveInteger: SimdElement + MaskOps {}
+#[expect(private_bounds)]
+pub trait PrimitiveInteger:
+    SimdElement + MaskOps + FloatIntegerDisjointMarker<Marker = u32>
+{
+}
 
 /// A sealed trait for primitive integer types that have a double-width variant.
 ///
@@ -37,14 +42,22 @@ pub trait HasDoubleWidth: PrimitiveInteger {
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveSigned`, update the documentation of this trait to explain its
 /// intended usage.
-pub trait PrimitiveSigned: PrimitiveInteger<Signed = Self> {}
+#[expect(private_bounds)]
+pub trait PrimitiveSigned:
+    PrimitiveInteger<Signed = Self> + SignedUnsignedDisjointMarker<Marker = i32>
+{
+}
 
 /// A sealed trait for all primitive unsigned integer types.
 ///
 /// TODO(generics): Once appropriate SIMD functionality becomes generic over
 /// `T: PrimitiveSigned`, update the documentation of this trait to explain its
 /// intended usage.
-pub trait PrimitiveUnsigned: PrimitiveInteger<Unsigned = Self> {}
+#[expect(private_bounds)]
+pub trait PrimitiveUnsigned:
+    PrimitiveInteger<Unsigned = Self> + SignedUnsignedDisjointMarker<Marker = u32>
+{
+}
 
 /// A marker trait representing `!PrimitiveFloat` used for an internal
 /// type-system hack in `simd_float.rs`.
@@ -62,21 +75,71 @@ pub(crate) trait NotPrimitiveSigned {}
 /// type-system hack in `simd_unsigned.rs`.
 pub(crate) trait NotPrimitiveUnsigned {}
 
-impl PrimitiveFloat for f32 {}
-impl PrimitiveFloat for f64 {}
+/// A trait used to tell the compiler that [`PrimitiveFloat`] and
+/// [`PrimitiveInteger`] are disjoint.
+///
+/// This makes the compiler deny `T: PrimitiveFloat + PrimitiveInteger`
+/// statements. In the future, the type system may use this to allow coexisting
+/// blanket trait implementations over `T: PrimitiveFloat` and
+/// `T: PrimitiveInteger`, which will be very useful for this library.
+trait FloatIntegerDisjointMarker {
+    /// Use [`f32`] to mark floats and [`u32`] to mark integers.
+    type Marker;
+}
 
-impl PrimitiveInteger for i8 {}
-impl PrimitiveInteger for i16 {}
-impl PrimitiveInteger for i32 {}
-impl PrimitiveInteger for i64 {}
-impl PrimitiveInteger for i128 {}
-impl PrimitiveInteger for isize {}
-impl PrimitiveInteger for u8 {}
-impl PrimitiveInteger for u16 {}
-impl PrimitiveInteger for u32 {}
-impl PrimitiveInteger for u64 {}
-impl PrimitiveInteger for u128 {}
-impl PrimitiveInteger for usize {}
+/// A trait used to tell the compiler that [`PrimitiveSigned`] and
+/// [`PrimitiveUnsigned`] are disjoint.
+///
+/// This makes the compiler deny `T: PrimitiveSigned + PrimitiveUnsigned`
+/// statements. In the future, the type system may use this to allow coexisting
+/// blanket trait implementations over `T: PrimitiveSigned` and
+/// `T: PrimitiveUnsigned`.
+trait SignedUnsignedDisjointMarker {
+    /// Use [`i32`] to mark signed and [`u32`] to mark unsigned.
+    type Marker;
+}
+
+macro_rules! float {
+    ($T:ident) => {
+        impl PrimitiveFloat for $T {}
+
+        impl NotPrimitiveInteger for $T {}
+
+        impl NotPrimitiveSigned for $T {}
+
+        impl NotPrimitiveUnsigned for $T {}
+
+        impl FloatIntegerDisjointMarker for $T {
+            type Marker = f32;
+        }
+    };
+}
+float!(f32);
+float!(f64);
+
+macro_rules! integer {
+    ($T:ident) => {
+        impl PrimitiveInteger for $T {}
+
+        impl NotPrimitiveFloat for $T {}
+
+        impl FloatIntegerDisjointMarker for $T {
+            type Marker = u32;
+        }
+    };
+}
+integer!(i8);
+integer!(i16);
+integer!(i32);
+integer!(i64);
+integer!(i128);
+integer!(isize);
+integer!(u8);
+integer!(u16);
+integer!(u32);
+integer!(u64);
+integer!(u128);
+integer!(usize);
 
 impl HasDoubleWidth for i8 {
     type DoubleWidth = i16;
@@ -103,50 +166,38 @@ impl HasDoubleWidth for u64 {
     type DoubleWidth = u128;
 }
 
-impl PrimitiveSigned for i8 {}
-impl PrimitiveSigned for i16 {}
-impl PrimitiveSigned for i32 {}
-impl PrimitiveSigned for i64 {}
-impl PrimitiveSigned for i128 {}
-impl PrimitiveSigned for isize {}
+macro_rules! signed {
+    ($T:ident) => {
+        impl PrimitiveSigned for $T {}
 
-impl PrimitiveUnsigned for u8 {}
-impl PrimitiveUnsigned for u16 {}
-impl PrimitiveUnsigned for u32 {}
-impl PrimitiveUnsigned for u64 {}
-impl PrimitiveUnsigned for u128 {}
-impl PrimitiveUnsigned for usize {}
+        impl NotPrimitiveUnsigned for $T {}
 
-impl NotPrimitiveFloat for i8 {}
-impl NotPrimitiveFloat for i16 {}
-impl NotPrimitiveFloat for i32 {}
-impl NotPrimitiveFloat for i64 {}
-impl NotPrimitiveFloat for i128 {}
-impl NotPrimitiveFloat for isize {}
-impl NotPrimitiveFloat for u8 {}
-impl NotPrimitiveFloat for u16 {}
-impl NotPrimitiveFloat for u32 {}
-impl NotPrimitiveFloat for u64 {}
-impl NotPrimitiveFloat for u128 {}
-impl NotPrimitiveFloat for usize {}
+        impl SignedUnsignedDisjointMarker for $T {
+            type Marker = i32;
+        }
+    };
+}
+signed!(i8);
+signed!(i16);
+signed!(i32);
+signed!(i64);
+signed!(i128);
+signed!(isize);
 
-impl NotPrimitiveInteger for f32 {}
-impl NotPrimitiveInteger for f64 {}
+macro_rules! unsigned {
+    ($T:ident) => {
+        impl PrimitiveUnsigned for $T {}
 
-impl NotPrimitiveSigned for f32 {}
-impl NotPrimitiveSigned for f64 {}
-impl NotPrimitiveSigned for u8 {}
-impl NotPrimitiveSigned for u16 {}
-impl NotPrimitiveSigned for u32 {}
-impl NotPrimitiveSigned for u64 {}
-impl NotPrimitiveSigned for u128 {}
-impl NotPrimitiveSigned for usize {}
+        impl NotPrimitiveSigned for $T {}
 
-impl NotPrimitiveUnsigned for f32 {}
-impl NotPrimitiveUnsigned for f64 {}
-impl NotPrimitiveUnsigned for i8 {}
-impl NotPrimitiveUnsigned for i16 {}
-impl NotPrimitiveUnsigned for i32 {}
-impl NotPrimitiveUnsigned for i64 {}
-impl NotPrimitiveUnsigned for i128 {}
-impl NotPrimitiveUnsigned for isize {}
+        impl SignedUnsignedDisjointMarker for $T {
+            type Marker = u32;
+        }
+    };
+}
+unsigned!(u8);
+unsigned!(u16);
+unsigned!(u32);
+unsigned!(u64);
+unsigned!(u128);
+unsigned!(usize);
