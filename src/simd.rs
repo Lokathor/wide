@@ -74,160 +74,6 @@ pub trait SupportedSimd:
     type Bitmask: PrimitiveUnsigned;
 }
 
-/// Defines the `Inner` type (the type contained inside `Simd<T, N>`) and the
-/// internal implementations of functions applicable to arbitrary SIMD vectors.
-pub(crate) trait SimdBackend: Sized {
-    type Inner: Copy;
-
-    fn simd_eq_backend(self, other: Self) -> Self;
-
-    fn simd_ne_backend(self, other: Self) -> Self;
-
-    fn simd_lt_backend(self, other: Self) -> Self;
-
-    fn simd_gt_backend(self, other: Self) -> Self;
-
-    fn simd_le_backend(self, other: Self) -> Self;
-
-    fn simd_ge_backend(self, other: Self) -> Self;
-
-    fn select_backend(self, if_true: Self, if_false: Self) -> Self;
-
-    fn to_bitmask_backend(self) -> Self::Bitmask
-    where
-        Self: SupportedSimd;
-
-    fn any_backend(self) -> bool;
-
-    fn all_backend(self) -> bool;
-
-    fn interleave_low_backend(self, other: Self) -> Self;
-
-    fn interleave_high_backend(self, other: Self) -> Self;
-
-    fn shuffle_backend(self, indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_zeroing_backend(self, indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_wrapping_backend(self, indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn transpose_backend(data: Self::ArrayOf<Self>) -> Self::ArrayOf<Self>
-    where
-        Self: SimdAssociatedTypes;
-
-    fn replace_const_backend<const INDEX: usize>(self, value: Self::T) -> Self
-    where
-        Self: SimdAssociatedTypes;
-
-    fn extract_const_backend<const INDEX: usize>(self) -> Self::T
-    where
-        Self: SimdAssociatedTypes;
-}
-
-/// Provides SIMD backend traits access to SIMD associated types.
-///
-/// SIMD backend traits are not generic over `T` nor `N` (they cannot due to
-/// type-system limitations). As a result, they cannot easily refer to types
-/// that depends on `T` and `N`.
-///
-/// Such types include `[Self; N]` (used in [`Simd::transpose`]) and
-/// `Simd<T::Unsigned, N>` (used in [`Simd::shuffle`]).
-///
-/// To solve this problem, SIMD backend functions that need access to such types
-/// add `where Self: SimdAssociatedTypes` which gives them access to appropriate
-/// types.
-///
-/// [`SimdAssociatedTypes`] has one shared generic implementation for all
-/// supported [`Simd<T, N>`] types. This means that the compiler, in
-/// contexts generic over `T` and `N`, understands what these types actually are
-/// (for example, for `Self = Simd<T, N>`, that [`Self::T`]  is `T` and that
-/// [`Self::ArrayOf<U>`] is `[U; N]`).
-pub(crate) trait SimdAssociatedTypes: Sized {
-    /// For `Self = Simd<T, N>`, this type is `T`.
-    type T;
-
-    /// For `Self = Simd<T, N>`, this type is `[U; N]`.
-    type ArrayOf<U>;
-
-    /// For `Self = Simd<T, N>`, this type is `Simd<U, N>`.
-    type SimdOf<U>
-    where
-        Self: SupportSimdOf<U>;
-
-    /// For `Self = Simd<T, N>`, this type is `T::Unsigned`.
-    type UnsignedT;
-
-    /// For `Self = Simd<T, N>`, this type is `Simd<T::Unsigned, N>`.
-    type UnsignedSimd
-    where
-        Self: SupportSimdOf<Self::UnsignedT>;
-
-    /// For `Self = Simd<T, N>`, this type is `T::Signed`.
-    type SignedT;
-
-    /// For `Self = Simd<T, N>`, this type is `Simd<T::Signed, N>`.
-    type SignedSimd
-    where
-        Self: SupportSimdOf<Self::SignedT>;
-}
-
-/// An extension of [`SimdAssociatedTypes`] for when `Self::SimdOf<U>` must
-/// implement [`SupportedSimd`].
-///
-/// When SIMD backend functions refer to SIMD vectors of generic `T` types
-/// other than `T` (using [`SimdAssociatedTypes::SimdOf<U>`]), they must have a
-/// trait bound that guarantees the type `Self::SimdOf<U>` is actually defined
-/// (which requires it to implement [`SupportedSimd`]).
-///
-/// The `Self::SimdOf<U>: SupportedSimd` bound cannot be used directly. That
-/// results in a cycle. Instead, that bound is represented with
-/// `Self: SupportSimdOf<U>` (for `Self::SimdOf<U>: SupportedSimd`.
-pub(crate) trait SupportSimdOf<U> {
-    type SimdOfU;
-}
-
 /// A sealed trait for SIMD element types that support mask operations.
 ///
 /// All current SIMD element types implement this. However, it is possible that
@@ -566,8 +412,6 @@ where
     }
 }
 
-trait Sealed {}
-
 impl SimdElement for f32 {
     type Unsigned = u32;
     type Signed = i32;
@@ -767,6 +611,336 @@ macro_rules! define_simd {
     )?
   };
 }
+define_simd!(
+    T = f32,
+    N = 4,
+    N_STR = "four",
+    Simd = f32x4,
+    UnsignedSimd = u32x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128 },
+    optional_type_arm_inner { ArmInner = float32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = f32,
+    N = 8,
+    N_STR = "eight",
+    Simd = f32x8,
+    UnsignedSimd = u32x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256 },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = f32,
+    N = 16,
+    N_STR = "16",
+    Simd = f32x16,
+    UnsignedSimd = u32x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512 },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = f64,
+    N = 2,
+    N_STR = "two",
+    Simd = f64x2,
+    UnsignedSimd = u64x2,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128d },
+    optional_type_arm_inner { ArmInner = float64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = f64,
+    N = 4,
+    N_STR = "four",
+    Simd = f64x4,
+    UnsignedSimd = u64x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = f64,
+    N = 8,
+    N_STR = "eight",
+    Simd = f64x8,
+    UnsignedSimd = u64x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i8,
+    N = 16,
+    N_STR = "16",
+    Simd = i8x16,
+    UnsignedSimd = u8x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int8x16_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i8,
+    N = 32,
+    N_STR = "32",
+    Simd = i8x32,
+    UnsignedSimd = u8x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i8,
+    N = 64,
+    N_STR = "64",
+    Simd = i8x64,
+    UnsignedSimd = u8x64,
+    Bitmask = u64,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i16,
+    N = 8,
+    N_STR = "eight",
+    Simd = i16x8,
+    UnsignedSimd = u16x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int16x8_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i16,
+    N = 16,
+    N_STR = "16",
+    Simd = i16x16,
+    UnsignedSimd = u16x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i16,
+    N = 32,
+    N_STR = "32",
+    Simd = i16x32,
+    UnsignedSimd = u16x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i32,
+    N = 4,
+    N_STR = "four",
+    Simd = i32x4,
+    UnsignedSimd = u32x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i32,
+    N = 8,
+    N_STR = "eight",
+    Simd = i32x8,
+    UnsignedSimd = u32x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i32,
+    N = 16,
+    N_STR = "16",
+    Simd = i32x16,
+    UnsignedSimd = u32x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i64,
+    N = 2,
+    N_STR = "two",
+    Simd = i64x2,
+    UnsignedSimd = u64x2,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = i64,
+    N = 4,
+    N_STR = "four",
+    Simd = i64x4,
+    UnsignedSimd = u64x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = i64,
+    N = 8,
+    N_STR = "eight",
+    Simd = i64x8,
+    UnsignedSimd = u64x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u8,
+    N = 16,
+    N_STR = "16",
+    Simd = u8x16,
+    UnsignedSimd = u8x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint8x16_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u8,
+    N = 32,
+    N_STR = "32",
+    Simd = u8x32,
+    UnsignedSimd = u8x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u8,
+    N = 64,
+    N_STR = "64",
+    Simd = u8x64,
+    UnsignedSimd = u8x64,
+    Bitmask = u64,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u16,
+    N = 8,
+    N_STR = "eight",
+    Simd = u16x8,
+    UnsignedSimd = u16x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint16x8_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u16,
+    N = 16,
+    N_STR = "16",
+    Simd = u16x16,
+    UnsignedSimd = u16x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u16,
+    N = 32,
+    N_STR = "32",
+    Simd = u16x32,
+    UnsignedSimd = u16x32,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u32,
+    N = 4,
+    N_STR = "four",
+    Simd = u32x4,
+    UnsignedSimd = u32x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u32,
+    N = 8,
+    N_STR = "eight",
+    Simd = u32x8,
+    UnsignedSimd = u32x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u32,
+    N = 16,
+    N_STR = "16",
+    Simd = u32x16,
+    UnsignedSimd = u32x16,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u64,
+    N = 2,
+    N_STR = "two",
+    Simd = u64x2,
+    UnsignedSimd = u64x2,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_simd!(
+    T = u64,
+    N = 4,
+    N_STR = "four",
+    Simd = u64x4,
+    UnsignedSimd = u64x4,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_simd!(
+    T = u64,
+    N = 8,
+    N_STR = "eight",
+    Simd = u64x8,
+    UnsignedSimd = u64x8,
+    Bitmask = u32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
 
 impl<T, const N: usize> PartialEq for Simd<T, N>
 where
@@ -1710,6 +1884,162 @@ where
     }
 }
 
+/// Defines the `Inner` type (the type contained inside `Simd<T, N>`) and the
+/// internal implementations of functions applicable to arbitrary SIMD vectors.
+pub(crate) trait SimdBackend: Sized {
+    type Inner: Copy;
+
+    fn simd_eq_backend(self, other: Self) -> Self;
+
+    fn simd_ne_backend(self, other: Self) -> Self;
+
+    fn simd_lt_backend(self, other: Self) -> Self;
+
+    fn simd_gt_backend(self, other: Self) -> Self;
+
+    fn simd_le_backend(self, other: Self) -> Self;
+
+    fn simd_ge_backend(self, other: Self) -> Self;
+
+    fn select_backend(self, if_true: Self, if_false: Self) -> Self;
+
+    fn to_bitmask_backend(self) -> Self::Bitmask
+    where
+        Self: SupportedSimd;
+
+    fn any_backend(self) -> bool;
+
+    fn all_backend(self) -> bool;
+
+    fn interleave_low_backend(self, other: Self) -> Self;
+
+    fn interleave_high_backend(self, other: Self) -> Self;
+
+    fn shuffle_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_backend(self, indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn transpose_backend(data: Self::ArrayOf<Self>) -> Self::ArrayOf<Self>
+    where
+        Self: SimdAssociatedTypes;
+
+    fn replace_const_backend<const INDEX: usize>(self, value: Self::T) -> Self
+    where
+        Self: SimdAssociatedTypes;
+
+    fn extract_const_backend<const INDEX: usize>(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+}
+
+/// Provides SIMD backend traits access to SIMD associated types.
+///
+/// SIMD backend traits are not generic over `T` nor `N` (they cannot due to
+/// type-system limitations). As a result, they cannot easily refer to types
+/// that depends on `T` and `N`.
+///
+/// Such types include `[Self; N]` (used in [`Simd::transpose`]) and
+/// `Simd<T::Unsigned, N>` (used in [`Simd::shuffle`]).
+///
+/// To solve this problem, SIMD backend functions that need access to such types
+/// add `where Self: SimdAssociatedTypes` which gives them access to appropriate
+/// types.
+///
+/// [`SimdAssociatedTypes`] has one shared generic implementation for all
+/// supported [`Simd<T, N>`] types. This means that the compiler, in
+/// contexts generic over `T` and `N`, understands what these types actually are
+/// (for example, for `Self = Simd<T, N>`, that [`Self::T`]  is `T` and that
+/// [`Self::ArrayOf<U>`] is `[U; N]`).
+pub(crate) trait SimdAssociatedTypes: Sized {
+    /// For `Self = Simd<T, N>`, this type is `T`.
+    type T;
+
+    /// For `Self = Simd<T, N>`, this type is `[U; N]`.
+    type ArrayOf<U>;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<U, N>`.
+    type SimdOf<U>
+    where
+        Self: SupportSimdOf<U>;
+
+    /// For `Self = Simd<T, N>`, this type is `T::Unsigned`.
+    type UnsignedT;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<T::Unsigned, N>`.
+    type UnsignedSimd
+    where
+        Self: SupportSimdOf<Self::UnsignedT>;
+
+    /// For `Self = Simd<T, N>`, this type is `T::Signed`.
+    type SignedT;
+
+    /// For `Self = Simd<T, N>`, this type is `Simd<T::Signed, N>`.
+    type SignedSimd
+    where
+        Self: SupportSimdOf<Self::SignedT>;
+}
+
+/// An extension of [`SimdAssociatedTypes`] for when `Self::SimdOf<U>` must
+/// implement [`SupportedSimd`].
+///
+/// When SIMD backend functions refer to SIMD vectors of generic `T` types
+/// other than `T` (using [`SimdAssociatedTypes::SimdOf<U>`]), they must have a
+/// trait bound that guarantees the type `Self::SimdOf<U>` is actually defined
+/// (which requires it to implement [`SupportedSimd`]).
+///
+/// The `Self::SimdOf<U>: SupportedSimd` bound cannot be used directly. That
+/// results in a cycle. Instead, that bound is represented with
+/// `Self: SupportSimdOf<U>` (for `Self::SimdOf<U>: SupportedSimd`.
+pub(crate) trait SupportSimdOf<U> {
+    type SimdOfU;
+}
+
+trait Sealed {}
+
 /// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD float types.
 macro_rules! simd_backend_float_autofill {
@@ -2093,334 +2423,3 @@ where
     Simd<T, N>: SupportedSimd,
 {
 }
-
-define_simd!(
-    T = f32,
-    N = 4,
-    N_STR = "four",
-    Simd = f32x4,
-    UnsignedSimd = u32x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128 },
-    optional_type_arm_inner { ArmInner = float32x4_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = f32,
-    N = 8,
-    N_STR = "eight",
-    Simd = f32x8,
-    UnsignedSimd = u32x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256 },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = f32,
-    N = 16,
-    N_STR = "16",
-    Simd = f32x16,
-    UnsignedSimd = u32x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512 },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = f64,
-    N = 2,
-    N_STR = "two",
-    Simd = f64x2,
-    UnsignedSimd = u64x2,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128d },
-    optional_type_arm_inner { ArmInner = float64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = f64,
-    N = 4,
-    N_STR = "four",
-    Simd = f64x4,
-    UnsignedSimd = u64x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256d },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = f64,
-    N = 8,
-    N_STR = "eight",
-    Simd = f64x8,
-    UnsignedSimd = u64x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512d },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i8,
-    N = 16,
-    N_STR = "16",
-    Simd = i8x16,
-    UnsignedSimd = u8x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int8x16_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i8,
-    N = 32,
-    N_STR = "32",
-    Simd = i8x32,
-    UnsignedSimd = u8x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i8,
-    N = 64,
-    N_STR = "64",
-    Simd = i8x64,
-    UnsignedSimd = u8x64,
-    Bitmask = u64,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i16,
-    N = 8,
-    N_STR = "eight",
-    Simd = i16x8,
-    UnsignedSimd = u16x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int16x8_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i16,
-    N = 16,
-    N_STR = "16",
-    Simd = i16x16,
-    UnsignedSimd = u16x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i16,
-    N = 32,
-    N_STR = "32",
-    Simd = i16x32,
-    UnsignedSimd = u16x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i32,
-    N = 4,
-    N_STR = "four",
-    Simd = i32x4,
-    UnsignedSimd = u32x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int32x4_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i32,
-    N = 8,
-    N_STR = "eight",
-    Simd = i32x8,
-    UnsignedSimd = u32x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i32,
-    N = 16,
-    N_STR = "16",
-    Simd = i32x16,
-    UnsignedSimd = u32x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i64,
-    N = 2,
-    N_STR = "two",
-    Simd = i64x2,
-    UnsignedSimd = u64x2,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i64,
-    N = 4,
-    N_STR = "four",
-    Simd = i64x4,
-    UnsignedSimd = u64x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i64,
-    N = 8,
-    N_STR = "eight",
-    Simd = i64x8,
-    UnsignedSimd = u64x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u8,
-    N = 16,
-    N_STR = "16",
-    Simd = u8x16,
-    UnsignedSimd = u8x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint8x16_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u8,
-    N = 32,
-    N_STR = "32",
-    Simd = u8x32,
-    UnsignedSimd = u8x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u8,
-    N = 64,
-    N_STR = "64",
-    Simd = u8x64,
-    UnsignedSimd = u8x64,
-    Bitmask = u64,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u16,
-    N = 8,
-    N_STR = "eight",
-    Simd = u16x8,
-    UnsignedSimd = u16x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint16x8_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u16,
-    N = 16,
-    N_STR = "16",
-    Simd = u16x16,
-    UnsignedSimd = u16x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u16,
-    N = 32,
-    N_STR = "32",
-    Simd = u16x32,
-    UnsignedSimd = u16x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u32,
-    N = 4,
-    N_STR = "four",
-    Simd = u32x4,
-    UnsignedSimd = u32x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint32x4_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u32,
-    N = 8,
-    N_STR = "eight",
-    Simd = u32x8,
-    UnsignedSimd = u32x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u32,
-    N = 16,
-    N_STR = "16",
-    Simd = u32x16,
-    UnsignedSimd = u32x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u64,
-    N = 2,
-    N_STR = "two",
-    Simd = u64x2,
-    UnsignedSimd = u64x2,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u64,
-    N = 4,
-    N_STR = "four",
-    Simd = u64x4,
-    UnsignedSimd = u64x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u64,
-    N = 8,
-    N_STR = "eight",
-    Simd = u64x8,
-    UnsignedSimd = u64x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);

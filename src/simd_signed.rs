@@ -8,64 +8,6 @@ use crate::{
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
-/// Defines the internal implementations of functions applicable to SIMD vectors
-/// of signed integers.
-pub(crate) trait SimdSignedBackend {
-    fn abs_backend(self) -> Self;
-
-    #[expect(clippy::wrong_self_convention)]
-    fn is_positive_backend(self) -> Self;
-
-    #[expect(clippy::wrong_self_convention)]
-    fn is_negative_backend(self) -> Self;
-
-    fn saturating_neg_backend(self) -> Self;
-
-    fn saturating_abs_backend(self) -> Self;
-
-    fn saturating_add_unsigned_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-}
-
-/// In order for the generic SIMD signed integer API to work,
-/// [`SimdSignedBackend`] is used as a super-trait of [`SupportedSimd`].
-///
-/// This is incorrect logically, since [`SimdSignedBackend`] is only applicable
-/// to SIMD vectors of signed integers. However this seems to be the only way to
-/// do it on stable Rust.
-///
-/// This means that non-signed-integers do need some implementation of
-/// [`SimdSignedBackend`]. This block is a dummy implementation for all
-/// non-signed-integers that fills functions with [`unreachable!`].
-impl<T, const N: usize> SimdSignedBackend for Simd<T, N>
-where
-    T: SimdElement + NotPrimitiveSigned,
-    Simd<T, N>: SupportedSimd,
-{
-    fn abs_backend(self) -> Self {
-        unreachable!()
-    }
-    fn is_negative_backend(self) -> Self {
-        unreachable!()
-    }
-    fn is_positive_backend(self) -> Self {
-        unreachable!()
-    }
-    fn saturating_abs_backend(self) -> Self {
-        unreachable!()
-    }
-    fn saturating_add_unsigned_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
-    {
-        unreachable!()
-    }
-    fn saturating_neg_backend(self) -> Self {
-        unreachable!()
-    }
-}
-
 macro_rules! impl_simd_signed {
     (
         T = $T:ident,
@@ -277,3 +219,61 @@ impl_simd_signed!(T = i32, N = 16, Simd = i32x16, UnsignedSimd = u32x16,);
 impl_simd_signed!(T = i64, N = 2, Simd = i64x2, UnsignedSimd = u64x2,);
 impl_simd_signed!(T = i64, N = 4, Simd = i64x4, UnsignedSimd = u64x4,);
 impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
+
+/// Defines the internal implementations of functions applicable to SIMD vectors
+/// of signed integers.
+pub(crate) trait SimdSignedBackend {
+    fn abs_backend(self) -> Self;
+
+    #[expect(clippy::wrong_self_convention)]
+    fn is_positive_backend(self) -> Self;
+
+    #[expect(clippy::wrong_self_convention)]
+    fn is_negative_backend(self) -> Self;
+
+    fn saturating_neg_backend(self) -> Self;
+
+    fn saturating_abs_backend(self) -> Self;
+
+    fn saturating_add_unsigned_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+}
+
+/// In order for the generic SIMD signed integer API to work,
+/// [`SimdSignedBackend`] is used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdSignedBackend`] is only applicable
+/// to SIMD vectors of signed integers. However this seems to be the only way to
+/// do it on stable Rust.
+///
+/// This means that non-signed-integers do need some implementation of
+/// [`SimdSignedBackend`]. This block is a dummy implementation for all
+/// non-signed-integers that fills functions with [`unreachable!`].
+impl<T, const N: usize> SimdSignedBackend for Simd<T, N>
+where
+    T: SimdElement + NotPrimitiveSigned,
+    Simd<T, N>: SupportedSimd,
+{
+    fn abs_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_negative_backend(self) -> Self {
+        unreachable!()
+    }
+    fn is_positive_backend(self) -> Self {
+        unreachable!()
+    }
+    fn saturating_abs_backend(self) -> Self {
+        unreachable!()
+    }
+    fn saturating_add_unsigned_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn saturating_neg_backend(self) -> Self {
+        unreachable!()
+    }
+}

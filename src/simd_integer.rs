@@ -16,275 +16,6 @@ use crate::{
     u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
-/// Defines the internal implementations of functions applicable to SIMD vectors
-/// of integers (both signed and unsigned).
-pub(crate) trait SimdIntegerBackend: Sized {
-    fn neg_backend(self) -> Self;
-
-    fn not_backend(self) -> Self;
-
-    fn add_backend(self, rhs: Self) -> Self;
-
-    fn sub_backend(self, rhs: Self) -> Self;
-
-    fn mul_backend(self, rhs: Self) -> Self;
-
-    fn bitand_backend(self, rhs: Self) -> Self;
-
-    fn bitor_backend(self, rhs: Self) -> Self;
-
-    fn bitxor_backend(self, rhs: Self) -> Self;
-
-    fn reduce_add_backend(self) -> Self::T
-    where
-        Self: SimdAssociatedTypes;
-
-    fn reduce_mul_backend(self) -> Self::T
-    where
-        Self: SimdAssociatedTypes;
-
-    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
-
-    fn shl_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shl_scalar_backend(self, rhs: u32) -> Self;
-
-    fn shr_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shr_scalar_backend(self, rhs: u32) -> Self;
-
-    fn max_backend(self, rhs: Self) -> Self;
-
-    fn min_backend(self, rhs: Self) -> Self;
-
-    fn reduce_max_backend(self) -> Self::T
-    where
-        Self: SimdAssociatedTypes;
-
-    fn reduce_min_backend(self) -> Self::T
-    where
-        Self: SimdAssociatedTypes;
-
-    fn unbounded_shl_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self;
-
-    fn unbounded_shr_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self;
-
-    fn saturating_add_backend(self, rhs: Self) -> Self;
-
-    fn saturating_sub_backend(self, rhs: Self) -> Self;
-
-    fn saturating_mul_backend(self, rhs: Self) -> Self;
-
-    fn overflowing_neg_backend(self) -> (Self, Self);
-
-    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self);
-
-    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self);
-
-    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self);
-
-    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self);
-
-    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self);
-
-    fn widening_mul_backend(
-        self,
-        rhs: Self,
-    ) -> Self::SimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>
-    where
-        Self: SimdAssociatedTypes<T: HasDoubleWidth>
-            + SupportSimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>,
-    {
-        // Because not all concrete types support `widening_mul`, this default
-        // implementation must exist. Note that all concrete types that support
-        // `widening_mul` should override this implementation, otherwise callers
-        // would get this panic.
-        let _ = rhs;
-        unreachable!(
-            "if you encountered this panic, a `wide` type is unintentionally missing its internal implementation of `widening_mul`"
-        )
-    }
-
-    fn mul_keep_low_high_backend(self, rhs: Self) -> (Self::UnsignedSimd, Self)
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn mul_keep_high_backend(self, rhs: Self) -> Self;
-}
-
-/// In order for the generic SIMD integer API to work, [`SimdIntegerBackend`] is
-/// used as a super-trait of [`SupportedSimd`].
-///
-/// This is incorrect logically, since [`SimdIntegerBackend`] is only applicable
-/// to SIMD vectors of integers. However this seems to be the only way to do it
-/// on stable Rust.
-///
-/// This means that non-integers do need some implementation of
-/// [`SimdIntegerBackend`]. This block is a dummy implementation for all
-/// non-integers that fills functions with [`unreachable!`].
-impl<T, const N: usize> SimdIntegerBackend for Simd<T, N>
-where
-    T: SimdElement + NotPrimitiveInteger,
-    Simd<T, N>: SupportedSimd,
-{
-    fn add_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn bitand_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn bitor_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn bitselect_backend(self, _: Self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn bitxor_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn max_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn min_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn mul_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn mul_keep_high_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn mul_keep_low_high_backend(
-        self,
-        _: Self,
-    ) -> (<Self as SimdAssociatedTypes>::UnsignedSimd, Self)
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
-    {
-        unreachable!()
-    }
-    fn neg_backend(self) -> Self {
-        unreachable!()
-    }
-    fn not_backend(self) -> Self {
-        unreachable!()
-    }
-    fn overflowing_add_backend(self, _: Self) -> (Self, Self) {
-        unreachable!()
-    }
-    fn overflowing_div_backend(self, _: Self) -> (Self, Self) {
-        unreachable!()
-    }
-    fn overflowing_mul_backend(self, _: Self) -> (Self, Self) {
-        unreachable!()
-    }
-    fn overflowing_neg_backend(self) -> (Self, Self) {
-        unreachable!()
-    }
-    fn overflowing_rem_backend(self, _: Self) -> (Self, Self) {
-        unreachable!()
-    }
-    fn overflowing_sub_backend(self, _: Self) -> (Self, Self) {
-        unreachable!()
-    }
-    fn reduce_add_backend(self) -> <Self as SimdAssociatedTypes>::T
-    where
-        Self: SimdAssociatedTypes,
-    {
-        unreachable!()
-    }
-    fn reduce_max_backend(self) -> <Self as SimdAssociatedTypes>::T
-    where
-        Self: SimdAssociatedTypes,
-    {
-        unreachable!()
-    }
-    fn reduce_min_backend(self) -> <Self as SimdAssociatedTypes>::T
-    where
-        Self: SimdAssociatedTypes,
-    {
-        unreachable!()
-    }
-    fn reduce_mul_backend(self) -> <Self as SimdAssociatedTypes>::T
-    where
-        Self: SimdAssociatedTypes,
-    {
-        unreachable!()
-    }
-    fn saturating_add_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn saturating_mul_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn saturating_sub_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn shl_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
-    {
-        unreachable!()
-    }
-    fn shl_scalar_backend(self, _: u32) -> Self {
-        unreachable!()
-    }
-    fn shr_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
-    {
-        unreachable!()
-    }
-    fn shr_scalar_backend(self, _: u32) -> Self {
-        unreachable!()
-    }
-    fn sub_backend(self, _: Self) -> Self {
-        unreachable!()
-    }
-    fn unbounded_shl_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
-    {
-        unreachable!()
-    }
-    fn unbounded_shl_scalar_backend(self, _: u32) -> Self {
-        unreachable!()
-    }
-    fn unbounded_shr_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
-    {
-        unreachable!()
-    }
-    fn unbounded_shr_scalar_backend(self, _: u32) -> Self {
-        unreachable!()
-    }
-    fn widening_mul_backend(
-        self,
-        _: Self,
-    ) -> <Self as SimdAssociatedTypes>::SimdOf<
-        <<Self as SimdAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth,
-    >
-    where
-        Self: SimdAssociatedTypes<T: HasDoubleWidth>
-            + SupportSimdOf<<<Self as SimdAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth>,
-    {
-        unreachable!()
-    }
-}
-
 macro_rules! impl_shift_operator {
   (
     $Op:ident,
@@ -1406,182 +1137,6 @@ macro_rules! impl_simd_integer {
         }
     };
 }
-
-/// Automatically fills SIMD integer backend functions that have the same
-/// implementation for all SIMD signed integer types.
-macro_rules! simd_integer_backend_signed_autofill {
-    ($T:ident, $N:literal) => {
-        #[inline]
-        fn neg_backend(self) -> Self {
-            (-self.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn not_backend(self) -> Self {
-            (!self.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn add_backend(self, rhs: Self) -> Self {
-            // Wrapping addition is the same for signed and unsigned integers.
-            (self.cast_unsigned() + rhs.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn sub_backend(self, rhs: Self) -> Self {
-            // Wrapping subtraction is the same for signed and unsigned integers.
-            (self.cast_unsigned() - rhs.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn mul_backend(self, rhs: Self) -> Self {
-            // Wrapping multiplication is the same for signed and unsigned integers.
-            (self.cast_unsigned() * rhs.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn bitand_backend(self, rhs: Self) -> Self {
-            (self.cast_unsigned() & rhs.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn bitor_backend(self, rhs: Self) -> Self {
-            (self.cast_unsigned() | rhs.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn bitxor_backend(self, rhs: Self) -> Self {
-            (self.cast_unsigned() ^ rhs.cast_unsigned()).cast_signed()
-        }
-
-        #[inline]
-        fn shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
-            (self.cast_unsigned() << rhs).cast_signed()
-        }
-
-        #[inline]
-        fn shl_scalar_backend(self, rhs: u32) -> Self {
-            (self.cast_unsigned() << rhs).cast_signed()
-        }
-
-        #[inline]
-        fn reduce_add_backend(self) -> $T {
-            // Wrapping addition is the same for signed and unsigned integers.
-            self.cast_unsigned().reduce_add().cast_signed()
-        }
-
-        #[inline]
-        fn reduce_mul_backend(self) -> $T {
-            // Wrapping multiplication is the same for signed and unsigned integers.
-            self.cast_unsigned().reduce_mul().cast_signed()
-        }
-
-        #[inline]
-        fn unbounded_shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
-            // Shift left is the same for unsigned and signed integers.
-            self.cast_unsigned().unbounded_shl(rhs).cast_signed()
-        }
-
-        #[inline]
-        fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
-            // Shift left is the same for unsigned and signed integers.
-            self.cast_unsigned().unbounded_shl_scalar(rhs).cast_signed()
-        }
-
-        #[inline]
-        fn saturating_mul_backend(self, rhs: Self) -> Self {
-            let (result, overflow) = self.overflowing_mul(rhs);
-            let limit = Self::MAX ^ (self ^ rhs).is_negative();
-            overflow.select(limit, result)
-        }
-
-        #[inline]
-        fn overflowing_neg_backend(self) -> (Self, Self) {
-            (-self, self.simd_eq(Self::MIN))
-        }
-
-        #[inline]
-        fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
-            let result = self + rhs;
-            let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
-
-            (result, overflow)
-        }
-
-        #[inline]
-        fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
-            let result = self - rhs;
-            let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
-
-            (result, overflow)
-        }
-
-        #[inline]
-        fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
-            // The second field is equivalent to
-            // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
-            (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
-        }
-
-        #[inline]
-        fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
-            // The second field is equivalent to
-            // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
-            (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
-        }
-
-        #[inline]
-        fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
-            self.cast_unsigned()
-                .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
-                .cast_signed()
-        }
-    };
-}
-
-/// Automatically fills SIMD integer backend functions that have the same
-/// implementation for all SIMD unsigned integer types.
-macro_rules! simd_integer_backend_unsigned_autofill {
-    ($T:ident, $N:literal) => {
-        #[inline]
-        fn saturating_mul_backend(self, rhs: Self) -> Self {
-            let (low, high) = self.mul_keep_low_high(rhs);
-            low | high.simd_ne(Self::ZERO)
-        }
-
-        #[inline]
-        fn overflowing_neg_backend(self) -> (Self, Self) {
-            (-self, self.simd_ne(Self::ZERO))
-        }
-
-        #[inline]
-        fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
-            let result = self + rhs;
-            let overflow = result.simd_lt(self);
-
-            (result, overflow)
-        }
-
-        #[inline]
-        fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
-            let result = self - rhs;
-            let overflow = result.simd_gt(self);
-
-            (result, overflow)
-        }
-
-        #[inline]
-        fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
-            (self / rhs, Self::ZERO)
-        }
-
-        #[inline]
-        fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
-            (self % rhs, Self::ZERO)
-        }
-    };
-}
-
 impl_simd_integer!(
     T = i8,
     N = 16,
@@ -1866,3 +1421,447 @@ impl_simd_integer!(
     T_BITS_MUL_2 = 128,
     INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
 );
+
+/// Defines the internal implementations of functions applicable to SIMD vectors
+/// of integers (both signed and unsigned).
+pub(crate) trait SimdIntegerBackend: Sized {
+    fn neg_backend(self) -> Self;
+
+    fn not_backend(self) -> Self;
+
+    fn add_backend(self, rhs: Self) -> Self;
+
+    fn sub_backend(self, rhs: Self) -> Self;
+
+    fn mul_backend(self, rhs: Self) -> Self;
+
+    fn bitand_backend(self, rhs: Self) -> Self;
+
+    fn bitor_backend(self, rhs: Self) -> Self;
+
+    fn bitxor_backend(self, rhs: Self) -> Self;
+
+    fn reduce_add_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_mul_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
+
+    fn shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn max_backend(self, rhs: Self) -> Self;
+
+    fn min_backend(self, rhs: Self) -> Self;
+
+    fn reduce_max_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_min_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn unbounded_shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn unbounded_shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn saturating_add_backend(self, rhs: Self) -> Self;
+
+    fn saturating_sub_backend(self, rhs: Self) -> Self;
+
+    fn saturating_mul_backend(self, rhs: Self) -> Self;
+
+    fn overflowing_neg_backend(self) -> (Self, Self);
+
+    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self);
+
+    fn widening_mul_backend(
+        self,
+        rhs: Self,
+    ) -> Self::SimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>
+    where
+        Self: SimdAssociatedTypes<T: HasDoubleWidth>
+            + SupportSimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>,
+    {
+        // Because not all concrete types support `widening_mul`, this default
+        // implementation must exist. Note that all concrete types that support
+        // `widening_mul` should override this implementation, otherwise callers
+        // would get this panic.
+        let _ = rhs;
+        unreachable!(
+            "if you encountered this panic, a `wide` type is unintentionally missing its internal implementation of `widening_mul`"
+        )
+    }
+
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (Self::UnsignedSimd, Self)
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn mul_keep_high_backend(self, rhs: Self) -> Self;
+}
+
+/// Automatically fills SIMD integer backend functions that have the same
+/// implementation for all SIMD signed integer types.
+macro_rules! simd_integer_backend_signed_autofill {
+    ($T:ident, $N:literal) => {
+        #[inline]
+        fn neg_backend(self) -> Self {
+            (-self.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn not_backend(self) -> Self {
+            (!self.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn add_backend(self, rhs: Self) -> Self {
+            // Wrapping addition is the same for signed and unsigned integers.
+            (self.cast_unsigned() + rhs.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn sub_backend(self, rhs: Self) -> Self {
+            // Wrapping subtraction is the same for signed and unsigned integers.
+            (self.cast_unsigned() - rhs.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn mul_backend(self, rhs: Self) -> Self {
+            // Wrapping multiplication is the same for signed and unsigned integers.
+            (self.cast_unsigned() * rhs.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn bitand_backend(self, rhs: Self) -> Self {
+            (self.cast_unsigned() & rhs.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn bitor_backend(self, rhs: Self) -> Self {
+            (self.cast_unsigned() | rhs.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn bitxor_backend(self, rhs: Self) -> Self {
+            (self.cast_unsigned() ^ rhs.cast_unsigned()).cast_signed()
+        }
+
+        #[inline]
+        fn shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
+            (self.cast_unsigned() << rhs).cast_signed()
+        }
+
+        #[inline]
+        fn shl_scalar_backend(self, rhs: u32) -> Self {
+            (self.cast_unsigned() << rhs).cast_signed()
+        }
+
+        #[inline]
+        fn reduce_add_backend(self) -> $T {
+            // Wrapping addition is the same for signed and unsigned integers.
+            self.cast_unsigned().reduce_add().cast_signed()
+        }
+
+        #[inline]
+        fn reduce_mul_backend(self) -> $T {
+            // Wrapping multiplication is the same for signed and unsigned integers.
+            self.cast_unsigned().reduce_mul().cast_signed()
+        }
+
+        #[inline]
+        fn unbounded_shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
+            // Shift left is the same for unsigned and signed integers.
+            self.cast_unsigned().unbounded_shl(rhs).cast_signed()
+        }
+
+        #[inline]
+        fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self {
+            // Shift left is the same for unsigned and signed integers.
+            self.cast_unsigned().unbounded_shl_scalar(rhs).cast_signed()
+        }
+
+        #[inline]
+        fn saturating_mul_backend(self, rhs: Self) -> Self {
+            let (result, overflow) = self.overflowing_mul(rhs);
+            let limit = Self::MAX ^ (self ^ rhs).is_negative();
+            overflow.select(limit, result)
+        }
+
+        #[inline]
+        fn overflowing_neg_backend(self) -> (Self, Self) {
+            (-self, self.simd_eq(Self::MIN))
+        }
+
+        #[inline]
+        fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self + rhs;
+            let overflow = (!(self ^ rhs) & (self ^ result)).is_negative();
+
+            (result, overflow)
+        }
+
+        #[inline]
+        fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self - rhs;
+            let overflow = ((self ^ rhs) & (self ^ result)).is_negative();
+
+            (result, overflow)
+        }
+
+        #[inline]
+        fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
+            // The second field is equivalent to
+            // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+            (self / rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+        }
+
+        #[inline]
+        fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
+            // The second field is equivalent to
+            // `self.simd_eq(Self::MIN) & rhs.simd_eq(-1)` but may be cheaper.
+            (self % rhs, ((self ^ Self::MAX) & rhs).simd_eq(!Self::ZERO))
+        }
+
+        #[inline]
+        fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self {
+            self.cast_unsigned()
+                .bitselect(if_one.cast_unsigned(), if_zero.cast_unsigned())
+                .cast_signed()
+        }
+    };
+}
+
+/// Automatically fills SIMD integer backend functions that have the same
+/// implementation for all SIMD unsigned integer types.
+macro_rules! simd_integer_backend_unsigned_autofill {
+    ($T:ident, $N:literal) => {
+        #[inline]
+        fn saturating_mul_backend(self, rhs: Self) -> Self {
+            let (low, high) = self.mul_keep_low_high(rhs);
+            low | high.simd_ne(Self::ZERO)
+        }
+
+        #[inline]
+        fn overflowing_neg_backend(self) -> (Self, Self) {
+            (-self, self.simd_ne(Self::ZERO))
+        }
+
+        #[inline]
+        fn overflowing_add_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self + rhs;
+            let overflow = result.simd_lt(self);
+
+            (result, overflow)
+        }
+
+        #[inline]
+        fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self) {
+            let result = self - rhs;
+            let overflow = result.simd_gt(self);
+
+            (result, overflow)
+        }
+
+        #[inline]
+        fn overflowing_div_backend(self, rhs: Self) -> (Self, Self) {
+            (self / rhs, Self::ZERO)
+        }
+
+        #[inline]
+        fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self) {
+            (self % rhs, Self::ZERO)
+        }
+    };
+}
+
+/// In order for the generic SIMD integer API to work, [`SimdIntegerBackend`] is
+/// used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdIntegerBackend`] is only applicable
+/// to SIMD vectors of integers. However this seems to be the only way to do it
+/// on stable Rust.
+///
+/// This means that non-integers do need some implementation of
+/// [`SimdIntegerBackend`]. This block is a dummy implementation for all
+/// non-integers that fills functions with [`unreachable!`].
+impl<T, const N: usize> SimdIntegerBackend for Simd<T, N>
+where
+    T: SimdElement + NotPrimitiveInteger,
+    Simd<T, N>: SupportedSimd,
+{
+    fn add_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitand_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitor_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitselect_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitxor_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn max_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn min_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn mul_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn mul_keep_high_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn mul_keep_low_high_backend(
+        self,
+        _: Self,
+    ) -> (<Self as SimdAssociatedTypes>::UnsignedSimd, Self)
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn neg_backend(self) -> Self {
+        unreachable!()
+    }
+    fn not_backend(self) -> Self {
+        unreachable!()
+    }
+    fn overflowing_add_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_div_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_mul_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_neg_backend(self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_rem_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_sub_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn reduce_add_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_max_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_min_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_mul_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn saturating_add_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn saturating_mul_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn saturating_sub_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn shl_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn shl_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn shr_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn shr_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn sub_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn unbounded_shl_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn unbounded_shl_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn unbounded_shr_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn unbounded_shr_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn widening_mul_backend(
+        self,
+        _: Self,
+    ) -> <Self as SimdAssociatedTypes>::SimdOf<
+        <<Self as SimdAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth,
+    >
+    where
+        Self: SimdAssociatedTypes<T: HasDoubleWidth>
+            + SupportSimdOf<<<Self as SimdAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth>,
+    {
+        unreachable!()
+    }
+}
