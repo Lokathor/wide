@@ -1344,6 +1344,9 @@ where
     T: SimdElement,
     Simd<T, N>: SupportedSimd,
 {
+    /// The number of elements in this SIMD vector.
+    pub const LANES: u16 = N as u16;
+
     /// Converts an array to a SIMD vector.
     #[inline]
     #[must_use]
