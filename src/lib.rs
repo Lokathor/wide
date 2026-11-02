@@ -188,6 +188,7 @@ pub use crate::{
 #[macro_use]
 mod utils;
 mod primitive_traits;
+mod simd_float_or_integer;
 
 // The following modules are intentionally separated by blank lines. These
 // modules contain public `impl` blocks for SIMD types. The order of module

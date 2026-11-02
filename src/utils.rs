@@ -140,8 +140,12 @@ macro_rules! pick {
 }
 
 macro_rules! impl_unary_operator {
-  ($Simd:ident, $Op:ident, $op:ident, $op_backend:ident, $(#[$doc:meta])*) => {
-    impl $Op for $Simd {
+  (T: $ElementBound:ident, $Op:ident, $op:ident, $op_backend:ident, $(#[$doc:meta])*) => {
+    impl<T, const N: usize> $Op for Simd<T, N>
+    where
+        T: $ElementBound,
+        Simd<T, N>: SupportedSimd,
+    {
       type Output = Self;
 
       $(#[$doc])*
@@ -151,8 +155,12 @@ macro_rules! impl_unary_operator {
       }
     }
 
-    impl $Op for &$Simd {
-      type Output = $Simd;
+    impl<T, const N: usize> $Op for &Simd<T, N>
+    where
+        T: $ElementBound,
+        Simd<T, N>: SupportedSimd,
+    {
+      type Output = Simd<T, N>;
 
       $(#[$doc])*
       #[inline]

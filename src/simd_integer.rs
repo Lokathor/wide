@@ -3,7 +3,7 @@
 
 use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    Mul, MulAssign, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 
 use bytemuck::Zeroable;
@@ -374,6 +374,33 @@ impl_shift_operator!(
     /// [`unbounded_shr`]: crate::Simd::unbounded_shr
 );
 
+/*
+These commented-out lines contain implementations of traits that should have
+separate implementations for SIMD integers and SIMD floats.
+
+Rust currently does not allow two blanket trait implementations based on
+disjoint traits. Because of this, these traits have one shared implementation
+for both floats and integers (see `simd_float_or_integer.rs`).
+
+If Rust gains support for two blanket trait implementations based on disjoint
+traits, these integer-only implementations can be uncommented.
+
+impl_unary_operator!(
+    T: PrimitiveInteger,
+    Neg,
+    neg,
+    neg_backend,
+    /// Computes wrapping negation for each element of `self`.
+);
+impl_unary_operator!(
+    T: PrimitiveInteger,
+    Not,
+    not,
+    not_backend,
+    /// Computes bitwise NOT for each element of `self`.
+);
+*/
+
 macro_rules! impl_simd_integer {
     (
         T = $T:ident,
@@ -383,21 +410,6 @@ macro_rules! impl_simd_integer {
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
     ) => {
-        impl_unary_operator!(
-            $Simd,
-            Neg,
-            neg,
-            neg_backend,
-            /// Computes wrapping negation for each element of `self`.
-        );
-        impl_unary_operator!(
-            $Simd,
-            Not,
-            not,
-            not_backend,
-            /// Computes bitwise NOT for each element of `self`.
-        );
-
         impl_binary_operator!(
             $T,
             $Simd,

@@ -2,7 +2,7 @@
 
 use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
+    Mul, MulAssign, Rem, RemAssign, Sub, SubAssign,
 };
 
 use bytemuck::Zeroable;
@@ -15,6 +15,38 @@ use crate::{
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
+/*
+These commented-out lines contain implementations of traits that should have
+separate implementations for SIMD integers and SIMD floats.
+
+Rust currently does not allow two blanket trait implementations based on
+disjoint traits. Because of this, these traits have one shared implementation
+for both floats and integers (see `simd_float_or_integer.rs`).
+
+If Rust gains support for two blanket trait implementations based on disjoint
+traits, these float-only implementations can be uncommented.
+
+impl_unary_operator!(
+    T: PrimitiveFloat,
+    Neg,
+    neg,
+    neg_backend,
+    /// Computes negation for each element of `self`.
+    ///
+    /// This always returns the precise result, simply flipping the sign-bit.
+);
+impl_unary_operator!(
+    T: PrimitiveFloat,
+    Not,
+    not,
+    not_backend,
+    /// Computes bitwise NOT for each element of `self`.
+    ///
+    /// This computes bitwise NOT, even though the `!` operator is not
+    /// implemented for Rust's primitive floats.
+);
+*/
+
 macro_rules! impl_simd_float {
     (
       T = $T:ident,
@@ -23,26 +55,6 @@ macro_rules! impl_simd_float {
       UnsignedT = $UnsignedT:ident,
       UnsignedSimd = $UnsignedSimd:ident,
   ) => {
-        impl_unary_operator!(
-          $Simd,
-          Neg,
-          neg,
-          neg_backend,
-          /// Computes negation for each element of `self`.
-          ///
-          /// This always returns the precise result, simply flipping the sign-bit.
-        );
-        impl_unary_operator!(
-          $Simd,
-          Not,
-          not,
-          not_backend,
-          /// Computes bitwise NOT for each element of `self`.
-          ///
-          /// This computes bitwise NOT, even though the `!` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-
         impl_binary_operator!(
           $T,
           $Simd,
