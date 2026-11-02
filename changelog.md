@@ -28,6 +28,10 @@
 * [#374](https://github.com/Lokathor/wide/pull/374): Add appropriate saturating
   and overflowing variants of integer `neg`, `abs` and shifts
 
+* [#392](https://github.com/Lokathor/wide/pull/392): Add `LANES` and `BITS`
+  constants for SIMD float types (previously they only existed for SIMD integer
+  types)
+
 ### Fixed
 
 * [#354](https://github.com/Lokathor/wide/pull/354): Fix unsound usage of
