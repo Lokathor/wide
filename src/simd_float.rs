@@ -10,16 +10,10 @@ use bytemuck::Zeroable;
 use crate::{
     Select, Simd, SimdElement, SupportedSimd, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4,
     i32x8, i32x16, i64x2, i64x4, i64x8,
-    simd::{MaskOps, SimdAssociatedTypes, SupportSimdOf},
+    primitive_traits::NotPrimitiveFloat,
+    simd::{SimdAssociatedTypes, SupportSimdOf},
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
-
-/// A sealed trait for all primitive floating-point types.
-///
-/// TODO(generics): Once appropriate SIMD functionality becomes generic over
-/// `T: PrimitiveFloat`, update the documentation of this trait to explain its
-/// intended usage.
-pub trait PrimitiveFloat: SimdElement + MaskOps {}
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of floats.
@@ -168,27 +162,6 @@ pub(crate) trait SimdFloatBackend: Sized {
 
     fn tanh_backend(self) -> Self;
 }
-
-/// A marker trait representing `!PrimitiveFloat` used for an internal
-/// type-system hack.
-trait NotPrimitiveFloat {}
-
-macro_rules! impl_primitive_float {
-    ($T:ident) => {
-        impl PrimitiveFloat for $T {}
-    };
-}
-impl_primitive_float!(f32);
-impl_primitive_float!(f64);
-
-impl NotPrimitiveFloat for i8 {}
-impl NotPrimitiveFloat for i16 {}
-impl NotPrimitiveFloat for i32 {}
-impl NotPrimitiveFloat for i64 {}
-impl NotPrimitiveFloat for u8 {}
-impl NotPrimitiveFloat for u16 {}
-impl NotPrimitiveFloat for u32 {}
-impl NotPrimitiveFloat for u64 {}
 
 /// In order for the generic SIMD float API to work, [`SimdFloatBackend`] is
 /// used as a super-trait of [`SupportedSimd`].
