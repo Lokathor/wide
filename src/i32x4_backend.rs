@@ -111,6 +111,7 @@ impl SimdBackend for i32x4 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i32x4 {
+    simd_integer_backend_autofill! { i32, 4 }
     simd_integer_backend_signed_autofill! { i32, 4 }
 
     #[inline]

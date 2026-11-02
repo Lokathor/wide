@@ -159,6 +159,7 @@ impl SimdBackend for i8x16 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i8x16 {
+    simd_integer_backend_autofill! { i8, 16 }
     simd_integer_backend_signed_autofill! { i8, 16 }
 
     #[inline]

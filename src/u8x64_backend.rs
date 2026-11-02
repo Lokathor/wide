@@ -551,6 +551,7 @@ impl SimdBackend for u8x64 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for u8x64 {
+    simd_integer_backend_autofill! { u8, 64 }
     simd_integer_backend_unsigned_autofill! { u8, 64 }
 
     #[inline]

@@ -112,6 +112,7 @@ impl SimdBackend for i64x2 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i64x2 {
+    simd_integer_backend_autofill! { i64, 2 }
     simd_integer_backend_signed_autofill! { i64, 2 }
 
     #[inline]
