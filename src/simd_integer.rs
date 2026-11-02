@@ -795,15 +795,7 @@ macro_rules! impl_simd_integer {
             #[inline]
             #[must_use]
             pub fn saturating_div(self, rhs: Self) -> Self {
-                // TODO(generics): Consider finding a way to remove the use of
-                // the closure which may lead to bad codegen
-
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array(core::array::from_fn(|i| {
-                    self_array[i].saturating_div(rhs_array[i])
-                }))
+                self.saturating_div_backend(rhs)
             }
 
             /// Returns `-self` and whether an overflow occured.
@@ -1369,35 +1361,6 @@ macro_rules! integer {
             /// Computes bitwise XOR for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
         );
-
-        impl<const N: usize> Simd<$T, N>
-        where
-            Simd<$T, N>: SupportedSimd,
-        {
-            #[inline]
-            #[track_caller]
-            fn div_backend(self, rhs: Self) -> Self {
-                // TODO(generics): Consider making this implementation easier to
-                // optimize
-
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array(core::array::from_fn(|i| self_array[i].wrapping_div(rhs_array[i])))
-            }
-
-            #[inline]
-            #[track_caller]
-            fn rem_backend(self, rhs: Self) -> Self {
-                // TODO(generics): Consider making this implementation easier to
-                // optimize
-
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array(core::array::from_fn(|i| self_array[i].wrapping_rem(rhs_array[i])))
-            }
-        }
     };
 }
 integer!(i8);
@@ -1425,6 +1388,12 @@ pub(crate) trait SimdIntegerBackend: Sized {
     fn sub_backend(self, rhs: Self) -> Self;
 
     fn mul_backend(self, rhs: Self) -> Self;
+
+    #[track_caller]
+    fn div_backend(self, rhs: Self) -> Self;
+
+    #[track_caller]
+    fn rem_backend(self, rhs: Self) -> Self;
 
     fn bitand_backend(self, rhs: Self) -> Self;
 
@@ -1484,6 +1453,9 @@ pub(crate) trait SimdIntegerBackend: Sized {
 
     fn saturating_mul_backend(self, rhs: Self) -> Self;
 
+    #[track_caller]
+    fn saturating_div_backend(self, rhs: Self) -> Self;
+
     fn overflowing_neg_backend(self) -> (Self, Self);
 
     fn overflowing_add_backend(self, rhs: Self) -> (Self, Self);
@@ -1519,6 +1491,59 @@ pub(crate) trait SimdIntegerBackend: Sized {
         Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn mul_keep_high_backend(self, rhs: Self) -> Self;
+}
+
+/// Automatically fills [`SimdIntegerBackend`] functions that have the same
+/// implementation for all types.
+///
+/// Even though such functions have the same implementation for all applicable
+/// types, they are implemented via the trait and this macro because they cannot
+/// be implemented in a generic context (e.g., if a function requires a
+/// Rust primitive number API that is not exposed to generic contexts).
+macro_rules! simd_integer_backend_autofill {
+    ($T:ident, $N:literal) => {
+        #[inline]
+        #[track_caller]
+        fn div_backend(self, rhs: Self) -> Self {
+            // TODO(generics): Consider making this implementation easier to
+            // optimize
+
+            let self_array = self.to_array();
+            let rhs_array = rhs.to_array();
+
+            Self::from_array(core::array::from_fn(|i| {
+                self_array[i].wrapping_div(rhs_array[i])
+            }))
+        }
+
+        #[inline]
+        #[track_caller]
+        fn rem_backend(self, rhs: Self) -> Self {
+            // TODO(generics): Consider making this implementation easier to
+            // optimize
+
+            let self_array = self.to_array();
+            let rhs_array = rhs.to_array();
+
+            Self::from_array(core::array::from_fn(|i| {
+                self_array[i].wrapping_rem(rhs_array[i])
+            }))
+        }
+
+        #[inline]
+        #[track_caller]
+        fn saturating_div_backend(self, rhs: Self) -> Self {
+            // TODO(generics): Consider finding a way to remove the use of
+            // the closure which may lead to bad codegen
+
+            let self_array = self.to_array();
+            let rhs_array = rhs.to_array();
+
+            Self::from_array(core::array::from_fn(|i| {
+                self_array[i].saturating_div(rhs_array[i])
+            }))
+        }
+    };
 }
 
 /// Automatically fills SIMD integer backend functions that have the same
@@ -1726,6 +1751,9 @@ where
     fn bitxor_backend(self, _: Self) -> Self {
         unreachable!()
     }
+    fn div_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
     fn max_backend(self, _: Self) -> Self {
         unreachable!()
     }
@@ -1795,7 +1823,13 @@ where
     {
         unreachable!()
     }
+    fn rem_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
     fn saturating_add_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn saturating_div_backend(self, _: Self) -> Self {
         unreachable!()
     }
     fn saturating_mul_backend(self, _: Self) -> Self {

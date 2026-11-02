@@ -450,6 +450,7 @@ impl SimdBackend for u32x16 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for u32x16 {
+    simd_integer_backend_autofill! { u32, 16 }
     simd_integer_backend_unsigned_autofill! { u32, 16 }
 
     #[inline]

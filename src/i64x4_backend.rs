@@ -80,6 +80,7 @@ impl SimdBackend for i64x4 {
 
 safe_target_feature! {
 impl SimdIntegerBackend for i64x4 {
+    simd_integer_backend_autofill! { i64, 4 }
     simd_integer_backend_signed_autofill! { i64, 4 }
 
     #[inline]
