@@ -1,12 +1,7 @@
 //! Defines APIs applicable to SIMD vectors of integers (both signed and
 //! unsigned).
 
-use core::ops::{
-    Add, AddAssign, BitAnd, BitOr, BitXor, Div, Mul, MulAssign, Rem, Shl, ShlAssign, Shr,
-    ShrAssign, Sub,
-};
-
-use bytemuck::Zeroable;
+use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, ShlAssign, Shr, ShrAssign, Sub};
 
 use crate::{
     HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8,
@@ -532,6 +527,36 @@ impl_binary_operator!(
     /// Computes bitwise XOR for each element of `self` and the
     /// scalar `rhs`.
 );
+
+impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+{
+    #[inline]
+    fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ZERO;
+        for val in iter {
+            total += val;
+        }
+        total
+    }
+}
+
+impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+{
+    #[inline]
+    fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ONE;
+        for val in iter {
+            total *= val;
+        }
+        total
+    }
+}
 */
 
 macro_rules! impl_simd_integer {
@@ -543,34 +568,6 @@ macro_rules! impl_simd_integer {
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
     ) => {
-        impl<Rhs> core::iter::Sum<Rhs> for $Simd
-        where
-            $Simd: AddAssign<Rhs>,
-        {
-            #[inline]
-            fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::zeroed();
-                for val in iter {
-                total += val;
-                }
-                total
-            }
-        }
-
-        impl<Rhs> core::iter::Product<Rhs> for $Simd
-        where
-            $Simd: MulAssign<Rhs>,
-        {
-            #[inline]
-            fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::from(1);
-                for val in iter {
-                total *= val;
-                }
-                total
-            }
-        }
-
         macro_rules! impl_formatting_trait {
             ($Trait:path) => {
                 impl $Trait for $Simd {

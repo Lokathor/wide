@@ -1,8 +1,6 @@
 //! Defines APIs applicable to SIMD vectors of floats.
 
-use core::ops::{Add, AddAssign, BitAnd, BitOr, BitXor, Div, Mul, MulAssign, Rem, Sub};
-
-use bytemuck::Zeroable;
+use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Sub};
 
 use crate::{
     Select, Simd, SimdElement, SupportedSimd, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4,
@@ -179,6 +177,42 @@ impl_binary_operator!(
     /// This computes bitwise XOR, even though the `^` operator is not
     /// implemented for Rust's primitive floats.
 );
+
+impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
+where
+    T: PrimitiveFloat,
+    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+{
+    /// Computes the sum of multiple SIMD vectors for each lane.
+    ///
+    /// The order of addition is not specified.
+    #[inline]
+    fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ZERO;
+        for val in iter {
+            total += val;
+        }
+        total
+    }
+}
+
+impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
+where
+    T: PrimitiveFloat,
+    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+{
+    /// Computes the product of multiple SIMD vectors for each lane.
+    ///
+    /// The order of multiplication is not specified.
+    #[inline]
+    fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ONE;
+        for val in iter {
+            total *= val;
+        }
+        total
+    }
+}
 */
 
 macro_rules! impl_simd_float {
@@ -189,40 +223,6 @@ macro_rules! impl_simd_float {
         UnsignedT = $UnsignedT:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
-        impl<Rhs> core::iter::Sum<Rhs> for $Simd
-        where
-            $Simd: AddAssign<Rhs>,
-        {
-            /// Computes the sum of multiple SIMD vectors for each lane.
-            ///
-            /// The order of addition is not specified.
-            #[inline]
-            fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::zeroed();
-                for val in iter {
-                    total += val;
-                }
-                total
-            }
-        }
-
-        impl<Rhs> core::iter::Product<Rhs> for $Simd
-        where
-            $Simd: MulAssign<Rhs>,
-        {
-            /// Computes the product of multiple SIMD vectors for each lane.
-            ///
-            /// The order of multiplication is not specified.
-            #[inline]
-            fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::from(1.0);
-                for val in iter {
-                    total *= val;
-                }
-                total
-            }
-        }
-
         macro_rules! impl_formatting_trait {
             ($Trait:path) => {
                 impl $Trait for $Simd {

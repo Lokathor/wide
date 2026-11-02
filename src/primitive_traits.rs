@@ -77,6 +77,12 @@ pub(crate) trait PrimitiveFloatOrInteger: SimdElement {
     /// [`SimdFloatBackend`](crate::simd_float::SimdFloatBackend) and
     /// [`SimdIntegerBackend`](crate::simd_integer::SimdIntegerBackend).
     const IS_FLOAT: bool;
+
+    /// Numeric `0`.
+    const ZERO: Self;
+
+    /// Numeric `1`.
+    const ONE: Self;
 }
 
 /// A marker trait representing `!PrimitiveFloat` used for an internal
@@ -125,6 +131,10 @@ macro_rules! float {
 
         impl PrimitiveFloatOrInteger for $T {
             const IS_FLOAT: bool = true;
+
+            const ZERO: Self = 0.0;
+
+            const ONE: Self = 1.0;
         }
 
         impl NotPrimitiveInteger for $T {}
@@ -147,6 +157,10 @@ macro_rules! integer {
 
         impl PrimitiveFloatOrInteger for $T {
             const IS_FLOAT: bool = false;
+
+            const ZERO: Self = 0;
+
+            const ONE: Self = 1;
         }
 
         impl NotPrimitiveFloat for $T {}

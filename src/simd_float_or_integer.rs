@@ -296,6 +296,52 @@ impl_binary_operator!(
     /// traits.
 );
 
+impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
+where
+    T: PrimitiveFloatOrInteger,
+    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+{
+    /// Computes the sum of multiple SIMD vectors for each lane.
+    ///
+    /// For floats, the order of addition is not specified.
+    ///
+    /// This is one of multiple trait implementations that should be separate
+    /// for SIMD floats and SIMD integers, but cannot because Rust currently
+    /// does not allow two blanket trait implementations based on disjoint
+    /// traits.
+    #[inline]
+    fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = const { Self::splat(T::ZERO) };
+        for val in iter {
+            total += val;
+        }
+        total
+    }
+}
+
+impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
+where
+    T: PrimitiveFloatOrInteger,
+    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+{
+    /// Computes the product of multiple SIMD vectors for each lane.
+    ///
+    /// For floats, the order of addition is not specified.
+    ///
+    /// This is one of multiple trait implementations that should be separate
+    /// for SIMD floats and SIMD integers, but cannot because Rust currently
+    /// does not allow two blanket trait implementations based on disjoint
+    /// traits.
+    #[inline]
+    fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = const { Self::splat(T::ONE) };
+        for val in iter {
+            total *= val;
+        }
+        total
+    }
+}
+
 /// Implementations of operator traits do not know whether to pick backend
 /// functions from [`SimdFloatBackend`] or [`SimdIntegerBackend`], so these
 /// functions wrap the backend functions, calling the correct one.
