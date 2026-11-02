@@ -163,6 +163,11 @@ macro_rules! impl_unary_operator {
   }
 }
 
+/// Implements a binary operator of `SIMD x SIMD` and `SIMD x T`.
+///
+/// Binary operators are implemented for `Simd x Simd`, `Simd x T` and
+/// `T x Simd`. This macro implements the first two kinds, and
+/// [`impl_binary_operator_for_scalar!`] implements the third one.
 macro_rules! impl_binary_operator {
   (
     $T:ident,
@@ -173,8 +178,7 @@ macro_rules! impl_binary_operator {
     $op_assign:ident,
     $op_backend:ident,
     $(#[$doc:meta])*,
-    $(#[$doc_scalar:meta])*,
-    $(#[$scalar_doc:meta])*
+    $(#[$doc_scalar:meta])*
   ) => {
     impl $Op for $Simd {
       type Output = Self;
@@ -193,16 +197,6 @@ macro_rules! impl_binary_operator {
       #[inline]
       fn $op(self, rhs: $T) -> Self::Output {
         self.$op_backend(Self::splat(rhs))
-      }
-    }
-
-    impl $Op<$Simd> for $T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $Simd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs)
       }
     }
 
@@ -242,16 +236,6 @@ macro_rules! impl_binary_operator {
       }
     }
 
-    impl $Op<&$Simd> for $T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$Simd) -> Self::Output {
-        $Simd::splat(self).$op_backend(*rhs)
-      }
-    }
-
     impl $OpAssign<&Self> for $Simd {
       $(#[$doc])*
       #[inline]
@@ -288,16 +272,6 @@ macro_rules! impl_binary_operator {
       }
     }
 
-    impl $Op<$Simd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $Simd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs)
-      }
-    }
-
     impl $Op<&$Simd> for &$Simd {
       type Output = $Simd;
 
@@ -317,14 +291,81 @@ macro_rules! impl_binary_operator {
         self.$op_backend($Simd::splat(*rhs))
       }
     }
+  }
+}
 
-    impl $Op<&$Simd> for &$T {
-      type Output = $Simd;
+/// Implements a binary operator of `T x Simd` for SIMD vectors of a given `T`
+/// type.
+///
+/// Binary operators are implemented for `Simd x Simd`, `Simd x T` and
+/// `T x Simd`. This macro implements the third kind, and
+/// [`impl_binary_operator!`] implements the first two.
+///
+/// This is separated from the [`impl_binary_operator!`] macro because unlike
+/// for `SIMD x SIMD` and `SIMD x T`, there are limitations for implementing
+/// `T x SIMD` where it's impossible to define a blanket implementation like
+/// `impl<T, const N: usize> Add<Simd<T, N>> for T` because of orphan rules.
+/// Unlike [`impl_binary_operator!`], this macro only accepts one concrete `T`
+/// type.
+macro_rules! impl_binary_operator_for_scalar {
+  (
+    $T:ident,
+    $Op:ident,
+    $op:ident,
+    $OpAssign:ident,
+    $op_assign:ident,
+    $op_backend:ident,
+    $(#[$scalar_doc:meta])*
+  ) => {
+    impl<const N: usize> $Op<Simd<$T, N>> for $T
+    where
+        Simd<$T, N>: SupportedSimd,
+    {
+      type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: &$Simd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(*rhs)
+      fn $op(self, rhs: Simd<$T, N>) -> Self::Output {
+        Simd::<$T, N>::splat(self).$op_backend(rhs)
+      }
+    }
+
+    impl<const N: usize> $Op<&Simd<$T, N>> for $T
+    where
+        Simd<$T, N>: SupportedSimd,
+    {
+      type Output = Simd<$T, N>;
+
+      $(#[$scalar_doc])*
+      #[inline]
+      fn $op(self, rhs: &Simd<$T, N>) -> Self::Output {
+        Simd::<$T, N>::splat(self).$op_backend(*rhs)
+      }
+    }
+
+    impl<const N: usize> $Op<Simd<$T, N>> for &$T
+    where
+        Simd<$T, N>: SupportedSimd,
+    {
+      type Output = Simd<$T, N>;
+
+      $(#[$scalar_doc])*
+      #[inline]
+      fn $op(self, rhs: Simd<$T, N>) -> Self::Output {
+        Simd::<$T, N>::splat(*self).$op_backend(rhs)
+      }
+    }
+
+    impl<const N: usize> $Op<&Simd<$T, N>> for &$T
+    where
+        Simd<$T, N>: SupportedSimd,
+    {
+      type Output = Simd<$T, N>;
+
+      $(#[$scalar_doc])*
+      #[inline]
+      fn $op(self, rhs: &Simd<$T, N>) -> Self::Output {
+        Simd::<$T, N>::splat(*self).$op_backend(*rhs)
       }
     }
   }

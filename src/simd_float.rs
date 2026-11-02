@@ -59,11 +59,6 @@ macro_rules! impl_simd_float {
           /// Computes addition for each element of `self` and the scalar `rhs`.
           ///
           /// This always returns the precise result.
-          ,
-          /// Computes addition for the scalar `self` and each element of `rhs`,
-          /// returning a SIMD vector.
-          ///
-          /// This always returns the precise result.
         );
         impl_binary_operator!(
           $T,
@@ -79,11 +74,6 @@ macro_rules! impl_simd_float {
           /// This always returns the precise result.
           ,
           /// Computes subtraction for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes subtraction for the scalar `self` and each element of `rhs`,
-          /// returning a SIMD vector.
           ///
           /// This always returns the precise result.
         );
@@ -104,11 +94,6 @@ macro_rules! impl_simd_float {
           /// `rhs`.
           ///
           /// This always returns the precise result.
-          ,
-          /// Computes multiplication for the scalar `self` and each element of
-          /// `rhs`, returning a SIMD vector.
-          ///
-          /// This always returns the precise result.
         );
         impl_binary_operator!(
           $T,
@@ -124,11 +109,6 @@ macro_rules! impl_simd_float {
           /// This always returns the precise result.
           ,
           /// Computes division for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes division for the scalar `self` and each element of
-          /// `rhs`, returning a SIMD vector.
           ///
           /// This always returns the precise result.
         );
@@ -149,11 +129,6 @@ macro_rules! impl_simd_float {
           /// `rhs`.
           ///
           /// This always returns the precise result.
-          ,
-          /// Computes the remainder for the scalar `self` and each element of
-          /// `rhs`, returning a SIMD vector.
-          ///
-          /// This always returns the precise result.
         );
         impl_binary_operator!(
           $T,
@@ -170,12 +145,6 @@ macro_rules! impl_simd_float {
           /// implemented for Rust's primitive floats.
           ,
           /// Computes bitwise AND for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise AND, even though the `&` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise AND for the scalar `self` and each element of `rhs`,
-          /// returning a SIMD vector.
           ///
           /// This computes bitwise AND, even though the `&` operator is not
           /// implemented for Rust's primitive floats.
@@ -198,12 +167,6 @@ macro_rules! impl_simd_float {
           ///
           /// This computes bitwise OR, even though the `|` operator is not
           /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise OR for the scalar `self` and each element of `rhs`,
-          /// returning a SIMD vector.
-          ///
-          /// This computes bitwise OR, even though the `|` operator is not
-          /// implemented for Rust's primitive floats.
         );
         impl_binary_operator!(
           $T,
@@ -220,12 +183,6 @@ macro_rules! impl_simd_float {
           /// implemented for Rust's primitive floats.
           ,
           /// Computes bitwise XOR for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise XOR, even though the `^` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise XOR for the scalar `self` and each element of `rhs`,
-          /// returning a SIMD vector.
           ///
           /// This computes bitwise XOR, even though the `^` operator is not
           /// implemented for Rust's primitive floats.
@@ -1578,6 +1535,112 @@ impl_simd_float!(
     UnsignedT = u64,
     UnsignedSimd = u64x8,
 );
+
+macro_rules! float {
+    ($T:ident) => {
+        impl_binary_operator_for_scalar!(
+            $T,
+            Add,
+            add,
+            AddAssign,
+            add_assign,
+            add_backend,
+            /// Computes addition for the scalar `self` and each element of `rhs`,
+            /// returning a SIMD vector.
+            ///
+            /// This always returns the precise result.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Sub,
+            sub,
+            SubAssign,
+            sub_assign,
+            sub_backend,
+            /// Computes subtraction for the scalar `self` and each element of `rhs`,
+            /// returning a SIMD vector.
+            ///
+            /// This always returns the precise result.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Mul,
+            mul,
+            MulAssign,
+            mul_assign,
+            mul_backend,
+            /// Computes multiplication for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
+            ///
+            /// This always returns the precise result.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Div,
+            div,
+            DivAssign,
+            div_assign,
+            div_backend,
+            /// Computes division for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
+            ///
+            /// This always returns the precise result.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            Rem,
+            rem,
+            RemAssign,
+            rem_assign,
+            rem_backend,
+            /// Computes the remainder for the scalar `self` and each element of
+            /// `rhs`, returning a SIMD vector.
+            ///
+            /// This always returns the precise result.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            BitAnd,
+            bitand,
+            BitAndAssign,
+            bitand_assign,
+            bitand_backend,
+            /// Computes bitwise AND for the scalar `self` and each element of `rhs`,
+            /// returning a SIMD vector.
+            ///
+            /// This computes bitwise AND, even though the `&` operator is not
+            /// implemented for Rust's primitive floats.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            BitOr,
+            bitor,
+            BitOrAssign,
+            bitor_assign,
+            bitor_backend,
+            /// Computes bitwise OR for the scalar `self` and each element of `rhs`,
+            /// returning a SIMD vector.
+            ///
+            /// This computes bitwise OR, even though the `|` operator is not
+            /// implemented for Rust's primitive floats.
+        );
+        impl_binary_operator_for_scalar!(
+            $T,
+            BitXor,
+            bitxor,
+            BitXorAssign,
+            bitxor_assign,
+            bitxor_backend,
+            /// Computes bitwise XOR for the scalar `self` and each element of `rhs`,
+            /// returning a SIMD vector.
+            ///
+            /// This computes bitwise XOR, even though the `^` operator is not
+            /// implemented for Rust's primitive floats.
+        );
+    };
+}
+float!(f32);
+float!(f64);
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of floats.
