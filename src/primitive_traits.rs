@@ -15,7 +15,10 @@ use crate::{MaskOps, SimdElement};
 /// `T: PrimitiveFloat`, update the documentation of this trait to explain its
 /// intended usage.
 #[expect(private_bounds)]
-pub trait PrimitiveFloat: SimdElement + MaskOps + FloatIntegerDisjointMarker<Marker = f32> {}
+pub trait PrimitiveFloat:
+    SimdElement + MaskOps + PrimitiveFloatOrInteger + FloatIntegerDisjointMarker<Marker = f32>
+{
+}
 
 /// A sealed trait for all primitive integer types.
 ///
@@ -24,7 +27,7 @@ pub trait PrimitiveFloat: SimdElement + MaskOps + FloatIntegerDisjointMarker<Mar
 /// intended usage.
 #[expect(private_bounds)]
 pub trait PrimitiveInteger:
-    SimdElement + MaskOps + FloatIntegerDisjointMarker<Marker = u32>
+    SimdElement + MaskOps + PrimitiveFloatOrInteger + FloatIntegerDisjointMarker<Marker = u32>
 {
 }
 
@@ -57,6 +60,37 @@ pub trait PrimitiveSigned:
 pub trait PrimitiveUnsigned:
     PrimitiveInteger<Unsigned = Self> + SignedUnsignedDisjointMarker<Marker = u32>
 {
+}
+
+/// An internal trait that represents `PrimitiveFloat OR PrimitiveInteger`.
+///
+/// This is used to implement operator traits, that due to Rust language
+/// limitations (not allowing two disjoint blanket implementations), are
+/// implemented with one generic implementation for [`PrimitiveFloatOrInteger`]
+/// rather than two separate implementations for [`PrimitiveFloat`] and
+/// [`PrimitiveInteger`].
+pub(crate) trait PrimitiveFloatOrInteger: SimdElement {
+    /// `true` for [`PrimitiveFloat`] types and `false` for [`PrimitiveInteger`]
+    /// types.
+    ///
+    /// This is used to select between the backend functions of
+    /// [`SimdFloatBackend`](crate::simd_float::SimdFloatBackend) and
+    /// [`SimdIntegerBackend`](crate::simd_integer::SimdIntegerBackend).
+    const IS_FLOAT: bool;
+
+    /// Numeric `0`.
+    const ZERO: Self;
+
+    /// Numeric `1`.
+    const ONE: Self;
+
+    /// Converts floats to unsigned integers via `to_bits` and keeps integers
+    /// unchanged (returns the original types).
+    ///
+    /// See `impl_formatting_traits` in `simd_float_or_integer.rs`.
+    fn fmt_cast(
+        self,
+    ) -> impl core::fmt::Binary + core::fmt::LowerHex + core::fmt::Octal + core::fmt::UpperHex;
 }
 
 /// A marker trait representing `!PrimitiveFloat` used for an internal
@@ -103,6 +137,21 @@ macro_rules! float {
     ($T:ident) => {
         impl PrimitiveFloat for $T {}
 
+        impl PrimitiveFloatOrInteger for $T {
+            const IS_FLOAT: bool = true;
+
+            const ZERO: Self = 0.0;
+
+            const ONE: Self = 1.0;
+
+            #[inline]
+            fn fmt_cast(
+                self,
+            ) -> impl core::fmt::Binary + core::fmt::LowerHex + core::fmt::Octal + core::fmt::UpperHex {
+                self.to_bits()
+            }
+        }
+
         impl NotPrimitiveInteger for $T {}
 
         impl NotPrimitiveSigned for $T {}
@@ -120,6 +169,21 @@ float!(f64);
 macro_rules! integer {
     ($T:ident) => {
         impl PrimitiveInteger for $T {}
+
+        impl PrimitiveFloatOrInteger for $T {
+            const IS_FLOAT: bool = false;
+
+            const ZERO: Self = 0;
+
+            const ONE: Self = 1;
+
+            #[inline]
+            fn fmt_cast(
+                self,
+            ) -> impl core::fmt::Binary + core::fmt::LowerHex + core::fmt::Octal + core::fmt::UpperHex {
+                self
+            }
+        }
 
         impl NotPrimitiveFloat for $T {}
 

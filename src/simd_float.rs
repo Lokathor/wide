@@ -1,11 +1,6 @@
 //! Defines APIs applicable to SIMD vectors of floats.
 
-use core::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
-};
-
-use bytemuck::Zeroable;
+use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Sub};
 
 use crate::{
     Select, Simd, SimdElement, SupportedSimd, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4,
@@ -15,235 +10,245 @@ use crate::{
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
+/*
+These commented-out lines contain implementations of traits that should have
+separate implementations for SIMD integers and SIMD floats.
+
+Rust currently does not allow two blanket trait implementations based on
+disjoint traits. Because of this, these traits have one shared implementation
+for both floats and integers (see `simd_float_or_integer.rs`).
+
+If Rust gains support for two blanket trait implementations based on disjoint
+traits, these float-only implementations can be uncommented.
+
+impl_unary_operator!(
+    T: PrimitiveFloat,
+    Neg,
+    neg,
+    neg_backend,
+    /// Computes negation for each element of `self`.
+    ///
+    /// This always returns the precise result, simply flipping the sign-bit.
+);
+impl_unary_operator!(
+    T: PrimitiveFloat,
+    Not,
+    not,
+    not_backend,
+    /// Computes bitwise NOT for each element of `self`.
+    ///
+    /// This computes bitwise NOT, even though the `!` operator is not
+    /// implemented for Rust's primitive floats.
+);
+
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Add,
+    add,
+    AddAssign,
+    add_assign,
+    add_backend,
+    /// Computes addition for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes addition for each element of `self` and the scalar `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Sub,
+    sub,
+    SubAssign,
+    sub_assign,
+    sub_backend,
+    /// Computes subtraction for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes subtraction for each element of `self` and the scalar `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Mul,
+    mul,
+    MulAssign,
+    mul_assign,
+    mul_backend,
+    /// Computes multiplication for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes multiplication for each element of `self` and the scalar
+    /// `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Div,
+    div,
+    DivAssign,
+    div_assign,
+    div_backend,
+    /// Computes division for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes division for each element of `self` and the scalar `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    Rem,
+    rem,
+    RemAssign,
+    rem_assign,
+    rem_backend,
+    /// Computes the remainder for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ///
+    /// This always returns the precise result.
+    ,
+    /// Computes the remainder for each element of `self` and the scalar
+    /// `rhs`.
+    ///
+    /// This always returns the precise result.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    BitAnd,
+    bitand,
+    BitAndAssign,
+    bitand_assign,
+    bitand_backend,
+    /// Computes bitwise AND for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This computes bitwise AND, even though the `&` operator is not
+    /// implemented for Rust's primitive floats.
+    ,
+    /// Computes bitwise AND for each element of `self` and the scalar `rhs`.
+    ///
+    /// This computes bitwise AND, even though the `&` operator is not
+    /// implemented for Rust's primitive floats.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    BitOr,
+    bitor,
+    BitOrAssign,
+    bitor_assign,
+    bitor_backend,
+    /// Computes bitwise OR for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This computes bitwise OR, even though the `|` operator is not
+    /// implemented for Rust's primitive floats.
+    ,
+    /// Computes bitwise OR for each element of `self` and the scalar `rhs`.
+    ///
+    /// This computes bitwise OR, even though the `|` operator is not
+    /// implemented for Rust's primitive floats.
+);
+impl_binary_operator!(
+    T: PrimitiveFloat,
+    BitXor,
+    bitxor,
+    BitXorAssign,
+    bitxor_assign,
+    bitxor_backend,
+    /// Computes bitwise XOR for each element of `self` and the corresponding
+    /// element of `rhs`.
+    ///
+    /// This computes bitwise XOR, even though the `^` operator is not
+    /// implemented for Rust's primitive floats.
+    ,
+    /// Computes bitwise XOR for each element of `self` and the scalar `rhs`.
+    ///
+    /// This computes bitwise XOR, even though the `^` operator is not
+    /// implemented for Rust's primitive floats.
+);
+
+impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
+where
+    T: PrimitiveFloat,
+    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+{
+    /// Computes the sum of multiple SIMD vectors for each lane.
+    ///
+    /// The order of addition is not specified.
+    #[inline]
+    fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ZERO;
+        for val in iter {
+            total += val;
+        }
+        total
+    }
+}
+
+impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
+where
+    T: PrimitiveFloat,
+    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+{
+    /// Computes the product of multiple SIMD vectors for each lane.
+    ///
+    /// The order of multiplication is not specified.
+    #[inline]
+    fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ONE;
+        for val in iter {
+            total *= val;
+        }
+        total
+    }
+}
+
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: PrimitiveFloat,
+            Simd<T, N>: SupportedSimd,
+        {
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_bits().to_array().iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    <T::Unsigned as $Trait>::fmt(x, f)?;
+                }
+                write!(f, ")")
+            }
+        }
+    };
+}
+impl_formatting_trait!(core::fmt::Binary);
+impl_formatting_trait!(core::fmt::LowerHex);
+impl_formatting_trait!(core::fmt::Octal);
+impl_formatting_trait!(core::fmt::UpperHex);
+*/
+
 macro_rules! impl_simd_float {
     (
-      T = $T:ident,
-      Simd = $Simd:ident,
-      SignedSimd = $SignedSimd:ident,
-      UnsignedT = $UnsignedT:ident,
-      UnsignedSimd = $UnsignedSimd:ident,
-  ) => {
-        impl_unary_operator!(
-          $Simd,
-          Neg,
-          neg,
-          neg_backend,
-          /// Computes negation for each element of `self`.
-          ///
-          /// This always returns the precise result, simply flipping the sign-bit.
-        );
-        impl_unary_operator!(
-          $Simd,
-          Not,
-          not,
-          not_backend,
-          /// Computes bitwise NOT for each element of `self`.
-          ///
-          /// This computes bitwise NOT, even though the `!` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Add,
-          add,
-          AddAssign,
-          add_assign,
-          add_backend,
-          /// Computes addition for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes addition for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Sub,
-          sub,
-          SubAssign,
-          sub_assign,
-          sub_backend,
-          /// Computes subtraction for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes subtraction for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Mul,
-          mul,
-          MulAssign,
-          mul_assign,
-          mul_backend,
-          /// Computes multiplication for each element of `self` and the
-          /// corresponding element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes multiplication for each element of `self` and the scalar
-          /// `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Div,
-          div,
-          DivAssign,
-          div_assign,
-          div_backend,
-          /// Computes division for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes division for each element of `self` and the scalar `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          Rem,
-          rem,
-          RemAssign,
-          rem_assign,
-          rem_backend,
-          /// Computes the remainder for each element of `self` and the
-          /// corresponding element of `rhs`.
-          ///
-          /// This always returns the precise result.
-          ,
-          /// Computes the remainder for each element of `self` and the scalar
-          /// `rhs`.
-          ///
-          /// This always returns the precise result.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          BitAnd,
-          bitand,
-          BitAndAssign,
-          bitand_assign,
-          bitand_backend,
-          /// Computes bitwise AND for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This computes bitwise AND, even though the `&` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise AND for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise AND, even though the `&` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          BitOr,
-          bitor,
-          BitOrAssign,
-          bitor_assign,
-          bitor_backend,
-          /// Computes bitwise OR for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This computes bitwise OR, even though the `|` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise OR for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise OR, even though the `|` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-        impl_binary_operator!(
-          $T,
-          $Simd,
-          BitXor,
-          bitxor,
-          BitXorAssign,
-          bitxor_assign,
-          bitxor_backend,
-          /// Computes bitwise XOR for each element of `self` and the corresponding
-          /// element of `rhs`.
-          ///
-          /// This computes bitwise XOR, even though the `^` operator is not
-          /// implemented for Rust's primitive floats.
-          ,
-          /// Computes bitwise XOR for each element of `self` and the scalar `rhs`.
-          ///
-          /// This computes bitwise XOR, even though the `^` operator is not
-          /// implemented for Rust's primitive floats.
-        );
-
-        impl<Rhs> core::iter::Sum<Rhs> for $Simd
-        where
-            $Simd: AddAssign<Rhs>,
-        {
-            /// Computes the sum of multiple SIMD vectors for each lane.
-            ///
-            /// The order of addition is not specified.
-            #[inline]
-            fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::zeroed();
-                for val in iter {
-                    total += val;
-                }
-                total
-            }
-        }
-
-        impl<Rhs> core::iter::Product<Rhs> for $Simd
-        where
-            $Simd: MulAssign<Rhs>,
-        {
-            /// Computes the product of multiple SIMD vectors for each lane.
-            ///
-            /// The order of multiplication is not specified.
-            #[inline]
-            fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::from(1.0);
-                for val in iter {
-                    total *= val;
-                }
-                total
-            }
-        }
-
-        macro_rules! impl_formatting_trait {
-            ($Trait:path) => {
-                impl $Trait for $Simd {
-                    #[allow(clippy::missing_inline_in_public_items)]
-                    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                        write!(f, "(")?;
-                        for (i, x) in self.to_array().iter().enumerate() {
-                            if i > 0 {
-                                write!(f, ", ")?;
-                            }
-                            <$UnsignedT as $Trait>::fmt(&x.to_bits(), f)?;
-                        }
-                        write!(f, ")")
-                    }
-                }
-            };
-        }
-        impl_formatting_trait!(core::fmt::Binary);
-        impl_formatting_trait!(core::fmt::LowerHex);
-        impl_formatting_trait!(core::fmt::Octal);
-        impl_formatting_trait!(core::fmt::UpperHex);
-
+        T = $T:ident,
+        Simd = $Simd:ident,
+        SignedSimd = $SignedSimd:ident,
+        UnsignedT = $UnsignedT:ident,
+        UnsignedSimd = $UnsignedSimd:ident,
+    ) => {
         impl Select<$Simd> for $UnsignedSimd {
             #[inline]
             fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {

@@ -1,12 +1,7 @@
 //! Defines APIs applicable to SIMD vectors of integers (both signed and
 //! unsigned).
 
-use core::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
-};
-
-use bytemuck::Zeroable;
+use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, ShlAssign, Shr, ShrAssign, Sub};
 
 use crate::{
     HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8,
@@ -374,6 +369,222 @@ impl_shift_operator!(
     /// [`unbounded_shr`]: crate::Simd::unbounded_shr
 );
 
+/*
+These commented-out lines contain implementations of traits that should have
+separate implementations for SIMD integers and SIMD floats.
+
+Rust currently does not allow two blanket trait implementations based on
+disjoint traits. Because of this, these traits have one shared implementation
+for both floats and integers (see `simd_float_or_integer.rs`).
+
+If Rust gains support for two blanket trait implementations based on disjoint
+traits, these integer-only implementations can be uncommented.
+
+impl_unary_operator!(
+    T: PrimitiveInteger,
+    Neg,
+    neg,
+    neg_backend,
+    /// Computes wrapping negation for each element of `self`.
+);
+impl_unary_operator!(
+    T: PrimitiveInteger,
+    Not,
+    not,
+    not_backend,
+    /// Computes bitwise NOT for each element of `self`.
+);
+
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Add,
+    add,
+    AddAssign,
+    add_assign,
+    add_backend,
+    /// Computes wrapping addition for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes wrapping addition for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Sub,
+    sub,
+    SubAssign,
+    sub_assign,
+    sub_backend,
+    /// Computes wrapping subtraction for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes wrapping subtraction for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Mul,
+    mul,
+    MulAssign,
+    mul_assign,
+    mul_backend,
+    /// Computes wrapping multiplication for each element of `self` and
+    /// the corresponding element of `rhs`.
+    ,
+    /// Computes wrapping multiplication for each element of `self` and
+    /// the scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Div,
+    div,
+    DivAssign,
+    div_assign,
+    div_backend,
+    /// Computes wrapping division for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any element of `rhs` is zero.
+    ,
+    /// Computes wrapping division for each element of `self` and the
+    /// scalar `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs` is zero.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Rem,
+    rem,
+    RemAssign,
+    rem_assign,
+    rem_backend,
+    /// Computes the wrapping remainder of each element of `self`
+    /// divided by the corresponding element of `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any element of `rhs` is zero.
+    ,
+    /// Computes the wrapping remainder of each element of `self`
+    /// divided by the scalar `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs` is zero.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitAnd,
+    bitand,
+    BitAndAssign,
+    bitand_assign,
+    bitand_backend,
+    /// Computes bitwise AND for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise AND for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitOr,
+    bitor,
+    BitOrAssign,
+    bitor_assign,
+    bitor_backend,
+    /// Computes bitwise OR for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise OR for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitXor,
+    bitxor,
+    BitXorAssign,
+    bitxor_assign,
+    bitxor_backend,
+    /// Computes bitwise XOR for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise XOR for each element of `self` and the
+    /// scalar `rhs`.
+);
+
+impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+{
+    #[inline]
+    fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ZERO;
+        for val in iter {
+            total += val;
+        }
+        total
+    }
+}
+
+impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+{
+    #[inline]
+    fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ONE;
+        for val in iter {
+            total *= val;
+        }
+        total
+    }
+}
+
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: PrimitiveInteger,
+            Simd<T, N>: SupportedSimd,
+        {
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_array().iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    <T as $Trait>::fmt(x, f)?;
+                }
+                write!(f, ")")
+            }
+        }
+    };
+}
+impl_formatting_trait!(core::fmt::Binary);
+impl_formatting_trait!(core::fmt::LowerHex);
+impl_formatting_trait!(core::fmt::Octal);
+impl_formatting_trait!(core::fmt::UpperHex);
+*/
+
 macro_rules! impl_simd_integer {
     (
         T = $T:ident,
@@ -383,212 +594,6 @@ macro_rules! impl_simd_integer {
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
     ) => {
-        impl_unary_operator!(
-            $Simd,
-            Neg,
-            neg,
-            neg_backend,
-            /// Computes wrapping negation for each element of `self`.
-        );
-        impl_unary_operator!(
-            $Simd,
-            Not,
-            not,
-            not_backend,
-            /// Computes bitwise NOT for each element of `self`.
-        );
-
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Add,
-            add,
-            AddAssign,
-            add_assign,
-            add_backend,
-            /// Computes wrapping addition for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes wrapping addition for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Sub,
-            sub,
-            SubAssign,
-            sub_assign,
-            sub_backend,
-            /// Computes wrapping subtraction for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes wrapping subtraction for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Mul,
-            mul,
-            MulAssign,
-            mul_assign,
-            mul_backend,
-            /// Computes wrapping multiplication for each element of `self` and
-            /// the corresponding element of `rhs`.
-            ,
-            /// Computes wrapping multiplication for each element of `self` and
-            /// the scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Div,
-            div,
-            DivAssign,
-            div_assign,
-            div_backend,
-            /// Computes wrapping division for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
-            ,
-            /// Computes wrapping division for each element of `self` and the
-            /// scalar `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if `rhs` is zero.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            Rem,
-            rem,
-            RemAssign,
-            rem_assign,
-            rem_backend,
-            /// Computes the wrapping remainder of each element of `self`
-            /// divided by the corresponding element of `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
-            ,
-            /// Computes the wrapping remainder of each element of `self`
-            /// divided by the scalar `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if `rhs` is zero.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            BitAnd,
-            bitand,
-            BitAndAssign,
-            bitand_assign,
-            bitand_backend,
-            /// Computes bitwise AND for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise AND for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            BitOr,
-            bitor,
-            BitOrAssign,
-            bitor_assign,
-            bitor_backend,
-            /// Computes bitwise OR for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise OR for each element of `self` and the
-            /// scalar `rhs`.
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
-            BitXor,
-            bitxor,
-            BitXorAssign,
-            bitxor_assign,
-            bitxor_backend,
-            /// Computes bitwise XOR for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise XOR for each element of `self` and the
-            /// scalar `rhs`.
-        );
-
-        impl<Rhs> core::iter::Sum<Rhs> for $Simd
-        where
-            $Simd: AddAssign<Rhs>,
-        {
-            #[inline]
-            fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::zeroed();
-                for val in iter {
-                total += val;
-                }
-                total
-            }
-        }
-
-        impl<Rhs> core::iter::Product<Rhs> for $Simd
-        where
-            $Simd: MulAssign<Rhs>,
-        {
-            #[inline]
-            fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::from(1);
-                for val in iter {
-                total *= val;
-                }
-                total
-            }
-        }
-
-        macro_rules! impl_formatting_trait {
-            ($Trait:path) => {
-                impl $Trait for $Simd {
-                    #[allow(clippy::missing_inline_in_public_items)]
-                    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                        write!(f, "(")?;
-                        for (i, x) in self.to_array().iter().enumerate() {
-                            if i > 0 {
-                                write!(f, ", ")?;
-                            }
-                            <$T as $Trait>::fmt(x, f)?;
-                        }
-                        write!(f, ")")
-                    }
-                }
-            }
-        }
-        impl_formatting_trait!(core::fmt::Binary);
-        impl_formatting_trait!(core::fmt::LowerHex);
-        impl_formatting_trait!(core::fmt::Octal);
-        impl_formatting_trait!(core::fmt::UpperHex);
-
         /// The following functionality exists for all SIMD vectors of integers.
         impl $Simd {
             /// A SIMD vector with all elements set to `1`.
