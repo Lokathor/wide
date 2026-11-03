@@ -675,6 +675,251 @@ macro_rules! impl_simd_integer {
                 self.reduce_min_backend()
             }
 
+            /// Creates a SIMD vector from a native-endian byte array.
+            ///
+            /// The bytes are interpreted as the raw memory representation of the
+            /// vector. This is equivalent to the `from_ne_bytes` functions on
+            /// primitive integer types, but operates on the entire vector at once.
+            ///
+            /// This is the inverse of [`to_ne_bytes`].
+            ///
+            /// [`to_ne_bytes`]: Self::to_ne_bytes
+            #[inline]
+            #[must_use]
+            pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
+                // SAFETY: `$Simd` accepts all bit-patterns and only contains
+                // initialized memory, and the byte array has the same size.
+                unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
+            }
+
+            /// Returns the raw memory representation of `self` as a native-endian
+            /// byte array.
+            ///
+            /// This is the inverse of [`from_ne_bytes`].
+            ///
+            /// [`from_ne_bytes`]: Self::from_ne_bytes
+            #[inline]
+            #[must_use]
+            pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
+                // SAFETY: `$Simd` accepts all bit-patterns and only contains
+                // initialized memory, and the byte array has the same size.
+                unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
+            }
+
+            /// Bitwise selection.
+            ///
+            /// For each bit of `self`:
+            ///
+            /// - If the bit is one, return the corresponding bit of `if_one`
+            /// - If the bit is zero, return the corresponding bit of `if_zero`
+            ///
+            /// If you know `self` is a [mask], meaning each element is either
+            /// all zeros or all ones, consider using [`select`] which is
+            /// faster.
+            ///
+            /// [mask]: crate#masks
+            /// [`select`]: Self::select
+            #[inline]
+            #[must_use]
+            pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+                self.bitselect_backend(if_one, if_zero)
+            }
+        }
+    };
+}
+impl_simd_integer!(
+    T = i8,
+    N = 16,
+    Simd = i8x16,
+    UnsignedSimd = u8x16,
+    SignedSimd = i8x16,
+    WiderSimd = { i16x16 },
+);
+impl_simd_integer!(
+    T = i8,
+    N = 32,
+    Simd = i8x32,
+    UnsignedSimd = u8x32,
+    SignedSimd = i8x32,
+    WiderSimd = { i16x32 },
+);
+impl_simd_integer!(
+    T = i8,
+    N = 64,
+    Simd = i8x64,
+    UnsignedSimd = u8x64,
+    SignedSimd = i8x64,
+    WiderSimd = { /*i16x64*/ },
+);
+impl_simd_integer!(
+    T = i16,
+    N = 8,
+    Simd = i16x8,
+    UnsignedSimd = u16x8,
+    SignedSimd = i16x8,
+    WiderSimd = { i32x8 },
+);
+impl_simd_integer!(
+    T = i16,
+    N = 16,
+    Simd = i16x16,
+    UnsignedSimd = u16x16,
+    SignedSimd = i16x16,
+    WiderSimd = { i32x16 },
+);
+impl_simd_integer!(
+    T = i16,
+    N = 32,
+    Simd = i16x32,
+    UnsignedSimd = u16x32,
+    SignedSimd = i16x32,
+    WiderSimd = { /*i32x32*/ },
+);
+impl_simd_integer!(
+    T = i32,
+    N = 4,
+    Simd = i32x4,
+    UnsignedSimd = u32x4,
+    SignedSimd = i32x4,
+    WiderSimd = { i64x4 },
+);
+impl_simd_integer!(
+    T = i32,
+    N = 8,
+    Simd = i32x8,
+    UnsignedSimd = u32x8,
+    SignedSimd = i32x8,
+    WiderSimd = { i64x8 },
+);
+impl_simd_integer!(
+    T = i32,
+    N = 16,
+    Simd = i32x16,
+    UnsignedSimd = u32x16,
+    SignedSimd = i32x16,
+    WiderSimd = { /*i64x16*/ },
+);
+impl_simd_integer!(
+    T = i64,
+    N = 2,
+    Simd = i64x2,
+    UnsignedSimd = u64x2,
+    SignedSimd = i64x2,
+    WiderSimd = { /*i128x2*/ },
+);
+impl_simd_integer!(
+    T = i64,
+    N = 4,
+    Simd = i64x4,
+    UnsignedSimd = u64x4,
+    SignedSimd = i64x4,
+    WiderSimd = { /*i128x4*/ },
+);
+impl_simd_integer!(
+    T = i64,
+    N = 8,
+    Simd = i64x8,
+    UnsignedSimd = u64x8,
+    SignedSimd = i64x8,
+    WiderSimd = { /*i128x8*/ },
+);
+impl_simd_integer!(
+    T = u8,
+    N = 16,
+    Simd = u8x16,
+    UnsignedSimd = u8x16,
+    SignedSimd = i8x16,
+    WiderSimd = { u16x16 },
+);
+impl_simd_integer!(
+    T = u8,
+    N = 32,
+    Simd = u8x32,
+    UnsignedSimd = u8x32,
+    SignedSimd = i8x32,
+    WiderSimd = { u16x32 },
+);
+impl_simd_integer!(
+    T = u8,
+    N = 64,
+    Simd = u8x64,
+    UnsignedSimd = u8x64,
+    SignedSimd = i8x64,
+    WiderSimd = { /*u16x64*/ },
+);
+impl_simd_integer!(
+    T = u16,
+    N = 8,
+    Simd = u16x8,
+    UnsignedSimd = u16x8,
+    SignedSimd = i16x8,
+    WiderSimd = { u32x8 },
+);
+impl_simd_integer!(
+    T = u16,
+    N = 16,
+    Simd = u16x16,
+    UnsignedSimd = u16x16,
+    SignedSimd = i16x16,
+    WiderSimd = { u32x16 },
+);
+impl_simd_integer!(
+    T = u16,
+    N = 32,
+    Simd = u16x32,
+    UnsignedSimd = u16x32,
+    SignedSimd = i16x32,
+    WiderSimd = { /*u32x32*/ },
+);
+impl_simd_integer!(
+    T = u32,
+    N = 4,
+    Simd = u32x4,
+    UnsignedSimd = u32x4,
+    SignedSimd = i32x4,
+    WiderSimd = { u64x4 },
+);
+impl_simd_integer!(
+    T = u32,
+    N = 8,
+    Simd = u32x8,
+    UnsignedSimd = u32x8,
+    SignedSimd = i32x8,
+    WiderSimd = { u64x8 },
+);
+impl_simd_integer!(
+    T = u32,
+    N = 16,
+    Simd = u32x16,
+    UnsignedSimd = u32x16,
+    SignedSimd = i32x16,
+    WiderSimd = { /*u64x16*/ },
+);
+impl_simd_integer!(
+    T = u64,
+    N = 2,
+    Simd = u64x2,
+    UnsignedSimd = u64x2,
+    SignedSimd = i64x2,
+    WiderSimd = { /*u128x2*/ },
+);
+impl_simd_integer!(
+    T = u64,
+    N = 4,
+    Simd = u64x4,
+    UnsignedSimd = u64x4,
+    SignedSimd = i64x4,
+    WiderSimd = { /*u128x4*/ },
+);
+impl_simd_integer!(
+    T = u64,
+    N = 8,
+    Simd = u64x8,
+    UnsignedSimd = u64x8,
+    SignedSimd = i64x8,
+    WiderSimd = { /*u128x8*/ },
+);
+
             /// Shifts left each element of `self` by the corresponding element
             /// of `rhs`, without bounding `rhs`.
             ///
@@ -1024,251 +1269,6 @@ macro_rules! impl_simd_integer {
             pub fn mul_keep_high(self, rhs: Self) -> Self {
                 self.mul_keep_high_backend(rhs)
             }
-
-            /// Creates a SIMD vector from a native-endian byte array.
-            ///
-            /// The bytes are interpreted as the raw memory representation of the
-            /// vector. This is equivalent to the `from_ne_bytes` functions on
-            /// primitive integer types, but operates on the entire vector at once.
-            ///
-            /// This is the inverse of [`to_ne_bytes`].
-            ///
-            /// [`to_ne_bytes`]: Self::to_ne_bytes
-            #[inline]
-            #[must_use]
-            pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
-                // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
-            }
-
-            /// Returns the raw memory representation of `self` as a native-endian
-            /// byte array.
-            ///
-            /// This is the inverse of [`from_ne_bytes`].
-            ///
-            /// [`from_ne_bytes`]: Self::from_ne_bytes
-            #[inline]
-            #[must_use]
-            pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
-                // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
-            }
-
-            /// Bitwise selection.
-            ///
-            /// For each bit of `self`:
-            ///
-            /// - If the bit is one, return the corresponding bit of `if_one`
-            /// - If the bit is zero, return the corresponding bit of `if_zero`
-            ///
-            /// If you know `self` is a [mask], meaning each element is either
-            /// all zeros or all ones, consider using [`select`] which is
-            /// faster.
-            ///
-            /// [mask]: crate#masks
-            /// [`select`]: Self::select
-            #[inline]
-            #[must_use]
-            pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-                self.bitselect_backend(if_one, if_zero)
-            }
-        }
-    };
-}
-impl_simd_integer!(
-    T = i8,
-    N = 16,
-    Simd = i8x16,
-    UnsignedSimd = u8x16,
-    SignedSimd = i8x16,
-    WiderSimd = { i16x16 },
-);
-impl_simd_integer!(
-    T = i8,
-    N = 32,
-    Simd = i8x32,
-    UnsignedSimd = u8x32,
-    SignedSimd = i8x32,
-    WiderSimd = { i16x32 },
-);
-impl_simd_integer!(
-    T = i8,
-    N = 64,
-    Simd = i8x64,
-    UnsignedSimd = u8x64,
-    SignedSimd = i8x64,
-    WiderSimd = { /*i16x64*/ },
-);
-impl_simd_integer!(
-    T = i16,
-    N = 8,
-    Simd = i16x8,
-    UnsignedSimd = u16x8,
-    SignedSimd = i16x8,
-    WiderSimd = { i32x8 },
-);
-impl_simd_integer!(
-    T = i16,
-    N = 16,
-    Simd = i16x16,
-    UnsignedSimd = u16x16,
-    SignedSimd = i16x16,
-    WiderSimd = { i32x16 },
-);
-impl_simd_integer!(
-    T = i16,
-    N = 32,
-    Simd = i16x32,
-    UnsignedSimd = u16x32,
-    SignedSimd = i16x32,
-    WiderSimd = { /*i32x32*/ },
-);
-impl_simd_integer!(
-    T = i32,
-    N = 4,
-    Simd = i32x4,
-    UnsignedSimd = u32x4,
-    SignedSimd = i32x4,
-    WiderSimd = { i64x4 },
-);
-impl_simd_integer!(
-    T = i32,
-    N = 8,
-    Simd = i32x8,
-    UnsignedSimd = u32x8,
-    SignedSimd = i32x8,
-    WiderSimd = { i64x8 },
-);
-impl_simd_integer!(
-    T = i32,
-    N = 16,
-    Simd = i32x16,
-    UnsignedSimd = u32x16,
-    SignedSimd = i32x16,
-    WiderSimd = { /*i64x16*/ },
-);
-impl_simd_integer!(
-    T = i64,
-    N = 2,
-    Simd = i64x2,
-    UnsignedSimd = u64x2,
-    SignedSimd = i64x2,
-    WiderSimd = { /*i128x2*/ },
-);
-impl_simd_integer!(
-    T = i64,
-    N = 4,
-    Simd = i64x4,
-    UnsignedSimd = u64x4,
-    SignedSimd = i64x4,
-    WiderSimd = { /*i128x4*/ },
-);
-impl_simd_integer!(
-    T = i64,
-    N = 8,
-    Simd = i64x8,
-    UnsignedSimd = u64x8,
-    SignedSimd = i64x8,
-    WiderSimd = { /*i128x8*/ },
-);
-impl_simd_integer!(
-    T = u8,
-    N = 16,
-    Simd = u8x16,
-    UnsignedSimd = u8x16,
-    SignedSimd = i8x16,
-    WiderSimd = { u16x16 },
-);
-impl_simd_integer!(
-    T = u8,
-    N = 32,
-    Simd = u8x32,
-    UnsignedSimd = u8x32,
-    SignedSimd = i8x32,
-    WiderSimd = { u16x32 },
-);
-impl_simd_integer!(
-    T = u8,
-    N = 64,
-    Simd = u8x64,
-    UnsignedSimd = u8x64,
-    SignedSimd = i8x64,
-    WiderSimd = { /*u16x64*/ },
-);
-impl_simd_integer!(
-    T = u16,
-    N = 8,
-    Simd = u16x8,
-    UnsignedSimd = u16x8,
-    SignedSimd = i16x8,
-    WiderSimd = { u32x8 },
-);
-impl_simd_integer!(
-    T = u16,
-    N = 16,
-    Simd = u16x16,
-    UnsignedSimd = u16x16,
-    SignedSimd = i16x16,
-    WiderSimd = { u32x16 },
-);
-impl_simd_integer!(
-    T = u16,
-    N = 32,
-    Simd = u16x32,
-    UnsignedSimd = u16x32,
-    SignedSimd = i16x32,
-    WiderSimd = { /*u32x32*/ },
-);
-impl_simd_integer!(
-    T = u32,
-    N = 4,
-    Simd = u32x4,
-    UnsignedSimd = u32x4,
-    SignedSimd = i32x4,
-    WiderSimd = { u64x4 },
-);
-impl_simd_integer!(
-    T = u32,
-    N = 8,
-    Simd = u32x8,
-    UnsignedSimd = u32x8,
-    SignedSimd = i32x8,
-    WiderSimd = { u64x8 },
-);
-impl_simd_integer!(
-    T = u32,
-    N = 16,
-    Simd = u32x16,
-    UnsignedSimd = u32x16,
-    SignedSimd = i32x16,
-    WiderSimd = { /*u64x16*/ },
-);
-impl_simd_integer!(
-    T = u64,
-    N = 2,
-    Simd = u64x2,
-    UnsignedSimd = u64x2,
-    SignedSimd = i64x2,
-    WiderSimd = { /*u128x2*/ },
-);
-impl_simd_integer!(
-    T = u64,
-    N = 4,
-    Simd = u64x4,
-    UnsignedSimd = u64x4,
-    SignedSimd = i64x4,
-    WiderSimd = { /*u128x4*/ },
-);
-impl_simd_integer!(
-    T = u64,
-    N = 8,
-    Simd = u64x8,
-    UnsignedSimd = u64x8,
-    SignedSimd = i64x8,
-    WiderSimd = { /*u128x8*/ },
-);
 
 macro_rules! integer {
     ($T:ident) => {
