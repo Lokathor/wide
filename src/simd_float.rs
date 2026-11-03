@@ -241,14 +241,6 @@ impl_formatting_trait!(core::fmt::Octal);
 impl_formatting_trait!(core::fmt::UpperHex);
 */
 
-macro_rules! impl_simd_float {
-    (
-        T = $T:ident,
-        Simd = $Simd:ident,
-        SignedSimd = $SignedSimd:ident,
-        UnsignedT = $UnsignedT:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
         /// The following functionality exists for all SIMD vectors of floats.
         impl $Simd {
             /// The size of this SIMD vector in bits.
@@ -1468,50 +1460,6 @@ macro_rules! impl_simd_float {
                 self.powf_simd(Self::splat(n))
             }
         }
-    };
-}
-impl_simd_float!(
-    T = f32,
-    Simd = f32x4,
-    SignedSimd = i32x4,
-    UnsignedT = u32,
-    UnsignedSimd = u32x4,
-);
-impl_simd_float!(
-    T = f32,
-    Simd = f32x8,
-    SignedSimd = i32x8,
-    UnsignedT = u32,
-    UnsignedSimd = u32x8,
-);
-impl_simd_float!(
-    T = f32,
-    Simd = f32x16,
-    SignedSimd = i32x16,
-    UnsignedT = u32,
-    UnsignedSimd = u32x16,
-);
-impl_simd_float!(
-    T = f64,
-    Simd = f64x2,
-    SignedSimd = i64x2,
-    UnsignedT = u64,
-    UnsignedSimd = u64x2,
-);
-impl_simd_float!(
-    T = f64,
-    Simd = f64x4,
-    SignedSimd = i64x4,
-    UnsignedT = u64,
-    UnsignedSimd = u64x4,
-);
-impl_simd_float!(
-    T = f64,
-    Simd = f64x8,
-    SignedSimd = i64x8,
-    UnsignedT = u64,
-    UnsignedSimd = u64x8,
-);
 
 macro_rules! float {
     ($T:ident) => {
