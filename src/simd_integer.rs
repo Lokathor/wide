@@ -920,6 +920,14 @@ impl_simd_integer!(
     WiderSimd = { /*u128x8*/ },
 );
 
+impl<T, const N: usize> Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd,
+    // TODO(generics): Try to make these bounds implicit
+    Simd<T::Unsigned, N>: SupportedSimd,
+    Simd<T::Signed, N>: SupportedSimd,
+{
             /// Shifts left each element of `self` by the corresponding element
             /// of `rhs`, without bounding `rhs`.
             ///
@@ -937,7 +945,7 @@ impl_simd_integer!(
             /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
             #[inline]
             #[must_use]
-            pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
+            pub fn unbounded_shl(self, rhs: Simd<T::Unsigned, N>) -> Self {
                 self.unbounded_shl_backend(rhs)
             }
 
@@ -980,7 +988,7 @@ impl_simd_integer!(
             /// [`unbounded_shr_scalar`]: crate::Simd::unbounded_shr_scalar
             #[inline]
             #[must_use]
-            pub fn unbounded_shr(self, rhs: $UnsignedSimd) -> Self {
+            pub fn unbounded_shr(self, rhs: Simd<T::Unsigned, N>) -> Self {
                 self.unbounded_shr_backend(rhs)
             }
 
@@ -1154,8 +1162,8 @@ impl_simd_integer!(
             /// [`overflowing_shl_scalar`]: Self::overflowing_shl_scalar
             #[inline]
             #[must_use]
-            pub fn overflowing_shl(self, rhs: $UnsignedSimd) -> (Self, $UnsignedSimd) {
-                (self << rhs, rhs.simd_ge(const { $UnsignedSimd::splat($T::BITS as _) }))
+            pub fn overflowing_shl(self, rhs: Simd<T::Unsigned, N>) -> (Self, Simd<T::Unsigned, N>) {
+                (self << rhs, rhs.simd_ge(const { Simd::<T::Unsigned, N>::splat(T::BITS_AS_UNSIGNED) }))
             }
 
             /// Shifts left each element of `self` by the uniform scalar `rhs`
@@ -1177,7 +1185,7 @@ impl_simd_integer!(
             #[inline]
             #[must_use]
             pub fn overflowing_shl_scalar(self, rhs: u32) -> (Self, bool) {
-                (self << rhs, rhs >= $T::BITS)
+                (self << rhs, rhs >= T::BITS)
             }
 
             /// Shifts right each element of `self` by the corresponding element
@@ -1198,8 +1206,8 @@ impl_simd_integer!(
             /// [`overflowing_shr_scalar`]: Self::overflowing_shr_scalar
             #[inline]
             #[must_use]
-            pub fn overflowing_shr(self, rhs: $UnsignedSimd) -> (Self, $UnsignedSimd) {
-                (self >> rhs, rhs.simd_ge(const { $UnsignedSimd::splat($T::BITS as _) }))
+            pub fn overflowing_shr(self, rhs: Simd<T::Unsigned, N>) -> (Self, Simd<T::Unsigned, N>) {
+                (self >> rhs, rhs.simd_ge(const { Simd::<T::Unsigned, N>::splat(T::BITS_AS_UNSIGNED) }))
             }
 
             /// Shifts right each element of `self` by the uniform scalar `rhs`
@@ -1221,10 +1229,9 @@ impl_simd_integer!(
             #[inline]
             #[must_use]
             pub fn overflowing_shr_scalar(self, rhs: u32) -> (Self, bool) {
-                (self >> rhs, rhs >= $T::BITS)
+                (self >> rhs, rhs >= T::BITS)
             }
 
-            $(
                 /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
                 /// vector of a larger integer type.
                 ///
@@ -1240,10 +1247,13 @@ impl_simd_integer!(
                 /// [`mul_keep_low_high`]: Self::mul_keep_low_high
                 #[inline]
                 #[must_use]
-                pub fn widening_mul(self, rhs: Self) -> $WiderSimd {
+                pub fn widening_mul(self, rhs: Self) -> Simd<T::DoubleWidth, N>
+                where
+                    T: HasDoubleWidth,
+                    Simd<T::DoubleWidth, N>: SupportedSimd,
+                {
                     self.widening_mul_backend(rhs)
                 }
-            )?
 
             /// Computes `self * rhs`, producing intermediate double-width
             /// integers, then returns their low parts and high parts in two
@@ -1257,7 +1267,7 @@ impl_simd_integer!(
             /// there is no `i64x16`).
             #[inline]
             #[must_use]
-            pub fn mul_keep_low_high(self, rhs: Self) -> ($UnsignedSimd, Self) {
+            pub fn mul_keep_low_high(self, rhs: Self) -> (Simd<T::Unsigned, N>, Self) {
                 self.mul_keep_low_high_backend(rhs)
             }
 
@@ -1269,6 +1279,7 @@ impl_simd_integer!(
             pub fn mul_keep_high(self, rhs: Self) -> Self {
                 self.mul_keep_high_backend(rhs)
             }
+}
 
 macro_rules! integer {
     ($T:ident) => {

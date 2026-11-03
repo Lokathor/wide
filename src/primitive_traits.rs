@@ -7,7 +7,7 @@
 //! tightly coupled and easier to do in one module. In the future, these traits
 //! may be moved back to the `simd_*.rs` modules.
 
-use crate::{MaskOps, SimdElement, utils::PrimitiveFloatUtils};
+use crate::{MaskOps, SimdElement, utils::{PrimitiveFloatUtils, PrimitiveIntegerUtils}};
 
 /// A sealed trait for all primitive floating-point types.
 ///
@@ -32,7 +32,7 @@ pub trait PrimitiveFloat:
 /// intended usage.
 #[expect(private_bounds)]
 pub trait PrimitiveInteger:
-    SimdElement + MaskOps + PrimitiveFloatOrInteger + FloatIntegerDisjointMarker<Marker = u32>
+    SimdElement + MaskOps + Ord + PrimitiveFloatOrInteger + FloatIntegerDisjointMarker<Marker = u32> + PrimitiveIntegerUtils
 {
 }
 

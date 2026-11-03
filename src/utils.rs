@@ -2,6 +2,8 @@ use core::ops::{BitAnd, BitXor};
 
 use bytemuck::cast;
 
+use crate::SimdElement;
+
 /// Utilities for primitive float types used in `simd_float.rs`.
 ///
 /// This trait simply wraps existing float functionality so that it is
@@ -39,6 +41,16 @@ pub(crate) trait PrimitiveFloatUtils {
 
     const RADIANS_TO_DEGREES_RATIO: Self;
     const DEGREES_TO_RADIANS_RATIO: Self;
+}
+
+/// Utilities for primitive integer types used in `simd_integer.rs`.
+///
+/// This trait simply wraps existing integer functionality so that it is
+/// accessible to the generic context that implements the public SIMD integer
+/// API.
+pub(crate) trait PrimitiveIntegerUtils: SimdElement {
+    const BITS: u32;
+    const BITS_AS_UNSIGNED: Self::Unsigned;
 }
 
 macro_rules! float {
@@ -81,6 +93,27 @@ macro_rules! float {
 }
 float!(f32);
 float!(f64);
+
+macro_rules! integer {
+    ($T:ident) => {
+        impl PrimitiveIntegerUtils for $T {
+            const BITS: u32 = Self::BITS;
+            const BITS_AS_UNSIGNED: Self::Unsigned = Self::BITS as Self::Unsigned;
+        }
+    };
+}
+integer!(i8);
+integer!(i16);
+integer!(i32);
+integer!(i64);
+integer!(i128);
+integer!(isize);
+integer!(u8);
+integer!(u16);
+integer!(u32);
+integer!(u64);
+integer!(u128);
+integer!(usize);
 
 /// Modifies an `impl` block such that calling functions with target features
 /// that are guaranteed at compile time does not require an `unsafe` block.
