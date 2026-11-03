@@ -3,11 +3,7 @@
 use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Sub};
 
 use crate::{
-    Simd, SimdElement, SupportedSimd, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8,
-    i32x16, i64x2, i64x4, i64x8,
-    primitive_traits::NotPrimitiveFloat,
-    simd::{SimdAssociatedTypes, SupportSimdOf},
-    u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+    PrimitiveFloat, Simd, SimdElement, SupportedSimd, primitive_traits::NotPrimitiveFloat, simd::{SimdAssociatedTypes, SupportSimdOf},
 };
 
 /*
@@ -241,120 +237,126 @@ impl_formatting_trait!(core::fmt::Octal);
 impl_formatting_trait!(core::fmt::UpperHex);
 */
 
-        /// The following functionality exists for all SIMD vectors of floats.
-        impl $Simd {
+        impl<T, const N: usize> Simd<T, N>
+        where
+            T: PrimitiveFloat,
+            Simd<T, N>: SupportedSimd,
+            // TODO(generics): Try to make these bounds implicit
+            Simd<T::Unsigned, N>: SupportedSimd,
+            Simd<T::Signed, N>: SupportedSimd,
+        {
             /// The size of this SIMD vector in bits.
             pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
 
             /// A SIMD vector with all elements set to `1.0`.
-            pub const ONE: Self = Self::splat(1.0);
+            pub const ONE: Self = Self::splat(T::ONE);
 
             /// A SIMD vector with all elements set to `0.5`.
-            pub const HALF: Self = Self::splat(0.5);
+            pub const HALF: Self = Self::splat(T::HALF);
 
             /// A SIMD vector with all elements set to `0.0`.
-            pub const ZERO: Self = Self::splat(0.0);
+            pub const ZERO: Self = Self::splat(T::ZERO);
 
             /// A SIMD vector with all elements set to [`T::EPSILON`](f32::EPSILON).
-            pub const EPSILON: Self = Self::splat($T::EPSILON);
+            pub const EPSILON: Self = Self::splat(T::EPSILON);
 
             /// A SIMD vector with all elements set to [`T::MIN`](f32::MIN).
-            pub const MIN: Self = Self::splat($T::MIN);
+            pub const MIN: Self = Self::splat(T::MIN);
 
             /// A SIMD vector with all elements set to
             /// [`T::MIN_POSITIVE`](f32::MIN_POSITIVE).
-            pub const MIN_POSITIVE: Self = Self::splat($T::MIN_POSITIVE);
+            pub const MIN_POSITIVE: Self = Self::splat(T::MIN_POSITIVE);
 
             /// A SIMD vector with all elements set to [`T::MAX`](f32::MAX).
-            pub const MAX: Self = Self::splat($T::MAX);
+            pub const MAX: Self = Self::splat(T::MAX);
 
             /// A SIMD vector with all elements set to [`T::NAN`](f32::NAN).
-            pub const NAN: Self = Self::splat($T::NAN);
+            pub const NAN: Self = Self::splat(T::NAN);
 
             /// A SIMD vector with all elements set to [`T::INFINITY`](f32::INFINITY).
-            pub const INFINITY: Self = Self::splat($T::INFINITY);
+            pub const INFINITY: Self = Self::splat(T::INFINITY);
 
             /// A SIMD vector with all elements set to
             /// [`T::NEG_INFINITY`](f32::NEG_INFINITY).
-            pub const NEG_INFINITY: Self = Self::splat($T::NEG_INFINITY);
+            pub const NEG_INFINITY: Self = Self::splat(T::NEG_INFINITY);
 
             /// A SIMD vector with all elements set to
             /// [Euler's number (e)](core::f32::consts::E).
-            pub const E: Self = Self::splat(core::$T::consts::E);
+            pub const E: Self = Self::splat(T::E);
 
             /// A SIMD vector with all elements set to
             /// [1/π](core::f32::consts::FRAC_1_PI).
-            pub const FRAC_1_PI: Self = Self::splat(core::$T::consts::FRAC_1_PI);
+            pub const FRAC_1_PI: Self = Self::splat(T::FRAC_1_PI);
 
             /// A SIMD vector with all elements set to
             /// [2/π](core::f32::consts::FRAC_2_PI).
-            pub const FRAC_2_PI: Self = Self::splat(core::$T::consts::FRAC_2_PI);
+            pub const FRAC_2_PI: Self = Self::splat(T::FRAC_2_PI);
 
             /// A SIMD vector with all elements set to
             /// [2/sqrt(π)](core::f32::consts::FRAC_2_SQRT_PI).
-            pub const FRAC_2_SQRT_PI: Self = Self::splat(core::$T::consts::FRAC_2_SQRT_PI);
+            pub const FRAC_2_SQRT_PI: Self = Self::splat(T::FRAC_2_SQRT_PI);
 
             /// A SIMD vector with all elements set to
             /// [1/sqrt(2)](core::f32::consts::FRAC_1_SQRT_2).
-            pub const FRAC_1_SQRT_2: Self = Self::splat(core::$T::consts::FRAC_1_SQRT_2);
+            pub const FRAC_1_SQRT_2: Self = Self::splat(T::FRAC_1_SQRT_2);
 
             /// A SIMD vector with all elements set to
             /// [π/2](core::f32::consts::FRAC_PI_2).
-            pub const FRAC_PI_2: Self = Self::splat(core::$T::consts::FRAC_PI_2);
+            pub const FRAC_PI_2: Self = Self::splat(T::FRAC_PI_2);
 
             /// A SIMD vector with all elements set to
             /// [π/3](core::f32::consts::FRAC_PI_3).
-            pub const FRAC_PI_3: Self = Self::splat(core::$T::consts::FRAC_PI_3);
+            pub const FRAC_PI_3: Self = Self::splat(T::FRAC_PI_3);
 
             /// A SIMD vector with all elements set to
             /// [π/4](core::f32::consts::FRAC_PI_4).
-            pub const FRAC_PI_4: Self = Self::splat(core::$T::consts::FRAC_PI_4);
+            pub const FRAC_PI_4: Self = Self::splat(T::FRAC_PI_4);
 
             /// A SIMD vector with all elements set to
             /// [π/6](core::f32::consts::FRAC_PI_6).
-            pub const FRAC_PI_6: Self = Self::splat(core::$T::consts::FRAC_PI_6);
+            pub const FRAC_PI_6: Self = Self::splat(T::FRAC_PI_6);
 
             /// A SIMD vector with all elements set to
             /// [π/8](core::f32::consts::FRAC_PI_8).
-            pub const FRAC_PI_8: Self = Self::splat(core::$T::consts::FRAC_PI_8);
+            pub const FRAC_PI_8: Self = Self::splat(T::FRAC_PI_8);
 
             /// A SIMD vector with all elements set to
             /// [ln(2)](core::f32::consts::LN_2).
-            pub const LN_2: Self = Self::splat(core::$T::consts::LN_2);
+            pub const LN_2: Self = Self::splat(T::LN_2);
 
             /// A SIMD vector with all elements set to
             /// [ln(10)](core::f32::consts::LN_10).
-            pub const LN_10: Self = Self::splat(core::$T::consts::LN_10);
+            pub const LN_10: Self = Self::splat(T::LN_10);
 
             /// A SIMD vector with all elements set to
             /// [log<sub>2</sub>(e)](core::f32::consts::LOG2_E).
-            pub const LOG2_E: Self = Self::splat(core::$T::consts::LOG2_E);
+            pub const LOG2_E: Self = Self::splat(T::LOG2_E);
 
             /// A SIMD vector with all elements set to
             /// [log<sub>10</sub>(e)](core::f32::consts::LOG10_E).
-            pub const LOG10_E: Self = Self::splat(core::$T::consts::LOG10_E);
+            pub const LOG10_E: Self = Self::splat(T::LOG10_E);
 
             /// A SIMD vector with all elements set to
             /// [log<sub>10</sub>(2)](core::f32::consts::LOG10_2).
-            pub const LOG10_2: Self = Self::splat(core::$T::consts::LOG10_2);
+            pub const LOG10_2: Self = Self::splat(T::LOG10_2);
 
             /// A SIMD vector with all elements set to
             /// [log<sub>2</sub>(10)](core::f32::consts::LOG2_10).
-            pub const LOG2_10: Self = Self::splat(core::$T::consts::LOG2_10);
+            pub const LOG2_10: Self = Self::splat(T::LOG2_10);
 
             /// A SIMD vector with all elements set to
             /// [Archimedes’ constant (π)](core::f32::consts::PI).
-            pub const PI: Self = Self::splat(core::$T::consts::PI);
+            pub const PI: Self = Self::splat(T::PI);
 
             /// A SIMD vector with all elements set to
             /// [sqrt(2)](core::f32::consts::SQRT_2).
-            pub const SQRT_2: Self = Self::splat(core::$T::consts::SQRT_2);
+            pub const SQRT_2: Self = Self::splat(T::SQRT_2);
 
             /// A SIMD vector with all elements set to
             /// [the full circle constant (τ)](core::f32::consts::TAU).
             ///
             /// Equal to 2π.
-            pub const TAU: Self = Self::splat(core::$T::consts::TAU);
+            pub const TAU: Self = Self::splat(T::TAU);
 
             /// Returns a [mask] that checks if each element is NaN.
             ///
@@ -450,8 +452,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             #[inline]
             #[must_use]
             pub fn to_degrees(self) -> Self {
-                const RAD_TO_DEG_RATIO: $Simd = $Simd::splat(180.0 / core::$T::consts::PI);
-                self * RAD_TO_DEG_RATIO
+                self * const { Self::splat(T::RADIANS_TO_DEGREES_RATIO) }
             }
 
             /// Converts degrees to radians.
@@ -468,8 +469,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             #[inline]
             #[must_use]
             pub fn to_radians(self) -> Self {
-                const DEG_TO_RAD_RATIO: $Simd = $Simd::splat(core::$T::consts::PI / 180.0);
-                self * DEG_TO_RAD_RATIO
+                self * const { Self::splat(T::DEGREES_TO_RADIANS_RATIO) }
             }
 
             /// Returns the maximum between each element of `self` and the
@@ -552,7 +552,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// within the same execution from one invocation to the next.
             #[inline]
             #[must_use]
-            pub fn reduce_add(self) -> $T {
+            pub fn reduce_add(self) -> T {
                 self.reduce_add_backend()
             }
 
@@ -570,7 +570,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// the next.
             #[inline]
             #[must_use]
-            pub fn reduce_mul(self) -> $T {
+            pub fn reduce_mul(self) -> T {
                 self.reduce_mul_backend()
             }
 
@@ -587,7 +587,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`fast_reduce_max`]: Self::fast_reduce_max
             #[inline]
             #[must_use]
-            pub fn reduce_max(self) -> $T {
+            pub fn reduce_max(self) -> T {
                 self.reduce_max_backend()
             }
 
@@ -601,7 +601,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`reduce_max`]: Self::reduce_max
             #[inline]
             #[must_use]
-            pub fn fast_reduce_max(self) -> $T {
+            pub fn fast_reduce_max(self) -> T {
                 self.fast_reduce_max_backend()
             }
 
@@ -618,7 +618,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`fast_reduce_min`]: Self::fast_reduce_min
             #[inline]
             #[must_use]
-            pub fn reduce_min(self) -> $T {
+            pub fn reduce_min(self) -> T {
                 self.reduce_min_backend()
             }
 
@@ -632,7 +632,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`reduce_min`]: Self::reduce_min
             #[inline]
             #[must_use]
-            pub fn fast_reduce_min(self) -> $T {
+            pub fn fast_reduce_min(self) -> T {
                 self.fast_reduce_min_backend()
             }
 
@@ -653,7 +653,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             #[inline]
             #[must_use]
             pub fn midpoint(self, other: Self) -> Self {
-                (self + other) * 0.5
+                (self + other) * T::HALF
             }
 
             /// Raw transmutation to unsigned integer vector.
@@ -662,10 +662,11 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// numeric value.
             #[inline]
             #[must_use]
-            pub const fn to_bits(self) -> $UnsignedSimd {
+            pub const fn to_bits(self) -> Simd<T::Unsigned, N> {
                 // SAFETY: Both types accept all bit-patterns and only contain
-                // initialized memory.
-                unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+                // initialized memory. They have the same size since `T` and
+                // `T::Unsigned` must have the same size.
+                unsafe { core::mem::transmute_copy::<Simd<T, N>, Simd<T::Unsigned, N>>(&self) }
             }
 
             /// Raw transmutation from unsigned integer vector.
@@ -674,13 +675,17 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// numeric value.
             #[inline]
             #[must_use]
-            pub const fn from_bits(bits: $UnsignedSimd) -> Self {
+            pub const fn from_bits(bits: Simd<T::Unsigned, N>) -> Self {
                 // SAFETY: Both types accept all bit-patterns and only contain
-                // initialized memory.
-                unsafe { core::mem::transmute::<$UnsignedSimd, $Simd>(bits) }
+                // initialized memory. They have the same size since `T` and
+                // `T::Unsigned` must have the same size.
+                unsafe { core::mem::transmute_copy::<Simd<T::Unsigned, N>, Simd<T, N>>(&bits) }
             }
 
             /// Creates a SIMD vector from a native-endian byte array.
+            ///
+            /// Note that this takes `[u8; size_of::<Self>()]`, but it is
+            /// written as `Self::Bytes` due to language limitations.
             ///
             /// The bytes are interpreted as the raw memory representation of the
             /// vector. This is equivalent to the `from_ne_bytes` functions on
@@ -691,24 +696,27 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`to_ne_bytes`]: Self::to_ne_bytes
             #[inline]
             #[must_use]
-            pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
+            pub const fn from_ne_bytes(bytes: <Self as SupportedSimd>::Bytes) -> Self {
+                // SAFETY: `Self` accepts all bit-patterns and only contains
                 // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
+                unsafe { core::mem::transmute_copy::<<Self as SupportedSimd>::Bytes, Self>(&bytes) }
             }
 
             /// Returns the raw memory representation of `self` as a native-endian
             /// byte array.
+            ///
+            /// Note that this returns `[u8; size_of::<Self>()]`, but it is
+            /// written as `Self::Bytes` due to language limitations.
             ///
             /// This is the inverse of [`from_ne_bytes`].
             ///
             /// [`from_ne_bytes`]: Self::from_ne_bytes
             #[inline]
             #[must_use]
-            pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
+            pub const fn to_ne_bytes(self) -> <Self as SupportedSimd>::Bytes {
+                // SAFETY: `Self` accepts all bit-patterns and only contains
                 // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
+                unsafe { core::mem::transmute_copy::<Self, <Self as SupportedSimd>::Bytes>(&self) }
             }
 
             /// Bitwise selection.
@@ -799,7 +807,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             #[inline]
             #[must_use]
             pub fn copysign(self, sign: Self) -> Self {
-                Self::splat(-0.0).bitselect(sign, self)
+                Self::splat(T::NEG_ZERO).bitselect(sign, self)
             }
 
             /// Flips the sign of `self` based on the sign of `sign`.
@@ -811,7 +819,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             #[inline]
             #[must_use]
             pub fn flipsign(self, sign: Self) -> Self {
-                self ^ (sign & Self::from(-0.0))
+                self ^ (sign & Self::from(T::NEG_ZERO))
             }
 
             /// Returns the largest integer less than or equal to each input element.
@@ -862,7 +870,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`fast_round_int`]: Self::fast_round_int
             #[inline]
             #[must_use]
-            pub fn round_int(self) -> $SignedSimd {
+            pub fn round_int(self) -> Simd<T::Signed, N> {
                 self.round_int_backend()
             }
 
@@ -878,7 +886,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`round_int`]: Self::round_int
             #[inline]
             #[must_use]
-            pub fn fast_round_int(self) -> $SignedSimd {
+            pub fn fast_round_int(self) -> Simd<T::Signed, N> {
                 self.fast_round_int_backend()
             }
 
@@ -912,7 +920,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`fast_trunc_int`]: Self::fast_trunc_int
             #[inline]
             #[must_use]
-            pub fn trunc_int(self) -> $SignedSimd {
+            pub fn trunc_int(self) -> Simd<T::Signed, N> {
                 self.trunc_int_backend()
             }
 
@@ -926,7 +934,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             /// [`trunc_int`]: Self::trunc_int
             #[inline]
             #[must_use]
-            pub fn fast_trunc_int(self) -> $SignedSimd {
+            pub fn fast_trunc_int(self) -> Simd<T::Signed, N> {
                 self.fast_trunc_int_backend()
             }
 
@@ -1456,7 +1464,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
             #[deprecated(since = "1.6.0", note = "use `x.powf_simd(splat(n))` instead")]
             #[inline]
             #[must_use]
-            pub fn powf(self, n: $T) -> Self {
+            pub fn powf(self, n: T) -> Self {
                 self.powf_simd(Self::splat(n))
             }
         }

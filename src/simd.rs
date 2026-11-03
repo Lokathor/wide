@@ -72,6 +72,11 @@ pub trait SupportedSimd:
     /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
     /// is [`u64`].
     type Bitmask: PrimitiveUnsigned;
+
+    /// A type equal to `[u8; size_of::<Self>()]`.
+    ///
+    /// This exists since that type cannot be expressed in generic contexts.
+    type Bytes: Copy;
 }
 
 /// A sealed trait for SIMD element types that support mask operations.
@@ -516,6 +521,8 @@ macro_rules! define_simd {
 
     impl SupportedSimd for Simd<$T, $N> {
       type Bitmask = $Bitmask;
+
+      type Bytes = [u8; size_of::<Self>()];
     }
 
     $(
