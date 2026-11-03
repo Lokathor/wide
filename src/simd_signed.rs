@@ -1,11 +1,7 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
 use crate::{
-    Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8,
-    i32x16, i64x2, i64x4, i64x8,
-    primitive_traits::NotPrimitiveSigned,
-    simd::{SimdAssociatedTypes, SupportSimdOf},
-    u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+    PrimitiveSigned, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, primitive_traits::NotPrimitiveSigned, simd::{SimdAssociatedTypes, SupportSimdOf},
 };
 
 macro_rules! impl_simd_signed {
@@ -53,22 +49,31 @@ impl_simd_signed!(T = i64, N = 2, Simd = i64x2, UnsignedSimd = u64x2,);
 impl_simd_signed!(T = i64, N = 4, Simd = i64x4, UnsignedSimd = u64x4,);
 impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
 
+impl<T, const N: usize> Simd<T, N>
+where
+    T: PrimitiveSigned,
+    Simd<T, N>: SupportedSimd,
+    // TODO(generics): Try make this implicit bound
+    Simd<T::Unsigned, N>: SupportedSimd,
+{
             /// Returns the bit patterns of `self` reinterpreted as unsigned integers
             /// of the same size.
             #[inline]
             #[must_use]
-            pub const fn cast_unsigned(self) -> $UnsignedSimd {
+            pub const fn cast_unsigned(self) -> Simd<T::Unsigned, N> {
                 // SAFETY: Both types accept all bit-patterns and only contain
                 // initialized memory.
-                unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+                unsafe { core::mem::transmute_copy::<Simd<T, N>, Simd<T::Unsigned, N>>(&self) }
             }
 
             /// Computes the absolute value of each input element, returned as an
             /// unsigned integer in order to avoid wrapping.
             #[inline]
             #[must_use]
-            pub fn unsigned_abs(self) -> $UnsignedSimd {
-                self.abs().cast_unsigned()
+            pub fn unsigned_abs(self) -> Simd<T::Unsigned, N> {
+                // Use `abs_backend` and not `abs` because `abs` is not
+                // available in contexts generic over `T`
+                self.abs_backend().cast_unsigned()
             }
 
             /// Returns a [mask] that is true for each positive element, and false if
@@ -95,7 +100,7 @@ impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
             /// `self + rhs`, wrapping around at the boundary of the type.
             #[inline]
             #[must_use]
-            pub fn add_unsigned(self, rhs: $UnsignedSimd) -> Self {
+            pub fn add_unsigned(self, rhs: Simd<T::Unsigned, N>) -> Self {
                 self + rhs.cast_signed()
             }
 
@@ -103,7 +108,7 @@ impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
             /// `self - rhs`, wrapping around at the boundary of the type.
             #[inline]
             #[must_use]
-            pub fn sub_unsigned(self, rhs: $UnsignedSimd) -> Self {
+            pub fn sub_unsigned(self, rhs: Simd<T::Unsigned, N>) -> Self {
                 self - rhs.cast_signed()
             }
 
@@ -128,7 +133,7 @@ impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
             /// overflowing.
             #[inline]
             #[must_use]
-            pub fn saturating_add_unsigned(self, rhs: $UnsignedSimd) -> Self {
+            pub fn saturating_add_unsigned(self, rhs: Simd<T::Unsigned, N>) -> Self {
                 // NEON has a direct intrinsic for this operation
                 self.saturating_add_unsigned_backend(rhs)
             }
@@ -138,11 +143,11 @@ impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
             /// overflowing.
             #[inline]
             #[must_use]
-            pub fn saturating_sub_unsigned(self, rhs: $UnsignedSimd) -> Self {
+            pub fn saturating_sub_unsigned(self, rhs: Simd<T::Unsigned, N>) -> Self {
                 // Unlike for `saturating_add_unsigned`, NEON does not have a
                 // direct intrinsic for this operation
                 let (result, overflow) = self.overflowing_sub_unsigned(rhs);
-                overflow.select(Self::MIN, result)
+                overflow.select(const { Self::splat(T::MIN) }, result)
             }
 
             /// Computes the absolute value of self.
@@ -156,7 +161,9 @@ impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
             #[inline]
             #[must_use]
             pub fn overflowing_abs(self) -> (Self, Self) {
-                (self.abs(), self.simd_eq(Self::MIN))
+                // Use `abs_backend` and not `abs` because `abs` is not
+                // available in contexts generic over `T`
+                (self.abs_backend(), self.simd_eq(const { Self::splat(T::MIN) }))
             }
 
             /// Returns `self + rhs` with an unsigned `rhs` and whether an overflow
@@ -168,7 +175,7 @@ impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
             /// - A mask indicating whether an overflow occured
             #[inline]
             #[must_use]
-            pub fn overflowing_add_unsigned(self, rhs: $UnsignedSimd) -> (Self, Self) {
+            pub fn overflowing_add_unsigned(self, rhs: Simd<T::Unsigned, N>) -> (Self, Self) {
                 pick! {
                     // On NEON, `saturating_add_unsigned` is implement using a
                     // direct intrinsic. It should be faster to call the
@@ -198,13 +205,14 @@ impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
             /// - A mask indicating whether an overflow occured
             #[inline]
             #[must_use]
-            pub fn overflowing_sub_unsigned(self, rhs: $UnsignedSimd) -> (Self, Self) {
+            pub fn overflowing_sub_unsigned(self, rhs: Simd<T::Unsigned, N>) -> (Self, Self) {
                 let rhs = rhs.cast_signed();
                 let result = self - rhs;
                 let overflow = (((self ^ rhs) & (self ^ result)) ^ rhs).is_negative();
 
                 (result, overflow)
             }
+}
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of signed integers.

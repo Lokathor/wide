@@ -51,6 +51,8 @@ pub(crate) trait PrimitiveFloatUtils {
 pub(crate) trait PrimitiveIntegerUtils: SimdElement {
     const BITS: u32;
     const BITS_AS_UNSIGNED: Self::Unsigned;
+
+    const MIN: Self;
 }
 
 macro_rules! float {
@@ -99,6 +101,8 @@ macro_rules! integer {
         impl PrimitiveIntegerUtils for $T {
             const BITS: u32 = Self::BITS;
             const BITS_AS_UNSIGNED: Self::Unsigned = Self::BITS as Self::Unsigned;
+
+            const MIN: Self = Self::MIN;
         }
     };
 }
