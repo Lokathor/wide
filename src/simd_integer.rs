@@ -1,127 +1,1176 @@
 //! Defines APIs applicable to SIMD vectors of integers (both signed and
 //! unsigned).
 
-use core::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
-};
-
-use bytemuck::Zeroable;
+use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, ShlAssign, Shr, ShrAssign, Sub};
 
 use crate::{
-    i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16,
-    u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+    HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportedSimd,
+    primitive_traits::NotPrimitiveInteger,
+    simd::{SimdAssociatedTypes, SupportSimdOf},
 };
 
-macro_rules! impl_simd_integer {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        autofill = $autofill:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        SignedSimd = $SignedSimd:ident,
-        WiderSimd = { $($WiderSimd:ident)? },
-        T_BITS = $T_BITS:literal,
-        T_BITS_MUL_2 = $T_BITS_MUL_2:literal,
-        INDICES = [$($INDEX:literal),* $(,)?],
-    ) => {
-        impl Eq for $Simd {}
+macro_rules! impl_shift_operator {
+  (
+    $Op:ident,
+    $op:ident,
+    $OpAssign:ident,
+    $op_assign:ident,
+    $op_backend:ident,
+    $op_scalar_backend:ident,
+    $(#[$doc:meta])*,
+    $(#[$doc_scalar:meta])*,
+    $(#[$scalar_doc:meta])*
+  ) => {
+    impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Self;
 
-        impl_unary_operator!(
-            $Simd,
-            Neg,
-            neg,
-            neg_backend,
-            /// Computes wrapping negation for each element of `self`.
-        );
-        impl_unary_operator!(
-            $Simd,
-            Not,
-            not,
-            not_backend,
-            /// Computes bitwise NOT for each element of `self`.
-        );
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+        // SAFETY: `Rhs` and `Rhs::Unsigned` are equallity-sized integers. Thus
+        // it is sound to transmute between the two.
+        let rhs = unsafe {
+            core::mem::transmute_copy::<Simd<Rhs, N>, Simd<Rhs::Unsigned, N>>(&rhs)
+        };
 
-        impl_binary_operator!(
+        self.$op_backend(rhs)
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $OpAssign<Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      $(#[$doc])*
+      #[inline]
+      fn $op_assign(&mut self, rhs: Simd<Rhs, N>) {
+        *self = self.$op(rhs);
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Self;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+        self.$op(*rhs)
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $OpAssign<&Simd<Rhs, N>> for Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      $(#[$doc])*
+      #[inline]
+      fn $op_assign(&mut self, rhs: &Simd<Rhs, N>) {
+        *self = self.$op(*rhs);
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for &Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Simd<T, N>;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+        (*self).$op(rhs)
+      }
+    }
+
+    impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for &Simd<T, N>
+    where
+        T: PrimitiveInteger,
+        Simd<T, N>: SupportedSimd,
+        Simd<T::Unsigned, N>: SupportedSimd,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
+        Simd<Rhs, N>: SupportedSimd,
+    {
+      type Output = Simd<T, N>;
+
+      $(#[$doc])*
+      #[inline]
+      fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+        (*self).$op(*rhs)
+      }
+    }
+
+    macro_rules! impl_scalar {
+      ($T:ident) => {
+        impl<T, const N: usize> $Op<$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Self;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: $T) -> Self::Output {
+            self.$op_scalar_backend(rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<Simd<Rhs, N>> for $T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(self).$op(rhs)
+          }
+        }
+
+        impl<T, const N: usize> $OpAssign<$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op_assign(&mut self, rhs: $T) {
+            *self = self.$op_scalar_backend(rhs as u32);
+          }
+        }
+
+        impl<T, const N: usize> $Op<&$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Self;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: &$T) -> Self::Output {
+            self.$op_scalar_backend(*rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<&Simd<Rhs, N>> for $T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(self).$op(*rhs)
+          }
+        }
+
+        impl<T, const N: usize> $OpAssign<&$T> for Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op_assign(&mut self, rhs: &$T) {
+            *self = self.$op_scalar_backend(*rhs as u32);
+          }
+        }
+
+        impl<T, const N: usize> $Op<$T> for &Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Simd<T, N>;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: $T) -> Self::Output {
+            self.$op_scalar_backend(rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<Simd<Rhs, N>> for &$T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(*self).$op(rhs)
+          }
+        }
+
+        impl<T, const N: usize> $Op<&$T> for &Simd<T, N>
+        where
+          T: PrimitiveInteger,
+          Simd<T, N>: SupportedSimd,
+        {
+          type Output = Simd<T, N>;
+
+          $(#[$doc_scalar])*
+          #[inline]
+          fn $op(self, rhs: &$T) -> Self::Output {
+            self.$op_scalar_backend(*rhs as u32)
+          }
+        }
+
+        impl<const N: usize, Rhs> $Op<&Simd<Rhs, N>> for &$T
+        where
+            Simd<$T, N>: SupportedSimd,
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
+            Simd<Rhs, N>: SupportedSimd,
+        {
+          type Output = Simd<$T, N>;
+
+          $(#[$scalar_doc])*
+          #[inline]
+          fn $op(self, rhs: &Simd<Rhs, N>) -> Self::Output {
+            Simd::<$T, N>::splat(*self).$op(*rhs)
+          }
+        }
+      };
+    }
+    impl_scalar!(i8);
+    impl_scalar!(i16);
+    impl_scalar!(i32);
+    impl_scalar!(i64);
+    impl_scalar!(i128);
+    impl_scalar!(isize);
+    impl_scalar!(u8);
+    impl_scalar!(u16);
+    impl_scalar!(u32);
+    impl_scalar!(u64);
+    impl_scalar!(u128);
+    impl_scalar!(usize);
+  };
+}
+impl_shift_operator!(
+    Shl,
+    shl,
+    ShlAssign,
+    shl_assign,
+    shl_backend,
+    shl_scalar_backend,
+    /// Shifts left each element of `self` by the corresponding element
+    /// of `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shl`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shl`], so consider using that instead.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl`]: crate::Simd::unbounded_shl
+    ,
+    /// Shifts left each element of `self` by the scalar `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shl`].
+    ///
+    /// On most targets, shifting by a scalar is faster than shifting by
+    /// SIMD vector. Note that on most targets, this operator is slower than
+    /// [`unbounded_shl_scalar`], so consider using that instead.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
+    ,
+    /// Shifts left the scalar `self` by each element of `rhs`,
+    /// returning a SIMD vector.
+    ///
+    /// This operator behaves like [`wrapping_shl`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shl`], so consider using that instead.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl`]: crate::Simd::unbounded_shl
+);
+impl_shift_operator!(
+    Shr,
+    shr,
+    ShrAssign,
+    shr_assign,
+    shr_backend,
+    shr_scalar_backend,
+    /// Shifts right each element of `self` by the corresponding element of
+    /// `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shr`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shr`], so consider using that instead.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+    ,
+    /// Shifts right each element of `self` by the scalar `rhs`.
+    ///
+    /// This operator behaves like [`wrapping_shr`].
+    ///
+    /// On most targets, shifting by a scalar is faster than shifting by
+    /// a SIMD vector. Note that on most targets, this operator is
+    /// slower than [`unbounded_shr`], so consider using that instead.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+    ,
+    /// Shifts right the scalar `self` by each element of `rhs`,
+    /// returning a SIMD vector.
+    ///
+    /// This operator behaves like [`wrapping_shr`].
+    ///
+    /// Note that on most targets, this operator is slower than
+    /// [`unbounded_shr`], so consider using that instead.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+);
+
+/*
+These commented-out lines contain implementations of traits that should have
+separate implementations for SIMD integers and SIMD floats.
+
+Rust currently does not allow two blanket trait implementations based on
+disjoint traits. Because of this, these traits have one shared implementation
+for both floats and integers (see `simd_float_or_integer.rs`).
+
+If Rust gains support for two blanket trait implementations based on disjoint
+traits, these integer-only implementations can be uncommented.
+
+impl_unary_operator!(
+    T: PrimitiveInteger,
+    Neg,
+    neg,
+    neg_backend,
+    /// Computes wrapping negation for each element of `self`.
+);
+impl_unary_operator!(
+    T: PrimitiveInteger,
+    Not,
+    not,
+    not_backend,
+    /// Computes bitwise NOT for each element of `self`.
+);
+
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Add,
+    add,
+    AddAssign,
+    add_assign,
+    add_backend,
+    /// Computes wrapping addition for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes wrapping addition for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Sub,
+    sub,
+    SubAssign,
+    sub_assign,
+    sub_backend,
+    /// Computes wrapping subtraction for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes wrapping subtraction for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Mul,
+    mul,
+    MulAssign,
+    mul_assign,
+    mul_backend,
+    /// Computes wrapping multiplication for each element of `self` and
+    /// the corresponding element of `rhs`.
+    ,
+    /// Computes wrapping multiplication for each element of `self` and
+    /// the scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Div,
+    div,
+    DivAssign,
+    div_assign,
+    div_backend,
+    /// Computes wrapping division for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any element of `rhs` is zero.
+    ,
+    /// Computes wrapping division for each element of `self` and the
+    /// scalar `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs` is zero.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    Rem,
+    rem,
+    RemAssign,
+    rem_assign,
+    rem_backend,
+    /// Computes the wrapping remainder of each element of `self`
+    /// divided by the corresponding element of `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any element of `rhs` is zero.
+    ,
+    /// Computes the wrapping remainder of each element of `self`
+    /// divided by the scalar `rhs`.
+    ///
+    /// Note that because division has no hardware support, this operation
+    /// is very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs` is zero.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitAnd,
+    bitand,
+    BitAndAssign,
+    bitand_assign,
+    bitand_backend,
+    /// Computes bitwise AND for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise AND for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitOr,
+    bitor,
+    BitOrAssign,
+    bitor_assign,
+    bitor_backend,
+    /// Computes bitwise OR for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise OR for each element of `self` and the
+    /// scalar `rhs`.
+);
+impl_binary_operator!(
+    T: PrimitiveInteger,
+    BitXor,
+    bitxor,
+    BitXorAssign,
+    bitxor_assign,
+    bitxor_backend,
+    /// Computes bitwise XOR for each element of `self` and the
+    /// corresponding element of `rhs`.
+    ,
+    /// Computes bitwise XOR for each element of `self` and the
+    /// scalar `rhs`.
+);
+
+impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+{
+    #[inline]
+    fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ZERO;
+        for val in iter {
+            total += val;
+        }
+        total
+    }
+}
+
+impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+{
+    #[inline]
+    fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
+        let mut total = Self::ONE;
+        for val in iter {
+            total *= val;
+        }
+        total
+    }
+}
+
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: PrimitiveInteger,
+            Simd<T, N>: SupportedSimd,
+        {
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_array().iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    <T as $Trait>::fmt(x, f)?;
+                }
+                write!(f, ")")
+            }
+        }
+    };
+}
+impl_formatting_trait!(core::fmt::Binary);
+impl_formatting_trait!(core::fmt::LowerHex);
+impl_formatting_trait!(core::fmt::Octal);
+impl_formatting_trait!(core::fmt::UpperHex);
+*/
+
+/// Contains SIMD integer items whose name conflicts with a SIMD float item's
+/// name.
+///
+/// The SIMD float API is exposed where `T: PrimitiveFloat` and the SIMD integer
+/// API is exposed where `T: PrimitiveInteger`. Even though these bounds are
+/// logically disjoint, Rust does not allow two items with the same name to
+/// both exist for generic `T` types.
+///
+/// The solution used is to make all SIMD float items generic over `T` and to
+/// duplicate conflicting SIMD integer items for each concrete integer `T`. When
+/// `cfg(doc)` is active, these items are emitted once in a generic context
+/// rather than for each `T`, in order to make the documentation easier to read.
+macro_rules! conflicting_items {
+    ($T:ident) => {
+        /// A SIMD vector with all elements set to `1`.
+        pub const ONE: Self = Self::splat(1);
+
+        /// A SIMD vector with all elements set to `0`.
+        pub const ZERO: Self = Self::splat(0);
+
+        /// A SIMD vector with all elements set to [`T::MAX`](i32::MAX).
+        pub const MAX: Self = Self::splat($T::MAX);
+
+        /// A SIMD vector with all elements set to [`T::MIN`](i32::MIN).
+        pub const MIN: Self = Self::splat($T::MIN);
+
+        /// The size of this SIMD vector in bits.
+        pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
+
+        /// Returns the maximum between each element of `self` and the
+        /// corresponding element of `other`.
+        #[inline]
+        #[must_use]
+        pub fn max(self, other: Self) -> Self {
+            self.max_backend(other)
+        }
+
+        /// Returns the minimum between each element of `self` and the
+        /// corresponding element of `other`.
+        #[inline]
+        #[must_use]
+        pub fn min(self, other: Self) -> Self {
+            self.min_backend(other)
+        }
+
+        /// Clamps each element of `self` between the corresponding elements
+        /// of `min` and `max`.
+        ///
+        /// If `min > max`, the result is unspecified. Consider manually
+        /// checking for that case.
+        #[inline]
+        #[must_use]
+        pub fn clamp(self, min: Self, max: Self) -> Self {
+            self.max(min).min(max)
+        }
+
+        /// Reducing addition. Returns the sum of the vector's elements.
+        ///
+        /// Equivalent to `self[0] + self[1] + ...`.
+        #[inline]
+        #[must_use]
+        pub fn reduce_add(self) -> $T {
+            self.reduce_add_backend()
+        }
+
+        /// Reducing multiplication. Returns the product of the vector's
+        /// elements.
+        ///
+        /// Equivalent to `self[0] * self[1] * ...`.
+        #[inline]
+        #[must_use]
+        pub fn reduce_mul(self) -> $T {
+            self.reduce_mul_backend()
+        }
+
+        /// Reducing maximum. Returns the maximum of the vector's elements.
+        ///
+        /// Equivalent to `self[0].max(self[1].max(...))`.
+        #[inline]
+        #[must_use]
+        pub fn reduce_max(self) -> $T {
+            self.reduce_max_backend()
+        }
+
+        /// Reducing minimum. Returns the minimum of the vector's elements.
+        ///
+        /// Equivalent to `self[0].min(self[1].min(...))`.
+        #[inline]
+        #[must_use]
+        pub fn reduce_min(self) -> $T {
+            self.reduce_min_backend()
+        }
+
+        /// Creates a SIMD vector from a native-endian byte array.
+        ///
+        /// Note that this takes `[u8; size_of::<Self>()]`, but it is
+        /// written as `Self::Bytes` due to language limitations.
+        ///
+        /// The bytes are interpreted as the raw memory representation of the
+        /// vector. This is equivalent to the `from_ne_bytes` functions on
+        /// primitive integer types, but operates on the entire vector at once.
+        ///
+        /// This is the inverse of [`to_ne_bytes`].
+        ///
+        /// [`to_ne_bytes`]: Self::to_ne_bytes
+        #[inline]
+        #[must_use]
+        pub const fn from_ne_bytes(bytes: <Self as SupportedSimd>::Bytes) -> Self {
+            // SAFETY: `Simd<$T, N>` accepts all bit-patterns and only contains
+            // initialized memory, and the byte array has the same size.
+            unsafe {
+                core::mem::transmute_copy::<<Self as SupportedSimd>::Bytes, Simd<$T, N>>(&bytes)
+            }
+        }
+
+        /// Returns the raw memory representation of `self` as a native-endian
+        /// byte array.
+        ///
+        /// Note that this takes `[u8; size_of::<Self>()]`, but it is
+        /// written as `Self::Bytes` due to language limitations.
+        ///
+        /// This is the inverse of [`from_ne_bytes`].
+        ///
+        /// [`from_ne_bytes`]: Self::from_ne_bytes
+        #[inline]
+        #[must_use]
+        pub const fn to_ne_bytes(self) -> <Self as SupportedSimd>::Bytes {
+            // SAFETY: `Simd<$T, N>` accepts all bit-patterns and only contains
+            // initialized memory, and the byte array has the same size.
+            unsafe {
+                core::mem::transmute_copy::<Simd<$T, N>, <Self as SupportedSimd>::Bytes>(&self)
+            }
+        }
+
+        /// Bitwise selection.
+        ///
+        /// For each bit of `self`:
+        ///
+        /// - If the bit is one, return the corresponding bit of `if_one`
+        /// - If the bit is zero, return the corresponding bit of `if_zero`
+        ///
+        /// If you know `self` is a [mask], meaning each element is either
+        /// all zeros or all ones, consider using [`select`] which is
+        /// faster.
+        ///
+        /// [mask]: crate#masks
+        /// [`select`]: Self::select
+        #[inline]
+        #[must_use]
+        pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
+            self.bitselect_backend(if_one, if_zero)
+        }
+    };
+}
+
+impl<T, const N: usize> Simd<T, N>
+where
+    T: PrimitiveInteger,
+    Simd<T, N>: SupportedSimd,
+    // TODO(generics): Try to make these bounds implicit
+    Simd<T::Unsigned, N>: SupportedSimd,
+    Simd<T::Signed, N>: SupportedSimd,
+{
+    // Because `rustdoc` does not enforce the "no conflicting implementations"
+    // rule, we show conflicting items in documentation in the generic `impl`
+    // block rather than duplicate them across multiple `impl` blocks. This
+    // makes documentation quite easier to read. This detail is documented
+    // publicly in `PrimitiveInteger`.
+    #[cfg(doc)]
+    conflicting_items!(T);
+
+    /// Shifts left each element of `self` by the corresponding element
+    /// of `rhs`, without bounding `rhs`.
+    ///
+    /// If `rhs` is larger than or equal to the number of bits in `T`,
+    /// the entire value is shifted out, and `0` is returned.
+    ///
+    /// This is different from the standard operator, which behaves like
+    /// [`wrapping_shl`]. For most targets, `unbounded_shl` is faster than the
+    /// standard operator.
+    ///
+    /// If you intend to shift all elements by the same value, consider using
+    /// [`unbounded_shl_scalar`] which is faster.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
+    #[inline]
+    #[must_use]
+    pub fn unbounded_shl(self, rhs: Simd<T::Unsigned, N>) -> Self {
+        self.unbounded_shl_backend(rhs)
+    }
+
+    /// Shifts left each element of `self` by the uniform scalar `rhs`,
+    /// without bounding `rhs`.
+    ///
+    /// If `rhs` is larger than or equal to the number of bits in `T`,
+    /// the entire value is shifted out, and `0` is returned.
+    ///
+    /// This is different from the standard operator, which behaves like
+    /// [`wrapping_shl`]. For most targets, `unbounded_shl_scalar` is
+    /// faster than the standard operator.
+    ///
+    /// This function is faster than `self.unbounded_shl(splat(rhs))`
+    /// because it has special hardware support.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    #[inline]
+    #[must_use]
+    pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
+        self.unbounded_shl_scalar_backend(rhs)
+    }
+
+    /// Shifts right each element of `self` by the corresponding element
+    /// of `rhs`, without bounding `rhs`.
+    ///
+    /// If `rhs` is larger than or equal to the number of bits in `T`,
+    /// the entire value is shifted out. For unsigned integers, this
+    /// yields `0`. For signed integers, this yields `0` for a positive
+    /// number and `-1` for a negative number.
+    ///
+    /// This is different from the standard operator, which behaves like
+    /// [`wrapping_shr`]. For most targets, `unbounded_shr` is faster than the
+    /// standard operator.
+    ///
+    /// If you intend to shift all elements by the same value, consider using
+    /// [`unbounded_shr_scalar`] which is faster.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr_scalar`]: crate::Simd::unbounded_shr_scalar
+    #[inline]
+    #[must_use]
+    pub fn unbounded_shr(self, rhs: Simd<T::Unsigned, N>) -> Self {
+        self.unbounded_shr_backend(rhs)
+    }
+
+    /// Shifts right each element of `self` by the uniform scalar `rhs`,
+    /// without bounding `rhs`.
+    ///
+    /// If `rhs` is larger than or equal to the number of bits in `T`,
+    /// the entire value is shifted out. For unsigned integers, this
+    /// yields `0`. For signed integers, this yields `0` for a positive
+    /// number and `-1` for a negative number.
+    ///
+    /// This is different from the standard operator, which behaves like
+    /// [`wrapping_shr`]. For most targets, `unbounded_shr_scalar` is faster
+    /// than the standard operator.
+    ///
+    /// This function is faster than `self.unbounded_shr(splat(rhs))` because
+    /// it has special hardware support.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    #[inline]
+    #[must_use]
+    pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
+        self.unbounded_shr_scalar_backend(rhs)
+    }
+
+    /// Saturating integer addition. Computes `self + rhs`, saturating at the
+    /// numeric bounds instead of overflowing.
+    #[inline]
+    #[must_use]
+    pub fn saturating_add(self, rhs: Self) -> Self {
+        self.saturating_add_backend(rhs)
+    }
+
+    /// Saturating integer subtraction. Computes `self - rhs`, saturating at
+    /// the numeric bounds instead of overflowing.
+    #[inline]
+    #[must_use]
+    pub fn saturating_sub(self, rhs: Self) -> Self {
+        self.saturating_sub_backend(rhs)
+    }
+
+    /// Saturating integer multiplication. Computes `self * rhs`, saturating
+    /// at the numeric bounds instead of overflowing.
+    #[inline]
+    #[must_use]
+    pub fn saturating_mul(self, rhs: Self) -> Self {
+        self.saturating_mul_backend(rhs)
+    }
+
+    /// Saturating integer division. Computes `self / rhs`, saturating at the
+    /// numeric bounds instead of overflowing.
+    ///
+    /// Note that for unsigned integers, overflow never occurs and the
+    /// operation is identical to regular division.
+    ///
+    /// Note that because division has no hardware support, this operation is
+    /// very slow and should be avoided if possible.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any element of `rhs` is zero.
+    #[inline]
+    #[must_use]
+    pub fn saturating_div(self, rhs: Self) -> Self {
+        self.saturating_div_backend(rhs)
+    }
+
+    /// Returns `-self` and whether an overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The negation (returns the wrapped value if an overflow occured)
+    /// - A mask indicating whether an overflow occured
+    ///
+    /// For signed integers, overflow only occurs for `Self::MIN`.
+    /// For unsigned integers, overflow occurs for all values except
+    /// zero.
+    #[inline]
+    #[must_use]
+    pub fn overflowing_neg(self) -> (Self, Self) {
+        self.overflowing_neg_backend()
+    }
+
+    /// Returns `self + rhs` and whether an overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The addition (returns the wrapped value if an overflow occured)
+    /// - A mask indicating whether an overflow occured
+    #[inline]
+    #[must_use]
+    pub fn overflowing_add(self, rhs: Self) -> (Self, Self) {
+        self.overflowing_add_backend(rhs)
+    }
+
+    /// Returns `self - rhs` and whether an overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The subtraction (returns the wrapped value if an overflow occured)
+    /// - A mask indicating whether an overflow occured
+    #[inline]
+    #[must_use]
+    pub fn overflowing_sub(self, rhs: Self) -> (Self, Self) {
+        self.overflowing_sub_backend(rhs)
+    }
+
+    /// Returns `self * rhs` and whether an overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The multiplication (returns the wrapped value if an overflow occured)
+    /// - A mask indicating whether an overflow occured
+    #[inline]
+    #[must_use]
+    pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
+        self.overflowing_mul_backend(rhs)
+    }
+
+    /// Returns `self / rhs` and whether an overflow occured.
+    ///
+    /// Note that for unsigned integers, overflow never occurs thus the
+    /// second value is always `false`.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The division (returns `self` if an overflow occured)
+    /// - A mask indicating whether an overflow occured (always false)
+    ///
+    /// Note that because division has no hardware support, this operation is
+    /// very slow and should be avoided if possible.
+    #[inline]
+    #[must_use]
+    pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
+        self.overflowing_div_backend(rhs)
+    }
+
+    /// Returns `self % rhs` and whether an overflow occured.
+    ///
+    /// Note that for unsigned integers, overflow never occurs thus the
+    /// second value is always `false`.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The remainder (returns zero if an overflow occured)
+    /// - A mask indicating whether an overflow occured (always false)
+    ///
+    /// Note that because division has no hardware support, this operation is
+    /// very slow and should be avoided if possible.
+    #[inline]
+    #[must_use]
+    pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
+        self.overflowing_rem_backend(rhs)
+    }
+
+    /// Shifts left each element of `self` by the corresponding element
+    /// of `rhs` and returns whether overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
+    /// - A mask indicating whether an overflow occured (`rhs >= T::BITS`)
+    ///
+    /// Note that on most targets, this operation is slower than
+    /// [`unbounded_shl`], so consider using that instead. If you intend
+    /// to shift all elements by the same value, consider using
+    /// [`overflowing_shl_scalar`] which is faster.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl`]: crate::Simd::unbounded_shl
+    /// [`overflowing_shl_scalar`]: Self::overflowing_shl_scalar
+    #[inline]
+    #[must_use]
+    pub fn overflowing_shl(self, rhs: Simd<T::Unsigned, N>) -> (Self, Simd<T::Unsigned, N>) {
+        (
+            self << rhs,
+            rhs.simd_ge(const { Simd::<T::Unsigned, N>::splat(T::BITS_AS_UNSIGNED) }),
+        )
+    }
+
+    /// Shifts left each element of `self` by the uniform scalar `rhs`
+    /// and returns whether overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
+    /// - A boolean indicating whether an overflow occured (`rhs >= T::BITS`)
+    ///
+    /// Note that on most targets, this operation is slower than
+    /// [`unbounded_shl_scalar`], so consider using that instead.
+    ///
+    /// This function is faster than `self.overflowing_shl(splat(rhs))`
+    /// because it has special hardware support.
+    ///
+    /// [`wrapping_shl`]: i32::wrapping_shl
+    /// [`unbounded_shl_scalar`]: crate::Simd::unbounded_shl_scalar
+    #[inline]
+    #[must_use]
+    pub fn overflowing_shl_scalar(self, rhs: u32) -> (Self, bool) {
+        (self << rhs, rhs >= T::BITS)
+    }
+
+    /// Shifts right each element of `self` by the corresponding element
+    /// of `rhs` and returns whether overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
+    /// - A mask indicating whether an overflow occured (`rhs >= T::BITS`)
+    ///
+    /// Note that on most targets, this operation is slower than
+    /// [`unbounded_shr`], so consider using that instead. If you intend
+    /// to shift all elements by the same value, consider using
+    /// [`overflowing_shr_scalar`] which is faster.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr`]: crate::Simd::unbounded_shr
+    /// [`overflowing_shr_scalar`]: Self::overflowing_shr_scalar
+    #[inline]
+    #[must_use]
+    pub fn overflowing_shr(self, rhs: Simd<T::Unsigned, N>) -> (Self, Simd<T::Unsigned, N>) {
+        (
+            self >> rhs,
+            rhs.simd_ge(const { Simd::<T::Unsigned, N>::splat(T::BITS_AS_UNSIGNED) }),
+        )
+    }
+
+    /// Shifts right each element of `self` by the uniform scalar `rhs`
+    /// and returns whether overflow occured.
+    ///
+    /// Returns a tuple with:
+    ///
+    /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
+    /// - A boolean indicating whether an overflow occured (`rhs >= T::BITS`)
+    ///
+    /// Note that on most targets, this operation is slower than
+    /// [`unbounded_shr_scalar`], so consider using that instead.
+    ///
+    /// This function is faster than `self.overflowing_shr(splat(rhs))`
+    /// because it has special hardware support.
+    ///
+    /// [`wrapping_shr`]: i32::wrapping_shr
+    /// [`unbounded_shr_scalar`]: crate::Simd::unbounded_shr_scalar
+    #[inline]
+    #[must_use]
+    pub fn overflowing_shr_scalar(self, rhs: u32) -> (Self, bool) {
+        (self >> rhs, rhs >= T::BITS)
+    }
+
+    /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
+    /// vector of a larger integer type.
+    ///
+    /// The returned value is always exact and can never overflow.
+    ///
+    /// This function is different from [`mul_keep_low_high`], which returns
+    /// two seperate SIMD vectors for low and high parts, instead of a
+    /// single SIMD vector of a larger integer type. Also note that while
+    /// [`mul_keep_low_high`] exists for all types, `widening_mul` does not
+    /// exist for types with no wider variant (e.g., for `i32x16` because
+    /// there is no `i64x16`).
+    ///
+    /// [`mul_keep_low_high`]: Self::mul_keep_low_high
+    #[inline]
+    #[must_use]
+    pub fn widening_mul(self, rhs: Self) -> Simd<T::DoubleWidth, N>
+    where
+        T: HasDoubleWidth,
+        Simd<T::DoubleWidth, N>: SupportedSimd,
+    {
+        self.widening_mul_backend(rhs)
+    }
+
+    /// Computes `self * rhs`, producing intermediate double-width
+    /// integers, then returns their low parts and high parts in two
+    /// seperate SIMD vectors.
+    ///
+    /// This function is different from `widening_mul`, which returns a single
+    /// SIMD vector of a larger integer type, instead of two seperate SIMD
+    /// vectors for low and high parts. Also note that while
+    /// `mul_keep_low_high` exists for all types, `widening_mul` does not
+    /// exist for types with no wider variant (e.g., for `i32x16` because
+    /// there is no `i64x16`).
+    #[inline]
+    #[must_use]
+    pub fn mul_keep_low_high(self, rhs: Self) -> (Simd<T::Unsigned, N>, Self) {
+        self.mul_keep_low_high_backend(rhs)
+    }
+
+    /// Computes `self * rhs`, producing intermediate double-width
+    /// integers, then returns their high parts, discarding their low
+    /// parts.
+    #[inline]
+    #[must_use]
+    pub fn mul_keep_high(self, rhs: Self) -> Self {
+        self.mul_keep_high_backend(rhs)
+    }
+}
+
+macro_rules! integer {
+    ($T:ident) => {
+        /// Contains SIMD integer items whose name conflicts with a SIMD float
+        /// item's name.
+        ///
+        /// These items cannot be made generic over `T: PrimitiveInteger`
+        /// because Rust treats that as conflicting with items exposed for
+        /// `T: PrimitiveFloat`.
+        ///
+        /// Regularly, `cfg(doc)` is used to show these items in one generic
+        /// `impl` block rather than multiple duplicated `impl` blocks. This may
+        /// fail when `wide` types are reexported. Consider reading `wide`
+        /// documentation directly.
+        #[cfg(not(doc))]
+        impl<const N: usize> Simd<$T, N>
+        where
+            Simd<$T, N>: SupportedSimd,
+        {
+            conflicting_items!($T);
+        }
+
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
             Add,
             add,
             AddAssign,
             add_assign,
             add_backend,
-            /// Computes wrapping addition for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes wrapping addition for each element of `self` and the
-            /// scalar `rhs`.
-            ,
             /// Computes wrapping addition for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
         );
-        impl_binary_operator!(
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
             Sub,
             sub,
             SubAssign,
             sub_assign,
             sub_backend,
-            /// Computes wrapping subtraction for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes wrapping subtraction for each element of `self` and the
-            /// scalar `rhs`.
-            ,
             /// Computes wrapping subtraction for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
         );
-        impl_binary_operator!(
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
             Mul,
             mul,
             MulAssign,
             mul_assign,
             mul_backend,
-            /// Computes wrapping multiplication for each element of `self` and
-            /// the corresponding element of `rhs`.
-            ,
-            /// Computes wrapping multiplication for each element of `self` and
-            /// the scalar `rhs`.
-            ,
             /// Computes wrapping multiplication for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
         );
-        impl_binary_operator!(
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
             Div,
             div,
             DivAssign,
             div_assign,
             div_backend,
-            /// Computes wrapping division for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
-            ,
-            /// Computes wrapping division for each element of `self` and the
-            /// scalar `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if `rhs` is zero.
-            ,
             /// Computes wrapping division for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
             ///
@@ -132,34 +1181,13 @@ macro_rules! impl_simd_integer {
             ///
             /// Panics if any element of `rhs` is zero.
         );
-        impl_binary_operator!(
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
             Rem,
             rem,
             RemAssign,
             rem_assign,
             rem_backend,
-            /// Computes the wrapping remainder of each element of `self`
-            /// divided by the corresponding element of `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
-            ,
-            /// Computes the wrapping remainder of each element of `self`
-            /// divided by the scalar `rhs`.
-            ///
-            /// Note that because division has no hardware support, this operation
-            /// is very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if `rhs` is zero.
-            ,
             /// Computes the wrapping remainder of the scalar `self` divided by
             /// each element of `rhs`, returning a SIMD vector.
             ///
@@ -170,720 +1198,217 @@ macro_rules! impl_simd_integer {
             ///
             /// Panics if any element of `rhs` is zero.
         );
-        impl_shift_operator!(
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
-            $UnsignedSimd,
-            $SignedSimd,
-            Shl,
-            shl,
-            ShlAssign,
-            shl_assign,
-            shl_backend,
-            shl_scalar_backend,
-            /// Shifts left each element of `self` by the corresponding element
-            /// of `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shl`], so consider using that instead.
-            ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
-            ,
-            /// Shifts left each element of `self` by the scalar `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// On most targets, shifting by a scalar is faster than shifting by
-            /// SIMD vector. Note that on most targets, this operator is slower than
-            /// [`unbounded_shl_scalar`], so consider using that instead.
-            ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            #[doc = concat!("[`unbounded_shl_scalar`]: ", stringify!($Simd), "::unbounded_shl_scalar")]
-            ,
-            /// Shifts left the scalar `self` by each element of `rhs`,
-            /// returning a SIMD vector.
-            ///
-            /// This operator behaves like [`wrapping_shl`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shl`], so consider using that instead.
-            ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            #[doc = concat!("[`unbounded_shl`]: ", stringify!($Simd), "::unbounded_shl")]
-        );
-        impl_shift_operator!(
-            $T,
-            $Simd,
-            $UnsignedSimd,
-            $SignedSimd,
-            Shr,
-            shr,
-            ShrAssign,
-            shr_assign,
-            shr_backend,
-            shr_scalar_backend,
-            /// Shifts right each element of `self` by the corresponding element of
-            /// `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shr`], so consider using that instead.
-            ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
-            ,
-            /// Shifts right each element of `self` by the scalar `rhs`.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// On most targets, shifting by a scalar is faster than shifting by
-            /// a SIMD vector. Note that on most targets, this operator is
-            /// slower than [`unbounded_shr`], so consider using that instead.
-            ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")],
-            /// Shifts right the scalar `self` by each element of `rhs`,
-            /// returning a SIMD vector.
-            ///
-            /// This operator behaves like [`wrapping_shr`].
-            ///
-            /// Note that on most targets, this operator is slower than
-            /// [`unbounded_shr`], so consider using that instead.
-            ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[doc = concat!("[`unbounded_shr`]: ", stringify!($Simd), "::unbounded_shr")]
-        );
-        impl_binary_operator!(
-            $T,
-            $Simd,
             BitAnd,
             bitand,
             BitAndAssign,
             bitand_assign,
             bitand_backend,
-            /// Computes bitwise AND for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise AND for each element of `self` and the
-            /// scalar `rhs`.
-            ,
             /// Computes bitwise AND for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
         );
-        impl_binary_operator!(
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
             BitOr,
             bitor,
             BitOrAssign,
             bitor_assign,
             bitor_backend,
-            /// Computes bitwise OR for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise OR for each element of `self` and the
-            /// scalar `rhs`.
-            ,
             /// Computes bitwise OR for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
         );
-        impl_binary_operator!(
+        impl_binary_operator_for_scalar!(
             $T,
-            $Simd,
             BitXor,
             bitxor,
             BitXorAssign,
             bitxor_assign,
             bitxor_backend,
-            /// Computes bitwise XOR for each element of `self` and the
-            /// corresponding element of `rhs`.
-            ,
-            /// Computes bitwise XOR for each element of `self` and the
-            /// scalar `rhs`.
-            ,
             /// Computes bitwise XOR for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
         );
+    };
+}
+integer!(i8);
+integer!(i16);
+integer!(i32);
+integer!(i64);
+integer!(i128);
+integer!(isize);
+integer!(u8);
+integer!(u16);
+integer!(u32);
+integer!(u64);
+integer!(u128);
+integer!(usize);
 
-        impl<Rhs> core::iter::Sum<Rhs> for $Simd
-        where
-            $Simd: AddAssign<Rhs>,
-        {
-            #[inline]
-            fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::zeroed();
-                for val in iter {
-                total += val;
-                }
-                total
-            }
+/// Defines the internal implementations of functions applicable to SIMD vectors
+/// of integers (both signed and unsigned).
+pub(crate) trait SimdIntegerBackend: Sized {
+    fn neg_backend(self) -> Self;
+
+    fn not_backend(self) -> Self;
+
+    fn add_backend(self, rhs: Self) -> Self;
+
+    fn sub_backend(self, rhs: Self) -> Self;
+
+    fn mul_backend(self, rhs: Self) -> Self;
+
+    #[track_caller]
+    fn div_backend(self, rhs: Self) -> Self;
+
+    #[track_caller]
+    fn rem_backend(self, rhs: Self) -> Self;
+
+    fn bitand_backend(self, rhs: Self) -> Self;
+
+    fn bitor_backend(self, rhs: Self) -> Self;
+
+    fn bitxor_backend(self, rhs: Self) -> Self;
+
+    fn reduce_add_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_mul_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
+
+    fn shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn max_backend(self, rhs: Self) -> Self;
+
+    fn min_backend(self, rhs: Self) -> Self;
+
+    fn reduce_max_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn reduce_min_backend(self) -> Self::T
+    where
+        Self: SimdAssociatedTypes;
+
+    fn unbounded_shl_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self;
+
+    fn unbounded_shr_backend(self, rhs: Self::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self;
+
+    fn saturating_add_backend(self, rhs: Self) -> Self;
+
+    fn saturating_sub_backend(self, rhs: Self) -> Self;
+
+    fn saturating_mul_backend(self, rhs: Self) -> Self;
+
+    #[track_caller]
+    fn saturating_div_backend(self, rhs: Self) -> Self;
+
+    fn overflowing_neg_backend(self) -> (Self, Self);
+
+    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self);
+
+    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self);
+
+    fn widening_mul_backend(
+        self,
+        rhs: Self,
+    ) -> Self::SimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>
+    where
+        Self: SimdAssociatedTypes<T: HasDoubleWidth>
+            + SupportSimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>,
+    {
+        // Because not all concrete types support `widening_mul`, this default
+        // implementation must exist. Note that all concrete types that support
+        // `widening_mul` should override this implementation, otherwise callers
+        // would get this panic.
+        let _ = rhs;
+        unreachable!(
+            "if you encountered this panic, a `wide` type is unintentionally missing its internal implementation of `widening_mul`"
+        )
+    }
+
+    fn mul_keep_low_high_backend(self, rhs: Self) -> (Self::UnsignedSimd, Self)
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+
+    fn mul_keep_high_backend(self, rhs: Self) -> Self;
+}
+
+/// Automatically fills [`SimdIntegerBackend`] functions that have the same
+/// implementation for all types.
+///
+/// Even though such functions have the same implementation for all applicable
+/// types, they are implemented via the trait and this macro because they cannot
+/// be implemented in a generic context (e.g., if a function requires a
+/// Rust primitive number API that is not exposed to generic contexts).
+macro_rules! simd_integer_backend_autofill {
+    ($T:ident, $N:literal) => {
+        #[inline]
+        #[track_caller]
+        fn div_backend(self, rhs: Self) -> Self {
+            // TODO(generics): Consider making this implementation easier to
+            // optimize
+
+            let self_array = self.to_array();
+            let rhs_array = rhs.to_array();
+
+            Self::from_array(core::array::from_fn(|i| {
+                self_array[i].wrapping_div(rhs_array[i])
+            }))
         }
 
-        impl<Rhs> core::iter::Product<Rhs> for $Simd
-        where
-            $Simd: MulAssign<Rhs>,
-        {
-            #[inline]
-            fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
-                let mut total = Self::from(1);
-                for val in iter {
-                total *= val;
-                }
-                total
-            }
+        #[inline]
+        #[track_caller]
+        fn rem_backend(self, rhs: Self) -> Self {
+            // TODO(generics): Consider making this implementation easier to
+            // optimize
+
+            let self_array = self.to_array();
+            let rhs_array = rhs.to_array();
+
+            Self::from_array(core::array::from_fn(|i| {
+                self_array[i].wrapping_rem(rhs_array[i])
+            }))
         }
 
-        macro_rules! impl_formatting_trait {
-            ($Trait:path) => {
-                impl $Trait for $Simd {
-                    #[allow(clippy::missing_inline_in_public_items)]
-                    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                        write!(f, "(")?;
-                        for (i, x) in self.to_array().iter().enumerate() {
-                            if i > 0 {
-                                write!(f, ", ")?;
-                            }
-                            <$T as $Trait>::fmt(x, f)?;
-                        }
-                        write!(f, ")")
-                    }
-                }
-            }
-        }
-        impl_formatting_trait!(core::fmt::Binary);
-        impl_formatting_trait!(core::fmt::LowerHex);
-        impl_formatting_trait!(core::fmt::Octal);
-        impl_formatting_trait!(core::fmt::UpperHex);
+        #[inline]
+        #[track_caller]
+        fn saturating_div_backend(self, rhs: Self) -> Self {
+            // TODO(generics): Consider finding a way to remove the use of
+            // the closure which may lead to bad codegen
 
-        /// The following functionality exists for all SIMD vectors of integers.
-        impl $Simd {
-            /// A SIMD vector with all elements set to `1`.
-            pub const ONE: Self = Self::splat(1);
+            let self_array = self.to_array();
+            let rhs_array = rhs.to_array();
 
-            /// A SIMD vector with all elements set to `0`.
-            pub const ZERO: Self = Self::splat(0);
-
-            #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MAX`].")]
-            pub const MAX: Self = Self::splat($T::MAX);
-
-            #[doc = concat!("A SIMD vector with all elements set to [`", stringify!($T) ,"::MIN`].")]
-            pub const MIN: Self = Self::splat($T::MIN);
-
-            /// The size of this SIMD vector in bits.
-            pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
-
-            /// Returns the maximum between each element of `self` and the
-            /// corresponding element of `other`.
-            #[inline]
-            #[must_use]
-            pub fn max(self, other: Self) -> Self {
-                self.max_backend(other)
-            }
-
-            /// Returns the minimum between each element of `self` and the
-            /// corresponding element of `other`.
-            #[inline]
-            #[must_use]
-            pub fn min(self, other: Self) -> Self {
-                self.min_backend(other)
-            }
-
-            /// Clamps each element of `self` between the corresponding elements
-            /// of `min` and `max`.
-            ///
-            /// If `min > max`, the result is unspecified. Consider manually
-            /// checking for that case.
-            #[inline]
-            #[must_use]
-            pub fn clamp(self, min: Self, max: Self) -> Self {
-                self.max(min).min(max)
-            }
-
-            /// Reducing addition. Returns the sum of the vector's elements.
-            ///
-            /// Equivalent to `self[0] + self[1] + ...`.
-            #[inline]
-            #[must_use]
-            pub fn reduce_add(self) -> $T {
-                self.reduce_add_backend()
-            }
-
-            /// Reducing multiplication. Returns the product of the vector's
-            /// elements.
-            ///
-            /// Equivalent to `self[0] * self[1] * ...`.
-            #[inline]
-            #[must_use]
-            pub fn reduce_mul(self) -> $T {
-                self.reduce_mul_backend()
-            }
-
-            /// Reducing maximum. Returns the maximum of the vector's elements.
-            ///
-            /// Equivalent to `self[0].max(self[1].max(...))`.
-            #[inline]
-            #[must_use]
-            pub fn reduce_max(self) -> $T {
-                self.reduce_max_backend()
-            }
-
-            /// Reducing minimum. Returns the minimum of the vector's elements.
-            ///
-            /// Equivalent to `self[0].min(self[1].min(...))`.
-            #[inline]
-            #[must_use]
-            pub fn reduce_min(self) -> $T {
-                self.reduce_min_backend()
-            }
-
-            /// Shifts left each element of `self` by the corresponding element
-            /// of `rhs`, without bounding `rhs`.
-            ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
-            /// the entire value is shifted out, and `0` is returned.
-            ///
-            /// This is different from the standard operator, which behaves like
-            /// [`wrapping_shl`]. For most targets, `unbounded_shl` is faster than the
-            /// standard operator.
-            ///
-            /// If you intend to shift all elements by the same value, consider using
-            /// [`unbounded_shl_scalar`] which is faster.
-            ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
-            #[inline]
-            #[must_use]
-            pub fn unbounded_shl(self, rhs: $UnsignedSimd) -> Self {
-                self.unbounded_shl_backend(rhs)
-            }
-
-            /// Shifts left each element of `self` by the uniform scalar `rhs`,
-            /// without bounding `rhs`.
-            ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
-            /// the entire value is shifted out, and `0` is returned.
-            ///
-            /// This is different from the standard operator, which behaves like
-            /// [`wrapping_shl`]. For most targets, `unbounded_shl_scalar` is
-            /// faster than the standard operator.
-            ///
-            /// This function is faster than `self.unbounded_shl(splat(rhs))`
-            /// because it has special hardware support.
-            ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            #[inline]
-            #[must_use]
-            pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
-                self.unbounded_shl_scalar_backend(rhs)
-            }
-
-            /// Shifts right each element of `self` by the corresponding element
-            /// of `rhs`, without bounding `rhs`.
-            ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
-            /// the entire value is shifted out. For unsigned integers, this
-            /// yields `0`. For signed integers, this yields `0` for a positive
-            /// number and `-1` for a negative number.
-            ///
-            /// This is different from the standard operator, which behaves like
-            /// [`wrapping_shr`]. For most targets, `unbounded_shr` is faster than the
-            /// standard operator.
-            ///
-            /// If you intend to shift all elements by the same value, consider using
-            /// [`unbounded_shr_scalar`] which is faster.
-            ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
-            #[inline]
-            #[must_use]
-            pub fn unbounded_shr(self, rhs: $UnsignedSimd) -> Self {
-                self.unbounded_shr_backend(rhs)
-            }
-
-            /// Shifts right each element of `self` by the uniform scalar `rhs`,
-            /// without bounding `rhs`.
-            ///
-            #[doc = concat!("If `rhs` is larger than or equal to the number of bits in [`", stringify!($T), "`],")]
-            /// the entire value is shifted out. For unsigned integers, this
-            /// yields `0`. For signed integers, this yields `0` for a positive
-            /// number and `-1` for a negative number.
-            ///
-            /// This is different from the standard operator, which behaves like
-            /// [`wrapping_shr`]. For most targets, `unbounded_shr_scalar` is faster
-            /// than the standard operator.
-            ///
-            /// This function is faster than `self.unbounded_shr(splat(rhs))` because
-            /// it has special hardware support.
-            ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            #[inline]
-            #[must_use]
-            pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
-                self.unbounded_shr_scalar_backend(rhs)
-            }
-
-            /// Saturating integer addition. Computes `self + rhs`, saturating at the
-            /// numeric bounds instead of overflowing.
-            #[inline]
-            #[must_use]
-            pub fn saturating_add(self, rhs: Self) -> Self {
-                self.saturating_add_backend(rhs)
-            }
-
-            /// Saturating integer subtraction. Computes `self - rhs`, saturating at
-            /// the numeric bounds instead of overflowing.
-            #[inline]
-            #[must_use]
-            pub fn saturating_sub(self, rhs: Self) -> Self {
-                self.saturating_sub_backend(rhs)
-            }
-
-            /// Saturating integer multiplication. Computes `self * rhs`, saturating
-            /// at the numeric bounds instead of overflowing.
-            #[inline]
-            #[must_use]
-            pub fn saturating_mul(self, rhs: Self) -> Self {
-                self.saturating_mul_backend(rhs)
-            }
-
-            /// Saturating integer division. Computes `self / rhs`, saturating at the
-            /// numeric bounds instead of overflowing.
-            ///
-            /// Note that for unsigned integers, overflow never occurs and the
-            /// operation is identical to regular division.
-            ///
-            /// Note that because division has no hardware support, this operation is
-            /// very slow and should be avoided if possible.
-            ///
-            /// # Panics
-            ///
-            /// Panics if any element of `rhs` is zero.
-            #[inline]
-            #[must_use]
-            pub fn saturating_div(self, rhs: Self) -> Self {
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array([$(self_array[$INDEX].saturating_div(rhs_array[$INDEX])),*])
-            }
-
-            /// Returns `-self` and whether an overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The negation (returns the wrapped value if an overflow occured)
-            /// - A mask indicating whether an overflow occured
-            ///
-            /// For signed integers, overflow only occurs for `Self::MIN`.
-            /// For unsigned integers, overflow occurs for all values except
-            /// zero.
-            #[inline]
-            #[must_use]
-            pub fn overflowing_neg(self) -> (Self, Self) {
-                self.overflowing_neg_backend()
-            }
-
-            /// Returns `self + rhs` and whether an overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The addition (returns the wrapped value if an overflow occured)
-            /// - A mask indicating whether an overflow occured
-            #[inline]
-            #[must_use]
-            pub fn overflowing_add(self, rhs: Self) -> (Self, Self) {
-                self.overflowing_add_backend(rhs)
-            }
-
-            /// Returns `self - rhs` and whether an overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The subtraction (returns the wrapped value if an overflow occured)
-            /// - A mask indicating whether an overflow occured
-            #[inline]
-            #[must_use]
-            pub fn overflowing_sub(self, rhs: Self) -> (Self, Self) {
-                self.overflowing_sub_backend(rhs)
-            }
-
-            /// Returns `self * rhs` and whether an overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The multiplication (returns the wrapped value if an overflow occured)
-            /// - A mask indicating whether an overflow occured
-            #[inline]
-            #[must_use]
-            pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
-                self.overflowing_mul_backend(rhs)
-            }
-
-            /// Returns `self / rhs` and whether an overflow occured.
-            ///
-            /// Note that for unsigned integers, overflow never occurs thus the
-            /// second value is always `false`.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The division (returns `self` if an overflow occured)
-            /// - A mask indicating whether an overflow occured (always false)
-            ///
-            /// Note that because division has no hardware support, this operation is
-            /// very slow and should be avoided if possible.
-            #[inline]
-            #[must_use]
-            pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
-                self.overflowing_div_backend(rhs)
-            }
-
-            /// Returns `self % rhs` and whether an overflow occured.
-            ///
-            /// Note that for unsigned integers, overflow never occurs thus the
-            /// second value is always `false`.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The remainder (returns zero if an overflow occured)
-            /// - A mask indicating whether an overflow occured (always false)
-            ///
-            /// Note that because division has no hardware support, this operation is
-            /// very slow and should be avoided if possible.
-            #[inline]
-            #[must_use]
-            pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
-                self.overflowing_rem_backend(rhs)
-            }
-
-            /// Shifts left each element of `self` by the corresponding element
-            /// of `rhs` and returns whether overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
-            #[doc = concat!(" - A mask indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
-            ///
-            /// Note that on most targets, this operation is slower than
-            /// [`unbounded_shl`], so consider using that instead. If you intend
-            /// to shift all elements by the same value, consider using
-            /// [`overflowing_shl_scalar`] which is faster.
-            ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            /// [`unbounded_shl`]: Self::unbounded_shl
-            /// [`overflowing_shl_scalar`]: Self::overflowing_shl_scalar
-            #[inline]
-            #[must_use]
-            pub fn overflowing_shl(self, rhs: $UnsignedSimd) -> (Self, $UnsignedSimd) {
-                (self << rhs, rhs.simd_ge(const { $UnsignedSimd::splat($T::BITS as _) }))
-            }
-
-            /// Shifts left each element of `self` by the uniform scalar `rhs`
-            /// and returns whether overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The wrapping shift (overflow behaves like [`wrapping_shl`])
-            #[doc = concat!(" - A boolean indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
-            ///
-            /// Note that on most targets, this operation is slower than
-            /// [`unbounded_shl_scalar`], so consider using that instead.
-            ///
-            /// This function is faster than `self.overflowing_shl(splat(rhs))`
-            /// because it has special hardware support.
-            ///
-            #[doc = concat!("[`wrapping_shl`]: ", stringify!($T), "::wrapping_shl")]
-            /// [`unbounded_shl_scalar`]: Self::unbounded_shl_scalar
-            #[inline]
-            #[must_use]
-            pub fn overflowing_shl_scalar(self, rhs: u32) -> (Self, bool) {
-                (self << rhs, rhs >= $T::BITS)
-            }
-
-            /// Shifts right each element of `self` by the corresponding element
-            /// of `rhs` and returns whether overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
-            #[doc = concat!(" - A mask indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
-            ///
-            /// Note that on most targets, this operation is slower than
-            /// [`unbounded_shr`], so consider using that instead. If you intend
-            /// to shift all elements by the same value, consider using
-            /// [`overflowing_shr_scalar`] which is faster.
-            ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            /// [`unbounded_shr`]: Self::unbounded_shr
-            /// [`overflowing_shr_scalar`]: Self::overflowing_shr_scalar
-            #[inline]
-            #[must_use]
-            pub fn overflowing_shr(self, rhs: $UnsignedSimd) -> (Self, $UnsignedSimd) {
-                (self >> rhs, rhs.simd_ge(const { $UnsignedSimd::splat($T::BITS as _) }))
-            }
-
-            /// Shifts right each element of `self` by the uniform scalar `rhs`
-            /// and returns whether overflow occured.
-            ///
-            /// Returns a tuple with:
-            ///
-            /// - The wrapping shift (overflow behaves like [`wrapping_shr`])
-            #[doc = concat!(" - A boolean indicating whether an overflow occured (`rhs >= ", stringify!($T), "::BITS`)")]
-            ///
-            /// Note that on most targets, this operation is slower than
-            /// [`unbounded_shr_scalar`], so consider using that instead.
-            ///
-            /// This function is faster than `self.overflowing_shr(splat(rhs))`
-            /// because it has special hardware support.
-            ///
-            #[doc = concat!("[`wrapping_shr`]: ", stringify!($T), "::wrapping_shr")]
-            /// [`unbounded_shr_scalar`]: Self::unbounded_shr_scalar
-            #[inline]
-            #[must_use]
-            pub fn overflowing_shr_scalar(self, rhs: u32) -> (Self, bool) {
-                (self >> rhs, rhs >= $T::BITS)
-            }
-
-            $(
-                /// Widening multiplication. Computes `self * rhs`, widening to a SIMD
-                /// vector of a larger integer type.
-                ///
-                /// The returned value is always exact and can never overflow.
-                ///
-                /// This function is different from [`mul_keep_low_high`], which returns
-                /// two seperate SIMD vectors for low and high parts, instead of a
-                /// single SIMD vector of a larger integer type. Also note that while
-                /// [`mul_keep_low_high`] exists for all types, `widening_mul` does not
-                /// exist for types with no wider variant (e.g., for `i32x16` because
-                /// there is no `i64x16`).
-                ///
-                /// [`mul_keep_low_high`]: Self::mul_keep_low_high
-                #[inline]
-                #[must_use]
-                pub fn widening_mul(self, rhs: Self) -> $WiderSimd {
-                    self.widening_mul_backend(rhs)
-                }
-            )?
-
-            #[doc = concat!(
-                "Computes `self * rhs`, producing intermediate ",
-                $T_BITS_MUL_2,
-                "-bit integers, then returns their low ",
-                $T_BITS,
-                "-bit parts and high ",
-                $T_BITS,
-                "-bit parts in two seperate SIMD vectors."
-            )]
-            ///
-            /// This function is different from `widening_mul`, which returns a single
-            /// SIMD vector of a larger integer type, instead of two seperate SIMD
-            /// vectors for low and high parts. Also note that while
-            /// `mul_keep_low_high` exists for all types, `widening_mul` does not
-            /// exist for types with no wider variant (e.g., for `i32x16` because
-            /// there is no `i64x16`).
-            #[inline]
-            #[must_use]
-            pub fn mul_keep_low_high(self, rhs: Self) -> ($UnsignedSimd, Self) {
-                self.mul_keep_low_high_backend(rhs)
-            }
-
-            #[doc = concat!(
-                "Computes `self * rhs`, producing intermediate ",
-                $T_BITS_MUL_2,
-                "-bit integers, then returns their high ",
-                $T_BITS,
-                "-bit parts."
-            )]
-            #[inline]
-            #[must_use]
-            pub fn mul_keep_high(self, rhs: Self) -> Self {
-                self.mul_keep_high_backend(rhs)
-            }
-
-            /// Creates a SIMD vector from a native-endian byte array.
-            ///
-            /// The bytes are interpreted as the raw memory representation of the
-            /// vector. This is equivalent to the `from_ne_bytes` functions on
-            /// primitive integer types, but operates on the entire vector at once.
-            ///
-            /// This is the inverse of [`to_ne_bytes`].
-            ///
-            /// [`to_ne_bytes`]: Self::to_ne_bytes
-            #[inline]
-            #[must_use]
-            pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
-                // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
-            }
-
-            /// Returns the raw memory representation of `self` as a native-endian
-            /// byte array.
-            ///
-            /// This is the inverse of [`from_ne_bytes`].
-            ///
-            /// [`from_ne_bytes`]: Self::from_ne_bytes
-            #[inline]
-            #[must_use]
-            pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
-                // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
-            }
-
-            /// Bitwise selection.
-            ///
-            /// For each bit of `self`:
-            ///
-            /// - If the bit is one, return the corresponding bit of `if_one`
-            /// - If the bit is zero, return the corresponding bit of `if_zero`
-            ///
-            /// If you know `self` is a [mask], meaning each element is either
-            /// all zeros or all ones, consider using [`select`] which is
-            /// faster.
-            ///
-            /// [mask]: crate#masks
-            /// [`select`]: Self::select
-            #[inline]
-            #[must_use]
-            pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-                self.bitselect_backend(if_one, if_zero)
-            }
-
-            #[inline]
-            #[track_caller]
-            fn div_backend(self, rhs: Self) -> Self {
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array([$(self_array[$INDEX].wrapping_div(rhs_array[$INDEX])),*])
-            }
-
-            #[inline]
-            #[track_caller]
-            fn rem_backend(self, rhs: Self) -> Self {
-                let self_array = self.to_array();
-                let rhs_array = rhs.to_array();
-
-                Self::from_array([$(self_array[$INDEX].wrapping_rem(rhs_array[$INDEX])),*])
-            }
-
-            // Invoke a macro that automatically fills some of this API's
-            // backend functions. There is a separate macro for signed integers
-            // and unsigned integers.
-            //
-            // This is used for functions that do not have the same
-            // implementation for all SIMD integer types, but do have the same
-            // implementation for all SIMD signed integer types, or for all SIMD
-            // unsigned integer types.
-            $autofill!(
-                T = $T,
-                Simd = $Simd,
-                UnsignedSimd = $UnsignedSimd,
-            );
+            Self::from_array(core::array::from_fn(|i| {
+                self_array[i].saturating_div(rhs_array[i])
+            }))
         }
     };
 }
@@ -891,11 +1416,7 @@ macro_rules! impl_simd_integer {
 /// Automatically fills SIMD integer backend functions that have the same
 /// implementation for all SIMD signed integer types.
 macro_rules! simd_integer_backend_signed_autofill {
-    (
-        T = $T:ident,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn neg_backend(self) -> Self {
             (-self.cast_unsigned()).cast_signed()
@@ -940,7 +1461,7 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
-        fn shl_backend(self, rhs: $UnsignedSimd) -> Self {
+        fn shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             (self.cast_unsigned() << rhs).cast_signed()
         }
 
@@ -962,7 +1483,7 @@ macro_rules! simd_integer_backend_signed_autofill {
         }
 
         #[inline]
-        fn unbounded_shl_backend(self, rhs: $UnsignedSimd) -> Self {
+        fn unbounded_shl_backend(self, rhs: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             // Shift left is the same for unsigned and signed integers.
             self.cast_unsigned().unbounded_shl(rhs).cast_signed()
         }
@@ -1027,11 +1548,7 @@ macro_rules! simd_integer_backend_signed_autofill {
 /// Automatically fills SIMD integer backend functions that have the same
 /// implementation for all SIMD unsigned integer types.
 macro_rules! simd_integer_backend_unsigned_autofill {
-    (
-        T = $T:ident,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn saturating_mul_backend(self, rhs: Self) -> Self {
             let (low, high) = self.mul_keep_low_high(rhs);
@@ -1071,311 +1588,172 @@ macro_rules! simd_integer_backend_unsigned_autofill {
     };
 }
 
-impl_simd_integer!(
-    T = i8,
-    N = 16,
-    Simd = i8x16,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u8x16,
-    SignedSimd = i8x16,
-    WiderSimd = { i16x16 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
-impl_simd_integer!(
-    T = i8,
-    N = 32,
-    Simd = i8x32,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u8x32,
-    SignedSimd = i8x32,
-    WiderSimd = { i16x32 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
-);
-impl_simd_integer!(
-    T = i8,
-    N = 64,
-    Simd = i8x64,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u8x64,
-    SignedSimd = i8x64,
-    WiderSimd = { /*i16x64*/ },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-    ],
-);
-impl_simd_integer!(
-    T = i16,
-    N = 8,
-    Simd = i16x8,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u16x8,
-    SignedSimd = i16x8,
-    WiderSimd = { i32x8 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
-);
-impl_simd_integer!(
-    T = i16,
-    N = 16,
-    Simd = i16x16,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u16x16,
-    SignedSimd = i16x16,
-    WiderSimd = { i32x16 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
-impl_simd_integer!(
-    T = i16,
-    N = 32,
-    Simd = i16x32,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u16x32,
-    SignedSimd = i16x32,
-    WiderSimd = { /*i32x32*/ },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
-);
-impl_simd_integer!(
-    T = i32,
-    N = 4,
-    Simd = i32x4,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u32x4,
-    SignedSimd = i32x4,
-    WiderSimd = { i64x4 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3],
-);
-impl_simd_integer!(
-    T = i32,
-    N = 8,
-    Simd = i32x8,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u32x8,
-    SignedSimd = i32x8,
-    WiderSimd = { i64x8 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
-);
-impl_simd_integer!(
-    T = i32,
-    N = 16,
-    Simd = i32x16,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u32x16,
-    SignedSimd = i32x16,
-    WiderSimd = { /*i64x16*/ },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
-impl_simd_integer!(
-    T = i64,
-    N = 2,
-    Simd = i64x2,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u64x2,
-    SignedSimd = i64x2,
-    WiderSimd = { /*i128x2*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1],
-);
-impl_simd_integer!(
-    T = i64,
-    N = 4,
-    Simd = i64x4,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u64x4,
-    SignedSimd = i64x4,
-    WiderSimd = { /*i128x4*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3],
-);
-impl_simd_integer!(
-    T = i64,
-    N = 8,
-    Simd = i64x8,
-    autofill = simd_integer_backend_signed_autofill,
-    UnsignedSimd = u64x8,
-    SignedSimd = i64x8,
-    WiderSimd = { /*i128x8*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
-);
-impl_simd_integer!(
-    T = u8,
-    N = 16,
-    Simd = u8x16,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u8x16,
-    SignedSimd = i8x16,
-    WiderSimd = { u16x16 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
-impl_simd_integer!(
-    T = u8,
-    N = 32,
-    Simd = u8x32,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u8x32,
-    SignedSimd = i8x32,
-    WiderSimd = { u16x32 },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
-);
-impl_simd_integer!(
-    T = u8,
-    N = 64,
-    Simd = u8x64,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u8x64,
-    SignedSimd = i8x64,
-    WiderSimd = { /*u16x64*/ },
-    T_BITS = 8,
-    T_BITS_MUL_2 = 16,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-    ],
-);
-impl_simd_integer!(
-    T = u16,
-    N = 8,
-    Simd = u16x8,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u16x8,
-    SignedSimd = i16x8,
-    WiderSimd = { u32x8 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
-);
-impl_simd_integer!(
-    T = u16,
-    N = 16,
-    Simd = u16x16,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u16x16,
-    SignedSimd = i16x16,
-    WiderSimd = { u32x16 },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
-impl_simd_integer!(
-    T = u16,
-    N = 32,
-    Simd = u16x32,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u16x32,
-    SignedSimd = i16x32,
-    WiderSimd = { /*u32x32*/ },
-    T_BITS = 16,
-    T_BITS_MUL_2 = 32,
-    INDICES = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31,
-    ],
-);
-impl_simd_integer!(
-    T = u32,
-    N = 4,
-    Simd = u32x4,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u32x4,
-    SignedSimd = i32x4,
-    WiderSimd = { u64x4 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3],
-);
-impl_simd_integer!(
-    T = u32,
-    N = 8,
-    Simd = u32x8,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u32x8,
-    SignedSimd = i32x8,
-    WiderSimd = { u64x8 },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
-);
-impl_simd_integer!(
-    T = u32,
-    N = 16,
-    Simd = u32x16,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u32x16,
-    SignedSimd = i32x16,
-    WiderSimd = { /*u64x16*/ },
-    T_BITS = 32,
-    T_BITS_MUL_2 = 64,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-);
-impl_simd_integer!(
-    T = u64,
-    N = 2,
-    Simd = u64x2,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u64x2,
-    SignedSimd = i64x2,
-    WiderSimd = { /*u128x2*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1],
-);
-impl_simd_integer!(
-    T = u64,
-    N = 4,
-    Simd = u64x4,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u64x4,
-    SignedSimd = i64x4,
-    WiderSimd = { /*u128x4*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3],
-);
-impl_simd_integer!(
-    T = u64,
-    N = 8,
-    Simd = u64x8,
-    autofill = simd_integer_backend_unsigned_autofill,
-    UnsignedSimd = u64x8,
-    SignedSimd = i64x8,
-    WiderSimd = { /*u128x8*/ },
-    T_BITS = 64,
-    T_BITS_MUL_2 = 128,
-    INDICES = [0, 1, 2, 3, 4, 5, 6, 7],
-);
+/// In order for the generic SIMD integer API to work, [`SimdIntegerBackend`] is
+/// used as a super-trait of [`SupportedSimd`].
+///
+/// This is incorrect logically, since [`SimdIntegerBackend`] is only applicable
+/// to SIMD vectors of integers. However this seems to be the only way to do it
+/// on stable Rust.
+///
+/// This means that non-integers do need some implementation of
+/// [`SimdIntegerBackend`]. This block is a dummy implementation for all
+/// non-integers that fills functions with [`unreachable!`].
+impl<T, const N: usize> SimdIntegerBackend for Simd<T, N>
+where
+    T: SimdElement + NotPrimitiveInteger,
+    Simd<T, N>: SupportedSimd,
+{
+    fn add_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitand_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitor_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitselect_backend(self, _: Self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn bitxor_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn div_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn max_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn min_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn mul_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn mul_keep_high_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn mul_keep_low_high_backend(
+        self,
+        _: Self,
+    ) -> (<Self as SimdAssociatedTypes>::UnsignedSimd, Self)
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn neg_backend(self) -> Self {
+        unreachable!()
+    }
+    fn not_backend(self) -> Self {
+        unreachable!()
+    }
+    fn overflowing_add_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_div_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_mul_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_neg_backend(self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_rem_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn overflowing_sub_backend(self, _: Self) -> (Self, Self) {
+        unreachable!()
+    }
+    fn reduce_add_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_max_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_min_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn reduce_mul_backend(self) -> <Self as SimdAssociatedTypes>::T
+    where
+        Self: SimdAssociatedTypes,
+    {
+        unreachable!()
+    }
+    fn rem_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn saturating_add_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn saturating_div_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn saturating_mul_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn saturating_sub_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn shl_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn shl_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn shr_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn shr_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn sub_backend(self, _: Self) -> Self {
+        unreachable!()
+    }
+    fn unbounded_shl_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn unbounded_shl_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn unbounded_shr_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    where
+        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+    {
+        unreachable!()
+    }
+    fn unbounded_shr_scalar_backend(self, _: u32) -> Self {
+        unreachable!()
+    }
+    fn widening_mul_backend(
+        self,
+        _: Self,
+    ) -> <Self as SimdAssociatedTypes>::SimdOf<
+        <<Self as SimdAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth,
+    >
+    where
+        Self: SimdAssociatedTypes<T: HasDoubleWidth>
+            + SupportSimdOf<<<Self as SimdAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth>,
+    {
+        unreachable!()
+    }
+}
