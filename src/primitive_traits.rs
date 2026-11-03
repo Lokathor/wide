@@ -7,31 +7,105 @@
 //! tightly coupled and easier to do in one module. In the future, these traits
 //! may be moved back to the `simd_*.rs` modules.
 
-use crate::{MaskOps, SimdElement};
+use crate::{
+    MaskOps, SimdElement,
+    utils::{PrimitiveFloatUtils, PrimitiveIntegerUtils},
+};
 
 /// A sealed trait for all primitive floating-point types.
 ///
-/// TODO(generics): Once appropriate SIMD functionality becomes generic over
-/// `T: PrimitiveFloat`, update the documentation of this trait to explain its
-/// intended usage.
+/// Implemented for [`f32`] and [`f64`].
+///
+/// This trait is used to access SIMD float functionality in contexts generic
+/// over `T`:
+///
+/// ```rust
+/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveFloat};
+/// #
+/// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
+/// where
+///     T: PrimitiveFloat,
+///     Simd<T, N>: SupportedSimd,
+///     Simd<T::Unsigned, N>: SupportedSimd,
+///     Simd<T::Signed, N>: SupportedSimd,
+/// {
+///     // Use SIMD float functionality
+///     x.sin().abs().acos() + x
+/// }
+/// ```
+///
+/// This trait does not aim to expose scalar float functionality, only to enable
+/// access to [`Simd<T, N>`] functionality. For scalar functionality, consider
+/// combining this trait with the [`num-primitive`] crate.
+///
+/// [`Simd<T, N>`]: crate::Simd
+/// [`num-primitive`]: https://crates.io/crates/num-primitive
 #[expect(private_bounds)]
 pub trait PrimitiveFloat:
-    SimdElement + MaskOps + PrimitiveFloatOrInteger + FloatIntegerDisjointMarker<Marker = f32>
+    SimdElement
+    + MaskOps
+    + PartialOrd
+    + PrimitiveFloatOrInteger
+    + FloatIntegerDisjointMarker<Marker = f32>
+    + PrimitiveFloatUtils
 {
 }
 
 /// A sealed trait for all primitive integer types.
 ///
-/// TODO(generics): Once appropriate SIMD functionality becomes generic over
-/// `T: PrimitiveInteger`, update the documentation of this trait to explain its
-/// intended usage.
+/// Implemented for [`i8`], [`i16`], [`i32`], [`i64`], [`i128`], [`isize`],
+/// [`u8`], [`u16`], [`u32`], [`u64`], [`u128`] and [`usize`].
+///
+/// This trait is used to access SIMD integer functionality in contexts generic
+/// over `T`:
+///
+/// ```rust
+/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveInteger};
+/// #
+/// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
+/// where
+///     T: PrimitiveInteger,
+///     Simd<T, N>: SupportedSimd,
+///     Simd<T::Unsigned, N>: SupportedSimd,
+///     Simd<T::Signed, N>: SupportedSimd,
+/// {
+///     // Use SIMD integer functionality
+///     x.saturating_add(x) * x
+/// }
+/// ```
+///
+/// This trait does not aim to expose scalar integer functionality, only to
+/// enable access to [`Simd<T, N>`] functionality. For scalar functionality,
+/// consider combining this trait with the [`num-primitive`] crate.
+///
+/// # Important limitation
+///
+/// Due to Rust language limitations, SIMD integer items whose name conflicts
+/// with a SIMD float item's name (e.g., `reduce_add`) cannot be used in generic
+/// contexts.
+///
+/// In documentation, such items are still shown as generic over `T`, even
+/// though in reality those items are duplicated for each concrete `T` type.
+/// This is done in order to avoid duplicated documentation, which is hard to
+/// navigate.
+///
+/// [`Simd<T, N>`]: crate::Simd
+/// [`num-primitive`]: https://crates.io/crates/num-primitive
 #[expect(private_bounds)]
 pub trait PrimitiveInteger:
-    SimdElement + MaskOps + PrimitiveFloatOrInteger + FloatIntegerDisjointMarker<Marker = u32>
+    SimdElement
+    + MaskOps
+    + Ord
+    + PrimitiveFloatOrInteger
+    + FloatIntegerDisjointMarker<Marker = u32>
+    + PrimitiveIntegerUtils
 {
 }
 
 /// A sealed trait for primitive integer types that have a double-width variant.
+///
+/// Implemented for [`i8`], [`i16`], [`i32`], [`i64`], [`u8`], [`u16`], [`u32`]
+/// and [`u64`].
 ///
 /// This is used for [`Simd::widening_mul`](crate::Simd::widening_mul).
 pub trait HasDoubleWidth: PrimitiveInteger {
@@ -42,9 +116,43 @@ pub trait HasDoubleWidth: PrimitiveInteger {
 
 /// A sealed trait for all primitive signed integer types.
 ///
-/// TODO(generics): Once appropriate SIMD functionality becomes generic over
-/// `T: PrimitiveSigned`, update the documentation of this trait to explain its
-/// intended usage.
+/// Implemented for [`i8`], [`i16`], [`i32`], [`i64`], [`i128`] and [`isize`].
+///
+/// This trait is used to access SIMD signed integer functionality in contexts
+/// generic over `T`:
+///
+/// ```rust
+/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveSigned};
+/// #
+/// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
+/// where
+///     T: PrimitiveSigned,
+///     Simd<T, N>: SupportedSimd,
+///     Simd<T::Unsigned, N>: SupportedSimd,
+///     Simd<T::Signed, N>: SupportedSimd,
+/// {
+///     // Use SIMD signed integer functionality
+///     x.saturating_abs().add_unsigned(x.cast_unsigned())
+/// }
+/// ```
+///
+/// This trait does not aim to expose scalar signed integer functionality, only
+/// to enable access to [`Simd<T, N>`] functionality. For scalar functionality,
+/// consider combining this trait with the [`num-primitive`] crate.
+///
+/// # Important limitation
+///
+/// Due to Rust language limitations, SIMD signed integer items whose name
+/// conflicts with a SIMD float item's name (e.g., `abs`) cannot be used in
+/// generic contexts.
+///
+/// In documentation, such items are still shown as generic over `T`, even
+/// though in reality those items are duplicated for each concrete `T` type.
+/// This is done in order to avoid duplicated documentation, which is hard to
+/// navigate.
+///
+/// [`Simd<T, N>`]: crate::Simd
+/// [`num-primitive`]: https://crates.io/crates/num-primitive
 #[expect(private_bounds)]
 pub trait PrimitiveSigned:
     PrimitiveInteger<Signed = Self> + SignedUnsignedDisjointMarker<Marker = i32>
@@ -53,9 +161,33 @@ pub trait PrimitiveSigned:
 
 /// A sealed trait for all primitive unsigned integer types.
 ///
-/// TODO(generics): Once appropriate SIMD functionality becomes generic over
-/// `T: PrimitiveSigned`, update the documentation of this trait to explain its
-/// intended usage.
+/// Implemented for [`u8`], [`u16`], [`u32`], [`u64`], [`u128`] and [`usize`].
+///
+/// This trait is used to access SIMD unsigned integer functionality in contexts
+/// generic over `T`:
+///
+/// ```rust
+/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveUnsigned};
+/// #
+/// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
+/// where
+///     T: PrimitiveUnsigned,
+///     Simd<T, N>: SupportedSimd,
+///     Simd<T::Unsigned, N>: SupportedSimd,
+///     Simd<T::Signed, N>: SupportedSimd,
+/// {
+///     // Use SIMD signed integer functionality
+///     x.saturating_add_signed(x.cast_signed())
+/// }
+/// ```
+///
+/// This trait does not aim to expose scalar unsigned integer functionality,
+/// only to enable access to [`Simd<T, N>`] functionality. For scalar
+/// functionality, consider combining this trait with the [`num-primitive`]
+/// crate.
+///
+/// [`Simd<T, N>`]: crate::Simd
+/// [`num-primitive`]: https://crates.io/crates/num-primitive
 #[expect(private_bounds)]
 pub trait PrimitiveUnsigned:
     PrimitiveInteger<Unsigned = Self> + SignedUnsignedDisjointMarker<Marker = u32>

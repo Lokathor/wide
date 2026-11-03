@@ -2,6 +2,123 @@ use core::ops::{BitAnd, BitXor};
 
 use bytemuck::cast;
 
+use crate::SimdElement;
+
+/// Utilities for primitive float types used in `simd_float.rs`.
+///
+/// This trait simply wraps existing float functionality so that it is
+/// accessible to the generic context that implements the public SIMD float API.
+pub(crate) trait PrimitiveFloatUtils {
+    const NEG_ZERO: Self;
+    const HALF: Self;
+    const EPSILON: Self;
+    const MIN: Self;
+    const MIN_POSITIVE: Self;
+    const MAX: Self;
+    const NAN: Self;
+    const INFINITY: Self;
+    const NEG_INFINITY: Self;
+
+    const E: Self;
+    const FRAC_1_PI: Self;
+    const FRAC_2_PI: Self;
+    const FRAC_2_SQRT_PI: Self;
+    const FRAC_1_SQRT_2: Self;
+    const FRAC_PI_2: Self;
+    const FRAC_PI_3: Self;
+    const FRAC_PI_4: Self;
+    const FRAC_PI_6: Self;
+    const FRAC_PI_8: Self;
+    const LN_2: Self;
+    const LN_10: Self;
+    const LOG2_E: Self;
+    const LOG10_E: Self;
+    const LOG10_2: Self;
+    const LOG2_10: Self;
+    const PI: Self;
+    const SQRT_2: Self;
+    const TAU: Self;
+
+    const RADIANS_TO_DEGREES_RATIO: Self;
+    const DEGREES_TO_RADIANS_RATIO: Self;
+}
+
+/// Utilities for primitive integer types used in `simd_integer.rs`.
+///
+/// This trait simply wraps existing integer functionality so that it is
+/// accessible to the generic context that implements the public SIMD integer
+/// API.
+pub(crate) trait PrimitiveIntegerUtils: SimdElement {
+    const BITS: u32;
+    const BITS_AS_UNSIGNED: Self::Unsigned;
+
+    const MIN: Self;
+}
+
+macro_rules! float {
+    ($T:ident) => {
+        impl PrimitiveFloatUtils for $T {
+            const NEG_ZERO: Self = -0.0;
+            const HALF: Self = 0.5;
+            const EPSILON: Self = Self::EPSILON;
+            const MIN: Self = Self::MIN;
+            const MIN_POSITIVE: Self = Self::MIN_POSITIVE;
+            const MAX: Self = Self::MAX;
+            const NAN: Self = Self::NAN;
+            const INFINITY: Self = Self::INFINITY;
+            const NEG_INFINITY: Self = Self::NEG_INFINITY;
+
+            const E: Self = core::$T::consts::E;
+            const FRAC_1_PI: Self = core::$T::consts::FRAC_1_PI;
+            const FRAC_2_PI: Self = core::$T::consts::FRAC_2_PI;
+            const FRAC_2_SQRT_PI: Self = core::$T::consts::FRAC_2_SQRT_PI;
+            const FRAC_1_SQRT_2: Self = core::$T::consts::FRAC_1_SQRT_2;
+            const FRAC_PI_2: Self = core::$T::consts::FRAC_PI_2;
+            const FRAC_PI_3: Self = core::$T::consts::FRAC_PI_3;
+            const FRAC_PI_4: Self = core::$T::consts::FRAC_PI_4;
+            const FRAC_PI_6: Self = core::$T::consts::FRAC_PI_6;
+            const FRAC_PI_8: Self = core::$T::consts::FRAC_PI_8;
+            const LN_2: Self = core::$T::consts::LN_2;
+            const LN_10: Self = core::$T::consts::LN_10;
+            const LOG2_E: Self = core::$T::consts::LOG2_E;
+            const LOG10_E: Self = core::$T::consts::LOG10_E;
+            const LOG10_2: Self = core::$T::consts::LOG10_2;
+            const LOG2_10: Self = core::$T::consts::LOG2_10;
+            const PI: Self = core::$T::consts::PI;
+            const SQRT_2: Self = core::$T::consts::SQRT_2;
+            const TAU: Self = core::$T::consts::TAU;
+
+            const RADIANS_TO_DEGREES_RATIO: Self = 180.0 / core::$T::consts::PI;
+            const DEGREES_TO_RADIANS_RATIO: Self = core::$T::consts::PI / 180.0;
+        }
+    };
+}
+float!(f32);
+float!(f64);
+
+macro_rules! integer {
+    ($T:ident) => {
+        impl PrimitiveIntegerUtils for $T {
+            const BITS: u32 = Self::BITS;
+            const BITS_AS_UNSIGNED: Self::Unsigned = Self::BITS as Self::Unsigned;
+
+            const MIN: Self = Self::MIN;
+        }
+    };
+}
+integer!(i8);
+integer!(i16);
+integer!(i32);
+integer!(i64);
+integer!(i128);
+integer!(isize);
+integer!(u8);
+integer!(u16);
+integer!(u32);
+integer!(u64);
+integer!(u128);
+integer!(usize);
+
 /// Modifies an `impl` block such that calling functions with target features
 /// that are guaranteed at compile time does not require an `unsafe` block.
 ///
