@@ -213,6 +213,32 @@ where
         total
     }
 }
+
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: PrimitiveFloat,
+            Simd<T, N>: SupportedSimd,
+        {
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_bits().to_array().iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    <T::Unsigned as $Trait>::fmt(x, f)?;
+                }
+                write!(f, ")")
+            }
+        }
+    };
+}
+impl_formatting_trait!(core::fmt::Binary);
+impl_formatting_trait!(core::fmt::LowerHex);
+impl_formatting_trait!(core::fmt::Octal);
+impl_formatting_trait!(core::fmt::UpperHex);
 */
 
 macro_rules! impl_simd_float {
@@ -223,28 +249,6 @@ macro_rules! impl_simd_float {
         UnsignedT = $UnsignedT:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
-        macro_rules! impl_formatting_trait {
-            ($Trait:path) => {
-                impl $Trait for $Simd {
-                    #[allow(clippy::missing_inline_in_public_items)]
-                    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                        write!(f, "(")?;
-                        for (i, x) in self.to_array().iter().enumerate() {
-                            if i > 0 {
-                                write!(f, ", ")?;
-                            }
-                            <$UnsignedT as $Trait>::fmt(&x.to_bits(), f)?;
-                        }
-                        write!(f, ")")
-                    }
-                }
-            };
-        }
-        impl_formatting_trait!(core::fmt::Binary);
-        impl_formatting_trait!(core::fmt::LowerHex);
-        impl_formatting_trait!(core::fmt::Octal);
-        impl_formatting_trait!(core::fmt::UpperHex);
-
         impl Select<$Simd> for $UnsignedSimd {
             #[inline]
             fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {

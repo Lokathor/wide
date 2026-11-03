@@ -342,6 +342,38 @@ where
     }
 }
 
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
+        /// This is one of multiple trait implementations that should be separate
+        /// for SIMD floats and SIMD integers, but cannot because Rust currently
+        /// does not allow two blanket trait implementations based on disjoint
+        /// traits.
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: PrimitiveFloatOrInteger,
+            Simd<T, N>: SupportedSimd,
+        {
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_array().into_iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    // Cast floats to unsigned integers and keep integers
+                    // unchanged
+                    <_ as $Trait>::fmt(&x.fmt_cast(), f)?;
+                }
+                write!(f, ")")
+            }
+        }
+    };
+}
+impl_formatting_trait!(core::fmt::Binary);
+impl_formatting_trait!(core::fmt::LowerHex);
+impl_formatting_trait!(core::fmt::Octal);
+impl_formatting_trait!(core::fmt::UpperHex);
+
 /// Implementations of operator traits do not know whether to pick backend
 /// functions from [`SimdFloatBackend`] or [`SimdIntegerBackend`], so these
 /// functions wrap the backend functions, calling the correct one.

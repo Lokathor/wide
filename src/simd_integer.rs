@@ -557,6 +557,32 @@ where
         total
     }
 }
+
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: PrimitiveInteger,
+            Simd<T, N>: SupportedSimd,
+        {
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_array().iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    <T as $Trait>::fmt(x, f)?;
+                }
+                write!(f, ")")
+            }
+        }
+    };
+}
+impl_formatting_trait!(core::fmt::Binary);
+impl_formatting_trait!(core::fmt::LowerHex);
+impl_formatting_trait!(core::fmt::Octal);
+impl_formatting_trait!(core::fmt::UpperHex);
 */
 
 macro_rules! impl_simd_integer {
@@ -568,28 +594,6 @@ macro_rules! impl_simd_integer {
         SignedSimd = $SignedSimd:ident,
         WiderSimd = { $($WiderSimd:ident)? },
     ) => {
-        macro_rules! impl_formatting_trait {
-            ($Trait:path) => {
-                impl $Trait for $Simd {
-                    #[allow(clippy::missing_inline_in_public_items)]
-                    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                        write!(f, "(")?;
-                        for (i, x) in self.to_array().iter().enumerate() {
-                            if i > 0 {
-                                write!(f, ", ")?;
-                            }
-                            <$T as $Trait>::fmt(x, f)?;
-                        }
-                        write!(f, ")")
-                    }
-                }
-            }
-        }
-        impl_formatting_trait!(core::fmt::Binary);
-        impl_formatting_trait!(core::fmt::LowerHex);
-        impl_formatting_trait!(core::fmt::Octal);
-        impl_formatting_trait!(core::fmt::UpperHex);
-
         /// The following functionality exists for all SIMD vectors of integers.
         impl $Simd {
             /// A SIMD vector with all elements set to `1`.

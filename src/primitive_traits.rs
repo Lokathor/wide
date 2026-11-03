@@ -83,6 +83,14 @@ pub(crate) trait PrimitiveFloatOrInteger: SimdElement {
 
     /// Numeric `1`.
     const ONE: Self;
+
+    /// Converts floats to unsigned integers via `to_bits` and keeps integers
+    /// unchanged (returns the original types).
+    ///
+    /// See `impl_formatting_traits` in `simd_float_or_integer.rs`.
+    fn fmt_cast(
+        self,
+    ) -> impl core::fmt::Binary + core::fmt::LowerHex + core::fmt::Octal + core::fmt::UpperHex;
 }
 
 /// A marker trait representing `!PrimitiveFloat` used for an internal
@@ -135,6 +143,13 @@ macro_rules! float {
             const ZERO: Self = 0.0;
 
             const ONE: Self = 1.0;
+
+            #[inline]
+            fn fmt_cast(
+                self,
+            ) -> impl core::fmt::Binary + core::fmt::LowerHex + core::fmt::Octal + core::fmt::UpperHex {
+                self.to_bits()
+            }
         }
 
         impl NotPrimitiveInteger for $T {}
@@ -161,6 +176,13 @@ macro_rules! integer {
             const ZERO: Self = 0;
 
             const ONE: Self = 1;
+
+            #[inline]
+            fn fmt_cast(
+                self,
+            ) -> impl core::fmt::Binary + core::fmt::LowerHex + core::fmt::Octal + core::fmt::UpperHex {
+                self
+            }
         }
 
         impl NotPrimitiveFloat for $T {}
