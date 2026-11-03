@@ -18,24 +18,6 @@ macro_rules! impl_simd_signed {
         /// The following functionality exists for all SIMD vectors of signed
         /// integers.
         impl $Simd {
-            /// Returns the bit patterns of `self` reinterpreted as unsigned integers
-            /// of the same size.
-            #[inline]
-            #[must_use]
-            pub const fn cast_unsigned(self) -> $UnsignedSimd {
-                // SAFETY: Both types accept all bit-patterns and only contain
-                // initialized memory.
-                unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
-            }
-
-            /// Computes the absolute value of each input element, returned as an
-            /// unsigned integer in order to avoid wrapping.
-            #[inline]
-            #[must_use]
-            pub fn unsigned_abs(self) -> $UnsignedSimd {
-                self.abs().cast_unsigned()
-            }
-
             /// Returns the absolute value of each input element.
             #[inline]
             #[must_use]
@@ -54,6 +36,39 @@ macro_rules! impl_simd_signed {
                 // Flip signs because the result for true in `is_positive/negative` is
                 // `-1` (all bits set).
                 self.is_negative() - self.is_positive()
+            }
+        }
+    };
+}
+impl_simd_signed!(T = i8, N = 16, Simd = i8x16, UnsignedSimd = u8x16,);
+impl_simd_signed!(T = i8, N = 32, Simd = i8x32, UnsignedSimd = u8x32,);
+impl_simd_signed!(T = i8, N = 64, Simd = i8x64, UnsignedSimd = u8x64,);
+impl_simd_signed!(T = i16, N = 8, Simd = i16x8, UnsignedSimd = u16x8,);
+impl_simd_signed!(T = i16, N = 16, Simd = i16x16, UnsignedSimd = u16x16,);
+impl_simd_signed!(T = i16, N = 32, Simd = i16x32, UnsignedSimd = u16x32,);
+impl_simd_signed!(T = i32, N = 4, Simd = i32x4, UnsignedSimd = u32x4,);
+impl_simd_signed!(T = i32, N = 8, Simd = i32x8, UnsignedSimd = u32x8,);
+impl_simd_signed!(T = i32, N = 16, Simd = i32x16, UnsignedSimd = u32x16,);
+impl_simd_signed!(T = i64, N = 2, Simd = i64x2, UnsignedSimd = u64x2,);
+impl_simd_signed!(T = i64, N = 4, Simd = i64x4, UnsignedSimd = u64x4,);
+impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
+
+            /// Returns the bit patterns of `self` reinterpreted as unsigned integers
+            /// of the same size.
+            #[inline]
+            #[must_use]
+            pub const fn cast_unsigned(self) -> $UnsignedSimd {
+                // SAFETY: Both types accept all bit-patterns and only contain
+                // initialized memory.
+                unsafe { core::mem::transmute::<$Simd, $UnsignedSimd>(self) }
+            }
+
+            /// Computes the absolute value of each input element, returned as an
+            /// unsigned integer in order to avoid wrapping.
+            #[inline]
+            #[must_use]
+            pub fn unsigned_abs(self) -> $UnsignedSimd {
+                self.abs().cast_unsigned()
             }
 
             /// Returns a [mask] that is true for each positive element, and false if
@@ -190,21 +205,6 @@ macro_rules! impl_simd_signed {
 
                 (result, overflow)
             }
-        }
-    };
-}
-impl_simd_signed!(T = i8, N = 16, Simd = i8x16, UnsignedSimd = u8x16,);
-impl_simd_signed!(T = i8, N = 32, Simd = i8x32, UnsignedSimd = u8x32,);
-impl_simd_signed!(T = i8, N = 64, Simd = i8x64, UnsignedSimd = u8x64,);
-impl_simd_signed!(T = i16, N = 8, Simd = i16x8, UnsignedSimd = u16x8,);
-impl_simd_signed!(T = i16, N = 16, Simd = i16x16, UnsignedSimd = u16x16,);
-impl_simd_signed!(T = i16, N = 32, Simd = i16x32, UnsignedSimd = u16x32,);
-impl_simd_signed!(T = i32, N = 4, Simd = i32x4, UnsignedSimd = u32x4,);
-impl_simd_signed!(T = i32, N = 8, Simd = i32x8, UnsignedSimd = u32x8,);
-impl_simd_signed!(T = i32, N = 16, Simd = i32x16, UnsignedSimd = u32x16,);
-impl_simd_signed!(T = i64, N = 2, Simd = i64x2, UnsignedSimd = u64x2,);
-impl_simd_signed!(T = i64, N = 4, Simd = i64x4, UnsignedSimd = u64x4,);
-impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of signed integers.
