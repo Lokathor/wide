@@ -16,7 +16,12 @@ use crate::{MaskOps, SimdElement, utils::PrimitiveFloatUtils};
 /// intended usage.
 #[expect(private_bounds)]
 pub trait PrimitiveFloat:
-    SimdElement + MaskOps + PartialOrd + PrimitiveFloatOrInteger + FloatIntegerDisjointMarker<Marker = f32> + PrimitiveFloatUtils
+    SimdElement
+    + MaskOps
+    + PartialOrd
+    + PrimitiveFloatOrInteger
+    + FloatIntegerDisjointMarker<Marker = f32>
+    + PrimitiveFloatUtils
 {
 }
 
