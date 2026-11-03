@@ -1,19 +1,24 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
 use crate::{
-    PrimitiveSigned, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8, i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, primitive_traits::NotPrimitiveSigned, simd::{SimdAssociatedTypes, SupportSimdOf},
+    PrimitiveSigned, Simd, SimdElement, SupportedSimd, primitive_traits::NotPrimitiveSigned, simd::{SimdAssociatedTypes, SupportSimdOf},
 };
 
-macro_rules! impl_simd_signed {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-    ) => {
-        /// The following functionality exists for all SIMD vectors of signed
-        /// integers.
-        impl $Simd {
+/// Contains SIMD signed items whose name conflicts with a SIMD float item's
+/// name.
+///
+/// The SIMD float API is exposed where `T: PrimitiveFloat` and the SIMD signed
+/// integer API is exposed where `T: PrimitiveSigned`. Even though these bounds
+/// are logically disjoint, Rust does not allow two items with the same name to
+/// both exist for generic `T` types.
+///
+/// The solution used is to make all SIMD float items generic over `T` and to
+/// duplicate conflicting SIMD signed integer items for each concrete integer
+/// `T`. When `cfg(doc)` is active, these items are emitted once in a generic
+/// context rather than for each `T`, in order to make the documentation easier
+/// to read.
+macro_rules! conflicting_items {
+    ($T:ident) => {
             /// Returns the absolute value of each input element.
             #[inline]
             #[must_use]
@@ -33,21 +38,8 @@ macro_rules! impl_simd_signed {
                 // `-1` (all bits set).
                 self.is_negative() - self.is_positive()
             }
-        }
     };
 }
-impl_simd_signed!(T = i8, N = 16, Simd = i8x16, UnsignedSimd = u8x16,);
-impl_simd_signed!(T = i8, N = 32, Simd = i8x32, UnsignedSimd = u8x32,);
-impl_simd_signed!(T = i8, N = 64, Simd = i8x64, UnsignedSimd = u8x64,);
-impl_simd_signed!(T = i16, N = 8, Simd = i16x8, UnsignedSimd = u16x8,);
-impl_simd_signed!(T = i16, N = 16, Simd = i16x16, UnsignedSimd = u16x16,);
-impl_simd_signed!(T = i16, N = 32, Simd = i16x32, UnsignedSimd = u16x32,);
-impl_simd_signed!(T = i32, N = 4, Simd = i32x4, UnsignedSimd = u32x4,);
-impl_simd_signed!(T = i32, N = 8, Simd = i32x8, UnsignedSimd = u32x8,);
-impl_simd_signed!(T = i32, N = 16, Simd = i32x16, UnsignedSimd = u32x16,);
-impl_simd_signed!(T = i64, N = 2, Simd = i64x2, UnsignedSimd = u64x2,);
-impl_simd_signed!(T = i64, N = 4, Simd = i64x4, UnsignedSimd = u64x4,);
-impl_simd_signed!(T = i64, N = 8, Simd = i64x8, UnsignedSimd = u64x8,);
 
 impl<T, const N: usize> Simd<T, N>
 where
@@ -56,6 +48,14 @@ where
     // TODO(generics): Try make this implicit bound
     Simd<T::Unsigned, N>: SupportedSimd,
 {
+    // Because `rustdoc` does not enforce the "no conflicting implementations"
+    // rule, we show conflicting items in documentation in the generic `impl`
+    // block rather than duplicate them across multiple `impl` blocks. This
+    // makes documentation quite easier to read. This detail is documented
+    // publicly in `PrimitiveSigned`.
+    #[cfg(doc)]
+    conflicting_items!(T);
+
             /// Returns the bit patterns of `self` reinterpreted as unsigned integers
             /// of the same size.
             #[inline]
@@ -213,6 +213,37 @@ where
                 (result, overflow)
             }
 }
+
+macro_rules! signed {
+    ($T:ident) => {
+        /// Contains SIMD signed integer items whose name conflicts with a SIMD
+        /// float item's name.
+        ///
+        /// These items cannot be made generic over `T: PrimitiveSigned`
+        /// because Rust treats that as conflicting with items exposed for
+        /// `T: PrimitiveFloat`.
+        ///
+        /// Regularly, `cfg(doc)` is used to show these items in one generic
+        /// `impl` block rather than multiple duplicated `impl` blocks. This may
+        /// fail when `wide` types are reexported. Consider reading `wide`
+        /// documentation directly.
+        #[cfg(not(doc))]
+        impl<const N: usize> Simd<$T, N>
+        where
+            Simd<$T, N>: SupportedSimd,
+            // TODO(generics): Try make this bound implicit
+            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+        {
+            conflicting_items!($T);
+        }
+    };
+}
+signed!(i8);
+signed!(i16);
+signed!(i32);
+signed!(i64);
+signed!(i128);
+signed!(isize);
 
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of signed integers.
