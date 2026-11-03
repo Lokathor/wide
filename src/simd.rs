@@ -1077,14 +1077,22 @@ impl_formatting_trait!(core::fmt::Display);
 impl_formatting_trait!(core::fmt::LowerExp);
 impl_formatting_trait!(core::fmt::UpperExp);
 
-impl<T, const N: usize> Select<Simd<T, N>> for Simd<T, N>
+impl<T, const N: usize, U> Select<Simd<U, N>> for Simd<T, N>
 where
     T: SimdElement + MaskOps,
     Simd<T, N>: SupportedSimd,
+    U: SimdElement<Unsigned = T::Unsigned> + MaskOps,
+    Simd<U, N>: SupportedSimd,
 {
     #[inline]
-    fn select(self, if_true: Self, if_false: Self) -> Self {
-        self.select_backend(if_true, if_false)
+    fn select(self, if_true: Simd<U, N>, if_false: Simd<U, N>) -> Simd<U, N> {
+        // SAFETY: `U` is guaranteed to have the same size as `T` thus
+        // `Simd<T, N>` and `Simd<U, N>` have the same size. All SIMD types
+        // currently supported accept all bit-patterns and only contain
+        // initialized memory.
+        let casted_mask = unsafe { transmute_copy::<Simd<T, N>, Simd<U, N>>(&self) };
+
+        casted_mask.select_backend(if_true, if_false)
     }
 }
 
