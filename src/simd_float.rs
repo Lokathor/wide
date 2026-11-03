@@ -3,8 +3,8 @@
 use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Sub};
 
 use crate::{
-    Select, Simd, SimdElement, SupportedSimd, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4,
-    i32x8, i32x16, i64x2, i64x4, i64x8,
+    Simd, SimdElement, SupportedSimd, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8,
+    i32x16, i64x2, i64x4, i64x8,
     primitive_traits::NotPrimitiveFloat,
     simd::{SimdAssociatedTypes, SupportSimdOf},
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
@@ -249,34 +249,6 @@ macro_rules! impl_simd_float {
         UnsignedT = $UnsignedT:ident,
         UnsignedSimd = $UnsignedSimd:ident,
     ) => {
-        impl Select<$Simd> for $UnsignedSimd {
-            #[inline]
-            fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
-                $Simd::from_bits(self).select(if_true, if_false)
-            }
-        }
-
-        impl Select<$UnsignedSimd> for $Simd {
-            #[inline]
-            fn select(self, if_true: $UnsignedSimd, if_false: $UnsignedSimd) -> $UnsignedSimd {
-                self.to_bits().select(if_true, if_false)
-            }
-        }
-
-        impl Select<$Simd> for $SignedSimd {
-            #[inline]
-            fn select(self, if_true: $Simd, if_false: $Simd) -> $Simd {
-                $Simd::from_bits(self.cast_unsigned()).select(if_true, if_false)
-            }
-        }
-
-        impl Select<$SignedSimd> for $Simd {
-            #[inline]
-            fn select(self, if_true: $SignedSimd, if_false: $SignedSimd) -> $SignedSimd {
-                self.to_bits().cast_signed().select(if_true, if_false)
-            }
-        }
-
         /// The following functionality exists for all SIMD vectors of floats.
         impl $Simd {
             /// The size of this SIMD vector in bits.
