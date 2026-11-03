@@ -4,11 +4,9 @@
 use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, ShlAssign, Shr, ShrAssign, Sub};
 
 use crate::{
-    HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportedSimd, i8x16, i8x32, i8x64, i16x8,
-    i16x16, i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8,
+    HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportedSimd,
     primitive_traits::NotPrimitiveInteger,
     simd::{SimdAssociatedTypes, SupportSimdOf},
-    u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
 macro_rules! impl_shift_operator {
@@ -585,17 +583,20 @@ impl_formatting_trait!(core::fmt::Octal);
 impl_formatting_trait!(core::fmt::UpperHex);
 */
 
-macro_rules! impl_simd_integer {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        SignedSimd = $SignedSimd:ident,
-        WiderSimd = { $($WiderSimd:ident)? },
-    ) => {
-        /// The following functionality exists for all SIMD vectors of integers.
-        impl $Simd {
+/// Contains SIMD integer items whose name conflicts with a SIMD float item's
+/// name.
+///
+/// The SIMD float API is exposed where `T: PrimitiveFloat` and the SIMD integer
+/// API is exposed where `T: PrimitiveInteger`. Even though these bounds are
+/// logically disjoint, Rust does not allow two items with the same name to
+/// both exist for generic `T` types.
+///
+/// The solution used is to make all SIMD float items generic over `T` and to
+/// duplicate conflicting SIMD integer items for each concrete integer `T`. When
+/// `cfg(doc)` is active, these items are emitted once in a generic context
+/// rather than for each `T`, in order to make the documentation easier to read.
+macro_rules! conflicting_items {
+    ($T:ident) => {
             /// A SIMD vector with all elements set to `1`.
             pub const ONE: Self = Self::splat(1);
 
@@ -677,6 +678,9 @@ macro_rules! impl_simd_integer {
 
             /// Creates a SIMD vector from a native-endian byte array.
             ///
+            /// Note that this takes `[u8; size_of::<Self>()]`, but it is
+            /// written as `Self::Bytes` due to language limitations.
+            ///
             /// The bytes are interpreted as the raw memory representation of the
             /// vector. This is equivalent to the `from_ne_bytes` functions on
             /// primitive integer types, but operates on the entire vector at once.
@@ -686,24 +690,27 @@ macro_rules! impl_simd_integer {
             /// [`to_ne_bytes`]: Self::to_ne_bytes
             #[inline]
             #[must_use]
-            pub const fn from_ne_bytes(bytes: [u8; size_of::<$Simd>()]) -> Self {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
+            pub const fn from_ne_bytes(bytes: <Self as SupportedSimd>::Bytes) -> Self {
+                // SAFETY: `Simd<$T, N>` accepts all bit-patterns and only contains
                 // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<[u8; size_of::<$Simd>()], $Simd>(bytes) }
+                unsafe { core::mem::transmute_copy::<<Self as SupportedSimd>::Bytes, Simd<$T, N>>(&bytes) }
             }
 
             /// Returns the raw memory representation of `self` as a native-endian
             /// byte array.
+            ///
+            /// Note that this takes `[u8; size_of::<Self>()]`, but it is
+            /// written as `Self::Bytes` due to language limitations.
             ///
             /// This is the inverse of [`from_ne_bytes`].
             ///
             /// [`from_ne_bytes`]: Self::from_ne_bytes
             #[inline]
             #[must_use]
-            pub const fn to_ne_bytes(self) -> [u8; size_of::<$Simd>()] {
-                // SAFETY: `$Simd` accepts all bit-patterns and only contains
+            pub const fn to_ne_bytes(self) -> <Self as SupportedSimd>::Bytes {
+                // SAFETY: `Simd<$T, N>` accepts all bit-patterns and only contains
                 // initialized memory, and the byte array has the same size.
-                unsafe { core::mem::transmute::<$Simd, [u8; size_of::<$Simd>()]>(self) }
+                unsafe { core::mem::transmute_copy::<Simd<$T, N>, <Self as SupportedSimd>::Bytes>(&self) }
             }
 
             /// Bitwise selection.
@@ -724,201 +731,8 @@ macro_rules! impl_simd_integer {
             pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
                 self.bitselect_backend(if_one, if_zero)
             }
-        }
     };
 }
-impl_simd_integer!(
-    T = i8,
-    N = 16,
-    Simd = i8x16,
-    UnsignedSimd = u8x16,
-    SignedSimd = i8x16,
-    WiderSimd = { i16x16 },
-);
-impl_simd_integer!(
-    T = i8,
-    N = 32,
-    Simd = i8x32,
-    UnsignedSimd = u8x32,
-    SignedSimd = i8x32,
-    WiderSimd = { i16x32 },
-);
-impl_simd_integer!(
-    T = i8,
-    N = 64,
-    Simd = i8x64,
-    UnsignedSimd = u8x64,
-    SignedSimd = i8x64,
-    WiderSimd = { /*i16x64*/ },
-);
-impl_simd_integer!(
-    T = i16,
-    N = 8,
-    Simd = i16x8,
-    UnsignedSimd = u16x8,
-    SignedSimd = i16x8,
-    WiderSimd = { i32x8 },
-);
-impl_simd_integer!(
-    T = i16,
-    N = 16,
-    Simd = i16x16,
-    UnsignedSimd = u16x16,
-    SignedSimd = i16x16,
-    WiderSimd = { i32x16 },
-);
-impl_simd_integer!(
-    T = i16,
-    N = 32,
-    Simd = i16x32,
-    UnsignedSimd = u16x32,
-    SignedSimd = i16x32,
-    WiderSimd = { /*i32x32*/ },
-);
-impl_simd_integer!(
-    T = i32,
-    N = 4,
-    Simd = i32x4,
-    UnsignedSimd = u32x4,
-    SignedSimd = i32x4,
-    WiderSimd = { i64x4 },
-);
-impl_simd_integer!(
-    T = i32,
-    N = 8,
-    Simd = i32x8,
-    UnsignedSimd = u32x8,
-    SignedSimd = i32x8,
-    WiderSimd = { i64x8 },
-);
-impl_simd_integer!(
-    T = i32,
-    N = 16,
-    Simd = i32x16,
-    UnsignedSimd = u32x16,
-    SignedSimd = i32x16,
-    WiderSimd = { /*i64x16*/ },
-);
-impl_simd_integer!(
-    T = i64,
-    N = 2,
-    Simd = i64x2,
-    UnsignedSimd = u64x2,
-    SignedSimd = i64x2,
-    WiderSimd = { /*i128x2*/ },
-);
-impl_simd_integer!(
-    T = i64,
-    N = 4,
-    Simd = i64x4,
-    UnsignedSimd = u64x4,
-    SignedSimd = i64x4,
-    WiderSimd = { /*i128x4*/ },
-);
-impl_simd_integer!(
-    T = i64,
-    N = 8,
-    Simd = i64x8,
-    UnsignedSimd = u64x8,
-    SignedSimd = i64x8,
-    WiderSimd = { /*i128x8*/ },
-);
-impl_simd_integer!(
-    T = u8,
-    N = 16,
-    Simd = u8x16,
-    UnsignedSimd = u8x16,
-    SignedSimd = i8x16,
-    WiderSimd = { u16x16 },
-);
-impl_simd_integer!(
-    T = u8,
-    N = 32,
-    Simd = u8x32,
-    UnsignedSimd = u8x32,
-    SignedSimd = i8x32,
-    WiderSimd = { u16x32 },
-);
-impl_simd_integer!(
-    T = u8,
-    N = 64,
-    Simd = u8x64,
-    UnsignedSimd = u8x64,
-    SignedSimd = i8x64,
-    WiderSimd = { /*u16x64*/ },
-);
-impl_simd_integer!(
-    T = u16,
-    N = 8,
-    Simd = u16x8,
-    UnsignedSimd = u16x8,
-    SignedSimd = i16x8,
-    WiderSimd = { u32x8 },
-);
-impl_simd_integer!(
-    T = u16,
-    N = 16,
-    Simd = u16x16,
-    UnsignedSimd = u16x16,
-    SignedSimd = i16x16,
-    WiderSimd = { u32x16 },
-);
-impl_simd_integer!(
-    T = u16,
-    N = 32,
-    Simd = u16x32,
-    UnsignedSimd = u16x32,
-    SignedSimd = i16x32,
-    WiderSimd = { /*u32x32*/ },
-);
-impl_simd_integer!(
-    T = u32,
-    N = 4,
-    Simd = u32x4,
-    UnsignedSimd = u32x4,
-    SignedSimd = i32x4,
-    WiderSimd = { u64x4 },
-);
-impl_simd_integer!(
-    T = u32,
-    N = 8,
-    Simd = u32x8,
-    UnsignedSimd = u32x8,
-    SignedSimd = i32x8,
-    WiderSimd = { u64x8 },
-);
-impl_simd_integer!(
-    T = u32,
-    N = 16,
-    Simd = u32x16,
-    UnsignedSimd = u32x16,
-    SignedSimd = i32x16,
-    WiderSimd = { /*u64x16*/ },
-);
-impl_simd_integer!(
-    T = u64,
-    N = 2,
-    Simd = u64x2,
-    UnsignedSimd = u64x2,
-    SignedSimd = i64x2,
-    WiderSimd = { /*u128x2*/ },
-);
-impl_simd_integer!(
-    T = u64,
-    N = 4,
-    Simd = u64x4,
-    UnsignedSimd = u64x4,
-    SignedSimd = i64x4,
-    WiderSimd = { /*u128x4*/ },
-);
-impl_simd_integer!(
-    T = u64,
-    N = 8,
-    Simd = u64x8,
-    UnsignedSimd = u64x8,
-    SignedSimd = i64x8,
-    WiderSimd = { /*u128x8*/ },
-);
 
 impl<T, const N: usize> Simd<T, N>
 where
@@ -928,6 +742,14 @@ where
     Simd<T::Unsigned, N>: SupportedSimd,
     Simd<T::Signed, N>: SupportedSimd,
 {
+    // Because `rustdoc` does not enforce the "no conflicting implementations"
+    // rule, we show conflicting items in documentation in the generic `impl`
+    // block rather than duplicate them across multiple `impl` blocks. This
+    // makes documentation quite easier to read. This detail is documented
+    // publicly in `PrimitiveInteger`.
+    #[cfg(doc)]
+    conflicting_items!(T);
+
             /// Shifts left each element of `self` by the corresponding element
             /// of `rhs`, without bounding `rhs`.
             ///
@@ -1283,6 +1105,25 @@ where
 
 macro_rules! integer {
     ($T:ident) => {
+        /// Contains SIMD integer items whose name conflicts with a SIMD float
+        /// item's name.
+        ///
+        /// These items cannot be made generic over `T: PrimitiveInteger`
+        /// because Rust treats that as conflicting with items exposed for
+        /// `T: PrimitiveFloat`.
+        ///
+        /// Regularly, `cfg(doc)` is used to show these items in one generic
+        /// `impl` block rather than multiple duplicated `impl` blocks. This may
+        /// fail when `wide` types are reexported. Consider reading `wide`
+        /// documentation directly.
+        #[cfg(not(doc))]
+        impl<const N: usize> Simd<$T, N>
+        where
+            Simd<$T, N>: SupportedSimd,
+        {
+            conflicting_items!($T);
+        }
+
         impl_binary_operator_for_scalar!(
             $T,
             Add,
