@@ -1,6 +1,6 @@
 use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
-use crate::utils::{for_simd_types, random_iter, simd_chunks};
+use crate::utils::{for_simd_types, fuzz_iter, simd_chunks};
 
 #[test]
 fn test_reduce_add() {
@@ -57,7 +57,7 @@ fn test_abs() {
             9.5,
             -3.0,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::abs));
             let actual = Simd::from_array(value).abs();
@@ -91,7 +91,7 @@ fn test_signum() {
             T::MAX,
             T::MIN,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::signum));
             let actual = Simd::from_array(value).signum();
@@ -133,7 +133,7 @@ fn test_floor() {
             -8388608.0,
             -8388609.0,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::floor));
             let actual = Simd::from_array(value).floor();
@@ -175,7 +175,7 @@ fn test_ceil() {
             -8388608.0,
             -8388609.0,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::ceil));
             let actual = Simd::from_array(value).ceil();
@@ -262,7 +262,7 @@ fn test_max() {
                 3.0
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
             let actual = Simd::from_array(value).max(Simd::from_array(other));
@@ -350,7 +350,7 @@ fn test_min() {
                 3.0
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
             let actual = Simd::from_array(value).min(Simd::from_array(other));
@@ -372,7 +372,7 @@ fn test_clamp() {
             [3.0, 11.0, 5.0, 1.0, -1.0, -1.0],
             [8.0, 14.0, 9.0, 3.0, 1.0, 1.0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if value[i].is_nan() || min[i].is_nan() || max[i].is_nan() {
@@ -402,7 +402,7 @@ fn test_fast_clamp() {
             [3.0, 11.0, 5.0, 1.0, -1.0, -1.0],
             [8.0, 14.0, 9.0, 3.0, 1.0, 1.0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for i in 0..N {
                 if min[i].is_nan() {
@@ -436,7 +436,7 @@ fn test_fast_clamp() {
 #[test]
 fn test_reduce_max() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).reduce_max();
             let expected = value.into_iter().reduce(T::max).unwrap();
 
@@ -451,7 +451,7 @@ fn test_reduce_max() {
 #[test]
 fn test_fast_reduce_max() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).fast_reduce_max();
             let expected = value.into_iter().reduce(T::max).unwrap();
 
@@ -468,7 +468,7 @@ fn test_fast_reduce_max() {
 #[test]
 fn test_reduce_min() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).reduce_min();
             let expected = value.into_iter().reduce(T::min).unwrap();
 
@@ -483,7 +483,7 @@ fn test_reduce_min() {
 #[test]
 fn test_fast_reduce_min() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).fast_reduce_min();
             let expected = value.into_iter().reduce(T::min).unwrap();
 
@@ -547,7 +547,7 @@ fn test_is_nan() {
             T::INFINITY,
             16.0,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(value.map(|x| if x.is_nan() { T::from_bits(!0) } else { 0.0 }));
@@ -576,7 +576,7 @@ fn test_is_finite() {
             T::INFINITY,
             16.0,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(value.map(|x| if x.is_finite() { T::from_bits(!0) } else { 0.0 }));
@@ -605,7 +605,7 @@ fn test_is_infinite() {
             T::INFINITY,
             16.0,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(|x| {
                 if x.is_infinite() {
@@ -648,7 +648,7 @@ fn test_round() {
             ]
         })
         .flat_map(|x| [x, x.map(|x| -x)])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::round));
             let actual = Simd::from_array(value).round();
@@ -685,7 +685,7 @@ fn test_round_ties_even() {
             ]
         })
         .flat_map(|x| [x, x.map(|x| -x)])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::round_ties_even));
             let actual = Simd::from_array(value).round_ties_even();
@@ -747,7 +747,7 @@ fn test_round_int() {
             T::INFINITY,
             T::NEG_INFINITY,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             // TODO:  Currently `round` actually behaves like `round_ties_even`.
             // Decide the correct behavior then add documentation.
@@ -810,7 +810,7 @@ fn test_trunc() {
             T::INFINITY,
             T::NEG_INFINITY,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::trunc));
             let actual = Simd::from_array(value).trunc();
@@ -880,7 +880,7 @@ fn test_trunc_int() {
             T::INFINITY,
             T::NEG_INFINITY,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = SimdSigned::from_array(
                 value.map(|x| x.trunc().clamp(Signed::MIN as T, Signed::MAX as T) as Signed),
@@ -929,7 +929,7 @@ fn test_fract() {
             T::INFINITY,
             T::NEG_INFINITY,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::fract));
             let actual = Simd::from_array(value).fract();
@@ -1881,8 +1881,7 @@ fn test_powf_simd() {
 #[test]
 fn test_is_sign_positive() {
     for_simd_types!(|T: Float, N| {
-        for value in
-            simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(random_iter())
+        for value in simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(|x| {
                 if x.is_sign_positive() {
@@ -1904,8 +1903,7 @@ fn test_is_sign_positive() {
 #[test]
 fn test_is_sign_negative() {
     for_simd_types!(|T: Float, N| {
-        for value in
-            simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(random_iter())
+        for value in simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(|x| {
                 if x.is_sign_negative() {

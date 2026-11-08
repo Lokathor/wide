@@ -1,6 +1,6 @@
 use wide::{i16x8, i16x16, i16x32, i32x4, i32x8, i32x16};
 
-use crate::utils::{for_simd_types, random_iter, simd_chunks};
+use crate::utils::{for_simd_types, fuzz_iter, simd_chunks};
 
 #[test]
 fn test_is_positive() {
@@ -29,8 +29,7 @@ fn test_is_negative() {
 #[test]
 fn test_abs() {
     for_simd_types!(|T: Signed, N| {
-        for value in
-            simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(random_iter())
+        for value in simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::wrapping_abs));
             let actual = Simd::from_array(value).abs();
@@ -43,8 +42,7 @@ fn test_abs() {
 #[test]
 fn test_unsigned_abs() {
     for_simd_types!(|T: Signed, N| {
-        for value in
-            simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(random_iter())
+        for value in simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(fuzz_iter())
         {
             let expected = SimdUnsigned::from_array(value.map(T::unsigned_abs));
             let actual = Simd::from_array(value).unsigned_abs();
@@ -57,8 +55,7 @@ fn test_unsigned_abs() {
 #[test]
 fn test_signum() {
     for_simd_types!(|T: Signed, N| {
-        for value in
-            simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(random_iter())
+        for value in simd_chunks!([1, -15, -2, -5, 0, 9, -4, 0, T::MIN, T::MAX]).chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::signum));
             let actual = Simd::from_array(value).signum();
@@ -71,7 +68,7 @@ fn test_signum() {
 #[test]
 fn test_add_unsigned() {
     for_simd_types!(|T: Signed, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].wrapping_add_unsigned(b[i])));
             let actual = Simd::from_array(a).add_unsigned(SimdUnsigned::from_array(b));
@@ -84,7 +81,7 @@ fn test_add_unsigned() {
 #[test]
 fn test_sub_unsigned() {
     for_simd_types!(|T: Signed, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].wrapping_sub_unsigned(b[i])));
             let actual = Simd::from_array(a).sub_unsigned(SimdUnsigned::from_array(b));
@@ -100,7 +97,7 @@ fn test_saturating_neg() {
         for value in [0, 1, T::MAX, T::MIN]
             .into_iter()
             .map(|v| [v; N])
-            .chain(random_iter())
+            .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::saturating_neg));
             let actual = Simd::from_array(value).saturating_neg();
@@ -116,7 +113,7 @@ fn test_saturating_abs() {
         for value in [0, 1, T::MAX, T::MIN]
             .into_iter()
             .map(|v| [v; N])
-            .chain(random_iter())
+            .chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::saturating_abs));
             let actual = Simd::from_array(value).saturating_abs();
@@ -129,7 +126,7 @@ fn test_saturating_abs() {
 #[test]
 fn test_saturating_add_unsigned() {
     for_simd_types!(|T: Signed, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].saturating_add_unsigned(b[i])));
             let actual = Simd::from_array(a).saturating_add_unsigned(SimdUnsigned::from_array(b));
@@ -142,7 +139,7 @@ fn test_saturating_add_unsigned() {
 #[test]
 fn test_saturating_sub_unsigned() {
     for_simd_types!(|T: Signed, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].saturating_sub_unsigned(b[i])));
             let actual = Simd::from_array(a).saturating_sub_unsigned(SimdUnsigned::from_array(b));
@@ -158,7 +155,7 @@ fn test_overflowing_abs() {
         for value in [0, 1, T::MAX, T::MIN]
             .into_iter()
             .map(|v| [v; N])
-            .chain(random_iter())
+            .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| value[i].overflowing_abs().0)),
@@ -176,7 +173,7 @@ fn test_overflowing_abs() {
 #[test]
 fn test_overflowing_add_unsigned() {
     for_simd_types!(|T: Signed, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| {
                     a[i].overflowing_add_unsigned(b[i]).0
@@ -199,7 +196,7 @@ fn test_overflowing_add_unsigned() {
 #[test]
 fn test_overflowing_sub_unsigned() {
     for_simd_types!(|T: Signed, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| {
                     a[i].overflowing_sub_unsigned(b[i]).0

@@ -2,7 +2,7 @@
 
 use wide::{f32x4, f32x8, f32x16, i8x16, i8x32, i16x8, i16x16, i32x4, i32x8, i32x16, u8x16, u16x8};
 
-use crate::utils::{for_simd_types, random_iter, simd_chunks};
+use crate::utils::{for_simd_types, fuzz_iter, simd_chunks};
 
 #[test]
 fn test_unbounded_shl() {
@@ -25,7 +25,7 @@ fn test_unbounded_shl() {
             ],
             [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         .map(|[left, right]| (left, right.map(T::cast_unsigned)))
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
@@ -59,7 +59,7 @@ fn test_unbounded_shl() {
             ],
             [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
@@ -94,7 +94,7 @@ fn test_unbounded_shl_scalar() {
             53,
         ],)
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shl(right)));
             let actual = Simd::from_array(left).unbounded_shl_scalar(right);
@@ -122,7 +122,7 @@ fn test_unbounded_shl_scalar() {
             53,
         ],)
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shl(right)));
             let actual = Simd::from_array(left).unbounded_shl_scalar(right);
@@ -156,7 +156,7 @@ fn test_unbounded_shr() {
             ],
             [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         .map(|[left, right]| (left, right.map(T::cast_unsigned)))
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
@@ -190,7 +190,7 @@ fn test_unbounded_shr() {
             ],
             [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
@@ -225,7 +225,7 @@ fn test_unbounded_shr_scalar() {
             53,
         ],)
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shr(right)));
             let actual = Simd::from_array(left).unbounded_shr_scalar(right);
@@ -253,7 +253,7 @@ fn test_unbounded_shr_scalar() {
             53,
         ],)
         .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shr(right)));
             let actual = Simd::from_array(left).unbounded_shr_scalar(right);
@@ -339,7 +339,7 @@ fn test_reduce_mul() {
             40,
             T::MAX
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = value.into_iter().fold(1, T::wrapping_mul);
             let actual = Simd::from_array(value).reduce_mul();
@@ -366,7 +366,7 @@ fn test_saturating_add() {
             ],
             [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_add(right[i])));
@@ -380,7 +380,7 @@ fn test_saturating_add() {
             [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MIN / 2, 9],
             [-17, 18, T::MAX, -2, -20, -100, 10],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_add(right[i])));
@@ -408,7 +408,7 @@ fn test_saturating_sub() {
             ],
             [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
@@ -422,7 +422,7 @@ fn test_saturating_sub() {
             [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MAX / 2],
             [17, -18, T::MIN, 2, 20, -100],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
@@ -454,7 +454,7 @@ fn test_saturating_mul() {
             ],
             [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
@@ -507,7 +507,7 @@ fn test_saturating_mul() {
                 T::MAX,
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
@@ -528,7 +528,7 @@ fn test_saturating_div() {
             [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
             [2, 5, 5, 8, 10, 5, 2, 10],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -551,7 +551,7 @@ fn test_saturating_div() {
             [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
             [-2, -5, 3, -6, -2, -1, -1, -1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -577,7 +577,7 @@ fn test_overflowing_neg() {
         for value in [0, 1, T::MAX, T::MIN]
             .into_iter()
             .map(|v| [v; N])
-            .chain(random_iter())
+            .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(value.map(|v| v.overflowing_neg().0)),
@@ -607,7 +607,7 @@ fn test_overflowing_add() {
             ],
             [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
@@ -629,7 +629,7 @@ fn test_overflowing_add() {
             [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MIN / 2, 9],
             [-17, 18, T::MAX, -2, -20, -100, 10],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
@@ -665,7 +665,7 @@ fn test_overflowing_sub() {
             ],
             [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
@@ -687,7 +687,7 @@ fn test_overflowing_sub() {
             [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MAX / 2],
             [17, -18, T::MIN, 2, 20, -100],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
@@ -727,7 +727,7 @@ fn test_overflowing_mul() {
             ],
             [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
@@ -788,7 +788,7 @@ fn test_overflowing_mul() {
                 T::MAX,
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
@@ -817,7 +817,7 @@ fn test_overflowing_div() {
             [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
             [2, 5, 5, 8, 10, 5, 2, 10],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -848,7 +848,7 @@ fn test_overflowing_div() {
             [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
             [-2, -5, 3, -6, -2, -1, -1, -1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -883,7 +883,7 @@ fn test_overflowing_rem() {
             [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
             [2, 5, 5, 8, 10, 5, 2, 10],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -914,7 +914,7 @@ fn test_overflowing_rem() {
             [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
             [-2, -5, 3, -6, -2, -1, -1, -1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -945,7 +945,7 @@ fn test_overflowing_rem() {
 #[test]
 fn test_overflowing_shl() {
     for_simd_types!(|T: Integer, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shl(b[i] as u32).0)),
                 SimdUnsigned::from_array(std::array::from_fn(|i| {
@@ -966,7 +966,7 @@ fn test_overflowing_shl() {
 #[test]
 fn test_overflowing_shl_scalar() {
     for_simd_types!(|T: Integer, N| {
-        for (a, b) in random_iter::<([T; N], u32)>() {
+        for (a, b) in fuzz_iter::<([T; N], u32)>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shl(b).0)),
                 Simd::from_array(std::array::from_fn(|i| {
@@ -990,7 +990,7 @@ fn test_overflowing_shl_scalar() {
 #[test]
 fn test_overflowing_shr() {
     for_simd_types!(|T: Integer, N| {
-        for (a, b) in random_iter::<([T; N], [Unsigned; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shr(b[i] as u32).0)),
                 SimdUnsigned::from_array(std::array::from_fn(|i| {
@@ -1011,7 +1011,7 @@ fn test_overflowing_shr() {
 #[test]
 fn test_overflowing_shr_scalar() {
     for_simd_types!(|T: Integer, N| {
-        for (a, b) in random_iter::<([T; N], u32)>() {
+        for (a, b) in fuzz_iter::<([T; N], u32)>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| a[i].overflowing_shr(b).0)),
                 Simd::from_array(std::array::from_fn(|i| {
@@ -1053,7 +1053,7 @@ fn test_widening_mul() {
             ],
             [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = DoubleSizedSimd::from_array(std::array::from_fn(|i| {
                 (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
@@ -1107,7 +1107,7 @@ fn test_widening_mul() {
                 T::MAX,
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = DoubleSizedSimd::from_array(std::array::from_fn(|i| {
                 (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
@@ -1143,7 +1143,7 @@ fn test_mul_keep_low_high() {
             ],
             [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 SimdUnsigned::from_array(std::array::from_fn(|i| {
@@ -1203,7 +1203,7 @@ fn test_mul_keep_low_high() {
                 T::MAX,
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_mul(right[i]))),
@@ -1243,7 +1243,7 @@ fn test_mul_keep_high() {
             ],
             [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS) as T
@@ -1297,7 +1297,7 @@ fn test_mul_keep_high() {
                 T::MAX,
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS) as T

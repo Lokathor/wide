@@ -8,7 +8,7 @@ use wide::{
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
-use crate::utils::{for_simd_types, random_iter, simd_chunks};
+use crate::utils::{for_simd_types, fuzz_iter, simd_chunks};
 
 #[test]
 fn test_size() {
@@ -76,8 +76,7 @@ fn test_debug() {
 #[test]
 fn test_neg() {
     for_simd_types!(|T: Float, N| {
-        for value in
-            simd_chunks!([0.0, -0.0, 1.0, -2.0, -3.1, 5.3, T::INFINITY]).chain(random_iter())
+        for value in simd_chunks!([0.0, -0.0, 1.0, -2.0, -3.1, 5.3, T::INFINITY]).chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(T::neg));
             let actual = -Simd::from_array(value);
@@ -90,7 +89,7 @@ fn test_neg() {
         }
     });
     for_simd_types!(|T: Signed, N| {
-        for value in simd_chunks!([0, 1, -2, -30, 50, T::MAX, T::MIN]).chain(random_iter()) {
+        for value in simd_chunks!([0, 1, -2, -30, 50, T::MAX, T::MIN]).chain(fuzz_iter()) {
             let expected = Simd::from_array(value.map(T::wrapping_neg));
             let actual = -Simd::from_array(value);
 
@@ -102,8 +101,7 @@ fn test_neg() {
 #[test]
 fn test_not() {
     for_simd_types!(|T: Float, N| {
-        for value in
-            simd_chunks!([0.0, -0.0, 1.0, -2.0, -3.1, 5.3, T::INFINITY]).chain(random_iter())
+        for value in simd_chunks!([0.0, -0.0, 1.0, -2.0, -3.1, 5.3, T::INFINITY]).chain(fuzz_iter())
         {
             let expected = Simd::from_array(value.map(|x| T::from_bits(!x.to_bits())));
             let actual = !Simd::from_array(value);
@@ -116,7 +114,7 @@ fn test_not() {
         }
     });
     for_simd_types!(|T: Integer, N| {
-        for value in simd_chunks!([0, 1, 50, 113, T::MAX, T::MIN]).chain(random_iter()) {
+        for value in simd_chunks!([0, 1, 50, 113, T::MAX, T::MIN]).chain(fuzz_iter()) {
             let expected = Simd::from_array(value.map(T::not));
             let actual = !Simd::from_array(value);
 
@@ -132,7 +130,7 @@ fn test_add() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] + right[i]));
             let actual = Simd::from_array(left) + Simd::from_array(right);
@@ -149,7 +147,7 @@ fn test_add() {
             [0, 1, 2, 5, 100, T::MAX, T::MAX - 1],
             [5, 0, 5, 11, 3, 2, 2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_add(right[i])));
@@ -163,7 +161,7 @@ fn test_add() {
             [-3, 5, 100, -20, T::MIN, T::MIN + 1, T::MAX, T::MIN],
             [3, -6, -30, 11, -2, -2, -2, 2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_add(right[i])));
@@ -225,7 +223,7 @@ fn test_sub() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] - right[i]));
             let actual = Simd::from_array(left) - Simd::from_array(right);
@@ -242,7 +240,7 @@ fn test_sub() {
             [0, 1, 2, 5, 100, T::MAX, T::MAX - 1],
             [5, 0, 5, 11, 3, 2, 2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_sub(right[i])));
@@ -256,7 +254,7 @@ fn test_sub() {
             [-3, 5, 100, -20, T::MIN, T::MIN + 1, T::MAX, T::MIN],
             [-3, 6, 30, -11, 2, 2, 2, -2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_sub(right[i])));
@@ -318,7 +316,7 @@ fn test_mul() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] * right[i]));
             let actual = Simd::from_array(left) * Simd::from_array(right);
@@ -349,7 +347,7 @@ fn test_mul() {
             ],
             [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_mul(right[i])));
@@ -399,7 +397,7 @@ fn test_mul() {
                 T::MAX,
             ],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_mul(right[i])));
@@ -489,7 +487,7 @@ fn test_div() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] / right[i]));
             let actual = Simd::from_array(left) / Simd::from_array(right);
@@ -506,7 +504,7 @@ fn test_div() {
             [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
             [2, 5, 5, 8, 10, 5, 2, 10],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -529,7 +527,7 @@ fn test_div() {
             [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
             [-2, -5, 3, -6, -2, -1, -1, -1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -561,8 +559,7 @@ fn test_div_scalar() {
         }
     });
     for_simd_types!(|T: Integer, N| {
-        for left in simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(random_iter())
-        {
+        for left in simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(fuzz_iter()) {
             for right in [2, 5, 5, 8, 10, 5, 2, 10] {
                 let expected =
                     Simd::from_array(std::array::from_fn(|i| left[i].wrapping_div(right)));
@@ -577,7 +574,7 @@ fn test_div_scalar() {
     });
     for_simd_types!(|T: Signed, N| {
         for left in
-            simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(random_iter())
+            simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(fuzz_iter())
         {
             for right in [-2, -5, 3, -6, -2, -1, -1, -1] {
                 let expected =
@@ -608,7 +605,7 @@ fn test_scalar_div() {
         for left in [2, 5, 5, 8, 10, 5, 2, 10] {
             let _: T = left;
             for mut right in
-                simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(random_iter())
+                simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(fuzz_iter())
             {
                 for right in &mut right {
                     if *right == 0 {
@@ -631,7 +628,7 @@ fn test_scalar_div() {
         for left in [-2, -5, 3, -6, -2, -1, -1, -1] {
             let _: T = left;
             for mut right in
-                simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(random_iter())
+                simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(fuzz_iter())
             {
                 for right in &mut right {
                     if *right == 0 {
@@ -659,7 +656,7 @@ fn test_rem() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] % right[i]));
             let actual = Simd::from_array(left) % Simd::from_array(right);
@@ -676,7 +673,7 @@ fn test_rem() {
             [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
             [2, 5, 5, 8, 10, 5, 2, 10],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -699,7 +696,7 @@ fn test_rem() {
             [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
             [-2, -5, 3, -6, -2, -1, -1, -1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for right in &mut right {
                 if *right == 0 {
@@ -735,8 +732,7 @@ fn test_rem_scalar() {
         }
     });
     for_simd_types!(|T: Integer, N| {
-        for left in simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(random_iter())
-        {
+        for left in simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(fuzz_iter()) {
             for right in [2, 5, 5, 8, 10, 5, 2, 10] {
                 let expected =
                     Simd::from_array(std::array::from_fn(|i| left[i].wrapping_rem(right)));
@@ -751,7 +747,7 @@ fn test_rem_scalar() {
     });
     for_simd_types!(|T: Signed, N| {
         for left in
-            simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(random_iter())
+            simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(fuzz_iter())
         {
             for right in [-2, -5, 3, -6, -2, -1, -1, -1] {
                 let expected =
@@ -786,7 +782,7 @@ fn test_scalar_rem() {
         for left in [2, 5, 5, 8, 10, 5, 2, 10] {
             let _: T = left;
             for mut right in
-                simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(random_iter())
+                simd_chunks!([11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1]).chain(fuzz_iter())
             {
                 for right in &mut right {
                     if *right == 0 {
@@ -809,7 +805,7 @@ fn test_scalar_rem() {
         for left in [-2, -5, 3, -6, -2, -1, -1, -1] {
             let _: T = left;
             for mut right in
-                simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(random_iter())
+                simd_chunks!([11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1]).chain(fuzz_iter())
             {
                 for right in &mut right {
                     if *right == 0 {
@@ -851,7 +847,7 @@ fn test_shl() {
             ],
             [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 left[i].wrapping_shl(right[i] as u32)
@@ -883,7 +879,7 @@ fn test_shl() {
             ],
             [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             #[allow(clippy::unnecessary_cast)]
             let expected = Simd::from_array(std::array::from_fn(|i| {
@@ -920,7 +916,7 @@ fn test_shl_scalar() {
         .flat_map(|left| {
             [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33].map(|right| (left, right))
         })
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_shl(right as u32)));
@@ -964,7 +960,7 @@ fn test_shl_scalar() {
         .flat_map(|left| {
             [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33].map(|right| (left, right))
         })
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_shl(right as u32)));
@@ -1014,7 +1010,7 @@ fn test_shr() {
             ],
             [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 left[i].wrapping_shr(right[i] as u32)
@@ -1046,7 +1042,7 @@ fn test_shr() {
             ],
             [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             #[allow(clippy::unnecessary_cast)]
             let expected = Simd::from_array(std::array::from_fn(|i| {
@@ -1083,7 +1079,7 @@ fn test_shr_scalar() {
         .flat_map(|left| {
             [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33].map(|right| (left, right))
         })
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_shr(right as u32)));
@@ -1127,7 +1123,7 @@ fn test_shr_scalar() {
         .flat_map(|left| {
             [1, 0, 3, -2, -6, 100, 7, 8, 9, 15, 16, 31, 32, 33].map(|right| (left, right))
         })
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].wrapping_shr(right as u32)));
@@ -1163,7 +1159,7 @@ fn test_bitand() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 T::from_bits(left[i].to_bits() & right[i].to_bits())
@@ -1181,7 +1177,7 @@ fn test_bitand() {
             [0, 1, 2, 30, 5, T::MAX - 5, T::MIN + 3],
             [5, 78, 3, 26, 30, 5, 78],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] & right[i]));
             let actual = Simd::from_array(left) & Simd::from_array(right);
@@ -1202,7 +1198,7 @@ fn test_bitor() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 T::from_bits(left[i].to_bits() | right[i].to_bits())
@@ -1220,7 +1216,7 @@ fn test_bitor() {
             [0, 1, 2, 30, 5, T::MAX - 5, T::MIN + 3],
             [5, 78, 3, 26, 30, 5, 78],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] | right[i]));
             let actual = Simd::from_array(left) | Simd::from_array(right);
@@ -1241,7 +1237,7 @@ fn test_bitxor() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 T::from_bits(left[i].to_bits() ^ right[i].to_bits())
@@ -1259,7 +1255,7 @@ fn test_bitxor() {
             [0, 1, 2, 30, 5, T::MAX - 5, T::MIN + 3],
             [5, 78, 3, 26, 30, 5, 78],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] ^ right[i]));
             let actual = Simd::from_array(left) ^ Simd::from_array(right);
@@ -1280,7 +1276,7 @@ fn test_simd_eq() {
             [5.0, -0.0, 1.0, 2.0, 6.3, -30.2, 1e3, 20.2],
             [5.0, 0.0, 5.0, -3.1, 6.3, -30.2, 1e4, 20.1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] == right[i] {
@@ -1302,7 +1298,7 @@ fn test_simd_eq() {
             [5, 1, 5, -5, -5, -1, -3, 20, T::MIN + 5, 0, T::MAX - 5, 5],
             [5, 5, 2, -5, -1, -7, 20, -6, 0, T::MIN + 5, 5, T::MAX - 5],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] == right[i] { !0 } else { 0 }
@@ -1320,7 +1316,7 @@ fn test_simd_eq() {
             [5, 1, 5, T::MAX - 5, 20, T::MAX],
             [5, 5, 2, 20, T::MAX - 5, 0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] == right[i] { !0 } else { 0 }
@@ -1398,7 +1394,7 @@ fn test_simd_ne() {
             [5.0, -0.0, 1.0, 2.0, 6.3, -30.2, 1e3, 20.2],
             [5.0, 0.0, 5.0, -3.1, 6.3, -30.2, 1e4, 20.1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] != right[i] {
@@ -1420,7 +1416,7 @@ fn test_simd_ne() {
             [5, 1, 5, -5, -5, -1, -3, 20, T::MIN + 5, 0, T::MAX - 5, 5],
             [5, 5, 2, -5, -1, -7, 20, -6, 0, T::MIN + 5, 5, T::MAX - 5],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] != right[i] { !0 } else { 0 }
@@ -1438,7 +1434,7 @@ fn test_simd_ne() {
             [5, 1, 5, T::MAX - 5, 20, T::MAX],
             [5, 5, 2, 20, T::MAX - 5, 0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] != right[i] { !0 } else { 0 }
@@ -1516,7 +1512,7 @@ fn test_simd_lt() {
             [5.0, -0.0, 1.0, 2.0, 6.3, -30.2, 1e3, 20.2],
             [5.0, 0.0, 5.0, -3.1, 6.3, -30.2, 1e4, 20.1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] < right[i] {
@@ -1538,7 +1534,7 @@ fn test_simd_lt() {
             [5, 1, 5, -5, -5, -1, -3, 20, T::MIN + 5, 0, T::MAX - 5, 5],
             [5, 5, 2, -5, -1, -7, 20, -6, 0, T::MIN + 5, 5, T::MAX - 5],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(
@@ -1559,7 +1555,7 @@ fn test_simd_lt() {
             [5, 1, 5, T::MAX - 5, 20, T::MAX],
             [5, 5, 2, 20, T::MAX - 5, 0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(
@@ -1640,7 +1636,7 @@ fn test_simd_gt() {
             [5.0, -0.0, 1.0, 2.0, 6.3, -30.2, 1e3, 20.2],
             [5.0, 0.0, 5.0, -3.1, 6.3, -30.2, 1e4, 20.1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] > right[i] {
@@ -1662,7 +1658,7 @@ fn test_simd_gt() {
             [5, 1, 5, -5, -5, -1, -3, 20, T::MIN + 5, 0, T::MAX - 5, 5],
             [5, 5, 2, -5, -1, -7, 20, -6, 0, T::MIN + 5, 5, T::MAX - 5],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(
@@ -1683,7 +1679,7 @@ fn test_simd_gt() {
             [5, 1, 5, T::MAX - 5, 20, T::MAX],
             [5, 5, 2, 20, T::MAX - 5, 0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected =
                 Simd::from_array(std::array::from_fn(
@@ -1764,7 +1760,7 @@ fn test_simd_le() {
             [5.0, -0.0, 1.0, 2.0, 6.3, -30.2, 1e3, 20.2],
             [5.0, 0.0, 5.0, -3.1, 6.3, -30.2, 1e4, 20.1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] <= right[i] {
@@ -1786,7 +1782,7 @@ fn test_simd_le() {
             [5, 1, 5, -5, -5, -1, -3, 20, T::MIN + 5, 0, T::MAX - 5, 5],
             [5, 5, 2, -5, -1, -7, 20, -6, 0, T::MIN + 5, 5, T::MAX - 5],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] <= right[i] { !0 } else { 0 }
@@ -1804,7 +1800,7 @@ fn test_simd_le() {
             [5, 1, 5, T::MAX - 5, 20, T::MAX],
             [5, 5, 2, 20, T::MAX - 5, 0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] <= right[i] { !0 } else { 0 }
@@ -1882,7 +1878,7 @@ fn test_simd_ge() {
             [5.0, -0.0, 1.0, 2.0, 6.3, -30.2, 1e3, 20.2],
             [5.0, 0.0, 5.0, -3.1, 6.3, -30.2, 1e4, 20.1],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] >= right[i] {
@@ -1904,7 +1900,7 @@ fn test_simd_ge() {
             [5, 1, 5, -5, -5, -1, -3, 20, T::MIN + 5, 0, T::MAX - 5, 5],
             [5, 5, 2, -5, -1, -7, 20, -6, 0, T::MIN + 5, 5, T::MAX - 5],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] >= right[i] { !0 } else { 0 }
@@ -1922,7 +1918,7 @@ fn test_simd_ge() {
             [5, 1, 5, T::MAX - 5, 20, T::MAX],
             [5, 5, 2, 20, T::MAX - 5, 0],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if left[i] >= right[i] { !0 } else { 0 }
@@ -2001,7 +1997,7 @@ fn test_bitselect() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 T::from_bits(
@@ -2024,7 +2020,7 @@ fn test_bitselect() {
             [4, 6, 3, 20, T::MAX, 5, 123, 111],
             [5, 1, 4, 50, 1, T::MIN, 120, 112],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if_true[i] & value[i] | if_false[i] & !value[i]
@@ -2048,7 +2044,7 @@ fn test_select() {
             [0.0, -0.0, 1.0, 2.0, -3.1, 5.3, 1e3, -20.1],
             [5.0, 0.0, 5.0, 3.1, 6.3, -30.2, 1e4, 53.2],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if mask[i].is_sign_negative() {
@@ -2073,7 +2069,7 @@ fn test_select() {
             [4, 6, 3, 20, T::MAX, 5, 123, 111],
             [5, 1, 4, 50, 1, T::MIN, 120, 112],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if mask[i] > 0 { if_true[i] } else { if_false[i] }
@@ -2093,8 +2089,8 @@ fn test_select() {
 #[test]
 fn test_to_bitmask() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([0.0, -0.0, 1.0, -1.0, T::INFINITY, -5.3, T::NAN, 2.4])
-            .chain(random_iter())
+        for value in
+            simd_chunks!([0.0, -0.0, 1.0, -1.0, T::INFINITY, -5.3, T::NAN, 2.4]).chain(fuzz_iter())
         {
             let expected = (0..N)
                 .map(|i| {
@@ -2114,8 +2110,8 @@ fn test_to_bitmask() {
         }
     });
     for_simd_types!(|T: Signed, N| {
-        for value in simd_chunks!([0, T::MIN, T::MIN + 10, -5, 7, T::MAX, T::MIN, 9, -10])
-            .chain(random_iter())
+        for value in
+            simd_chunks!([0, T::MIN, T::MIN + 10, -5, 7, T::MAX, T::MIN, 9, -10]).chain(fuzz_iter())
         {
             let expected = (0..N)
                 .map(|i| if value[i].is_negative() { 1 << i } else { 0 })
@@ -2130,8 +2126,8 @@ fn test_to_bitmask() {
         }
     });
     for_simd_types!(|T: Unsigned, N| {
-        for value in simd_chunks!([0, 10, 5, T::MAX, T::MAX / 2 + 5, 2, T::MAX / 2 + 10])
-            .chain(random_iter())
+        for value in
+            simd_chunks!([0, 10, 5, T::MAX, T::MAX / 2 + 5, 2, T::MAX / 2 + 10]).chain(fuzz_iter())
         {
             let expected = (0..N)
                 .map(|i| if value[i] > T::MAX >> 1 { 1 << i } else { 0 })
@@ -2265,7 +2261,7 @@ fn test_replace_const() {
 
     macro_rules! test_indices {
     ($T:ident, $N:literal, $Simd:ident, [$($INDEX:literal),*]) => {
-      for (simd, value) in random_iter::<($Simd, $T)>() {$(
+      for (simd, value) in fuzz_iter::<($Simd, $T)>() {$(
         let expected = {
           let mut result = simd;
           result.as_mut_array()[$INDEX] = value;
@@ -2349,7 +2345,7 @@ fn test_extract_const() {
 
     macro_rules! test_indices {
     ($T:ident, $N:literal, $Simd:ident, [$($INDEX:literal),*]) => {
-      for simd in random_iter::<$Simd>() {$(
+      for simd in fuzz_iter::<$Simd>() {$(
         let expected = simd.to_array()[$INDEX];
         let actual = simd.extract_const::<$INDEX>();
 
@@ -2692,7 +2688,7 @@ fn test_array_shuffle_wrapping() {
 fn shuffle_indices<const N: usize>(inputs: usize) -> impl Iterator<Item = [usize; N]> {
     (0..N)
         .map(|offset| std::array::from_fn(|i| i * 3 + offset))
-        .chain(random_iter())
+        .chain(fuzz_iter())
         .map(move |indices| {
             indices.map(|index| {
                 // We need both in bounds and out of bounds indices, so wrap indices
@@ -2782,7 +2778,7 @@ fn add_mul_reference_u64<const W: u32>(acc: u64, a: u64, b: u64) -> (u64, u64) {
 /// at each of the given widths.
 macro_rules! check_add_mul {
   ($Simd:ident, $reference:ident, [$($W:literal),* $(,)?]) => {
-    for [acc, a, b] in random_iter::<[$Simd; 3]>() {
+    for [acc, a, b] in fuzz_iter::<[$Simd; 3]>() {
       let (acc_arr, a_arr, b_arr) = (acc.to_array(), a.to_array(), b.to_array());
       $({
         let expected_lo = $Simd::from_array(std::array::from_fn(|i| {
@@ -2878,7 +2874,7 @@ fn test_max() {
             [1, 2, T::MIN + 1, T::MIN, 6, -8, 12, 9],
             [17, -18, 1, 1, 19, -5, -1, -9],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
             let actual = Simd::from_array(value).max(Simd::from_array(other));
@@ -2891,7 +2887,7 @@ fn test_max() {
             [1, 2, 1, 10, 6, T::MAX - 1, 12, 9],
             [17, 18, 0, 9, 19, 5, 3, 9],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
             let actual = Simd::from_array(value).max(Simd::from_array(other));
@@ -2908,7 +2904,7 @@ fn test_min() {
             [1, 2, T::MIN + 1, T::MIN, 6, -8, 12, 9],
             [17, -18, 1, 1, 19, -5, -1, -9],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
             let actual = Simd::from_array(value).min(Simd::from_array(other));
@@ -2921,7 +2917,7 @@ fn test_min() {
             [1, 2, 1, 10, 6, T::MAX - 1, 12, 9],
             [17, 18, 0, 9, 19, 5, 3, 9],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
             let actual = Simd::from_array(value).min(Simd::from_array(other));
@@ -2939,7 +2935,7 @@ fn test_clamp() {
             [2, 6, 5, 10, 9, 11],
             [10, 10, 7, 10, 9, 11],
         )
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             for (min, max) in min.iter_mut().zip(&mut max) {
                 if *min > *max {
@@ -3048,7 +3044,7 @@ fn test_from_small() {
         55,
         i8::MIN,
     ])
-    .chain(random_iter())
+    .chain(fuzz_iter())
     {
         let expected = i16x16::from_array(value.map(|x| x as i16));
         let actual = i16x16::from_i8x16(i8x16::from_array(value));
@@ -3090,7 +3086,7 @@ fn test_from_small() {
         55,
         i8::MIN,
     ])
-    .chain(random_iter())
+    .chain(fuzz_iter())
     {
         let expected = i16x32::from_array(value.map(|x| x as i16));
         let actual = i16x32::from_i8x32(i8x32::from_array(value));
@@ -3098,7 +3094,7 @@ fn test_from_small() {
         assert_eq!(expected, actual);
     }
 
-    for value in once([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]).chain(random_iter()) {
+    for value in once([1, 2, 3, 4, 5, 6, i16::MIN + 1, i16::MIN]).chain(fuzz_iter()) {
         let expected = i32x8::from_array(value.map(|x| x as i32));
         let actual = i32x8::from_i16x8(i16x8::from_array(value));
 
@@ -3123,7 +3119,7 @@ fn test_from_small() {
         i16::MIN + 1,
         i16::MIN,
     ])
-    .chain(random_iter())
+    .chain(fuzz_iter())
     {
         let expected = i32x16::from_array(value.map(|x| x as i32));
         let actual = i32x16::from_i16x16(i16x16::from_array(value));
@@ -3131,24 +3127,21 @@ fn test_from_small() {
         assert_eq!(expected, actual);
     }
 
-    for value in once([1, 2, 3, 4, 5, i16::MAX as u16, u16::MAX - 1, u16::MAX]).chain(random_iter())
-    {
+    for value in once([1, 2, 3, 4, 5, i16::MAX as u16, u16::MAX - 1, u16::MAX]).chain(fuzz_iter()) {
         let expected = i32x8::from_array(value.map(|x| x as i32));
         let actual = i32x8::from_u16x8(u16x8::from_array(value));
 
         assert_eq!(expected, actual);
     }
 
-    for value in once([10, 2, 3, 4, 5, 6, 7, 8, 9, 7, 127, 12, 13, 6, 55, 255]).chain(random_iter())
-    {
+    for value in once([10, 2, 3, 4, 5, 6, 7, 8, 9, 7, 127, 12, 13, 6, 55, 255]).chain(fuzz_iter()) {
         let expected = u16x16::from_array(value.map(|x| x as u16));
         let actual = u16x16::from(u8x16::from_array(value));
 
         assert_eq!(expected, actual);
     }
 
-    for value in once([1, 2, 3, 4, 5, i16::MAX as u16, u16::MAX - 1, u16::MAX]).chain(random_iter())
-    {
+    for value in once([1, 2, 3, 4, 5, i16::MAX as u16, u16::MAX - 1, u16::MAX]).chain(fuzz_iter()) {
         let expected = u32x8::from_array(value.map(|x| x as u32));
         let actual = u32x8::from(u16x8::from_array(value));
 
@@ -3173,7 +3166,7 @@ fn test_from_small() {
         u16::MAX - 1,
         u16::MAX,
     ])
-    .chain(random_iter())
+    .chain(fuzz_iter())
     {
         let expected = u32x16::from_array(value.map(|x| x as u32));
         let actual = u32x16::from(u16x16::from_array(value));
@@ -3201,7 +3194,7 @@ fn test_ne_bytes() {
         for value in simd_chunks!([
             1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
         ])
-        .chain(random_iter())
+        .chain(fuzz_iter())
         {
             let simd = Simd::from_array(value);
             let bytes = simd.to_ne_bytes();
@@ -3218,7 +3211,7 @@ fn test_ne_bytes() {
     });
     for_simd_types!(|T: Integer, N| {
         for value in simd_chunks!([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,])
-            .chain(random_iter())
+            .chain(fuzz_iter())
         {
             let simd = Simd::from_array(value);
             let bytes = simd.to_ne_bytes();

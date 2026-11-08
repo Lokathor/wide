@@ -8,7 +8,7 @@ use wide::{
 ///
 /// This is used for fuzz-testing.
 #[expect(private_bounds)]
-pub fn random_iter<T>() -> impl Iterator<Item = T>
+pub fn fuzz_iter<T>() -> impl Iterator<Item = T>
 where
     T: Random,
 {
