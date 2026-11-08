@@ -1,33 +1,14 @@
 #![allow(clippy::unnecessary_cast)]
 
+use bytemuck::cast;
 use wide::{f32x4, f32x8, f32x16, i8x16, i8x32, i16x8, i16x16, i32x4, i32x8, i32x16, u8x16, u16x8};
 
-use crate::utils::{for_simd_types, fuzz_iter, simd_chunks};
+use crate::utils::{for_simd_types, fuzz_iter};
 
 #[test]
 fn test_unbounded_shl() {
-    for_simd_types!(|T: Signed, N| {
-        for (left, right) in simd_chunks!(
-            [
-                1,
-                2,
-                T::MAX - 1,
-                -123,
-                -121,
-                53,
-                -60,
-                -49,
-                T::MAX / 2,
-                T::MIN + 1,
-                T::MIN / 2,
-                -121,
-                53,
-            ],
-            [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
-        )
-        .chain(fuzz_iter())
-        .map(|[left, right]| (left, right.map(T::cast_unsigned)))
-        {
+    for_simd_types!(|T: Integer, N| {
+        for (left, right) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
                 left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
@@ -40,90 +21,12 @@ fn test_unbounded_shl() {
             );
         }
     });
-    for_simd_types!(|T: Unsigned, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MAX - 1,
-                T::MAX - 122,
-                T::MAX - 120,
-                53,
-                T::MAX - 59,
-                T::MAX - 48,
-                T::MAX / 4,
-                T::MAX / 2,
-                T::MAX / 4,
-                T::MAX - 120,
-                53,
-            ],
-            [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = Simd::from_array(std::array::from_fn(|i| {
-                // Cannot use `as u32` because that truncates, not saturates.
-                left[i].unbounded_shl((right[i] as u128).min(u32::MAX as u128) as u32)
-            }));
-            let actual = Simd::from_array(left).unbounded_shl(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
-        }
-    });
 }
 
 #[test]
 fn test_unbounded_shl_scalar() {
-    for_simd_types!(|T: Signed, N| {
-        for (left, right) in simd_chunks!([
-            1,
-            2,
-            T::MAX - 1,
-            -123,
-            -121,
-            53,
-            -60,
-            -49,
-            T::MAX / 2,
-            T::MIN + 1,
-            T::MIN / 2,
-            -121,
-            53,
-        ],)
-        .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(fuzz_iter())
-        {
-            let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shl(right)));
-            let actual = Simd::from_array(left).unbounded_shl_scalar(right);
-
-            assert!(
-                actual == expected,
-                "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for (left, right) in simd_chunks!([
-            1,
-            2,
-            T::MAX - 1,
-            T::MAX - 122,
-            T::MAX - 120,
-            53,
-            T::MAX - 59,
-            T::MAX - 48,
-            T::MAX / 4,
-            T::MAX / 2,
-            T::MAX / 4,
-            T::MAX - 120,
-            53,
-        ],)
-        .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(fuzz_iter())
-        {
+    for_simd_types!(|T: Integer, N| {
+        for (left, right) in fuzz_iter::<([T; N], u32)>() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shl(right)));
             let actual = Simd::from_array(left).unbounded_shl_scalar(right);
 
@@ -137,28 +40,8 @@ fn test_unbounded_shl_scalar() {
 
 #[test]
 fn test_unbounded_shr() {
-    for_simd_types!(|T: Signed, N| {
-        for (left, right) in simd_chunks!(
-            [
-                1,
-                2,
-                T::MAX - 1,
-                -123,
-                -121,
-                53,
-                -60,
-                -49,
-                T::MAX / 2,
-                T::MIN + 1,
-                T::MIN / 2,
-                -121,
-                53,
-            ],
-            [1, 0, 3, 2, -1, 6, 100, 0, 4, 1, 3, -101, 123],
-        )
-        .chain(fuzz_iter())
-        .map(|[left, right]| (left, right.map(T::cast_unsigned)))
-        {
+    for_simd_types!(|T: Integer, N| {
+        for (left, right) in fuzz_iter::<([T; N], [Unsigned; N])>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 // Cannot use `as u32` because that truncates, not saturates.
                 left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
@@ -171,90 +54,12 @@ fn test_unbounded_shr() {
             );
         }
     });
-    for_simd_types!(|T: Unsigned, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MAX - 1,
-                T::MAX - 122,
-                T::MAX - 120,
-                53,
-                T::MAX - 59,
-                T::MAX - 48,
-                T::MAX / 4,
-                T::MAX / 2,
-                T::MAX / 4,
-                T::MAX - 120,
-                53,
-            ],
-            [1, 0, 3, 2, T::MAX, 6, 100, 0, 4, 1, 3, T::MAX - 100, 123],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = Simd::from_array(std::array::from_fn(|i| {
-                // Cannot use `as u32` because that truncates, not saturates.
-                left[i].unbounded_shr((right[i] as u128).min(u32::MAX as u128) as u32)
-            }));
-            let actual = Simd::from_array(left).unbounded_shr(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
-        }
-    });
 }
 
 #[test]
 fn test_unbounded_shr_scalar() {
-    for_simd_types!(|T: Signed, N| {
-        for (left, right) in simd_chunks!([
-            1,
-            2,
-            T::MAX - 1,
-            -123,
-            -121,
-            53,
-            -60,
-            -49,
-            T::MAX / 2,
-            T::MIN + 1,
-            T::MIN / 2,
-            -121,
-            53,
-        ],)
-        .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(fuzz_iter())
-        {
-            let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shr(right)));
-            let actual = Simd::from_array(left).unbounded_shr_scalar(right);
-
-            assert!(
-                actual == expected,
-                "\nexpected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for (left, right) in simd_chunks!([
-            1,
-            2,
-            T::MAX - 1,
-            T::MAX - 122,
-            T::MAX - 120,
-            53,
-            T::MAX - 59,
-            T::MAX - 48,
-            T::MAX / 4,
-            T::MAX / 2,
-            T::MAX / 4,
-            T::MAX - 120,
-            53,
-        ],)
-        .flat_map(|left| [1, 0, 3, 2, 6, 100, 0, 4, 1, 3, 123].map(|right| (left, right)))
-        .chain(fuzz_iter())
-        {
+    for_simd_types!(|T: Integer, N| {
+        for (left, right) in fuzz_iter::<([T; N], u32)>() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].unbounded_shr(right)));
             let actual = Simd::from_array(left).unbounded_shr_scalar(right);
 
@@ -268,16 +73,8 @@ fn test_unbounded_shr_scalar() {
 
 #[test]
 fn test_reduce_add() {
-    for_simd_types!(|T: Signed, N| {
-        for value in simd_chunks!([1, 2, 3, -4, 5, -6, 7, -9, -10, 20, -30, T::MAX]) {
-            let expected = value.into_iter().fold(0, T::wrapping_add);
-            let actual = Simd::from_array(value).reduce_add();
-
-            assert_eq!(actual, expected);
-        }
-    });
     for_simd_types!(|T: Integer, N| {
-        for value in simd_chunks!([1, 2, 3, 4, 5, 6, 7, 9, 10, 20, 30, 40, T::MAX]) {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = value.into_iter().fold(0, T::wrapping_add);
             let actual = Simd::from_array(value).reduce_add();
 
@@ -288,59 +85,8 @@ fn test_reduce_add() {
 
 #[test]
 fn test_reduce_mul() {
-    for_simd_types!(|T: Signed, N| {
-        // Have many `1` values so that not all cases overflow.
-        for value in simd_chunks!([
-            1,
-            2,
-            3,
-            1,
-            -1,
-            -4,
-            5,
-            -1,
-            1,
-            -6,
-            7,
-            -9,
-            -10,
-            20,
-            -30,
-            T::MAX
-        ]) {
-            let expected = value.into_iter().fold(1, T::wrapping_mul);
-            let actual = Simd::from_array(value).reduce_mul();
-
-            assert_eq!(actual, expected);
-        }
-    });
     for_simd_types!(|T: Integer, N| {
-        // Have many `1` values so that not all cases overflow.
-        for value in simd_chunks!([
-            1,
-            2,
-            1,
-            3,
-            1,
-            1,
-            4,
-            1,
-            5,
-            1,
-            6,
-            1,
-            1,
-            7,
-            9,
-            1,
-            10,
-            20,
-            30,
-            40,
-            T::MAX
-        ])
-        .chain(fuzz_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = value.into_iter().fold(1, T::wrapping_mul);
             let actual = Simd::from_array(value).reduce_mul();
 
@@ -352,36 +98,7 @@ fn test_reduce_mul() {
 #[test]
 fn test_saturating_add() {
     for_simd_types!(|T: Integer, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MAX - 1,
-                T::MAX - 1,
-                15,
-                20,
-                100,
-                T::MAX - 1,
-                T::MAX / 2
-            ],
-            [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected =
-                Simd::from_array(std::array::from_fn(|i| left[i].saturating_add(right[i])));
-            let actual = Simd::from_array(left).saturating_add(Simd::from_array(right));
-
-            assert_eq!(expected, actual);
-        }
-    });
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MIN / 2, 9],
-            [-17, 18, T::MAX, -2, -20, -100, 10],
-        )
-        .chain(fuzz_iter())
-        {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_add(right[i])));
             let actual = Simd::from_array(left).saturating_add(Simd::from_array(right));
@@ -394,36 +111,7 @@ fn test_saturating_add() {
 #[test]
 fn test_saturating_sub() {
     for_simd_types!(|T: Integer, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MIN + 1,
-                T::MIN + 1,
-                15,
-                20,
-                100,
-                T::MIN + 1,
-                T::MIN / 2
-            ],
-            [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected =
-                Simd::from_array(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
-            let actual = Simd::from_array(left).saturating_sub(Simd::from_array(right));
-
-            assert_eq!(expected, actual);
-        }
-    });
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MAX / 2],
-            [17, -18, T::MIN, 2, 20, -100],
-        )
-        .chain(fuzz_iter())
-        {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_sub(right[i])));
             let actual = Simd::from_array(left).saturating_sub(Simd::from_array(right));
@@ -435,80 +123,8 @@ fn test_saturating_sub() {
 
 #[test]
 fn test_saturating_mul() {
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MIN + 1,
-                T::MIN,
-                2,
-                3,
-                4,
-                5,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                T::MAX / 2,
-                T::MIN / 2,
-            ],
-            [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected =
-                Simd::from_array(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
-            let actual = Simd::from_array(left).saturating_mul(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
-            );
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                3,
-                4,
-                5,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-            ],
-            [
-                17,
-                18,
-                9,
-                1,
-                0,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-            ],
-        )
-        .chain(fuzz_iter())
-        {
+    for_simd_types!(|T: Integer, N| {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| left[i].saturating_mul(right[i])));
             let actual = Simd::from_array(left).saturating_mul(Simd::from_array(right));
@@ -524,35 +140,7 @@ fn test_saturating_mul() {
 #[test]
 fn test_saturating_div() {
     for_simd_types!(|T: Integer, N| {
-        for [left, mut right] in simd_chunks!(
-            [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
-            [2, 5, 5, 8, 10, 5, 2, 10],
-        )
-        .chain(fuzz_iter())
-        {
-            for right in &mut right {
-                if *right == 0 {
-                    *right = 3;
-                }
-            }
-
-            let expected =
-                Simd::from_array(std::array::from_fn(|i| left[i].saturating_div(right[i])));
-            let actual = Simd::from_array(left).saturating_div(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
-        }
-    });
-    for_simd_types!(|T: Signed, N| {
-        for [left, mut right] in simd_chunks!(
-            [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
-            [-2, -5, 3, -6, -2, -1, -1, -1],
-        )
-        .chain(fuzz_iter())
-        {
+        for [left, mut right] in fuzz_iter::<[[T; N]; 2]>() {
             for right in &mut right {
                 if *right == 0 {
                     *right = 3;
@@ -574,11 +162,7 @@ fn test_saturating_div() {
 #[test]
 fn test_overflowing_neg() {
     for_simd_types!(|T: Integer, N| {
-        for value in [0, 1, T::MAX, T::MIN]
-            .into_iter()
-            .map(|v| [v; N])
-            .chain(fuzz_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = (
                 Simd::from_array(value.map(|v| v.overflowing_neg().0)),
                 Simd::from_array(value.map(|v| if v.overflowing_neg().1 { !0 } else { 0 })),
@@ -593,44 +177,7 @@ fn test_overflowing_neg() {
 #[test]
 fn test_overflowing_add() {
     for_simd_types!(|T: Integer, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MAX - 1,
-                T::MAX - 1,
-                15,
-                20,
-                100,
-                T::MAX - 1,
-                T::MAX / 2
-            ],
-            [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = (
-                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
-                Simd::from_array(std::array::from_fn(|i| {
-                    if left[i].overflowing_add(right[i]).1 {
-                        !0
-                    } else {
-                        0
-                    }
-                })),
-            );
-            let actual = Simd::from_array(left).overflowing_add(Simd::from_array(right));
-
-            assert_eq!(expected, actual);
-        }
-    });
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MIN / 2, 9],
-            [-17, 18, T::MAX, -2, -20, -100, 10],
-        )
-        .chain(fuzz_iter())
-        {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_add(right[i]).0)),
                 Simd::from_array(std::array::from_fn(|i| {
@@ -651,44 +198,7 @@ fn test_overflowing_add() {
 #[test]
 fn test_overflowing_sub() {
     for_simd_types!(|T: Integer, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MIN + 1,
-                T::MIN + 1,
-                15,
-                20,
-                100,
-                T::MIN + 1,
-                T::MIN / 2
-            ],
-            [17, 18, 1, 2, 20, 5, T::MAX - 5, 50, 100],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = (
-                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
-                Simd::from_array(std::array::from_fn(|i| {
-                    if left[i].overflowing_sub(right[i]).1 {
-                        !0
-                    } else {
-                        0
-                    }
-                })),
-            );
-            let actual = Simd::from_array(left).overflowing_sub(Simd::from_array(right));
-
-            assert_eq!(expected, actual);
-        }
-    });
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [1, 2, T::MAX - 1, T::MIN + 1, T::MIN + 2, T::MAX / 2],
-            [17, -18, T::MIN, 2, 20, -100],
-        )
-        .chain(fuzz_iter())
-        {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_sub(right[i]).0)),
                 Simd::from_array(std::array::from_fn(|i| {
@@ -708,88 +218,8 @@ fn test_overflowing_sub() {
 
 #[test]
 fn test_overflowing_mul() {
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MIN + 1,
-                T::MIN,
-                2,
-                3,
-                4,
-                5,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                T::MAX / 2,
-                T::MIN / 2,
-            ],
-            [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = (
-                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
-                Simd::from_array(std::array::from_fn(|i| {
-                    if left[i].overflowing_mul(right[i]).1 {
-                        !0
-                    } else {
-                        0
-                    }
-                })),
-            );
-            let actual = Simd::from_array(left).overflowing_mul(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
-            );
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                3,
-                4,
-                5,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-            ],
-            [
-                17,
-                18,
-                9,
-                1,
-                0,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-            ],
-        )
-        .chain(fuzz_iter())
-        {
+    for_simd_types!(|T: Integer, N| {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| left[i].overflowing_mul(right[i]).0)),
                 Simd::from_array(std::array::from_fn(|i| {
@@ -813,43 +243,7 @@ fn test_overflowing_mul() {
 #[test]
 fn test_overflowing_div() {
     for_simd_types!(|T: Integer, N| {
-        for [left, mut right] in simd_chunks!(
-            [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
-            [2, 5, 5, 8, 10, 5, 2, 10],
-        )
-        .chain(fuzz_iter())
-        {
-            for right in &mut right {
-                if *right == 0 {
-                    *right = 3;
-                }
-            }
-
-            let expected = (
-                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_div(right[i]).0)),
-                Simd::from_array(std::array::from_fn(|i| {
-                    if left[i].overflowing_div(right[i]).1 {
-                        !0
-                    } else {
-                        0
-                    }
-                })),
-            );
-            let actual = Simd::from_array(left).overflowing_div(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
-            );
-        }
-    });
-    for_simd_types!(|T: Signed, N| {
-        for [left, mut right] in simd_chunks!(
-            [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
-            [-2, -5, 3, -6, -2, -1, -1, -1],
-        )
-        .chain(fuzz_iter())
-        {
+        for [left, mut right] in fuzz_iter::<[[T; N]; 2]>() {
             for right in &mut right {
                 if *right == 0 {
                     *right = 3;
@@ -879,43 +273,7 @@ fn test_overflowing_div() {
 #[test]
 fn test_overflowing_rem() {
     for_simd_types!(|T: Integer, N| {
-        for [left, mut right] in simd_chunks!(
-            [11, 15, 2, 3, T::MAX, 0, T::MAX, T::MAX - 1],
-            [2, 5, 5, 8, 10, 5, 2, 10],
-        )
-        .chain(fuzz_iter())
-        {
-            for right in &mut right {
-                if *right == 0 {
-                    *right = 3;
-                }
-            }
-
-            let expected = (
-                Simd::from_array(std::array::from_fn(|i| left[i].overflowing_rem(right[i]).0)),
-                Simd::from_array(std::array::from_fn(|i| {
-                    if left[i].overflowing_rem(right[i]).1 {
-                        !0
-                    } else {
-                        0
-                    }
-                })),
-            );
-            let actual = Simd::from_array(left).overflowing_rem(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
-            );
-        }
-    });
-    for_simd_types!(|T: Signed, N| {
-        for [left, mut right] in simd_chunks!(
-            [11, 15, -13, -16, T::MIN, 0, T::MIN, T::MIN + 1],
-            [-2, -5, 3, -6, -2, -1, -1, -1],
-        )
-        .chain(fuzz_iter())
-        {
+        for [left, mut right] in fuzz_iter::<[[T; N]; 2]>() {
             for right in &mut right {
                 if *right == 0 {
                     *right = 3;
@@ -1034,81 +392,8 @@ fn test_overflowing_shr_scalar() {
 
 #[test]
 fn test_widening_mul() {
-    for_simd_types!(|T: Signed, N, DoubleSizedSimd| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MIN + 1,
-                T::MIN,
-                2,
-                3,
-                4,
-                5,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                T::MAX / 2,
-                T::MIN / 2,
-            ],
-            [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = DoubleSizedSimd::from_array(std::array::from_fn(|i| {
-                (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
-            }));
-            let actual = Simd::from_array(left).widening_mul(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
-            );
-        }
-    });
-    for_simd_types!(|T: Unsigned, N, DoubleSizedSimd| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                3,
-                4,
-                5,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-            ],
-            [
-                17,
-                18,
-                9,
-                1,
-                0,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-            ],
-        )
-        .chain(fuzz_iter())
-        {
+    for_simd_types!(|T: Integer, N, DoubleSizedSimd| {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = DoubleSizedSimd::from_array(std::array::from_fn(|i| {
                 (left[i] as DoubleSizedT) * (right[i] as DoubleSizedT)
             }));
@@ -1124,89 +409,12 @@ fn test_widening_mul() {
 
 #[test]
 fn test_mul_keep_low_high() {
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MIN + 1,
-                T::MIN,
-                2,
-                3,
-                4,
-                5,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                T::MAX / 2,
-                T::MIN / 2,
-            ],
-            [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
-        )
-        .chain(fuzz_iter())
-        {
+    for_simd_types!(|T: Integer, N| {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = (
                 SimdUnsigned::from_array(std::array::from_fn(|i| {
-                    left[i].wrapping_mul(right[i]).cast_unsigned()
+                    cast::<T, Unsigned>(left[i].wrapping_mul(right[i]))
                 })),
-                Simd::from_array(std::array::from_fn(|i| {
-                    ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS)
-                        as T
-                })),
-            );
-            let actual = Simd::from_array(left).mul_keep_low_high(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
-            );
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                3,
-                4,
-                5,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-            ],
-            [
-                17,
-                18,
-                9,
-                1,
-                0,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-            ],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = (
-                Simd::from_array(std::array::from_fn(|i| left[i].wrapping_mul(right[i]))),
                 Simd::from_array(std::array::from_fn(|i| {
                     ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS)
                         as T
@@ -1224,81 +432,8 @@ fn test_mul_keep_low_high() {
 
 #[test]
 fn test_mul_keep_high() {
-    for_simd_types!(|T: Signed, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                T::MIN + 1,
-                T::MIN,
-                2,
-                3,
-                4,
-                5,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                T::MAX / 2,
-                T::MIN / 2,
-            ],
-            [17, -18, 1, 1, -1, -2, -6, 3, 3, 2, 1, 3, 3],
-        )
-        .chain(fuzz_iter())
-        {
-            let expected = Simd::from_array(std::array::from_fn(|i| {
-                ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS) as T
-            }));
-            let actual = Simd::from_array(left).mul_keep_high(Simd::from_array(right));
-
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}"
-            );
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for [left, right] in simd_chunks!(
-            [
-                1,
-                2,
-                3,
-                4,
-                5,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-            ],
-            [
-                17,
-                18,
-                9,
-                1,
-                0,
-                3,
-                4,
-                3,
-                2,
-                2,
-                1,
-                T::MAX / 4,
-                T::MAX / 3,
-                T::MAX / 2,
-                T::MAX - 1,
-                T::MAX,
-                T::MAX,
-            ],
-        )
-        .chain(fuzz_iter())
-        {
+    for_simd_types!(|T: Integer, N| {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 ((left[i] as DoubleSizedT).wrapping_mul(right[i] as DoubleSizedT) >> T::BITS) as T
             }));
