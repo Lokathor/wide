@@ -1,9 +1,9 @@
-use crate::utils::{for_simd_types, random_iter};
+use crate::utils::{for_simd_types, fuzz_iter};
 
 #[test]
 fn test_add_signed() {
     for_simd_types!(|T: Unsigned, N| {
-        for (a, b) in random_iter::<([T; N], [Signed; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Signed; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].wrapping_add_signed(b[i])));
             let actual = Simd::from_array(a).add_signed(SimdSigned::from_array(b));
@@ -16,7 +16,7 @@ fn test_add_signed() {
 #[test]
 fn test_sub_signed() {
     for_simd_types!(|T: Unsigned, N| {
-        for (a, b) in random_iter::<([T; N], [Signed; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Signed; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].wrapping_sub_signed(b[i])));
             let actual = Simd::from_array(a).sub_signed(SimdSigned::from_array(b));
@@ -29,7 +29,7 @@ fn test_sub_signed() {
 #[test]
 fn test_saturating_add_signed() {
     for_simd_types!(|T: Unsigned, N| {
-        for (a, b) in random_iter::<([T; N], [Signed; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Signed; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].saturating_add_signed(b[i])));
             let actual = Simd::from_array(a).saturating_add_signed(SimdSigned::from_array(b));
@@ -42,7 +42,7 @@ fn test_saturating_add_signed() {
 #[test]
 fn test_saturating_sub_signed() {
     for_simd_types!(|T: Unsigned, N| {
-        for (a, b) in random_iter::<([T; N], [Signed; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Signed; N])>() {
             let expected =
                 Simd::from_array(std::array::from_fn(|i| a[i].saturating_sub_signed(b[i])));
             let actual = Simd::from_array(a).saturating_sub_signed(SimdSigned::from_array(b));
@@ -55,7 +55,7 @@ fn test_saturating_sub_signed() {
 #[test]
 fn test_overflowing_add_signed() {
     for_simd_types!(|T: Unsigned, N| {
-        for (a, b) in random_iter::<([T; N], [Signed; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Signed; N])>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| a[i].overflowing_add_signed(b[i]).0)),
                 Simd::from_array(std::array::from_fn(|i| {
@@ -76,7 +76,7 @@ fn test_overflowing_add_signed() {
 #[test]
 fn test_overflowing_sub_signed() {
     for_simd_types!(|T: Unsigned, N| {
-        for (a, b) in random_iter::<([T; N], [Signed; N])>() {
+        for (a, b) in fuzz_iter::<([T; N], [Signed; N])>() {
             let expected = (
                 Simd::from_array(std::array::from_fn(|i| a[i].overflowing_sub_signed(b[i]).0)),
                 Simd::from_array(std::array::from_fn(|i| {
