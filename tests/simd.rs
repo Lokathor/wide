@@ -1179,16 +1179,11 @@ fn test_bitselect() {
 #[test]
 fn test_select() {
     for_simd_types!(|T: Float, N| {
-        for [mask, if_true, if_false] in fuzz_iter::<[[T; N]; 3]>() {
+        for (mask, [if_true, if_false]) in fuzz_iter::<([bool; N], [[T; N]; 2])>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
-                if mask[i].is_sign_negative() {
-                    if_true[i]
-                } else {
-                    if_false[i]
-                }
+                if mask[i] { if_true[i] } else { if_false[i] }
             }));
-            let actual = Simd::from_array(mask)
-                .is_sign_negative()
+            let actual = Simd::from_array(mask.map(|b| if b { T::from_bits(!0) } else { 0.0 }))
                 .select(Simd::from_array(if_true), Simd::from_array(if_false));
 
             assert!(
@@ -1198,12 +1193,11 @@ fn test_select() {
         }
     });
     for_simd_types!(|T: Integer, N| {
-        for [mask, if_true, if_false] in fuzz_iter::<[[T; N]; 3]>() {
+        for (mask, [if_true, if_false]) in fuzz_iter::<([bool; N], [[T; N]; 2])>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
-                if mask[i] > 0 { if_true[i] } else { if_false[i] }
+                if mask[i] { if_true[i] } else { if_false[i] }
             }));
-            let actual = Simd::from_array(mask)
-                .simd_gt(Simd::ZERO)
+            let actual = Simd::from_array(mask.map(|b| if b { !0 } else { 0 }))
                 .select(Simd::from_array(if_true), Simd::from_array(if_false));
 
             assert!(
@@ -1217,35 +1211,30 @@ fn test_select() {
 #[test]
 fn test_to_bitmask() {
     for_simd_types!(|T: Float, N| {
-        for value in fuzz_iter::<[T; N]>() {
+        for mask in fuzz_iter::<[bool; N]>() {
             let expected = (0..N)
-                .map(|i| {
-                    if value[i].is_sign_negative() {
-                        1 << i
-                    } else {
-                        0
-                    }
-                })
+                .map(|i| if mask[i] { 1 << i } else { 0 })
                 .fold(0, u64::bitor);
-            let actual = Simd::from_array(value).to_bitmask() as u64;
+            let actual = Simd::from_array(mask.map(|b| if b { T::from_bits(!0) } else { 0.0 }))
+                .to_bitmask() as u64;
 
             assert!(
                 actual == expected,
-                "expected: {expected:0>32b}\n  actual: {actual:0>32b}\n   value: {value:?}",
+                "expected: {expected:0>32b}\n  actual: {actual:0>32b}\n   mask: {mask:?}",
             );
         }
     });
-    for_simd_types!(|T: Unsigned, N| {
-        for value in fuzz_iter::<[T; N]>() {
+    for_simd_types!(|T: Integer, N| {
+        for mask in fuzz_iter::<[bool; N]>() {
             let expected = (0..N)
-                .map(|i| if value[i] > T::MAX >> 1 { 1 << i } else { 0 })
+                .map(|i| if mask[i] { 1 << i } else { 0 })
                 .fold(0, u64::bitor);
             #[allow(clippy::unnecessary_cast)]
-            let actual = Simd::from_array(value).to_bitmask() as u64;
+            let actual = Simd::from_array(mask.map(|b| if b { !0 } else { 0 })).to_bitmask() as u64;
 
             assert!(
                 actual == expected,
-                "expected: {expected:0>32b}\n  actual: {actual:0>32b}\n   value: {value:?}",
+                "expected: {expected:0>32b}\n  actual: {actual:0>32b}\n   mask: {mask:?}",
             );
         }
     });
@@ -1254,36 +1243,20 @@ fn test_to_bitmask() {
 #[test]
 fn test_any() {
     for_simd_types!(|T: Float, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { -0.0 } else { 0.0 }))
-            .chain([[0.0 as T; N], [-0.0 as T; N]])
-        {
-            let expected = value.into_iter().any(|x| x.is_sign_negative());
-            let actual = Simd::from_array(value).any();
+        for mask in fuzz_iter::<[bool; N]>() {
+            let expected = mask.into_iter().any(core::convert::identity);
+            let actual =
+                Simd::from_array(mask.map(|b| if b { T::from_bits(!0) } else { 0.0 })).any();
 
-            assert_eq!(actual, expected, "\n   value: {value:?}");
+            assert_eq!(actual, expected, "\n   mask: {mask:?}");
         }
     });
-    for_simd_types!(|T: Signed, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { -5 } else { 1 }))
-            .chain([[2 as T; N], [-4 as T; N]])
-        {
-            let expected = value.into_iter().any(|x| x.is_negative());
-            let actual = Simd::from_array(value).any();
+    for_simd_types!(|T: Integer, N| {
+        for mask in fuzz_iter::<[bool; N]>() {
+            let expected = mask.into_iter().any(core::convert::identity);
+            let actual = Simd::from_array(mask.map(|b| if b { !0 } else { 0 })).any();
 
-            assert_eq!(actual, expected, "\n   value: {value:?}");
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { !0 - 5 } else { 1 }))
-            .chain([[2 as T; N], [!0 - 6 as T; N]])
-        {
-            let expected = value.into_iter().any(|x| x.cast_signed().is_negative());
-            let actual = Simd::from_array(value).any();
-
-            assert_eq!(actual, expected, "\n   value: {value:?}");
+            assert_eq!(actual, expected, "\n   mask: {mask:?}");
         }
     });
 }
@@ -1291,36 +1264,20 @@ fn test_any() {
 #[test]
 fn test_all() {
     for_simd_types!(|T: Float, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { -0.0 } else { 0.0 }))
-            .chain([[0.0 as T; N], [-0.0 as T; N]])
-        {
-            let expected = value.into_iter().all(|x| x.is_sign_negative());
-            let actual = Simd::from_array(value).all();
+        for mask in fuzz_iter::<[bool; N]>() {
+            let expected = mask.into_iter().all(core::convert::identity);
+            let actual =
+                Simd::from_array(mask.map(|b| if b { T::from_bits(!0) } else { 0.0 })).all();
 
-            assert_eq!(actual, expected, "\n   value: {value:?}");
+            assert_eq!(actual, expected, "\n   mask: {mask:?}");
         }
     });
-    for_simd_types!(|T: Signed, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { -5 } else { 1 }))
-            .chain([[2 as T; N], [-4 as T; N]])
-        {
-            let expected = value.into_iter().all(|x| x.is_negative());
-            let actual = Simd::from_array(value).all();
+    for_simd_types!(|T: Integer, N| {
+        for mask in fuzz_iter::<[bool; N]>() {
+            let expected = mask.into_iter().all(core::convert::identity);
+            let actual = Simd::from_array(mask.map(|b| if b { !0 } else { 0 })).all();
 
-            assert_eq!(actual, expected, "\n   value: {value:?}");
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { !0 - 5 } else { 1 }))
-            .chain([[2 as T; N], [!0 - 6 as T; N]])
-        {
-            let expected = value.into_iter().all(|x| x.cast_signed().is_negative());
-            let actual = Simd::from_array(value).all();
-
-            assert_eq!(actual, expected, "\n   value: {value:?}");
+            assert_eq!(actual, expected, "\n   mask: {mask:?}");
         }
     });
 }
@@ -1328,36 +1285,20 @@ fn test_all() {
 #[test]
 fn test_none() {
     for_simd_types!(|T: Float, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { -0.0 } else { 0.0 }))
-            .chain([[0.0 as T; N], [-0.0 as T; N]])
-        {
-            let expected = !value.into_iter().any(|x| x.is_sign_negative());
-            let actual = Simd::from_array(value).none();
+        for mask in fuzz_iter::<[bool; N]>() {
+            let expected = !mask.into_iter().any(core::convert::identity);
+            let actual =
+                Simd::from_array(mask.map(|b| if b { T::from_bits(!0) } else { 0.0 })).none();
 
-            assert_eq!(actual, expected, "\n   value: {value:?}");
+            assert_eq!(actual, expected, "\n   mask: {mask:?}");
         }
     });
-    for_simd_types!(|T: Signed, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { -5 } else { 1 }))
-            .chain([[2 as T; N], [-4 as T; N]])
-        {
-            let expected = !value.into_iter().any(|x| x.is_negative());
-            let actual = Simd::from_array(value).none();
+    for_simd_types!(|T: Integer, N| {
+        for mask in fuzz_iter::<[bool; N]>() {
+            let expected = !mask.into_iter().any(core::convert::identity);
+            let actual = Simd::from_array(mask.map(|b| if b { !0 } else { 0 })).none();
 
-            assert_eq!(actual, expected, "\n   value: {value:?}");
-        }
-    });
-    for_simd_types!(|T: Unsigned, N| {
-        for value in (0..N)
-            .map(|i| std::array::from_fn(|j| if i == j { !0 - 5 } else { 1 }))
-            .chain([[2 as T; N], [!0 - 6 as T; N]])
-        {
-            let expected = !value.into_iter().any(|x| x.cast_signed().is_negative());
-            let actual = Simd::from_array(value).none();
-
-            assert_eq!(actual, expected, "\n   value: {value:?}");
+            assert_eq!(actual, expected, "\n   mask: {mask:?}");
         }
     });
 }
