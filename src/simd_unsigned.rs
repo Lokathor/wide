@@ -3,7 +3,7 @@
 use crate::{
     PrimitiveUnsigned, Simd, SimdElement, SupportedSimd,
     primitive_traits::NotPrimitiveUnsigned,
-    simd::{SimdAssociatedTypes, SupportSimdOf},
+    simd::{SimdInternalAssociatedTypes, SupportSimdOf},
 };
 
 impl<T, const N: usize> Simd<T, N>
@@ -98,7 +98,7 @@ where
 pub(crate) trait SimdUnsignedBackend {
     fn saturating_add_signed_backend(self, rhs: Self::SignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::SignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::SignedT>;
 }
 
 /// In order for the generic SIMD unsigned integer API to work,
@@ -116,9 +116,13 @@ where
     T: SimdElement + NotPrimitiveUnsigned,
     Simd<T, N>: SupportedSimd,
 {
-    fn saturating_add_signed_backend(self, _: <Self as SimdAssociatedTypes>::SignedSimd) -> Self
+    fn saturating_add_signed_backend(
+        self,
+        _: <Self as SimdInternalAssociatedTypes>::SignedSimd,
+    ) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::SignedT>,
+        Self: SimdInternalAssociatedTypes
+            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::SignedT>,
     {
         unreachable!()
     }

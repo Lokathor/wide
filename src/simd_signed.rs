@@ -3,7 +3,7 @@
 use crate::{
     PrimitiveSigned, Simd, SimdElement, SupportedSimd,
     primitive_traits::NotPrimitiveSigned,
-    simd::{SimdAssociatedTypes, SupportSimdOf},
+    simd::{SimdInternalAssociatedTypes, SupportSimdOf},
 };
 
 /// Contains SIMD signed items whose name conflicts with a SIMD float item's
@@ -267,7 +267,7 @@ pub(crate) trait SimdSignedBackend {
 
     fn saturating_add_unsigned_backend(self, rhs: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 }
 
 /// In order for the generic SIMD signed integer API to work,
@@ -297,9 +297,13 @@ where
     fn saturating_abs_backend(self) -> Self {
         unreachable!()
     }
-    fn saturating_add_unsigned_backend(self, _: <Self as SimdAssociatedTypes>::UnsignedSimd) -> Self
+    fn saturating_add_unsigned_backend(
+        self,
+        _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd,
+    ) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<<Self as SimdAssociatedTypes>::UnsignedT>,
+        Self: SimdInternalAssociatedTypes
+            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
     {
         unreachable!()
     }

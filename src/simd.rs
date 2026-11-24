@@ -48,7 +48,7 @@ pub trait SimdElement: Sealed + Copy {
     type Signed: PrimitiveSigned<Unsigned = Self::Unsigned>;
 }
 
-/// A trait for [`Simd<T, N>`] types that are actually supported.
+/// A marker trait for [`Simd<T, N>`] types that are actually supported.
 ///
 /// Due to Rust language limitations, [`Simd<T, N>`] only supports certain
 /// combinations of `T` and `N`. The trait bound `Simd<T, N>: SupportedSimd`
@@ -66,7 +66,18 @@ pub trait SupportedSimd:
     + SimdIntegerBackend
     + SimdSignedBackend
     + SimdUnsignedBackend
+    + SimdAssociatedTypesBackend
 {
+}
+
+/// Exposes associated types of [`Simd<T, N>`].
+///
+/// These types are provided through a trait because Rust
+/// inherent-associated-types are unstable. If that feature gets stabilized,
+/// these types will move to an inherent block and this trait will get
+/// deprecated.
+#[expect(private_bounds)]
+pub trait SimdAssociatedTypes: Sealed {
     /// The unsigned integer used in [`Simd::to_bitmask`].
     ///
     /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
@@ -519,10 +530,12 @@ macro_rules! define_simd {
       Simd(inner)
     }
 
-    impl SupportedSimd for Simd<$T, $N> {
-      type Bitmask = $Bitmask;
+    impl SupportedSimd for Simd<$T, $N> {}
 
-      type Bytes = [u8; size_of::<Self>()];
+    impl SimdAssociatedTypesBackend for Simd<$T, $N> {
+        type Bitmask = $Bitmask;
+
+        type Bytes = [u8; size_of::<Self>()];
     }
 
     $(
@@ -1354,6 +1367,15 @@ where
     type Elem = T;
 }
 
+impl<T, const N: usize> SimdAssociatedTypes for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+    type Bitmask = <Self as SimdAssociatedTypesBackend>::Bitmask;
+    type Bytes = <Self as SimdAssociatedTypesBackend>::Bytes;
+}
+
 impl<T, const N: usize> Simd<T, N>
 where
     T: SimdElement,
@@ -1580,7 +1602,7 @@ where
     #[inline]
     #[must_use]
     #[doc(alias("movemask", "move_mask"))]
-    pub fn to_bitmask(self) -> <Self as SupportedSimd>::Bitmask
+    pub fn to_bitmask(self) -> <Self as SimdAssociatedTypes>::Bitmask
     where
         T: MaskOps,
     {
@@ -1935,63 +1957,71 @@ pub(crate) trait SimdBackend: Sized {
 
     fn shuffle_backend(self, indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_zeroing_backend(self, indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_wrapping_backend(self, indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_zeroing_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_wrapping_2_backend(inputs: [Self; 2], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_zeroing_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_wrapping_3_backend(inputs: [Self; 3], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_zeroing_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn shuffle_wrapping_4_backend(inputs: [Self; 4], indices: Self::UnsignedSimd) -> Self
     where
-        Self: SimdAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
 
     fn transpose_backend(data: Self::ArrayOf<Self>) -> Self::ArrayOf<Self>
     where
-        Self: SimdAssociatedTypes;
+        Self: SimdInternalAssociatedTypes;
 
     fn replace_const_backend<const INDEX: usize>(self, value: Self::T) -> Self
     where
-        Self: SimdAssociatedTypes;
+        Self: SimdInternalAssociatedTypes;
 
     fn extract_const_backend<const INDEX: usize>(self) -> Self::T
     where
-        Self: SimdAssociatedTypes;
+        Self: SimdInternalAssociatedTypes;
+}
+
+#[doc(hidden)]
+pub trait SimdAssociatedTypesBackend {
+    #[doc(hidden)]
+    type Bitmask: PrimitiveUnsigned;
+    #[doc(hidden)]
+    type Bytes: Copy;
 }
 
 /// Provides SIMD backend traits access to SIMD associated types.
@@ -2004,15 +2034,15 @@ pub(crate) trait SimdBackend: Sized {
 /// `Simd<T::Unsigned, N>` (used in [`Simd::shuffle`]).
 ///
 /// To solve this problem, SIMD backend functions that need access to such types
-/// add `where Self: SimdAssociatedTypes` which gives them access to appropriate
-/// types.
+/// add `where Self: SimdInternalAssociatedTypes` which gives them access to
+/// appropriate types.
 ///
-/// [`SimdAssociatedTypes`] has one shared generic implementation for all
-/// supported [`Simd<T, N>`] types. This means that the compiler, in
+/// [`SimdInternalAssociatedTypes`] has one shared generic implementation for
+/// all supported [`Simd<T, N>`] types. This means that the compiler, in
 /// contexts generic over `T` and `N`, understands what these types actually are
 /// (for example, for `Self = Simd<T, N>`, that [`Self::T`]  is `T` and that
 /// [`Self::ArrayOf<U>`] is `[U; N]`).
-pub(crate) trait SimdAssociatedTypes: Sized {
+pub(crate) trait SimdInternalAssociatedTypes: Sized {
     /// For `Self = Simd<T, N>`, this type is `T`.
     type T;
 
@@ -2041,13 +2071,13 @@ pub(crate) trait SimdAssociatedTypes: Sized {
         Self: SupportSimdOf<Self::SignedT>;
 }
 
-/// An extension of [`SimdAssociatedTypes`] for when `Self::SimdOf<U>` must
-/// implement [`SupportedSimd`].
+/// An extension of [`SimdInternalAssociatedTypes`] for when `Self::SimdOf<U>`
+/// must implement [`SupportedSimd`].
 ///
 /// When SIMD backend functions refer to SIMD vectors of generic `T` types
-/// other than `T` (using [`SimdAssociatedTypes::SimdOf<U>`]), they must have a
-/// trait bound that guarantees the type `Self::SimdOf<U>` is actually defined
-/// (which requires it to implement [`SupportedSimd`]).
+/// other than `T` (using [`SimdInternalAssociatedTypes::SimdOf<U>`]), they must
+/// have a trait bound that guarantees the type `Self::SimdOf<U>` is actually
+/// defined (which requires it to implement [`SupportedSimd`]).
 ///
 /// The `Self::SimdOf<U>: SupportedSimd` bound cannot be used directly. That
 /// results in a cycle. Instead, that bound is represented with
@@ -2229,7 +2259,7 @@ macro_rules! simd_backend_signed_autofill {
         }
 
         #[inline]
-        fn to_bitmask_backend(self) -> <Self as SupportedSimd>::Bitmask {
+        fn to_bitmask_backend(self) -> <Self as SimdAssociatedTypes>::Bitmask {
             self.cast_unsigned().to_bitmask()
         }
 
@@ -2383,7 +2413,7 @@ macro_rules! simd_backend_signed_autofill {
     };
 }
 
-impl<T, const N: usize> SimdAssociatedTypes for Simd<T, N>
+impl<T, const N: usize> SimdInternalAssociatedTypes for Simd<T, N>
 where
     T: SimdElement,
     Simd<T, N>: SupportedSimd,
