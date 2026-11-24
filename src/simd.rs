@@ -66,7 +66,7 @@ pub trait SupportedSimd:
     + SimdIntegerBackend
     + SimdSignedBackend
     + SimdUnsignedBackend
-    + SimdAssociatedTypes
+    + SimdAssociatedTypesBackend
 {
 }
 
@@ -532,7 +532,7 @@ macro_rules! define_simd {
 
     impl SupportedSimd for Simd<$T, $N> {}
 
-    impl SimdAssociatedTypes for Simd<$T, $N> {
+    impl SimdAssociatedTypesBackend for Simd<$T, $N> {
         type Bitmask = $Bitmask;
 
         type Bytes = [u8; size_of::<Self>()];
@@ -1367,6 +1367,15 @@ where
     type Elem = T;
 }
 
+impl<T, const N: usize> SimdAssociatedTypes for Simd<T, N>
+where
+    T: SimdElement,
+    Simd<T, N>: SupportedSimd,
+{
+    type Bitmask = <Self as SimdAssociatedTypesBackend>::Bitmask;
+    type Bytes = <Self as SimdAssociatedTypesBackend>::Bytes;
+}
+
 impl<T, const N: usize> Simd<T, N>
 where
     T: SimdElement,
@@ -2005,6 +2014,14 @@ pub(crate) trait SimdBackend: Sized {
     fn extract_const_backend<const INDEX: usize>(self) -> Self::T
     where
         Self: SimdInternalAssociatedTypes;
+}
+
+#[doc(hidden)]
+pub trait SimdAssociatedTypesBackend {
+    #[doc(hidden)]
+    type Bitmask: PrimitiveUnsigned;
+    #[doc(hidden)]
+    type Bytes: Copy;
 }
 
 /// Provides SIMD backend traits access to SIMD associated types.
