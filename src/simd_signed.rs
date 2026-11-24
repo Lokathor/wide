@@ -297,9 +297,13 @@ where
     fn saturating_abs_backend(self) -> Self {
         unreachable!()
     }
-    fn saturating_add_unsigned_backend(self, _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd) -> Self
+    fn saturating_add_unsigned_backend(
+        self,
+        _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd,
+    ) -> Self
     where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
+        Self: SimdInternalAssociatedTypes
+            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
     {
         unreachable!()
     }
