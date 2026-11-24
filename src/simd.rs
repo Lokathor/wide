@@ -70,12 +70,12 @@ pub trait SupportedSimd:
 {
 }
 
-/// Exposes types used in [`Simd<T, N>`] APIs that cannot be directly expressed
-/// in generic contexts, due to Rust language limitations.
+/// Exposes associated types of [`Simd<T, N>`].
 ///
-/// These types are provided through a trait because Rust inherent associated
-/// types are unstable. If that feature gets stabilized, these types will move
-/// to an inherent block and this trait will get deprecated.
+/// These types are provided through a trait because Rust
+/// inherent-associated-types are unstable. If that feature gets stabilized,
+/// these types will move to an inherent block and this trait will get
+/// deprecated.
 #[expect(private_bounds)]
 pub trait SimdAssociatedTypes: Sealed {
     /// The unsigned integer used in [`Simd::to_bitmask`].
