@@ -20,14 +20,11 @@ use crate::{
 /// over `T`:
 ///
 /// ```rust
-/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveFloat};
+/// # use wide::{Simd, SimdElement, SupportsLaneCount, PrimitiveFloat};
 /// #
 /// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
 /// where
-///     T: PrimitiveFloat,
-///     Simd<T, N>: SupportedSimd,
-///     Simd<T::Unsigned, N>: SupportedSimd,
-///     Simd<T::Signed, N>: SupportedSimd,
+///     T: PrimitiveFloat + SupportsLaneCount<N>,
 /// {
 ///     // Use SIMD float functionality
 ///     x.sin().abs().acos() + x
@@ -60,14 +57,11 @@ pub trait PrimitiveFloat:
 /// over `T`:
 ///
 /// ```rust
-/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveInteger};
+/// # use wide::{Simd, SimdElement, SupportsLaneCount, PrimitiveInteger};
 /// #
 /// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
 /// where
-///     T: PrimitiveInteger,
-///     Simd<T, N>: SupportedSimd,
-///     Simd<T::Unsigned, N>: SupportedSimd,
-///     Simd<T::Signed, N>: SupportedSimd,
+///     T: PrimitiveInteger + SupportsLaneCount<N>,
 /// {
 ///     // Use SIMD integer functionality
 ///     x.saturating_add(x) * x
@@ -122,14 +116,11 @@ pub trait HasDoubleWidth: PrimitiveInteger {
 /// generic over `T`:
 ///
 /// ```rust
-/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveSigned};
+/// # use wide::{Simd, SimdElement, SupportsLaneCount, PrimitiveSigned};
 /// #
 /// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
 /// where
-///     T: PrimitiveSigned,
-///     Simd<T, N>: SupportedSimd,
-///     Simd<T::Unsigned, N>: SupportedSimd,
-///     Simd<T::Signed, N>: SupportedSimd,
+///     T: PrimitiveSigned + SupportsLaneCount<N>,
 /// {
 ///     // Use SIMD signed integer functionality
 ///     x.saturating_abs().add_unsigned(x.cast_unsigned())
@@ -167,14 +158,11 @@ pub trait PrimitiveSigned:
 /// generic over `T`:
 ///
 /// ```rust
-/// # use wide::{Simd, SimdElement, SupportedSimd, PrimitiveUnsigned};
+/// # use wide::{Simd, SimdElement, SupportsLaneCount, PrimitiveUnsigned};
 /// #
 /// fn example<T, const N: usize>(x: Simd<T, N>) -> Simd<T, N>
 /// where
-///     T: PrimitiveUnsigned,
-///     Simd<T, N>: SupportedSimd,
-///     Simd<T::Unsigned, N>: SupportedSimd,
-///     Simd<T::Signed, N>: SupportedSimd,
+///     T: PrimitiveUnsigned + SupportsLaneCount<N>,
 /// {
 ///     // Use SIMD signed integer functionality
 ///     x.saturating_add_signed(x.cast_signed())

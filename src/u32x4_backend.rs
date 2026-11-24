@@ -12,7 +12,7 @@ pub(crate) struct Inner {
 }
 
 safe_target_feature! {
-impl SimdBackend for u32x4 {
+impl SimdBackend<u32, 4> for u32x4 {
     pick! {
       if #[cfg(target_feature="sse2")] {
         type Inner = __m128i;
@@ -496,7 +496,7 @@ impl SimdBackend for u32x4 {
 }
 
 safe_target_feature! {
-impl SimdIntegerBackend for u32x4 {
+impl SimdIntegerBackend<u32, 4> for u32x4 {
     simd_integer_backend_autofill! { u32, 4 }
     simd_integer_backend_unsigned_autofill! { u32, 4 }
 
@@ -1146,7 +1146,7 @@ impl SimdIntegerBackend for u32x4 {
 }
 
 safe_target_feature! {
-impl SimdUnsignedBackend for u32x4 {
+impl SimdUnsignedBackend<u32, 4> for u32x4 {
     #[inline]
     fn saturating_add_signed_backend(self, rhs: i32x4) -> Self {
         pick! {

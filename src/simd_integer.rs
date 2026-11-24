@@ -4,9 +4,8 @@
 use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, ShlAssign, Shr, ShrAssign, Sub};
 
 use crate::{
-    HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportedSimd,
-    primitive_traits::NotPrimitiveInteger,
-    simd::{SimdAssociatedTypes, SimdInternalAssociatedTypes, SupportSimdOf},
+    HasDoubleWidth, PrimitiveInteger, Simd, SimdElement, SupportsLaneCount,
+    primitive_traits::NotPrimitiveInteger, simd::SimdAssociatedTypes,
 };
 
 macro_rules! impl_shift_operator {
@@ -15,19 +14,16 @@ macro_rules! impl_shift_operator {
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $op_backend:ident,
-    $op_scalar_backend:ident,
+    $backend:path,
+    $scalar_backend:path,
     $(#[$doc:meta])*,
     $(#[$doc_scalar:meta])*,
     $(#[$scalar_doc:meta])*
   ) => {
     impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for Simd<T, N>
     where
-        T: PrimitiveInteger,
-        Simd<T, N>: SupportedSimd,
-        Simd<T::Unsigned, N>: SupportedSimd,
-        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
-        Simd<Rhs, N>: SupportedSimd,
+        T: PrimitiveInteger + SupportsLaneCount<N>,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
     {
       type Output = Self;
 
@@ -40,17 +36,14 @@ macro_rules! impl_shift_operator {
             core::mem::transmute_copy::<Simd<Rhs, N>, Simd<Rhs::Unsigned, N>>(&rhs)
         };
 
-        self.$op_backend(rhs)
+        $backend(self, rhs)
       }
     }
 
     impl<T, const N: usize, Rhs> $OpAssign<Simd<Rhs, N>> for Simd<T, N>
     where
-        T: PrimitiveInteger,
-        Simd<T, N>: SupportedSimd,
-        Simd<T::Unsigned, N>: SupportedSimd,
-        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
-        Simd<Rhs, N>: SupportedSimd,
+        T: PrimitiveInteger + SupportsLaneCount<N>,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
     {
       $(#[$doc])*
       #[inline]
@@ -61,11 +54,8 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for Simd<T, N>
     where
-        T: PrimitiveInteger,
-        Simd<T, N>: SupportedSimd,
-        Simd<T::Unsigned, N>: SupportedSimd,
-        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
-        Simd<Rhs, N>: SupportedSimd,
+        T: PrimitiveInteger + SupportsLaneCount<N>,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
     {
       type Output = Self;
 
@@ -78,11 +68,8 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $OpAssign<&Simd<Rhs, N>> for Simd<T, N>
     where
-        T: PrimitiveInteger,
-        Simd<T, N>: SupportedSimd,
-        Simd<T::Unsigned, N>: SupportedSimd,
-        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
-        Simd<Rhs, N>: SupportedSimd,
+        T: PrimitiveInteger + SupportsLaneCount<N>,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
     {
       $(#[$doc])*
       #[inline]
@@ -93,11 +80,8 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $Op<Simd<Rhs, N>> for &Simd<T, N>
     where
-        T: PrimitiveInteger,
-        Simd<T, N>: SupportedSimd,
-        Simd<T::Unsigned, N>: SupportedSimd,
-        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
-        Simd<Rhs, N>: SupportedSimd,
+        T: PrimitiveInteger + SupportsLaneCount<N>,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
     {
       type Output = Simd<T, N>;
 
@@ -110,11 +94,8 @@ macro_rules! impl_shift_operator {
 
     impl<T, const N: usize, Rhs> $Op<&Simd<Rhs, N>> for &Simd<T, N>
     where
-        T: PrimitiveInteger,
-        Simd<T, N>: SupportedSimd,
-        Simd<T::Unsigned, N>: SupportedSimd,
-        Rhs: PrimitiveInteger<Unsigned = T::Unsigned>,
-        Simd<Rhs, N>: SupportedSimd,
+        T: PrimitiveInteger + SupportsLaneCount<N>,
+        Rhs: PrimitiveInteger<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
     {
       type Output = Simd<T, N>;
 
@@ -129,24 +110,21 @@ macro_rules! impl_shift_operator {
       ($T:ident) => {
         impl<T, const N: usize> $Op<$T> for Simd<T, N>
         where
-          T: PrimitiveInteger,
-          Simd<T, N>: SupportedSimd,
+          T: PrimitiveInteger + SupportsLaneCount<N>,
         {
           type Output = Self;
 
           $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: $T) -> Self::Output {
-            self.$op_scalar_backend(rhs as u32)
+            $scalar_backend(self, rhs as u32)
           }
         }
 
         impl<const N: usize, Rhs> $Op<Simd<Rhs, N>> for $T
         where
-            Simd<$T, N>: SupportedSimd,
-            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
-            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
-            Simd<Rhs, N>: SupportedSimd,
+            $T: SupportsLaneCount<N>,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned> + SupportsLaneCount<N>,
         {
           type Output = Simd<$T, N>;
 
@@ -159,36 +137,32 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $OpAssign<$T> for Simd<T, N>
         where
-          T: PrimitiveInteger,
-          Simd<T, N>: SupportedSimd,
+          T: PrimitiveInteger + SupportsLaneCount<N>,
         {
           $(#[$doc_scalar])*
           #[inline]
           fn $op_assign(&mut self, rhs: $T) {
-            *self = self.$op_scalar_backend(rhs as u32);
+            *self = $scalar_backend(*self, rhs as u32);
           }
         }
 
         impl<T, const N: usize> $Op<&$T> for Simd<T, N>
         where
-          T: PrimitiveInteger,
-          Simd<T, N>: SupportedSimd,
+          T: PrimitiveInteger + SupportsLaneCount<N>,
         {
           type Output = Self;
 
           $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: &$T) -> Self::Output {
-            self.$op_scalar_backend(*rhs as u32)
+            $scalar_backend(self, *rhs as u32)
           }
         }
 
         impl<const N: usize, Rhs> $Op<&Simd<Rhs, N>> for $T
         where
-            Simd<$T, N>: SupportedSimd,
-            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
-            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
-            Simd<Rhs, N>: SupportedSimd,
+            $T: SupportsLaneCount<N>,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned> + SupportsLaneCount<N>,
         {
           type Output = Simd<$T, N>;
 
@@ -201,36 +175,32 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $OpAssign<&$T> for Simd<T, N>
         where
-          T: PrimitiveInteger,
-          Simd<T, N>: SupportedSimd,
+          T: PrimitiveInteger + SupportsLaneCount<N>,
         {
           $(#[$doc_scalar])*
           #[inline]
           fn $op_assign(&mut self, rhs: &$T) {
-            *self = self.$op_scalar_backend(*rhs as u32);
+            *self = $scalar_backend(*self, *rhs as u32);
           }
         }
 
         impl<T, const N: usize> $Op<$T> for &Simd<T, N>
         where
-          T: PrimitiveInteger,
-          Simd<T, N>: SupportedSimd,
+          T: PrimitiveInteger + SupportsLaneCount<N>,
         {
           type Output = Simd<T, N>;
 
           $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: $T) -> Self::Output {
-            self.$op_scalar_backend(rhs as u32)
+            $scalar_backend(*self, rhs as u32)
           }
         }
 
         impl<const N: usize, Rhs> $Op<Simd<Rhs, N>> for &$T
         where
-            Simd<$T, N>: SupportedSimd,
-            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
-            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
-            Simd<Rhs, N>: SupportedSimd,
+            $T: SupportsLaneCount<N>,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned> + SupportsLaneCount<N>,
         {
           type Output = Simd<$T, N>;
 
@@ -243,24 +213,21 @@ macro_rules! impl_shift_operator {
 
         impl<T, const N: usize> $Op<&$T> for &Simd<T, N>
         where
-          T: PrimitiveInteger,
-          Simd<T, N>: SupportedSimd,
+          T: PrimitiveInteger + SupportsLaneCount<N>,
         {
           type Output = Simd<T, N>;
 
           $(#[$doc_scalar])*
           #[inline]
           fn $op(self, rhs: &$T) -> Self::Output {
-            self.$op_scalar_backend(*rhs as u32)
+            $scalar_backend(*self, *rhs as u32)
           }
         }
 
         impl<const N: usize, Rhs> $Op<&Simd<Rhs, N>> for &$T
         where
-            Simd<$T, N>: SupportedSimd,
-            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
-            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned>,
-            Simd<Rhs, N>: SupportedSimd,
+            $T: SupportsLaneCount<N>,
+            Rhs: PrimitiveInteger<Unsigned = <$T as SimdElement>::Unsigned> + SupportsLaneCount<N>,
         {
           type Output = Simd<$T, N>;
 
@@ -291,8 +258,8 @@ impl_shift_operator!(
     shl,
     ShlAssign,
     shl_assign,
-    shl_backend,
-    shl_scalar_backend,
+    T::shl_backend,
+    T::shl_scalar_backend,
     /// Shifts left each element of `self` by the corresponding element
     /// of `rhs`.
     ///
@@ -331,8 +298,8 @@ impl_shift_operator!(
     shr,
     ShrAssign,
     shr_assign,
-    shr_backend,
-    shr_scalar_backend,
+    T::shr_backend,
+    T::shr_scalar_backend,
     /// Shifts right each element of `self` by the corresponding element of
     /// `rhs`.
     ///
@@ -528,8 +495,8 @@ impl_binary_operator!(
 
 impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
 where
-    T: PrimitiveInteger,
-    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+    T: PrimitiveInteger + SupportsLaneCount<N>,
+    Simd<T, N>: AddAssign<Rhs>,
 {
     #[inline]
     fn sum<I: Iterator<Item = Rhs>>(iter: I) -> Self {
@@ -543,8 +510,8 @@ where
 
 impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
 where
-    T: PrimitiveInteger,
-    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+    T: PrimitiveInteger + SupportsLaneCount<N>,
+    Simd<T, N>: MulAssign<Rhs>,
 {
     #[inline]
     fn product<I: Iterator<Item = Rhs>>(iter: I) -> Self {
@@ -560,8 +527,7 @@ macro_rules! impl_formatting_trait {
     ($Trait:path) => {
         impl<T, const N: usize> $Trait for Simd<T, N>
         where
-            T: PrimitiveInteger,
-            Simd<T, N>: SupportedSimd,
+            T: PrimitiveInteger + SupportsLaneCount<N>,
         {
             #[allow(clippy::missing_inline_in_public_items)]
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
@@ -617,7 +583,7 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn max(self, other: Self) -> Self {
-            self.max_backend(other)
+            $T::max_backend(self, other)
         }
 
         /// Returns the minimum between each element of `self` and the
@@ -625,7 +591,7 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn min(self, other: Self) -> Self {
-            self.min_backend(other)
+            $T::min_backend(self, other)
         }
 
         /// Clamps each element of `self` between the corresponding elements
@@ -645,7 +611,7 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn reduce_add(self) -> $T {
-            self.reduce_add_backend()
+            $T::reduce_add_backend(self)
         }
 
         /// Reducing multiplication. Returns the product of the vector's
@@ -655,7 +621,7 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn reduce_mul(self) -> $T {
-            self.reduce_mul_backend()
+            $T::reduce_mul_backend(self)
         }
 
         /// Reducing maximum. Returns the maximum of the vector's elements.
@@ -664,7 +630,7 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn reduce_max(self) -> $T {
-            self.reduce_max_backend()
+            $T::reduce_max_backend(self)
         }
 
         /// Reducing minimum. Returns the minimum of the vector's elements.
@@ -673,7 +639,7 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn reduce_min(self) -> $T {
-            self.reduce_min_backend()
+            $T::reduce_min_backend(self)
         }
 
         /// Creates a SIMD vector from a native-endian byte array.
@@ -737,18 +703,14 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-            self.bitselect_backend(if_one, if_zero)
+            $T::bitselect_backend(self, if_one, if_zero)
         }
     };
 }
 
 impl<T, const N: usize> Simd<T, N>
 where
-    T: PrimitiveInteger,
-    Simd<T, N>: SupportedSimd,
-    // TODO(generics): Try to make these bounds implicit
-    Simd<T::Unsigned, N>: SupportedSimd,
-    Simd<T::Signed, N>: SupportedSimd,
+    T: PrimitiveInteger + SupportsLaneCount<N>,
 {
     // Because `rustdoc` does not enforce the "no conflicting implementations"
     // rule, we show conflicting items in documentation in the generic `impl`
@@ -776,7 +738,7 @@ where
     #[inline]
     #[must_use]
     pub fn unbounded_shl(self, rhs: Simd<T::Unsigned, N>) -> Self {
-        self.unbounded_shl_backend(rhs)
+        T::unbounded_shl_backend(self, rhs)
     }
 
     /// Shifts left each element of `self` by the uniform scalar `rhs`,
@@ -796,7 +758,7 @@ where
     #[inline]
     #[must_use]
     pub fn unbounded_shl_scalar(self, rhs: u32) -> Self {
-        self.unbounded_shl_scalar_backend(rhs)
+        T::unbounded_shl_scalar_backend(self, rhs)
     }
 
     /// Shifts right each element of `self` by the corresponding element
@@ -819,7 +781,7 @@ where
     #[inline]
     #[must_use]
     pub fn unbounded_shr(self, rhs: Simd<T::Unsigned, N>) -> Self {
-        self.unbounded_shr_backend(rhs)
+        T::unbounded_shr_backend(self, rhs)
     }
 
     /// Shifts right each element of `self` by the uniform scalar `rhs`,
@@ -841,7 +803,7 @@ where
     #[inline]
     #[must_use]
     pub fn unbounded_shr_scalar(self, rhs: u32) -> Self {
-        self.unbounded_shr_scalar_backend(rhs)
+        T::unbounded_shr_scalar_backend(self, rhs)
     }
 
     /// Saturating integer addition. Computes `self + rhs`, saturating at the
@@ -849,7 +811,7 @@ where
     #[inline]
     #[must_use]
     pub fn saturating_add(self, rhs: Self) -> Self {
-        self.saturating_add_backend(rhs)
+        T::saturating_add_backend(self, rhs)
     }
 
     /// Saturating integer subtraction. Computes `self - rhs`, saturating at
@@ -857,7 +819,7 @@ where
     #[inline]
     #[must_use]
     pub fn saturating_sub(self, rhs: Self) -> Self {
-        self.saturating_sub_backend(rhs)
+        T::saturating_sub_backend(self, rhs)
     }
 
     /// Saturating integer multiplication. Computes `self * rhs`, saturating
@@ -865,7 +827,7 @@ where
     #[inline]
     #[must_use]
     pub fn saturating_mul(self, rhs: Self) -> Self {
-        self.saturating_mul_backend(rhs)
+        T::saturating_mul_backend(self, rhs)
     }
 
     /// Saturating integer division. Computes `self / rhs`, saturating at the
@@ -883,7 +845,7 @@ where
     #[inline]
     #[must_use]
     pub fn saturating_div(self, rhs: Self) -> Self {
-        self.saturating_div_backend(rhs)
+        T::saturating_div_backend(self, rhs)
     }
 
     /// Returns `-self` and whether an overflow occured.
@@ -899,7 +861,7 @@ where
     #[inline]
     #[must_use]
     pub fn overflowing_neg(self) -> (Self, Self) {
-        self.overflowing_neg_backend()
+        T::overflowing_neg_backend(self)
     }
 
     /// Returns `self + rhs` and whether an overflow occured.
@@ -911,7 +873,7 @@ where
     #[inline]
     #[must_use]
     pub fn overflowing_add(self, rhs: Self) -> (Self, Self) {
-        self.overflowing_add_backend(rhs)
+        T::overflowing_add_backend(self, rhs)
     }
 
     /// Returns `self - rhs` and whether an overflow occured.
@@ -923,7 +885,7 @@ where
     #[inline]
     #[must_use]
     pub fn overflowing_sub(self, rhs: Self) -> (Self, Self) {
-        self.overflowing_sub_backend(rhs)
+        T::overflowing_sub_backend(self, rhs)
     }
 
     /// Returns `self * rhs` and whether an overflow occured.
@@ -935,7 +897,7 @@ where
     #[inline]
     #[must_use]
     pub fn overflowing_mul(self, rhs: Self) -> (Self, Self) {
-        self.overflowing_mul_backend(rhs)
+        T::overflowing_mul_backend(self, rhs)
     }
 
     /// Returns `self / rhs` and whether an overflow occured.
@@ -953,7 +915,7 @@ where
     #[inline]
     #[must_use]
     pub fn overflowing_div(self, rhs: Self) -> (Self, Self) {
-        self.overflowing_div_backend(rhs)
+        T::overflowing_div_backend(self, rhs)
     }
 
     /// Returns `self % rhs` and whether an overflow occured.
@@ -971,7 +933,7 @@ where
     #[inline]
     #[must_use]
     pub fn overflowing_rem(self, rhs: Self) -> (Self, Self) {
-        self.overflowing_rem_backend(rhs)
+        T::overflowing_rem_backend(self, rhs)
     }
 
     /// Shifts left each element of `self` by the corresponding element
@@ -1085,10 +1047,9 @@ where
     #[must_use]
     pub fn widening_mul(self, rhs: Self) -> Simd<T::DoubleWidth, N>
     where
-        T: HasDoubleWidth,
-        Simd<T::DoubleWidth, N>: SupportedSimd,
+        T: HasDoubleWidth<DoubleWidth: SupportsLaneCount<N>>,
     {
-        self.widening_mul_backend(rhs)
+        T::widening_mul_backend(self, rhs)
     }
 
     /// Computes `self * rhs`, producing intermediate double-width
@@ -1104,7 +1065,7 @@ where
     #[inline]
     #[must_use]
     pub fn mul_keep_low_high(self, rhs: Self) -> (Simd<T::Unsigned, N>, Self) {
-        self.mul_keep_low_high_backend(rhs)
+        T::mul_keep_low_high_backend(self, rhs)
     }
 
     /// Computes `self * rhs`, producing intermediate double-width
@@ -1113,7 +1074,7 @@ where
     #[inline]
     #[must_use]
     pub fn mul_keep_high(self, rhs: Self) -> Self {
-        self.mul_keep_high_backend(rhs)
+        T::mul_keep_high_backend(self, rhs)
     }
 }
 
@@ -1133,7 +1094,7 @@ macro_rules! integer {
         #[cfg(not(doc))]
         impl<const N: usize> Simd<$T, N>
         where
-            Simd<$T, N>: SupportedSimd,
+            $T: SupportsLaneCount<N>,
         {
             conflicting_items!($T);
         }
@@ -1144,7 +1105,7 @@ macro_rules! integer {
             add,
             AddAssign,
             add_assign,
-            add_backend,
+            $T::add_backend,
             /// Computes wrapping addition for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
         );
@@ -1154,7 +1115,7 @@ macro_rules! integer {
             sub,
             SubAssign,
             sub_assign,
-            sub_backend,
+            $T::sub_backend,
             /// Computes wrapping subtraction for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
         );
@@ -1164,7 +1125,7 @@ macro_rules! integer {
             mul,
             MulAssign,
             mul_assign,
-            mul_backend,
+            $T::mul_backend,
             /// Computes wrapping multiplication for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
         );
@@ -1174,7 +1135,7 @@ macro_rules! integer {
             div,
             DivAssign,
             div_assign,
-            div_backend,
+            $T::div_backend,
             /// Computes wrapping division for the scalar `self` and each
             /// element of `rhs`, returning a SIMD vector.
             ///
@@ -1191,7 +1152,7 @@ macro_rules! integer {
             rem,
             RemAssign,
             rem_assign,
-            rem_backend,
+            $T::rem_backend,
             /// Computes the wrapping remainder of the scalar `self` divided by
             /// each element of `rhs`, returning a SIMD vector.
             ///
@@ -1208,7 +1169,7 @@ macro_rules! integer {
             bitand,
             BitAndAssign,
             bitand_assign,
-            bitand_backend,
+            $T::bitand_backend,
             /// Computes bitwise AND for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
         );
@@ -1218,7 +1179,7 @@ macro_rules! integer {
             bitor,
             BitOrAssign,
             bitor_assign,
-            bitor_backend,
+            $T::bitor_backend,
             /// Computes bitwise OR for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
         );
@@ -1228,7 +1189,7 @@ macro_rules! integer {
             bitxor,
             BitXorAssign,
             bitxor_assign,
-            bitxor_backend,
+            $T::bitxor_backend,
             /// Computes bitwise XOR for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
         );
@@ -1247,105 +1208,90 @@ integer!(u64);
 integer!(u128);
 integer!(usize);
 
+generate_t_backend_trait! {
+#[generate_t_backend_trait(TSimdIntegerBackend)]
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of integers (both signed and unsigned).
-pub(crate) trait SimdIntegerBackend: Sized {
-    fn neg_backend(self) -> Self;
+pub(crate) trait SimdIntegerBackend<T, const N: usize>: Sized
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    fn neg_backend(self) -> Simd<T, N>;
 
-    fn not_backend(self) -> Self;
+    fn not_backend(self) -> Simd<T, N>;
 
-    fn add_backend(self, rhs: Self) -> Self;
+    fn add_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn sub_backend(self, rhs: Self) -> Self;
+    fn sub_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn mul_backend(self, rhs: Self) -> Self;
-
-    #[track_caller]
-    fn div_backend(self, rhs: Self) -> Self;
-
-    #[track_caller]
-    fn rem_backend(self, rhs: Self) -> Self;
-
-    fn bitand_backend(self, rhs: Self) -> Self;
-
-    fn bitor_backend(self, rhs: Self) -> Self;
-
-    fn bitxor_backend(self, rhs: Self) -> Self;
-
-    fn reduce_add_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
-
-    fn reduce_mul_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
-
-    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
-
-    fn shl_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shl_scalar_backend(self, rhs: u32) -> Self;
-
-    fn shr_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn shr_scalar_backend(self, rhs: u32) -> Self;
-
-    fn max_backend(self, rhs: Self) -> Self;
-
-    fn min_backend(self, rhs: Self) -> Self;
-
-    fn reduce_max_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
-
-    fn reduce_min_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
-
-    fn unbounded_shl_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Self;
-
-    fn unbounded_shr_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
-
-    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Self;
-
-    fn saturating_add_backend(self, rhs: Self) -> Self;
-
-    fn saturating_sub_backend(self, rhs: Self) -> Self;
-
-    fn saturating_mul_backend(self, rhs: Self) -> Self;
+    fn mul_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
     #[track_caller]
-    fn saturating_div_backend(self, rhs: Self) -> Self;
+    fn div_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn overflowing_neg_backend(self) -> (Self, Self);
+    #[track_caller]
+    fn rem_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn overflowing_add_backend(self, rhs: Self) -> (Self, Self);
+    fn bitand_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn overflowing_sub_backend(self, rhs: Self) -> (Self, Self);
+    fn bitor_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn overflowing_mul_backend(self, rhs: Self) -> (Self, Self);
+    fn bitxor_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn overflowing_div_backend(self, rhs: Self) -> (Self, Self);
+    fn reduce_add_backend(self) -> T;
 
-    fn overflowing_rem_backend(self, rhs: Self) -> (Self, Self);
+    fn reduce_mul_backend(self) -> T;
 
-    fn widening_mul_backend(
-        self,
-        rhs: Self,
-    ) -> Self::SimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>
+    fn bitselect_backend(self, if_one: Simd<T, N>, if_zero: Simd<T, N>) -> Simd<T, N>;
+
+    fn shl_backend(self, rhs: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shl_scalar_backend(self, rhs: u32) -> Simd<T, N>;
+
+    fn shr_backend(self, rhs: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shr_scalar_backend(self, rhs: u32) -> Simd<T, N>;
+
+    fn max_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
+
+    fn min_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
+
+    fn reduce_max_backend(self) -> T;
+
+    fn reduce_min_backend(self) -> T;
+
+    fn unbounded_shl_backend(self, rhs: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn unbounded_shl_scalar_backend(self, rhs: u32) -> Simd<T, N>;
+
+    fn unbounded_shr_backend(self, rhs: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn unbounded_shr_scalar_backend(self, rhs: u32) -> Simd<T, N>;
+
+    fn saturating_add_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
+
+    fn saturating_sub_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
+
+    fn saturating_mul_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
+
+    #[track_caller]
+    fn saturating_div_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
+
+    fn overflowing_neg_backend(self) -> (Simd<T, N>, Simd<T, N>);
+
+    fn overflowing_add_backend(self, rhs: Simd<T, N>) -> (Simd<T, N>, Simd<T, N>);
+
+    fn overflowing_sub_backend(self, rhs: Simd<T, N>) -> (Simd<T, N>, Simd<T, N>);
+
+    fn overflowing_mul_backend(self, rhs: Simd<T, N>) -> (Simd<T, N>, Simd<T, N>);
+
+    fn overflowing_div_backend(self, rhs: Simd<T, N>) -> (Simd<T, N>, Simd<T, N>);
+
+    fn overflowing_rem_backend(self, rhs: Simd<T, N>) -> (Simd<T, N>, Simd<T, N>);
+
+    fn widening_mul_backend(self, rhs: Simd<T, N>) -> Simd<T::DoubleWidth, N>
     where
-        Self: SimdInternalAssociatedTypes<T: HasDoubleWidth>
-            + SupportSimdOf<<Self::T as HasDoubleWidth>::DoubleWidth>,
+        T: HasDoubleWidth<DoubleWidth: SupportsLaneCount<N>>,
     {
         // Because not all concrete types support `widening_mul`, this default
         // implementation must exist. Note that all concrete types that support
@@ -1357,11 +1303,10 @@ pub(crate) trait SimdIntegerBackend: Sized {
         )
     }
 
-    fn mul_keep_low_high_backend(self, rhs: Self) -> (Self::UnsignedSimd, Self)
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+    fn mul_keep_low_high_backend(self, rhs: Simd<T, N>) -> (Simd<T::Unsigned, N>, Simd<T, N>);
 
-    fn mul_keep_high_backend(self, rhs: Self) -> Self;
+    fn mul_keep_high_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
+}
 }
 
 /// Automatically fills [`SimdIntegerBackend`] functions that have the same
@@ -1602,10 +1547,9 @@ macro_rules! simd_integer_backend_unsigned_autofill {
 /// This means that non-integers do need some implementation of
 /// [`SimdIntegerBackend`]. This block is a dummy implementation for all
 /// non-integers that fills functions with [`unreachable!`].
-impl<T, const N: usize> SimdIntegerBackend for Simd<T, N>
+impl<T, const N: usize> SimdIntegerBackend<T, N> for Simd<T, N>
 where
-    T: SimdElement + NotPrimitiveInteger,
-    Simd<T, N>: SupportedSimd,
+    T: SimdElement + NotPrimitiveInteger + SupportsLaneCount<N>,
 {
     fn add_backend(self, _: Self) -> Self {
         unreachable!()
@@ -1637,14 +1581,7 @@ where
     fn mul_keep_high_backend(self, _: Self) -> Self {
         unreachable!()
     }
-    fn mul_keep_low_high_backend(
-        self,
-        _: Self,
-    ) -> (<Self as SimdInternalAssociatedTypes>::UnsignedSimd, Self)
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
-    {
+    fn mul_keep_low_high_backend(self, _: Self) -> (Simd<T::Unsigned, N>, Self) {
         unreachable!()
     }
     fn neg_backend(self) -> Self {
@@ -1671,28 +1608,16 @@ where
     fn overflowing_sub_backend(self, _: Self) -> (Self, Self) {
         unreachable!()
     }
-    fn reduce_add_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_add_backend(self) -> T {
         unreachable!()
     }
-    fn reduce_max_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_max_backend(self) -> T {
         unreachable!()
     }
-    fn reduce_min_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_min_backend(self) -> T {
         unreachable!()
     }
-    fn reduce_mul_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_mul_backend(self) -> T {
         unreachable!()
     }
     fn rem_backend(self, _: Self) -> Self {
@@ -1710,21 +1635,13 @@ where
     fn saturating_sub_backend(self, _: Self) -> Self {
         unreachable!()
     }
-    fn shl_backend(self, _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
-    {
+    fn shl_backend(self, _: Simd<T::Unsigned, N>) -> Self {
         unreachable!()
     }
     fn shl_scalar_backend(self, _: u32) -> Self {
         unreachable!()
     }
-    fn shr_backend(self, _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
-    {
+    fn shr_backend(self, _: Simd<T::Unsigned, N>) -> Self {
         unreachable!()
     }
     fn shr_scalar_backend(self, _: u32) -> Self {
@@ -1733,35 +1650,21 @@ where
     fn sub_backend(self, _: Self) -> Self {
         unreachable!()
     }
-    fn unbounded_shl_backend(self, _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
-    {
+    fn unbounded_shl_backend(self, _: Simd<T::Unsigned, N>) -> Self {
         unreachable!()
     }
     fn unbounded_shl_scalar_backend(self, _: u32) -> Self {
         unreachable!()
     }
-    fn unbounded_shr_backend(self, _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
-    {
+    fn unbounded_shr_backend(self, _: Simd<T::Unsigned, N>) -> Self {
         unreachable!()
     }
     fn unbounded_shr_scalar_backend(self, _: u32) -> Self {
         unreachable!()
     }
-    fn widening_mul_backend(
-        self,
-        _: Self,
-    ) -> <Self as SimdInternalAssociatedTypes>::SimdOf<
-        <<Self as SimdInternalAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth,
-    >
+    fn widening_mul_backend(self, _: Self) -> Simd<T::DoubleWidth, N>
     where
-        Self: SimdInternalAssociatedTypes<T: HasDoubleWidth>
-            + SupportSimdOf<<<Self as SimdInternalAssociatedTypes>::T as HasDoubleWidth>::DoubleWidth>,
+        T: HasDoubleWidth<DoubleWidth: SupportsLaneCount<N>>,
     {
         unreachable!()
     }

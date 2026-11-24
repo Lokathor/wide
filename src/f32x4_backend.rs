@@ -12,7 +12,7 @@ pub(crate) struct Inner {
 }
 
 safe_target_feature! {
-impl SimdBackend for f32x4 {
+impl SimdBackend<f32, 4> for f32x4 {
     pick! {
       if #[cfg(target_feature="sse")] {
         type Inner = __m128;
@@ -299,7 +299,7 @@ impl SimdBackend for f32x4 {
 }
 
 safe_target_feature! {
-impl SimdFloatBackend for f32x4 {
+impl SimdFloatBackend<f32, 4> for f32x4 {
     #[inline]
     fn neg_backend(self) -> Self {
         pick! {

@@ -9,7 +9,7 @@ pub(crate) struct Inner {
 }
 
 safe_target_feature! {
-impl SimdBackend for f64x4 {
+impl SimdBackend<f64, 4> for f64x4 {
     pick! {
       if #[cfg(target_feature="avx")] {
         type Inner = __m256d;
@@ -220,7 +220,7 @@ impl SimdBackend for f64x4 {
 }
 
 safe_target_feature! {
-impl SimdFloatBackend for f64x4 {
+impl SimdFloatBackend<f64, 4> for f64x4 {
     #[inline]
     fn neg_backend(self) -> Self {
         pick! {

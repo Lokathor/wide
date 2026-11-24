@@ -9,7 +9,7 @@ pub(crate) struct Inner {
 }
 
 safe_target_feature! {
-impl SimdBackend for u16x16 {
+impl SimdBackend<u16, 16> for u16x16 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         type Inner = __m256i;
@@ -440,7 +440,7 @@ impl SimdBackend for u16x16 {
 }
 
 safe_target_feature! {
-impl SimdIntegerBackend for u16x16 {
+impl SimdIntegerBackend<u16, 16> for u16x16 {
     simd_integer_backend_autofill! { u16, 16 }
     simd_integer_backend_unsigned_autofill! { u16, 16 }
 
@@ -822,7 +822,7 @@ impl SimdIntegerBackend for u16x16 {
 }
 
 safe_target_feature! {
-impl SimdUnsignedBackend for u16x16 {
+impl SimdUnsignedBackend<u16, 16> for u16x16 {
     #[inline]
     fn saturating_add_signed_backend(self, rhs: i16x16) -> Self {
         pick! {

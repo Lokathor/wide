@@ -9,7 +9,7 @@ pub(crate) struct Inner {
 }
 
 safe_target_feature! {
-impl SimdBackend for i64x4 {
+impl SimdBackend<i64, 4> for i64x4 {
     pick! {
       if #[cfg(target_feature="avx2")] {
         type Inner = __m256i;
@@ -79,7 +79,7 @@ impl SimdBackend for i64x4 {
 }
 
 safe_target_feature! {
-impl SimdIntegerBackend for i64x4 {
+impl SimdIntegerBackend<i64, 4> for i64x4 {
     simd_integer_backend_autofill! { i64, 4 }
     simd_integer_backend_signed_autofill! { i64, 4 }
 
@@ -262,7 +262,7 @@ impl SimdIntegerBackend for i64x4 {
 }
 
 safe_target_feature! {
-impl SimdSignedBackend for i64x4 {
+impl SimdSignedBackend<i64, 4> for i64x4 {
     #[inline]
     fn abs_backend(self) -> Self {
         pick! {

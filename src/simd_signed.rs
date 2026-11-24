@@ -1,9 +1,7 @@
 //! Defines APIs applicable to SIMD vectors of signed integers.
 
 use crate::{
-    PrimitiveSigned, Simd, SimdElement, SupportedSimd,
-    primitive_traits::NotPrimitiveSigned,
-    simd::{SimdInternalAssociatedTypes, SupportSimdOf},
+    PrimitiveSigned, Simd, SimdElement, SupportsLaneCount, primitive_traits::NotPrimitiveSigned,
 };
 
 /// Contains SIMD signed items whose name conflicts with a SIMD float item's
@@ -25,7 +23,7 @@ macro_rules! conflicting_items {
         #[inline]
         #[must_use]
         pub fn abs(self) -> Self {
-            self.abs_backend()
+            $T::abs_backend(self)
         }
 
         /// Returns numbers representing the sign of each element.
@@ -45,10 +43,7 @@ macro_rules! conflicting_items {
 
 impl<T, const N: usize> Simd<T, N>
 where
-    T: PrimitiveSigned,
-    Simd<T, N>: SupportedSimd,
-    // TODO(generics): Try make this implicit bound
-    Simd<T::Unsigned, N>: SupportedSimd,
+    T: PrimitiveSigned + SupportsLaneCount<N>,
 {
     // Because `rustdoc` does not enforce the "no conflicting implementations"
     // rule, we show conflicting items in documentation in the generic `impl`
@@ -75,7 +70,7 @@ where
     pub fn unsigned_abs(self) -> Simd<T::Unsigned, N> {
         // Use `abs_backend` and not `abs` because `abs` is not
         // available in contexts generic over `T`
-        self.abs_backend().cast_unsigned()
+        <T as TSimdSignedBackend<T, N>>::abs_backend(self).cast_unsigned()
     }
 
     /// Returns a [mask] that is true for each positive element, and false if
@@ -85,7 +80,7 @@ where
     #[inline]
     #[must_use]
     pub fn is_positive(self) -> Self {
-        self.is_positive_backend()
+        T::is_positive_backend(self)
     }
 
     /// Returns a [mask] that is true for each negative element, and false if
@@ -95,7 +90,7 @@ where
     #[inline]
     #[must_use]
     pub fn is_negative(self) -> Self {
-        self.is_negative_backend()
+        T::is_negative_backend(self)
     }
 
     /// Wrapping (modular) addition with an unsigned `rhs`. Computes
@@ -119,7 +114,7 @@ where
     #[inline]
     #[must_use]
     pub fn saturating_neg(self) -> Self {
-        self.saturating_neg_backend()
+        T::saturating_neg_backend(self)
     }
 
     /// Saturating absolute value. Computes `self.abs()`, returning
@@ -127,7 +122,7 @@ where
     #[inline]
     #[must_use]
     pub fn saturating_abs(self) -> Self {
-        self.saturating_abs_backend()
+        T::saturating_abs_backend(self)
     }
 
     /// Saturating addition with an unsigned `rhs`. Computes
@@ -137,7 +132,7 @@ where
     #[must_use]
     pub fn saturating_add_unsigned(self, rhs: Simd<T::Unsigned, N>) -> Self {
         // NEON has a direct intrinsic for this operation
-        self.saturating_add_unsigned_backend(rhs)
+        T::saturating_add_unsigned_backend(self, rhs)
     }
 
     /// Saturating subtraction with an unsigned `rhs`. Computes
@@ -166,7 +161,7 @@ where
         // Use `abs_backend` and not `abs` because `abs` is not
         // available in contexts generic over `T`
         (
-            self.abs_backend(),
+            <T as TSimdSignedBackend<T, N>>::abs_backend(self),
             self.simd_eq(const { Self::splat(T::MIN) }),
         )
     }
@@ -235,9 +230,7 @@ macro_rules! signed {
         #[cfg(not(doc))]
         impl<const N: usize> Simd<$T, N>
         where
-            Simd<$T, N>: SupportedSimd,
-            // TODO(generics): Try make this bound implicit
-            Simd<<$T as SimdElement>::Unsigned, N>: SupportedSimd,
+            $T: SupportsLaneCount<N>,
         {
             conflicting_items!($T);
         }
@@ -250,24 +243,28 @@ signed!(i64);
 signed!(i128);
 signed!(isize);
 
+generate_t_backend_trait! {
+#[generate_t_backend_trait(TSimdSignedBackend)]
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of signed integers.
-pub(crate) trait SimdSignedBackend {
-    fn abs_backend(self) -> Self;
+pub(crate) trait SimdSignedBackend<T, const N: usize>: Sized
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    fn abs_backend(self) -> Simd<T, N>;
 
     #[expect(clippy::wrong_self_convention)]
-    fn is_positive_backend(self) -> Self;
+    fn is_positive_backend(self) -> Simd<T, N>;
 
     #[expect(clippy::wrong_self_convention)]
-    fn is_negative_backend(self) -> Self;
+    fn is_negative_backend(self) -> Simd<T, N>;
 
-    fn saturating_neg_backend(self) -> Self;
+    fn saturating_neg_backend(self) -> Simd<T, N>;
 
-    fn saturating_abs_backend(self) -> Self;
+    fn saturating_abs_backend(self) -> Simd<T, N>;
 
-    fn saturating_add_unsigned_backend(self, rhs: Self::UnsignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::UnsignedT>;
+    fn saturating_add_unsigned_backend(self, rhs: Simd<T::Unsigned, N>) -> Simd<T, N>;
+}
 }
 
 /// In order for the generic SIMD signed integer API to work,
@@ -280,10 +277,9 @@ pub(crate) trait SimdSignedBackend {
 /// This means that non-signed-integers do need some implementation of
 /// [`SimdSignedBackend`]. This block is a dummy implementation for all
 /// non-signed-integers that fills functions with [`unreachable!`].
-impl<T, const N: usize> SimdSignedBackend for Simd<T, N>
+impl<T, const N: usize> SimdSignedBackend<T, N> for Simd<T, N>
 where
-    T: SimdElement + NotPrimitiveSigned,
-    Simd<T, N>: SupportedSimd,
+    T: SimdElement + NotPrimitiveSigned + SupportsLaneCount<N>,
 {
     fn abs_backend(self) -> Self {
         unreachable!()
@@ -297,14 +293,7 @@ where
     fn saturating_abs_backend(self) -> Self {
         unreachable!()
     }
-    fn saturating_add_unsigned_backend(
-        self,
-        _: <Self as SimdInternalAssociatedTypes>::UnsignedSimd,
-    ) -> Self
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::UnsignedT>,
-    {
+    fn saturating_add_unsigned_backend(self, _: Simd<T::Unsigned, N>) -> Self {
         unreachable!()
     }
     fn saturating_neg_backend(self) -> Self {

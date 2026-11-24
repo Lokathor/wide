@@ -1,17 +1,12 @@
 //! Defines APIs applicable to SIMD vectors of unsigned integers.
 
 use crate::{
-    PrimitiveUnsigned, Simd, SimdElement, SupportedSimd,
-    primitive_traits::NotPrimitiveUnsigned,
-    simd::{SimdInternalAssociatedTypes, SupportSimdOf},
+    PrimitiveUnsigned, Simd, SimdElement, SupportsLaneCount, primitive_traits::NotPrimitiveUnsigned,
 };
 
 impl<T, const N: usize> Simd<T, N>
 where
-    T: PrimitiveUnsigned,
-    Simd<T, N>: SupportedSimd,
-    // TODO(generics): Try to make this bound implicit
-    Simd<T::Signed, N>: SupportedSimd,
+    T: PrimitiveUnsigned + SupportsLaneCount<N>,
 {
     /// Returns the bit patterns of `self` reinterpreted as signed integers of
     /// the same size.
@@ -45,7 +40,7 @@ where
     #[must_use]
     pub fn saturating_add_signed(self, rhs: Simd<T::Signed, N>) -> Self {
         // NEON has a direct intrinsic for this operation
-        self.saturating_add_signed_backend(rhs)
+        T::saturating_add_signed_backend(self, rhs)
     }
 
     /// Saturating subtraction with a signed `rhs`. Computes
@@ -93,12 +88,16 @@ where
     }
 }
 
+generate_t_backend_trait! {
+#[generate_t_backend_trait(TSimdUnsignedBackend)]
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of unsigned integers.
-pub(crate) trait SimdUnsignedBackend {
-    fn saturating_add_signed_backend(self, rhs: Self::SignedSimd) -> Self
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::SignedT>;
+pub(crate) trait SimdUnsignedBackend<T, const N: usize>: Sized
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    fn saturating_add_signed_backend(self, rhs: Simd<T::Signed, N>) -> Simd<T, N>;
+}
 }
 
 /// In order for the generic SIMD unsigned integer API to work,
@@ -111,19 +110,11 @@ pub(crate) trait SimdUnsignedBackend {
 /// This means that non-unsigned-integers do need some implementation of
 /// [`SimdUnsignedBackend`]. This block is a dummy implementation for all
 /// non-unsigned-integers that fills functions with [`unreachable!`].
-impl<T, const N: usize> SimdUnsignedBackend for Simd<T, N>
+impl<T, const N: usize> SimdUnsignedBackend<T, N> for Simd<T, N>
 where
-    T: SimdElement + NotPrimitiveUnsigned,
-    Simd<T, N>: SupportedSimd,
+    T: SimdElement + NotPrimitiveUnsigned + SupportsLaneCount<N>,
 {
-    fn saturating_add_signed_backend(
-        self,
-        _: <Self as SimdInternalAssociatedTypes>::SignedSimd,
-    ) -> Self
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::SignedT>,
-    {
+    fn saturating_add_signed_backend(self, _: Simd<T::Signed, N>) -> Self {
         unreachable!()
     }
 }
