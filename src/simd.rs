@@ -1450,6 +1450,64 @@ where
         unsafe { transmute_copy::<[T; N], Simd<T, N>>(&[elem; N]) }
     }
 
+    /// Splits a slice into a prefix, a middle of aligned SIMD vectors, and a
+    /// suffix.
+    ///
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to),
+    /// so this inherits the same guarantees as that method.
+    ///
+    /// # Panics
+    ///
+    /// In the future, if support for non-power-of-two lane counts is added
+    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
+    ///
+    /// If those types have padding, then this function would incorrectly insert
+    /// input elements into that padding, thus a panic may be added instead.
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub fn align_from_slice(slice: &[T]) -> (&[T], &[Self], &[T]) {
+        const {
+            // This panic cannot actually occur, so it is better to remove it
+            // from codegen completely.
+            assert!(size_of::<Simd<T, N>>() == size_of::<[T; N]>());
+        }
+
+        // SAFETY: this `Simd<T, N>` has the same layout as `[T; N]`, just with
+        // potentially-higher alignment, so the de-facto transmutes are sound.
+        unsafe { <[T]>::align_to::<Simd<T, N>>(slice) }
+    }
+
+    /// Splits a mutable slice into a prefix, a middle of aligned SIMD vectors,
+    /// and a suffix.
+    ///
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to_mut`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to_mut),
+    /// so this inherits the same guarantees as that method.
+    ///
+    /// # Panics
+    ///
+    /// In the future, if support for non-power-of-two lane counts is added
+    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
+    ///
+    /// If those types have padding, then this function would incorrectly insert
+    /// input elements into that padding, thus a panic may be added instead.
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub fn align_from_mut_slice(slice: &mut [T]) -> (&mut [T], &mut [Self], &mut [T]) {
+        const {
+            // This panic cannot actually occur, so it is better to remove it
+            // from codegen completely.
+            assert!(size_of::<Simd<T, N>>() == size_of::<[T; N]>());
+        }
+
+        // SAFETY: this `Simd<T, N>` has the same layout as `[T; N]`, just with
+        // potentially-higher alignment, so the de-facto transmutes are sound.
+        unsafe { <[T]>::align_to_mut::<Simd<T, N>>(slice) }
+    }
+
     /// Converts a SIMD vector to an array.
     #[inline]
     #[must_use]
