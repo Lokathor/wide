@@ -349,14 +349,14 @@ impl_unary_operator!(
     T: PrimitiveInteger,
     Neg,
     neg,
-    neg_backend,
+    T::neg_backend,
     /// Computes wrapping negation for each element of `self`.
 );
 impl_unary_operator!(
     T: PrimitiveInteger,
     Not,
     not,
-    not_backend,
+    T::not_backend,
     /// Computes bitwise NOT for each element of `self`.
 );
 
@@ -366,7 +366,7 @@ impl_binary_operator!(
     add,
     AddAssign,
     add_assign,
-    add_backend,
+    T::add_backend,
     /// Computes wrapping addition for each element of `self` and the
     /// corresponding element of `rhs`.
     ,
@@ -379,7 +379,7 @@ impl_binary_operator!(
     sub,
     SubAssign,
     sub_assign,
-    sub_backend,
+    T::sub_backend,
     /// Computes wrapping subtraction for each element of `self` and the
     /// corresponding element of `rhs`.
     ,
@@ -392,7 +392,7 @@ impl_binary_operator!(
     mul,
     MulAssign,
     mul_assign,
-    mul_backend,
+    T::mul_backend,
     /// Computes wrapping multiplication for each element of `self` and
     /// the corresponding element of `rhs`.
     ,
@@ -405,7 +405,7 @@ impl_binary_operator!(
     div,
     DivAssign,
     div_assign,
-    div_backend,
+    T::div_backend,
     /// Computes wrapping division for each element of `self` and the
     /// corresponding element of `rhs`.
     ///
@@ -432,7 +432,7 @@ impl_binary_operator!(
     rem,
     RemAssign,
     rem_assign,
-    rem_backend,
+    T::rem_backend,
     /// Computes the wrapping remainder of each element of `self`
     /// divided by the corresponding element of `rhs`.
     ///
@@ -459,7 +459,7 @@ impl_binary_operator!(
     bitand,
     BitAndAssign,
     bitand_assign,
-    bitand_backend,
+    T::bitand_backend,
     /// Computes bitwise AND for each element of `self` and the
     /// corresponding element of `rhs`.
     ,
@@ -472,7 +472,7 @@ impl_binary_operator!(
     bitor,
     BitOrAssign,
     bitor_assign,
-    bitor_backend,
+    T::bitor_backend,
     /// Computes bitwise OR for each element of `self` and the
     /// corresponding element of `rhs`.
     ,
@@ -485,7 +485,7 @@ impl_binary_operator!(
     bitxor,
     BitXorAssign,
     bitxor_assign,
-    bitxor_backend,
+    T::bitxor_backend,
     /// Computes bitwise XOR for each element of `self` and the
     /// corresponding element of `rhs`.
     ,
