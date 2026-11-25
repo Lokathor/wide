@@ -29,7 +29,7 @@ where
 /// Note that because [`Simd<T, N>`] only supports certain combinations of `T`
 /// and `N`, there may be `T` types that implement [`SimdElement`] but are not
 /// actually supported in any real SIMD type. For example, [`usize`] implements
-/// [`SimdElement`], but does not implement no [`SupportsLaneCount<N>`] for any
+/// [`SimdElement`], but does not implement [`SupportsLaneCount<N>`] for any
 /// `N`.
 #[expect(private_bounds)]
 pub trait SimdElement: Sealed + Copy {
