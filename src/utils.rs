@@ -20,6 +20,12 @@ use crate::SimdElement;
 ///
 /// - Backend-trait items cannot use the `Self` type. Instead, write
 ///   `Simd<T, N>` directly. The `self` parameter does work.
+///
+/// # Attribute macro
+///
+/// If Rust stabilizes support for declarative attribute macros, this macro
+/// should switch to that. That will enable formatting for backend-trait
+/// definitions.
 macro_rules! generate_t_backend_trait {
     (
         @helper_arm
