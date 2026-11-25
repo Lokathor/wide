@@ -3,9 +3,8 @@
 use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Sub};
 
 use crate::{
-    PrimitiveFloat, Simd, SimdElement, SupportedSimd,
-    primitive_traits::NotPrimitiveFloat,
-    simd::{SimdAssociatedTypes, SimdInternalAssociatedTypes, SupportSimdOf},
+    PrimitiveFloat, Simd, SimdElement, SupportsLaneCount, primitive_traits::NotPrimitiveFloat,
+    simd::SimdAssociatedTypes,
 };
 
 /*
@@ -23,7 +22,7 @@ impl_unary_operator!(
     T: PrimitiveFloat,
     Neg,
     neg,
-    neg_backend,
+    T::neg_backend,
     /// Computes negation for each element of `self`.
     ///
     /// This always returns the precise result, simply flipping the sign-bit.
@@ -32,7 +31,7 @@ impl_unary_operator!(
     T: PrimitiveFloat,
     Not,
     not,
-    not_backend,
+    T::not_backend,
     /// Computes bitwise NOT for each element of `self`.
     ///
     /// This computes bitwise NOT, even though the `!` operator is not
@@ -45,7 +44,7 @@ impl_binary_operator!(
     add,
     AddAssign,
     add_assign,
-    add_backend,
+    T::add_backend,
     /// Computes addition for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -61,7 +60,7 @@ impl_binary_operator!(
     sub,
     SubAssign,
     sub_assign,
-    sub_backend,
+    T::sub_backend,
     /// Computes subtraction for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -77,7 +76,7 @@ impl_binary_operator!(
     mul,
     MulAssign,
     mul_assign,
-    mul_backend,
+    T::mul_backend,
     /// Computes multiplication for each element of `self` and the
     /// corresponding element of `rhs`.
     ///
@@ -94,7 +93,7 @@ impl_binary_operator!(
     div,
     DivAssign,
     div_assign,
-    div_backend,
+    T::div_backend,
     /// Computes division for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -110,7 +109,7 @@ impl_binary_operator!(
     rem,
     RemAssign,
     rem_assign,
-    rem_backend,
+    T::rem_backend,
     /// Computes the remainder for each element of `self` and the
     /// corresponding element of `rhs`.
     ///
@@ -127,7 +126,7 @@ impl_binary_operator!(
     bitand,
     BitAndAssign,
     bitand_assign,
-    bitand_backend,
+    T::bitand_backend,
     /// Computes bitwise AND for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -145,7 +144,7 @@ impl_binary_operator!(
     bitor,
     BitOrAssign,
     bitor_assign,
-    bitor_backend,
+    T::bitor_backend,
     /// Computes bitwise OR for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -163,7 +162,7 @@ impl_binary_operator!(
     bitxor,
     BitXorAssign,
     bitxor_assign,
-    bitxor_backend,
+    T::bitxor_backend,
     /// Computes bitwise XOR for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -178,8 +177,8 @@ impl_binary_operator!(
 
 impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
 where
-    T: PrimitiveFloat,
-    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+    T: PrimitiveFloat + SupportsLaneCount<N>,
+    Simd<T, N>: AddAssign<Rhs>,
 {
     /// Computes the sum of multiple SIMD vectors for each lane.
     ///
@@ -196,8 +195,8 @@ where
 
 impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
 where
-    T: PrimitiveFloat,
-    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+    T: PrimitiveFloat + SupportsLaneCount<N>,
+    Simd<T, N>: MulAssign<Rhs>,
 {
     /// Computes the product of multiple SIMD vectors for each lane.
     ///
@@ -216,8 +215,7 @@ macro_rules! impl_formatting_trait {
     ($Trait:path) => {
         impl<T, const N: usize> $Trait for Simd<T, N>
         where
-            T: PrimitiveFloat,
-            Simd<T, N>: SupportedSimd,
+            T: PrimitiveFloat + SupportsLaneCount<N>,
         {
             #[allow(clippy::missing_inline_in_public_items)]
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
@@ -241,11 +239,7 @@ impl_formatting_trait!(core::fmt::UpperHex);
 
 impl<T, const N: usize> Simd<T, N>
 where
-    T: PrimitiveFloat,
-    Simd<T, N>: SupportedSimd,
-    // TODO(generics): Try to make these bounds implicit
-    Simd<T::Unsigned, N>: SupportedSimd,
-    Simd<T::Signed, N>: SupportedSimd,
+    T: PrimitiveFloat + SupportsLaneCount<N>,
 {
     /// The size of this SIMD vector in bits.
     pub const BITS: u16 = (size_of::<Self>() * 8) as u16;
@@ -366,7 +360,7 @@ where
     #[inline]
     #[must_use]
     pub fn is_nan(self) -> Self {
-        self.is_nan_backend()
+        T::is_nan_backend(self)
     }
 
     /// Returns a [mask] that checks if each element is infinity (either
@@ -376,7 +370,7 @@ where
     #[inline]
     #[must_use]
     pub fn is_infinite(self) -> Self {
-        self.is_infinite_backend()
+        T::is_infinite_backend(self)
     }
 
     /// Returns a [mask] that checks if each element is neither infinite nor
@@ -386,7 +380,7 @@ where
     #[inline]
     #[must_use]
     pub fn is_finite(self) -> Self {
-        self.is_finite_backend()
+        T::is_finite_backend(self)
     }
 
     /// Returns a [mask] that checks if each element has a positive sign,
@@ -396,7 +390,7 @@ where
     #[inline]
     #[must_use]
     pub fn is_sign_positive(self) -> Self {
-        self.is_sign_positive_backend()
+        T::is_sign_positive_backend(self)
     }
 
     /// Returns a [mask] that checks if each element has a negative sign,
@@ -423,7 +417,7 @@ where
     #[inline]
     #[must_use]
     pub fn recip(self) -> Self {
-        self.recip_backend()
+        T::recip_backend(self)
     }
 
     /// Approximates the square root of the reciprocal (inverse) of a number,
@@ -437,7 +431,7 @@ where
     #[inline]
     #[must_use]
     pub fn recip_sqrt(self) -> Self {
-        self.recip_sqrt_backend()
+        T::recip_sqrt_backend(self)
     }
 
     /// Converts radians to degrees.
@@ -488,7 +482,7 @@ where
     #[inline]
     #[must_use]
     pub fn max(self, other: Self) -> Self {
-        self.max_backend(other)
+        <T as TSimdFloatBackend<T, N>>::max_backend(self, other)
     }
 
     /// Returns the maximum between each element of `self` and the
@@ -505,7 +499,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_max(self, other: Self) -> Self {
-        self.fast_max_backend(other)
+        T::fast_max_backend(self, other)
     }
 
     /// Returns the minimum between each element of `self` and the
@@ -522,7 +516,7 @@ where
     #[inline]
     #[must_use]
     pub fn min(self, other: Self) -> Self {
-        self.min_backend(other)
+        <T as TSimdFloatBackend<T, N>>::min_backend(self, other)
     }
 
     /// Returns the minimum between each element of `self` and the
@@ -539,7 +533,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_min(self, other: Self) -> Self {
-        self.fast_min_backend(other)
+        T::fast_min_backend(self, other)
     }
 
     /// Reducing addition. Returns the sum of the vector's elements.
@@ -555,7 +549,7 @@ where
     #[inline]
     #[must_use]
     pub fn reduce_add(self) -> T {
-        self.reduce_add_backend()
+        <T as TSimdFloatBackend<T, N>>::reduce_add_backend(self)
     }
 
     /// Reducing multiplication. Returns the product of the vector's
@@ -573,7 +567,7 @@ where
     #[inline]
     #[must_use]
     pub fn reduce_mul(self) -> T {
-        self.reduce_mul_backend()
+        <T as TSimdFloatBackend<T, N>>::reduce_mul_backend(self)
     }
 
     /// Returns the maximum between all elements of `self`.
@@ -590,7 +584,7 @@ where
     #[inline]
     #[must_use]
     pub fn reduce_max(self) -> T {
-        self.reduce_max_backend()
+        <T as TSimdFloatBackend<T, N>>::reduce_max_backend(self)
     }
 
     /// Returns the maximum between all elements of `self`.
@@ -604,7 +598,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_reduce_max(self) -> T {
-        self.fast_reduce_max_backend()
+        T::fast_reduce_max_backend(self)
     }
 
     /// Returns the minimum between all elements of `self`.
@@ -621,7 +615,7 @@ where
     #[inline]
     #[must_use]
     pub fn reduce_min(self) -> T {
-        self.reduce_min_backend()
+        <T as TSimdFloatBackend<T, N>>::reduce_min_backend(self)
     }
 
     /// Returns the minimum between all elements of `self`.
@@ -635,7 +629,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_reduce_min(self) -> T {
-        self.fast_reduce_min_backend()
+        T::fast_reduce_min_backend(self)
     }
 
     /// Calculates the midpoint (average) between `self` and `other`.
@@ -739,7 +733,7 @@ where
     #[inline]
     #[must_use]
     pub fn bitselect(self, if_one: Self, if_zero: Self) -> Self {
-        self.bitselect_backend(if_one, if_zero)
+        <T as TSimdFloatBackend<T, N>>::bitselect_backend(self, if_one, if_zero)
     }
 
     /// Restrict a value to a certain interval unless it is NaN.
@@ -756,7 +750,7 @@ where
     #[inline]
     #[must_use]
     pub fn clamp(self, min: Self, max: Self) -> Self {
-        self.clamp_backend(min, max)
+        <T as TSimdFloatBackend<T, N>>::clamp_backend(self, min, max)
     }
 
     /// Restrict a value to a certain interval unless it is NaN.
@@ -773,7 +767,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_clamp(self, min: Self, max: Self) -> Self {
-        self.fast_clamp_backend(min, max)
+        T::fast_clamp_backend(self, min, max)
     }
 
     /// Computes the absolute value of `self`.
@@ -782,7 +776,7 @@ where
     #[inline]
     #[must_use]
     pub fn abs(self) -> Self {
-        self.abs_backend()
+        <T as TSimdFloatBackend<T, N>>::abs_backend(self)
     }
 
     /// Returns numbers representing the sign of each element.
@@ -830,7 +824,7 @@ where
     #[inline]
     #[must_use]
     pub fn floor(self) -> Self {
-        self.floor_backend()
+        T::floor_backend(self)
     }
 
     /// Returns the smallest integer greater than or equal to each input
@@ -840,7 +834,7 @@ where
     #[inline]
     #[must_use]
     pub fn ceil(self) -> Self {
-        self.ceil_backend()
+        T::ceil_backend(self)
     }
 
     /// Returns the nearest integer to each input element. If a value is
@@ -857,7 +851,7 @@ where
     #[inline]
     #[must_use]
     pub fn round(self) -> Self {
-        self.round_backend()
+        T::round_backend(self)
     }
 
     /// Returns the nearest integer to each input element.
@@ -873,7 +867,7 @@ where
     #[inline]
     #[must_use]
     pub fn round_int(self) -> Simd<T::Signed, N> {
-        self.round_int_backend()
+        T::round_int_backend(self)
     }
 
     /// Returns the nearest integer to each input element.
@@ -889,7 +883,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_round_int(self) -> Simd<T::Signed, N> {
-        self.fast_round_int_backend()
+        T::fast_round_int_backend(self)
     }
 
     /// Returns the nearest integer to each input element. Rounds half-way
@@ -899,7 +893,7 @@ where
     #[inline]
     #[must_use]
     pub fn round_ties_even(self) -> Self {
-        self.round_ties_even_backend()
+        T::round_ties_even_backend(self)
     }
 
     /// Returns the integer part of each input element. This means that
@@ -909,7 +903,7 @@ where
     #[inline]
     #[must_use]
     pub fn trunc(self) -> Self {
-        self.trunc_backend()
+        T::trunc_backend(self)
     }
 
     /// Returns the integer part of each input element. This means that
@@ -923,7 +917,7 @@ where
     #[inline]
     #[must_use]
     pub fn trunc_int(self) -> Simd<T::Signed, N> {
-        self.trunc_int_backend()
+        T::trunc_int_backend(self)
     }
 
     /// Returns the integer part of each input element. This means that
@@ -937,7 +931,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_trunc_int(self) -> Simd<T::Signed, N> {
-        self.fast_trunc_int_backend()
+        T::fast_trunc_int_backend(self)
     }
 
     /// Returns the fractional part of each input element.
@@ -957,7 +951,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_mul_add(self, a: Self, b: Self) -> Self {
-        self.fast_mul_add_backend(a, b)
+        T::fast_mul_add_backend(self, a, b)
     }
 
     /// Fused multiply-sub. Computes `(self * a) - b`.
@@ -968,7 +962,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_mul_sub(self, a: Self, b: Self) -> Self {
-        self.fast_mul_sub_backend(a, b)
+        T::fast_mul_sub_backend(self, a, b)
     }
 
     /// Fused multiply-negate-add. Computes `-(self * a) + b`.
@@ -979,7 +973,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_mul_neg_add(self, a: Self, b: Self) -> Self {
-        self.fast_mul_neg_add_backend(a, b)
+        T::fast_mul_neg_add_backend(self, a, b)
     }
 
     /// Fused multiply-negate-sub. Computes `-(self * a) - b`.
@@ -990,7 +984,7 @@ where
     #[inline]
     #[must_use]
     pub fn fast_mul_neg_sub(self, a: Self, b: Self) -> Self {
-        self.fast_mul_neg_sub_backend(a, b)
+        T::fast_mul_neg_sub_backend(self, a, b)
     }
 
     /// Calculates Euclidean division, the matching function for
@@ -1049,7 +1043,7 @@ where
     #[inline]
     #[must_use]
     pub fn powf_simd(self, n: Self) -> Self {
-        self.powf_simd_backend(n)
+        T::powf_simd_backend(self, n)
     }
 
     /// Returns the square root of a number for each input element.
@@ -1060,7 +1054,7 @@ where
     #[inline]
     #[must_use]
     pub fn sqrt(self) -> Self {
-        self.sqrt_backend()
+        T::sqrt_backend(self)
     }
 
     /// Returns `e^(self)`, (the exponential function) for each input element.
@@ -1073,7 +1067,7 @@ where
     #[inline]
     #[must_use]
     pub fn exp(self) -> Self {
-        self.exp_backend()
+        T::exp_backend(self)
     }
 
     /// Returns `2^(self)` for each input element.
@@ -1086,7 +1080,7 @@ where
     #[inline]
     #[must_use]
     pub fn exp2(self) -> Self {
-        self.exp2_backend()
+        T::exp2_backend(self)
     }
 
     /// Returns the natural logarithm of a number for each input element.
@@ -1099,7 +1093,7 @@ where
     #[inline]
     #[must_use]
     pub fn ln(self) -> Self {
-        self.ln_backend()
+        T::ln_backend(self)
     }
 
     /// Returns the base 2 logarithm of a number for each input element.
@@ -1138,7 +1132,7 @@ where
     #[inline]
     #[must_use]
     pub fn cbrt(self) -> Self {
-        self.cbrt_backend()
+        T::cbrt_backend(self)
     }
 
     /// Computes the sine of a number (in radians) for each input element.
@@ -1195,7 +1189,7 @@ where
     #[inline]
     #[must_use]
     pub fn asin(self) -> Self {
-        self.asin_backend()
+        T::asin_backend(self)
     }
 
     /// Computes the arccosine of a number for each input element. Return
@@ -1210,7 +1204,7 @@ where
     #[inline]
     #[must_use]
     pub fn acos(self) -> Self {
-        self.acos_backend()
+        T::acos_backend(self)
     }
 
     /// Computes the arctangent of a number for each input element. Return
@@ -1224,7 +1218,7 @@ where
     #[inline]
     #[must_use]
     pub fn atan(self) -> Self {
-        self.atan_backend()
+        T::atan_backend(self)
     }
 
     /// Computes the four quadrant arctangent of each element of `self` (`y`)
@@ -1245,7 +1239,7 @@ where
     #[inline]
     #[must_use]
     pub fn atan2(self, other: Self) -> Self {
-        self.atan2_backend(other)
+        T::atan2_backend(self, other)
     }
 
     /// Simultaneously computes the sine and cosine of a number `x` for each
@@ -1259,7 +1253,7 @@ where
     #[inline]
     #[must_use]
     pub fn sin_cos(self) -> (Self, Self) {
-        self.sin_cos_backend()
+        T::sin_cos_backend(self)
     }
 
     /// Simultaneously computes the arcsine and arccosine of a number `x` for
@@ -1273,7 +1267,7 @@ where
     #[inline]
     #[must_use]
     pub fn asin_acos(self) -> (Self, Self) {
-        self.asin_acos_backend()
+        T::asin_acos_backend(self)
     }
 
     /// Returns `e^(self) - 1` for each input element in a way that is
@@ -1287,7 +1281,7 @@ where
     #[inline]
     #[must_use]
     pub fn exp_m1(self) -> Self {
-        self.exp_m1_backend()
+        T::exp_m1_backend(self)
     }
 
     /// Returns `ln(1+n)` (natural logarithm) for each input element more
@@ -1301,7 +1295,7 @@ where
     #[inline]
     #[must_use]
     pub fn ln_1p(self) -> Self {
-        self.ln_1p_backend()
+        T::ln_1p_backend(self)
     }
 
     /// Returns the hyperbolic sine (`(e^self - e^(-self))/2`) for each input
@@ -1315,7 +1309,7 @@ where
     #[inline]
     #[must_use]
     pub fn sinh(self) -> Self {
-        self.sinh_backend()
+        T::sinh_backend(self)
     }
 
     /// Returns the hyperbolic cosine (`(e^self + e^(-self))/2`) for each
@@ -1329,7 +1323,7 @@ where
     #[inline]
     #[must_use]
     pub fn cosh(self) -> Self {
-        self.cosh_backend()
+        T::cosh_backend(self)
     }
 
     /// Returns the hyperbolic tangent (`sinh(self)/cosh(self)`) for each
@@ -1343,7 +1337,7 @@ where
     #[inline]
     #[must_use]
     pub fn tanh(self) -> Self {
-        self.tanh_backend()
+        T::tanh_backend(self)
     }
 
     /// Returns a [mask] that checks if each element is infinity (either
@@ -1479,7 +1473,7 @@ macro_rules! float {
             add,
             AddAssign,
             add_assign,
-            add_backend,
+            $T::add_backend,
             /// Computes addition for the scalar `self` and each element of `rhs`,
             /// returning a SIMD vector.
             ///
@@ -1491,7 +1485,7 @@ macro_rules! float {
             sub,
             SubAssign,
             sub_assign,
-            sub_backend,
+            $T::sub_backend,
             /// Computes subtraction for the scalar `self` and each element of `rhs`,
             /// returning a SIMD vector.
             ///
@@ -1503,7 +1497,7 @@ macro_rules! float {
             mul,
             MulAssign,
             mul_assign,
-            mul_backend,
+            $T::mul_backend,
             /// Computes multiplication for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
             ///
@@ -1515,7 +1509,7 @@ macro_rules! float {
             div,
             DivAssign,
             div_assign,
-            div_backend,
+            $T::div_backend,
             /// Computes division for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
             ///
@@ -1527,7 +1521,7 @@ macro_rules! float {
             rem,
             RemAssign,
             rem_assign,
-            rem_backend,
+            $T::rem_backend,
             /// Computes the remainder for the scalar `self` and each element of
             /// `rhs`, returning a SIMD vector.
             ///
@@ -1539,7 +1533,7 @@ macro_rules! float {
             bitand,
             BitAndAssign,
             bitand_assign,
-            bitand_backend,
+            $T::bitand_backend,
             /// Computes bitwise AND for the scalar `self` and each element of `rhs`,
             /// returning a SIMD vector.
             ///
@@ -1552,7 +1546,7 @@ macro_rules! float {
             bitor,
             BitOrAssign,
             bitor_assign,
-            bitor_backend,
+            $T::bitor_backend,
             /// Computes bitwise OR for the scalar `self` and each element of `rhs`,
             /// returning a SIMD vector.
             ///
@@ -1565,7 +1559,7 @@ macro_rules! float {
             bitxor,
             BitXorAssign,
             bitxor_assign,
-            bitxor_backend,
+            $T::bitxor_backend,
             /// Computes bitwise XOR for the scalar `self` and each element of `rhs`,
             /// returning a SIMD vector.
             ///
@@ -1577,152 +1571,138 @@ macro_rules! float {
 float!(f32);
 float!(f64);
 
+generate_t_backend_trait! {
+#[generate_t_backend_trait(TSimdFloatBackend)]
 /// Defines the internal implementations of functions applicable to SIMD vectors
 /// of floats.
-pub(crate) trait SimdFloatBackend: Sized {
-    fn neg_backend(self) -> Self;
+pub(crate) trait SimdFloatBackend<T, const N: usize>: Sized
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    fn neg_backend(self) -> Simd<T, N>;
 
-    fn not_backend(self) -> Self;
+    fn not_backend(self) -> Simd<T, N>;
 
-    fn add_backend(self, rhs: Self) -> Self;
+    fn add_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn sub_backend(self, rhs: Self) -> Self;
+    fn sub_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn mul_backend(self, rhs: Self) -> Self;
+    fn mul_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn div_backend(self, rhs: Self) -> Self;
+    fn div_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn rem_backend(self, rhs: Self) -> Self;
+    fn rem_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn bitand_backend(self, rhs: Self) -> Self;
+    fn bitand_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn bitor_backend(self, rhs: Self) -> Self;
+    fn bitor_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn bitxor_backend(self, rhs: Self) -> Self;
+    fn bitxor_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn reduce_add_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
+    fn reduce_add_backend(self) -> T;
 
-    fn reduce_mul_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
+    fn reduce_mul_backend(self) -> T;
 
-    fn bitselect_backend(self, if_one: Self, if_zero: Self) -> Self;
-
-    #[expect(clippy::wrong_self_convention)]
-    fn is_nan_backend(self) -> Self;
+    fn bitselect_backend(self, if_one: Simd<T, N>, if_zero: Simd<T, N>) -> Simd<T, N>;
 
     #[expect(clippy::wrong_self_convention)]
-    fn is_infinite_backend(self) -> Self;
+    fn is_nan_backend(self) -> Simd<T, N>;
 
     #[expect(clippy::wrong_self_convention)]
-    fn is_finite_backend(self) -> Self;
+    fn is_infinite_backend(self) -> Simd<T, N>;
 
     #[expect(clippy::wrong_self_convention)]
-    fn is_sign_positive_backend(self) -> Self;
+    fn is_finite_backend(self) -> Simd<T, N>;
 
-    fn recip_backend(self) -> Self;
+    #[expect(clippy::wrong_self_convention)]
+    fn is_sign_positive_backend(self) -> Simd<T, N>;
 
-    fn recip_sqrt_backend(self) -> Self;
+    fn recip_backend(self) -> Simd<T, N>;
 
-    fn max_backend(self, rhs: Self) -> Self;
+    fn recip_sqrt_backend(self) -> Simd<T, N>;
 
-    fn fast_max_backend(self, rhs: Self) -> Self;
+    fn max_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn min_backend(self, rhs: Self) -> Self;
+    fn fast_max_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn fast_min_backend(self, rhs: Self) -> Self;
+    fn min_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn clamp_backend(self, min: Self, max: Self) -> Self;
+    fn fast_min_backend(self, rhs: Simd<T, N>) -> Simd<T, N>;
 
-    fn fast_clamp_backend(self, min: Self, max: Self) -> Self;
+    fn clamp_backend(self, min: Simd<T, N>, max: Simd<T, N>) -> Simd<T, N>;
 
-    fn reduce_max_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
+    fn fast_clamp_backend(self, min: Simd<T, N>, max: Simd<T, N>) -> Simd<T, N>;
 
-    fn fast_reduce_max_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
+    fn reduce_max_backend(self) -> T;
 
-    fn reduce_min_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
+    fn fast_reduce_max_backend(self) -> T;
 
-    fn fast_reduce_min_backend(self) -> Self::T
-    where
-        Self: SimdInternalAssociatedTypes;
+    fn reduce_min_backend(self) -> T;
 
-    fn abs_backend(self) -> Self;
+    fn fast_reduce_min_backend(self) -> T;
 
-    fn floor_backend(self) -> Self;
+    fn abs_backend(self) -> Simd<T, N>;
 
-    fn ceil_backend(self) -> Self;
+    fn floor_backend(self) -> Simd<T, N>;
 
-    fn round_backend(self) -> Self;
+    fn ceil_backend(self) -> Simd<T, N>;
 
-    fn round_int_backend(self) -> Self::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::SignedT>;
+    fn round_backend(self) -> Simd<T, N>;
 
-    fn fast_round_int_backend(self) -> Self::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::SignedT>;
+    fn round_int_backend(self) -> Simd<T::Signed, N>;
 
-    fn round_ties_even_backend(self) -> Self;
+    fn fast_round_int_backend(self) -> Simd<T::Signed, N>;
 
-    fn trunc_backend(self) -> Self;
+    fn round_ties_even_backend(self) -> Simd<T, N>;
 
-    fn trunc_int_backend(self) -> Self::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::SignedT>;
+    fn trunc_backend(self) -> Simd<T, N>;
 
-    fn fast_trunc_int_backend(self) -> Self::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes + SupportSimdOf<Self::SignedT>;
+    fn trunc_int_backend(self) -> Simd<T::Signed, N>;
 
-    fn fast_mul_add_backend(self, a: Self, b: Self) -> Self;
+    fn fast_trunc_int_backend(self) -> Simd<T::Signed, N>;
 
-    fn fast_mul_sub_backend(self, a: Self, b: Self) -> Self;
+    fn fast_mul_add_backend(self, a: Simd<T, N>, b: Simd<T, N>) -> Simd<T, N>;
 
-    fn fast_mul_neg_add_backend(self, a: Self, b: Self) -> Self;
+    fn fast_mul_sub_backend(self, a: Simd<T, N>, b: Simd<T, N>) -> Simd<T, N>;
 
-    fn fast_mul_neg_sub_backend(self, a: Self, b: Self) -> Self;
+    fn fast_mul_neg_add_backend(self, a: Simd<T, N>, b: Simd<T, N>) -> Simd<T, N>;
 
-    fn powf_simd_backend(self, n: Self) -> Self;
+    fn fast_mul_neg_sub_backend(self, a: Simd<T, N>, b: Simd<T, N>) -> Simd<T, N>;
 
-    fn sqrt_backend(self) -> Self;
+    fn powf_simd_backend(self, n: Simd<T, N>) -> Simd<T, N>;
 
-    fn exp_backend(self) -> Self;
+    fn sqrt_backend(self) -> Simd<T, N>;
 
-    fn exp2_backend(self) -> Self;
+    fn exp_backend(self) -> Simd<T, N>;
 
-    fn ln_backend(self) -> Self;
+    fn exp2_backend(self) -> Simd<T, N>;
 
-    fn cbrt_backend(self) -> Self;
+    fn ln_backend(self) -> Simd<T, N>;
 
-    fn asin_backend(self) -> Self;
+    fn cbrt_backend(self) -> Simd<T, N>;
 
-    fn acos_backend(self) -> Self;
+    fn asin_backend(self) -> Simd<T, N>;
 
-    fn atan_backend(self) -> Self;
+    fn acos_backend(self) -> Simd<T, N>;
 
-    fn atan2_backend(self, x: Self) -> Self;
+    fn atan_backend(self) -> Simd<T, N>;
 
-    fn sin_cos_backend(self) -> (Self, Self);
+    fn atan2_backend(self, x: Simd<T, N>) -> Simd<T, N>;
 
-    fn asin_acos_backend(self) -> (Self, Self);
+    fn sin_cos_backend(self) -> (Simd<T, N>, Simd<T, N>);
 
-    fn exp_m1_backend(self) -> Self;
+    fn asin_acos_backend(self) -> (Simd<T, N>, Simd<T, N>);
 
-    fn ln_1p_backend(self) -> Self;
+    fn exp_m1_backend(self) -> Simd<T, N>;
 
-    fn sinh_backend(self) -> Self;
+    fn ln_1p_backend(self) -> Simd<T, N>;
 
-    fn cosh_backend(self) -> Self;
+    fn sinh_backend(self) -> Simd<T, N>;
 
-    fn tanh_backend(self) -> Self;
+    fn cosh_backend(self) -> Simd<T, N>;
+
+    fn tanh_backend(self) -> Simd<T, N>;
+}
 }
 
 /// In order for the generic SIMD float API to work, [`SimdFloatBackend`] is
@@ -1735,10 +1715,9 @@ pub(crate) trait SimdFloatBackend: Sized {
 /// This means that non-floats do need some implementation of
 /// [`SimdFloatBackend`]. This block is a dummy implementation for all
 /// non-floats that fills functions with [`unreachable!`].
-impl<T, const N: usize> SimdFloatBackend for Simd<T, N>
+impl<T, const N: usize> SimdFloatBackend<T, N> for Simd<T, N>
 where
-    T: SimdElement + NotPrimitiveFloat,
-    Simd<T, N>: SupportedSimd,
+    T: SimdElement + NotPrimitiveFloat + SupportsLaneCount<N>,
 {
     fn abs_backend(self) -> Self {
         unreachable!()
@@ -1818,30 +1797,16 @@ where
     fn fast_mul_sub_backend(self, _: Self, _: Self) -> Self {
         unreachable!()
     }
-    fn fast_reduce_max_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn fast_reduce_max_backend(self) -> T {
         unreachable!()
     }
-    fn fast_reduce_min_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn fast_reduce_min_backend(self) -> T {
         unreachable!()
     }
-    fn fast_round_int_backend(self) -> <Self as SimdInternalAssociatedTypes>::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::SignedT>,
-    {
+    fn fast_round_int_backend(self) -> Simd<T::Signed, N> {
         unreachable!()
     }
-    fn fast_trunc_int_backend(self) -> <Self as SimdInternalAssociatedTypes>::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::SignedT>,
-    {
+    fn fast_trunc_int_backend(self) -> Simd<T::Signed, N> {
         unreachable!()
     }
     fn floor_backend(self) -> Self {
@@ -1889,28 +1854,16 @@ where
     fn recip_sqrt_backend(self) -> Self {
         unreachable!()
     }
-    fn reduce_add_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_add_backend(self) -> T {
         unreachable!()
     }
-    fn reduce_max_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_max_backend(self) -> T {
         unreachable!()
     }
-    fn reduce_min_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_min_backend(self) -> T {
         unreachable!()
     }
-    fn reduce_mul_backend(self) -> <Self as SimdInternalAssociatedTypes>::T
-    where
-        Self: SimdInternalAssociatedTypes,
-    {
+    fn reduce_mul_backend(self) -> T {
         unreachable!()
     }
     fn rem_backend(self, _: Self) -> Self {
@@ -1919,11 +1872,7 @@ where
     fn round_backend(self) -> Self {
         unreachable!()
     }
-    fn round_int_backend(self) -> <Self as SimdInternalAssociatedTypes>::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::SignedT>,
-    {
+    fn round_int_backend(self) -> Simd<T::Signed, N> {
         unreachable!()
     }
     fn round_ties_even_backend(self) -> Self {
@@ -1947,11 +1896,7 @@ where
     fn trunc_backend(self) -> Self {
         unreachable!()
     }
-    fn trunc_int_backend(self) -> <Self as SimdInternalAssociatedTypes>::SignedSimd
-    where
-        Self: SimdInternalAssociatedTypes
-            + SupportSimdOf<<Self as SimdInternalAssociatedTypes>::SignedT>,
-    {
+    fn trunc_int_backend(self) -> Simd<T::Signed, N> {
         unreachable!()
     }
 }

@@ -18,15 +18,15 @@ use core::ops::{
 };
 
 use crate::{
-    Simd, SupportedSimd, primitive_traits::PrimitiveFloatOrInteger, simd_float::SimdFloatBackend,
-    simd_integer::SimdIntegerBackend,
+    Simd, SupportsLaneCount, primitive_traits::PrimitiveFloatOrInteger,
+    simd_float::TSimdFloatBackend, simd_integer::TSimdIntegerBackend,
 };
 
 impl_unary_operator!(
     T: PrimitiveFloatOrInteger,
     Neg,
     neg,
-    neg_backend,
+    Simd::<T, N>::neg_backend,
     /// Computes negation for each element of `self`.
     ///
     /// For floats, this always returns the precise result, simply flipping the
@@ -41,7 +41,7 @@ impl_unary_operator!(
     T: PrimitiveFloatOrInteger,
     Not,
     not,
-    not_backend,
+    Simd::<T, N>::not_backend,
     /// Computes bitwise NOT for each element of `self`.
     ///
     /// For floats, this computes bitwise NOT, even though the `!` operator is
@@ -59,7 +59,7 @@ impl_binary_operator!(
     add,
     AddAssign,
     add_assign,
-    add_backend,
+    Simd::<T, N>::add_backend,
     /// Computes addition for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -87,7 +87,7 @@ impl_binary_operator!(
     sub,
     SubAssign,
     sub_assign,
-    sub_backend,
+    Simd::<T, N>::sub_backend,
     /// Computes subtraction for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -115,7 +115,7 @@ impl_binary_operator!(
     mul,
     MulAssign,
     mul_assign,
-    mul_backend,
+    Simd::<T, N>::mul_backend,
     /// Computes multiplication for each element of `self` and the
     /// corresponding element of `rhs`.
     ///
@@ -144,7 +144,7 @@ impl_binary_operator!(
     div,
     DivAssign,
     div_assign,
-    div_backend,
+    Simd::<T, N>::div_backend,
     /// Computes division for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -180,7 +180,7 @@ impl_binary_operator!(
     rem,
     RemAssign,
     rem_assign,
-    rem_backend,
+    Simd::<T, N>::rem_backend,
     /// Computes the remainder for each element of `self` and the
     /// corresponding element of `rhs`.
     ///
@@ -217,7 +217,7 @@ impl_binary_operator!(
     bitand,
     BitAndAssign,
     bitand_assign,
-    bitand_backend,
+    Simd::<T, N>::bitand_backend,
     /// Computes bitwise AND for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -245,7 +245,7 @@ impl_binary_operator!(
     bitor,
     BitOrAssign,
     bitor_assign,
-    bitor_backend,
+    Simd::<T, N>::bitor_backend,
     /// Computes bitwise OR for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -273,7 +273,7 @@ impl_binary_operator!(
     bitxor,
     BitXorAssign,
     bitxor_assign,
-    bitxor_backend,
+    Simd::<T, N>::bitxor_backend,
     /// Computes bitwise XOR for each element of `self` and the corresponding
     /// element of `rhs`.
     ///
@@ -298,8 +298,8 @@ impl_binary_operator!(
 
 impl<T, const N: usize, Rhs> core::iter::Sum<Rhs> for Simd<T, N>
 where
-    T: PrimitiveFloatOrInteger,
-    Simd<T, N>: SupportedSimd + AddAssign<Rhs>,
+    T: PrimitiveFloatOrInteger + SupportsLaneCount<N>,
+    Simd<T, N>: AddAssign<Rhs>,
 {
     /// Computes the sum of multiple SIMD vectors for each lane.
     ///
@@ -321,8 +321,8 @@ where
 
 impl<T, const N: usize, Rhs> core::iter::Product<Rhs> for Simd<T, N>
 where
-    T: PrimitiveFloatOrInteger,
-    Simd<T, N>: SupportedSimd + MulAssign<Rhs>,
+    T: PrimitiveFloatOrInteger + SupportsLaneCount<N>,
+    Simd<T, N>: MulAssign<Rhs>,
 {
     /// Computes the product of multiple SIMD vectors for each lane.
     ///
@@ -350,8 +350,7 @@ macro_rules! impl_formatting_trait {
         /// traits.
         impl<T, const N: usize> $Trait for Simd<T, N>
         where
-            T: PrimitiveFloatOrInteger,
-            Simd<T, N>: SupportedSimd,
+            T: PrimitiveFloatOrInteger + SupportsLaneCount<N>,
         {
             #[allow(clippy::missing_inline_in_public_items)]
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
@@ -383,51 +382,50 @@ impl_formatting_trait!(core::fmt::UpperHex);
 #[expect(private_bounds)]
 impl<T, const N: usize> Simd<T, N>
 where
-    T: PrimitiveFloatOrInteger,
-    Simd<T, N>: SupportedSimd,
+    T: PrimitiveFloatOrInteger + SupportsLaneCount<N>,
 {
     #[inline]
     fn neg_backend(self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::neg_backend(self)
+            <T as TSimdFloatBackend<T, N>>::neg_backend(self)
         } else {
-            SimdIntegerBackend::neg_backend(self)
+            <T as TSimdIntegerBackend<T, N>>::neg_backend(self)
         }
     }
 
     #[inline]
     fn not_backend(self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::not_backend(self)
+            <T as TSimdFloatBackend<T, N>>::not_backend(self)
         } else {
-            SimdIntegerBackend::not_backend(self)
+            <T as TSimdIntegerBackend<T, N>>::not_backend(self)
         }
     }
 
     #[inline]
     fn add_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::add_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::add_backend(self, rhs)
         } else {
-            SimdIntegerBackend::add_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::add_backend(self, rhs)
         }
     }
 
     #[inline]
     fn sub_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::sub_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::sub_backend(self, rhs)
         } else {
-            SimdIntegerBackend::sub_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::sub_backend(self, rhs)
         }
     }
 
     #[inline]
     fn mul_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::mul_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::mul_backend(self, rhs)
         } else {
-            SimdIntegerBackend::mul_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::mul_backend(self, rhs)
         }
     }
 
@@ -435,9 +433,9 @@ where
     #[track_caller]
     fn div_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::div_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::div_backend(self, rhs)
         } else {
-            SimdIntegerBackend::div_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::div_backend(self, rhs)
         }
     }
 
@@ -445,36 +443,36 @@ where
     #[track_caller]
     fn rem_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::rem_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::rem_backend(self, rhs)
         } else {
-            SimdIntegerBackend::rem_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::rem_backend(self, rhs)
         }
     }
 
     #[inline]
     fn bitand_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::bitand_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::bitand_backend(self, rhs)
         } else {
-            SimdIntegerBackend::bitand_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::bitand_backend(self, rhs)
         }
     }
 
     #[inline]
     fn bitor_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::bitor_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::bitor_backend(self, rhs)
         } else {
-            SimdIntegerBackend::bitor_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::bitor_backend(self, rhs)
         }
     }
 
     #[inline]
     fn bitxor_backend(self, rhs: Self) -> Self {
         if T::IS_FLOAT {
-            SimdFloatBackend::bitxor_backend(self, rhs)
+            <T as TSimdFloatBackend<T, N>>::bitxor_backend(self, rhs)
         } else {
-            SimdIntegerBackend::bitxor_backend(self, rhs)
+            <T as TSimdIntegerBackend<T, N>>::bitxor_backend(self, rhs)
         }
     }
 }

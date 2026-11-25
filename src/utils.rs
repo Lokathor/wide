@@ -4,6 +4,205 @@ use bytemuck::cast;
 
 use crate::SimdElement;
 
+/// A macro applied on a SIMD-backend trait definition, that generates a version
+/// of the trait that is implemented for `T` instead of `Simd<T, N>`.
+///
+/// This exists because the `SupportsLaneCount<N>` trait cannot add bounds such
+/// as `Simd<Self, N>: SimdBackend<Self, N>` directly, because Rust does not
+/// properly support such implied bounds.
+///
+/// Thus, `SupportsLaneCount<N>` uses these generated traits that are
+/// implemented for `T` and have blanket implementations for any `T` and `N`
+/// where the original trait is implemented, e.g.
+/// `impl<T, const N: usize> TSimdBackend<T, N> for T where Simd<T, N>: SimdBackend<T, N>`.
+///
+/// # Limitations
+///
+/// - Backend-trait items cannot use the `Self` type. Instead, write
+///   `Simd<T, N>` directly. The `self` parameter does work.
+///
+/// # Attribute macro
+///
+/// If Rust stabilizes support for declarative attribute macros, this macro
+/// should switch to that. That will enable formatting for backend-trait
+/// definitions.
+macro_rules! generate_t_backend_trait {
+    (
+        @helper_arm
+        after_input_tokens_already_emitted(TTrait = $TTrait:ident)
+
+        $(#[$_trait_meta:meta])*
+        $vis:vis trait $Trait:ident<T, const N: usize>: Sized
+        where
+            T: $TraitTBound:ident + SupportsLaneCount<N> $(,)?
+        {
+            $(type $Inner:ident: Copy;)?
+            $(
+                $(#[$_fn_meta:meta])*
+                fn $fn:ident
+                $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),* $(,)?>)?
+                ($($param:ident $(: $ParamTy:ty)?),* $(,)?)
+                $(-> $OutputTy:ty)?
+                $(where T: $FnTBound:path $(,)? $_body:block)?
+                $(;)?
+            )*
+        }
+    ) => {
+        /// A version of
+        #[doc = concat!("[`", stringify!($Trait), "<T, N>`]")]
+        /// that is implemented for `T` instead of [`Simd<T, N>`].
+        ///
+        /// This trait exists because the [`SupportsLaneCount<N>`] trait cannot
+        /// add the bound
+        #[doc = concat!("`Simd<Self, N>: ", stringify!($Trait), "<Self, N>`")]
+        /// directly, because Rust does not properly support such implied
+        /// bounds.
+        ///
+        /// Thus, [`SupportsLaneCount<N>`] uses
+        #[doc = concat!("[`", stringify!($TTrait), "<T, N>`],")]
+        /// which is implemented for `T` and has a blanket implementation for
+        /// any
+        #[doc = concat!("`Simd<T, N>: ", stringify!($Trait), "<T, N>`.")]
+        $vis trait $TTrait<T, const N: usize> {
+            $(type $Inner: Copy;)?
+            $(
+                // This segment must be its own macro arm, because functions
+                // with/without the `self` parameter need different handling.
+                generate_t_backend_trait!(
+                    @helper_arm
+                    emit_t_backend_trait_fn(TraitTBound = $TraitTBound)
+
+                    fn $fn
+                    $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                    ($($param $(: $ParamTy)?),*)
+                    $(-> $OutputTy)?
+                    $(where T: $FnTBound)?;
+                );
+            )*
+        }
+
+        impl<T, const N: usize> $TTrait<T, N> for T
+        where
+            T: $TraitTBound + SupportsLaneCount<N>,
+            Simd<T, N>: $Trait<T, N>,
+        {
+            $(type $Inner = <Simd<T, N> as $Trait<T, N>>::Inner;)?
+            $(
+                // This segment must be its own macro arm, because functions
+                // with/without the `self` parameter need different handling.
+                generate_t_backend_trait!(
+                    @helper_arm
+                    emit_t_backend_trait_impl_fn(Trait = $Trait)
+
+                    fn $fn
+                    $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                    ($($param $(: $ParamTy)?),*)
+                    $(-> $OutputTy)?
+                    $(where T: $FnTBound)?;
+                );
+            )*
+        }
+    };
+
+    // Helper arms that match functions with the `self` parameter
+
+    (
+        @helper_arm
+        emit_t_backend_trait_fn(TraitTBound = $TraitTBound:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        (self $(, $param:ident: $ParamTy:ty)*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[track_caller]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        (this: Simd<T, N> $(, $param: $ParamTy)*)
+        $(-> $OutputTy)?
+        where
+            T: $TraitTBound + SupportsLaneCount<N> $(+ $FnTBound)?;
+    };
+
+    (
+        @helper_arm
+        emit_t_backend_trait_impl_fn(Trait = $Trait:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        (self $(, $param:ident: $ParamTy:ty)*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[inline]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        (this: Simd<T, N> $(, $param: $ParamTy)*)
+        $(-> $OutputTy)?
+        $(where T: $FnTBound,)?
+        {
+            $Trait::<T, N>::$fn
+            $(::<$($CONST_PARAM),*>)?
+            (this $(, $param)*)
+        }
+    };
+
+    // Helper arms that match functions without the `self` parameter
+
+    (
+        @helper_arm
+        emit_t_backend_trait_fn(TraitTBound = $TraitTBound:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        ($($param:ident: $ParamTy:ty),*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[track_caller]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        ($($param: $ParamTy),*)
+        $(-> $OutputTy)?
+        where
+            T: $TraitTBound + SupportsLaneCount<N> $(+ $FnTBound)?;
+    };
+
+    (
+        @helper_arm
+        emit_t_backend_trait_impl_fn(Trait = $Trait:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        ($($param:ident: $ParamTy:ty),*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[inline]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        ($($param: $ParamTy),*)
+        $(-> $OutputTy)?
+        $(where T: $FnTBound,)?
+        {
+            <Simd<T, N> as $Trait<T, N>>::$fn
+            $(::<$($CONST_PARAM),*>)?
+            ($($param),*)
+        }
+    };
+
+    // This is the root arm. All other arms are helpers.
+    (#[generate_t_backend_trait($TTrait:ident)] $($tt:tt)*) => {
+        $($tt)*
+        generate_t_backend_trait!(
+            @helper_arm
+            after_input_tokens_already_emitted(TTrait = $TTrait)
+            $($tt)*
+        );
+    };
+}
+
 /// Utilities for primitive float types used in `simd_float.rs`.
 ///
 /// This trait simply wraps existing float functionality so that it is
@@ -145,6 +344,11 @@ macro_rules! safe_target_feature {
             safe_target_feature! { Self = $Self, $body }
         }
     };
+    (impl $Trait:ident<$Arg0:tt, $Arg1:tt> for $Self:ident $body:tt) => {
+        impl $Trait<$Arg0, $Arg1> for $Self {
+            safe_target_feature! { Self = $Self, $body }
+        }
+    };
 
     (
         Self = $Self:ty,
@@ -257,32 +461,30 @@ macro_rules! pick {
 }
 
 macro_rules! impl_unary_operator {
-  (T: $ElementBound:ident, $Op:ident, $op:ident, $op_backend:ident, $(#[$doc:meta])*) => {
+  (T: $ElementBound:ident, $Op:ident, $op:ident, $backend:path, $(#[$doc:meta])*) => {
     impl<T, const N: usize> $Op for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
       fn $op(self) -> Self::Output {
-        self.$op_backend()
+        $backend(self)
       }
     }
 
     impl<T, const N: usize> $Op for &Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Simd<T, N>;
 
       $(#[$doc])*
       #[inline]
       fn $op(self) -> Self::Output {
-        self.$op_backend()
+        $backend(*self)
       }
     }
   }
@@ -300,167 +502,155 @@ macro_rules! impl_binary_operator {
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $op_backend:ident,
+    $backend:path,
     $(#[$doc:meta])*,
     $(#[$doc_scalar:meta])*
   ) => {
     impl<T, const N: usize> $Op for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: Self) -> Self::Output {
-        self.$op_backend(rhs)
+        $backend(self, rhs)
       }
     }
 
     impl<T, const N: usize> $Op<T> for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Self;
 
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: T) -> Self::Output {
-        self.$op_backend(Self::splat(rhs))
+        $backend(self, Self::splat(rhs))
       }
     }
 
     impl<T, const N: usize> $OpAssign for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: Self) {
-        *self = self.$op_backend(rhs);
+        *self = $backend(*self, rhs);
       }
     }
 
     impl<T, const N: usize> $OpAssign<T> for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       $(#[$doc_scalar])*
       #[inline]
       fn $op_assign(&mut self, rhs: T) {
-        *self = self.$op_backend(Self::splat(rhs));
+        *self = $backend(*self, Self::splat(rhs));
       }
     }
 
     impl<T, const N: usize> $Op<&Self> for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &Self) -> Self::Output {
-        self.$op_backend(*rhs)
+        $backend(self, *rhs)
       }
     }
 
     impl<T, const N: usize> $Op<&T> for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Self;
 
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: &T) -> Self::Output {
-        self.$op_backend(Self::splat(*rhs))
+        $backend(self, Self::splat(*rhs))
       }
     }
 
     impl<T, const N: usize> $OpAssign<&Self> for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &Self) {
-        *self = (*self).$op_backend(*rhs);
+        *self = $backend(*self, *rhs);
       }
     }
 
     impl<T, const N: usize> $OpAssign<&T> for Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       $(#[$doc_scalar])*
       #[inline]
       fn $op_assign(&mut self, rhs: &T) {
-        *self = self.$op_backend(Self::splat(*rhs));
+        *self = $backend(*self, Self::splat(*rhs));
       }
     }
 
     impl<T, const N: usize> $Op<Simd<T, N>> for &Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Simd<T, N>;
 
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: Simd<T, N>) -> Self::Output {
-        (*self).$op_backend(rhs)
+        $backend(*self, rhs)
       }
     }
 
     impl<T, const N: usize> $Op<T> for &Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Simd<T, N>;
 
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: T) -> Self::Output {
-        self.$op_backend(Simd::<T, N>::splat(rhs))
+        $backend(*self, Simd::<T, N>::splat(rhs))
       }
     }
 
     impl<T, const N: usize> $Op<&Simd<T, N>> for &Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Simd<T, N>;
 
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &Simd<T, N>) -> Self::Output {
-        self.$op_backend(*rhs)
+        $backend(*self, *rhs)
       }
     }
 
     impl<T, const N: usize> $Op<&T> for &Simd<T, N>
     where
-        T: $ElementBound,
-        Simd<T, N>: SupportedSimd,
+        T: $ElementBound + SupportsLaneCount<N>,
     {
       type Output = Simd<T, N>;
 
       $(#[$doc_scalar])*
       #[inline]
       fn $op(self, rhs: &T) -> Self::Output {
-        self.$op_backend(Simd::<T, N>::splat(*rhs))
+        $backend(*self, Simd::<T, N>::splat(*rhs))
       }
     }
   }
@@ -486,58 +676,58 @@ macro_rules! impl_binary_operator_for_scalar {
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $op_backend:ident,
+    $backend:path,
     $(#[$scalar_doc:meta])*
   ) => {
     impl<const N: usize> $Op<Simd<$T, N>> for $T
     where
-        Simd<$T, N>: SupportedSimd,
+        $T: SupportsLaneCount<N>,
     {
       type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: Simd<$T, N>) -> Self::Output {
-        Simd::<$T, N>::splat(self).$op_backend(rhs)
+        $backend(Simd::<$T, N>::splat(self), rhs)
       }
     }
 
     impl<const N: usize> $Op<&Simd<$T, N>> for $T
     where
-        Simd<$T, N>: SupportedSimd,
+        $T: SupportsLaneCount<N>,
     {
       type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &Simd<$T, N>) -> Self::Output {
-        Simd::<$T, N>::splat(self).$op_backend(*rhs)
+        $backend(Simd::<$T, N>::splat(self), *rhs)
       }
     }
 
     impl<const N: usize> $Op<Simd<$T, N>> for &$T
     where
-        Simd<$T, N>: SupportedSimd,
+        $T: SupportsLaneCount<N>,
     {
       type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: Simd<$T, N>) -> Self::Output {
-        Simd::<$T, N>::splat(*self).$op_backend(rhs)
+        $backend(Simd::<$T, N>::splat(*self), rhs)
       }
     }
 
     impl<const N: usize> $Op<&Simd<$T, N>> for &$T
     where
-        Simd<$T, N>: SupportedSimd,
+        $T: SupportsLaneCount<N>,
     {
       type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
       fn $op(self, rhs: &Simd<$T, N>) -> Self::Output {
-        Simd::<$T, N>::splat(*self).$op_backend(*rhs)
+        $backend(Simd::<$T, N>::splat(*self), *rhs)
       }
     }
   }
