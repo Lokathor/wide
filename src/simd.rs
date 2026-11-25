@@ -599,12 +599,7 @@ macro_rules! define_simd {
     ///
     /// This function is used because type-aliases do not support tuple-struct
     /// construction syntax.
-    ///
-    /// TODO(generics): Decide if this function should be removed in favor of
-    /// constructing non-`Self` SIMD types using `Simd(inner)` instead of
-    /// `{simd-type}(Inner)`. Wait until the generics API is ready to be merged
-    /// onto `main`, only then remove this function if decided so (wait to avoid
-    /// merge conflicts with `main`).
+    #[inline(always)]
     pub(crate) fn $Simd(inner: <$Simd as SimdBackend<$T, $N>>::Inner) -> $Simd {
       Simd(inner)
     }
