@@ -169,15 +169,6 @@ pub trait SimdAssociatedTypes: Sealed {
     type Bytes: Copy;
 }
 
-/// A sealed trait for SIMD element types that support mask operations.
-///
-/// All current SIMD element types implement this. However, it is possible that
-/// in the future, there will be SIMD element types that do not satisfy
-/// [`Pod`]-like requirements, and thus cannot support the existing mask
-/// operations.
-#[expect(private_bounds)]
-pub trait MaskOps: Sealed {}
-
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
@@ -563,21 +554,6 @@ impl SimdElement for usize {
     type Unsigned = usize;
     type Signed = isize;
 }
-
-impl MaskOps for f32 {}
-impl MaskOps for f64 {}
-impl MaskOps for i8 {}
-impl MaskOps for i16 {}
-impl MaskOps for i32 {}
-impl MaskOps for i64 {}
-impl MaskOps for i128 {}
-impl MaskOps for isize {}
-impl MaskOps for u8 {}
-impl MaskOps for u16 {}
-impl MaskOps for u32 {}
-impl MaskOps for u64 {}
-impl MaskOps for u128 {}
-impl MaskOps for usize {}
 
 macro_rules! define_simd {
   (
@@ -1042,9 +1018,7 @@ where
 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        // Use `all_backend` and not `all` in order to ignore the `T: MaskOps`
-        // bound
-        T::all_backend(self.simd_eq(*other))
+        self.simd_eq(*other).all()
     }
 }
 
@@ -1161,8 +1135,8 @@ impl_formatting_trait!(core::fmt::UpperExp);
 
 impl<T, const N: usize, U> Select<Simd<U, N>> for Simd<T, N>
 where
-    T: SimdElement + MaskOps + SupportsLaneCount<N>,
-    U: SimdElement<Unsigned = T::Unsigned> + MaskOps + SupportsLaneCount<N>,
+    T: SimdElement + SupportsLaneCount<N>,
+    U: SimdElement<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
 {
     #[inline]
     fn select(self, if_true: Simd<U, N>, if_false: Simd<U, N>) -> Simd<U, N> {
@@ -1620,7 +1594,6 @@ where
     #[must_use]
     pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
     where
-        T: MaskOps,
         Self: Select<Output>,
     {
         Select::select(self, if_true, if_false)
@@ -1641,10 +1614,7 @@ where
     #[inline]
     #[must_use]
     #[doc(alias("movemask", "move_mask"))]
-    pub fn to_bitmask(self) -> <Self as SimdAssociatedTypes>::Bitmask
-    where
-        T: MaskOps,
-    {
+    pub fn to_bitmask(self) -> <Self as SimdAssociatedTypes>::Bitmask {
         T::to_bitmask_backend(self)
     }
 
@@ -1657,10 +1627,7 @@ where
     /// [mask]: crate#masks
     #[inline]
     #[must_use]
-    pub fn any(self) -> bool
-    where
-        T: MaskOps,
-    {
+    pub fn any(self) -> bool {
         T::any_backend(self)
     }
 
@@ -1673,10 +1640,7 @@ where
     /// [mask]: crate#masks
     #[inline]
     #[must_use]
-    pub fn all(self) -> bool
-    where
-        T: MaskOps,
-    {
+    pub fn all(self) -> bool {
         T::all_backend(self)
     }
 
@@ -1689,10 +1653,7 @@ where
     /// [mask]: crate#masks
     #[inline]
     #[must_use]
-    pub fn none(self) -> bool
-    where
-        T: MaskOps,
-    {
+    pub fn none(self) -> bool {
         !self.any()
     }
 
@@ -1813,10 +1774,7 @@ where
     )]
     #[inline]
     #[must_use]
-    pub fn blend(self, if_true: Self, if_false: Self) -> Self
-    where
-        T: MaskOps,
-    {
+    pub fn blend(self, if_true: Self, if_false: Self) -> Self {
         self.select(if_true, if_false)
     }
 

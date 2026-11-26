@@ -8,7 +8,7 @@
 //! may be moved back to the `simd_*.rs` modules.
 
 use crate::{
-    MaskOps, SimdElement,
+    SimdElement,
     utils::{PrimitiveFloatUtils, PrimitiveIntegerUtils},
 };
 
@@ -40,7 +40,6 @@ use crate::{
 #[expect(private_bounds)]
 pub trait PrimitiveFloat:
     SimdElement
-    + MaskOps
     + PartialOrd
     + PrimitiveFloatOrInteger
     + FloatIntegerDisjointMarker<Marker = f32>
@@ -88,7 +87,6 @@ pub trait PrimitiveFloat:
 #[expect(private_bounds)]
 pub trait PrimitiveInteger:
     SimdElement
-    + MaskOps
     + Ord
     + PrimitiveFloatOrInteger
     + FloatIntegerDisjointMarker<Marker = u32>
