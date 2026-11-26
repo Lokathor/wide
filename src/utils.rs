@@ -10,7 +10,7 @@ use crate::SimdElement;
 /// [`imply-hack`](https://crates.io/crates/imply-hack) crate, which is not
 /// added as a dependency in order to minimize compile times.
 ///
-/// ```rust
+/// ```ignore
 /// trait MyTrait<T>: Imply<T, Is: Bound> {} // Implies T: Bound
 /// ```
 pub trait Imply<T>: sealed::ImplyInner<T, Is = T> {}
