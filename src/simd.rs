@@ -5,7 +5,7 @@ use core::mem::{transmute, transmute_copy};
 use crate::{
     PrimitiveSigned, PrimitiveUnsigned, simd_float::TSimdFloatBackend,
     simd_integer::TSimdIntegerBackend, simd_signed::TSimdSignedBackend,
-    simd_unsigned::TSimdUnsignedBackend,
+    simd_unsigned::TSimdUnsignedBackend, utils::Imply,
 };
 
 /// TODO(generics): Add documentation and explain how to use SIMD vectors.
@@ -72,6 +72,7 @@ pub trait SimdElement: Sealed + Copy {
 pub trait SupportsLaneCount<const N: usize>:
     SimdElement<Unsigned: SupportsLaneCountBase<N>, Signed: SupportsLaneCountBase<N>>
     + SupportsLaneCountBase<N>
+    + Imply<LaneCount<N>, Is: SupportedLaneCount>
 {
 }
 
@@ -81,6 +82,7 @@ impl<T, const N: usize> SupportsLaneCount<N> for T where
     // `SupportsLaneCount` definition above.
     T: SimdElement<Unsigned: SupportsLaneCountBase<N>, Signed: SupportsLaneCountBase<N>>
         + SupportsLaneCountBase<N>
+        + Imply<LaneCount<N>, Is: SupportedLaneCount>
 {
 }
 
@@ -143,6 +145,23 @@ trait SupportsLaneCountBase<const N: usize>:
     + TSimdUnsignedBackend<Self, N>
     + TSimdAssociatedTypesBackend<Self, N>
 {
+}
+
+/// A marker type representing the `N` in [`Simd<T, N>`].
+///
+/// This is used in [`SupportsLaneCount<N>`] to imply that the internal bound
+/// `LaneCount<N>: SupportedLaneCount` holds. That bound is used to specialize
+/// [`SimdAssociatedTypes::Bitmask`] for each `N`, while telling the compiler
+/// that it does not depend on `T`.
+#[doc(hidden)]
+pub struct LaneCount<const N: usize>;
+
+trait SupportedLaneCount: LaneCountAssociatedTypesBackend {}
+
+#[doc(hidden)]
+pub trait LaneCountAssociatedTypesBackend {
+    #[doc(hidden)]
+    type Bitmask: PrimitiveUnsigned;
 }
 
 /// Exposes associated types of [`Simd<T, N>`].
@@ -570,6 +589,32 @@ impl SimdElement for usize {
     type Signed = isize;
 }
 
+impl SupportedLaneCount for LaneCount<2> {}
+impl SupportedLaneCount for LaneCount<4> {}
+impl SupportedLaneCount for LaneCount<8> {}
+impl SupportedLaneCount for LaneCount<16> {}
+impl SupportedLaneCount for LaneCount<32> {}
+impl SupportedLaneCount for LaneCount<64> {}
+
+impl LaneCountAssociatedTypesBackend for LaneCount<2> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<4> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<8> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<16> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<32> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<64> {
+    type Bitmask = u64;
+}
+
 impl Zeroable for f32 {}
 impl Zeroable for f64 {}
 impl Zeroable for i8 {}
@@ -613,8 +658,6 @@ macro_rules! define_simd {
     impl SupportsLaneCountBase<$N> for $T {}
 
     impl TSimdAssociatedTypesBackend<$T, $N> for $T {
-        type Bitmask = $Bitmask;
-
         type Bytes = [u8; size_of::<Simd<$T, $N>>()];
     }
 
@@ -1428,7 +1471,7 @@ impl<T, const N: usize> SimdAssociatedTypes for Simd<T, N>
 where
     T: SimdElement + SupportsLaneCount<N>,
 {
-    type Bitmask = <T as TSimdAssociatedTypesBackend<T, N>>::Bitmask;
+    type Bitmask = <LaneCount<N> as LaneCountAssociatedTypesBackend>::Bitmask;
     type Bytes = <T as TSimdAssociatedTypesBackend<T, N>>::Bytes;
 }
 
@@ -1942,8 +1985,6 @@ where
 
 #[doc(hidden)]
 pub trait TSimdAssociatedTypesBackend<T, const N: usize> {
-    #[doc(hidden)]
-    type Bitmask: PrimitiveUnsigned;
     #[doc(hidden)]
     type Bytes: Copy;
 }
