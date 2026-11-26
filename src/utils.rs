@@ -4,6 +4,29 @@ use bytemuck::cast;
 
 use crate::SimdElement;
 
+/// Creates an implied bound when applied as a supertrait.
+///
+/// This code is copied from the
+/// [`imply-hack`](https://crates.io/crates/imply-hack) crate, which is not
+/// added as a dependency in order to minimize compile times.
+///
+/// ```ignore
+/// trait MyTrait<T>: Imply<T, Is: Bound> {} // Implies T: Bound
+/// ```
+pub trait Imply<T>: sealed::ImplyInner<T, Is = T> {}
+
+impl<T, U> Imply<T> for U {}
+
+mod sealed {
+    pub trait ImplyInner<T> {
+        type Is;
+    }
+
+    impl<T, U> ImplyInner<T> for U {
+        type Is = T;
+    }
+}
+
 /// A macro applied on a SIMD-backend trait definition, that generates a version
 /// of the trait that is implemented for `T` instead of `Simd<T, N>`.
 ///
