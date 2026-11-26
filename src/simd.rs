@@ -147,6 +147,12 @@ trait SupportsLaneCountBase<const N: usize>:
 {
 }
 
+#[doc(hidden)]
+pub trait TSimdAssociatedTypesBackend<T, const N: usize> {
+    #[doc(hidden)]
+    type Bytes: Copy;
+}
+
 /// A marker type representing the `N` in [`Simd<T, N>`].
 ///
 /// This is used in [`SupportsLaneCount<N>`] to imply that the internal bound
@@ -1919,12 +1925,6 @@ where
 
     fn extract_const_backend<const INDEX: usize>(self) -> T;
 }
-}
-
-#[doc(hidden)]
-pub trait TSimdAssociatedTypesBackend<T, const N: usize> {
-    #[doc(hidden)]
-    type Bytes: Copy;
 }
 
 trait Sealed {}
