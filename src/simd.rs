@@ -271,6 +271,11 @@ pub trait ShuffleExt: Sealed {
     /// This is always the type of SIMD vector contained in the array.
     type Output;
 
+    /// The `T` in [`Simd<T, N>`].
+    ///
+    /// Is is used for the trait bound in [`Self::shuffle_zeroing`].
+    type T;
+
     /// Returns a SIMD vector whose elements are selected from multiple input
     /// vectors using the corresponding runtime `indices`.
     ///
@@ -310,8 +315,9 @@ pub trait ShuffleExt: Sealed {
     /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
     /// select values from `self[1]`, etc.
     ///
-    /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
-    /// corresponding result element is the number zero.
+    /// If an index is out of bounds (greater than or equal to `N * INPUTS`),
+    /// the corresponding result element is the all-zeros bit pattern, which is
+    /// numeric `0` for integers and numeric `0.0` for floats.
     ///
     /// # Example
     ///
@@ -327,7 +333,9 @@ pub trait ShuffleExt: Sealed {
     /// assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 0.0, 101.0]));
     /// ```
     #[must_use]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
+    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output
+    where
+        Self::T: Zeroable;
 
     /// Returns a SIMD vector whose elements are selected from multiple input
     /// vectors using the corresponding runtime `indices`.
@@ -1178,19 +1186,23 @@ where
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
+    type T = T;
 
     #[inline]
-    fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_2_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_2_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_wrapping_2_backend(self, indices)
     }
 }
@@ -1201,19 +1213,23 @@ where
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
+    type T = T;
 
     #[inline]
-    fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_3_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_3_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_wrapping_3_backend(self, indices)
     }
 }
@@ -1224,19 +1240,23 @@ where
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
+    type T = T;
 
     #[inline]
-    fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_4_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_4_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_wrapping_4_backend(self, indices)
     }
 }
@@ -1730,14 +1750,18 @@ where
     /// the corresponding runtime `indices`.
     ///
     /// If an index is out of bounds, the corresponding result element is
-    /// the number zero.
+    /// the all-zeros bit pattern, which is numeric `0` for integers and numeric
+    /// `0.0` for floats.
     ///
     /// Equivalent to
     /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
     /// with a zero fallback.
     #[inline]
     #[must_use]
-    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self {
+    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_backend(self, indices)
     }
 
