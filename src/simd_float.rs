@@ -681,7 +681,7 @@ where
     /// Creates a SIMD vector from a native-endian byte array.
     ///
     /// Note that this takes `[u8; size_of::<Self>()]`, but it is
-    /// written as `Self::Bytes` due to language limitations.
+    /// written as `Self::ByteArray` due to language limitations.
     ///
     /// The bytes are interpreted as the raw memory representation of the
     /// vector. This is equivalent to the `from_ne_bytes` functions on
@@ -692,27 +692,31 @@ where
     /// [`to_ne_bytes`]: Self::to_ne_bytes
     #[inline]
     #[must_use]
-    pub const fn from_ne_bytes(bytes: <Self as SimdAssociatedTypes>::Bytes) -> Self {
+    pub const fn from_ne_bytes(bytes: <Self as SimdAssociatedTypes>::ByteArray) -> Self {
         // SAFETY: `Self` accepts all bit-patterns and only contains
         // initialized memory, and the byte array has the same size.
-        unsafe { core::mem::transmute_copy::<<Self as SimdAssociatedTypes>::Bytes, Self>(&bytes) }
+        unsafe {
+            core::mem::transmute_copy::<<Self as SimdAssociatedTypes>::ByteArray, Self>(&bytes)
+        }
     }
 
     /// Returns the raw memory representation of `self` as a native-endian
     /// byte array.
     ///
     /// Note that this returns `[u8; size_of::<Self>()]`, but it is
-    /// written as `Self::Bytes` due to language limitations.
+    /// written as `Self::ByteArray` due to language limitations.
     ///
     /// This is the inverse of [`from_ne_bytes`].
     ///
     /// [`from_ne_bytes`]: Self::from_ne_bytes
     #[inline]
     #[must_use]
-    pub const fn to_ne_bytes(self) -> <Self as SimdAssociatedTypes>::Bytes {
+    pub const fn to_ne_bytes(self) -> <Self as SimdAssociatedTypes>::ByteArray {
         // SAFETY: `Self` accepts all bit-patterns and only contains
         // initialized memory, and the byte array has the same size.
-        unsafe { core::mem::transmute_copy::<Self, <Self as SimdAssociatedTypes>::Bytes>(&self) }
+        unsafe {
+            core::mem::transmute_copy::<Self, <Self as SimdAssociatedTypes>::ByteArray>(&self)
+        }
     }
 
     /// Bitwise selection.

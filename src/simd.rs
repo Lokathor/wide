@@ -150,7 +150,7 @@ trait SupportsLaneCountBase<const N: usize>:
 #[doc(hidden)]
 pub trait TSimdAssociatedTypesBackend<T, const N: usize> {
     #[doc(hidden)]
-    type Bytes: Copy;
+    type ByteArray: Copy;
 }
 
 /// A marker type representing the `N` in [`Simd<T, N>`].
@@ -187,7 +187,7 @@ pub trait SimdAssociatedTypes: Sealed {
     /// A type equal to `[u8; size_of::<Self>()]`.
     ///
     /// This exists since that type cannot be expressed in generic contexts.
-    type Bytes: Copy;
+    type ByteArray: Copy;
 }
 
 /// A marker trait for [`SimdElement`] types that accept the all-zeros bit
@@ -662,7 +662,7 @@ macro_rules! define_supported_simd {
     impl SupportsLaneCountBase<$N> for $T {}
 
     impl TSimdAssociatedTypesBackend<$T, $N> for $T {
-        type Bytes = [u8; size_of::<Simd<$T, $N>>()];
+        type ByteArray = [u8; size_of::<Simd<$T, $N>>()];
     }
 
     $(
@@ -1416,7 +1416,7 @@ where
     T: SimdElement + SupportsLaneCount<N>,
 {
     type Bitmask = <LaneCount<N> as LaneCountAssociatedTypesBackend>::Bitmask;
-    type Bytes = <T as TSimdAssociatedTypesBackend<T, N>>::Bytes;
+    type ByteArray = <T as TSimdAssociatedTypesBackend<T, N>>::ByteArray;
 }
 
 impl<T, const N: usize> Simd<T, N>
