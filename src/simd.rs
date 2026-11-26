@@ -2315,6 +2315,8 @@ mod bytemuck_integration {
 mod serde_integration {
     use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
 
+    use super::*;
+
     impl<T, const N: usize> Serialize for Simd<T, N>
     where
         T: SimdElement + SupportsLaneCount<N> + Serialize,
