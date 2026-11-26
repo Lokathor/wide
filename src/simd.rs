@@ -2,10 +2,6 @@
 
 use core::mem::{transmute, transmute_copy};
 
-use bytemuck::{Pod, Zeroable, pod_align_to, pod_align_to_mut};
-#[cfg(feature = "serde")]
-use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
-
 use crate::{
     PrimitiveSigned, PrimitiveUnsigned, simd_float::TSimdFloatBackend,
     simd_integer::TSimdIntegerBackend, simd_signed::TSimdSignedBackend,
@@ -169,6 +165,17 @@ pub trait SimdAssociatedTypes: Sealed {
     type Bytes: Copy;
 }
 
+/// A marker trait for [`SimdElement`] types that accept the all-zeros bit
+/// pattern.
+///
+/// This is required in [`Simd::shuffle_zeroing`].
+///
+/// This trait represents the same requirement as [`bytemuck::Zeroable`], but
+/// stays separate in order to avoid depending on [`bytemuck`] in `wide`'s
+/// public API.
+#[expect(private_bounds)]
+pub trait Zeroable: Sealed {}
+
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
@@ -264,6 +271,11 @@ pub trait ShuffleExt: Sealed {
     /// This is always the type of SIMD vector contained in the array.
     type Output;
 
+    /// The `T` in [`Simd<T, N>`].
+    ///
+    /// Is is used for the trait bound in [`Self::shuffle_zeroing`].
+    type T;
+
     /// Returns a SIMD vector whose elements are selected from multiple input
     /// vectors using the corresponding runtime `indices`.
     ///
@@ -303,8 +315,9 @@ pub trait ShuffleExt: Sealed {
     /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
     /// select values from `self[1]`, etc.
     ///
-    /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
-    /// corresponding result element is the number zero.
+    /// If an index is out of bounds (greater than or equal to `N * INPUTS`),
+    /// the corresponding result element is the all-zeros bit pattern, which is
+    /// numeric `0` for integers and numeric `0.0` for floats.
     ///
     /// # Example
     ///
@@ -320,7 +333,9 @@ pub trait ShuffleExt: Sealed {
     /// assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 0.0, 101.0]));
     /// ```
     #[must_use]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
+    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output
+    where
+        Self::T: Zeroable;
 
     /// Returns a SIMD vector whose elements are selected from multiple input
     /// vectors using the corresponding runtime `indices`.
@@ -473,8 +488,8 @@ pub trait CmpLe<Rhs = Self> {
 /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
 pub trait AlignTo
 where
-    Self: Pod + Default + PartialEq + From<Self::Elem>,
-    Self::Elem: Pod + Default + PartialEq,
+    Self: bytemuck::Pod + Default + PartialEq + From<Self::Elem>,
+    Self::Elem: bytemuck::Pod + Default + PartialEq,
 {
     /// The element type of this SIMD vector.
     type Elem;
@@ -484,7 +499,7 @@ where
     /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
     #[inline]
     fn simd_align_to(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-        pod_align_to(slice)
+        bytemuck::pod_align_to(slice)
     }
 
     /// A SIMD variant of [`align_to_mut`].
@@ -494,7 +509,7 @@ where
     fn simd_align_to_mut(
         slice: &mut [Self::Elem],
     ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-        pod_align_to_mut(slice)
+        bytemuck::pod_align_to_mut(slice)
     }
 }
 
@@ -554,6 +569,21 @@ impl SimdElement for usize {
     type Unsigned = usize;
     type Signed = isize;
 }
+
+impl Zeroable for f32 {}
+impl Zeroable for f64 {}
+impl Zeroable for i8 {}
+impl Zeroable for i16 {}
+impl Zeroable for i32 {}
+impl Zeroable for i64 {}
+impl Zeroable for i128 {}
+impl Zeroable for isize {}
+impl Zeroable for u8 {}
+impl Zeroable for u16 {}
+impl Zeroable for u32 {}
+impl Zeroable for u64 {}
+impl Zeroable for u128 {}
+impl Zeroable for usize {}
 
 macro_rules! define_simd {
   (
@@ -1156,19 +1186,23 @@ where
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
+    type T = T;
 
     #[inline]
-    fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_2_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_2_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_wrapping_2_backend(self, indices)
     }
 }
@@ -1179,19 +1213,23 @@ where
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
+    type T = T;
 
     #[inline]
-    fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_3_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_3_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_wrapping_3_backend(self, indices)
     }
 }
@@ -1202,19 +1240,23 @@ where
 {
     type Indices = Simd<T::Unsigned, N>;
     type Output = Simd<T, N>;
+    type T = T;
 
     #[inline]
-    fn shuffle(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_4_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_4_backend(self, indices)
     }
 
     #[inline]
-    fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
         T::shuffle_wrapping_4_backend(self, indices)
     }
 }
@@ -1377,7 +1419,7 @@ where
 
 impl<T, const N: usize> AlignTo for Simd<T, N>
 where
-    T: SimdElement + SupportsLaneCount<N> + Pod + Default + PartialEq,
+    T: SimdElement + SupportsLaneCount<N> + bytemuck::Pod + Default + PartialEq,
 {
     type Elem = T;
 }
@@ -1708,14 +1750,18 @@ where
     /// the corresponding runtime `indices`.
     ///
     /// If an index is out of bounds, the corresponding result element is
-    /// the number zero.
+    /// the all-zeros bit pattern, which is numeric `0` for integers and numeric
+    /// `0.0` for floats.
     ///
     /// Equivalent to
     /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
     /// with a zero fallback.
     #[inline]
     #[must_use]
-    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self {
+    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self
+    where
+        T: Zeroable,
+    {
         T::shuffle_zeroing_backend(self, indices)
     }
 
@@ -1807,99 +1853,6 @@ where
     #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
     pub fn unpack_hi(self, other: Self) -> Self {
         self.interleave_high(other)
-    }
-}
-
-// SAFETY: Currently, all SIMD types in this library contain fully initialized
-// memory and accept all bits patterns.
-unsafe impl<T, const N: usize> Zeroable for Simd<T, N> where
-    T: SimdElement + SupportsLaneCount<N> + Zeroable
-{
-}
-
-// SAFETY: Currently, all SIMD types in this library contain fully initialized
-// memory and accept all bits patterns.
-unsafe impl<T, const N: usize> Pod for Simd<T, N> where T: SimdElement + SupportsLaneCount<N> + Pod {}
-
-#[cfg(feature = "serde")]
-impl<T, const N: usize> Serialize for Simd<T, N>
-where
-    T: SimdElement + SupportsLaneCount<N> + Serialize,
-{
-    #[inline]
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde_core::Serializer,
-    {
-        let array = self.as_array();
-        let mut seq = serializer.serialize_tuple(N)?;
-        for e in array {
-            seq.serialize_element(e)?;
-        }
-        seq.end()
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de, T, const N: usize> Deserialize<'de> for Simd<T, N>
-where
-    T: SimdElement + SupportsLaneCount<N> + Deserialize<'de>,
-{
-    #[inline]
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde_core::Deserializer<'de>,
-    {
-        use core::mem::MaybeUninit;
-
-        use serde_core::de::Error;
-
-        struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
-
-        impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
-        where
-            T: SimdElement + Deserialize<'de>,
-        {
-            type Value = [T; N];
-
-            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                formatter.write_str("an array of length {N}")
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
-            where
-                A: serde_core::de::SeqAccess<'de>,
-            {
-                let mut result = [MaybeUninit::uninit(); N];
-
-                for (index, element) in result.iter_mut().enumerate() {
-                    element.write(
-                        seq.next_element()?
-                            .ok_or_else(|| A::Error::invalid_length(index, &self))?,
-                    );
-                }
-
-                // `<[MaybeUninit<T>; N]>::transpose` is unstable
-                // SAFETY: These types represent the same thing
-                let result =
-                    unsafe { transmute_copy::<[MaybeUninit<T>; N], MaybeUninit<[T; N]>>(&result) };
-
-                // SAFETY: If the function has not early-returned already, all
-                // `result` slots have been written to and initialized.
-                let result = unsafe { result.assume_init() };
-
-                if seq.next_element::<T>()?.is_some() {
-                    return Err(A::Error::invalid_length(N + 1, &self));
-                }
-
-                Ok(result)
-            }
-        }
-
-        Ok(Self::from_array(deserializer.deserialize_tuple(
-            N,
-            ArrayVisitor::<T, N>(core::marker::PhantomData),
-        )?))
     }
 }
 
@@ -2340,3 +2293,108 @@ impl Sealed for usize {}
 impl<T, const N: usize> Sealed for [T; N] {}
 
 impl<T, const N: usize> Sealed for Simd<T, N> where T: SimdElement + SupportsLaneCount<N> {}
+
+mod bytemuck_integration {
+    use bytemuck::{Pod, Zeroable};
+
+    use super::*;
+
+    // SAFETY: Currently, all SIMD types in this library contain fully initialized
+    // memory and accept all bits patterns.
+    unsafe impl<T, const N: usize> Zeroable for Simd<T, N> where
+        T: SimdElement + SupportsLaneCount<N> + Zeroable
+    {
+    }
+
+    // SAFETY: Currently, all SIMD types in this library contain fully initialized
+    // memory and accept all bits patterns.
+    unsafe impl<T, const N: usize> Pod for Simd<T, N> where T: SimdElement + SupportsLaneCount<N> + Pod {}
+}
+
+#[cfg(feature = "serde")]
+mod serde_integration {
+    use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
+
+    use super::*;
+
+    impl<T, const N: usize> Serialize for Simd<T, N>
+    where
+        T: SimdElement + SupportsLaneCount<N> + Serialize,
+    {
+        #[inline]
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde_core::Serializer,
+        {
+            let array = self.as_array();
+            let mut seq = serializer.serialize_tuple(N)?;
+            for e in array {
+                seq.serialize_element(e)?;
+            }
+            seq.end()
+        }
+    }
+
+    impl<'de, T, const N: usize> Deserialize<'de> for Simd<T, N>
+    where
+        T: SimdElement + SupportsLaneCount<N> + Deserialize<'de>,
+    {
+        #[inline]
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde_core::Deserializer<'de>,
+        {
+            use core::mem::MaybeUninit;
+
+            use serde_core::de::Error;
+
+            struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
+
+            impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
+            where
+                T: SimdElement + Deserialize<'de>,
+            {
+                type Value = [T; N];
+
+                fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    formatter.write_str("an array of length {N}")
+                }
+
+                fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
+                where
+                    A: serde_core::de::SeqAccess<'de>,
+                {
+                    let mut result = [MaybeUninit::uninit(); N];
+
+                    for (index, element) in result.iter_mut().enumerate() {
+                        element.write(
+                            seq.next_element()?
+                                .ok_or_else(|| A::Error::invalid_length(index, &self))?,
+                        );
+                    }
+
+                    // `<[MaybeUninit<T>; N]>::transpose` is unstable
+                    // SAFETY: These types represent the same thing
+                    let result = unsafe {
+                        transmute_copy::<[MaybeUninit<T>; N], MaybeUninit<[T; N]>>(&result)
+                    };
+
+                    // SAFETY: If the function has not early-returned already, all
+                    // `result` slots have been written to and initialized.
+                    let result = unsafe { result.assume_init() };
+
+                    if seq.next_element::<T>()?.is_some() {
+                        return Err(A::Error::invalid_length(N + 1, &self));
+                    }
+
+                    Ok(result)
+                }
+            }
+
+            Ok(Self::from_array(deserializer.deserialize_tuple(
+                N,
+                ArrayVisitor::<T, N>(core::marker::PhantomData),
+            )?))
+        }
+    }
+}

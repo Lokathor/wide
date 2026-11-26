@@ -8,7 +8,7 @@
 //! may be moved back to the `simd_*.rs` modules.
 
 use crate::{
-    SimdElement,
+    SimdElement, Zeroable,
     utils::{PrimitiveFloatUtils, PrimitiveIntegerUtils},
 };
 
@@ -40,6 +40,7 @@ use crate::{
 #[expect(private_bounds)]
 pub trait PrimitiveFloat:
     SimdElement
+    + Zeroable
     + PartialOrd
     + PrimitiveFloatOrInteger
     + FloatIntegerDisjointMarker<Marker = f32>
@@ -87,6 +88,7 @@ pub trait PrimitiveFloat:
 #[expect(private_bounds)]
 pub trait PrimitiveInteger:
     SimdElement
+    + Zeroable
     + Ord
     + PrimitiveFloatOrInteger
     + FloatIntegerDisjointMarker<Marker = u32>
