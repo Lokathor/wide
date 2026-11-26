@@ -165,6 +165,17 @@ pub trait SimdAssociatedTypes: Sealed {
     type Bytes: Copy;
 }
 
+/// A marker trait for [`SimdElement`] types that accept the all-zeros bit
+/// pattern.
+///
+/// This is required in [`Simd::shuffle_zeroing`].
+///
+/// This trait represents the same requirement as [`bytemuck::Zeroable`], but
+/// stays separate in order to avoid depending on [`bytemuck`] in `wide`'s
+/// public API.
+#[expect(private_bounds)]
+pub trait Zeroable: Sealed {}
+
 /// A trait for lanewise SIMD selection.
 ///
 /// The method [`select`] is used to select lanes from two SIMD values based on
@@ -550,6 +561,21 @@ impl SimdElement for usize {
     type Unsigned = usize;
     type Signed = isize;
 }
+
+impl Zeroable for f32 {}
+impl Zeroable for f64 {}
+impl Zeroable for i8 {}
+impl Zeroable for i16 {}
+impl Zeroable for i32 {}
+impl Zeroable for i64 {}
+impl Zeroable for i128 {}
+impl Zeroable for isize {}
+impl Zeroable for u8 {}
+impl Zeroable for u16 {}
+impl Zeroable for u32 {}
+impl Zeroable for u64 {}
+impl Zeroable for u128 {}
+impl Zeroable for usize {}
 
 macro_rules! define_simd {
   (
