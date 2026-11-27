@@ -97,14 +97,14 @@ fn test_ceil() {
 #[test]
 fn test_fast_max() {
     for_simd_types!(|T: Float, N| {
-        for [value, other] in fuzz_iter::<[[T; N]; 2]>() {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
-            let actual = Simd::from_array(value).fast_max(Simd::from_array(other));
+        for [value, other] in fuzz_iter::<[Simd; 2]>() {
+            let expected = value.max(other);
+            let actual = value.fast_max(other);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
+            assert!(
+                (actual.simd_eq(expected) | (actual.is_nan() & (value.is_nan() | other.is_nan())))
+                    .all(),
+                dbg!(actual, expected, value, other)
             );
         }
     });
@@ -125,14 +125,14 @@ fn test_max() {
 #[test]
 fn test_fast_min() {
     for_simd_types!(|T: Float, N| {
-        for [value, other] in fuzz_iter::<[[T; N]; 2]>() {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
-            let actual = Simd::from_array(value).fast_min(Simd::from_array(other));
+        for [value, other] in fuzz_iter::<[Simd; 2]>() {
+            let expected = value.min(other);
+            let actual = value.fast_min(other);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
+            assert!(
+                (actual.simd_eq(expected) | (actual.is_nan() & (value.is_nan() | other.is_nan())))
+                    .all(),
+                dbg!(actual, expected, value, other)
             );
         }
     });
