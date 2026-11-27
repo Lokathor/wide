@@ -536,14 +536,6 @@ where
     ///
     /// This trait function has been deprecated and replaced by the inherent
     /// function [`Simd::align_from_slice`].
-    ///
-    /// # Panics
-    ///
-    /// In the future, if support for non-power-of-two lane counts is added
-    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
-    ///
-    /// If those types have padding, then this function would incorrectly insert
-    /// input elements into that padding, thus a panic may be added instead.
     #[inline]
     fn simd_align_to(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
         bytemuck::pod_align_to(slice)
@@ -558,14 +550,6 @@ where
     ///
     /// This trait function has been deprecated and replaced by the inherent
     /// function [`Simd::align_from_mut_slice`].
-    ///
-    /// # Panics
-    ///
-    /// In the future, if support for non-power-of-two lane counts is added
-    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
-    ///
-    /// If those types have padding, then this function would incorrectly insert
-    /// input elements into that padding, thus a panic may be added instead.
     #[inline]
     fn simd_align_to_mut(
         slice: &mut [Self::Elem],
@@ -1493,21 +1477,15 @@ where
     /// This is a safe wrapper around
     /// [`<[T]>::align_to`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to),
     /// so this inherits the same guarantees as that method.
-    ///
-    /// # Panics
-    ///
-    /// In the future, if support for non-power-of-two lane counts is added
-    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
-    ///
-    /// If those types have padding, then this function would incorrectly insert
-    /// input elements into that padding, thus a panic may be added instead.
     #[inline]
     #[must_use]
     #[track_caller]
     pub fn align_from_slice(slice: &[T]) -> (&[T], &[Self], &[T]) {
         const {
-            // This panic cannot actually occur, so it is better to remove it
-            // from codegen completely.
+            // This is true for all existing types, but just to make sure, keep
+            // this check for now. If non-power-of-two lane counts are added and
+            // have padding, we may return an empty middle, returning everything
+            // into the prefix instead of panicking.
             assert!(size_of::<Simd<T, N>>() == size_of::<[T; N]>());
         }
 
@@ -1522,21 +1500,15 @@ where
     /// This is a safe wrapper around
     /// [`<[T]>::align_to_mut`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to_mut),
     /// so this inherits the same guarantees as that method.
-    ///
-    /// # Panics
-    ///
-    /// In the future, if support for non-power-of-two lane counts is added
-    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
-    ///
-    /// If those types have padding, then this function would incorrectly insert
-    /// input elements into that padding, thus a panic may be added instead.
     #[inline]
     #[must_use]
     #[track_caller]
     pub fn align_from_mut_slice(slice: &mut [T]) -> (&mut [T], &mut [Self], &mut [T]) {
         const {
-            // This panic cannot actually occur, so it is better to remove it
-            // from codegen completely.
+            // This is true for all existing types, but just to make sure, keep
+            // this check for now. If non-power-of-two lane counts are added and
+            // have padding, we may return an empty middle, returning everything
+            // into the prefix instead of panicking.
             assert!(size_of::<Simd<T, N>>() == size_of::<[T; N]>());
         }
 
