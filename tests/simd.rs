@@ -8,7 +8,7 @@ use wide::{
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
-use crate::utils::{assert, assert_eq, for_simd_types, fuzz_iter};
+use crate::utils::{assert, assert_bit_eq, assert_eq, for_simd_types, fuzz_iter};
 
 #[test]
 fn test_size() {
@@ -80,11 +80,7 @@ fn test_neg() {
             let expected = Simd::from_array(value.map(T::neg));
             let actual = -Simd::from_array(value);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -104,11 +100,7 @@ fn test_not() {
             let expected = Simd::from_array(value.map(|x| T::from_bits(!x.to_bits())));
             let actual = !Simd::from_array(value);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -619,10 +611,7 @@ fn test_bitand() {
             }));
             let actual = Simd::from_array(left) & Simd::from_array(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -648,10 +637,7 @@ fn test_bitor() {
             }));
             let actual = Simd::from_array(left) | Simd::from_array(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -677,10 +663,7 @@ fn test_bitxor() {
             }));
             let actual = Simd::from_array(left) ^ Simd::from_array(right);
 
-            assert!(
-                (0..N).all(|i| actual.to_array()[i].to_bits() == expected.to_array()[i].to_bits()),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -710,10 +693,7 @@ fn test_simd_eq() {
             }));
             let actual = Simd::from_array(left).simd_eq(Simd::from_array(right));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -745,10 +725,7 @@ fn test_simd_eq_scalar() {
             }));
             let actual = Simd::from_array(left).simd_eq(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -783,10 +760,7 @@ fn test_simd_ne() {
             }));
             let actual = Simd::from_array(left).simd_ne(Simd::from_array(right));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -818,10 +792,7 @@ fn test_simd_ne_scalar() {
             }));
             let actual = Simd::from_array(left).simd_ne(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -856,10 +827,7 @@ fn test_simd_lt() {
             }));
             let actual = Simd::from_array(left).simd_lt(Simd::from_array(right));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -894,10 +862,7 @@ fn test_simd_lt_scalar() {
             }));
             let actual = Simd::from_array(left).simd_lt(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -932,10 +897,7 @@ fn test_simd_gt() {
             }));
             let actual = Simd::from_array(left).simd_gt(Simd::from_array(right));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -970,10 +932,7 @@ fn test_simd_gt_scalar() {
             }));
             let actual = Simd::from_array(left).simd_gt(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -1008,10 +967,7 @@ fn test_simd_le() {
             }));
             let actual = Simd::from_array(left).simd_le(Simd::from_array(right));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -1043,10 +999,7 @@ fn test_simd_le_scalar() {
             }));
             let actual = Simd::from_array(left).simd_le(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -1081,10 +1034,7 @@ fn test_simd_ge() {
             }));
             let actual = Simd::from_array(left).simd_ge(Simd::from_array(right));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -1116,10 +1066,7 @@ fn test_simd_ge_scalar() {
             }));
             let actual = Simd::from_array(left).simd_ge(right);
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    left: {left:?}\n   right: {right:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -1154,10 +1101,7 @@ fn test_bitselect() {
             let actual = Simd::from_array(value)
                 .bitselect(Simd::from_array(if_true), Simd::from_array(if_false));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n if_true: {if_true:?}\nif_false: {if_false:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value, if_true, if_false));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -1186,10 +1130,7 @@ fn test_select() {
             let actual = Simd::from_array(mask.map(|b| if b { T::from_bits(!0) } else { 0.0 }))
                 .select(Simd::from_array(if_true), Simd::from_array(if_false));
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n    mask: {mask:?}\n if_true: {if_true:?}\nif_false: {if_false:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(mask, if_true, if_false));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -2305,7 +2246,7 @@ fn test_serde() {
             let deserialized =
                 bincode::deserialize::<Simd>(&serialized).expect("deserializaion panicked");
 
-            assert!((deserialized.simd_eq(value) | deserialized.is_nan() & value.is_nan()).all(),);
+            assert_bit_eq!(deserialized, value);
         }
     });
     for_simd_types!(|T: Integer, N| {

@@ -1,6 +1,6 @@
 use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
-use crate::utils::{assert, assert_eq, for_simd_types, fuzz_iter};
+use crate::utils::{assert, assert_bit_eq, assert_eq, for_simd_types, fuzz_iter};
 
 #[test]
 fn test_reduce_add() {
@@ -39,10 +39,7 @@ fn test_abs() {
             let expected = Simd::from_array(value.map(T::abs));
             let actual = Simd::from_array(value).abs();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(expected, actual, dbg!(value));
         }
     });
 }
@@ -297,10 +294,7 @@ fn test_is_nan() {
                 Simd::from_array(value.map(|x| if x.is_nan() { T::from_bits(!0) } else { 0.0 }));
             let actual = Simd::from_array(value).is_nan();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -313,10 +307,7 @@ fn test_is_finite() {
                 Simd::from_array(value.map(|x| if x.is_finite() { T::from_bits(!0) } else { 0.0 }));
             let actual = Simd::from_array(value).is_finite();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -334,10 +325,7 @@ fn test_is_infinite() {
             }));
             let actual = Simd::from_array(value).is_infinite();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -591,7 +579,7 @@ fn test_flipsign() {
             }));
             let actual = Simd::from_array(value).flipsign(Simd::from_array(sign));
 
-            assert_eq!(actual, expected);
+            assert_bit_eq!(actual, expected);
         }
     });
 }
@@ -609,11 +597,13 @@ fn test_copysign() {
             }));
             let actual = Simd::from_array(value).copysign(Simd::from_array(sign));
 
-            assert_eq!(actual, expected);
+            assert_bit_eq!(actual, expected);
         }
     });
 }
 
+// Note: The tests for `asin` and `acos` rely on `asin_acos`, so this test must
+// not rely on neither.
 #[test]
 fn test_asin_acos() {
     for_simd_types!(|T: Float, N| {
@@ -636,14 +626,11 @@ fn test_asin_acos() {
 #[test]
 fn test_asin() {
     for_simd_types!(|T: Float, N| {
-        for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::asin));
-            let actual = Simd::from_array(value).asin();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.asin_acos().0;
+            let actual = value.asin();
 
-            assert!(
-                (actual - expected).abs().simd_le(6e-7).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -651,14 +638,11 @@ fn test_asin() {
 #[test]
 fn test_acos() {
     for_simd_types!(|T: Float, N| {
-        for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::acos));
-            let actual = Simd::from_array(value).acos();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.asin_acos().1;
+            let actual = value.acos();
 
-            assert!(
-                (actual - expected).abs().simd_le(6e-7).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -695,6 +679,8 @@ fn test_atan2() {
     });
 }
 
+// Note: The tests for `sin` and `cos` rely on `sin_cos`, so this test must not
+// rely on neither.
 #[test]
 fn test_sin_cos() {
     for_simd_types!(|T: Float, N| {
@@ -718,15 +704,11 @@ fn test_sin_cos() {
 #[test]
 fn test_sin() {
     for_simd_types!(|T: Float, N| {
-        for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::sin));
-            let actual = Simd::from_array(value).sin();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.sin_cos().0;
+            let actual = value.sin();
 
-            let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
-            assert!(
-                (actual - expected).abs().simd_le(tol).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -734,15 +716,11 @@ fn test_sin() {
 #[test]
 fn test_cos() {
     for_simd_types!(|T: Float, N| {
-        for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::cos));
-            let actual = Simd::from_array(value).cos();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.sin_cos().1;
+            let actual = value.cos();
 
-            let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
-            assert!(
-                (actual - expected).abs().simd_le(tol).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -973,10 +951,7 @@ fn test_is_sign_positive() {
             }));
             let actual = Simd::from_array(value).is_sign_positive();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -994,10 +969,7 @@ fn test_is_sign_negative() {
             }));
             let actual = Simd::from_array(value).is_sign_negative();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
