@@ -760,15 +760,22 @@ fn test_to_radians() {
 fn test_recip() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::recip));
-            let actual = Simd::from_array(value).recip();
+            // Test against a precise reciprocal, `1.0 / x`, rather than against
+            // an approximate result, `x.recip()`.
+            let expected = value.map(|x| 1.0 / x);
+            let actual = Simd::from_array(value).recip().to_array();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-3)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            for ((actual, expected), value) in actual.into_iter().zip(expected).zip(value) {
+                assert!(
+                    actual.is_sign_negative() == expected.is_sign_negative()
+                        && (float_eq!(
+                            actual,
+                            expected,
+                            max_abs_diff = expected.abs() * 1e-3 + 1e-30
+                        ) || (actual.is_infinite() && value.is_subnormal())),
+                    dbg!(actual, expected, value)
+                );
+            }
         }
     });
 }
@@ -777,15 +784,22 @@ fn test_recip() {
 fn test_recip_sqrt() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(|x| x.sqrt().recip()));
-            let actual = Simd::from_array(value).recip_sqrt();
+            // Test against a precise reciprocal, `1.0 / x`, rather than against
+            // an approximate result, `x.recip()`.
+            let expected = value.map(|x| 1.0 / x.sqrt());
+            let actual = Simd::from_array(value).recip_sqrt().to_array();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-3)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            for ((actual, expected), value) in actual.into_iter().zip(expected).zip(value) {
+                assert!(
+                    actual.is_sign_negative() == expected.is_sign_negative()
+                        && (float_eq!(
+                            actual,
+                            expected,
+                            max_abs_diff = expected.abs() * 1e-3 + 1e-30
+                        ) || (actual.is_infinite() && value.is_subnormal())),
+                    dbg!(actual, expected, value)
+                );
+            }
         }
     });
 }
