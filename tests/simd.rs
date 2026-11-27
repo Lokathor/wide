@@ -8,7 +8,7 @@ use wide::{
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
-use crate::utils::{for_simd_types, fuzz_iter};
+use crate::utils::{assert, assert_eq, for_simd_types, fuzz_iter};
 
 #[test]
 fn test_size() {
@@ -1520,7 +1520,7 @@ fn test_shuffle_const_n2() {
         ($([$I0:literal, $I1:literal]),* $(,)?) => {$(
             assert_eq!(
                 simd.shuffle_consts::<$I0, $I1>(),
-                u64x2::from_array([array[$I0], array[$I1]]),
+                u64x2::from_array([array[$I0], array[$I1]])
             );
         )*};
         ($([$I0:literal]),* $(,)?) => {
@@ -1544,7 +1544,7 @@ fn test_shuffle_const_n4() {
     ($([$I0:literal, $I1:literal, $I2:literal, $I3:literal]),* $(,)?) => {$(
       assert_eq!(
         simd.shuffle_consts::<$I0, $I1, $I2, $I3>(),
-        u32x4::from_array([array[$I0], array[$I1], array[$I2], array[$I3]]),
+        u32x4::from_array([array[$I0], array[$I1], array[$I2], array[$I3]])
       );
     )*};
     ($([$I0:literal, $I1:literal, $I2:literal]),* $(,)?) => {

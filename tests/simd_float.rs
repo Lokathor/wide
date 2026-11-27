@@ -1,6 +1,6 @@
 use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
-use crate::utils::{for_simd_types, fuzz_iter};
+use crate::utils::{assert, assert_eq, for_simd_types, fuzz_iter};
 
 #[test]
 fn test_reduce_add() {

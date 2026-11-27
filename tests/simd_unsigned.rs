@@ -1,4 +1,4 @@
-use crate::utils::{for_simd_types, fuzz_iter};
+use crate::utils::{assert_eq, for_simd_types, fuzz_iter};
 
 #[test]
 fn test_add_signed() {
