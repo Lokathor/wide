@@ -2,10 +2,12 @@ use core::ops::{BitOr, Neg, Not};
 use std::{convert::identity, iter::once};
 
 use bytemuck::cast;
+#[expect(deprecated)]
+use wide::AlignTo;
 use wide::{
-    AlignTo, ShuffleExt, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i16x8, i16x16,
-    i16x32, i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16, u8x32, u8x64, u16x8, u16x16, u16x32,
-    u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
+    ShuffleExt, f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i8x16, i8x32, i16x8, i16x16, i16x32,
+    i32x4, i32x8, i32x16, i64x2, i64x4, i64x8, u8x16, u8x32, u8x64, u16x8, u16x16, u16x32, u32x4,
+    u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
 use crate::utils::{for_simd_types, random_iter, simd_chunks};
@@ -3293,11 +3295,51 @@ fn test_from_slice() {
 }
 
 #[test]
+fn test_align_from_slice() {
+    for_simd_types!(|T, N| {
+        let array = std::array::from_fn::<T, 100, _>(|i| i as T);
+        for start in 0..100 {
+            let slice = &array[start..];
+            let (head, body, tail) = Simd::align_from_slice(slice);
+
+            assert_eq!(head.len() + body.len() * N + tail.len(), slice.len());
+            assert_eq!(head, &slice[..head.len()]);
+            for (i, body_item) in body.iter().enumerate() {
+                let offset = head.len() + i * N;
+                assert_eq!(body_item.as_array(), &slice[offset..offset + N]);
+            }
+            assert_eq!(tail, &slice[head.len() + body.len() * N..]);
+        }
+    });
+}
+
+#[test]
+fn test_align_from_mut_slice() {
+    for_simd_types!(|T, N| {
+        let mut array = std::array::from_fn::<T, 100, _>(|i| i as T);
+        for start in 0..100 {
+            let slice = &identity(array)[start..];
+            #[expect(deprecated)]
+            let (head, body, tail) = Simd::simd_align_to_mut(&mut array[start..]);
+
+            assert_eq!(head.len() + body.len() * N + tail.len(), slice.len());
+            assert_eq!(head, &slice[..head.len()]);
+            for (i, body_item) in body.iter().enumerate() {
+                let offset = head.len() + i * N;
+                assert_eq!(body_item.as_array(), &slice[offset..offset + N]);
+            }
+            assert_eq!(tail, &slice[head.len() + body.len() * N..]);
+        }
+    });
+}
+
+#[test]
 fn test_simd_align_to() {
     for_simd_types!(|T, N| {
         let array = std::array::from_fn::<T, 100, _>(|i| i as T);
         for start in 0..100 {
             let slice = &array[start..];
+            #[expect(deprecated)]
             let (head, body, tail) = Simd::simd_align_to(slice);
 
             assert_eq!(head.len() + body.len() * N + tail.len(), slice.len());
@@ -3317,6 +3359,7 @@ fn test_simd_align_to_mut() {
         let mut array = std::array::from_fn::<T, 100, _>(|i| i as T);
         for start in 0..100 {
             let slice = &identity(array)[start..];
+            #[expect(deprecated)]
             let (head, body, tail) = Simd::simd_align_to_mut(&mut array[start..]);
 
             assert_eq!(head.len() + body.len() * N + tail.len(), slice.len());

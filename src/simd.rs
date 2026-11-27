@@ -508,9 +508,17 @@ pub trait CmpLe<Rhs = Self> {
     fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
 
-/// A trait for SIMD variants of [`align_to`] functions.
+/// A deprecated trait for the SIMD variants of [`align_to`] functions.
+///
+/// This trait has been deprecated and replaced by the inherent functions
+/// [`Simd::align_from_slice`] and [`Simd::align_from_mut_slice`].
 ///
 /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
+#[expect(clippy::deprecated_semver, reason = "TODO(generics): remove this")]
+#[deprecated(
+    since = "TODO(generics) fill this",
+    note = "use the inherent functions `align_from_slice` and `align_from_mut_slice` instead"
+)]
 pub trait AlignTo
 where
     Self: bytemuck::Pod + Default + PartialEq + From<Self::Elem>,
@@ -519,17 +527,45 @@ where
     /// The element type of this SIMD vector.
     type Elem;
 
-    /// A SIMD variant of [`align_to`].
+    /// Splits a slice into a prefix, a middle of aligned SIMD vectors, and a
+    /// suffix.
     ///
-    /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to),
+    /// so this inherits the same guarantees as that method.
+    ///
+    /// This trait function has been deprecated and replaced by the inherent
+    /// function [`Simd::align_from_slice`].
+    ///
+    /// # Panics
+    ///
+    /// In the future, if support for non-power-of-two lane counts is added
+    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
+    ///
+    /// If those types have padding, then this function would incorrectly insert
+    /// input elements into that padding, thus a panic may be added instead.
     #[inline]
     fn simd_align_to(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
         bytemuck::pod_align_to(slice)
     }
 
-    /// A SIMD variant of [`align_to_mut`].
+    /// Splits a mutable slice into a prefix, a middle of aligned SIMD vectors,
+    /// and a suffix.
     ///
-    /// [`align_to_mut`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to_mut
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to_mut`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to_mut),
+    /// so this inherits the same guarantees as that method.
+    ///
+    /// This trait function has been deprecated and replaced by the inherent
+    /// function [`Simd::align_from_mut_slice`].
+    ///
+    /// # Panics
+    ///
+    /// In the future, if support for non-power-of-two lane counts is added
+    /// (e.g., `Simd<f32, 3>`), this function may panic for those types.
+    ///
+    /// If those types have padding, then this function would incorrectly insert
+    /// input elements into that padding, thus a panic may be added instead.
     #[inline]
     fn simd_align_to_mut(
         slice: &mut [Self::Elem],
@@ -1404,6 +1440,7 @@ where
     }
 }
 
+#[expect(deprecated)]
 impl<T, const N: usize> AlignTo for Simd<T, N>
 where
     T: SimdElement + SupportsLaneCount<N> + bytemuck::Pod + Default + PartialEq,
