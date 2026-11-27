@@ -8,7 +8,7 @@ use wide::{
     u32x4, u32x8, u32x16, u64x2, u64x4, u64x8,
 };
 
-use crate::utils::{assert, assert_bit_eq, assert_eq, for_simd_types, fuzz_iter};
+use crate::utils::{assert, assert_bit_eq, assert_eq, assert_float_eq, for_simd_types, fuzz_iter};
 
 #[test]
 fn test_size() {
@@ -120,11 +120,7 @@ fn test_add() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] + right[i]));
             let actual = Simd::from_array(left) + Simd::from_array(right);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -146,7 +142,7 @@ fn test_add_scalar() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] + right));
             let actual = Simd::from_array(left) + right;
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -168,7 +164,7 @@ fn test_scalar_add() {
             let expected = Simd::from_array(std::array::from_fn(|i| left + right[i]));
             let actual = left + Simd::from_array(right);
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -189,11 +185,7 @@ fn test_sub() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] - right[i]));
             let actual = Simd::from_array(left) - Simd::from_array(right);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -215,7 +207,7 @@ fn test_sub_scalar() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] - right));
             let actual = Simd::from_array(left) - right;
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -237,7 +229,7 @@ fn test_scalar_sub() {
             let expected = Simd::from_array(std::array::from_fn(|i| left - right[i]));
             let actual = left - Simd::from_array(right);
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -258,11 +250,7 @@ fn test_mul() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] * right[i]));
             let actual = Simd::from_array(left) * Simd::from_array(right);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -284,7 +272,7 @@ fn test_mul_scalar() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] * right));
             let actual = Simd::from_array(left) * right;
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -306,7 +294,7 @@ fn test_scalar_mul() {
             let expected = Simd::from_array(std::array::from_fn(|i| left * right[i]));
             let actual = left * Simd::from_array(right);
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -327,11 +315,7 @@ fn test_div() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] / right[i]));
             let actual = Simd::from_array(left) / Simd::from_array(right);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -362,7 +346,7 @@ fn test_div_scalar() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] / right));
             let actual = Simd::from_array(left) / right;
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -386,7 +370,7 @@ fn test_scalar_div() {
             let expected = Simd::from_array(std::array::from_fn(|i| left / right[i]));
             let actual = left / Simd::from_array(right);
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -415,11 +399,7 @@ fn test_rem() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] % right[i]));
             let actual = Simd::from_array(left) % Simd::from_array(right);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -450,11 +430,7 @@ fn test_rem_scalar() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i] % right));
             let actual = Simd::from_array(left) % right;
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
@@ -478,11 +454,7 @@ fn test_scalar_rem() {
             let expected = Simd::from_array(std::array::from_fn(|i| left % right[i]));
             let actual = left % Simd::from_array(right);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
     for_simd_types!(|T: Integer, N| {
