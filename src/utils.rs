@@ -2,6 +2,345 @@ use core::ops::{BitAnd, BitXor};
 
 use bytemuck::cast;
 
+use crate::SimdElement;
+
+/// Creates an implied bound when applied as a supertrait.
+///
+/// This code is copied from the
+/// [`imply-hack`](https://crates.io/crates/imply-hack) crate, which is not
+/// added as a dependency in order to minimize compile times.
+///
+/// ```ignore
+/// trait MyTrait<T>: Imply<T, Is: Bound> {} // Implies T: Bound
+/// ```
+pub trait Imply<T>: sealed::ImplyInner<T, Is = T> {}
+
+impl<T, U> Imply<T> for U {}
+
+mod sealed {
+    pub trait ImplyInner<T> {
+        type Is;
+    }
+
+    impl<T, U> ImplyInner<T> for U {
+        type Is = T;
+    }
+}
+
+/// A macro applied on a SIMD-backend trait definition, that generates a version
+/// of the trait that is implemented for `T` instead of `Simd<T, N>`.
+///
+/// This exists because the `SupportsLaneCount<N>` trait cannot add bounds such
+/// as `Simd<Self, N>: SimdBackend<Self, N>` directly, because Rust does not
+/// properly support such implied bounds.
+///
+/// Thus, `SupportsLaneCount<N>` uses these generated traits that are
+/// implemented for `T` and have blanket implementations for any `T` and `N`
+/// where the original trait is implemented, e.g.
+/// `impl<T, const N: usize> TSimdBackend<T, N> for T where Simd<T, N>: SimdBackend<T, N>`.
+///
+/// # Limitations
+///
+/// - Backend-trait items cannot use the `Self` type. Instead, write
+///   `Simd<T, N>` directly. The `self` parameter does work.
+///
+/// # Attribute macro
+///
+/// If Rust stabilizes support for declarative attribute macros, this macro
+/// should switch to that. That will enable formatting for backend-trait
+/// definitions.
+macro_rules! generate_t_backend_trait {
+    (
+        @helper_arm
+        after_input_tokens_already_emitted(TTrait = $TTrait:ident)
+
+        $(#[$_trait_meta:meta])*
+        $vis:vis trait $Trait:ident<T, const N: usize>: Sized
+        where
+            T: $TraitTBound:ident + SupportsLaneCount<N> $(,)?
+        {
+            $(type $Inner:ident: Copy;)?
+            $(
+                $(#[$_fn_meta:meta])*
+                fn $fn:ident
+                $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),* $(,)?>)?
+                ($($param:ident $(: $ParamTy:ty)?),* $(,)?)
+                $(-> $OutputTy:ty)?
+                $(where T: $FnTBound:path $(,)? $_body:block)?
+                $(;)?
+            )*
+        }
+    ) => {
+        /// A version of
+        #[doc = concat!("[`", stringify!($Trait), "<T, N>`]")]
+        /// that is implemented for `T` instead of [`Simd<T, N>`].
+        ///
+        /// This trait exists because the [`SupportsLaneCount<N>`] trait cannot
+        /// add the bound
+        #[doc = concat!("`Simd<Self, N>: ", stringify!($Trait), "<Self, N>`")]
+        /// directly, because Rust does not properly support such implied
+        /// bounds.
+        ///
+        /// Thus, [`SupportsLaneCount<N>`] uses
+        #[doc = concat!("[`", stringify!($TTrait), "<T, N>`],")]
+        /// which is implemented for `T` and has a blanket implementation for
+        /// any
+        #[doc = concat!("`Simd<T, N>: ", stringify!($Trait), "<T, N>`.")]
+        $vis trait $TTrait<T, const N: usize> {
+            $(type $Inner: Copy;)?
+            $(
+                // This segment must be its own macro arm, because functions
+                // with/without the `self` parameter need different handling.
+                generate_t_backend_trait!(
+                    @helper_arm
+                    emit_t_backend_trait_fn(TraitTBound = $TraitTBound)
+
+                    fn $fn
+                    $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                    ($($param $(: $ParamTy)?),*)
+                    $(-> $OutputTy)?
+                    $(where T: $FnTBound)?;
+                );
+            )*
+        }
+
+        impl<T, const N: usize> $TTrait<T, N> for T
+        where
+            T: $TraitTBound + SupportsLaneCount<N>,
+            Simd<T, N>: $Trait<T, N>,
+        {
+            $(type $Inner = <Simd<T, N> as $Trait<T, N>>::Inner;)?
+            $(
+                // This segment must be its own macro arm, because functions
+                // with/without the `self` parameter need different handling.
+                generate_t_backend_trait!(
+                    @helper_arm
+                    emit_t_backend_trait_impl_fn(Trait = $Trait)
+
+                    fn $fn
+                    $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+                    ($($param $(: $ParamTy)?),*)
+                    $(-> $OutputTy)?
+                    $(where T: $FnTBound)?;
+                );
+            )*
+        }
+    };
+
+    // Helper arms that match functions with the `self` parameter
+
+    (
+        @helper_arm
+        emit_t_backend_trait_fn(TraitTBound = $TraitTBound:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        (self $(, $param:ident: $ParamTy:ty)*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[track_caller]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        (this: Simd<T, N> $(, $param: $ParamTy)*)
+        $(-> $OutputTy)?
+        where
+            T: $TraitTBound + SupportsLaneCount<N> $(+ $FnTBound)?;
+    };
+
+    (
+        @helper_arm
+        emit_t_backend_trait_impl_fn(Trait = $Trait:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        (self $(, $param:ident: $ParamTy:ty)*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[inline]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        (this: Simd<T, N> $(, $param: $ParamTy)*)
+        $(-> $OutputTy)?
+        $(where T: $FnTBound,)?
+        {
+            $Trait::<T, N>::$fn
+            $(::<$($CONST_PARAM),*>)?
+            (this $(, $param)*)
+        }
+    };
+
+    // Helper arms that match functions without the `self` parameter
+
+    (
+        @helper_arm
+        emit_t_backend_trait_fn(TraitTBound = $TraitTBound:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        ($($param:ident: $ParamTy:ty),*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[track_caller]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        ($($param: $ParamTy),*)
+        $(-> $OutputTy)?
+        where
+            T: $TraitTBound + SupportsLaneCount<N> $(+ $FnTBound)?;
+    };
+
+    (
+        @helper_arm
+        emit_t_backend_trait_impl_fn(Trait = $Trait:ident)
+
+        fn $fn:ident
+        $(<$(const $CONST_PARAM:ident: $ConstParamTy:ty),*>)?
+        ($($param:ident: $ParamTy:ty),*)
+        $(-> $OutputTy:ty)?
+        $(where T: $FnTBound:path)?;
+    ) => {
+        #[inline]
+        fn $fn
+        $(<$(const $CONST_PARAM: $ConstParamTy),*>)?
+        ($($param: $ParamTy),*)
+        $(-> $OutputTy)?
+        $(where T: $FnTBound,)?
+        {
+            <Simd<T, N> as $Trait<T, N>>::$fn
+            $(::<$($CONST_PARAM),*>)?
+            ($($param),*)
+        }
+    };
+
+    // This is the root arm. All other arms are helpers.
+    (#[generate_t_backend_trait($TTrait:ident)] $($tt:tt)*) => {
+        $($tt)*
+        generate_t_backend_trait!(
+            @helper_arm
+            after_input_tokens_already_emitted(TTrait = $TTrait)
+            $($tt)*
+        );
+    };
+}
+
+/// Utilities for primitive float types used in `simd_float.rs`.
+///
+/// This trait simply wraps existing float functionality so that it is
+/// accessible to the generic context that implements the public SIMD float API.
+pub(crate) trait PrimitiveFloatUtils {
+    const NEG_ZERO: Self;
+    const HALF: Self;
+    const EPSILON: Self;
+    const MIN: Self;
+    const MIN_POSITIVE: Self;
+    const MAX: Self;
+    const NAN: Self;
+    const INFINITY: Self;
+    const NEG_INFINITY: Self;
+
+    const E: Self;
+    const FRAC_1_PI: Self;
+    const FRAC_2_PI: Self;
+    const FRAC_2_SQRT_PI: Self;
+    const FRAC_1_SQRT_2: Self;
+    const FRAC_PI_2: Self;
+    const FRAC_PI_3: Self;
+    const FRAC_PI_4: Self;
+    const FRAC_PI_6: Self;
+    const FRAC_PI_8: Self;
+    const LN_2: Self;
+    const LN_10: Self;
+    const LOG2_E: Self;
+    const LOG10_E: Self;
+    const LOG10_2: Self;
+    const LOG2_10: Self;
+    const PI: Self;
+    const SQRT_2: Self;
+    const TAU: Self;
+
+    const RADIANS_TO_DEGREES_RATIO: Self;
+    const DEGREES_TO_RADIANS_RATIO: Self;
+}
+
+/// Utilities for primitive integer types used in `simd_integer.rs`.
+///
+/// This trait simply wraps existing integer functionality so that it is
+/// accessible to the generic context that implements the public SIMD integer
+/// API.
+pub(crate) trait PrimitiveIntegerUtils: SimdElement {
+    const BITS: u32;
+    const BITS_AS_UNSIGNED: Self::Unsigned;
+
+    const MIN: Self;
+}
+
+macro_rules! float {
+    ($T:ident) => {
+        impl PrimitiveFloatUtils for $T {
+            const NEG_ZERO: Self = -0.0;
+            const HALF: Self = 0.5;
+            const EPSILON: Self = Self::EPSILON;
+            const MIN: Self = Self::MIN;
+            const MIN_POSITIVE: Self = Self::MIN_POSITIVE;
+            const MAX: Self = Self::MAX;
+            const NAN: Self = Self::NAN;
+            const INFINITY: Self = Self::INFINITY;
+            const NEG_INFINITY: Self = Self::NEG_INFINITY;
+
+            const E: Self = core::$T::consts::E;
+            const FRAC_1_PI: Self = core::$T::consts::FRAC_1_PI;
+            const FRAC_2_PI: Self = core::$T::consts::FRAC_2_PI;
+            const FRAC_2_SQRT_PI: Self = core::$T::consts::FRAC_2_SQRT_PI;
+            const FRAC_1_SQRT_2: Self = core::$T::consts::FRAC_1_SQRT_2;
+            const FRAC_PI_2: Self = core::$T::consts::FRAC_PI_2;
+            const FRAC_PI_3: Self = core::$T::consts::FRAC_PI_3;
+            const FRAC_PI_4: Self = core::$T::consts::FRAC_PI_4;
+            const FRAC_PI_6: Self = core::$T::consts::FRAC_PI_6;
+            const FRAC_PI_8: Self = core::$T::consts::FRAC_PI_8;
+            const LN_2: Self = core::$T::consts::LN_2;
+            const LN_10: Self = core::$T::consts::LN_10;
+            const LOG2_E: Self = core::$T::consts::LOG2_E;
+            const LOG10_E: Self = core::$T::consts::LOG10_E;
+            const LOG10_2: Self = core::$T::consts::LOG10_2;
+            const LOG2_10: Self = core::$T::consts::LOG2_10;
+            const PI: Self = core::$T::consts::PI;
+            const SQRT_2: Self = core::$T::consts::SQRT_2;
+            const TAU: Self = core::$T::consts::TAU;
+
+            const RADIANS_TO_DEGREES_RATIO: Self = 180.0 / core::$T::consts::PI;
+            const DEGREES_TO_RADIANS_RATIO: Self = core::$T::consts::PI / 180.0;
+        }
+    };
+}
+float!(f32);
+float!(f64);
+
+macro_rules! integer {
+    ($T:ident) => {
+        impl PrimitiveIntegerUtils for $T {
+            const BITS: u32 = Self::BITS;
+            const BITS_AS_UNSIGNED: Self::Unsigned = Self::BITS as Self::Unsigned;
+
+            const MIN: Self = Self::MIN;
+        }
+    };
+}
+integer!(i8);
+integer!(i16);
+integer!(i32);
+integer!(i64);
+integer!(i128);
+integer!(isize);
+integer!(u8);
+integer!(u16);
+integer!(u32);
+integer!(u64);
+integer!(u128);
+integer!(usize);
+
 /// Modifies an `impl` block such that calling functions with target features
 /// that are guaranteed at compile time does not require an `unsafe` block.
 ///
@@ -25,6 +364,11 @@ macro_rules! safe_target_feature {
     };
     (impl $Trait:ident for $Self:ident $body:tt) => {
         impl $Trait for $Self {
+            safe_target_feature! { Self = $Self, $body }
+        }
+    };
+    (impl $Trait:ident<$Arg0:tt, $Arg1:tt> for $Self:ident $body:tt) => {
+        impl $Trait<$Arg0, $Arg1> for $Self {
             safe_target_feature! { Self = $Self, $body }
         }
     };
@@ -140,475 +484,275 @@ macro_rules! pick {
 }
 
 macro_rules! impl_unary_operator {
-  ($Simd:ident, $Op:ident, $op:ident, $op_backend:ident, $(#[$doc:meta])*) => {
-    impl $Op for $Simd {
+  (T: $ElementBound:ident, $Op:ident, $op:ident, $backend:path, $(#[$doc:meta])*) => {
+    impl<T, const N: usize> $Op for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
       fn $op(self) -> Self::Output {
-        self.$op_backend()
+        $backend(self)
       }
     }
 
-    impl $Op for &$Simd {
-      type Output = $Simd;
+    impl<T, const N: usize> $Op for &Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
+      type Output = Simd<T, N>;
 
       $(#[$doc])*
       #[inline]
       fn $op(self) -> Self::Output {
-        self.$op_backend()
+        $backend(*self)
       }
     }
   }
 }
 
+/// Implements a binary operator of `SIMD x SIMD` and `SIMD x T`.
+///
+/// Binary operators are implemented for `Simd x Simd`, `Simd x T` and
+/// `T x Simd`. This macro implements the first two kinds, and
+/// [`impl_binary_operator_for_scalar!`] implements the third one.
 macro_rules! impl_binary_operator {
   (
-    $T:ident,
-    $Simd:ident,
+    T: $ElementBound:ident,
     $Op:ident,
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $op_backend:ident,
+    $backend:path,
     $(#[$doc:meta])*,
-    $(#[$doc_scalar:meta])*,
-    $(#[$scalar_doc:meta])*
+    $(#[$doc_scalar:meta])*
   ) => {
-    impl $Op for $Simd {
+    impl<T, const N: usize> $Op for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: Self) -> Self::Output {
-        self.$op_backend(rhs)
+        $backend(self, rhs)
       }
     }
 
-    impl $Op<$T> for $Simd {
+    impl<T, const N: usize> $Op<T> for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       type Output = Self;
 
       $(#[$doc_scalar])*
       #[inline]
-      fn $op(self, rhs: $T) -> Self::Output {
-        self.$op_backend(Self::splat(rhs))
+      fn $op(self, rhs: T) -> Self::Output {
+        $backend(self, Self::splat(rhs))
       }
     }
 
-    impl $Op<$Simd> for $T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $Simd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs)
-      }
-    }
-
-    impl $OpAssign for $Simd {
+    impl<T, const N: usize> $OpAssign for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: Self) {
-        *self = self.$op_backend(rhs);
+        *self = $backend(*self, rhs);
       }
     }
 
-    impl $OpAssign<$T> for $Simd {
+    impl<T, const N: usize> $OpAssign<T> for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       $(#[$doc_scalar])*
       #[inline]
-      fn $op_assign(&mut self, rhs: $T) {
-        *self = self.$op_backend(Self::splat(rhs));
+      fn $op_assign(&mut self, rhs: T) {
+        *self = $backend(*self, Self::splat(rhs));
       }
     }
 
-    impl $Op<&Self> for $Simd {
+    impl<T, const N: usize> $Op<&Self> for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       type Output = Self;
 
       $(#[$doc])*
       #[inline]
       fn $op(self, rhs: &Self) -> Self::Output {
-        self.$op_backend(*rhs)
+        $backend(self, *rhs)
       }
     }
 
-    impl $Op<&$T> for $Simd {
+    impl<T, const N: usize> $Op<&T> for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       type Output = Self;
 
       $(#[$doc_scalar])*
       #[inline]
-      fn $op(self, rhs: &$T) -> Self::Output {
-        self.$op_backend(Self::splat(*rhs))
+      fn $op(self, rhs: &T) -> Self::Output {
+        $backend(self, Self::splat(*rhs))
       }
     }
 
-    impl $Op<&$Simd> for $T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$Simd) -> Self::Output {
-        $Simd::splat(self).$op_backend(*rhs)
-      }
-    }
-
-    impl $OpAssign<&Self> for $Simd {
+    impl<T, const N: usize> $OpAssign<&Self> for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       $(#[$doc])*
       #[inline]
       fn $op_assign(&mut self, rhs: &Self) {
-        *self = (*self).$op_backend(*rhs);
+        *self = $backend(*self, *rhs);
       }
     }
 
-    impl $OpAssign<&$T> for $Simd {
+    impl<T, const N: usize> $OpAssign<&T> for Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
       $(#[$doc_scalar])*
       #[inline]
-      fn $op_assign(&mut self, rhs: &$T) {
-        *self = self.$op_backend(Self::splat(*rhs));
+      fn $op_assign(&mut self, rhs: &T) {
+        *self = $backend(*self, Self::splat(*rhs));
       }
     }
 
-    impl $Op<$Simd> for &$Simd {
-      type Output = $Simd;
+    impl<T, const N: usize> $Op<Simd<T, N>> for &Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
+      type Output = Simd<T, N>;
 
       $(#[$doc])*
       #[inline]
-      fn $op(self, rhs: $Simd) -> Self::Output {
-        (*self).$op_backend(rhs)
+      fn $op(self, rhs: Simd<T, N>) -> Self::Output {
+        $backend(*self, rhs)
       }
     }
 
-    impl $Op<$T> for &$Simd {
-      type Output = $Simd;
+    impl<T, const N: usize> $Op<T> for &Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
+      type Output = Simd<T, N>;
 
       $(#[$doc_scalar])*
       #[inline]
-      fn $op(self, rhs: $T) -> Self::Output {
-        self.$op_backend($Simd::splat(rhs))
+      fn $op(self, rhs: T) -> Self::Output {
+        $backend(*self, Simd::<T, N>::splat(rhs))
       }
     }
 
-    impl $Op<$Simd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $Simd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs)
-      }
-    }
-
-    impl $Op<&$Simd> for &$Simd {
-      type Output = $Simd;
+    impl<T, const N: usize> $Op<&Simd<T, N>> for &Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
+      type Output = Simd<T, N>;
 
       $(#[$doc])*
       #[inline]
-      fn $op(self, rhs: &$Simd) -> Self::Output {
-        self.$op_backend(*rhs)
+      fn $op(self, rhs: &Simd<T, N>) -> Self::Output {
+        $backend(*self, *rhs)
       }
     }
 
-    impl $Op<&$T> for &$Simd {
-      type Output = $Simd;
+    impl<T, const N: usize> $Op<&T> for &Simd<T, N>
+    where
+        T: $ElementBound + SupportsLaneCount<N>,
+    {
+      type Output = Simd<T, N>;
 
       $(#[$doc_scalar])*
       #[inline]
-      fn $op(self, rhs: &$T) -> Self::Output {
-        self.$op_backend($Simd::splat(*rhs))
-      }
-    }
-
-    impl $Op<&$Simd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$Simd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(*rhs)
+      fn $op(self, rhs: &T) -> Self::Output {
+        $backend(*self, Simd::<T, N>::splat(*rhs))
       }
     }
   }
 }
 
-macro_rules! impl_shift_operator {
+/// Implements a binary operator of `T x Simd` for SIMD vectors of a given `T`
+/// type.
+///
+/// Binary operators are implemented for `Simd x Simd`, `Simd x T` and
+/// `T x Simd`. This macro implements the third kind, and
+/// [`impl_binary_operator!`] implements the first two.
+///
+/// This is separated from the [`impl_binary_operator!`] macro because unlike
+/// for `SIMD x SIMD` and `SIMD x T`, there are limitations for implementing
+/// `T x SIMD` where it's impossible to define a blanket implementation like
+/// `impl<T, const N: usize> Add<Simd<T, N>> for T` because of orphan rules.
+/// Unlike [`impl_binary_operator!`], this macro only accepts one concrete `T`
+/// type.
+macro_rules! impl_binary_operator_for_scalar {
   (
     $T:ident,
-    $Simd:ident,
-    $UnsignedSimd:ident,
-    $SignedSimd:ident,
     $Op:ident,
     $op:ident,
     $OpAssign:ident,
     $op_assign:ident,
-    $op_backend:ident,
-    $op_scalar_backend:ident,
-    $(#[$doc:meta])*,
-    $(#[$doc_scalar:meta])*,
+    $backend:path,
     $(#[$scalar_doc:meta])*
   ) => {
-    impl $Op<$UnsignedSimd> for $Simd {
-      type Output = Self;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        self.$op_backend(rhs)
-      }
-    }
-
-    impl $Op<$SignedSimd> for $Simd {
-      type Output = Self;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<$UnsignedSimd> for $T {
-      type Output = $Simd;
+    impl<const N: usize> $Op<Simd<$T, N>> for $T
+    where
+        $T: SupportsLaneCount<N>,
+    {
+      type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs)
+      fn $op(self, rhs: Simd<$T, N>) -> Self::Output {
+        $backend(Simd::<$T, N>::splat(self), rhs)
       }
     }
 
-    impl $Op<$SignedSimd> for $T {
-      type Output = $Simd;
+    impl<const N: usize> $Op<&Simd<$T, N>> for $T
+    where
+        $T: SupportsLaneCount<N>,
+    {
+      type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs.cast_unsigned())
+      fn $op(self, rhs: &Simd<$T, N>) -> Self::Output {
+        $backend(Simd::<$T, N>::splat(self), *rhs)
       }
     }
 
-    impl $OpAssign<$UnsignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: $UnsignedSimd) {
-        *self = self.$op_backend(rhs);
-      }
-    }
-
-    impl $OpAssign<$SignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: $SignedSimd) {
-        *self = self.$op_backend(rhs.cast_unsigned());
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for $Simd {
-      type Output = Self;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        self.$op_backend(*rhs)
-      }
-    }
-
-    impl $Op<&$SignedSimd> for $Simd {
-      type Output = Self;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for $T {
-      type Output = $Simd;
+    impl<const N: usize> $Op<Simd<$T, N>> for &$T
+    where
+        $T: SupportsLaneCount<N>,
+    {
+      type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(*rhs)
+      fn $op(self, rhs: Simd<$T, N>) -> Self::Output {
+        $backend(Simd::<$T, N>::splat(*self), rhs)
       }
     }
 
-    impl $Op<&$SignedSimd> for $T {
-      type Output = $Simd;
+    impl<const N: usize> $Op<&Simd<$T, N>> for &$T
+    where
+        $T: SupportsLaneCount<N>,
+    {
+      type Output = Simd<$T, N>;
 
       $(#[$scalar_doc])*
       #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        $Simd::splat(self).$op_backend(rhs.cast_unsigned())
+      fn $op(self, rhs: &Simd<$T, N>) -> Self::Output {
+        $backend(Simd::<$T, N>::splat(*self), *rhs)
       }
     }
-
-    impl $OpAssign<&$UnsignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: &$UnsignedSimd) {
-        *self = self.$op_backend(*rhs);
-      }
-    }
-
-    impl $OpAssign<&$SignedSimd> for $Simd {
-      $(#[$doc])*
-      #[inline]
-      fn $op_assign(&mut self, rhs: &$SignedSimd) {
-        *self = self.$op_backend(rhs.cast_unsigned());
-      }
-    }
-
-    impl $Op<$UnsignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        self.$op_backend(rhs)
-      }
-    }
-
-    impl $Op<$SignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<$UnsignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $UnsignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs)
-      }
-    }
-
-    impl $Op<$SignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: $SignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        self.$op_backend(*rhs)
-      }
-    }
-
-    impl $Op<&$SignedSimd> for &$Simd {
-      type Output = $Simd;
-
-      $(#[$doc])*
-      #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        self.$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    impl $Op<&$UnsignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$UnsignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(*rhs)
-      }
-    }
-
-    impl $Op<&$SignedSimd> for &$T {
-      type Output = $Simd;
-
-      $(#[$scalar_doc])*
-      #[inline]
-      fn $op(self, rhs: &$SignedSimd) -> Self::Output {
-        $Simd::splat(*self).$op_backend(rhs.cast_unsigned())
-      }
-    }
-
-    macro_rules! impl_scalar {
-      ($T2:ident) => {
-        impl $Op<$T2> for $Simd {
-          type Output = Self;
-
-          $(#[$doc_scalar])*
-          #[inline]
-          fn $op(self, rhs: $T2) -> Self::Output {
-            self.$op_scalar_backend(rhs as u32)
-          }
-        }
-
-        impl $OpAssign<$T2> for $Simd {
-          $(#[$doc_scalar])*
-          #[inline]
-          fn $op_assign(&mut self, rhs: $T2) {
-            *self = self.$op_scalar_backend(rhs as u32);
-          }
-        }
-
-        impl $Op<&$T2> for $Simd {
-          type Output = Self;
-
-          $(#[$doc_scalar])*
-          #[inline]
-          fn $op(self, rhs: &$T2) -> Self::Output {
-            self.$op_scalar_backend(*rhs as u32)
-          }
-        }
-
-        impl $OpAssign<&$T2> for $Simd {
-          $(#[$doc_scalar])*
-          #[inline]
-          fn $op_assign(&mut self, rhs: &$T2) {
-            *self = self.$op_scalar_backend(*rhs as u32);
-          }
-        }
-
-        impl $Op<$T2> for &$Simd {
-          type Output = $Simd;
-
-          $(#[$doc_scalar])*
-          #[inline]
-          fn $op(self, rhs: $T2) -> Self::Output {
-            self.$op_scalar_backend(rhs as u32)
-          }
-        }
-
-        impl $Op<&$T2> for &$Simd {
-          type Output = $Simd;
-
-          $(#[$doc_scalar])*
-          #[inline]
-          fn $op(self, rhs: &$T2) -> Self::Output {
-            self.$op_scalar_backend(*rhs as u32)
-          }
-        }
-      }
-    }
-    impl_scalar!(u32);
-    impl_scalar!(i8);
-    impl_scalar!(i16);
-    impl_scalar!(i32);
-    impl_scalar!(i64);
-    impl_scalar!(i128);
-    impl_scalar!(isize);
-    impl_scalar!(u8);
-    impl_scalar!(u16);
-    impl_scalar!(u64);
-    impl_scalar!(u128);
-    impl_scalar!(usize);
   }
 }
 

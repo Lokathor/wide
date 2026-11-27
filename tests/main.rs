@@ -1,3 +1,4 @@
+mod generic_patterns;
 mod simd;
 mod simd_float;
 mod simd_integer;

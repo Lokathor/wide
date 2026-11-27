@@ -1,8 +1,205 @@
 //! Defines the library's types and APIs applicable to arbitrary SIMD vectors.
 
-use bytemuck::{Pod, Zeroable, cast, pod_align_to, pod_align_to_mut};
-#[cfg(feature = "serde")]
-use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
+use core::mem::{transmute, transmute_copy};
+
+use crate::{
+    PrimitiveSigned, PrimitiveUnsigned, simd_float::TSimdFloatBackend,
+    simd_integer::TSimdIntegerBackend, simd_signed::TSimdSignedBackend,
+    simd_unsigned::TSimdUnsignedBackend, utils::Imply,
+};
+
+/// TODO(generics): Add documentation and explain how to use SIMD vectors.
+///
+/// # Layout
+///
+/// TODO(generics): Define this type's precise layout guarantees (size,
+/// alignment, what about non-power-of-two lane counts).
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+pub struct Simd<T, const N: usize>(pub(crate) <T as TSimdBackend<T, N>>::Inner)
+where
+    T: SimdElement + SupportsLaneCount<N>;
+
+/// A trait for types that can be used as SIMD vector elements.
+///
+/// Note that because [`Simd<T, N>`] only supports certain combinations of `T`
+/// and `N`, there may be `T` types that implement [`SimdElement`] but are not
+/// actually supported in any real SIMD type. For example, [`usize`] implements
+/// [`SimdElement`], but does not implement [`SupportsLaneCount<N>`] for any
+/// `N`.
+#[expect(private_bounds)]
+pub trait SimdElement: Sealed + Copy {
+    /// An unsigned integer with the same size as `self`.
+    ///
+    /// For floats and integers, the unsigned type is guaranteed to have their
+    /// exact size. However, it is possible that SIMD element types added in the
+    /// future will not have an exact unsigned integer equivalent, and will use
+    /// a type with a different size.
+    type Unsigned: PrimitiveUnsigned<Signed = Self::Signed>;
+
+    /// A signed integer with the same size as `self`.
+    ///
+    /// This is the signed variant of [`Self::Unsigned`].
+    type Signed: PrimitiveSigned<Unsigned = Self::Unsigned>;
+}
+
+/// A marker trait for [`SimdElement`] types that support a certain lane count.
+///
+/// Due to Rust language limitations, [`Simd<T, N>`] only supports certain
+/// combinations of `T` and `N`. The trait bound `T: SupportsLaneCount<N>` must
+/// be used in generic contexts to make sure [`Simd<T, N>`] is supported.
+///
+/// # Implied bounds
+///
+/// In order to reduce boilerplate in generic code, the bound
+/// `T: SupportsLaneCount<N>` automatically guarantees that
+/// `T::Unsigned: SupportsLaneCount<N>` and `T::Signed: SupportsLaneCount<N>`
+/// hold as well.
+///
+/// # Implementations
+///
+/// - [`f32`] supports `4, 8, 16`
+/// - [`f64`] supports `2, 4, 8`
+/// - [`i8`] supports `16, 32, 64`
+/// - [`i16`] supports `8, 16, 32`
+/// - [`i32`] supports `4, 8, 16`
+/// - [`i64`] supports `2, 4, 8`
+/// - [`u8`] supports `16, 32, 64`
+/// - [`u16`] supports `8, 16, 32`
+/// - [`u32`] supports `4, 8, 16`
+/// - [`u64`] supports `2, 4, 8`
+#[expect(private_bounds)]
+pub trait SupportsLaneCount<const N: usize>:
+    SimdElement<Unsigned: SupportsLaneCountBase<N>, Signed: SupportsLaneCountBase<N>>
+    + SupportsLaneCountBase<N>
+    + Imply<LaneCount<N>, Is: SupportedLaneCount>
+{
+}
+
+#[diagnostic::do_not_recommend]
+impl<T, const N: usize> SupportsLaneCount<N> for T where
+    // This bound should remain identical to the super traits in the
+    // `SupportsLaneCount` definition above.
+    T: SimdElement<Unsigned: SupportsLaneCountBase<N>, Signed: SupportsLaneCountBase<N>>
+        + SupportsLaneCountBase<N>
+        + Imply<LaneCount<N>, Is: SupportedLaneCount>
+{
+}
+
+/// An internal trait supporting [`SupportsLaneCount<N>`] that hacks through a
+/// language limitation.
+///
+/// In the intuitive definition of [`SupportsLaneCount<N>`], the trait would
+/// directly require `T::Unsigned` and `T::Signed` to implement it as well via
+/// associated-type bounds, and it would have concrete implementations:
+///
+/// ```ignore
+/// pub trait SupportsLaneCount<const N: usize>:
+///     SimdElement<Unsigned: SupportsLaneCount<N>, Signed: SupportsLaneCount<N>>
+///     // Plus backend traits
+/// {
+/// }
+///
+/// impl SupportsLaneCount<4> for f32 {}
+/// impl SupportsLaneCount<4> for i32 {}
+/// impl SupportsLaneCount<4> for u32 {}
+/// // Etc
+/// ```
+///
+/// However, this definition is rejected with the error "cycle detected when
+/// computing the implied clauses of `SupportsLaneCount`". The simplest hack to
+/// fix this would be:
+///
+/// ```ignore
+/// pub trait SupportsLaneCount<const N: usize>:
+///     SimdElement<Unsigned: /* Backend traits */, Signed: /* Backend traits */>
+///     // Plus backend traits
+/// {
+/// }
+///
+/// impl<T, const N: usize> SupportsLaneCount<N> for T
+/// where
+///     T: SimdElement<Unsigned: /* Backend traits */, Signed: /* Backend traits */>
+///         // Plus backend traits
+/// ```
+///
+/// This hack avoids cycle errors and still implies that `T::Unsigned` and
+/// `T::Signed` implement `SupportsLaneCount<N>`, because the blanket
+/// implementation is detected for them too in generic contexts.
+///
+/// However, because some backend traits use blanket implementations that
+/// themselves require `T: SupportsLaneCount<N>`, there is a circular condition
+/// that leads to the trait resolver failing to prove that [`Simd<T, N>`] is
+/// well formed.
+///
+/// Thus, we define a second trait, [`SupportsLaneCountBase<N>`], that has
+/// concrete conditionless implementations, so that the circular condition
+/// breaks, and use a blanket implementation for the outer trait,
+/// [`SupportsLaneCount<N>`], so that implied bounds hold.
+trait SupportsLaneCountBase<const N: usize>:
+    SimdElement
+    + TSimdBackend<Self, N>
+    + TSimdFloatBackend<Self, N>
+    + TSimdIntegerBackend<Self, N>
+    + TSimdSignedBackend<Self, N>
+    + TSimdUnsignedBackend<Self, N>
+    + TSimdAssociatedTypesBackend<Self, N>
+{
+}
+
+#[doc(hidden)]
+pub trait TSimdAssociatedTypesBackend<T, const N: usize> {
+    #[doc(hidden)]
+    type ByteArray: Copy;
+}
+
+/// A marker type representing the `N` in [`Simd<T, N>`].
+///
+/// This is used in [`SupportsLaneCount<N>`] to imply that the internal bound
+/// `LaneCount<N>: SupportedLaneCount` holds. That bound is used to specialize
+/// [`SimdAssociatedTypes::Bitmask`] for each `N`, while telling the compiler
+/// that it does not depend on `T`.
+#[doc(hidden)]
+pub struct LaneCount<const N: usize>;
+
+trait SupportedLaneCount: LaneCountAssociatedTypesBackend {}
+
+#[doc(hidden)]
+pub trait LaneCountAssociatedTypesBackend {
+    #[doc(hidden)]
+    type Bitmask: PrimitiveUnsigned;
+}
+
+/// Exposes associated types of [`Simd<T, N>`].
+///
+/// These types are provided through a trait because Rust
+/// inherent-associated-types are unstable. If that feature gets stabilized,
+/// these types will move to an inherent block and this trait will get
+/// deprecated.
+#[expect(private_bounds)]
+pub trait SimdAssociatedTypes: Sealed {
+    /// The unsigned integer used in [`Simd::to_bitmask`].
+    ///
+    /// For most SIMD types, this is [`u32`]. For [`u8x64`] and [`i8x64`], this
+    /// is [`u64`].
+    type Bitmask: PrimitiveUnsigned;
+
+    /// A type equal to `[u8; size_of::<Self>()]`.
+    ///
+    /// This exists since that type cannot be expressed in generic contexts.
+    type ByteArray: Copy;
+}
+
+/// A marker trait for [`SimdElement`] types that accept the all-zeros bit
+/// pattern.
+///
+/// This is required in [`Simd::shuffle_zeroing`].
+///
+/// This trait represents the same requirement as [`bytemuck::Zeroable`], but
+/// stays separate in order to avoid depending on [`bytemuck`] in `wide`'s
+/// public API.
+#[expect(private_bounds)]
+pub trait Zeroable: Sealed {}
 
 /// A trait for lanewise SIMD selection.
 ///
@@ -99,6 +296,11 @@ pub trait ShuffleExt: Sealed {
     /// This is always the type of SIMD vector contained in the array.
     type Output;
 
+    /// The `T` in [`Simd<T, N>`].
+    ///
+    /// Is is used for the trait bound in [`Self::shuffle_zeroing`].
+    type T;
+
     /// Returns a SIMD vector whose elements are selected from multiple input
     /// vectors using the corresponding runtime `indices`.
     ///
@@ -138,8 +340,9 @@ pub trait ShuffleExt: Sealed {
     /// `0..N` select values from `self[0]`, indices in the range `N..N * 2`
     /// select values from `self[1]`, etc.
     ///
-    /// If an index is out of bounds (greater than or equal to `N * INPUTS`), the
-    /// corresponding result element is the number zero.
+    /// If an index is out of bounds (greater than or equal to `N * INPUTS`),
+    /// the corresponding result element is the all-zeros bit pattern, which is
+    /// numeric `0` for integers and numeric `0.0` for floats.
     ///
     /// # Example
     ///
@@ -155,7 +358,9 @@ pub trait ShuffleExt: Sealed {
     /// assert_eq!(from_two_vectors, f32x4::from_array([2.0, 3.0, 0.0, 101.0]));
     /// ```
     #[must_use]
-    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output;
+    fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output
+    where
+        Self::T: Zeroable;
 
     /// Returns a SIMD vector whose elements are selected from multiple input
     /// vectors using the corresponding runtime `indices`.
@@ -303,900 +508,1498 @@ pub trait CmpLe<Rhs = Self> {
     fn simd_le(self, rhs: Rhs) -> Self::Output;
 }
 
-/// A trait for SIMD variants of [`align_to`] functions.
+/// A deprecated trait for the SIMD variants of [`align_to`] functions.
+///
+/// This trait has been deprecated and replaced by the inherent functions
+/// [`Simd::align_from_slice`] and [`Simd::align_from_mut_slice`].
 ///
 /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
+#[expect(clippy::deprecated_semver, reason = "TODO(generics): remove this")]
+#[deprecated(
+    since = "TODO(generics) fill this",
+    note = "use the inherent functions `align_from_slice` and `align_from_mut_slice` instead"
+)]
 pub trait AlignTo
 where
-    Self: Pod + Default + PartialEq + From<Self::Elem>,
-    Self::Elem: Pod + Default + PartialEq,
+    Self: bytemuck::Pod + Default + PartialEq + From<Self::Elem>,
+    Self::Elem: bytemuck::Pod + Default + PartialEq,
 {
     /// The element type of this SIMD vector.
     type Elem;
 
-    /// A SIMD variant of [`align_to`].
+    /// Splits a slice into a prefix, a middle of aligned SIMD vectors, and a
+    /// suffix.
     ///
-    /// [`align_to`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to),
+    /// so this inherits the same guarantees as that method.
+    ///
+    /// This trait function has been deprecated and replaced by the inherent
+    /// function [`Simd::align_from_slice`].
     #[inline]
     fn simd_align_to(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-        pod_align_to(slice)
+        bytemuck::pod_align_to(slice)
     }
 
-    /// A SIMD variant of [`align_to_mut`].
+    /// Splits a mutable slice into a prefix, a middle of aligned SIMD vectors,
+    /// and a suffix.
     ///
-    /// [`align_to_mut`]: https://doc.rust-lang.org/std/primitive.slice.html#method.align_to_mut
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to_mut`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to_mut),
+    /// so this inherits the same guarantees as that method.
+    ///
+    /// This trait function has been deprecated and replaced by the inherent
+    /// function [`Simd::align_from_mut_slice`].
     #[inline]
     fn simd_align_to_mut(
         slice: &mut [Self::Elem],
     ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-        pod_align_to_mut(slice)
+        bytemuck::pod_align_to_mut(slice)
     }
 }
 
-trait Sealed {}
+impl SimdElement for f32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for f64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for i8 {
+    type Unsigned = u8;
+    type Signed = i8;
+}
+impl SimdElement for i16 {
+    type Unsigned = u16;
+    type Signed = i16;
+}
+impl SimdElement for i32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for i64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for i128 {
+    type Unsigned = u128;
+    type Signed = i128;
+}
+impl SimdElement for isize {
+    type Unsigned = usize;
+    type Signed = isize;
+}
+impl SimdElement for u8 {
+    type Unsigned = u8;
+    type Signed = i8;
+}
+impl SimdElement for u16 {
+    type Unsigned = u16;
+    type Signed = i16;
+}
+impl SimdElement for u32 {
+    type Unsigned = u32;
+    type Signed = i32;
+}
+impl SimdElement for u64 {
+    type Unsigned = u64;
+    type Signed = i64;
+}
+impl SimdElement for u128 {
+    type Unsigned = u128;
+    type Signed = i128;
+}
+impl SimdElement for usize {
+    type Unsigned = usize;
+    type Signed = isize;
+}
 
-macro_rules! define_simd {
+impl SupportedLaneCount for LaneCount<2> {}
+impl SupportedLaneCount for LaneCount<4> {}
+impl SupportedLaneCount for LaneCount<8> {}
+impl SupportedLaneCount for LaneCount<16> {}
+impl SupportedLaneCount for LaneCount<32> {}
+impl SupportedLaneCount for LaneCount<64> {}
+
+impl LaneCountAssociatedTypesBackend for LaneCount<2> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<4> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<8> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<16> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<32> {
+    type Bitmask = u32;
+}
+impl LaneCountAssociatedTypesBackend for LaneCount<64> {
+    type Bitmask = u64;
+}
+
+impl Zeroable for f32 {}
+impl Zeroable for f64 {}
+impl Zeroable for i8 {}
+impl Zeroable for i16 {}
+impl Zeroable for i32 {}
+impl Zeroable for i64 {}
+impl Zeroable for i128 {}
+impl Zeroable for isize {}
+impl Zeroable for u8 {}
+impl Zeroable for u16 {}
+impl Zeroable for u32 {}
+impl Zeroable for u64 {}
+impl Zeroable for u128 {}
+impl Zeroable for usize {}
+
+macro_rules! define_supported_simd {
   (
       T = $T:ident,
       N = $N:literal,
       N_STR = $N_STR:literal,
-      Simd = $Simd:ident,
-      backend_mod = $backend_mod:ident,
-      autofill = $autofill:ident,
-      UnsignedSimd = $UnsignedSimd:ident,
-      Bitmask = $Bitmask:ident,
+      TypeAlias = $TypeAlias:ident,
       optional_type_x86_inner { $(X86Inner = $X86Inner:ident)? },
       optional_type_arm_inner { $(ArmInner = $ArmInner:ident)? },
       optional_type_wasm_inner { $(WasmInner = $WasmInner:ident)? },
   ) => {
     #[doc = concat!("A SIMD vector with ", $N_STR, " elements of type [`", stringify!($T), "`].")]
+    pub type $TypeAlias = Simd<$T, $N>;
+
+    /// Constructs a specific SIMD type from its `Inner` type using its
+    /// type-alias name.
     ///
-    /// See the [crate level documentation] for more information about SIMD
-    /// vectors.
-    ///
-    /// [crate level documentation]: crate
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct $Simd(pub(crate) crate::$backend_mod::Inner);
-
-    impl PartialEq for $Simd {
-      #[inline]
-      fn eq(&self, other: &Self) -> bool {
-        self.simd_eq(*other).all()
-      }
+    /// This function is used because type-aliases do not support tuple-struct
+    /// construction syntax.
+    #[inline(always)]
+    pub(crate) fn $TypeAlias(inner: <Simd<$T, $N> as SimdBackend<$T, $N>>::Inner) -> Simd<$T, $N> {
+      Simd(inner)
     }
 
-    impl Default for $Simd {
-      #[inline]
-      fn default() -> Self {
-        // Currently, all supported `T` types have a default value where all
-        // bits equal zero.
-        Self::zeroed()
-      }
-    }
+    impl SupportsLaneCountBase<$N> for $T {}
 
-    impl From<[$T; $N]> for $Simd {
-      /// Converts an array to a SIMD vector.
-      #[inline]
-      fn from(arr: [$T; $N]) -> Self {
-        Self::from_array(arr)
-      }
-    }
-
-    impl From<$Simd> for [$T; $N] {
-      /// Converts a SIMD vector to an array.
-      #[inline]
-      fn from(simd: $Simd) -> Self {
-        simd.to_array()
-      }
-    }
-
-    impl From<$T> for $Simd {
-      /// Converts a single value to a SIMD vector by setting all elements to
-      /// that value.
-      #[inline]
-      fn from(elem: $T) -> Self {
-        Self::splat(elem)
-      }
-    }
-
-    impl From<&[$T]> for $Simd {
-      /// Converts a slice to a SIMD vector, filling in zeros if there are not
-      /// enough elements, and panicking if there are too many elements.
-      ///
-      /// Note that in the future, handling of too many elements may change.
-      #[inline]
-      fn from(value: &[$T]) -> Self {
-        assert!(
-          value.len() <= $N,
-          concat!(
-            "slice has more elements than `",
-            stringify!($Simd),
-            "` can store",
-          ),
-        );
-
-        // SAFETY: `$Simd` accepts all bit-patterns, including all zeros.
-        let mut result = unsafe { core::mem::zeroed::<$Simd>() };
-
-        // SAFETY: `value` is valid for its own length, and `result` is valid
-        // because its length is checked to be less than or equal to
-        // `value.len()`. Both pointers are properly aligned because they
-        // originate from a slice of `$T`. The regions of memory do not overlap
-        // because they originate from a shared reference and a mutable
-        // reference.
-        unsafe {
-          core::ptr::copy_nonoverlapping::<$T>(
-            value.as_ptr(),
-            result.as_mut_array().as_mut_ptr(),
-            value.len()
-          );
-        }
-
-        result
-      }
+    impl TSimdAssociatedTypesBackend<$T, $N> for $T {
+        type ByteArray = [u8; size_of::<Simd<$T, $N>>()];
     }
 
     $(
       #[cfg(target_arch = "x86")]
-      impl From<core::arch::x86::$X86Inner> for $Simd {
+      impl From<core::arch::x86::$X86Inner> for Simd<$T, $N> {
         /// Converts a native intrinsics SIMD type to a high-level SIMD type.
         #[inline]
         fn from(value: core::arch::x86::$X86Inner) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<core::arch::x86::$X86Inner, $Simd>(value) }
+          unsafe { core::mem::transmute::<core::arch::x86::$X86Inner, Simd<$T, $N>>(value) }
         }
       }
 
       #[cfg(target_arch = "x86")]
-      impl From<$Simd> for core::arch::x86::$X86Inner {
+      impl From<Simd<$T, $N>> for core::arch::x86::$X86Inner {
         /// Converts a high-level SIMD type to a native intrinsics SIMD type.
         #[inline]
-        fn from(value: $Simd) -> Self {
+        fn from(value: Simd<$T, $N>) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<$Simd, core::arch::x86::$X86Inner>(value) }
+          unsafe { core::mem::transmute::<Simd<$T, $N>, core::arch::x86::$X86Inner>(value) }
         }
       }
 
       #[cfg(target_arch = "x86_64")]
-      impl From<core::arch::x86_64::$X86Inner> for $Simd {
+      impl From<core::arch::x86_64::$X86Inner> for Simd<$T, $N> {
         /// Converts a native intrinsics SIMD type to a high-level SIMD type.
         #[inline]
         fn from(value: core::arch::x86_64::$X86Inner) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<core::arch::x86_64::$X86Inner, $Simd>(value) }
+          unsafe { core::mem::transmute::<core::arch::x86_64::$X86Inner, Simd<$T, $N>>(value) }
         }
       }
 
       #[cfg(target_arch = "x86_64")]
-      impl From<$Simd> for core::arch::x86_64::$X86Inner {
+      impl From<Simd<$T, $N>> for core::arch::x86_64::$X86Inner {
         /// Converts a high-level SIMD type to a native intrinsics SIMD type.
         #[inline]
-        fn from(value: $Simd) -> Self {
+        fn from(value: Simd<$T, $N>) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<$Simd, core::arch::x86_64::$X86Inner>(value) }
+          unsafe { core::mem::transmute::<Simd<$T, $N>, core::arch::x86_64::$X86Inner>(value) }
         }
       }
     )?
     $(
       #[cfg(target_arch = "aarch64")]
-      impl From<core::arch::aarch64::$ArmInner> for $Simd {
+      impl From<core::arch::aarch64::$ArmInner> for Simd<$T, $N> {
         /// Converts a native intrinsics SIMD type to a high-level SIMD type.
         #[inline]
         fn from(value: core::arch::aarch64::$ArmInner) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<core::arch::aarch64::$ArmInner, $Simd>(value) }
+          unsafe { core::mem::transmute::<core::arch::aarch64::$ArmInner, Simd<$T, $N>>(value) }
         }
       }
 
       #[cfg(target_arch = "aarch64")]
-      impl From<$Simd> for core::arch::aarch64::$ArmInner {
+      impl From<Simd<$T, $N>> for core::arch::aarch64::$ArmInner {
         /// Converts a high-level SIMD type to a native intrinsics SIMD type.
         #[inline]
-        fn from(value: $Simd) -> Self {
+        fn from(value: Simd<$T, $N>) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<$Simd, core::arch::aarch64::$ArmInner>(value) }
+          unsafe { core::mem::transmute::<Simd<$T, $N>, core::arch::aarch64::$ArmInner>(value) }
         }
       }
     )?
     $(
       #[cfg(target_arch = "wasm32")]
-      impl From<core::arch::wasm32::$WasmInner> for $Simd {
+      impl From<core::arch::wasm32::$WasmInner> for Simd<$T, $N> {
         /// Converts a native intrinsics SIMD type to a high-level SIMD type.
         #[inline]
         fn from(value: core::arch::wasm32::$WasmInner) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<core::arch::wasm32::$WasmInner, $Simd>(value) }
+          unsafe { core::mem::transmute::<core::arch::wasm32::$WasmInner, Simd<$T, $N>>(value) }
         }
       }
 
       #[cfg(target_arch = "wasm32")]
-      impl From<$Simd> for core::arch::wasm32::$WasmInner {
+      impl From<Simd<$T, $N>> for core::arch::wasm32::$WasmInner {
         /// Converts a high-level SIMD type to a native intrinsics SIMD type.
         #[inline]
-        fn from(value: $Simd) -> Self {
+        fn from(value: Simd<$T, $N>) -> Self {
           // SAFETY: Both types are expected to accept all bit-patterns and to
           // only contain initialized memory.
-          unsafe { core::mem::transmute::<$Simd, core::arch::wasm32::$WasmInner>(value) }
+          unsafe { core::mem::transmute::<Simd<$T, $N>, core::arch::wasm32::$WasmInner>(value) }
         }
       }
     )?
-
-    macro_rules! impl_formatting_trait {
-      ($Trait:path) => {
-        impl $Trait for $Simd {
-          #[allow(clippy::missing_inline_in_public_items)]
-          fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-            write!(f, "(")?;
-            for (i, x) in self.to_array().iter().enumerate() {
-              if i > 0 {
-                write!(f, ", ")?;
-              }
-              <$T as $Trait>::fmt(x, f)?;
-            }
-            write!(f, ")")
-          }
-        }
-      }
-    }
-    impl_formatting_trait!(core::fmt::Debug);
-    impl_formatting_trait!(core::fmt::Display);
-    impl_formatting_trait!(core::fmt::LowerExp);
-    impl_formatting_trait!(core::fmt::UpperExp);
-
-    impl Select<$Simd> for $Simd {
-      #[inline]
-      fn select(self, if_true: Self, if_false: Self) -> Self {
-        self.select_backend(if_true, if_false)
-      }
-    }
-
-    impl ShuffleExt for [$Simd; 2] {
-      type Indices = $UnsignedSimd;
-      type Output = $Simd;
-
-      #[inline]
-      fn shuffle(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_2_backend(self, indices)
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_zeroing_2_backend(self, indices)
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_wrapping_2_backend(self, indices)
-      }
-    }
-
-    impl ShuffleExt for [$Simd; 3] {
-      type Indices = $UnsignedSimd;
-      type Output = $Simd;
-
-      #[inline]
-      fn shuffle(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_3_backend(self, indices)
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_zeroing_3_backend(self, indices)
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_wrapping_3_backend(self, indices)
-      }
-    }
-
-    impl ShuffleExt for [$Simd; 4] {
-      type Indices = $UnsignedSimd;
-      type Output = $Simd;
-
-      #[inline]
-      fn shuffle(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_4_backend(self, indices)
-      }
-
-      #[inline]
-      fn shuffle_zeroing(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_zeroing_4_backend(self, indices)
-      }
-
-      #[inline]
-      fn shuffle_wrapping(self, indices: Self::Indices) -> Self::Output {
-        $Simd::shuffle_wrapping_4_backend(self, indices)
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpEq for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_eq(self, rhs: Self) -> Self {
-        self.simd_eq_backend(rhs)
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpEq<$T> for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_eq(self, rhs: $T) -> Self::Output {
-        self.simd_eq(Self::splat(rhs))
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpNe for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_ne(self, rhs: Self) -> Self {
-        self.simd_ne_backend(rhs)
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpNe<$T> for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_ne(self, rhs: $T) -> Self::Output {
-        self.simd_ne(Self::splat(rhs))
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpLt for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_lt(self, rhs: Self) -> Self {
-        self.simd_lt_backend(rhs)
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpLt<$T> for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_lt(self, rhs: $T) -> Self::Output {
-        self.simd_lt(Self::splat(rhs))
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpGt for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_gt(self, rhs: Self) -> Self {
-        self.simd_gt_backend(rhs)
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpGt<$T> for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_gt(self, rhs: $T) -> Self::Output {
-        self.simd_gt(Self::splat(rhs))
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpLe for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_le(self, rhs: Self) -> Self {
-        self.simd_le_backend(rhs)
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpLe<$T> for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_le(self, rhs: $T) -> Self::Output {
-        self.simd_le(Self::splat(rhs))
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpGe for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_ge(self, rhs: Self) -> Self {
-        self.simd_ge_backend(rhs)
-      }
-    }
-
-    #[expect(deprecated)]
-    impl CmpGe<$T> for $Simd {
-      type Output = Self;
-
-      #[inline]
-      fn simd_ge(self, rhs: $T) -> Self::Output {
-        self.simd_ge(Self::splat(rhs))
-      }
-    }
-
-    impl AlignTo for $Simd {
-      type Elem = $T;
-    }
-
-    /// The following functionality exists for all SIMD vectors.
-    impl $Simd {
-      /// The number of elements in this SIMD vector.
-      pub const LANES: u16 = $N;
-
-      /// Converts an array to a SIMD vector.
-      #[inline]
-      #[must_use]
-      pub const fn from_array(array: [$T; $N]) -> Self {
-        unsafe { core::mem::transmute::<[$T; $N], $Simd>(array) }
-      }
-
-      /// Constructs a new SIMD vector with all elements set to the given value.
-      #[inline]
-      #[must_use]
-      pub const fn splat(elem: $T) -> Self {
-        unsafe { core::mem::transmute::<[$T; $N], $Simd>([elem; $N]) }
-      }
-
-      /// Converts a SIMD vector to an array.
-      #[inline]
-      #[must_use]
-      pub const fn to_array(self) -> [$T; $N] {
-        // SAFETY: Both types accept all bit-patterns and only contain
-        // initialized memory.
-        unsafe { core::mem::transmute::<$Simd, [$T; $N]>(self) }
-      }
-
-      /// Returns an array reference containing the entire SIMD vector.
-      #[inline]
-      #[must_use]
-      pub const fn as_array(&self) -> &[$T; $N] {
-        // SAFETY: The input type has greater alignment than the output type,
-        // and both pointed-at types have the same size, accept all bit-patterns
-        // and only contain initialized memory.
-        unsafe { core::mem::transmute::<&$Simd, &[$T; $N]>(self) }
-      }
-
-      /// Returns a mutable array reference containing the entire SIMD vector.
-      #[inline]
-      #[must_use]
-      pub const fn as_mut_array(&mut self) -> &mut [$T; $N] {
-        // SAFETY: The input type has greater alignment than the output type,
-        // and both pointed-at types have the same size, accept all bit-patterns
-        // and only contain initialized memory.
-        unsafe { core::mem::transmute::<&mut $Simd, &mut [$T; $N]>(self) }
-      }
-
-      /// Returns a [mask] that checks if each element of `self` is equal to the
-      /// corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_eq<Rhs>(self, other: Rhs) -> <Self as CmpEq<Rhs>>::Output
-      where
-        Self: CmpEq<Rhs>,
-      {
-        CmpEq::simd_eq(self, other)
-      }
-
-      /// Returns a [mask] that checks if each element of `self` is not equal to
-      /// the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_ne<Rhs>(self, other: Rhs) -> <Self as CmpNe<Rhs>>::Output
-      where
-        Self: CmpNe<Rhs>,
-      {
-        CmpNe::simd_ne(self, other)
-      }
-
-      /// Returns a [mask] that checks if each element of `self` is less than
-      /// the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_lt<Rhs>(self, other: Rhs) -> <Self as CmpLt<Rhs>>::Output
-      where
-        Self: CmpLt<Rhs>,
-      {
-        CmpLt::simd_lt(self, other)
-      }
-
-      /// Returns a [mask] that checks if each element of `self` is greater than
-      /// the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_gt<Rhs>(self, other: Rhs) -> <Self as CmpGt<Rhs>>::Output
-      where
-        Self: CmpGt<Rhs>,
-      {
-        CmpGt::simd_gt(self, other)
-      }
-
-      /// Returns a [mask] that checks if each element of `self` is less than or
-      /// equal to the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_le<Rhs>(self, other: Rhs) -> <Self as CmpLe<Rhs>>::Output
-      where
-        Self: CmpLe<Rhs>,
-      {
-        CmpLe::simd_le(self, other)
-      }
-
-      /// Returns a [mask] that checks if each element of `self` is greater than
-      /// or equal to the corresponding element of `other`.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[expect(deprecated)]
-      pub fn simd_ge<Rhs>(self, other: Rhs) -> <Self as CmpGe<Rhs>>::Output
-      where
-        Self: CmpGe<Rhs>,
-      {
-        CmpGe::simd_ge(self, other)
-      }
-
-      /// Returns `self` with the element at position `INDEX` replaced by
-      /// `value`.
-      ///
-      /// If `INDEX` is out of bounds, compilation fails.
-      #[doc(alias = "set", alias = "with")]
-      #[inline]
-      #[must_use]
-      pub fn replace_const<const INDEX: usize>(self, value: $T) -> Self {
-        const {
-          assert!(INDEX < $N, "attempt to call `Simd::replace_const` with an out of bounds index");
-        }
-
-        self.replace_const_backend::<INDEX>(value)
-      }
-
-      /// Returns the element of `self` at position `INDEX`.
-      ///
-      /// If `INDEX` is out of bounds, compilation fails.
-      #[doc(alias = "get")]
-      #[inline]
-      #[must_use]
-      pub fn extract_const<const INDEX: usize>(self) -> $T {
-        const {
-          assert!(INDEX < $N, "attempt to call `Simd::extract_const` with an out of bounds index");
-        }
-
-        self.extract_const_backend::<INDEX>()
-      }
-
-      /// Lanewise SIMD selection.
-      ///
-      /// For each lane:
-      ///
-      /// - If all bits of `self` are one, return the corresponding lane of
-      ///   `if_true`
-      /// - If all bits of `self` are zero, return the corresponding lane of
-      ///   `if_false`
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. For bitwise selection use [`bitselect`].
-      ///
-      /// In addition to selecting SIMD vectors, this method can be used to
-      /// select composite types (e.g., a downstream `Vec3<f32x4>` structure)
-      /// if you implement `Select<Composite> for Simd`.
-      ///
-      /// [mask]: crate#masks
-      /// [`bitselect`]: f32x4::bitselect
-      #[inline]
-      #[must_use]
-      pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
-      where
-        Self: Select<Output>,
-      {
-        Select::select(self, if_true, if_false)
-      }
-
-      /// Converts to a bitmask, where each bit is `1` if the element of `self`
-      /// is true or `0` if the element of `self` is false.
-      ///
-      /// Each bit of the output corresponds to an element of `self`. The least
-      /// significant bit corresponds to the lowest element. Remaining bits are
-      /// `0`.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      #[doc(alias("movemask", "move_mask"))]
-      pub fn to_bitmask(self) -> $Bitmask {
-        self.to_bitmask_backend()
-      }
-
-      /// Returns `true` if any element of `self` is true.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn any(self) -> bool {
-        self.any_backend()
-      }
-
-      /// Returns `true` if all elements of `self` are true.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn all(self) -> bool {
-        self.all_backend()
-      }
-
-      /// Returns `true` if none of the elements of `self` are true.
-      ///
-      /// This function assumes `self` is a [mask], meaning each element is
-      /// either all zeros or all ones. If the input is not a mask, the result
-      /// is unspecified.
-      ///
-      /// [mask]: crate#masks
-      #[inline]
-      #[must_use]
-      pub fn none(self) -> bool {
-        !self.any()
-      }
-
-      /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
-      /// halfs.
-      ///
-      /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
-      #[inline]
-      #[must_use]
-      pub fn interleave_low(self, other: Self) -> Self {
-        self.interleave_low_backend(other)
-      }
-
-      /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
-      /// halfs.
-      ///
-      /// Equivalent to
-      /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
-      #[inline]
-      #[must_use]
-      pub fn interleave_high(self, other: Self) -> Self {
-        self.interleave_high_backend(other)
-      }
-
-      /// Returns a SIMD vector whose elements are selected from `self` using
-      /// the corresponding runtime `indices`.
-      ///
-      /// If an index is out of bounds, the corresponding result element is
-      /// unspecified.
-      ///
-      /// Equivalent to
-      /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`.
-      ///
-      /// # Type-specific guarantees
-      ///
-      /// For [`u8x16`] and [`i8x16`], it is guaranteed that for out of bounds
-      /// indices, if the high bit of an index is set, zero is returned.
-      /// Otherwise, either zero is returned or the index wraps around,
-      /// non-deterministically.
-      ///
-      /// For all other 8-bit types, it is guaranteed that for out of bounds
-      /// indices, either zero is returned or the index wraps around,
-      /// non-deterministically (unlike other types, which can return arbitrary
-      /// values).
-      #[inline]
-      #[must_use]
-      pub fn shuffle(self, indices: $UnsignedSimd) -> Self {
-        self.shuffle_backend(indices)
-      }
-
-      /// Returns a SIMD vector whose elements are selected from `self` using
-      /// the corresponding runtime `indices`.
-      ///
-      /// If an index is out of bounds, the corresponding result element is
-      /// the number zero.
-      ///
-      /// Equivalent to
-      /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
-      /// with a zero fallback.
-      #[inline]
-      #[must_use]
-      pub fn shuffle_zeroing(self, indices: $UnsignedSimd) -> Self {
-        self.shuffle_zeroing_backend(indices)
-      }
-
-      /// Returns a SIMD vector whose elements are selected from `self` using
-      /// the corresponding runtime `indices`.
-      ///
-      /// Indices are wrapped by the number of elements in `self`.
-      ///
-      /// Equivalent to
-      /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
-      #[inline]
-      #[must_use]
-      pub fn shuffle_wrapping(self, indices: $UnsignedSimd) -> Self {
-        self.shuffle_wrapping_backend(indices)
-      }
-
-      /// Transposes an array of SIMD vectors interpreted as a square matrix.
-      #[inline]
-      #[must_use]
-      pub fn transpose(data: [Self; $N]) -> [Self; $N] {
-        Self::transpose_backend(data)
-      }
-
-      /// Converts an array to a SIMD vector.
-      ///
-      /// This function has been deprecated and renamed to [`from_array`].
-      ///
-      /// [`from_array`]: Self::from_array
-      #[inline]
-      #[must_use]
-      #[deprecated(since = "1.8.0", note = "renamed to `from_array`")]
-      pub const fn new(array: [$T; $N]) -> Self {
-        Self::from_array(array)
-      }
-
-      /// Elementwise selection.
-      ///
-      /// For each element of `self`:
-      ///
-      /// - If all bits are one, return the corresponding element of `if_true`
-      /// - If all bits are zero, return the corresponding element of `if_false`
-      ///
-      /// Originally this function did not specify whether it supported per-bit
-      /// selection, or if it assumed `self` is a [mask], meaning each element
-      /// is either all zeros or all ones (for better performance). Because of
-      /// this, [`blend`] has been split into two new functions: [`select`] and
-      /// [`bitselect`].
-      ///
-      /// [mask]: crate#masks
-      /// [`blend`]: Self::blend
-      /// [`select`]: Self::select
-      /// [`bitselect`]: f32x4::bitselect
-      #[deprecated(
-        since = "1.6.0",
-        note = "split into `select` and `bitselect` functions"
-      )]
-      #[inline]
-      #[must_use]
-      pub fn blend(self, if_true: Self, if_false: Self) -> Self {
-        self.select(if_true, if_false)
-      }
-
-      /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
-      /// halfs.
-      ///
-      /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
-      ///
-      /// This function has been deprecated and renamed to [`interleave_low`].
-      ///
-      /// [`interleave_low`]: Self::interleave_low
-      #[inline]
-      #[must_use]
-      #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
-      pub fn unpack_lo(self, other: Self) -> Self {
-        self.interleave_low(other)
-      }
-
-      /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
-      /// halfs.
-      ///
-      /// Equivalent to
-      /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
-      ///
-      /// This function has been deprecated and renamed to [`interleave_high`].
-      ///
-      /// [`interleave_high`]: Self::interleave_high
-      #[inline]
-      #[must_use]
-      #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
-      pub fn unpack_hi(self, other: Self) -> Self {
-        self.interleave_high(other)
-      }
-
-      // Invoke a macro that automatically fills some of this API's backend
-      // functions. There is a separate macro for floats, signed integers and
-      // unsigned integers.
-      //
-      // This is used for functions that do not have the same implementation for
-      // all SIMD types, but do have the same implementation for all SIMD float
-      // types, or for all SIMD signed integer types, etc.
-      $autofill!(
-        T = $T,
-        N = $N,
-        Simd = $Simd,
-        UnsignedSimd = $UnsignedSimd,
-        Bitmask = $Bitmask,
-      );
-    }
-
-    // SAFETY: All SIMD types in this library contain fully initialized memory
-    // and accept all bits patterns.
-    unsafe impl Zeroable for $Simd {}
-
-    // SAFETY: All SIMD types in this library contain fully initialized memory
-    // and accept all bits patterns.
-    unsafe impl Pod for $Simd {}
-
-    #[cfg(feature = "serde")]
-    impl Serialize for $Simd {
-      #[inline]
-      fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-      where
-        S: serde_core::Serializer,
-      {
-        let array = self.as_array();
-        let mut seq = serializer.serialize_tuple($N)?;
-        for e in array {
-          seq.serialize_element(e)?;
-        }
-        seq.end()
-      }
-    }
-
-    #[cfg(feature = "serde")]
-    impl<'de> Deserialize<'de> for $Simd {
-      #[inline]
-      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-      where
-        D: serde_core::Deserializer<'de>,
-      {
-        crate::simd::deserialize_impl(deserializer)
-      }
-    }
   };
 }
+define_supported_simd!(
+    T = f32,
+    N = 4,
+    N_STR = "four",
+    TypeAlias = f32x4,
+    optional_type_x86_inner { X86Inner = __m128 },
+    optional_type_arm_inner { ArmInner = float32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = f32,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = f32x8,
+    optional_type_x86_inner { X86Inner = __m256 },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = f32,
+    N = 16,
+    N_STR = "16",
+    TypeAlias = f32x16,
+    optional_type_x86_inner { X86Inner = __m512 },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = f64,
+    N = 2,
+    N_STR = "two",
+    TypeAlias = f64x2,
+    optional_type_x86_inner { X86Inner = __m128d },
+    optional_type_arm_inner { ArmInner = float64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = f64,
+    N = 4,
+    N_STR = "four",
+    TypeAlias = f64x4,
+    optional_type_x86_inner { X86Inner = __m256d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = f64,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = f64x8,
+    optional_type_x86_inner { X86Inner = __m512d },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i8,
+    N = 16,
+    N_STR = "16",
+    TypeAlias = i8x16,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int8x16_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = i8,
+    N = 32,
+    N_STR = "32",
+    TypeAlias = i8x32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i8,
+    N = 64,
+    N_STR = "64",
+    TypeAlias = i8x64,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i16,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = i16x8,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int16x8_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = i16,
+    N = 16,
+    N_STR = "16",
+    TypeAlias = i16x16,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i16,
+    N = 32,
+    N_STR = "32",
+    TypeAlias = i16x32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i32,
+    N = 4,
+    N_STR = "four",
+    TypeAlias = i32x4,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = i32,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = i32x8,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i32,
+    N = 16,
+    N_STR = "16",
+    TypeAlias = i32x16,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i64,
+    N = 2,
+    N_STR = "two",
+    TypeAlias = i64x2,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = int64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = i64,
+    N = 4,
+    N_STR = "four",
+    TypeAlias = i64x4,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = i64,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = i64x8,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u8,
+    N = 16,
+    N_STR = "16",
+    TypeAlias = u8x16,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint8x16_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = u8,
+    N = 32,
+    N_STR = "32",
+    TypeAlias = u8x32,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u8,
+    N = 64,
+    N_STR = "64",
+    TypeAlias = u8x64,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u16,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = u16x8,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint16x8_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = u16,
+    N = 16,
+    N_STR = "16",
+    TypeAlias = u16x16,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u16,
+    N = 32,
+    N_STR = "32",
+    TypeAlias = u16x32,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u32,
+    N = 4,
+    N_STR = "four",
+    TypeAlias = u32x4,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint32x4_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = u32,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = u32x8,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u32,
+    N = 16,
+    N_STR = "16",
+    TypeAlias = u32x16,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u64,
+    N = 2,
+    N_STR = "two",
+    TypeAlias = u64x2,
+    optional_type_x86_inner { X86Inner = __m128i },
+    optional_type_arm_inner { ArmInner = uint64x2_t },
+    optional_type_wasm_inner { WasmInner = v128 },
+);
+define_supported_simd!(
+    T = u64,
+    N = 4,
+    N_STR = "four",
+    TypeAlias = u64x4,
+    optional_type_x86_inner { X86Inner = __m256i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+define_supported_simd!(
+    T = u64,
+    N = 8,
+    N_STR = "eight",
+    TypeAlias = u64x8,
+    optional_type_x86_inner { X86Inner = __m512i },
+    optional_type_arm_inner {},
+    optional_type_wasm_inner {},
+);
+
+impl<T, const N: usize> PartialEq for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialEq,
+{
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.simd_eq(*other).all()
+    }
+}
+
+impl<T, const N: usize> Eq for Simd<T, N> where T: SimdElement + SupportsLaneCount<N> + Eq {}
+
+impl<T, const N: usize> Default for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + Default,
+{
+    #[inline]
+    fn default() -> Self {
+        // Currently, all supported `T` types have a default value where all
+        // bits equal zero.
+
+        // SAFETY: All current SIMD types accept the zero bit-pattern.
+        unsafe { core::mem::zeroed::<Simd<T, N>>() }
+    }
+}
+
+impl<T, const N: usize> From<[T; N]> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    /// Converts an array to a SIMD vector.
+    #[inline]
+    fn from(arr: [T; N]) -> Self {
+        Self::from_array(arr)
+    }
+}
+
+impl<T, const N: usize> From<Simd<T, N>> for [T; N]
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    /// Converts a SIMD vector to an array.
+    #[inline]
+    fn from(simd: Simd<T, N>) -> Self {
+        simd.to_array()
+    }
+}
+
+impl<T, const N: usize> From<T> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    /// Converts a single value to a SIMD vector by setting all elements to
+    /// that value.
+    #[inline]
+    fn from(elem: T) -> Self {
+        Self::splat(elem)
+    }
+}
+
+impl<T, const N: usize> From<&[T]> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + Default,
+{
+    /// Converts a slice to a SIMD vector, filling in [`Default::default()`] if
+    /// there are not enough elements, and panicking if there are too many
+    /// elements.
+    ///
+    /// Note that in the future, handling of too many elements may change.
+    #[inline]
+    fn from(value: &[T]) -> Self {
+        assert!(
+            value.len() <= N,
+            "slice has more elements than the SIMD vector can store",
+        );
+
+        let mut result = Self::default();
+
+        // SAFETY: `value` is valid for its own length, and `result` is valid
+        // because its length is checked to be less than or equal to
+        // `value.len()`. Both pointers are properly aligned because they
+        // originate from a slice of `T`. The regions of memory do not overlap
+        // because they originate from a shared reference and a mutable
+        // reference.
+        unsafe {
+            core::ptr::copy_nonoverlapping::<T>(
+                value.as_ptr(),
+                result.as_mut_array().as_mut_ptr(),
+                value.len(),
+            );
+        }
+
+        result
+    }
+}
+
+macro_rules! impl_formatting_trait {
+    ($Trait:path) => {
+        impl<T, const N: usize> $Trait for Simd<T, N>
+        where
+            T: SimdElement + SupportsLaneCount<N> + $Trait,
+        {
+            #[allow(clippy::missing_inline_in_public_items)]
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "(")?;
+                for (i, x) in self.to_array().iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    <T as $Trait>::fmt(x, f)?;
+                }
+                write!(f, ")")
+            }
+        }
+    };
+}
+impl_formatting_trait!(core::fmt::Debug);
+impl_formatting_trait!(core::fmt::Display);
+impl_formatting_trait!(core::fmt::LowerExp);
+impl_formatting_trait!(core::fmt::UpperExp);
+
+impl<T, const N: usize, U> Select<Simd<U, N>> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N>,
+    U: SimdElement<Unsigned = T::Unsigned> + SupportsLaneCount<N>,
+{
+    #[inline]
+    fn select(self, if_true: Simd<U, N>, if_false: Simd<U, N>) -> Simd<U, N> {
+        // SAFETY: `U` is guaranteed to have the same size as `T` thus
+        // `Simd<T, N>` and `Simd<U, N>` have the same size. All SIMD types
+        // currently supported accept all bit-patterns and only contain
+        // initialized memory.
+        let casted_mask = unsafe { transmute_copy::<Simd<T, N>, Simd<U, N>>(&self) };
+
+        U::select_backend(casted_mask, if_true, if_false)
+    }
+}
+
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 2]
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    type Indices = Simd<T::Unsigned, N>;
+    type Output = Simd<T, N>;
+    type T = T;
+
+    #[inline]
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
+        T::shuffle_2_backend(self, indices)
+    }
+
+    #[inline]
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
+        T::shuffle_zeroing_2_backend(self, indices)
+    }
+
+    #[inline]
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
+        T::shuffle_wrapping_2_backend(self, indices)
+    }
+}
+
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 3]
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    type Indices = Simd<T::Unsigned, N>;
+    type Output = Simd<T, N>;
+    type T = T;
+
+    #[inline]
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
+        T::shuffle_3_backend(self, indices)
+    }
+
+    #[inline]
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
+        T::shuffle_zeroing_3_backend(self, indices)
+    }
+
+    #[inline]
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
+        T::shuffle_wrapping_3_backend(self, indices)
+    }
+}
+
+impl<T, const N: usize> ShuffleExt for [Simd<T, N>; 4]
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    type Indices = Simd<T::Unsigned, N>;
+    type Output = Simd<T, N>;
+    type T = T;
+
+    #[inline]
+    fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
+        T::shuffle_4_backend(self, indices)
+    }
+
+    #[inline]
+    fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>
+    where
+        T: Zeroable,
+    {
+        T::shuffle_zeroing_4_backend(self, indices)
+    }
+
+    #[inline]
+    fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N> {
+        T::shuffle_wrapping_4_backend(self, indices)
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpEq for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialEq,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_eq(self, rhs: Self) -> Self {
+        T::simd_eq_backend(self, rhs)
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpEq<T> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialEq,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_eq(self, rhs: T) -> Self::Output {
+        self.simd_eq(Self::splat(rhs))
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpNe for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialEq,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_ne(self, rhs: Self) -> Self {
+        T::simd_ne_backend(self, rhs)
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpNe<T> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialEq,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_ne(self, rhs: T) -> Self::Output {
+        self.simd_ne(Self::splat(rhs))
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLt for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_lt(self, rhs: Self) -> Self {
+        T::simd_lt_backend(self, rhs)
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLt<T> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_lt(self, rhs: T) -> Self::Output {
+        self.simd_lt(Self::splat(rhs))
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGt for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_gt(self, rhs: Self) -> Self {
+        T::simd_gt_backend(self, rhs)
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGt<T> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_gt(self, rhs: T) -> Self::Output {
+        self.simd_gt(Self::splat(rhs))
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLe for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_le(self, rhs: Self) -> Self {
+        T::simd_le_backend(self, rhs)
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpLe<T> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_le(self, rhs: T) -> Self::Output {
+        self.simd_le(Self::splat(rhs))
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGe for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_ge(self, rhs: Self) -> Self {
+        T::simd_ge_backend(self, rhs)
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> CmpGe<T> for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + PartialOrd,
+{
+    type Output = Self;
+
+    #[inline]
+    fn simd_ge(self, rhs: T) -> Self::Output {
+        self.simd_ge(Self::splat(rhs))
+    }
+}
+
+#[expect(deprecated)]
+impl<T, const N: usize> AlignTo for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N> + bytemuck::Pod + Default + PartialEq,
+{
+    type Elem = T;
+}
+
+impl<T, const N: usize> SimdAssociatedTypes for Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    type Bitmask = <LaneCount<N> as LaneCountAssociatedTypesBackend>::Bitmask;
+    type ByteArray = <T as TSimdAssociatedTypesBackend<T, N>>::ByteArray;
+}
+
+impl<T, const N: usize> Simd<T, N>
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    /// The number of elements in this SIMD vector.
+    pub const LANES: u16 = N as u16;
+
+    /// Converts an array to a SIMD vector.
+    #[inline]
+    #[must_use]
+    pub const fn from_array(array: [T; N]) -> Self {
+        // `transmute` cannot be used for generic types, so this must use
+        // `transmute_copy`
+
+        // SAFETY: All current SIMD types accept all bit-patterns and only
+        // contain initialized memory.
+        unsafe { transmute_copy::<[T; N], Simd<T, N>>(&array) }
+    }
+
+    /// Constructs a new SIMD vector with all elements set to the given value.
+    #[inline]
+    #[must_use]
+    pub const fn splat(elem: T) -> Self {
+        // `transmute` cannot be used for generic types, so this must use
+        // `transmute_copy`
+
+        // SAFETY: All current SIMD types accept all bit-patterns and only
+        // contain initialized memory.
+        unsafe { transmute_copy::<[T; N], Simd<T, N>>(&[elem; N]) }
+    }
+
+    /// Splits a slice into a prefix, a middle of aligned SIMD vectors, and a
+    /// suffix.
+    ///
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to),
+    /// so this inherits the same guarantees as that method.
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub fn align_from_slice(slice: &[T]) -> (&[T], &[Self], &[T]) {
+        const {
+            // This is true for all existing types, but just to make sure, keep
+            // this check for now. If non-power-of-two lane counts are added and
+            // have padding, we may return an empty middle, returning everything
+            // into the prefix instead of panicking.
+            assert!(size_of::<Simd<T, N>>() == size_of::<[T; N]>());
+        }
+
+        // SAFETY: this `Simd<T, N>` has the same layout as `[T; N]`, just with
+        // potentially-higher alignment, so the de-facto transmutes are sound.
+        unsafe { <[T]>::align_to::<Simd<T, N>>(slice) }
+    }
+
+    /// Splits a mutable slice into a prefix, a middle of aligned SIMD vectors,
+    /// and a suffix.
+    ///
+    /// This is a safe wrapper around
+    /// [`<[T]>::align_to_mut`](https://doc.rust-lang.org/core/primitive.slice.html#method.align_to_mut),
+    /// so this inherits the same guarantees as that method.
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub fn align_from_mut_slice(slice: &mut [T]) -> (&mut [T], &mut [Self], &mut [T]) {
+        const {
+            // This is true for all existing types, but just to make sure, keep
+            // this check for now. If non-power-of-two lane counts are added and
+            // have padding, we may return an empty middle, returning everything
+            // into the prefix instead of panicking.
+            assert!(size_of::<Simd<T, N>>() == size_of::<[T; N]>());
+        }
+
+        // SAFETY: this `Simd<T, N>` has the same layout as `[T; N]`, just with
+        // potentially-higher alignment, so the de-facto transmutes are sound.
+        unsafe { <[T]>::align_to_mut::<Simd<T, N>>(slice) }
+    }
+
+    /// Converts a SIMD vector to an array.
+    #[inline]
+    #[must_use]
+    pub const fn to_array(self) -> [T; N] {
+        // `transmute` cannot be used for generic types, so this must use
+        // `transmute_copy`
+
+        // SAFETY: All current SIMD types accept all bit-patterns and only
+        // contain initialized memory.
+        unsafe { transmute_copy::<Simd<T, N>, [T; N]>(&self) }
+    }
+
+    /// Returns an array reference containing the entire SIMD vector.
+    #[inline]
+    #[must_use]
+    pub const fn as_array(&self) -> &[T; N] {
+        // SAFETY: The input type has greater alignment than the output type,
+        // and both pointed-at types have the same size, accept all bit-patterns
+        // and only contain initialized memory.
+        unsafe { transmute::<&Simd<T, N>, &[T; N]>(self) }
+    }
+
+    /// Returns a mutable array reference containing the entire SIMD vector.
+    #[inline]
+    #[must_use]
+    pub const fn as_mut_array(&mut self) -> &mut [T; N] {
+        // SAFETY: The input type has greater alignment than the output type,
+        // and both pointed-at types have the same size, accept all bit-patterns
+        // and only contain initialized memory.
+        unsafe { transmute::<&mut Simd<T, N>, &mut [T; N]>(self) }
+    }
+
+    /// Returns a [mask] that checks if each element of `self` is equal to the
+    /// corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_eq<Rhs>(self, other: Rhs) -> <Self as CmpEq<Rhs>>::Output
+    where
+        T: PartialEq,
+        Self: CmpEq<Rhs>,
+    {
+        CmpEq::simd_eq(self, other)
+    }
+
+    /// Returns a [mask] that checks if each element of `self` is not equal to
+    /// the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_ne<Rhs>(self, other: Rhs) -> <Self as CmpNe<Rhs>>::Output
+    where
+        T: PartialEq,
+        Self: CmpNe<Rhs>,
+    {
+        CmpNe::simd_ne(self, other)
+    }
+
+    /// Returns a [mask] that checks if each element of `self` is less than
+    /// the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_lt<Rhs>(self, other: Rhs) -> <Self as CmpLt<Rhs>>::Output
+    where
+        T: PartialOrd,
+        Self: CmpLt<Rhs>,
+    {
+        CmpLt::simd_lt(self, other)
+    }
+
+    /// Returns a [mask] that checks if each element of `self` is greater than
+    /// the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_gt<Rhs>(self, other: Rhs) -> <Self as CmpGt<Rhs>>::Output
+    where
+        T: PartialOrd,
+        Self: CmpGt<Rhs>,
+    {
+        CmpGt::simd_gt(self, other)
+    }
+
+    /// Returns a [mask] that checks if each element of `self` is less than or
+    /// equal to the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_le<Rhs>(self, other: Rhs) -> <Self as CmpLe<Rhs>>::Output
+    where
+        T: PartialOrd,
+        Self: CmpLe<Rhs>,
+    {
+        CmpLe::simd_le(self, other)
+    }
+
+    /// Returns a [mask] that checks if each element of `self` is greater than
+    /// or equal to the corresponding element of `other`.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[expect(deprecated)]
+    pub fn simd_ge<Rhs>(self, other: Rhs) -> <Self as CmpGe<Rhs>>::Output
+    where
+        T: PartialOrd,
+        Self: CmpGe<Rhs>,
+    {
+        CmpGe::simd_ge(self, other)
+    }
+
+    /// Returns `self` with the element at position `INDEX` replaced by
+    /// `value`.
+    ///
+    /// If `INDEX` is out of bounds, compilation fails.
+    #[doc(alias = "set", alias = "with")]
+    #[inline]
+    #[must_use]
+    pub fn replace_const<const INDEX: usize>(self, value: T) -> Self {
+        const {
+            assert!(
+                INDEX < N,
+                "attempt to call `Simd::replace_const` with an out of bounds index"
+            );
+        }
+
+        T::replace_const_backend::<INDEX>(self, value)
+    }
+
+    /// Returns the element of `self` at position `INDEX`.
+    ///
+    /// If `INDEX` is out of bounds, compilation fails.
+    #[doc(alias = "get")]
+    #[inline]
+    #[must_use]
+    pub fn extract_const<const INDEX: usize>(self) -> T {
+        const {
+            assert!(
+                INDEX < N,
+                "attempt to call `Simd::extract_const` with an out of bounds index"
+            );
+        }
+
+        T::extract_const_backend::<INDEX>(self)
+    }
+
+    /// Lanewise SIMD selection.
+    ///
+    /// For each lane:
+    ///
+    /// - If all bits of `self` are one, return the corresponding lane of
+    ///   `if_true`
+    /// - If all bits of `self` are zero, return the corresponding lane of
+    ///   `if_false`
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. For bitwise selection use [`bitselect`].
+    ///
+    /// In addition to selecting SIMD vectors, this method can be used to
+    /// select composite types (e.g., a downstream `Vec3<f32x4>` structure)
+    /// if you implement `Select<Composite> for Simd`.
+    ///
+    /// [mask]: crate#masks
+    /// [`bitselect`]: f32x4::bitselect
+    #[inline]
+    #[must_use]
+    pub fn select<Output>(self, if_true: Output, if_false: Output) -> Output
+    where
+        Self: Select<Output>,
+    {
+        Select::select(self, if_true, if_false)
+    }
+
+    /// Converts to a bitmask, where each bit is `1` if the element of `self`
+    /// is true or `0` if the element of `self` is false.
+    ///
+    /// Each bit of the output corresponds to an element of `self`. The least
+    /// significant bit corresponds to the lowest element. Remaining bits are
+    /// `0`.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    #[doc(alias("movemask", "move_mask"))]
+    pub fn to_bitmask(self) -> <Self as SimdAssociatedTypes>::Bitmask {
+        T::to_bitmask_backend(self)
+    }
+
+    /// Returns `true` if any element of `self` is true.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    pub fn any(self) -> bool {
+        T::any_backend(self)
+    }
+
+    /// Returns `true` if all elements of `self` are true.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    pub fn all(self) -> bool {
+        T::all_backend(self)
+    }
+
+    /// Returns `true` if none of the elements of `self` are true.
+    ///
+    /// This function assumes `self` is a [mask], meaning each element is
+    /// either all zeros or all ones. If the input is not a mask, the result
+    /// is unspecified.
+    ///
+    /// [mask]: crate#masks
+    #[inline]
+    #[must_use]
+    pub fn none(self) -> bool {
+        !self.any()
+    }
+
+    /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+    /// halfs.
+    ///
+    /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+    #[inline]
+    #[must_use]
+    pub fn interleave_low(self, other: Self) -> Self {
+        T::interleave_low_backend(self, other)
+    }
+
+    /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+    /// halfs.
+    ///
+    /// Equivalent to
+    /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+    #[inline]
+    #[must_use]
+    pub fn interleave_high(self, other: Self) -> Self {
+        T::interleave_high_backend(self, other)
+    }
+
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// the corresponding runtime `indices`.
+    ///
+    /// If an index is out of bounds, the corresponding result element is
+    /// unspecified.
+    ///
+    /// Equivalent to
+    /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`.
+    ///
+    /// # Type-specific guarantees
+    ///
+    /// For [`u8x16`] and [`i8x16`], it is guaranteed that for out of bounds
+    /// indices, if the high bit of an index is set, zero is returned.
+    /// Otherwise, either zero is returned or the index wraps around,
+    /// non-deterministically.
+    ///
+    /// For all other 8-bit types, it is guaranteed that for out of bounds
+    /// indices, either zero is returned or the index wraps around,
+    /// non-deterministically (unlike other types, which can return arbitrary
+    /// values).
+    #[inline]
+    #[must_use]
+    pub fn shuffle(self, indices: Simd<T::Unsigned, N>) -> Self {
+        T::shuffle_backend(self, indices)
+    }
+
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// the corresponding runtime `indices`.
+    ///
+    /// If an index is out of bounds, the corresponding result element is
+    /// the all-zeros bit pattern, which is numeric `0` for integers and numeric
+    /// `0.0` for floats.
+    ///
+    /// Equivalent to
+    /// `[self[indices[0]], self[indices[1]], ..., self[[indices[N - 1]]]]`
+    /// with a zero fallback.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_zeroing(self, indices: Simd<T::Unsigned, N>) -> Self
+    where
+        T: Zeroable,
+    {
+        T::shuffle_zeroing_backend(self, indices)
+    }
+
+    /// Returns a SIMD vector whose elements are selected from `self` using
+    /// the corresponding runtime `indices`.
+    ///
+    /// Indices are wrapped by the number of elements in `self`.
+    ///
+    /// Equivalent to
+    /// `[self[indices[0] % N], self[indices[1] % N], ..., self[[indices[N - 1] % N]]]`.
+    #[inline]
+    #[must_use]
+    pub fn shuffle_wrapping(self, indices: Simd<T::Unsigned, N>) -> Self {
+        T::shuffle_wrapping_backend(self, indices)
+    }
+
+    /// Transposes an array of SIMD vectors interpreted as a square matrix.
+    #[inline]
+    #[must_use]
+    pub fn transpose(data: [Self; N]) -> [Self; N] {
+        T::transpose_backend(data)
+    }
+
+    /// Converts an array to a SIMD vector.
+    ///
+    /// This function has been deprecated and renamed to [`from_array`].
+    ///
+    /// [`from_array`]: Self::from_array
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.8.0", note = "renamed to `from_array`")]
+    pub const fn new(array: [T; N]) -> Self {
+        Self::from_array(array)
+    }
+
+    /// Elementwise selection.
+    ///
+    /// For each element of `self`:
+    ///
+    /// - If all bits are one, return the corresponding element of `if_true`
+    /// - If all bits are zero, return the corresponding element of `if_false`
+    ///
+    /// Originally this function did not specify whether it supported per-bit
+    /// selection, or if it assumed `self` is a [mask], meaning each element
+    /// is either all zeros or all ones (for better performance). Because of
+    /// this, [`blend`] has been split into two new functions: [`select`] and
+    /// [`bitselect`].
+    ///
+    /// [mask]: crate#masks
+    /// [`blend`]: Self::blend
+    /// [`select`]: Self::select
+    /// [`bitselect`]: f32x4::bitselect
+    #[deprecated(
+        since = "1.6.0",
+        note = "split into `select` and `bitselect` functions"
+    )]
+    #[inline]
+    #[must_use]
+    pub fn blend(self, if_true: Self, if_false: Self) -> Self {
+        self.select(if_true, if_false)
+    }
+
+    /// Interleaves the lower halfs of two SIMD vectors, discarding the higher
+    /// halfs.
+    ///
+    /// Equivalent to `[self[0], other[0], self[1], other[1], ...]`.
+    ///
+    /// This function has been deprecated and renamed to [`interleave_low`].
+    ///
+    /// [`interleave_low`]: Self::interleave_low
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.8.0", note = "renamed to `interleave_low`")]
+    pub fn unpack_lo(self, other: Self) -> Self {
+        self.interleave_low(other)
+    }
+
+    /// Interleaves the higher halfs of two SIMD vectors, discarding the lower
+    /// halfs.
+    ///
+    /// Equivalent to
+    /// `[self[N / 2], other[N / 2], self[N / 2 + 1], other[N / 2 + 1], ...]`.
+    ///
+    /// This function has been deprecated and renamed to [`interleave_high`].
+    ///
+    /// [`interleave_high`]: Self::interleave_high
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "1.8.0", note = "renamed to `interleave_high`")]
+    pub fn unpack_hi(self, other: Self) -> Self {
+        self.interleave_high(other)
+    }
+}
+
+generate_t_backend_trait! {
+#[generate_t_backend_trait(TSimdBackend)]
+/// Defines the `Inner` type (the type contained inside `Simd<T, N>`) and the
+/// internal implementations of functions applicable to arbitrary SIMD vectors.
+pub(crate) trait SimdBackend<T, const N: usize>: Sized
+where
+    T: SimdElement + SupportsLaneCount<N>,
+{
+    type Inner: Copy;
+
+    fn simd_eq_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn simd_ne_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn simd_lt_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn simd_gt_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn simd_le_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn simd_ge_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn select_backend(self, if_true: Simd<T, N>, if_false: Simd<T, N>) -> Simd<T, N>;
+
+    fn to_bitmask_backend(self) -> <Simd<T, N> as SimdAssociatedTypes>::Bitmask;
+
+    fn any_backend(self) -> bool;
+
+    fn all_backend(self) -> bool;
+
+    fn interleave_low_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn interleave_high_backend(self, other: Simd<T, N>) -> Simd<T, N>;
+
+    fn shuffle_backend(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shuffle_zeroing_backend(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shuffle_wrapping_backend(self, indices: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shuffle_2_backend(inputs: [Simd<T, N>; 2], indices: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shuffle_zeroing_2_backend(
+        inputs: [Simd<T, N>; 2],
+        indices: Simd<T::Unsigned, N>,
+    ) -> Simd<T, N>;
+
+    fn shuffle_wrapping_2_backend(
+        inputs: [Simd<T, N>; 2],
+        indices: Simd<T::Unsigned, N>,
+    ) -> Simd<T, N>;
+
+    fn shuffle_3_backend(inputs: [Simd<T, N>; 3], indices: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shuffle_zeroing_3_backend(
+        inputs: [Simd<T, N>; 3],
+        indices: Simd<T::Unsigned, N>,
+    ) -> Simd<T, N>;
+
+    fn shuffle_wrapping_3_backend(
+        inputs: [Simd<T, N>; 3],
+        indices: Simd<T::Unsigned, N>,
+    ) -> Simd<T, N>;
+
+    fn shuffle_4_backend(inputs: [Simd<T, N>; 4], indices: Simd<T::Unsigned, N>) -> Simd<T, N>;
+
+    fn shuffle_zeroing_4_backend(
+        inputs: [Simd<T, N>; 4],
+        indices: Simd<T::Unsigned, N>,
+    ) -> Simd<T, N>;
+
+    fn shuffle_wrapping_4_backend(
+        inputs: [Simd<T, N>; 4],
+        indices: Simd<T::Unsigned, N>,
+    ) -> Simd<T, N>;
+
+    fn transpose_backend(data: [Simd<T, N>; N]) -> [Simd<T, N>; N];
+
+    fn replace_const_backend<const INDEX: usize>(self, value: T) -> Simd<T, N>;
+
+    fn extract_const_backend<const INDEX: usize>(self) -> T;
+}
+}
+
+trait Sealed {}
 
 /// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD float types.
 macro_rules! simd_backend_float_autofill {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        Bitmask = $Bitmask:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn replace_const_backend<const INDEX: usize>(self, value: $T) -> Self {
             Self::from_bits(self.to_bits().replace_const::<INDEX>(value.to_bits()))
@@ -1208,63 +2011,120 @@ macro_rules! simd_backend_float_autofill {
         }
 
         #[inline]
-        fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             Self::from_bits(self.to_bits().shuffle(indices))
         }
 
         #[inline]
-        fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_zeroing_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             Self::from_bits(self.to_bits().shuffle_zeroing(indices))
         }
 
         #[inline]
-        fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_wrapping_backend(
+            self,
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
             Self::from_bits(self.to_bits().shuffle_wrapping(indices))
         }
 
         #[inline]
-        fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+        fn shuffle_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+        fn shuffle_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+        fn shuffle_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
     };
 }
@@ -1272,13 +2132,7 @@ macro_rules! simd_backend_float_autofill {
 /// Automatically fills SIMD backend functions that have the same implementation
 /// for all SIMD signed integer types.
 macro_rules! simd_backend_signed_autofill {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        Bitmask = $Bitmask:ident,
-    ) => {
+    ($T:ident, $N:literal) => {
         #[inline]
         fn simd_eq_backend(self, other: Self) -> Self {
             self.cast_unsigned()
@@ -1313,7 +2167,7 @@ macro_rules! simd_backend_signed_autofill {
         }
 
         #[inline]
-        fn to_bitmask_backend(self) -> $Bitmask {
+        fn to_bitmask_backend(self) -> <Self as SimdAssociatedTypes>::Bitmask {
             self.cast_unsigned().to_bitmask()
         }
 
@@ -1342,524 +2196,251 @@ macro_rules! simd_backend_signed_autofill {
         }
 
         #[inline]
-        fn shuffle_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             self.cast_unsigned().shuffle(indices).cast_signed()
         }
 
         #[inline]
-        fn shuffle_zeroing_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_zeroing_backend(self, indices: Simd<<$T as SimdElement>::Unsigned, $N>) -> Self {
             self.cast_unsigned().shuffle_zeroing(indices).cast_signed()
         }
 
         #[inline]
-        fn shuffle_wrapping_backend(self, indices: $UnsignedSimd) -> Self {
+        fn shuffle_wrapping_backend(
+            self,
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
             self.cast_unsigned().shuffle_wrapping(indices).cast_signed()
         }
 
         #[inline]
-        fn shuffle_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle(indices))
+        fn shuffle_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_2_backend(inputs: [$Simd; 2], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 2], [$UnsignedSimd; 2]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_2_backend(
+            inputs: [Self; 2],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 2], [Simd<<$T as SimdElement>::Unsigned, $N>; 2]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle(indices))
+        fn shuffle_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_3_backend(inputs: [$Simd; 3], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 3], [$UnsignedSimd; 3]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_3_backend(
+            inputs: [Self; 3],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 3], [Simd<<$T as SimdElement>::Unsigned, $N>; 3]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle(indices))
+        fn shuffle_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_zeroing_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_zeroing(indices))
+        fn shuffle_zeroing_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_zeroing(indices),
+            )
         }
 
         #[inline]
-        fn shuffle_wrapping_4_backend(inputs: [$Simd; 4], indices: $UnsignedSimd) -> $Simd {
-            cast(cast::<[$Simd; 4], [$UnsignedSimd; 4]>(inputs).shuffle_wrapping(indices))
+        fn shuffle_wrapping_4_backend(
+            inputs: [Self; 4],
+            indices: Simd<<$T as SimdElement>::Unsigned, $N>,
+        ) -> Self {
+            cast(
+                cast::<[Simd<$T, $N>; 4], [Simd<<$T as SimdElement>::Unsigned, $N>; 4]>(inputs)
+                    .shuffle_wrapping(indices),
+            )
         }
 
         #[inline]
         fn transpose_backend(data: [Self; $N]) -> [Self; $N] {
-            cast($UnsignedSimd::transpose(cast::<
-                [$Simd; $N],
-                [$UnsignedSimd; $N],
-            >(data)))
+            cast(Simd::<<$T as SimdElement>::Unsigned, $N>::transpose(
+                cast::<[Simd<$T, $N>; $N], [Simd<<$T as SimdElement>::Unsigned, $N>; $N]>(data),
+            ))
         }
     };
 }
 
-/// Automatically fills SIMD backend functions that have the same implementation
-/// for all SIMD unsigned integer types.
-macro_rules! simd_backend_unsigned_autofill {
-    (
-        T = $T:ident,
-        N = $N:literal,
-        Simd = $Simd:ident,
-        UnsignedSimd = $UnsignedSimd:ident,
-        Bitmask = $Bitmask:ident,
-    ) => {
-        // There are currently no such functions.
-    };
-}
+impl Sealed for f32 {}
+impl Sealed for f64 {}
+impl Sealed for i8 {}
+impl Sealed for i16 {}
+impl Sealed for i32 {}
+impl Sealed for i64 {}
+impl Sealed for i128 {}
+impl Sealed for isize {}
+impl Sealed for u8 {}
+impl Sealed for u16 {}
+impl Sealed for u32 {}
+impl Sealed for u64 {}
+impl Sealed for u128 {}
+impl Sealed for usize {}
 
-impl<Simd, const N: usize> Sealed for [Simd; N] {}
+impl<T, const N: usize> Sealed for [T; N] {}
 
-/// `serde` does not implement `Deserialize` for `[T; 64]`, so this manual
-/// implementation is used.
-#[cfg(feature = "serde")]
-pub(crate) fn deserialize_impl<'de, Simd, T, const N: usize, D>(
-    deserializer: D,
-) -> Result<Simd, D::Error>
-where
-    D: serde_core::Deserializer<'de>,
-    T: serde_core::Deserialize<'de> + Default + Copy,
-    Simd: From<[T; N]>,
-{
-    struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
+impl<T, const N: usize> Sealed for Simd<T, N> where T: SimdElement + SupportsLaneCount<N> {}
 
-    impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
-    where
-        T: serde_core::Deserialize<'de> + Default + Copy,
+mod bytemuck_integration {
+    use bytemuck::{Pod, Zeroable};
+
+    use super::*;
+
+    // SAFETY: Currently, all SIMD types in this library contain fully initialized
+    // memory and accept all bits patterns.
+    unsafe impl<T, const N: usize> Zeroable for Simd<T, N> where
+        T: SimdElement + SupportsLaneCount<N> + Zeroable
     {
-        type Value = [T; N];
+    }
 
-        fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            formatter.write_str("an array of length {N}")
-        }
+    // SAFETY: Currently, all SIMD types in this library contain fully initialized
+    // memory and accept all bits patterns.
+    unsafe impl<T, const N: usize> Pod for Simd<T, N> where T: SimdElement + SupportsLaneCount<N> + Pod {}
+}
 
-        fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
+#[cfg(feature = "serde")]
+mod serde_integration {
+    use serde_core::{Deserialize, Serialize, ser::SerializeTuple};
+
+    use super::*;
+
+    impl<T, const N: usize> Serialize for Simd<T, N>
+    where
+        T: SimdElement + SupportsLaneCount<N> + Serialize,
+    {
+        #[inline]
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
-            A: serde_core::de::SeqAccess<'de>,
+            S: serde_core::Serializer,
         {
-            use serde_core::de::Error;
-            let mut array = [T::default(); N];
-            for (index, element) in array.iter_mut().enumerate() {
-                *element = seq
-                    .next_element()?
-                    .ok_or_else(|| A::Error::invalid_length(index, &self))?;
+            let array = self.as_array();
+            let mut seq = serializer.serialize_tuple(N)?;
+            for e in array {
+                seq.serialize_element(e)?;
             }
-            if seq.next_element::<T>()?.is_some() {
-                return Err(A::Error::invalid_length(N + 1, &self));
-            }
-            Ok(array)
+            seq.end()
         }
     }
 
-    Ok(deserializer
-        .deserialize_tuple(N, ArrayVisitor::<T, N>(core::marker::PhantomData))?
-        .into())
-}
+    impl<'de, T, const N: usize> Deserialize<'de> for Simd<T, N>
+    where
+        T: SimdElement + SupportsLaneCount<N> + Deserialize<'de>,
+    {
+        #[inline]
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde_core::Deserializer<'de>,
+        {
+            use core::mem::MaybeUninit;
 
-define_simd!(
-    T = f32,
-    N = 4,
-    N_STR = "four",
-    Simd = f32x4,
-    backend_mod = f32x4_backend,
-    autofill = simd_backend_float_autofill,
-    UnsignedSimd = u32x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128 },
-    optional_type_arm_inner { ArmInner = float32x4_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = f32,
-    N = 8,
-    N_STR = "eight",
-    Simd = f32x8,
-    backend_mod = f32x8_backend,
-    autofill = simd_backend_float_autofill,
-    UnsignedSimd = u32x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256 },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = f32,
-    N = 16,
-    N_STR = "16",
-    Simd = f32x16,
-    backend_mod = f32x16_backend,
-    autofill = simd_backend_float_autofill,
-    UnsignedSimd = u32x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512 },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = f64,
-    N = 2,
-    N_STR = "two",
-    Simd = f64x2,
-    backend_mod = f64x2_backend,
-    autofill = simd_backend_float_autofill,
-    UnsignedSimd = u64x2,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128d },
-    optional_type_arm_inner { ArmInner = float64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = f64,
-    N = 4,
-    N_STR = "four",
-    Simd = f64x4,
-    backend_mod = f64x4_backend,
-    autofill = simd_backend_float_autofill,
-    UnsignedSimd = u64x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256d },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = f64,
-    N = 8,
-    N_STR = "eight",
-    Simd = f64x8,
-    backend_mod = f64x8_backend,
-    autofill = simd_backend_float_autofill,
-    UnsignedSimd = u64x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512d },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i8,
-    N = 16,
-    N_STR = "16",
-    Simd = i8x16,
-    backend_mod = i8x16_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u8x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int8x16_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i8,
-    N = 32,
-    N_STR = "32",
-    Simd = i8x32,
-    backend_mod = i8x32_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u8x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i8,
-    N = 64,
-    N_STR = "64",
-    Simd = i8x64,
-    backend_mod = i8x64_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u8x64,
-    Bitmask = u64,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i16,
-    N = 8,
-    N_STR = "eight",
-    Simd = i16x8,
-    backend_mod = i16x8_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u16x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int16x8_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i16,
-    N = 16,
-    N_STR = "16",
-    Simd = i16x16,
-    backend_mod = i16x16_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u16x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i16,
-    N = 32,
-    N_STR = "32",
-    Simd = i16x32,
-    backend_mod = i16x32_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u16x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i32,
-    N = 4,
-    N_STR = "four",
-    Simd = i32x4,
-    backend_mod = i32x4_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u32x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int32x4_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i32,
-    N = 8,
-    N_STR = "eight",
-    Simd = i32x8,
-    backend_mod = i32x8_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u32x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i32,
-    N = 16,
-    N_STR = "16",
-    Simd = i32x16,
-    backend_mod = i32x16_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u32x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i64,
-    N = 2,
-    N_STR = "two",
-    Simd = i64x2,
-    backend_mod = i64x2_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u64x2,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = int64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = i64,
-    N = 4,
-    N_STR = "four",
-    Simd = i64x4,
-    backend_mod = i64x4_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u64x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = i64,
-    N = 8,
-    N_STR = "eight",
-    Simd = i64x8,
-    backend_mod = i64x8_backend,
-    autofill = simd_backend_signed_autofill,
-    UnsignedSimd = u64x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u8,
-    N = 16,
-    N_STR = "16",
-    Simd = u8x16,
-    backend_mod = u8x16_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u8x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint8x16_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u8,
-    N = 32,
-    N_STR = "32",
-    Simd = u8x32,
-    backend_mod = u8x32_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u8x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u8,
-    N = 64,
-    N_STR = "64",
-    Simd = u8x64,
-    backend_mod = u8x64_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u8x64,
-    Bitmask = u64,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u16,
-    N = 8,
-    N_STR = "eight",
-    Simd = u16x8,
-    backend_mod = u16x8_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u16x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint16x8_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u16,
-    N = 16,
-    N_STR = "16",
-    Simd = u16x16,
-    backend_mod = u16x16_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u16x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u16,
-    N = 32,
-    N_STR = "32",
-    Simd = u16x32,
-    backend_mod = u16x32_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u16x32,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u32,
-    N = 4,
-    N_STR = "four",
-    Simd = u32x4,
-    backend_mod = u32x4_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u32x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint32x4_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u32,
-    N = 8,
-    N_STR = "eight",
-    Simd = u32x8,
-    backend_mod = u32x8_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u32x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u32,
-    N = 16,
-    N_STR = "16",
-    Simd = u32x16,
-    backend_mod = u32x16_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u32x16,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u64,
-    N = 2,
-    N_STR = "two",
-    Simd = u64x2,
-    backend_mod = u64x2_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u64x2,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m128i },
-    optional_type_arm_inner { ArmInner = uint64x2_t },
-    optional_type_wasm_inner { WasmInner = v128 },
-);
-define_simd!(
-    T = u64,
-    N = 4,
-    N_STR = "four",
-    Simd = u64x4,
-    backend_mod = u64x4_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u64x4,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m256i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
-define_simd!(
-    T = u64,
-    N = 8,
-    N_STR = "eight",
-    Simd = u64x8,
-    backend_mod = u64x8_backend,
-    autofill = simd_backend_unsigned_autofill,
-    UnsignedSimd = u64x8,
-    Bitmask = u32,
-    optional_type_x86_inner { X86Inner = __m512i },
-    optional_type_arm_inner {},
-    optional_type_wasm_inner {},
-);
+            use serde_core::de::Error;
+
+            struct ArrayVisitor<T, const N: usize>(core::marker::PhantomData<T>);
+
+            impl<'de, T, const N: usize> serde_core::de::Visitor<'de> for ArrayVisitor<T, N>
+            where
+                T: SimdElement + Deserialize<'de>,
+            {
+                type Value = [T; N];
+
+                fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    formatter.write_str("an array of length {N}")
+                }
+
+                fn visit_seq<A>(self, mut seq: A) -> Result<[T; N], A::Error>
+                where
+                    A: serde_core::de::SeqAccess<'de>,
+                {
+                    let mut result = [MaybeUninit::uninit(); N];
+
+                    for (index, element) in result.iter_mut().enumerate() {
+                        element.write(
+                            seq.next_element()?
+                                .ok_or_else(|| A::Error::invalid_length(index, &self))?,
+                        );
+                    }
+
+                    // `<[MaybeUninit<T>; N]>::transpose` is unstable
+                    // SAFETY: These types represent the same thing
+                    let result = unsafe {
+                        transmute_copy::<[MaybeUninit<T>; N], MaybeUninit<[T; N]>>(&result)
+                    };
+
+                    // SAFETY: If the function has not early-returned already, all
+                    // `result` slots have been written to and initialized.
+                    let result = unsafe { result.assume_init() };
+
+                    if seq.next_element::<T>()?.is_some() {
+                        return Err(A::Error::invalid_length(N + 1, &self));
+                    }
+
+                    Ok(result)
+                }
+            }
+
+            Ok(Self::from_array(deserializer.deserialize_tuple(
+                N,
+                ArrayVisitor::<T, N>(core::marker::PhantomData),
+            )?))
+        }
+    }
+}
