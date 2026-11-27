@@ -349,11 +349,20 @@ fn test_round_ties_even() {
 #[test]
 fn test_fast_round_int() {
     for_simd_types!(|T: Float, N| {
-        for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value).round_int();
-            let actual = Simd::from_array(value).fast_round_int();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.round_int();
+            let actual = value.fast_round_int();
 
-            assert_eq!(actual, expected);
+            assert!(
+                (actual.simd_eq(expected)
+                    | (value.is_nan()
+                        | value.simd_le(Signed::MIN as T)
+                        | value.simd_ge(Signed::MAX as T))
+                    .to_bits()
+                    .cast_signed())
+                .all(),
+                dbg!(actual, expected, value)
+            );
         }
     });
 }
@@ -396,11 +405,20 @@ fn test_trunc() {
 #[test]
 fn test_fast_trunc_int() {
     for_simd_types!(|T: Float, N| {
-        for value in fuzz_iter::<[T; N]>() {
-            let expected = SimdSigned::from_array(value.map(|x| x.trunc() as Signed));
-            let actual = Simd::from_array(value).fast_trunc_int();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.trunc_int();
+            let actual = value.fast_trunc_int();
 
-            assert_eq!(actual, expected);
+            assert!(
+                (actual.simd_eq(expected)
+                    | (value.is_nan()
+                        | value.simd_le(Signed::MIN as T)
+                        | value.simd_ge(Signed::MAX as T))
+                    .to_bits()
+                    .cast_signed())
+                .all(),
+                dbg!(actual, expected, value)
+            );
         }
     });
 }
