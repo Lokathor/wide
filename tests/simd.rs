@@ -3319,8 +3319,7 @@ fn test_align_from_mut_slice() {
         let mut array = std::array::from_fn::<T, 100, _>(|i| i as T);
         for start in 0..100 {
             let slice = &identity(array)[start..];
-            #[expect(deprecated)]
-            let (head, body, tail) = Simd::simd_align_to_mut(&mut array[start..]);
+            let (head, body, tail) = Simd::align_from_mut_slice(&mut array[start..]);
 
             assert_eq!(head.len() + body.len() * N + tail.len(), slice.len());
             assert_eq!(head, &slice[..head.len()]);
