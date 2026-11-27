@@ -350,7 +350,11 @@ fn test_div_scalar() {
         }
     });
     for_simd_types!(|T: Integer, N| {
-        for (left, right) in fuzz_iter::<([T; N], T)>() {
+        for (left, mut right) in fuzz_iter::<([T; N], T)>() {
+            if right == 0 {
+                right = 3;
+            }
+
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].wrapping_div(right)));
             let actual = Simd::from_array(left) / right;
 
@@ -434,7 +438,11 @@ fn test_rem_scalar() {
         }
     });
     for_simd_types!(|T: Integer, N| {
-        for (left, right) in fuzz_iter::<([T; N], T)>() {
+        for (left, mut right) in fuzz_iter::<([T; N], T)>() {
+            if right == 0 {
+                right = 3;
+            }
+
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].wrapping_rem(right)));
             let actual = Simd::from_array(left) % right;
 
