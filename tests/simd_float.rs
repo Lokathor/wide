@@ -1,3 +1,4 @@
+use libm::Libm;
 use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
 use crate::utils::{
@@ -588,8 +589,8 @@ fn test_asin_acos() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
             let expected = (
-                Simd::from_array(value.map(T::asin)),
-                Simd::from_array(value.map(T::acos)),
+                Simd::from_array(value.map(Libm::<T>::asin)),
+                Simd::from_array(value.map(Libm::<T>::acos)),
             );
             let actual = Simd::from_array(value).asin_acos();
 
@@ -630,7 +631,7 @@ fn test_acos() {
 fn test_atan() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::atan));
+            let expected = Simd::from_array(value.map(Libm::<T>::atan));
             let actual = Simd::from_array(value).atan();
 
             let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
@@ -646,7 +647,9 @@ fn test_atan() {
 fn test_atan2() {
     for_simd_types!(|T: Float, N| {
         for [value, other] in fuzz_iter::<[[T; N]; 2]>() {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i].atan2(other[i])));
+            let expected = Simd::from_array(std::array::from_fn(|i| {
+                Libm::<T>::atan2(value[i], other[i])
+            }));
             let actual = Simd::from_array(value).atan2(Simd::from_array(other));
 
             let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
@@ -665,8 +668,8 @@ fn test_sin_cos() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
             let expected = (
-                Simd::from_array(value.map(T::sin)),
-                Simd::from_array(value.map(T::cos)),
+                Simd::from_array(value.map(Libm::<T>::sin)),
+                Simd::from_array(value.map(Libm::<T>::cos)),
             );
             let actual = Simd::from_array(value).sin_cos();
 
@@ -708,7 +711,7 @@ fn test_cos() {
 fn test_tan() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::tan));
+            let expected = Simd::from_array(value.map(Libm::<T>::tan));
             let actual = Simd::from_array(value).tan();
 
             assert!(
@@ -820,7 +823,7 @@ fn test_sqrt() {
 fn test_exp() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::exp));
+            let expected = Simd::from_array(value.map(Libm::<T>::exp));
             let actual = Simd::from_array(value).exp();
 
             assert!(
@@ -838,7 +841,7 @@ fn test_exp() {
 fn test_exp2() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::exp2));
+            let expected = Simd::from_array(value.map(Libm::<T>::exp2));
             let actual = Simd::from_array(value).exp2();
 
             let tol = if size_of::<T>() == 8 { 1e-12 } else { 1e-7 };
@@ -860,7 +863,7 @@ fn test_exp2() {
 fn test_ln() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::ln));
+            let expected = Simd::from_array(value.map(Libm::<T>::log));
             let actual = Simd::from_array(value).ln();
 
             assert!(
@@ -878,7 +881,7 @@ fn test_ln() {
 fn test_log2() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::log2));
+            let expected = Simd::from_array(value.map(Libm::<T>::log2));
             let actual = Simd::from_array(value).log2();
 
             assert!(
@@ -896,7 +899,7 @@ fn test_log2() {
 fn test_log10() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::log10));
+            let expected = Simd::from_array(value.map(Libm::<T>::log10));
             let actual = Simd::from_array(value).log10();
 
             assert!(
@@ -914,7 +917,7 @@ fn test_log10() {
 fn test_powf_simd() {
     for_simd_types!(|T: Float, N| {
         for [x, n] in fuzz_iter::<[[T; N]; 2]>() {
-            let expected = Simd::from_array(std::array::from_fn(|i| x[i].powf(n[i])));
+            let expected = Simd::from_array(std::array::from_fn(|i| Libm::<T>::pow(x[i], n[i])));
             let actual = Simd::from_array(x).powf_simd(Simd::from_array(n));
 
             assert!(
@@ -1014,7 +1017,7 @@ fn test_from_i32x4_lower2() {
 fn test_exp_m1() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::exp_m1));
+            let expected = Simd::from_array(value.map(Libm::<T>::expm1));
             let actual = Simd::from_array(value).exp_m1();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 2.0);
 
@@ -1055,7 +1058,7 @@ fn test_exp_m1() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::exp_m1(t_v));
+            let expected = Simd::from(Libm::<T>::expm1(t_v));
             let actual = Simd::from(t_v).exp_m1();
 
             let diff = (actual - expected).abs();
@@ -1088,7 +1091,7 @@ fn test_exp_m1() {
 fn test_ln_1p() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::ln_1p));
+            let expected = Simd::from_array(value.map(Libm::<T>::log1p));
             let actual = Simd::from_array(value).ln_1p();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
@@ -1129,7 +1132,7 @@ fn test_ln_1p() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::ln_1p(t_v));
+            let expected = Simd::from(Libm::<T>::log1p(t_v));
             let actual = Simd::from(t_v).ln_1p();
 
             let diff = (actual - expected).abs();
@@ -1143,7 +1146,7 @@ fn test_ln_1p() {
 
         for &v in &[1e-16, 1e-14, 1e-12, 1e-10, 1e-8, 0.01, 0.1, 1.0] {
             let t_v = v as T;
-            let expected = Simd::from(T::ln_1p(t_v));
+            let expected = Simd::from(Libm::<T>::log1p(t_v));
             let actual = Simd::from(t_v).ln_1p();
             let diff = (actual - expected).abs();
             let limit = if std::mem::size_of::<T>() == 4 {
@@ -1185,7 +1188,7 @@ fn test_ln_1p() {
 fn test_sinh() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::sinh));
+            let expected = Simd::from_array(value.map(Libm::<T>::sinh));
             let actual = Simd::from_array(value).sinh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
@@ -1226,7 +1229,7 @@ fn test_sinh() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::sinh(t_v));
+            let expected = Simd::from(Libm::<T>::sinh(t_v));
             let actual = Simd::from(t_v).sinh();
 
             let diff = (actual - expected).abs();
@@ -1244,7 +1247,7 @@ fn test_sinh() {
 fn test_cosh() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::cosh));
+            let expected = Simd::from_array(value.map(Libm::<T>::cosh));
             let actual = Simd::from_array(value).cosh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
@@ -1285,7 +1288,7 @@ fn test_cosh() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::cosh(t_v));
+            let expected = Simd::from(Libm::<T>::cosh(t_v));
             let actual = Simd::from(t_v).cosh();
 
             let diff = (actual - expected).abs();
@@ -1303,7 +1306,7 @@ fn test_cosh() {
 fn test_tanh() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::tanh));
+            let expected = Simd::from_array(value.map(Libm::<T>::tanh));
             let actual = Simd::from_array(value).tanh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
@@ -1335,7 +1338,7 @@ fn test_tanh() {
 
             let v = if u.is_finite() { u } else { 0.0 };
             let t_v = v as T;
-            let expected = Simd::from(T::tanh(t_v));
+            let expected = Simd::from(Libm::<T>::tanh(t_v));
             let actual = Simd::from(t_v).tanh();
 
             let diff = (actual - expected).abs();
@@ -1353,7 +1356,7 @@ fn test_tanh() {
 fn test_cbrt() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(T::cbrt));
+            let expected = Simd::from_array(value.map(Libm::<T>::cbrt));
             let actual = Simd::from_array(value).cbrt();
             // SLEEF polynomial + 1 Newton step on 1/cbrt + 1 polish on cbrt.
             // Accumulated roundoff in the scaling (r = e - 3k) and refinement
@@ -1388,7 +1391,7 @@ fn test_cbrt() {
 
             let v = if u.is_finite() { u } else { 0.0 };
             let t_v = v as T;
-            let expected = Simd::from(T::cbrt(t_v));
+            let expected = Simd::from(Libm::<T>::cbrt(t_v));
             let actual = Simd::from(t_v).cbrt();
 
             let diff = (actual - expected).abs();
@@ -1415,7 +1418,7 @@ fn test_exp_overflow_boundary() {
 
         for v in [max_x, near_max, over_max, -max_x] {
             let input = Simd::splat(v);
-            let expected = Simd::splat(T::exp(v));
+            let expected = Simd::splat(Libm::<T>::exp(v));
             let actual = input.exp();
             let tol = expected.abs().fast_max(Simd::splat(T::MIN_POSITIVE))
                 * Simd::splat(T::EPSILON * 1.0);
@@ -1445,7 +1448,7 @@ fn test_exp_subnormal() {
         };
         for v in [subnormal_input, deeper] {
             let input = Simd::splat(v);
-            let expected = Simd::splat(T::exp(v));
+            let expected = Simd::splat(Libm::<T>::exp(v));
             let actual = input.exp();
             let tol = expected.abs().fast_max(Simd::splat(T::MIN_POSITIVE))
                 * Simd::splat(T::EPSILON * 1.0);
