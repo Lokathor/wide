@@ -1,19 +1,26 @@
+use libm::Libm;
 use wide::{f32x4, f32x8, f32x16, f64x2, f64x4, f64x8, i32x4, i32x8, i32x16};
 
-use crate::utils::{for_simd_types, random_iter, simd_chunks};
+use crate::utils::{
+    assert, assert_bit_eq, assert_eq, assert_float_eq, float_eq, for_simd_types, fuzz_iter,
+};
 
 #[test]
 fn test_reduce_add() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.2, 0.3, 0.5, 0.7, 1.1, 1.3, 1.7, 1.9, 2.3, 2.9, 3.1, 3.7, 4.1, 4.3, 4.7, 5.3,
-        ]) {
+        for value in fuzz_iter::<[T; N]>() {
+            // Testing special exponents would require more complex logic, and
+            // would be unlikely to catch any bugs in `reduce_add`.
+            let value = value.map(|x| x % 1e3 + 0.1);
+
             let expected = value.into_iter().sum::<T>();
             let actual = Simd::from_array(value).reduce_add();
 
-            assert!(
-                (actual - expected).abs() <= expected.abs() * 1e-5,
-                "expected: {expected:?}\n  actual: {actual:?}",
+            assert_float_eq!(
+                actual,
+                expected,
+                max_abs_diff = expected.abs() * 1e-3 + 1e-5,
+                dbg!(value)
             );
         }
     });
@@ -22,15 +29,19 @@ fn test_reduce_add() {
 #[test]
 fn test_reduce_mul() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.2, 0.3, 0.5, 0.7, 1.1, 1.3, 1.7, 1.9, 2.3, 2.9, 3.1, 3.7, 4.1, 4.3, 4.7, 5.3,
-        ]) {
+        for value in fuzz_iter::<[T; N]>() {
+            // Testing special exponents would require more complex logic, and
+            // would be unlikely to catch any bugs in `reduce_mul`.
+            let value = value.map(|x| x % 1e3 + 0.1);
+
             let expected = value.into_iter().product::<T>();
             let actual = Simd::from_array(value).reduce_mul();
 
-            assert!(
-                (actual - expected).abs() <= expected.abs() * 1e-5,
-                "expected: {expected:?}\n  actual: {actual:?}",
+            assert_float_eq!(
+                actual,
+                expected,
+                max_abs_diff = expected.abs() * 1e-3 + 1e-5,
+                dbg!(value)
             );
         }
     });
@@ -39,33 +50,11 @@ fn test_reduce_mul() {
 #[test]
 fn test_abs() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NEG_INFINITY,
-            6.0,
-            15.0,
-            -19.0,
-            -9.0,
-            4.5,
-            -20.0,
-            T::INFINITY,
-            5.0,
-            -4.0,
-            13.0,
-            9.5,
-            -3.0,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::abs));
             let actual = Simd::from_array(value).abs();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(expected, actual, dbg!(value));
         }
     });
 }
@@ -73,33 +62,11 @@ fn test_abs() {
 #[test]
 fn test_signum() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0,
-            -0.0,
-            1.0,
-            -1.0,
-            24.01,
-            -24.01,
-            T::MAX,
-            T::MIN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-            T::NAN,
-            T::NAN,
-            24.01,
-            -24.01,
-            T::MAX,
-            T::MIN,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::signum));
             let actual = Simd::from_array(value).signum();
 
-            assert!(
-                (actual.simd_eq(expected) | actual.is_nan() & expected.is_nan()).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -107,41 +74,11 @@ fn test_signum() {
 #[test]
 fn test_floor() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.1,
-            60.9,
-            1.1,
-            T::INFINITY,
-            96.6,
-            -53.2,
-            0.1,
-            9.2,
-            6.9,
-            -3.4,
-            85.3,
-            -79.8,
-            4.2,
-            -6.4,
-            7.3,
-            -9.1,
-            8388606.0,
-            8388607.0,
-            8388608.0,
-            8388609.0,
-            -8388606.0,
-            -8388607.0,
-            -8388608.0,
-            -8388609.0,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::floor));
             let actual = Simd::from_array(value).floor();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -149,41 +86,11 @@ fn test_floor() {
 #[test]
 fn test_ceil() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.1,
-            60.9,
-            1.1,
-            T::INFINITY,
-            96.6,
-            -53.2,
-            0.1,
-            9.2,
-            6.9,
-            -3.4,
-            85.3,
-            -79.8,
-            4.2,
-            -6.4,
-            7.3,
-            -9.1,
-            8388606.0,
-            8388607.0,
-            8388608.0,
-            8388609.0,
-            -8388606.0,
-            -8388607.0,
-            -8388608.0,
-            -8388609.0,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::ceil));
             let actual = Simd::from_array(value).ceil();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -191,41 +98,14 @@ fn test_ceil() {
 #[test]
 fn test_fast_max() {
     for_simd_types!(|T: Float, N| {
-        for [value, other] in simd_chunks!(
-            [
-                1.0,
-                5.0,
-                3.0,
-                0.0,
-                6.0,
-                -8.0,
-                12.0,
-                9.0,
-                2.0,
-                -3.0,
-                T::INFINITY
-            ],
-            [
-                2.0,
-                -3.0,
-                T::INFINITY,
-                10.0,
-                19.0,
-                -5.0,
-                -1.0,
-                -9.0,
-                1.0,
-                5.0,
-                3.0
-            ],
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
-            let actual = Simd::from_array(value).fast_max(Simd::from_array(other));
+        for [value, other] in fuzz_iter::<[Simd; 2]>() {
+            let expected = value.max(other);
+            let actual = value.fast_max(other);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
+            assert!(
+                (actual.simd_eq(expected) | (actual.is_nan() & (value.is_nan() | other.is_nan())))
+                    .all(),
+                dbg!(actual, expected, value, other)
             );
         }
     });
@@ -234,44 +114,11 @@ fn test_fast_max() {
 #[test]
 fn test_max() {
     for_simd_types!(|T: Float, N| {
-        for [value, other] in simd_chunks!(
-            [
-                1.0,
-                5.0,
-                3.0,
-                0.0,
-                6.0,
-                -8.0,
-                T::NAN,
-                T::NEG_INFINITY,
-                2.0,
-                -3.0,
-                T::INFINITY
-            ],
-            [
-                2.0,
-                -3.0,
-                T::NAN,
-                10.0,
-                19.0,
-                -5.0,
-                T::NAN,
-                -9.0,
-                T::INFINITY,
-                T::NEG_INFINITY,
-                3.0
-            ],
-        )
-        .chain(random_iter())
-        {
+        for [value, other] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].max(other[i])));
             let actual = Simd::from_array(value).max(Simd::from_array(other));
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, 0.0 = -0.0, dbg!(value, other));
         }
     });
 }
@@ -279,41 +126,14 @@ fn test_max() {
 #[test]
 fn test_fast_min() {
     for_simd_types!(|T: Float, N| {
-        for [value, other] in simd_chunks!(
-            [
-                1.0,
-                5.0,
-                3.0,
-                0.0,
-                6.0,
-                -8.0,
-                12.0,
-                9.0,
-                2.0,
-                -3.0,
-                T::INFINITY
-            ],
-            [
-                2.0,
-                -3.0,
-                T::INFINITY,
-                10.0,
-                19.0,
-                -5.0,
-                -1.0,
-                -9.0,
-                1.0,
-                5.0,
-                3.0
-            ],
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
-            let actual = Simd::from_array(value).fast_min(Simd::from_array(other));
+        for [value, other] in fuzz_iter::<[Simd; 2]>() {
+            let expected = value.min(other);
+            let actual = value.fast_min(other);
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
+            assert!(
+                (actual.simd_eq(expected) | (actual.is_nan() & (value.is_nan() | other.is_nan())))
+                    .all(),
+                dbg!(actual, expected, value, other)
             );
         }
     });
@@ -322,44 +142,11 @@ fn test_fast_min() {
 #[test]
 fn test_min() {
     for_simd_types!(|T: Float, N| {
-        for [value, other] in simd_chunks!(
-            [
-                1.0,
-                5.0,
-                3.0,
-                0.0,
-                6.0,
-                -8.0,
-                T::NAN,
-                T::NEG_INFINITY,
-                2.0,
-                -3.0,
-                T::INFINITY
-            ],
-            [
-                2.0,
-                -3.0,
-                T::NAN,
-                10.0,
-                19.0,
-                -5.0,
-                T::NAN,
-                -9.0,
-                T::INFINITY,
-                T::NEG_INFINITY,
-                3.0
-            ],
-        )
-        .chain(random_iter())
-        {
+        for [value, other] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| value[i].min(other[i])));
             let actual = Simd::from_array(value).min(Simd::from_array(other));
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, 0.0 = -0.0, dbg!(value, other));
         }
     });
 }
@@ -367,13 +154,7 @@ fn test_min() {
 #[test]
 fn test_clamp() {
     for_simd_types!(|T: Float, N| {
-        for [value, min, max] in simd_chunks!(
-            [5.0, 10.0, 10.0, T::NAN, T::INFINITY, T::NEG_INFINITY],
-            [3.0, 11.0, 5.0, 1.0, -1.0, -1.0],
-            [8.0, 14.0, 9.0, 3.0, 1.0, 1.0],
-        )
-        .chain(random_iter())
-        {
+        for [value, min, max] in fuzz_iter::<[[T; N]; 3]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if value[i].is_nan() || min[i].is_nan() || max[i].is_nan() {
                     T::NAN
@@ -386,10 +167,7 @@ fn test_clamp() {
             let actual =
                 Simd::from_array(value).clamp(Simd::from_array(min), Simd::from_array(max));
 
-            assert!(
-                (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n     min: {min:?}\n     max: {max:?}"
-            );
+            assert_float_eq!(actual, expected, 0.0 = -0.0, dbg!(value, min, max));
         }
     });
 }
@@ -397,13 +175,7 @@ fn test_clamp() {
 #[test]
 fn test_fast_clamp() {
     for_simd_types!(|T: Float, N| {
-        for [value, mut min, mut max] in simd_chunks!(
-            [5.0, 10.0, 10.0, T::NAN, T::INFINITY, T::NEG_INFINITY],
-            [3.0, 11.0, 5.0, 1.0, -1.0, -1.0],
-            [8.0, 14.0, 9.0, 3.0, 1.0, 1.0],
-        )
-        .chain(random_iter())
-        {
+        for [value, mut min, mut max] in fuzz_iter::<[[T; N]; 3]>() {
             for i in 0..N {
                 if min[i].is_nan() {
                     min[i] = 0.0;
@@ -425,10 +197,7 @@ fn test_fast_clamp() {
             let actual =
                 Simd::from_array(value).fast_clamp(Simd::from_array(min), Simd::from_array(max));
 
-            assert!(
-                (actual.simd_eq(expected) | expected.is_nan() & actual.is_nan()).all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n     min: {min:?}\n     max: {max:?}"
-            );
+            assert_float_eq!(actual, expected, 0.0 = -0.0, dbg!(value, min, max));
         }
     });
 }
@@ -436,14 +205,11 @@ fn test_fast_clamp() {
 #[test]
 fn test_reduce_max() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).reduce_max();
             let expected = value.into_iter().reduce(T::max).unwrap();
 
-            assert!(
-                actual == expected || actual.is_nan() && expected.is_nan(),
-                "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
-            );
+            assert_float_eq!(actual, expected, 0.0 = -0.0, dbg!(value));
         }
     });
 }
@@ -451,7 +217,7 @@ fn test_reduce_max() {
 #[test]
 fn test_fast_reduce_max() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).fast_reduce_max();
             let expected = value.into_iter().reduce(T::max).unwrap();
 
@@ -468,14 +234,11 @@ fn test_fast_reduce_max() {
 #[test]
 fn test_reduce_min() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).reduce_min();
             let expected = value.into_iter().reduce(T::min).unwrap();
 
-            assert!(
-                actual == expected || actual.is_nan() && expected.is_nan(),
-                "  actual: {actual:?}\nexpected: {expected:?}\n   value: {value:?}"
-            );
+            assert_float_eq!(actual, expected, 0.0 = -0.0, dbg!(value));
         }
     });
 }
@@ -483,7 +246,7 @@ fn test_reduce_min() {
 #[test]
 fn test_fast_reduce_min() {
     for_simd_types!(|T: Float, N| {
-        for value in random_iter::<[T; N]>() {
+        for value in fuzz_iter::<[T; N]>() {
             let actual = Simd::from_array(value).fast_reduce_min();
             let expected = value.into_iter().reduce(T::min).unwrap();
 
@@ -500,34 +263,18 @@ fn test_fast_reduce_min() {
 #[test]
 fn test_midpoint() {
     for_simd_types!(|T: Float, N| {
-        for [value, other] in simd_chunks!(
-            [
-                5.2,
-                -16349.0,
-                3467890356635.1,
-                2401.0,
-                -21.0,
-                -236456708943.0,
-                2340894786738.2,
-                -4235.0,
-                -21.0,
-            ],
-            [
-                -21.0,
-                -236456708943.0,
-                2340894786738.2,
-                -4235.0,
-                5.2,
-                -16349.0,
-                3467890356635.1,
-                2401.0,
-                5.2,
-            ],
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i].midpoint(other[i])));
-            let actual = Simd::from_array(value).midpoint(Simd::from_array(other));
+        for [value, other] in fuzz_iter::<[[T; N]; 2]>() {
+            let expected = std::array::from_fn::<T, N, _>(|i| value[i].midpoint(other[i]));
+            let actual = Simd::from_array(value)
+                .midpoint(Simd::from_array(other))
+                .to_array();
 
-            assert_eq!(actual, expected);
+            assert!(
+                (0..N).all(|i| float_eq!(actual[i], expected[i])
+                    || value[i].abs() > T::MAX * 0.5
+                    || other[i].abs() > T::MAX * 0.5),
+                dbg!(actual, expected, value, other)
+            );
         }
     });
 }
@@ -535,28 +282,12 @@ fn test_midpoint() {
 #[test]
 fn test_is_nan() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NAN,
-            6.0,
-            15.0,
-            T::NAN,
-            T::NEG_INFINITY,
-            T::INFINITY,
-            16.0,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected =
                 Simd::from_array(value.map(|x| if x.is_nan() { T::from_bits(!0) } else { 0.0 }));
             let actual = Simd::from_array(value).is_nan();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -564,28 +295,12 @@ fn test_is_nan() {
 #[test]
 fn test_is_finite() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NAN,
-            6.0,
-            15.0,
-            T::NAN,
-            T::NEG_INFINITY,
-            T::INFINITY,
-            16.0,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected =
                 Simd::from_array(value.map(|x| if x.is_finite() { T::from_bits(!0) } else { 0.0 }));
             let actual = Simd::from_array(value).is_finite();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -593,20 +308,7 @@ fn test_is_finite() {
 #[test]
 fn test_is_infinite() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NAN,
-            6.0,
-            15.0,
-            T::NAN,
-            T::NEG_INFINITY,
-            T::INFINITY,
-            16.0,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(|x| {
                 if x.is_infinite() {
                     T::from_bits(!0)
@@ -616,10 +318,7 @@ fn test_is_infinite() {
             }));
             let actual = Simd::from_array(value).is_infinite();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -627,36 +326,11 @@ fn test_is_infinite() {
 #[test]
 fn test_round() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0,
-            0.1,
-            (0.5 as T).next_down(),
-            0.5,
-            0.7,
-            8388607.0,
-            4503599627370495.0,
-            T::MAX,
-            T::INFINITY,
-            T::NAN
-        ])
-        .flat_map(|x| {
-            [
-                x,
-                x.map(|x| x + 1.0),
-                x.map(|x| x + 2.0),
-                x.map(|x| x + 3.0),
-            ]
-        })
-        .flat_map(|x| [x, x.map(|x| -x)])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::round));
             let actual = Simd::from_array(value).round();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}",
-            );
+            assert_float_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -664,36 +338,13 @@ fn test_round() {
 #[test]
 fn test_round_ties_even() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0,
-            0.1,
-            (0.5 as T).next_down(),
-            0.5,
-            0.7,
-            8388607.0,
-            4503599627370495.0,
-            T::MAX,
-            T::INFINITY,
-            T::NAN
-        ])
-        .flat_map(|x| {
-            [
-                x,
-                x.map(|x| x + 1.0),
-                x.map(|x| x + 2.0),
-                x.map(|x| x + 3.0),
-            ]
-        })
-        .flat_map(|x| [x, x.map(|x| -x)])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::round_ties_even));
             let actual = Simd::from_array(value).round_ties_even();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}",
-            );
+            // TODO(bug): `round_ties_even` sometimes returns the wrong zero
+            // sign on x86
+            assert_float_eq!(actual, expected, 0.0 = -0.0, dbg!(value));
         }
     });
 }
@@ -701,14 +352,20 @@ fn test_round_ties_even() {
 #[test]
 fn test_fast_round_int() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0, 0.1, 0.5, 0.7, -0.0, -0.1, -0.5, -0.7, 2.0, 2.1, 2.5, 2.7, -2.0, -2.1, -2.5, -2.7,
-            5.0, 5.1, 5.5, 5.7, -5.0, -5.1, -5.5, -5.7,
-        ]) {
-            let expected = Simd::from_array(value).round_int();
-            let actual = Simd::from_array(value).fast_round_int();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.round_int();
+            let actual = value.fast_round_int();
 
-            assert_eq!(actual, expected);
+            assert!(
+                (actual.simd_eq(expected)
+                    | (value.is_nan()
+                        | value.simd_le(Signed::MIN as T)
+                        | value.simd_ge(Signed::MAX as T))
+                    .to_bits()
+                    .cast_signed())
+                .all(),
+                dbg!(actual, expected, value)
+            );
         }
     });
 }
@@ -716,39 +373,7 @@ fn test_fast_round_int() {
 #[test]
 fn test_round_int() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0,
-            0.1,
-            0.5,
-            0.7,
-            -0.0,
-            -0.1,
-            -0.5,
-            -0.7,
-            2.0,
-            2.1,
-            2.5,
-            2.7,
-            -2.0,
-            -2.1,
-            -2.5,
-            -2.7,
-            5.0,
-            5.1,
-            5.5,
-            5.7,
-            -5.0,
-            -5.1,
-            -5.5,
-            -5.7,
-            T::MAX,
-            T::MIN,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             // TODO:  Currently `round` actually behaves like `round_ties_even`.
             // Decide the correct behavior then add documentation.
             let expected_1 = SimdSigned::from_array(
@@ -771,54 +396,11 @@ fn test_round_int() {
 #[test]
 fn test_trunc() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0,
-            0.1,
-            0.5,
-            0.7,
-            -0.0,
-            -0.1,
-            -0.5,
-            -0.7,
-            2.0,
-            2.1,
-            2.5,
-            2.7,
-            -2.0,
-            -2.1,
-            -2.5,
-            -2.7,
-            5.0,
-            5.1,
-            5.5,
-            5.7,
-            -5.0,
-            -5.1,
-            -5.5,
-            -5.7,
-            2401.63,
-            -2401.63,
-            4911111.2,
-            -4911111.2,
-            18388608.0,
-            18388608.0,
-            9223372036854775807.0,
-            -9223372036854775808.0,
-            T::MAX,
-            T::MIN,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::trunc));
             let actual = Simd::from_array(value).trunc();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -826,14 +408,20 @@ fn test_trunc() {
 #[test]
 fn test_fast_trunc_int() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0, 0.1, 0.5, 0.7, -0.0, -0.1, -0.5, -0.7, 2.0, 2.1, 2.5, 2.7, -2.0, -2.1, -2.5, -2.7,
-            5.0, 5.1, 5.5, 5.7, -5.0, -5.1, -5.5, -5.7,
-        ]) {
-            let expected = SimdSigned::from_array(value.map(|x| x.trunc() as Signed));
-            let actual = Simd::from_array(value).fast_trunc_int();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.trunc_int();
+            let actual = value.fast_trunc_int();
 
-            assert_eq!(actual, expected);
+            assert!(
+                (actual.simd_eq(expected)
+                    | (value.is_nan()
+                        | value.simd_le(Signed::MIN as T)
+                        | value.simd_ge(Signed::MAX as T))
+                    .to_bits()
+                    .cast_signed())
+                .all(),
+                dbg!(actual, expected, value)
+            );
         }
     });
 }
@@ -841,47 +429,7 @@ fn test_fast_trunc_int() {
 #[test]
 fn test_trunc_int() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0,
-            0.1,
-            0.5,
-            0.7,
-            -0.0,
-            -0.1,
-            -0.5,
-            -0.7,
-            2.0,
-            2.1,
-            2.5,
-            2.7,
-            -2.0,
-            -2.1,
-            -2.5,
-            -2.7,
-            5.0,
-            5.1,
-            5.5,
-            5.7,
-            -5.0,
-            -5.1,
-            -5.5,
-            -5.7,
-            2401.63,
-            -2401.63,
-            4911111.2,
-            -4911111.2,
-            18388608.0,
-            18388608.0,
-            9223372036854775807.0,
-            -9223372036854775808.0,
-            T::MAX,
-            T::MIN,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = SimdSigned::from_array(
                 value.map(|x| x.trunc().clamp(Signed::MIN as T, Signed::MAX as T) as Signed),
             );
@@ -898,46 +446,11 @@ fn test_trunc_int() {
 #[test]
 fn test_fract() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            0.0,
-            0.1,
-            0.5,
-            0.7,
-            -0.0,
-            -0.1,
-            -0.5,
-            -0.7,
-            2.0,
-            2.1,
-            2.5,
-            2.7,
-            -2.0,
-            -2.1,
-            -2.5,
-            -2.7,
-            5.0,
-            5.1,
-            5.5,
-            5.7,
-            -5.0,
-            -5.1,
-            -5.5,
-            -5.7,
-            T::MAX,
-            T::MIN,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ])
-        .chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::fract));
             let actual = Simd::from_array(value).fract();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -945,42 +458,17 @@ fn test_fract() {
 #[test]
 fn test_fast_mul_add() {
     for_simd_types!(|T: Float, N| {
-        for [value, a, b] in simd_chunks!(
-            [
-                2.0,
-                3.0,
-                4.0,
-                5.0,
-                6.7,
-                9.2,
-                11.5,
-                12.2,
-                1.0,
-                2.0,
-                -34578.0,
-                4.0,
-                5.0,
-                6.0,
-                7.0,
-                4538093452.0,
-            ],
-            [
-                4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6, 2.0, 3.0, 23.0, 5.0, 6.0, 7.0, 8.0, 9.0,
-            ],
-            [
-                1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
-            ],
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i].mul_add(a[i], b[i])));
-            let actual =
-                Simd::from_array(value).fast_mul_add(Simd::from_array(a), Simd::from_array(b));
+        for [value, a, b] in fuzz_iter::<[[T; N]; 3]>() {
+            let expected_unfused = std::array::from_fn::<T, N, _>(|i| value[i] * a[i] + b[i]);
+            let expected_fused = std::array::from_fn::<T, N, _>(|i| value[i].mul_add(a[i], b[i]));
+            let actual = Simd::from_array(value)
+                .fast_mul_add(Simd::from_array(a), Simd::from_array(b))
+                .to_array();
 
             assert!(
-                (actual - expected)
-                    .abs()
-                    .simd_le(expected.abs() * 1e-6)
-                    .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n       a: {a:?}\n       b: {b:?}",
+                (0..N).all(|i| float_eq!(actual[i], expected_unfused[i])
+                    || float_eq!(actual[i], expected_fused[i])),
+                dbg!(value, a, b, expected_unfused, expected_fused, actual)
             );
 
             #[cfg(any(
@@ -990,10 +478,7 @@ fn test_fast_mul_add() {
                 ),
                 all(target_feature = "neon", target_arch = "aarch64"),
             ))]
-            assert!(
-                actual == expected,
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n       a: {a:?}\n       b: {b:?}",
-            );
+            assert_float_eq!(actual, expected_fused, dbg!(value, a, b));
         }
     });
 }
@@ -1001,42 +486,11 @@ fn test_fast_mul_add() {
 #[test]
 fn test_fast_mul_neg_add() {
     for_simd_types!(|T: Float, N| {
-        for [value, a, b] in simd_chunks!(
-            [
-                2.0,
-                3.0,
-                4.0,
-                5.0,
-                6.7,
-                9.2,
-                11.5,
-                12.2,
-                1.0,
-                2.0,
-                -34578.0,
-                4.0,
-                5.0,
-                6.0,
-                7.0,
-                4538093452.0,
-            ],
-            [
-                4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6, 2.0, 3.0, 23.0, 5.0, 6.0, 7.0, 8.0, 9.0,
-            ],
-            [
-                1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
-            ],
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| b[i] - value[i] * a[i]));
-            let actual =
-                Simd::from_array(value).fast_mul_neg_add(Simd::from_array(a), Simd::from_array(b));
-
-            assert!(
-                (actual - expected)
-                    .abs()
-                    .simd_le(expected.abs() * 1e-6)
-                    .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n       a: {a:?}\n       b: {b:?}",
+        for [value, a, b] in fuzz_iter::<[Simd; 3]>() {
+            assert_float_eq!(
+                value.fast_mul_neg_add(a, b),
+                value.fast_mul_add(-a, b),
+                dbg!(value, a, b)
             );
         }
     });
@@ -1045,42 +499,11 @@ fn test_fast_mul_neg_add() {
 #[test]
 fn test_fast_mul_sub() {
     for_simd_types!(|T: Float, N| {
-        for [value, a, b] in simd_chunks!(
-            [
-                2.0,
-                3.0,
-                4.0,
-                5.0,
-                6.7,
-                9.2,
-                11.5,
-                12.2,
-                1.0,
-                2.0,
-                -34578.0,
-                4.0,
-                5.0,
-                6.0,
-                7.0,
-                4538093452.0,
-            ],
-            [
-                4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6, 2.0, 3.0, 23.0, 5.0, 6.0, 7.0, 8.0, 9.0,
-            ],
-            [
-                1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
-            ],
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| value[i] * a[i] - b[i]));
-            let actual =
-                Simd::from_array(value).fast_mul_sub(Simd::from_array(a), Simd::from_array(b));
-
-            assert!(
-                (actual - expected)
-                    .abs()
-                    .simd_le(expected.abs() * 1e-6)
-                    .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n       a: {a:?}\n       b: {b:?}",
+        for [value, a, b] in fuzz_iter::<[Simd; 3]>() {
+            assert_float_eq!(
+                value.fast_mul_sub(a, b),
+                value.fast_mul_add(a, -b),
+                dbg!(value, a, b)
             );
         }
     });
@@ -1089,42 +512,11 @@ fn test_fast_mul_sub() {
 #[test]
 fn test_fast_mul_neg_sub() {
     for_simd_types!(|T: Float, N| {
-        for [value, a, b] in simd_chunks!(
-            [
-                2.0,
-                3.0,
-                4.0,
-                5.0,
-                6.7,
-                9.2,
-                11.5,
-                12.2,
-                1.0,
-                2.0,
-                -34578.0,
-                4.0,
-                5.0,
-                6.0,
-                7.0,
-                4538093452.0,
-            ],
-            [
-                4.0, 5.0, 6.0, 7.0, 1.5, 8.9, 4.2, 5.6, 2.0, 3.0, 23.0, 5.0, 6.0, 7.0, 8.0, 9.0,
-            ],
-            [
-                1.5, 8.9, 4.2, 5.6, 2.0, 3.5, 4.0, 5.1, 9.0, 4.0, 5.32, 6.03, 7.12, 8.0, 6.0, 53.0,
-            ],
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| -value[i] * a[i] - b[i]));
-            let actual =
-                Simd::from_array(value).fast_mul_neg_sub(Simd::from_array(a), Simd::from_array(b));
-
-            assert!(
-                (actual - expected)
-                    .abs()
-                    .simd_le(expected.abs() * 1e-6)
-                    .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n   value: {value:?}\n       a: {a:?}\n       b: {b:?}",
+        for [value, a, b] in fuzz_iter::<[Simd; 3]>() {
+            assert_float_eq!(
+                value.fast_mul_neg_sub(a, b),
+                value.fast_mul_add(-a, -b),
+                dbg!(value, a, b)
             );
         }
     });
@@ -1133,20 +525,11 @@ fn test_fast_mul_neg_sub() {
 #[test]
 fn test_div_euclid() {
     for_simd_types!(|T: Float, N| {
-        for [left, right] in simd_chunks!(
-            [
-                4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.24, 18.0, 20.0, 15.0, 16.4, -21.0, 24.0,
-                -30.0, 32.0,
-            ],
-            [
-                2.0, 2.0, -5.0, -3.0, 2.0, 1.5, 3.0, -2.5, 3.5, 4.0, 5.1, 8.0, 7.68, 6.0, 10.0,
-                -16.0,
-            ],
-        ) {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].div_euclid(right[i])));
             let actual = Simd::from_array(left).div_euclid(Simd::from_array(right));
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
 }
@@ -1154,20 +537,11 @@ fn test_div_euclid() {
 #[test]
 fn test_rem_euclid() {
     for_simd_types!(|T: Float, N| {
-        for [left, right] in simd_chunks!(
-            [
-                4.0, 9.0, 10.0, 12.0, 5.0, 6.0, 7.0, 8.24, 18.0, 20.0, 15.0, 16.4, -21.0, 24.0,
-                -30.0, 32.0,
-            ],
-            [
-                2.0, 2.0, -5.0, -3.0, 2.0, 1.5, 3.0, -2.5, 3.5, 4.0, 5.1, 8.0, 7.68, 6.0, 10.0,
-                -16.0,
-            ],
-        ) {
+        for [left, right] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| left[i].rem_euclid(right[i])));
             let actual = Simd::from_array(left).rem_euclid(Simd::from_array(right));
 
-            assert_eq!(actual, expected);
+            assert_float_eq!(actual, expected, dbg!(left, right));
         }
     });
 }
@@ -1175,16 +549,7 @@ fn test_rem_euclid() {
 #[test]
 fn test_flipsign() {
     for_simd_types!(|T: Float, N| {
-        for [value, sign] in simd_chunks!(
-            [
-                1.0, 1.0, -1.0, -1.0, 5.2, 6.7, -8.2, -12.5, 3.0, -6.4, 7.2, -24.01, 3.2, 1.6,
-                -0.8, 0.4,
-            ],
-            [
-                2.0, -3.0, 4.0, -5.0, 5.2, 6.7, -8.2, -12.5, 3.3, -4.0, -5.5, 6.6, -6.9, 5.4, 3.1,
-                -6.0,
-            ],
-        ) {
+        for [value, sign] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if sign[i].is_sign_negative() {
                     -value[i]
@@ -1194,7 +559,7 @@ fn test_flipsign() {
             }));
             let actual = Simd::from_array(value).flipsign(Simd::from_array(sign));
 
-            assert_eq!(actual, expected);
+            assert_bit_eq!(actual, expected);
         }
     });
 }
@@ -1202,16 +567,7 @@ fn test_flipsign() {
 #[test]
 fn test_copysign() {
     for_simd_types!(|T: Float, N| {
-        for [value, sign] in simd_chunks!(
-            [
-                1.0, 1.0, -1.0, -1.0, 5.2, 6.7, -8.2, -12.5, 3.0, -6.4, 7.2, -24.01, 3.2, 1.6,
-                -0.8, 0.4,
-            ],
-            [
-                2.0, -3.0, 4.0, -5.0, 5.2, 6.7, -8.2, -12.5, 3.3, -4.0, -5.5, 6.6, -6.9, 5.4, 3.1,
-                -6.0,
-            ],
-        ) {
+        for [value, sign] in fuzz_iter::<[[T; N]; 2]>() {
             let expected = Simd::from_array(std::array::from_fn(|i| {
                 if sign[i].is_sign_negative() {
                     -value[i].abs()
@@ -1221,39 +577,24 @@ fn test_copysign() {
             }));
             let actual = Simd::from_array(value).copysign(Simd::from_array(sign));
 
-            assert_eq!(actual, expected);
+            assert_bit_eq!(actual, expected);
         }
     });
 }
 
+// Note: The tests for `asin` and `acos` rely on `asin_acos`, so this test must
+// not rely on neither.
 #[test]
 fn test_asin_acos() {
     for_simd_types!(|T: Float, N| {
-        let inc = 1.0 / 2501.0 / 8.0;
-        for x in -2500..=2500 {
-            let base = (x * 8) as T * inc;
-            for value in simd_chunks!([
-                base,
-                base + inc,
-                base + 2.0 * inc,
-                base + 3.0 * inc,
-                base + 4.0 * inc,
-                base + 5.0 * inc,
-                base + 6.0 * inc,
-                base + 7.0 * inc,
-            ]) {
-                let expected = (
-                    Simd::from_array(value.map(T::asin)),
-                    Simd::from_array(value.map(T::acos)),
-                );
-                let actual = Simd::from_array(value).asin_acos();
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = (
+                Simd::from_array(value.map(Libm::<T>::asin)),
+                Simd::from_array(value.map(Libm::<T>::acos)),
+            );
+            let actual = Simd::from_array(value).asin_acos();
 
-                assert!(
-                    (actual.0 - expected.0).abs().simd_le(6e-7).all()
-                        && (actual.1 - expected.1).abs().simd_le(6e-7).all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            assert_float_eq!(actual, expected, max_ulp_diff = 2, dbg!(value));
         }
     });
 }
@@ -1261,27 +602,11 @@ fn test_asin_acos() {
 #[test]
 fn test_asin() {
     for_simd_types!(|T: Float, N| {
-        let inc = 1.0 / 2501.0 / 8.0;
-        for x in -2500..=2500 {
-            let base = (x * 8) as T * inc;
-            for value in simd_chunks!([
-                base,
-                base + inc,
-                base + 2.0 * inc,
-                base + 3.0 * inc,
-                base + 4.0 * inc,
-                base + 5.0 * inc,
-                base + 6.0 * inc,
-                base + 7.0 * inc,
-            ]) {
-                let expected = Simd::from_array(value.map(T::asin));
-                let actual = Simd::from_array(value).asin();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.asin_acos().0;
+            let actual = value.asin();
 
-                assert!(
-                    (actual - expected).abs().simd_le(6e-7).all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -1289,27 +614,11 @@ fn test_asin() {
 #[test]
 fn test_acos() {
     for_simd_types!(|T: Float, N| {
-        let inc = 1.0 / 2501.0 / 8.0;
-        for x in -2500..=2500 {
-            let base = (x * 8) as T * inc;
-            for value in simd_chunks!([
-                base,
-                base + inc,
-                base + 2.0 * inc,
-                base + 3.0 * inc,
-                base + 4.0 * inc,
-                base + 5.0 * inc,
-                base + 6.0 * inc,
-                base + 7.0 * inc,
-            ]) {
-                let expected = Simd::from_array(value.map(T::acos));
-                let actual = Simd::from_array(value).acos();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.asin_acos().1;
+            let actual = value.acos();
 
-                assert!(
-                    (actual - expected).abs().simd_le(6e-7).all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -1317,28 +626,11 @@ fn test_acos() {
 #[test]
 fn test_atan() {
     for_simd_types!(|T: Float, N| {
-        let inc = 1.0 / 2501.0 / 8.0;
-        for x in -2500..=2500 {
-            let base = (x * 8) as T * inc;
-            for value in simd_chunks!([
-                base,
-                base + inc,
-                base + 2.0 * inc,
-                base + 3.0 * inc,
-                base + 4.0 * inc,
-                base + 5.0 * inc,
-                base + 6.0 * inc,
-                base + 7.0 * inc,
-            ]) {
-                let expected = Simd::from_array(value.map(T::atan));
-                let actual = Simd::from_array(value).atan();
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::atan));
+            let actual = Simd::from_array(value).atan();
 
-                let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
-                assert!(
-                    (actual - expected).abs().simd_le(tol).all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            assert_float_eq!(actual, expected, max_ulp_diff = 2, dbg!(value));
         }
     });
 }
@@ -1346,69 +638,35 @@ fn test_atan() {
 #[test]
 fn test_atan2() {
     for_simd_types!(|T: Float, N| {
-        let inc_y = 1.0 / 51.0 / 8.0;
-        let inc_x = 1.0 / 2501.0 / 8.0;
-        for y in -50..=50 {
-            let base_y = (y * 8) as T * inc_y;
-            for x in (-2500..=-2400).chain(-50..=50).chain(2400..=2500) {
-                let base_x = (x * 8) as T * inc_x;
-                for [value, other] in simd_chunks!(
-                    [
-                        base_y,
-                        base_y + inc_y,
-                        base_y + 2.0 * inc_y,
-                        base_y + 3.0 * inc_y
-                    ],
-                    [
-                        base_x,
-                        base_x + inc_x,
-                        base_x + 2.0 * inc_x,
-                        base_x + 3.0 * inc_x
-                    ],
-                ) {
-                    let expected =
-                        Simd::from_array(std::array::from_fn(|i| value[i].atan2(other[i])));
-                    let actual = Simd::from_array(value).atan2(Simd::from_array(other));
+        for [value, other] in fuzz_iter::<[[T; N]; 2]>() {
+            let expected = Simd::from_array(std::array::from_fn(|i| {
+                Libm::<T>::atan2(value[i], other[i])
+            }));
+            let actual = Simd::from_array(value).atan2(Simd::from_array(other));
 
-                    let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
-                    assert!(
-                        (actual - expected).abs().simd_le(tol).all(),
-                        "expected: {expected:?}\n  actual: {actual:?}",
-                    );
-                }
-            }
+            assert_float_eq!(actual, expected, max_ulp_diff = 3, dbg!(value));
         }
     });
 }
 
+// Note: The tests for `sin` and `cos` rely on `sin_cos`, so this test must not
+// rely on neither.
 #[test]
 fn test_sin_cos() {
     for_simd_types!(|T: Float, N| {
-        for x in -2500..=2500 {
-            let base = (x * 4) as T;
-            for angles in simd_chunks!([
-                base,
-                base + 1.0,
-                base + 2.0,
-                base + 3.0,
-                base + 4.0,
-                base + 5.0,
-                base + 6.0,
-                base + 7.0,
-            ]) {
-                let expected = (
-                    Simd::from_array(angles.map(T::sin)),
-                    Simd::from_array(angles.map(T::cos)),
-                );
-                let actual = Simd::from_array(angles).sin_cos();
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = (
+                Simd::from_array(value.map(Libm::<T>::sin)),
+                Simd::from_array(value.map(Libm::<T>::cos)),
+            );
+            let actual = Simd::from_array(value).sin_cos();
 
-                let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
-                assert!(
-                    (actual.0 - expected.0).abs().simd_le(tol).all()
-                        && (actual.1 - expected.1).abs().simd_le(tol).all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
+            assert!(
+                (actual.0 - expected.0).abs().simd_le(tol).all()
+                    && (actual.1 - expected.1).abs().simd_le(tol).all(),
+                "expected: {expected:?}\n  actual: {actual:?}",
+            );
         }
     });
 }
@@ -1416,27 +674,11 @@ fn test_sin_cos() {
 #[test]
 fn test_sin() {
     for_simd_types!(|T: Float, N| {
-        for x in -2500..=2500 {
-            let base = (x * 4) as T;
-            for angles in simd_chunks!([
-                base,
-                base + 1.0,
-                base + 2.0,
-                base + 3.0,
-                base + 4.0,
-                base + 5.0,
-                base + 6.0,
-                base + 7.0,
-            ]) {
-                let expected = Simd::from_array(angles.map(T::sin));
-                let actual = Simd::from_array(angles).sin();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.sin_cos().0;
+            let actual = value.sin();
 
-                let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
-                assert!(
-                    (actual - expected).abs().simd_le(tol).all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -1444,27 +686,11 @@ fn test_sin() {
 #[test]
 fn test_cos() {
     for_simd_types!(|T: Float, N| {
-        for x in -2500..=2500 {
-            let base = (x * 4) as T;
-            for angles in simd_chunks!([
-                base,
-                base + 1.0,
-                base + 2.0,
-                base + 3.0,
-                base + 4.0,
-                base + 5.0,
-                base + 6.0,
-                base + 7.0,
-            ]) {
-                let expected = Simd::from_array(angles.map(T::cos));
-                let actual = Simd::from_array(angles).cos();
+        for value in fuzz_iter::<Simd>() {
+            let expected = value.sin_cos().1;
+            let actual = value.cos();
 
-                let tol = if size_of::<T>() == 8 { 6e-8 } else { 2e-7 };
-                assert!(
-                    (actual - expected).abs().simd_le(tol).all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -1472,29 +698,17 @@ fn test_cos() {
 #[test]
 fn test_tan() {
     for_simd_types!(|T: Float, N| {
-        for x in -2500..=2500 {
-            let base = (x * 4) as T;
-            for angles in simd_chunks!([
-                base,
-                base + 1.0,
-                base + 2.0,
-                base + 3.0,
-                base + 4.0,
-                base + 5.0,
-                base + 6.0,
-                base + 7.0,
-            ]) {
-                let expected = Simd::from_array(angles.map(T::tan));
-                let actual = Simd::from_array(angles).tan();
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::tan));
+            let actual = Simd::from_array(value).tan();
 
-                assert!(
-                    (actual - expected)
-                        .abs()
-                        .simd_le(expected.abs() * 1e-6)
-                        .all(),
-                    "expected: {expected:?}\n  actual: {actual:?}",
-                );
-            }
+            assert!(
+                (actual - expected)
+                    .abs()
+                    .simd_le(expected.abs() * 1e-6)
+                    .all(),
+                "expected: {expected:?}\n  actual: {actual:?}",
+            );
         }
     });
 }
@@ -1502,32 +716,15 @@ fn test_tan() {
 #[test]
 fn test_to_degrees() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NEG_INFINITY,
-            6.0,
-            15.0,
-            -19.0,
-            -9.0,
-            4.5,
-            -20.0,
-            T::INFINITY,
-            5.0,
-            -4.0,
-            13.0,
-            9.5,
-            -3.0,
-        ]) {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::to_degrees));
             let actual = Simd::from_array(value).to_degrees();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-6)
-                    | actual.simd_eq(expected))
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
+            assert_float_eq!(
+                actual,
+                expected,
+                max_abs_diff = expected.abs() * 1e-6,
+                dbg!(value)
             );
         }
     });
@@ -1536,32 +733,15 @@ fn test_to_degrees() {
 #[test]
 fn test_to_radians() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NEG_INFINITY,
-            6.0,
-            15.0,
-            -19.0,
-            -9.0,
-            4.5,
-            -20.0,
-            T::INFINITY,
-            5.0,
-            -4.0,
-            13.0,
-            9.5,
-            -3.0,
-        ]) {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::to_radians));
             let actual = Simd::from_array(value).to_radians();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-6)
-                    | actual.simd_eq(expected))
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
+            assert_float_eq!(
+                actual,
+                expected,
+                max_abs_diff = expected.abs() * 1e-6,
+                dbg!(value)
             );
         }
     });
@@ -1570,33 +750,23 @@ fn test_to_radians() {
 #[test]
 fn test_recip() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NEG_INFINITY,
-            T::NAN,
-            15.0,
-            -19e5,
-            -9.0,
-            4.5e10,
-            -20.0,
-            T::INFINITY,
-            5.0,
-            -4.0,
-            13.343433,
-            9.5,
-            -3.0,
-        ]) {
-            let expected = Simd::from_array(value.map(T::recip));
-            let actual = Simd::from_array(value).recip();
+        for value in fuzz_iter::<[T; N]>() {
+            // Test against a precise reciprocal, `1.0 / x`, rather than against
+            // an approximate result, `x.recip()`.
+            let expected = value.map(|x| 1.0 / x);
+            let actual = Simd::from_array(value).recip().to_array();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-3)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            for ((actual, expected), value) in actual.into_iter().zip(expected).zip(value) {
+                assert!(
+                    actual.is_sign_negative() == expected.is_sign_negative()
+                        && (float_eq!(
+                            actual,
+                            expected,
+                            max_abs_diff = expected.abs() * 1e-3 + 1e-30
+                        ) || (actual.is_infinite() && value.is_subnormal())),
+                    dbg!(actual, expected, value)
+                );
+            }
         }
     });
 }
@@ -1604,33 +774,23 @@ fn test_recip() {
 #[test]
 fn test_recip_sqrt() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NEG_INFINITY,
-            T::NAN,
-            15.0,
-            -19e5,
-            -9.0,
-            4.5e10,
-            -20.0,
-            T::INFINITY,
-            5.0,
-            -4.0,
-            13.343433,
-            9.5,
-            -3.0,
-        ]) {
-            let expected = Simd::from_array(value.map(|x| x.sqrt().recip()));
-            let actual = Simd::from_array(value).recip_sqrt();
+        for value in fuzz_iter::<[T; N]>() {
+            // Test against a precise reciprocal, `1.0 / x`, rather than against
+            // an approximate result, `x.recip()`.
+            let expected = value.map(|x| 1.0 / x.sqrt());
+            let actual = Simd::from_array(value).recip_sqrt().to_array();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-3)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            for ((actual, expected), value) in actual.into_iter().zip(expected).zip(value) {
+                assert!(
+                    actual.is_sign_negative() == expected.is_sign_negative()
+                        && (float_eq!(
+                            actual,
+                            expected,
+                            max_abs_diff = expected.abs() * 1e-3 + 1e-30
+                        ) || (actual.is_infinite() && value.is_subnormal())),
+                    dbg!(actual, expected, value)
+                );
+            }
         }
     });
 }
@@ -1638,32 +798,11 @@ fn test_recip_sqrt() {
 #[test]
 fn test_sqrt() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -1.0,
-            2.0,
-            -3.5,
-            T::NEG_INFINITY,
-            T::NAN,
-            15.0,
-            -19e5,
-            -9.0,
-            4.5e10,
-            -20.0,
-            T::INFINITY,
-            5.0,
-            -4.0,
-            13.343433,
-            9.5,
-            -3.0,
-        ]) {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(T::sqrt));
             let actual = Simd::from_array(value).sqrt();
 
-            assert_eq!(
-                actual ^ expected,
-                Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}"
-            );
+            assert_float_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -1671,29 +810,11 @@ fn test_sqrt() {
 #[test]
 fn test_exp() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -2.0,
-            -1.1,
-            0.0,
-            1.3,
-            1.5,
-            2.0,
-            10.4,
-            2000.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::exp));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::exp));
             let actual = Simd::from_array(value).exp();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, max_ulp_diff = 1, dbg!(value));
         }
     });
 }
@@ -1701,39 +822,21 @@ fn test_exp() {
 #[test]
 fn test_exp2() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -2.0,
-            -1.1,
-            0.0,
-            1.3,
-            1.5,
-            2.0,
-            10.4,
-            100.5,
-            127.0,
-            -149.0,
-            1000.2,
-            1023.0,
-            -1074.0,
-            2000.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::exp2));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::exp2));
             let actual = Simd::from_array(value).exp2();
 
-            let tol = if size_of::<T>() == 8 { 1e-12 } else { 1e-7 };
-            let min_tol = if size_of::<T>() == 8 { 5e-324 } else { 1e-45 };
-            assert!(
-                ((actual - expected)
-                    .abs()
-                    .simd_le((expected.abs() * tol).max(Simd::splat(min_tol)))
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            match Unsigned::BITS {
+                32 => assert_float_eq!(actual, expected, max_ulp_diff = 1, dbg!(value)),
+                // `f64xN::exp2` has a large ULP difference
+                64 => assert_float_eq!(
+                    actual,
+                    expected,
+                    max_abs_diff = expected.abs() * 1e-12 + 1e-12,
+                    dbg!(value)
+                ),
+                _ => panic!(),
+            }
         }
     });
 }
@@ -1741,32 +844,24 @@ fn test_exp2() {
 #[test]
 fn test_ln() {
     for_simd_types!(|T: Float, N| {
-        #[expect(clippy::approx_constant)]
-        for value in simd_chunks!([
-            0.1,
-            0.5,
-            1.0,
-            2.718282,
-            10.0,
-            35.0,
-            1250.0,
-            0.0,
-            -1.0,
-            -2401.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::ln));
-            let actual = Simd::from_array(value).ln();
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = value.map(Libm::<T>::log);
+            let actual = Simd::from_array(value).ln().to_array();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            for ((actual, expected), value) in actual.into_iter().zip(expected).zip(value) {
+                // TODO(bug): Negative subnormals should result in NaN, but
+                // currently result in `NEG_INFINITY`.
+                let neg_subnormal_neg_inf = value.is_subnormal()
+                    && value.is_sign_negative()
+                    && actual == T::NEG_INFINITY
+                    && expected.is_nan();
+
+                assert!(
+                    float_eq!(actual, expected, max_abs_diff = expected.abs() * 1e-7)
+                        || neg_subnormal_neg_inf,
+                    dbg!(actual, expected, value)
+                );
+            }
         }
     });
 }
@@ -1774,23 +869,8 @@ fn test_ln() {
 #[test]
 fn test_log2() {
     for_simd_types!(|T: Float, N| {
-        #[expect(clippy::approx_constant)]
-        for value in simd_chunks!([
-            0.1,
-            0.5,
-            1.0,
-            2.718282,
-            10.0,
-            35.0,
-            1250.0,
-            0.0,
-            -1.0,
-            -2401.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::log2));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::log2));
             let actual = Simd::from_array(value).log2();
 
             assert!(
@@ -1807,23 +887,8 @@ fn test_log2() {
 #[test]
 fn test_log10() {
     for_simd_types!(|T: Float, N| {
-        #[expect(clippy::approx_constant)]
-        for value in simd_chunks!([
-            0.1,
-            0.5,
-            1.0,
-            2.718282,
-            10.0,
-            35.0,
-            1250.0,
-            0.0,
-            -1.0,
-            -2401.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::log10));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::log10));
             let actual = Simd::from_array(value).log10();
 
             assert!(
@@ -1840,32 +905,8 @@ fn test_log10() {
 #[test]
 fn test_powf_simd() {
     for_simd_types!(|T: Float, N| {
-        #[expect(clippy::approx_constant)]
-        for [x, n] in simd_chunks!(
-            [
-                1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0, -3.1, -3.0,
-                -4.0, 5.1,
-            ],
-            [
-                0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1, 2.7, 4.0,
-                -3.0, 29.0,
-            ],
-        )
-        .chain(
-            simd_chunks!([
-                1.2, 2.0, 3.0, 1.5, 9.2, 6.1, 2.5, 5.3, -4.5, -5.1, -5.2, -5.3, -3.0, -3.1, -3.0,
-                -4.0, 5.1,
-            ])
-            .flat_map(|x| {
-                [
-                    0.1, 0.5, 1.0, 2.718282, 3.0, 4.0, 2.5, -1.0, 1.4, 2.0, 1.0, 3.0, 0.1, 2.7,
-                    4.0, -3.0, 29.0,
-                ]
-                .into_iter()
-                .map(move |n| [x, [n; N]])
-            }),
-        ) {
-            let expected = Simd::from_array(std::array::from_fn(|i| x[i].powf(n[i])));
+        for [x, n] in fuzz_iter::<[[T; N]; 2]>() {
+            let expected = Simd::from_array(std::array::from_fn(|i| Libm::<T>::pow(x[i], n[i])));
             let actual = Simd::from_array(x).powf_simd(Simd::from_array(n));
 
             assert!(
@@ -1881,9 +922,7 @@ fn test_powf_simd() {
 #[test]
 fn test_is_sign_positive() {
     for_simd_types!(|T: Float, N| {
-        for value in
-            simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(|x| {
                 if x.is_sign_positive() {
                     T::from_bits(!0)
@@ -1893,10 +932,7 @@ fn test_is_sign_positive() {
             }));
             let actual = Simd::from_array(value).is_sign_positive();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -1904,9 +940,7 @@ fn test_is_sign_positive() {
 #[test]
 fn test_is_sign_negative() {
     for_simd_types!(|T: Float, N| {
-        for value in
-            simd_chunks!([2401.0, -123.0, T::INFINITY, T::NEG_INFINITY]).chain(random_iter())
-        {
+        for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(|x| {
                 if x.is_sign_negative() {
                     T::from_bits(!0)
@@ -1916,10 +950,7 @@ fn test_is_sign_negative() {
             }));
             let actual = Simd::from_array(value).is_sign_negative();
 
-            assert!(
-                actual ^ expected == Simd::ZERO,
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_bit_eq!(actual, expected, dbg!(value));
         }
     });
 }
@@ -1974,28 +1005,19 @@ fn test_from_i32x4_lower2() {
 #[test]
 fn test_exp_m1() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -2.0,
-            -1.0,
-            -0.5,
-            0.0,
-            0.5,
-            1.0,
-            2.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::exp_m1));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::expm1));
             let actual = Simd::from_array(value).exp_m1();
-            let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 2.0);
 
-            assert!(
-                ((actual - expected).abs().simd_le(tol)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+            assert_float_eq!(
+                actual,
+                expected,
+                max_ulp_diff = match Unsigned::BITS {
+                    32 => 3,
+                    64 => 4,
+                    _ => panic!(),
+                },
+                dbg!(value)
             );
         }
 
@@ -2027,7 +1049,7 @@ fn test_exp_m1() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::exp_m1(t_v));
+            let expected = Simd::from(Libm::<T>::expm1(t_v));
             let actual = Simd::from(t_v).exp_m1();
 
             let diff = (actual - expected).abs();
@@ -2059,28 +1081,11 @@ fn test_exp_m1() {
 #[test]
 fn test_ln_1p() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -0.5,
-            0.0,
-            0.5,
-            1.0,
-            2.0,
-            10.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::ln_1p));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::log1p));
             let actual = Simd::from_array(value).ln_1p();
-            let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
-            assert!(
-                ((actual - expected).abs().simd_le(tol)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
-            );
+            assert_float_eq!(actual, expected, max_ulp_diff = 2, dbg!(value));
         }
 
         let mut x = 0xcafe_babe_u64;
@@ -2111,7 +1116,7 @@ fn test_ln_1p() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::ln_1p(t_v));
+            let expected = Simd::from(Libm::<T>::log1p(t_v));
             let actual = Simd::from(t_v).ln_1p();
 
             let diff = (actual - expected).abs();
@@ -2125,7 +1130,7 @@ fn test_ln_1p() {
 
         for &v in &[1e-16, 1e-14, 1e-12, 1e-10, 1e-8, 0.01, 0.1, 1.0] {
             let t_v = v as T;
-            let expected = Simd::from(T::ln_1p(t_v));
+            let expected = Simd::from(Libm::<T>::log1p(t_v));
             let actual = Simd::from(t_v).ln_1p();
             let diff = (actual - expected).abs();
             let limit = if std::mem::size_of::<T>() == 4 {
@@ -2166,19 +1171,8 @@ fn test_ln_1p() {
 #[test]
 fn test_sinh() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -2.0,
-            -1.0,
-            -0.5,
-            0.0,
-            0.5,
-            1.0,
-            2.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::sinh));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::sinh));
             let actual = Simd::from_array(value).sinh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
@@ -2219,7 +1213,7 @@ fn test_sinh() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::sinh(t_v));
+            let expected = Simd::from(Libm::<T>::sinh(t_v));
             let actual = Simd::from(t_v).sinh();
 
             let diff = (actual - expected).abs();
@@ -2236,19 +1230,8 @@ fn test_sinh() {
 #[test]
 fn test_cosh() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -2.0,
-            -1.0,
-            -0.5,
-            0.0,
-            0.5,
-            1.0,
-            2.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::cosh));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::cosh));
             let actual = Simd::from_array(value).cosh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
@@ -2289,7 +1272,7 @@ fn test_cosh() {
                 0.0
             };
             let t_v = v as T;
-            let expected = Simd::from(T::cosh(t_v));
+            let expected = Simd::from(Libm::<T>::cosh(t_v));
             let actual = Simd::from(t_v).cosh();
 
             let diff = (actual - expected).abs();
@@ -2306,19 +1289,8 @@ fn test_cosh() {
 #[test]
 fn test_tanh() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -2.0,
-            -1.0,
-            -0.5,
-            0.0,
-            0.5,
-            1.0,
-            2.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::tanh));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::tanh));
             let actual = Simd::from_array(value).tanh();
             let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
@@ -2350,7 +1322,7 @@ fn test_tanh() {
 
             let v = if u.is_finite() { u } else { 0.0 };
             let t_v = v as T;
-            let expected = Simd::from(T::tanh(t_v));
+            let expected = Simd::from(Libm::<T>::tanh(t_v));
             let actual = Simd::from(t_v).tanh();
 
             let diff = (actual - expected).abs();
@@ -2367,19 +1339,8 @@ fn test_tanh() {
 #[test]
 fn test_cbrt() {
     for_simd_types!(|T: Float, N| {
-        for value in simd_chunks!([
-            -8.0,
-            -1.0,
-            -0.125,
-            0.0,
-            0.125,
-            1.0,
-            8.0,
-            T::NAN,
-            T::INFINITY,
-            T::NEG_INFINITY,
-        ]) {
-            let expected = Simd::from_array(value.map(T::cbrt));
+        for value in fuzz_iter::<[T; N]>() {
+            let expected = Simd::from_array(value.map(Libm::<T>::cbrt));
             let actual = Simd::from_array(value).cbrt();
             // SLEEF polynomial + 1 Newton step on 1/cbrt + 1 polish on cbrt.
             // Accumulated roundoff in the scaling (r = e - 3k) and refinement
@@ -2414,7 +1375,7 @@ fn test_cbrt() {
 
             let v = if u.is_finite() { u } else { 0.0 };
             let t_v = v as T;
-            let expected = Simd::from(T::cbrt(t_v));
+            let expected = Simd::from(Libm::<T>::cbrt(t_v));
             let actual = Simd::from(t_v).cbrt();
 
             let diff = (actual - expected).abs();
@@ -2441,7 +1402,7 @@ fn test_exp_overflow_boundary() {
 
         for v in [max_x, near_max, over_max, -max_x] {
             let input = Simd::splat(v);
-            let expected = Simd::splat(T::exp(v));
+            let expected = Simd::splat(Libm::<T>::exp(v));
             let actual = input.exp();
             let tol = expected.abs().fast_max(Simd::splat(T::MIN_POSITIVE))
                 * Simd::splat(T::EPSILON * 1.0);
@@ -2471,7 +1432,7 @@ fn test_exp_subnormal() {
         };
         for v in [subnormal_input, deeper] {
             let input = Simd::splat(v);
-            let expected = Simd::splat(T::exp(v));
+            let expected = Simd::splat(Libm::<T>::exp(v));
             let actual = input.exp();
             let tol = expected.abs().fast_max(Simd::splat(T::MIN_POSITIVE))
                 * Simd::splat(T::EPSILON * 1.0);

@@ -57,6 +57,10 @@ macro_rules! for_simd_types {
     for_simd_types!(|T: Signed, N| $expr);
     for_simd_types!(|T: Unsigned, N| $expr);
   };
+  (|T: Integer, N, DoubleSizedSimd| $expr:expr) => {
+    for_simd_types!(|T: Signed, N, DoubleSizedSimd| $expr);
+    for_simd_types!(|T: Unsigned, N, DoubleSizedSimd| $expr);
+  };
   (|T: Signed, N| $expr:expr) => {
     for_simd_types!(signed!(i8, 16, i8x16, u8, u8x16, i16, (), $expr));
     for_simd_types!(signed!(i8, 32, i8x32, u8, u8x32, i16, (), $expr));
