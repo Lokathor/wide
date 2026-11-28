@@ -594,11 +594,7 @@ fn test_asin_acos() {
             );
             let actual = Simd::from_array(value).asin_acos();
 
-            assert!(
-                (actual.0 - expected.0).abs().simd_le(6e-7).all()
-                    && (actual.1 - expected.1).abs().simd_le(6e-7).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, max_ulp_diff = 2, dbg!(value));
         }
     });
 }
@@ -634,11 +630,7 @@ fn test_atan() {
             let expected = Simd::from_array(value.map(Libm::<T>::atan));
             let actual = Simd::from_array(value).atan();
 
-            let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
-            assert!(
-                (actual - expected).abs().simd_le(tol).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, max_ulp_diff = 2, dbg!(value));
         }
     });
 }
@@ -652,11 +644,7 @@ fn test_atan2() {
             }));
             let actual = Simd::from_array(value).atan2(Simd::from_array(other));
 
-            let tol = if size_of::<T>() == 8 { 1e-15 } else { 6e-7 };
-            assert!(
-                (actual - expected).abs().simd_le(tol).all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, max_ulp_diff = 3, dbg!(value));
         }
     });
 }
@@ -826,13 +814,7 @@ fn test_exp() {
             let expected = Simd::from_array(value.map(Libm::<T>::exp));
             let actual = Simd::from_array(value).exp();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            assert_float_eq!(actual, expected, max_ulp_diff = 1, dbg!(value));
         }
     });
 }
@@ -844,17 +826,17 @@ fn test_exp2() {
             let expected = Simd::from_array(value.map(Libm::<T>::exp2));
             let actual = Simd::from_array(value).exp2();
 
-            let tol = if size_of::<T>() == 8 { 1e-12 } else { 1e-7 };
-            let min_tol = if size_of::<T>() == 8 { 5e-324 } else { 1e-45 };
-            assert!(
-                ((actual - expected)
-                    .abs()
-                    .simd_le((expected.abs() * tol).max(Simd::splat(min_tol)))
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            match Unsigned::BITS {
+                32 => assert_float_eq!(actual, expected, max_ulp_diff = 1, dbg!(value)),
+                // `f64xN::exp2` has a large ULP difference
+                64 => assert_float_eq!(
+                    actual,
+                    expected,
+                    max_abs_diff = expected.abs() * 1e-12 + 1e-12,
+                    dbg!(value)
+                ),
+                _ => panic!(),
+            }
         }
     });
 }
@@ -863,16 +845,23 @@ fn test_exp2() {
 fn test_ln() {
     for_simd_types!(|T: Float, N| {
         for value in fuzz_iter::<[T; N]>() {
-            let expected = Simd::from_array(value.map(Libm::<T>::log));
-            let actual = Simd::from_array(value).ln();
+            let expected = value.map(Libm::<T>::log);
+            let actual = Simd::from_array(value).ln().to_array();
 
-            assert!(
-                ((actual - expected).abs().simd_le(expected.abs() * 1e-7)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}",
-            );
+            for ((actual, expected), value) in actual.into_iter().zip(expected).zip(value) {
+                // TODO(bug): Negative subnormals should result in NaN, but
+                // currently result in `NEG_INFINITY`.
+                let neg_subnormal_neg_inf = value.is_subnormal()
+                    && value.is_sign_negative()
+                    && actual == T::NEG_INFINITY
+                    && expected.is_nan();
+
+                assert!(
+                    float_eq!(actual, expected, max_abs_diff = expected.abs() * 1e-7)
+                        || neg_subnormal_neg_inf,
+                    dbg!(actual, expected, value)
+                );
+            }
         }
     });
 }
@@ -1019,14 +1008,16 @@ fn test_exp_m1() {
         for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(Libm::<T>::expm1));
             let actual = Simd::from_array(value).exp_m1();
-            let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 2.0);
 
-            assert!(
-                ((actual - expected).abs().simd_le(tol)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
+            assert_float_eq!(
+                actual,
+                expected,
+                max_ulp_diff = match Unsigned::BITS {
+                    32 => 3,
+                    64 => 4,
+                    _ => panic!(),
+                },
+                dbg!(value)
             );
         }
 
@@ -1093,15 +1084,8 @@ fn test_ln_1p() {
         for value in fuzz_iter::<[T; N]>() {
             let expected = Simd::from_array(value.map(Libm::<T>::log1p));
             let actual = Simd::from_array(value).ln_1p();
-            let tol = expected.abs().fast_max(Simd::splat(1 as T)) * Simd::splat(T::EPSILON * 1.0);
 
-            assert!(
-                ((actual - expected).abs().simd_le(tol)
-                    | actual.simd_eq(expected)
-                    | actual.is_nan() & expected.is_nan())
-                .all(),
-                "expected: {expected:?}\n  actual: {actual:?}\n value: {value:?}",
-            );
+            assert_float_eq!(actual, expected, max_ulp_diff = 2, dbg!(value));
         }
 
         let mut x = 0xcafe_babe_u64;

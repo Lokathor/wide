@@ -122,6 +122,7 @@ macro_rules! assert_float_eq {
         $right:expr
         $(, 0.0 = -$zero_marker:tt)?
         $(, max_abs_diff = $max_abs_diff:expr)?
+        $(, max_ulp_diff = $max_ulp_diff:expr)?
         $(, dbg!($($ctx:expr),* $(,)?))?
     ) => {
         match (&$left, &$right) {
@@ -131,6 +132,7 @@ macro_rules! assert_float_eq {
                     *right
                     $(, 0.0 = -$zero_marker)?
                     $(, max_abs_diff = $max_abs_diff)?
+                    $(, max_ulp_diff = $max_ulp_diff)?
                 ) {
                     println!("{:>10} = {left:?}", stringify!($left));
                     println!("{:>10} = {right:?}", stringify!($right));
@@ -162,6 +164,9 @@ macro_rules! float_eq {
     ($left:expr, $right:expr, max_abs_diff = $max_abs_diff:expr $(,)?) => {
         crate::utils::FloatEq::float_abs_diff_eq(&$left, &$right, &$max_abs_diff)
     };
+    ($left:expr, $right:expr, max_ulp_diff = $max_ulp_diff:expr $(,)?) => {
+        crate::utils::FloatEq::float_ulp_diff_eq(&$left, &$right, $max_ulp_diff)
+    };
 }
 pub(crate) use float_eq;
 
@@ -173,10 +178,12 @@ pub trait FloatEq {
     fn float_eq(&self, other: &Self, zero_eq_neg_zero: bool) -> bool;
 
     fn float_abs_diff_eq(&self, other: &Self, max_abs_diff: &Self) -> bool;
+
+    fn float_ulp_diff_eq(&self, other: &Self, max_ulp_diff: u32) -> bool;
 }
 
 macro_rules! float {
-    ($T:ident) => {
+    ($T:ident, $TUnsigned:ident) => {
         impl BitEq for $T {
             fn bit_eq(&self, other: &Self) -> bool {
                 self.to_bits() == other.to_bits()
@@ -197,11 +204,21 @@ macro_rules! float {
                     || (self.is_nan() && other.is_nan())
                     || (self - other).abs() <= *max_abs_diff
             }
+
+            fn float_ulp_diff_eq(&self, other: &Self, max_ulp_diff: u32) -> bool {
+                if self.is_nan() || other.is_nan() {
+                    self.is_nan() && other.is_nan()
+                } else if self.is_sign_positive() != other.is_sign_positive() {
+                    self == other
+                } else {
+                    self.to_bits().abs_diff(other.to_bits()) <= max_ulp_diff as $TUnsigned
+                }
+            }
         }
     };
 }
-float!(f32);
-float!(f64);
+float!(f32, u32);
+float!(f64, u64);
 
 macro_rules! integer {
     ($T:ident) => {
@@ -244,6 +261,10 @@ where
 
     fn float_abs_diff_eq(&self, other: &Self, max_abs_diff: &Self) -> bool {
         (0..N).all(|i| self[i].float_abs_diff_eq(&other[i], &max_abs_diff[i]))
+    }
+
+    fn float_ulp_diff_eq(&self, other: &Self, max_ulp_diff: u32) -> bool {
+        (0..N).all(|i| self[i].float_ulp_diff_eq(&other[i], max_ulp_diff))
     }
 }
 
@@ -318,6 +339,11 @@ macro_rules! simd_float {
             fn float_abs_diff_eq(&self, other: &Self, max_abs_diff: &Self) -> bool {
                 self.to_array()
                     .float_abs_diff_eq(&other.to_array(), max_abs_diff.as_array())
+            }
+
+            fn float_ulp_diff_eq(&self, other: &Self, max_abs_diff: u32) -> bool {
+                self.to_array()
+                    .float_ulp_diff_eq(&other.to_array(), max_abs_diff)
             }
         }
     };
